@@ -22,12 +22,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WsClientService } from '@core/http/ws-client.service';
-import {
-  WsClientConnectionDialogComponent,
-  AddWsClientConnectionDialogData
-} from '@home/pages/ws-client/ws-client-connection-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
-import { ConnectionDetailed } from '@shared/models/ws-client.model';
+import { Connection } from '@shared/models/ws-client.model';
 import { tap } from 'rxjs/operators';
 
 @Component({
@@ -37,7 +33,7 @@ import { tap } from 'rxjs/operators';
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
-  connection: ConnectionDetailed;
+  connection: Connection;
 
   isConnected: boolean;
   actionLabel: string;
@@ -88,20 +84,20 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     const data = {
       connection: null
     };
-    this.dialog.open<WsClientConnectionDialogComponent, AddWsClientConnectionDialogData>(WsClientConnectionDialogComponent, {
+    /*this.dialog.open<WsClientConnectionDialogComponent, AddWsClientConnectionDialogData>(WsClientConnectionDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
+          /!*this.wsClientService.saveConnection(res).subscribe(
             res => {
               this.wsConnectionsTableConfig.getTable().updateData();
             }
-          );*/
+          );*!/
         }
-      });
+      });*/
   }
 
   update(connection) {

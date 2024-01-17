@@ -70,19 +70,20 @@
       <span translate>ws-client.connections.properties</span>
     </button>
   </section>
-  <div fxLayout="column">
-    <div style="background: #fff" fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="16px">
-      <tb-ws-json-object-edit
-        style="width: 100%;"
-        formControlName="value"
-        label="{{ 'value.json-value' | translate }}"
-        [jsonRequired]="false"
-        [fillHeight]="false">
-      </tb-ws-json-object-edit>
-      <button mat-icon-button (click)="publishMessage()">
-        <mat-icon color="primary">send</mat-icon>
-      </button>
-    </div>
+  <div style="background: #fff; position: relative;">
+    <tb-ws-json-object-edit
+      style="width: 100%;"
+      formControlName="value"
+      label="{{ 'value.json-value' | translate }}"
+      [jsonRequired]="false"
+      [fillHeight]="false">
+    </tb-ws-json-object-edit>
+    <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
+            (click)="publishMessage()"
+            [matTooltip]="'ws-client.messages.publish-message' | translate"
+            [disabled]="!messangerFormGroup.get('topic')?.value?.length">
+      <mat-icon>send</mat-icon>
+    </button>
   </div>
 </div>
 

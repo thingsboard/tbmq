@@ -22,11 +22,6 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { WsClientService } from '@core/http/ws-client.service';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  WsClientConnectionDialogComponent,
-  AddWsClientConnectionDialogData
-} from '@home/pages/ws-client/ws-client-connection-dialog.component';
-import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-ws-client',
@@ -60,7 +55,7 @@ export class WsClientComponent extends PageComponent {
   }
 
   addConnection() {
-    const data = {
+    /*const data = {
       connection: {
         "name": "Works 33",
         "uri": "ws://",
@@ -70,7 +65,7 @@ export class WsClientComponent extends PageComponent {
         "clientId": null,
         "username": null,
         "password": "tbmq_dev",
-        "keepAlive": 60,
+        "keepalive": 60,
         "reconnectPeriod": 1000,
         "connectTimeout": 30000,
         "clean": true,
@@ -97,6 +92,6 @@ export class WsClientComponent extends PageComponent {
         if (isDefinedAndNotNull(res)) {
           this.wsClientService.addConnection(res);
         }
-      });
+      });*/
   }
 }

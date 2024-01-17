@@ -14,18 +14,8 @@
 /// limitations under the License.
 ///
 
-import {
-  Component,
-  ElementRef,
-  EventEmitter,
-  forwardRef,
-  Input,
-  NgZone,
-  OnInit,
-  Output,
-  ViewChild
-} from '@angular/core';
-import { ControlValueAccessor, UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { PageLink } from '@shared/models/page/page-link';
 import { Direction } from '@shared/models/page/sort-order';
@@ -42,6 +32,8 @@ import { SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { Connection } from '@shared/models/ws-client.model';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-client-credentials-autocomplete',
@@ -58,6 +50,9 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   selectCredentialsFormGroup: UntypedFormGroup;
 
   modelValue: ClientCredentials | null;
+
+  @Input()
+  entity: Connection;
 
   @Input()
   subscriptSizing: SubscriptSizing = 'fixed';
@@ -186,8 +181,11 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
           this.clientCredentialsChanged.emit(credentials);
         }
       );
-    } else if (this.displayAllOnEmpty) {
+    } else if (isDefinedAndNotNull(this.entity.existingCredentials)) {
       this.modelValue = null;
+      this.selectCredentialsFormGroup.get('clientCredentials').patchValue(this.entity.existingCredentials, {emitEvent: false});
+      // @ts-ignore
+      this.clientCredentialsChanged.emit(this.entity.existingCredentials);
     } else {
       this.modelValue = null;
       this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null, {emitEvent: false});
@@ -217,7 +215,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     if (value?.id) {
       this.clientCredentialsService.getClientCredentials(value.id).subscribe(
         (credentials) => {
-          this.propagateChange(credentials);
+          this.propagateChange(credentials.id);
           this.clientCredentialsChanged.emit(credentials);
         }
       );

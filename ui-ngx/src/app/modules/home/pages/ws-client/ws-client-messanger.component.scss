@@ -32,5 +32,14 @@
         background-color: $tb-primary-color !important;
       }
     }
+
+    .publish-button {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      z-index: 1;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 4px;
+    }
   }
 }

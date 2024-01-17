@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -28,6 +28,7 @@ import {
 import { Subject, Subscription } from 'rxjs';
 import { SslCredentialsAuthRules } from '@shared/models/credentials.model';
 import { isDefinedAndNotNull } from '@core/utils';
+import { Connection } from '@shared/models/ws-client.model';
 
 export interface UserProperties {
   userProperties: UserPropertiesObject[];
@@ -54,10 +55,13 @@ export interface UserPropertiesObject {
     }],
   styleUrls: ['./user-properties.component.scss']
 })
-export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
+export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit {
 
   @Input()
   disabled: boolean;
+
+  @Input()
+  entity: Connection;
 
   userPropertiesFormGroup: UntypedFormGroup;
 
@@ -75,13 +79,23 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
     this.userPropertiesFormGroup = this.fb.group({
       userProperties: this.fb.array([])
     });
-    this.userPropertiesFormArray.push(this.fb.group({
-      key: [null, []],
-      value: [null, []]
-    }));
+
   }
 
-  ngAfterViewInit() {
+  ngOnInit() {
+    if (this.entity && isDefinedAndNotNull(this.entity.properties?.userProperties)) {
+      for (const [key, value] of Object.entries(this.entity.properties?.userProperties)) {
+        this.userPropertiesFormArray.push(this.fb.group({
+          key: [key, []],
+          value: [value, []]
+        }));
+      }
+    } else {
+      this.userPropertiesFormArray.push(this.fb.group({
+        key: [null, []],
+        value: [null, []]
+      }));
+    }
   }
 
   addRule(): void {

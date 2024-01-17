@@ -24,7 +24,7 @@ import { map, share, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { WsClientService } from '@core/http/ws-client.service';
 import { Connection } from '@shared/models/ws-client.model';
-import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
+import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { isDefinedAndNotNull } from "@core/utils";
 import { MatDialog } from "@angular/material/dialog";
 
@@ -46,6 +46,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
 
   connections$: Observable<Connection[]>;
   loadConnection = true;
+  connectionsTotal: number;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,
@@ -61,6 +62,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
     this.connections$ = this.wsClientService.getConnections().pipe(
       map(res => {
         if (res.data?.length) {
+          this.connectionsTotal = res.data.length;
           this.loadConnection = true;
           return res.data;
         }
@@ -86,17 +88,22 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<ConnectionWizardDialogComponent, any>(ConnectionWizardDialogComponent, {
+    this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        connectionsTotal: this.connectionsTotal
+      }
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveConnection(res).subscribe(
+          /*this.wsClientService.saveConnection(res).subscribe(
             () => {
               // this.updateData()
             }
-          );
+          );*/
+        } else {
+          this.onClose();
         }
       });
   }

@@ -19,8 +19,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
-import { DialogService } from '@core/services/dialog.service';
-import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { DatePipe } from '@angular/common';
 import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { MqttQoS, MqttQoSType, mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
@@ -31,7 +29,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { PropertiesDialogComponent } from '@home/pages/ws-client/properties-dialog.component';
 import {
   Connection,
-  ConnectionDetailed,
   PublishMessageProperties,
   SubscriptionTopicFilter
 } from '@shared/models/ws-client.model';
@@ -46,7 +43,7 @@ import { ValueType } from '@shared/models/constants';
 })
 export class WsClientMessangerComponent implements OnInit {
 
-  connection: ConnectionDetailed;
+  connection: Connection;
   connections: Connection[];
   subscriptions: SubscriptionTopicFilter[];
   messangerFormGroup: UntypedFormGroup;

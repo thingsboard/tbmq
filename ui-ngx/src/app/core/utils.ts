@@ -17,6 +17,7 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
+import { DataSizeUnitType, TimeUnitType } from '@shared/models/ws-client.model';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -535,6 +536,66 @@ export const camelCase = (str: string): string => {
   return _.camelCase(str);
 };
 
-export const clientIdRandom = 'tbmq_' + randomAlphanumeric(8);
+export const convertTimeUnits = (value: number, valueUnit: TimeUnitType, targetUnit: TimeUnitType): number => {
+  let milliseconds: number = convertToMilliseconds(value, valueUnit);
+  switch(targetUnit) {
+    case TimeUnitType.MILLISECONDS:
+      return milliseconds;
+    case TimeUnitType.SECONDS:
+      return milliseconds / 1000;
+    case TimeUnitType.MINUTES:
+      return milliseconds / (60 * 1000);
+    case TimeUnitType.HOURS:
+      return milliseconds / (60 * 60 * 1000);
+    default:
+      throw new Error(`Unsupported target unit: ${targetUnit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
+  }
+}
+
+const convertToMilliseconds = (value: number, unit: TimeUnitType): number => {
+  switch(unit) {
+    case TimeUnitType.MILLISECONDS:
+      return value;
+    case TimeUnitType.SECONDS:
+      return value * 1000;
+    case TimeUnitType.MINUTES:
+      return value * 60 * 1000;
+    case TimeUnitType.HOURS:
+      return value * 60 * 60 * 1000;
+    default:
+      throw new Error(`Unsupported unit: ${unit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
+  }
+}
+
+export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType, targetUnit: DataSizeUnitType): number => {
+  let bytes: number = convertToBytes(value, valueUnit);
+  switch(targetUnit) {
+    case DataSizeUnitType.B:
+      return bytes;
+    case DataSizeUnitType.KB:
+      return bytes / 1024;
+    case DataSizeUnitType.MB:
+      return bytes / (1024 * 1024);
+    default:
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`)
+  }
+}
+
+const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
+  switch(valueUnit) {
+    case DataSizeUnitType.B:
+      return value;
+    case DataSizeUnitType.KB:
+      return value * 1024;
+    case DataSizeUnitType.MB:
+      return value * 1024 * 1024;
+    default:
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`);
+  }
+}
+
+export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
+export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
+export const clientCredentialsNameRandom = () => 'WebSocket Connection_' + randomAlphanumeric(3);
 
 export const randomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16);

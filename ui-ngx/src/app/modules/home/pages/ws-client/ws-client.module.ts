@@ -22,7 +22,6 @@ import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
 import { WsClientMessangerComponent } from '@home/pages/ws-client/ws-client-messanger.component';
 import { ConnectionsComponent } from '@home/pages/ws-client/connections.component';
-import { WsClientConnectionDialogComponent } from '@home/pages/ws-client/ws-client-connection-dialog.component';
 import { MessagesComponent } from '@home/pages/ws-client/messages.component';
 import { WsClientTableComponent } from '@home/pages/ws-client/ws-client-table.component';
 import { WsClientSubscriptionDialogComponent } from '@home/pages/ws-client/ws-client-subscription-dialog.component';
@@ -42,7 +41,6 @@ import { EntitiesTableWsComponent } from "@home/components/entity/entities-table
     WsClientMessangerComponent,
     ConnectionsComponent,
     ConnectionControllerComponent,
-    WsClientConnectionDialogComponent,
     WsClientSubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     MessagesComponent,
@@ -62,7 +60,6 @@ import { EntitiesTableWsComponent } from "@home/components/entity/entities-table
     WsClientRoutingModule
   ],
   exports: [
-    WsClientConnectionDialogComponent,
     WsClientSubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     WsClientTableComponent,

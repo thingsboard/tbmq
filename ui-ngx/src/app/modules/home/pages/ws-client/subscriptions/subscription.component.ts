@@ -15,19 +15,17 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import {Connection, ConnectionDetailed, SubscriptionTopicFilter} from '@shared/models/ws-client.model';
+import { SubscriptionTopicFilter } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import {BaseData} from "@shared/models/base-data";
-import {MatDialog} from "@angular/material/dialog";
-import {DialogService} from "@core/services/dialog.service";
-import {ConnectionWizardDialogComponent} from "@home/components/wizard/connection-wizard-dialog.component";
-import {isDefinedAndNotNull} from "@core/utils";
+import { MatDialog } from '@angular/material/dialog';
+import { DialogService } from '@core/services/dialog.service';
+import { isDefinedAndNotNull } from '@core/utils';
 import {
   AddWsClientSubscriptionDialogData,
   WsClientSubscriptionDialogComponent
-} from "@home/pages/ws-client/ws-client-subscription-dialog.component";
+} from '@home/pages/ws-client/ws-client-subscription-dialog.component';
 
 @Component({
   selector: 'tb-subscription',
@@ -116,11 +114,11 @@ export class SubscriptionComponent implements OnInit {
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveConnection(res).subscribe(
+          /*this.wsClientService.saveConnection(res).subscribe(
             () => {
               // this.updateData()
             }
-          );
+          );*/
         }
       });
   }

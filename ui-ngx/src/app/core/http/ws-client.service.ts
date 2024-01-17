@@ -21,15 +21,17 @@ import { RequestConfig } from '@core/http/http-utils';
 import { PageData } from '@shared/models/page/page-data';
 import {
   Connection,
-  ConnectionDetailed,
+  DataSizeUnitType,
   SubscriptionTopicFilter,
-  SubscriptionTopicFilterDetailed, WsMessage
+  SubscriptionTopicFilterDetailed,
+  TimeUnitType,
+  WsMessage
 } from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
 import mqtt from 'mqtt';
-import { MessagesDisplayData } from "@home/pages/ws-client/messages.component";
-import { DateAgoPipe } from "@shared/pipe/date-ago.pipe";
-import { DatePipe } from "@angular/common";
+import { MessagesDisplayData } from '@home/pages/ws-client/messages.component';
+import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
+import { DatePipe } from '@angular/common';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +57,64 @@ export class WsClientService {
 
   mqttJsClients: any[] = [];
   mqttJsClient: any;
+
+  mockConnections: Connection[] = [{
+    id: '1',
+    name: 'WebSocket Connection 1',
+    protocol: 'ws://',
+    host: 'localhost',
+    port: 8084,
+    url: 'ws://localhost:8084/mqtt',
+    path: '/mqtt',
+    protocolId: 'MQTT', // Or 'MQIsdp' in MQTT 3.1 and 5.0
+    protocolVersion: 5, // Or 3 in MQTT 3.1, or 5 in MQTT 5.0
+    clean: false, // Can also be false
+    clientId: 'tbmq_dev',
+    keepalive: 0, // Seconds which can be any positive number, with 0 as the default setting
+    keepaliveUnit: TimeUnitType.SECONDS,
+    connectTimeout: 30000,
+    connectTimeoutUnit: TimeUnitType.MILLISECONDS,
+    reconnectPeriod: 10000,
+    reconnectPeriodUnit: TimeUnitType.MILLISECONDS,
+    username: 'tbmq_dev',
+    password: 'tbmq_dev', // Passwords are buffers
+    existingCredentials: {
+      id: "62397b5f-d04c-4d2e-957b-29209348cad3",
+      name: "TBMQ Device Demo"
+    },
+    will: {
+      topic: 'mydevice/status',
+      qos: 2,
+      retain: false,
+      payload: {'a': 123}, // Payloads are buffers
+      properties: { // MQTT 5.0
+        willDelayInterval: 1234,
+        willDelayIntervalUnit: TimeUnitType.SECONDS,
+        payloadFormatIndicator: true,
+        messageExpiryInterval: 4321,
+        messageExpiryIntervalUnit: TimeUnitType.SECONDS,
+        contentType: 'test',
+        responseTopic: 'topic',
+        correlationData: [1, 2, 3, 4]
+      }
+    },
+    properties: { // MQTT 5.0 properties
+      sessionExpiryInterval: 1234,
+      receiveMaximum: 432,
+      maximumPacketSize: 100,
+      topicAliasMaximum: 456,
+      requestResponseInformation: true,
+      requestProblemInformation: true,
+      authenticationMethod: 'test',
+      authenticationData: [1, 2, 3, 4],
+      sessionExpiryIntervalUnit: TimeUnitType.SECONDS,
+      maximumPacketSizeUnit: DataSizeUnitType.KB,
+      userProperties: {
+        'key_1': 'value 1',
+        'key_2': 'value 2'
+      },
+    }
+  }];
 
   constructor(private http: HttpClient,
               private datePipe: DatePipe,
@@ -459,7 +519,7 @@ export class WsClientService {
           createdTime: 54645673457,
           retain: true,
           payload: "{temp: 2}",
-          qos: 3,
+          qos: 2,
           topic: 'cde/topic',
           color: 'blue'
         },
@@ -521,162 +581,42 @@ export class WsClientService {
   public getConnections(pageLink?: PageLink, config?: RequestConfig): Observable<PageData<Connection>> {
     // return this.http.get<PageData<Connection>>(`/api/`, defaultHttpOptionsFromConfig(config));
     const mockData = {
-      data: [
-        {
-          id: '1',
-          name: 'WebSocket Connection  1',
-          createdTime: 1701696568854,
-          connected: false,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: null
-        },
-        {
-          id: '2',
-          name: 'WebSocket Connection  2',
-          createdTime: 1701696566405,
-          connected: true,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: 'tbmq_dev2'
-        },
-        {
-          id: '3',
-          name: 'WebSocket Connection 3 WO pass',
-          createdTime: 1701418253485,
-          connected: false,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: 'tbmq_dev2'
-        },
-        {
-          id: '4',
-          name: 'WebSocket Connection  4',
-          createdTime: 1700486480079,
-          connected: false,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: 'tbmq_dev2'
-        },
-        {
-          id: '5',
-          name: 'WebSocket Connection  5',
-          createdTime: 1700486480079,
-          connected: false,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: 'tbmq_dev2'
-        },
-        {
-          id: '6',
-          name: 'WebSocket Connection  6',
-          createdTime: 1700486480079,
-          connected: false,
-          clientId: 'tbmq_dev2',
-          username: 'tbmq_dev2',
-          password: 'tbmq_dev2'
-        }
-      ],
-      'totalPages': 2,
-      'totalElements': 10,
-      'hasNext': true
+      data: this.mockConnections,
+      'totalPages': 1,
+      'totalElements': 999,
+      'hasNext': false
     };
     return of(mockData);
   }
 
-  public getConnection(id: string, config?: RequestConfig): Observable<ConnectionDetailed> {
+  public getConnection(id: string, config?: RequestConfig): Observable<Connection> {
     // return this.http.get<Connection>(`/api/${id}`, defaultHttpOptionsFromConfig(config));
-    const allData = [
-      {
-        id: '1',
-        name: 'WebSocket Connection  1',
-        createdTime: 1701696568854,
-        connected: false,
-        clientId: 'tbmq_dev',
-        username: 'tbmq_dev',
-        password: null
-      },
-      {
-        id: '2',
-        name: 'WebSocket Connection  2',
-        createdTime: 1701696566405,
-        connected: true,
-        clientId: 'tbmq_dev2',
-        username: 'tbmq_dev2',
-        password: 'tbmq_dev2'
-      },
-      {
-        id: '3',
-        name: 'WebSocket Connection 3 Has password',
-        createdTime: 1701418253485,
-        connected: false,
-        clientId: 'tbmq_dev3',
-        username: 'tbmq_dev3',
-        password: 'tbmq_dev3'
-      },
-      {
-        id: '4',
-        name: 'WebSocket Connection  4',
-        createdTime: 1700486480079,
-        connected: false,
-        clientId: 'tbmq_dev4',
-        username: 'tbmq_dev4',
-        password: 'tbmq_dev4'
-      },
-      {
-        id: '5',
-        name: 'WebSocket Connection  5',
-        createdTime: 1700486480079,
-        connected: false,
-        clientId: 'tbmq_dev5',
-        username: 'tbmq_dev5',
-        password: 'tbmq_dev5'
-      },
-      {
-        id: '6',
-        name: 'WebSocket Connection 6',
-        createdTime: 1700486480079,
-        connected: false,
-        clientId: 'tbmq_dev6',
-        username: 'tbmq_dev6',
-        password: 'tbmq_dev6'
-      }
-    ];
-    const mockConnection = {
-      'protocol': 'ws://',
-      'host': 'localhost',
-      'port': 8084,
-      'path': '/mqtt',
-      'keepAlive': 60,
-      'reconnectPeriod': 1000,
-      'connectTimeout': 30000,
-      'clean': true,
-      'protocolVersion': '5',
-      'properties': {
-        'sessionExpiryInterval': null,
-        'receiveMaximum': null,
-        'maximumPacketSize': null,
-        'topicAliasMaximum': null,
-        'requestResponseInformation': null,
-        'requestProblemInformation': null,
-        'userProperties': null
-      },
-      'userProperties': null,
-      'will': null
-    };
-    const target = allData.find(el => el.id == id);
-    const result = {...target, ...mockConnection};
-    return of(result);
+    const target = this.mockConnections.find(el => el.id == id);
+    return of(target);
   }
 
-  public saveConnection(entity: any, config?: RequestConfig): Observable<ConnectionDetailed> {
-    const id = {
-      id: '62397b5f-d04c-4d2e-957b-29209348cad3',
-      name: 'WebSocket Connection  Device Demo',
-      createdTime: 1701696568854
-    };
-    const result = {...entity, ...id};
-    return of(result);
+  public saveConnection(entity: Connection, config?: RequestConfig): Observable<Connection> {
+    const index = this.mockConnections.findIndex(el => el.id == entity.id);
+    if (index > -1) {
+      this.mockConnections[index] = entity;
+    } else {
+      entity.id = (this.mockConnections?.length + 1).toString();
+      this.mockConnections.push(entity);
+    }
+    return of(entity);
+  }
+
+  public deleteConnection(entity: Connection, selectedConnection: Connection, config?: RequestConfig) {
+    const activeConnectionId = selectedConnection.id;
+    const index = this.mockConnections.findIndex(el => el.id === entity.id);
+    if (index > -1) {
+      this.mockConnections.splice(index, 1);
+    }
+    if (entity.id === activeConnectionId) {
+      if (this.mockConnections.length) {
+        this.selectConnection(this.mockConnections[0]);
+      }
+    }
   }
 
   public getSubscriptions(connectionId: any,config?: RequestConfig): Observable<PageData<SubscriptionTopicFilter>> {

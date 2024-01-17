@@ -82,11 +82,11 @@ export class WsSubscriptionsTableConfig extends EntityTableConfig<SubscriptionTo
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveConnection(res).subscribe(
+          /*this.wsClientService.saveConnection(res).subscribe(
             () => {
               this.updateData()
             }
-          );
+          );*/
         }
       });
   }

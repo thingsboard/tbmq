@@ -15,15 +15,14 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import {Connection, ConnectionDetailed} from '@shared/models/ws-client.model';
+import { Connection } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import {BaseData} from "@shared/models/base-data";
-import {MatDialog} from "@angular/material/dialog";
-import {DialogService} from "@core/services/dialog.service";
-import {ConnectionWizardDialogComponent} from "@home/components/wizard/connection-wizard-dialog.component";
-import {isDefinedAndNotNull} from "@core/utils";
+import { MatDialog } from '@angular/material/dialog';
+import { DialogService } from '@core/services/dialog.service';
+import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-connection',
@@ -103,8 +102,8 @@ export class ConnectionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
+        this.wsClientService.deleteConnection(this.connection, this.selectedConnection);
         if (this.selectedConnection.id === this.connection.id) {
-          this.connectionDeleted.emit(this.connection);
           // TODO move implementation to the select-connection-component
           /*this.wsClientService.selectFirstConnection().subscribe(
             () => {
@@ -120,20 +119,20 @@ export class ConnectionComponent implements OnInit {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<ConnectionWizardDialogComponent, any>(ConnectionWizardDialogComponent, {
+    this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        isEdit: true // TODO implement edit wizard
+        entity
       }
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveConnection(res).subscribe(
+          /*this.wsClientService.saveConnection(res).subscribe(
             (connection) => {
               this.connectionEdited.emit(connection);
             }
-          );
+          );*/
         }
       });
   }

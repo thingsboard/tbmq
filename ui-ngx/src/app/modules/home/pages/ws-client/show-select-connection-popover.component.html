@@ -23,7 +23,7 @@
 </section>
 
 <ng-container *ngIf="loadConnection; else loadingConnections">
-  <div *ngIf="(connections$ | async).length; else emptyConnections" style="overflow: auto">
+  <div *ngIf="(connections$ | async).length; else emptyConnections" style="overflow: auto; height: 100%">
     <div style="overflow: auto">
       <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
         <div *ngFor="let connection of (connections$ | async);">

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { ChangeDetectorRef, Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -27,6 +27,8 @@ import {
 import { Subject, Subscription } from 'rxjs';
 import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
+import { Connection, TimeUnitType, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { convertTimeUnits } from '@core/utils';
 
 export interface LastWill {
   topic: string;
@@ -49,7 +51,7 @@ export interface LastWill {
     }],
   styleUrls: ['./last-will.component.scss']
 })
-export class LastWillComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
 
   @Input()
   disabled: boolean;
@@ -57,8 +59,13 @@ export class LastWillComponent implements ControlValueAccessor, Validator, OnDes
   @Input()
   mqttVersion: number;
 
+  @Input()
+  entity: Connection;
+
   formGroup: UntypedFormGroup;
   mqttQoSTypes = mqttQoSTypes;
+  timeUnitTypes = Object.keys(TimeUnitType);
+  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();
@@ -68,18 +75,27 @@ export class LastWillComponent implements ControlValueAccessor, Validator, OnDes
   constructor(public fb: FormBuilder,
               public cd: ChangeDetectorRef,
               private translate: TranslateService) {
+  }
+
+  ngOnInit() {
+    this.initForm(this.entity);
+  }
+
+  private initForm(entity: Connection) {
     this.formGroup = this.fb.group({
-      topic: [null, []],
-      payload: [null, []],
-      qos: [MqttQoS.AT_LEAST_ONCE, []],
-      retain: [null, []],
+      topic: [entity?.will ? entity?.will.topic : null, []],
+      payload: [entity?.will ? entity?.will.payload : null, []],
+      qos: [entity?.will ? entity?.will.qos : MqttQoS.AT_LEAST_ONCE, []],
+      retain: [entity?.will ? entity?.will.retain : false, []],
       properties: this.fb.group({
-        willDelayInterval: [null, []],
-        payloadFormatIndicator: [null, []],
-        messageExpiryInterval: [null, []],
-        contentType: [null, []],
-        responseTopic: [null, []],
-        correlationData: [null, []]
+        willDelayInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.willDelayInterval, TimeUnitType.SECONDS, entity?.will.properties.willDelayIntervalUnit) : null, []],
+        willDelayIntervalUnit: [entity?.will ? entity?.will.properties.willDelayIntervalUnit : TimeUnitType.SECONDS, []],
+        payloadFormatIndicator: [entity?.will ? entity?.will.properties.payloadFormatIndicator : null, []],
+        messageExpiryInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.messageExpiryInterval, TimeUnitType.SECONDS, entity?.will.properties.messageExpiryIntervalUnit) : null, []],
+        messageExpiryIntervalUnit: [entity?.will ? entity?.will.properties.messageExpiryIntervalUnit : TimeUnitType.SECONDS, []],
+        contentType: [entity?.will ? entity?.will.properties.contentType : null, []],
+        responseTopic: [entity?.will ? entity?.will.properties.responseTopic : null, []],
+        correlationData: [entity?.will ? entity?.will.properties.correlationData : null, []]
       })
     });
   }

@@ -38,7 +38,7 @@ import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { QoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { WsMessage } from "@shared/models/ws-client.model";
+import { WsClientMessageTypeTranslationMap, WsMessage } from '@shared/models/ws-client.model';
 import { WsClientService } from "@core/http/ws-client.service";
 import { coerceBoolean } from "@shared/decorators/coercion";
 
@@ -71,17 +71,22 @@ export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
 
     this.columns.push(
       new EntityTableColumn<WsMessage>('color', null, '30px', (entity) => {
-        const messageReceived = !!entity?.color?.length;
+        const messageReceived = !!entity?.color?.length; // TODO refactor without color
         const color = entity?.color || 'rgba(0, 0, 0, 0.38)';
         return arrowIcon(messageReceived, color);
-      }, () => undefined, false),
+      }, () => undefined, false, undefined, (entity) => {
+        const messageReceived = !!entity?.color?.length;
+        return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
+      }),
       new DateEntityTableColumn<WsMessage>('createdTime', 'common.time', this.datePipe, '150px'),
       new EntityTableColumn<WsMessage>('topic', 'retained-message.topic', '50%'),
-      new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '25%'),
+      new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '25%', undefined,
+        undefined, undefined, undefined, (entity) => this.translate.instant(QoSTranslationMap.get(entity.qos))),
       new EntityTableColumn<WsMessage>('retain', 'ws-client.messages.retained', '25%',
           entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
-      new EntityTableColumn<WsMessage>('payload', 'retained-message.payload', '200px')
+      new EntityTableColumn<WsMessage>('payload', 'retained-message.payload', '200px', undefined,
+        undefined, undefined, undefined, (entity) => entity.payload)
     );
 
     this.entitiesFetchFunction = pageLink => this.wsClientService.getMessages();

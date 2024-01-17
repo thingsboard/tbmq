@@ -92,11 +92,11 @@ export class WsConnectionsTableConfig extends EntityTableConfig<Connection, Time
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveConnection(res).subscribe(
+          /*this.wsClientService.saveConnection(res).subscribe(
             () => {
               this.updateData()
             }
-          );
+          );*/
         }
       });
   }

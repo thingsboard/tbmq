@@ -14,20 +14,12 @@
 /// limitations under the License.
 ///
 
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UntypedFormBuilder } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
-import { Subject } from 'rxjs';
-import { isDefinedAndNotNull } from '@core/utils';
 import { WsClientService } from '@core/http/ws-client.service';
-import {
-  WsClientConnectionDialogComponent,
-  AddWsClientConnectionDialogData
-} from '@home/pages/ws-client/ws-client-connection-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
-import { ConnectionDetailed } from '@shared/models/ws-client.model';
+import { Connection } from '@shared/models/ws-client.model';
 import { tap } from 'rxjs/operators';
 
 @Component({
@@ -35,17 +27,12 @@ import { tap } from 'rxjs/operators';
   templateUrl: './connections.component.html',
   styleUrls: ['./connections.component.scss']
 })
-export class ConnectionsComponent implements OnInit, OnDestroy {
+export class ConnectionsComponent implements OnInit {
 
-  connections: any;
-  connection: ConnectionDetailed;
-
-  private destroy$ = new Subject<void>();
+  connection: Connection;
 
   constructor(protected store: Store<AppState>,
-              private translate: TranslateService,
               private wsClientService: WsClientService,
-              private dialog: MatDialog,
               public fb: UntypedFormBuilder) {
   }
 
@@ -68,29 +55,5 @@ export class ConnectionsComponent implements OnInit, OnDestroy {
         this.connection = res;
       }
     )
-  }
-
-  ngOnDestroy() {
-    this.destroy$.complete();
-  }
-
-  addConnection() {
-    const data = {
-      connection: null
-    };
-    this.dialog.open<WsClientConnectionDialogComponent, AddWsClientConnectionDialogData>(WsClientConnectionDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data
-    }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
-            res => {
-              this.wsConnectionsTableConfig.getTable().updateData();
-            }
-          );*/
-        }
-      });
   }
 }
