@@ -36,7 +36,7 @@ import {
 } from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
-import { QoSTranslationMap } from '@shared/models/session.model';
+import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WsClientMessageTypeTranslationMap, WsMessage } from '@shared/models/ws-client.model';
 import { WsClientService } from "@core/http/ws-client.service";
@@ -81,7 +81,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
       new DateEntityTableColumn<WsMessage>('createdTime', 'common.time', this.datePipe, '150px'),
       new EntityTableColumn<WsMessage>('topic', 'retained-message.topic', '50%'),
       new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '25%', undefined,
-        undefined, undefined, undefined, (entity) => this.translate.instant(QoSTranslationMap.get(entity.qos))),
+        undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
       new EntityTableColumn<WsMessage>('retain', 'ws-client.messages.retained', '25%',
           entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),

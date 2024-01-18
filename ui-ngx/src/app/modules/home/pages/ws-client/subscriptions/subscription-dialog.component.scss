@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 :host {
+  form:first-child {
+    min-width: 600px;
+    min-height: 700px;
+  }
+
   .slider {
     padding: 0 0 4px 4px;
   }

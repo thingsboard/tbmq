@@ -31,17 +31,16 @@
     <div style="overflow: auto">
       <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
         <div *ngFor="let subscription of (subscriptions$ | async);">
-          <tb-subscription [subscription]="subscription"></tb-subscription>
+          <tb-subscription [connection]="connection" [subscription]="subscription"></tb-subscription>
         </div>
       </section>
     </div>
   </div>
 </ng-container>
 <ng-template #emptySubscriptions>
-  <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px"
-           class="no-data">
+  <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px" style="height: 100%;">
     <img src="../../../../../../assets/home/no_data_bg.svg">
-    <span translate>ws-client.subscriptions.no-subscriptions</span>
+    <span style="color: rgba(0, 0, 0, 0.38)" translate>ws-client.subscriptions.no-subscriptions</span>
   </section>
 </ng-template>
 <ng-template #loadingSubscriptions>

@@ -53,7 +53,9 @@ export type CopyCellContent<T extends BaseData> = (entity: T, key: string, lengt
 
 export enum CellActionDescriptorType { 'DEFAULT', 'COPY_BUTTON'}
 
-export interface CellActionDescriptor<T extends BaseData> {
+type AnyOrBaseData = any | BaseData;
+
+export interface CellActionDescriptor<T extends AnyOrBaseData> {
   name: string;
   nameFunction?: (entity: T) => string;
   icon?: string;

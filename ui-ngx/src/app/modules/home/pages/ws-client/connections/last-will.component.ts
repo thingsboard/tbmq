@@ -25,7 +25,7 @@ import {
   Validator
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
+import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
 import { Connection, TimeUnitType, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import { convertTimeUnits } from '@core/utils';
@@ -63,7 +63,8 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   entity: Connection;
 
   formGroup: UntypedFormGroup;
-  mqttQoSTypes = mqttQoSTypes;
+  qoSTypes = WsQoSTypes;
+  qoSTranslationMap = WsQoSTranslationMap;
   timeUnitTypes = Object.keys(TimeUnitType);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
@@ -85,7 +86,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.formGroup = this.fb.group({
       topic: [entity?.will ? entity?.will.topic : null, []],
       payload: [entity?.will ? entity?.will.payload : null, []],
-      qos: [entity?.will ? entity?.will.qos : MqttQoS.AT_LEAST_ONCE, []],
+      qos: [entity?.will ? entity?.will.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
       retain: [entity?.will ? entity?.will.retain : false, []],
       properties: this.fb.group({
         willDelayInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.willDelayInterval, TimeUnitType.SECONDS, entity?.will.properties.willDelayIntervalUnit) : null, []],
@@ -132,14 +133,6 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.valueChangeSubscription = this.formGroup.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
-  }
-
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    const index = mqttQoSTypes.findIndex(object => {
-      return object.value === mqttQoSValue.value;
-    });
-    const name = this.translate.instant(mqttQoSValue.name);
-    return index + ' - ' + name;
   }
 
   private updateView(value: LastWill) {

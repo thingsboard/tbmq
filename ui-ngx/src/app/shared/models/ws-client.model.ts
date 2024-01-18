@@ -115,17 +115,31 @@ export interface PublishMessageProperties {
   userProperties?: any
 }
 
-export interface SubscriptionTopicFilter extends BaseData {
-  topic: string;
-  qos: number;
-  color?: string;
+interface TopicObject {
+  [topicName: string]: { qos: number };
 }
 
-export interface SubscriptionTopicFilterDetailed extends SubscriptionTopicFilter {
-  nl: boolean;
-  rap: boolean;
-  rh: boolean;
+type Topic = string | string[] | TopicObject;
+
+interface Properties {
   subscriptionIdentifier: number;
+  userProperties: {
+    [name: string]: string
+  };
+}
+
+interface Options {
+  qos?: number;
+  nl?: boolean;
+  rap?: boolean;
+  rh?: number;
+  properties?: Properties;
+}
+
+export interface WsSubscription {
+  topic: Topic;
+  options: Options;
+  color: string;
 }
 
 export enum WsAddressProtocolType {

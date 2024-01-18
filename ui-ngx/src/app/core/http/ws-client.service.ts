@@ -22,10 +22,8 @@ import { PageData } from '@shared/models/page/page-data';
 import {
   Connection,
   DataSizeUnitType,
-  SubscriptionTopicFilter,
-  SubscriptionTopicFilterDetailed,
   TimeUnitType,
-  WsMessage
+  WsMessage, WsSubscription
 } from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
 import mqtt from 'mqtt';
@@ -115,6 +113,39 @@ export class WsClientService {
       },
     }
   }];
+
+  mockSubscriptions = [
+    {
+      id: '1',
+      data: [{
+        topic: 'sensors/1',
+        color: 'blue',
+        options: {
+          qos: 2,
+          rh: 2,
+          nl: true,
+          rap: false,
+          properties: {
+            subscriptionIdentifier: 12
+          }
+        }
+      },
+        {
+          topic: 'sensors/2',
+          color: 'red',
+          options: {
+            qos: 2,
+            rh: 2,
+            nl: null,
+            rap: null,
+            properties: {
+              subscriptionIdentifier: 12
+            }
+          }
+        }
+      ]
+    }
+  ];
 
   constructor(private http: HttpClient,
               private datePipe: DatePipe,
@@ -619,7 +650,7 @@ export class WsClientService {
     }
   }
 
-  public getSubscriptions(connectionId: any,config?: RequestConfig): Observable<PageData<SubscriptionTopicFilter>> {
+  public getSubscriptions(connectionId: any,config?: RequestConfig): Observable<PageData<any>> {
     // return this.http.get<PageData<any>>(`/api/`, defaultHttpOptionsFromConfig(config));
     const allData = [
       {
@@ -774,7 +805,7 @@ export class WsClientService {
     return of(result);
   }
 
-  public getSubscriptionsV2(connectionId: any,config?: RequestConfig): Observable<SubscriptionTopicFilter[]> {
+  public getSubscriptionsV2(connectionId: any,config?: RequestConfig): Observable<any[]> {
     // return this.http.get<PageData<any>>(`/api/`, defaultHttpOptionsFromConfig(config));
     const allData = [
       {
@@ -911,7 +942,41 @@ export class WsClientService {
     return of(target?.data);
   }
 
-  public saveSubscription(): Observable<SubscriptionTopicFilterDetailed> {
+  public getSubscriptionsV3(connectionId: any, config?: RequestConfig): Observable<WsSubscription[]> {
+    const index = this.mockSubscriptions.findIndex(el => el.id == connectionId);
+    if (index > -1) {
+      return of(this.mockSubscriptions[index].data as WsSubscription[]);
+    } else {
+      return of([]);
+    }
+  }
+
+  public saveSubscriptionV3(connectionId: string, subscription: WsSubscription = null, isEdit:boolean, config?: RequestConfig): Observable<WsSubscription> {
+    // return this.http.post<WsSubscription>(`/api/ws/${connectionId}/subscription`, config);
+    const index = this.mockSubscriptions.findIndex(el => el.id === connectionId);
+    const subscriptions: any = this.mockSubscriptions[index].data;
+    if (isEdit) {
+      const subIndex = subscriptions.findIndex(el => el.topic === subscription.topic);
+      // @ts-ignore
+      this.mockSubscriptions[index].data[subIndex] = subscription;
+    } else {
+      // @ts-ignore
+      this.mockSubscriptions[index].data.push(subscription);
+    }
+    return of(subscription);
+  }
+
+  public deleteSubscriptionV3(connectionId: string, subscription: WsSubscription = null) {
+    const index = this.mockSubscriptions.findIndex(el => el.id === connectionId);
+    const subscriptions: any = this.mockSubscriptions[index].data;
+    const subIndex = subscriptions.findIndex(el => el.topic === subscription.topic);
+    // @ts-ignore
+    this.mockSubscriptions[index].data.splice(subIndex, 1);
+    return of(null);
+  }
+
+
+  public saveSubscription(connectionId: string): Observable<any> {
     const result = {
         topic: 'testtopic',
         color: 'pink',

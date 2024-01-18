@@ -17,7 +17,6 @@
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { mqttQoSTypes } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -36,7 +35,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
   formGroup: UntypedFormGroup;
   entity: any;
 
-  mqttQoSTypes = mqttQoSTypes;
+  // mqttQoSTypes = mqttQoSTypes;
 
   private destroy$ = new Subject<void>();
 

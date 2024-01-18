@@ -15,7 +15,7 @@
 ///
 
 import { Component, ElementRef, Input, OnInit, ViewChild } from '@angular/core';
-import { MqttQoS } from '@shared/models/session.model';
+import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { DialogService } from '@core/services/dialog.service';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
@@ -191,7 +191,7 @@ export class MessagesComponent implements OnInit {
       {
         value: ['null', []],
         topic: ['testtopic/1', []],
-        qos: [MqttQoS.AT_LEAST_ONCE, []],
+        qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
         retain: [false, []],
         meta: [null, []]
       }

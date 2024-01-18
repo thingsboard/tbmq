@@ -15,9 +15,9 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
+import { WsMqttQoSType, WsQoSTypes, WsQoSTranslationMap } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -25,11 +25,12 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Connection, rhOptions } from '@shared/models/ws-client.model';
+import { Connection, rhOptions, WsSubscription } from '@shared/models/ws-client.model';
 import { randomColor } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
-  subscription: any;
+  connection: Connection;
+  subscription?: WsSubscription;
 }
 
 @Component({
@@ -41,15 +42,14 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
-  entity: any;
-
-  subscriptions = [];
-  subscription;
-
   rhOptions = rhOptions;
-  mqttQoSTypes = mqttQoSTypes;
 
-  private valueChangeSubscription: Subscription = null;
+  qoSTypes = WsQoSTypes;
+  qoSTranslationMap = WsQoSTranslationMap;
+
+  title = 'ws-client.subscriptions.add-subscription';
+  actionButtonLabel = 'action.add';
+
   private destroy$ = new Subject<void>();
 
   constructor(public fb: FormBuilder,
@@ -64,30 +64,31 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   }
 
   ngOnInit(): void {
-    this.entity = this.data.subscription;
-    this.buildForms(this.entity);
+    const subscription: WsSubscription = this.data?.subscription;
+    if (subscription) {
+      this.title = 'ws-client.subscriptions.edit-subscription';
+      this.actionButtonLabel = 'action.save';
+    }
+    this.buildForms(subscription);
   }
 
   ngAfterContentChecked(): void {
     this.cd.detectChanges();
   }
 
-  private buildForms(entity: Connection): void {
-    this.buildSessionForm();
-    if (entity) {
-      this.updateFormsValues(entity);
-    }
-  }
-
-  private buildSessionForm(): void {
+  private buildForms(entity: WsSubscription): void {
     this.formGroup = this.fb.group({
-      topic: ['testtopic', []],
-      qos: [MqttQoS.AT_LEAST_ONCE, []],
-      nl: [null, []],
-      rap: [null, []],
-      rh: [null, []],
-      subscriptionIdentifier: [null, []],
-      color: [randomColor(), []]
+      topic: [{value: entity ? entity.topic : 'sensors/#', disabled: !!entity}, [Validators.required]],
+      color: [entity ? entity.color : randomColor(), []],
+      options: this.fb.group({
+        qos: [entity ? entity.options.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
+        nl: [entity ? entity.options.nl : null, []],
+        rap: [entity ? entity.options.rap : null, []],
+        rh: [entity ? entity.options.rh : null, []],
+        properties: this.fb.group({
+          subscriptionIdentifier: [entity ? entity.options.properties.subscriptionIdentifier : null, []]
+        })
+      })
     });
   }
 
@@ -96,20 +97,24 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     this.destroy$.complete();
   }
 
-  private updateFormsValues(entity: any): void {
-    this.formGroup.patchValue({topic: entity.topic});
-  }
-
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
+  /*mqttQoSValue(mqttQoSValue: MqttQoSType): string {
     const index = mqttQoSTypes.findIndex(object => {
       return object.value === mqttQoSValue.value;
     });
     const name = this.translate.instant(mqttQoSValue.name);
     return index + ' - ' + name;
+  }*/
+
+  save() {
+    console.log('1', this.formGroup.getRawValue())
+    this.dialogRef.close(this.formGroup.getRawValue());
+    // const connectionId = this.data.connection.id;
+    /*this.wsClientService.saveSubscriptionV3(connectionId, this.data?.subscription).subscribe(
+      (entity) => {
+        return this.dialogRef.close(entity);
+      }
+    );*/
   }
 
-  onSave() {
-
-  }
 }
 

@@ -207,7 +207,8 @@
   },
   "help": {
     "goto-help-page": "Go to help page",
-    "goto-docs": "Go to docs"
+    "goto-docs": "Go to docs",
+    "help-page": "Help page"
   },
   "home": {
     "home": "Home",
@@ -484,9 +485,9 @@
     "remove-sessions-title": "Are you sure you want to remove { count, plural, =1 {1 Session} other {# Sessions} }?",
     "remove-subscription": "Remove subscription",
     "qos": "QoS",
-    "qos-at-most-once": "At most once",
-    "qos-at-least-once": "At least once",
-    "qos-exactly-once": "Exactly once",
+    "qos-at-most-once": "0 - At most once",
+    "qos-at-least-once": "1 - At least once",
+    "qos-exactly-once": "2 - Exactly once",
     "should-be-persistent": "Application client should be persistent",
     "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
     "filter-title": "Filter"
@@ -876,6 +877,7 @@
     },
     "subscriptions": {
       "add-subscription": "Add Subscription",
+      "edit-subscription": "Edit Subscription",
       "delete-subscription": "Delete Subscription",
       "delete-subscription-title": "Are you sure you want to delete the topic '{{topic}}'?",
       "delete-subscription-text": "Be careful, after the confirmation the '{{topic}}' topic and all related data will become unrecoverable.",
@@ -891,12 +893,12 @@
       "rap": "Retain as Published",
       "rap-hint": "If true, Application Messages forwarded using this subscription keep the RETAIN flag they were published with. If false, Application Messages forwarded using this subscription have the RETAIN flag set to 0.",
       "subscription-identifier": "Subscription Identifier",
-      "subscription-identifier-hint": "Subscription Identifier",
+      "subscription-identifier-hint": "When a message is published that matches the subscription, the server sends the subscription identifier in the message, enabling the client to identify the subscription that the message was matched against.",
       "subscription-identifier-min": "Minimum value is 1",
       "subscription-identifier-max": "Maximum value is 268,435,455",
       "color": "Color",
       "search-subscription": "Search by Topic",
-      "no-subscriptions": "No Subscriptions yet",
+      "no-subscriptions": "No subscriptions yet",
       "retain-details": "Retained messages",
       "loading-subscriptions": "Loading subscriptions..."
     }

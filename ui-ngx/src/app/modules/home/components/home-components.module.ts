@@ -27,7 +27,6 @@ import {
   ClientCredentialsAutocompleteComponent
 } from '@home/components/client-credentials-templates/client-credentials-autocomplete.component';
 import { UserPropertiesComponent } from '@home/components/client-credentials-templates/user-properties.component';
-import { LastWillComponent } from '@home/components/client-credentials-templates/last-will.component';
 
 @NgModule({
   declarations:
@@ -38,8 +37,7 @@ import { LastWillComponent } from '@home/components/client-credentials-templates
       EntityDetailsPanelComponent,
       EventContentDialogComponent,
       ClientCredentialsAutocompleteComponent,
-      UserPropertiesComponent,
-      LastWillComponent
+      UserPropertiesComponent
     ],
   imports: [
     CommonModule,
@@ -52,8 +50,7 @@ import { LastWillComponent } from '@home/components/client-credentials-templates
     DetailsPanelComponent,
     EntityDetailsPanelComponent,
     ClientCredentialsAutocompleteComponent,
-    UserPropertiesComponent,
-    LastWillComponent
+    UserPropertiesComponent
   ]
 })
 export class HomeComponentsModule {

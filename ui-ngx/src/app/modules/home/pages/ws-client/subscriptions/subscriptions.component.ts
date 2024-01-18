@@ -14,14 +14,17 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import {Connection, SubscriptionTopicFilter} from '@shared/models/ws-client.model';
+import { Connection, WsSubscription } from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
-import { SubscriptionsTableConfig } from "@home/pages/ws-client/subscriptions/subscriptions-table-config";
-import {mergeMap, Observable, ReplaySubject, Subscription} from "rxjs";
-import {map, share, tap} from "rxjs/operators";
+import { Observable, ReplaySubject } from 'rxjs';
+import { map, share, tap } from 'rxjs/operators';
+import {
+  AddWsClientSubscriptionDialogData,
+  SubscriptionDialogComponent
+} from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-subscriptions',
@@ -30,28 +33,31 @@ import {map, share, tap} from "rxjs/operators";
 })
 export class SubscriptionsComponent {
 
-  subscriptions$: Observable<SubscriptionTopicFilter[]>;
-
+  subscriptions$: Observable<WsSubscription[]>;
+  subscriptions: WsSubscription[];
+  connection: Connection;
   loadSubscriptions = false;
+
   constructor(private dialog: MatDialog,
               private wsClientService: WsClientService,
-              private cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+              private cd: ChangeDetectorRef) {
   }
 
   ngOnInit() {
     this.wsClientService.selectedConnection$.subscribe(
       res => {
         this.loadSubscriptions = true;
+        this.connection = res;
         this.fetchSubcription(res);
       }
     );
   }
 
   fetchSubcription(connection) {
-    this.subscriptions$ = this.wsClientService.getSubscriptionsV2(connection.id).pipe(
+    this.subscriptions$ = this.wsClientService.getSubscriptionsV3(connection.id).pipe(
       map(res => {
         if (res.length) {
+          this.subscriptions = res;
           return res;
         }
         return [];
@@ -65,6 +71,25 @@ export class SubscriptionsComponent {
   }
 
   addSubscription($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        connection: this.connection
+      }
+    }).afterClosed()
+      .subscribe((res) => {
+        if (isDefinedAndNotNull(res)) {
+          this.wsClientService.saveSubscriptionV3(this.connection.id, res, false).subscribe(
+            (value) => {
+
+            }
+          );
+        }
+      });
   }
 
   trackById(index: number, item: Connection): string {

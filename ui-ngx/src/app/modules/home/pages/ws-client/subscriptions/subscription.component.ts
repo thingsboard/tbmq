@@ -15,7 +15,6 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { SubscriptionTopicFilter } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
@@ -26,6 +25,7 @@ import {
   AddWsClientSubscriptionDialogData,
   SubscriptionDialogComponent
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
+import { Connection, WsSubscription } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-subscription',
@@ -35,13 +35,16 @@ import {
 export class SubscriptionComponent implements OnInit {
 
   @Input()
-  subscription: SubscriptionTopicFilter;
+  subscription: WsSubscription;
+
+  @Input()
+  connection: Connection;
 
   @Output()
-  subscriptionDeleted = new EventEmitter<SubscriptionTopicFilter>();
+  subscriptionDeleted = new EventEmitter<WsSubscription>();
 
   @Output()
-  subscriptionEdited = new EventEmitter<SubscriptionTopicFilter>();
+  subscriptionEdited = new EventEmitter<WsSubscription>();
 
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
@@ -64,8 +67,8 @@ export class SubscriptionComponent implements OnInit {
     this.showActions = false;
   }
 
-  private configureCellHiddenActions(): Array<CellActionDescriptor<SubscriptionTopicFilter>> {
-    const actions: Array<CellActionDescriptor<SubscriptionTopicFilter>> = [];
+  private configureCellHiddenActions(): Array<CellActionDescriptor<WsSubscription>> {
+    const actions: Array<CellActionDescriptor<WsSubscription>> = [];
     actions.push(
       {
         name: this.translate.instant('action.edit'),
@@ -83,7 +86,7 @@ export class SubscriptionComponent implements OnInit {
     return actions;
   }
 
-  private delete($event: Event, entity: SubscriptionTopicFilter) {
+  private delete($event: Event, entity: WsSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -95,30 +98,31 @@ export class SubscriptionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
-        this.subscriptionDeleted.emit(this.subscription);
+        this.wsClientService.deleteSubscriptionV3(this.connection.id, this.subscription).subscribe()
+        // this.subscriptionDeleted.emit(this.subscription);
       }
     });
   }
 
-  private edit($event: Event, entity: SubscriptionTopicFilter) {
+  private edit($event: Event, entity: WsSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
-    const data = {
-      subscription: null
-    };
     this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data
+      data: {
+        connection: this.connection,
+        subscription: entity
+      }
     }).afterClosed()
       .subscribe((res) => {
         if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
+          this.wsClientService.saveSubscriptionV3(this.connection.id, res, true).subscribe(
             () => {
               // this.updateData()
             }
-          );*/
+          );
         }
       });
   }

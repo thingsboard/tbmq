@@ -33,6 +33,8 @@ import { SelectConnectionComponent } from '@home/pages/ws-client/connections/sel
 import { ConnectionComponent } from '@home/pages/ws-client/connections/connection.component';
 import { SubscriptionComponent } from "@home/pages/ws-client/subscriptions/subscription.component";
 import { EntitiesTableWsComponent } from "@home/components/entity/entities-table-ws.component";
+import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-json-object-edit.component';
+import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.component';
 
 @NgModule({
   declarations: [
@@ -49,7 +51,9 @@ import { EntitiesTableWsComponent } from "@home/components/entity/entities-table
     ShowSelectConnectionPopoverComponent,
     ConnectionComponent,
     SubscriptionComponent,
-    EntitiesTableWsComponent
+    EntitiesTableWsComponent,
+    WsJsonObjectEditComponent,
+    LastWillComponent
   ],
   imports: [
     CommonModule,

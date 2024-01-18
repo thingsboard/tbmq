@@ -21,7 +21,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
-import { MqttQoS, MqttQoSType, mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
+import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { WsClientService } from '@core/http/ws-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MessagesDisplayData } from './messages.component';
@@ -29,8 +29,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
 import {
   Connection,
-  PublishMessageProperties,
-  SubscriptionTopicFilter
+  PublishMessageProperties, WsSubscription
 } from '@shared/models/ws-client.model';
 import mqtt from 'mqtt';
 import { map } from "rxjs/operators";
@@ -45,12 +44,13 @@ export class MessangerComponent implements OnInit {
 
   connection: Connection;
   connections: Connection[];
-  subscriptions: SubscriptionTopicFilter[];
+  subscriptions: WsSubscription[];
   messangerFormGroup: UntypedFormGroup;
   mqttJsClients: any[] = [];
   editMode: boolean = false;
   mqttJsClient: any;
-  mqttQoSTypes = mqttQoSTypes;
+  qoSTypes = WsQoSTypes;
+  qoSTranslationMap = WsQoSTranslationMap;
   valueTypes = [
     {
       value: ValueType.JSON,
@@ -95,7 +95,7 @@ export class MessangerComponent implements OnInit {
       {
         value: [{temperature: 25}, []],
         topic: ['sensors/temperature', []],
-        qos: [MqttQoS.AT_LEAST_ONCE, []],
+        qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
         format: [ValueType.JSON, []],
         retain: [true, []],
         meta: [null, []]
@@ -252,13 +252,13 @@ export class MessangerComponent implements OnInit {
     });
   }
 
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
+  /*mqttQoSValue(mqttQoSValue: MqttQoSType): string {
     const index = mqttQoSTypes.findIndex(object => {
       return object.value === mqttQoSValue.value;
     });
     const name = this.translate.instant(mqttQoSValue.name);
     return index + ' - ' + name;
-  }
+  }*/
 
   unsubscribeClient() {
     /*this.mqttJsClient.unsubscribe(this.subscription?.topic, (e) => {
@@ -279,7 +279,7 @@ export class MessangerComponent implements OnInit {
     if (commentInputValue) {
       const topic = this.messangerFormGroup.get('topic').value;
       const value = this.messangerFormGroup.get('value').value;
-      const qos = mqttQoSValuesMap.get(this.messangerFormGroup.get('qos').value);
+      const qos = WsMqttQoSType.EXACTLY_ONCE; //mqttQoSValuesMap.get(this.messangerFormGroup.get('qos').value);
       const retain = this.messangerFormGroup.get('retain').value;
       const message = JSON.stringify({
         value: commentInputValue,
@@ -359,5 +359,4 @@ export class MessangerComponent implements OnInit {
         }
       );
   }
-
 }

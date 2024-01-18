@@ -21,11 +21,11 @@
       <mat-label translate>ws-client.last-will.topic</mat-label>
       <input matInput formControlName="topic">
     </mat-form-field>
-    <mat-form-field fxFlex>
-      <mat-label translate>ws-client.last-will.qos</mat-label>
+    <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
+      <mat-label translate>mqtt-client-session.qos</mat-label>
       <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-          {{ mqttQoSValue(mqttQoS) }}
+        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
+          {{ qoSTranslationMap.get(qos) | translate }}
         </mat-option>
       </mat-select>
     </mat-form-field>
