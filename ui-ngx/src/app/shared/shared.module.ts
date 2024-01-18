@@ -121,7 +121,7 @@ import { TbPopoverService } from '@shared/components/popover.service';
 import { HelpMarkdownComponent } from '@shared/components/help-markdown.component';
 import { TbComponentOutletDirective } from '@shared/components/directives/component-outlet.directive';
 import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
-import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-json-object-edit.component';
+import { HelpPageComponent } from '@shared/components/help-page.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -206,7 +206,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     JsonObjectEditDialogComponent,
     TbJsonToStringDirective,
     JsonObjectEditComponent,
-    WsJsonObjectEditComponent,
     ColorInputComponent,
     ColorPickerPanelComponent,
     TbPopoverDirective,
@@ -214,7 +213,8 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     HelpMarkdownComponent,
     TbPopoverComponent,
     TbComponentOutletDirective,
-    ColorPickerComponent
+    ColorPickerComponent,
+    HelpPageComponent
   ],
   imports: [
     CommonModule,
@@ -365,7 +365,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     JsonObjectEditDialogComponent,
     TbJsonToStringDirective,
     JsonObjectEditComponent,
-    WsJsonObjectEditComponent,
     ColorInputComponent,
     ColorPickerPanelComponent,
     TbPopoverDirective,
@@ -374,7 +373,8 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TbPopoverComponent,
     TbComponentOutletDirective,
     ColorPickerComponent,
-    ColorPickerModule
+    ColorPickerModule,
+    HelpPageComponent
   ]
 })
 export class SharedModule { }
