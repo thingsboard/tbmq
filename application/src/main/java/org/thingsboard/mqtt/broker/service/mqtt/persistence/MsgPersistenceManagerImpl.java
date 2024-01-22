@@ -227,12 +227,10 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void processPubAck(ClientSessionCtx clientSessionCtx, int packetId) {
-        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
-        String clientId = clientInfo.getClientId();
-        if (clientInfo.getType() == APPLICATION) {
-            applicationPersistenceProcessor.processPubAck(clientId, packetId);
-        } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.processPubAck(clientId, packetId);
+        if (clientSessionCtx.getClientType() == APPLICATION) {
+            applicationPersistenceProcessor.processPubAck(clientSessionCtx.getClientId(), packetId);
+        } else if (clientSessionCtx.getClientType() == DEVICE) {
+            devicePersistenceProcessor.processPubAck(clientSessionCtx.getClientId(), packetId);
         }
     }
 
@@ -256,12 +254,10 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void processPubComp(ClientSessionCtx clientSessionCtx, int packetId) {
-        ClientInfo clientInfo = clientSessionCtx.getSessionInfo().getClientInfo();
-        String clientId = clientInfo.getClientId();
-        if (clientInfo.getType() == APPLICATION) {
-            applicationPersistenceProcessor.processPubComp(clientId, packetId);
-        } else if (clientInfo.getType() == DEVICE) {
-            devicePersistenceProcessor.processPubComp(clientId, packetId);
+        if (clientSessionCtx.getClientType() == APPLICATION) {
+            applicationPersistenceProcessor.processPubComp(clientSessionCtx.getClientId(), packetId);
+        } else if (clientSessionCtx.getClientType() == DEVICE) {
+            devicePersistenceProcessor.processPubComp(clientSessionCtx.getClientId(), packetId);
         }
     }
 }
