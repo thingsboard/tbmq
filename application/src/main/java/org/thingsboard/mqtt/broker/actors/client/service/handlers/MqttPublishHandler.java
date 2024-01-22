@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -130,42 +131,44 @@ public class MqttPublishHandler {
             topicValidationService.validateTopic(publishMsg.getTopicName());
         } catch (DataValidationException e) {
             log.warn("[{}] Failed to validate topic for Pub msg {}", ctx.getClientId(), publishMsg, e);
-            if (publishMsg.getQosLevel() == 1) {
-                var code = MqttReasonCodeResolver.pubAckTopicNameInvalid(ctx);
-                if (code == null) {
-                    throw e;
-                }
-                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, code);
-                return false;
-            } else if (publishMsg.getQosLevel() == 2) {
-                var code = MqttReasonCodeResolver.pubRecTopicNameInvalid(ctx);
-                if (code == null) {
-                    throw e;
-                }
-                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, code);
-                return false;
-            }
+            return handleTopicValidationException(ctx, publishMsg, e);
         }
         try {
             validateClientAccess(ctx, publishMsg.getTopicName());
         } catch (MqttException e) {
-            if (publishMsg.getQosLevel() == 1) {
-                var code = MqttReasonCodeResolver.pubAckNotAuthorized(ctx);
-                if (code == null) {
-                    throw e;
-                }
-                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, code);
-                return false;
-            } else if (publishMsg.getQosLevel() == 2) {
-                var code = MqttReasonCodeResolver.pubRecNotAuthorized(ctx);
-                if (code == null) {
-                    throw e;
-                }
-                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, code);
-                return false;
-            }
+            return handleClientNotAuthException(ctx, publishMsg, e);
         }
         return true;
+    }
+
+    private boolean handleTopicValidationException(ClientSessionCtx ctx, PublishMsg publishMsg, DataValidationException e) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            if (publishMsg.getQosLevel() == 2) {
+                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecTopicNameInvalid());
+            } else if (publishMsg.getQosLevel() == 1) {
+                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckTopicNameInvalid());
+            } else {
+                // QoS=0 - do nothing
+            }
+            return false;
+        } else {
+            throw e;
+        }
+    }
+
+    private boolean handleClientNotAuthException(ClientSessionCtx ctx, PublishMsg publishMsg, MqttException e) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            if (publishMsg.getQosLevel() == 2) {
+                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecNotAuthorized());
+            } else if (publishMsg.getQosLevel() == 1) {
+                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckNotAuthorized());
+            } else {
+                // QoS=0 - do nothing
+            }
+            return false;
+        } else {
+            throw e;
+        }
     }
 
     private void pushPubAckErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCodes.PubAck code) {

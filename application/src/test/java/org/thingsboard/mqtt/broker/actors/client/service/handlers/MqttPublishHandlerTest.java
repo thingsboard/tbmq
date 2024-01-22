@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,13 +29,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
-import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -45,7 +47,9 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,7 +63,7 @@ public class MqttPublishHandlerTest {
     @MockBean
     MsgDispatcherService msgDispatcherService;
     @MockBean
-    TopicValidationService topicValidationService;
+    DefaultTopicValidationService topicValidationService;
     @MockBean
     AuthorizationRuleService authorizationRuleService;
     @MockBean
@@ -121,22 +125,124 @@ public class MqttPublishHandlerTest {
     }
 
     @Test(expected = MqttException.class)
-    public void givenUnauthorizedPublishAndMqttV3_whenValidatePubMsg_thenThrowException() {
+    public void givenUnauthorizedPublishQoS0AndMqttV3_whenValidatePubMsg_thenThrowException() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+
+        PublishMsg publishMsg = getPublishMsg(1, "test/1", 0);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
+    @Test(expected = MqttException.class)
+    public void givenUnauthorizedPublishQoS1AndMqttV3_whenValidatePubMsg_thenThrowException() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
 
         PublishMsg publishMsg = getPublishMsg(1, "test/1", 1);
         mqttPublishHandler.validatePubMsg(ctx, publishMsg);
     }
 
+    @Test(expected = MqttException.class)
+    public void givenUnauthorizedPublishQoS2AndMqttV3_whenValidatePubMsg_thenThrowException() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+
+        PublishMsg publishMsg = getPublishMsg(1, "test/1", 2);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
     @Test
-    public void givenUnauthorizedPublishAndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
+    public void givenUnauthorizedPublishQoS0AndMqttV5_whenValidatePubMsg_thenDoNotSendPubResponseWithReasonCode() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/2", 0);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, never()).createPubAckMsg(2, MqttReasonCodes.PubAck.NOT_AUTHORIZED);
+        verify(mqttMessageGenerator, never()).createPubRecMsg(2, MqttReasonCodes.PubRec.NOT_AUTHORIZED);
+    }
+
+    @Test
+    public void givenUnauthorizedPublishQoS1AndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/2", 1);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createPubAckMsg(2, MqttReasonCodes.PubAck.NOT_AUTHORIZED);
+    }
+
+    @Test
+    public void givenUnauthorizedPublishQoS2AndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
         when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(false);
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         PublishMsg publishMsg = getPublishMsg(2, "test/2", 2);
-        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createPubRecMsg(2, MqttReasonCodes.PubRec.NOT_AUTHORIZED);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWrongPublishTopicQoS0AndMqttV3_whenValidatePubMsg_thenThrowException() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+        PublishMsg publishMsg = getPublishMsg(1, "test/+", 0);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWrongPublishTopicQoS1AndMqttV3_whenValidatePubMsg_thenThrowException() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+
+        PublishMsg publishMsg = getPublishMsg(1, "test/+", 1);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWrongPublishTopicQoS2AndMqttV3_whenValidatePubMsg_thenThrowException() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+
+        PublishMsg publishMsg = getPublishMsg(1, "test/+", 2);
+        mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
+    @Test
+    public void givenWrongPublishTopicQoS0AndMqttV5_whenValidatePubMsg_thenDoNotSendPubResponseWithReasonCode() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/+", 0);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, never()).createPubAckMsg(2, MqttReasonCodes.PubAck.TOPIC_NAME_INVALID);
+        verify(mqttMessageGenerator, never()).createPubRecMsg(2, MqttReasonCodes.PubRec.TOPIC_NAME_INVALID);
+    }
+
+    @Test
+    public void givenWrongPublishTopicQoS1AndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/+", 1);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createPubAckMsg(eq(2), eq(MqttReasonCodes.PubAck.TOPIC_NAME_INVALID));
+    }
+
+    @Test
+    public void givenWrongPublishTopicQoS2AndMqttV5_whenValidatePubMsg_thenSendPubResponseWithReasonCode() {
+        doCallRealMethod().when(topicValidationService).validateTopic(eq("test/+"));
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        PublishMsg publishMsg = getPublishMsg(2, "test/+", 2);
+        boolean result = mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createPubRecMsg(eq(2), eq(MqttReasonCodes.PubRec.TOPIC_NAME_INVALID));
     }
 
     @Test

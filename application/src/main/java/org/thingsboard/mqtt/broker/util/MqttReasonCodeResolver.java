@@ -71,20 +71,20 @@ public final class MqttReasonCodeResolver {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.UnsubAck.SUCCESS : null;
     }
 
-    public static MqttReasonCodes.PubAck pubAckTopicNameInvalid(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubAck.TOPIC_NAME_INVALID : null;
+    public static MqttReasonCodes.PubAck pubAckTopicNameInvalid() {
+        return MqttReasonCodes.PubAck.TOPIC_NAME_INVALID;
     }
 
-    public static MqttReasonCodes.PubAck pubAckNotAuthorized(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubAck.NOT_AUTHORIZED : null;
+    public static MqttReasonCodes.PubAck pubAckNotAuthorized() {
+        return MqttReasonCodes.PubAck.NOT_AUTHORIZED;
     }
 
-    public static MqttReasonCodes.PubRec pubRecTopicNameInvalid(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRec.TOPIC_NAME_INVALID : null;
+    public static MqttReasonCodes.PubRec pubRecTopicNameInvalid() {
+        return MqttReasonCodes.PubRec.TOPIC_NAME_INVALID;
     }
 
-    public static MqttReasonCodes.PubRec pubRecNotAuthorized(ClientSessionCtx ctx) {
-        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? MqttReasonCodes.PubRec.NOT_AUTHORIZED : null;
+    public static MqttReasonCodes.PubRec pubRecNotAuthorized() {
+        return MqttReasonCodes.PubRec.NOT_AUTHORIZED;
     }
 
     public static MqttReasonCodes.SubAck notAuthorizedSubscribe(ClientSessionCtx ctx) {
