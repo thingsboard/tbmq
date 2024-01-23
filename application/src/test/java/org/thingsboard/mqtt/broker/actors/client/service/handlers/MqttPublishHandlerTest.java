@@ -22,11 +22,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
@@ -41,10 +43,12 @@ import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -57,6 +61,8 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MqttPublishHandler.class)
 public class MqttPublishHandlerTest {
+
+    private static final int MAX_AWAITING_QUEUE_SIZE = 10;
 
     @MockBean
     MqttMessageGenerator mqttMessageGenerator;
@@ -87,7 +93,7 @@ public class MqttPublishHandlerTest {
         ChannelHandlerContext channelHandlerContext = mock(ChannelHandlerContext.class);
         when(ctx.getChannel()).thenReturn(channelHandlerContext);
 
-        when(ctx.getPubResponseProcessingCtx()).thenReturn(new PubResponseProcessingCtx(10));
+        when(ctx.getPubResponseProcessingCtx()).thenReturn(new PubResponseProcessingCtx(MAX_AWAITING_QUEUE_SIZE));
         when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(new AwaitingPubRelPacketsCtx());
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
@@ -146,6 +152,55 @@ public class MqttPublishHandlerTest {
 
         PublishMsg publishMsg = getPublishMsg(1, "test/1", 2);
         mqttPublishHandler.validatePubMsg(ctx, publishMsg);
+    }
+
+    @Test
+    public void givenQoS2AndMaxInFlightMessagesReached_whenProcessNewPublishMsg_thenDisconnectClient() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+
+        for (int i = 0; i < MAX_AWAITING_QUEUE_SIZE + 1; i++) {
+            PublishMsg publishMsg = getPublishMsg(i + 1, "test/1", 2);
+            mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+        }
+        ArgumentCaptor<MqttDisconnectMsg> newMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, times(1)).disconnect(eq("clientId"), newMsgCaptor.capture());
+
+        MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
+        assertThat(disconnectMsg).isNotNull();
+        assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+    }
+
+    @Test
+    public void givenQoS1AndMaxInFlightMessagesReached_whenProcessNewPublishMsg_thenDisconnectClient() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+
+        for (int i = 0; i < MAX_AWAITING_QUEUE_SIZE + 1; i++) {
+            PublishMsg publishMsg = getPublishMsg(i + 1, "test/1", 1);
+            mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+        }
+        ArgumentCaptor<MqttDisconnectMsg> newMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, times(1)).disconnect(eq("clientId"), newMsgCaptor.capture());
+
+        MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
+        assertThat(disconnectMsg).isNotNull();
+        assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED);
+    }
+
+    @Test
+    public void givenQoS0AndMaxInFlightMessagesSent_whenProcessNewPublishMsg_thenNoDisconnectionOfClient() {
+        when(authorizationRuleService.isPubAuthorized(any(), any(), any())).thenReturn(true);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(ctx.getSessionId()).thenReturn(UUID.randomUUID());
+
+        for (int i = 0; i < MAX_AWAITING_QUEUE_SIZE + 1; i++) {
+            PublishMsg publishMsg = getPublishMsg(i + 1, "test/1", 0);
+            mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+        }
+        verify(clientMqttActorManager, never()).disconnect(eq("clientId"), any());
     }
 
     @Test

@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -96,7 +97,7 @@ public class MqttPublishHandler {
             if (TopicAliasCtx.UNKNOWN_TOPIC_ALIAS_MSG.equals(e.getMessage())) {
                 disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR, e.getMessage());
             } else {
-                disconnectClient(ctx, DisconnectReasonType.TOPIC_ALIAS_INVALID, e.getMessage());
+                disconnectClient(ctx, DisconnectReasonType.ON_TOPIC_ALIAS_INVALID, e.getMessage());
             }
             return;
         }
@@ -109,10 +110,16 @@ public class MqttPublishHandler {
             return;
         }
 
-        if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
-        } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
-            processAtLeastOnce(ctx, msgId);
+        try {
+            if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQosLevel()) {
+                if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
+            } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQosLevel()) {
+                processAtLeastOnce(ctx, msgId);
+            }
+        } catch (FullMsgQueueException e) {
+            log.warn("[{}][{}] Failed to process publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
+            disconnectClient(ctx, DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED, e.getMessage());
+            return;
         }
 
         if (publishMsg.isRetained()) {

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 public enum DisconnectReasonType {
+
     ON_DISCONNECT_MSG,
     ON_DISCONNECT_AND_WILL_MSG,
     ON_CONFLICTING_SESSIONS,
@@ -28,5 +29,7 @@ public enum DisconnectReasonType {
     ON_QUOTA_EXCEEDED,
     ON_SUBSCRIPTION_ID_NOT_SUPPORTED,
     ON_PACKET_TOO_LARGE,
-    TOPIC_ALIAS_INVALID
+    ON_TOPIC_ALIAS_INVALID,
+    ON_RECEIVE_MAXIMUM_EXCEEDED
+
 }

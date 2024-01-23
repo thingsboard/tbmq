@@ -47,6 +47,7 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
 
     protected static final String FLOW_CONTROL_USER_NAME = "flowControlUn";
     protected static final String PUB_CLIENT = "pubClient";
+    protected static final String RECEIVE_MAX_TOPIC = "receive/max/topic";
 
     protected static ExecutorService service;
 
@@ -107,7 +108,7 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
                 }
             });
         }};
-        MqttSubscription[] subscriptions = {new MqttSubscription("receive/max/topic", QOS)};
+        MqttSubscription[] subscriptions = {new MqttSubscription(RECEIVE_MAX_TOPIC, QOS)};
         persistedClient.subscribe(subscriptions, listeners);
 
         MqttClient publisher = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT);
@@ -118,7 +119,7 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
                 .until(publisher::isConnected);
 
         for (int i = 0; i < 10; i++) {
-            publisher.publish("receive/max/topic", PAYLOAD, QOS, false);
+            publisher.publish(RECEIVE_MAX_TOPIC, PAYLOAD, QOS, false);
         }
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
@@ -191,7 +192,7 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
                 }
             });
         }};
-        MqttSubscription[] subscriptions = {new MqttSubscription("receive/max/topic", QOS)};
+        MqttSubscription[] subscriptions = {new MqttSubscription(RECEIVE_MAX_TOPIC, QOS)};
         persistedClient.subscribe(subscriptions, listeners);
 
         MqttClient publisher = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT);
@@ -202,7 +203,7 @@ public abstract class AbstractFlowControlIntegrationTestCase extends AbstractPub
                 .until(publisher::isConnected);
 
         for (int i = 0; i < 2; i++) {
-            publisher.publish("receive/max/topic", PAYLOAD, QOS, false);
+            publisher.publish(RECEIVE_MAX_TOPIC, PAYLOAD, QOS, false);
         }
 
         boolean await = receivedResponses.await(5, TimeUnit.SECONDS);

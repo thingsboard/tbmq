@@ -101,7 +101,7 @@ public class FlowControlIntegrationTestCase extends AbstractFlowControlIntegrati
                 }
             });
         }};
-        MqttSubscription[] subscriptions = {new MqttSubscription("receive/max/topic", QOS)};
+        MqttSubscription[] subscriptions = {new MqttSubscription(RECEIVE_MAX_TOPIC, QOS)};
         subscriber.subscribe(subscriptions, listeners);
 
         MqttClient publisher = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT);
@@ -112,7 +112,7 @@ public class FlowControlIntegrationTestCase extends AbstractFlowControlIntegrati
                 .until(publisher::isConnected);
 
         for (int i = 0; i < 10; i++) {
-            publisher.publish("receive/max/topic", PAYLOAD, QOS, false);
+            publisher.publish(RECEIVE_MAX_TOPIC, PAYLOAD, QOS, false);
         }
 
         boolean await = receivedResponses.await(3, TimeUnit.SECONDS);

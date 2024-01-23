@@ -101,16 +101,19 @@ public final class MqttReasonCodeResolver {
 
     public static MqttReasonCodes.Disconnect disconnect(DisconnectReasonType type) {
         return switch (type) {
+            case ON_DISCONNECT_MSG -> MqttReasonCodes.Disconnect.NORMAL_DISCONNECT;
+            case ON_DISCONNECT_AND_WILL_MSG -> MqttReasonCodes.Disconnect.DISCONNECT_WITH_WILL_MESSAGE;
             case ON_CONFLICTING_SESSIONS -> MqttReasonCodes.Disconnect.SESSION_TAKEN_OVER;
             case ON_CHANNEL_CLOSED -> MqttReasonCodes.Disconnect.ADMINISTRATIVE_ACTION;
             case ON_RATE_LIMITS -> MqttReasonCodes.Disconnect.MESSAGE_RATE_TOO_HIGH;
             case ON_KEEP_ALIVE -> MqttReasonCodes.Disconnect.KEEP_ALIVE_TIMEOUT;
             case ON_MALFORMED_PACKET -> MqttReasonCodes.Disconnect.MALFORMED_PACKET;
             case ON_PROTOCOL_ERROR -> MqttReasonCodes.Disconnect.PROTOCOL_ERROR;
-            case TOPIC_ALIAS_INVALID -> MqttReasonCodes.Disconnect.TOPIC_ALIAS_INVALID;
+            case ON_TOPIC_ALIAS_INVALID -> MqttReasonCodes.Disconnect.TOPIC_ALIAS_INVALID;
             case ON_QUOTA_EXCEEDED -> MqttReasonCodes.Disconnect.QUOTA_EXCEEDED;
             case ON_SUBSCRIPTION_ID_NOT_SUPPORTED -> MqttReasonCodes.Disconnect.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED;
             case ON_PACKET_TOO_LARGE -> MqttReasonCodes.Disconnect.PACKET_TOO_LARGE;
+            case ON_RECEIVE_MAXIMUM_EXCEEDED -> MqttReasonCodes.Disconnect.RECEIVE_MAXIMUM_EXCEEDED;
             default -> MqttReasonCodes.Disconnect.UNSPECIFIED_ERROR;
         };
     }

@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 
 @Getter
 public class DisconnectReason {
+
     private final DisconnectReasonType type;
     private String message;
 
