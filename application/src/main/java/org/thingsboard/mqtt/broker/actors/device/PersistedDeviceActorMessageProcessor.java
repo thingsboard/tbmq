@@ -103,6 +103,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Start processing persisted messages on Device connect", msg.getSessionCtx().getClientId());
+        }
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
@@ -115,6 +118,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
+        }
         if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
             return;
         }
@@ -225,8 +231,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
         if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             }
             return;
         }

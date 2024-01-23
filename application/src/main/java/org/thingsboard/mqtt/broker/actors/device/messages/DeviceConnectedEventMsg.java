@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @Getter
 @RequiredArgsConstructor
 public class DeviceConnectedEventMsg implements TbActorMsg {
+
     private final ClientSessionCtx sessionCtx;
 
     @Override

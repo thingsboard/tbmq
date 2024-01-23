@@ -17,9 +17,11 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
+import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.IMqttToken;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,27 +31,31 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.service.integration.parent.AbstractFlowControlIntegrationTestCase;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = FlowControlIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "mqtt.max-in-flight-msgs=500"
+        "mqtt.max-in-flight-msgs=500",
+        "security.mqtt.basic.enabled=false"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class FlowControlIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class FlowControlIntegrationTestCase extends AbstractFlowControlIntegrationTestCase {
+
+    private static final String SUB_CLIENT = "receiveMaxSubClient";
 
     @Test
-    public void test() throws Throwable {
+    public void givenConnectingClient_whenConnected_thenReceiveMaxFromServerReceived() throws Throwable {
         MqttConnectionOptions options = new MqttConnectionOptions();
         options.setReceiveMaximum(100);
 
-        MqttClient client = new MqttClient(SERVER_URI + mqttPort, "receiveMaxClient");
+        MqttClient client = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT);
         IMqttToken iMqttToken = client.connectWithResult(options);
 
         Awaitility.await()
@@ -61,6 +67,80 @@ public class FlowControlIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         client.disconnect();
         client.close();
+    }
+
+    @Test
+    public void givenReceiveMaximumSetTo5_whenSend10MessagesWithoutAcks_thenReceive5Messages() throws Throwable {
+        CountDownLatch receivedResponses = new CountDownLatch(10);
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        options.setReceiveMaximum(5);
+
+        MqttClient subscriber = new MqttClient(SERVER_URI + mqttPort, SUB_CLIENT);
+        subscriber.setManualAcks(true);
+        subscriber.connectWithResult(options);
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(subscriber::isConnected);
+
+        IMqttMessageListener[] listeners = {(topic, message) -> {
+            int messageId = message.getId();
+            log.warn("[{}] Received message for receiveMax subscriber", messageId);
+
+            service.submit(() -> {
+                try {
+                    if (messageId == 6) { // this if statement should never become true
+                        for (int i = 1; i < 6; i++) {
+                            subscriber.messageArrivedComplete(i, QOS);
+                        }
+                    }
+                    receivedResponses.countDown();
+                } catch (Exception e) {
+                    log.error("Failure", e);
+                }
+            });
+        }};
+        MqttSubscription[] subscriptions = {new MqttSubscription("receive/max/topic", QOS)};
+        subscriber.subscribe(subscriptions, listeners);
+
+        MqttClient publisher = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT);
+        publisher.connectWithResult(new MqttConnectionOptions());
+
+        Awaitility.await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(publisher::isConnected);
+
+        for (int i = 0; i < 10; i++) {
+            publisher.publish("receive/max/topic", PAYLOAD, QOS, false);
+        }
+
+        boolean await = receivedResponses.await(3, TimeUnit.SECONDS);
+        Assert.assertFalse(await);
+
+        Assert.assertEquals(5, receivedResponses.getCount());
+
+        publisher.disconnect();
+        publisher.close();
+
+        subscriber.disconnect();
+        subscriber.close();
+    }
+
+    @Test
+    public void givenReceiveMaximumSetTo1_whenSend2Messages_thenReceiveMessagesWithDelay() throws Throwable {
+        MqttClient subscriber = super.givenReceiveMaximumSetTo1_whenSend2Messages_thenReceiveMessagesWithDelay(SUB_CLIENT, true);
+
+        subscriber.disconnect();
+        subscriber.close();
+    }
+
+    @Test
+    public void givenReceiveMaximumSetTo2_whenSend2Messages_thenReceiveMessagesWithoutDelay() throws Throwable {
+        MqttClient subscriber = super.givenReceiveMaximumSetTo2_whenSend2Messages_thenReceiveMessagesWithoutDelay(SUB_CLIENT, true);
+
+        subscriber.disconnect();
+        subscriber.close();
     }
 
 }
