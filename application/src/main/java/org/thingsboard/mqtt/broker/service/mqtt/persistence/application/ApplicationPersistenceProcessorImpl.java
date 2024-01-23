@@ -197,20 +197,20 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationPackProcessingCtx processingContext = packProcessingCtxMap.get(clientId);
         if (processingContext == null) {
             if (isDebugEnabled) {
-                log.debug("[{}] Cannot find main processing context for client on PubRec. PacketId - {}.", clientId, packetId);
+                log.debug("[{}] Cannot find main processing context for client on PubRec no PubRel delivery. PacketId - {}.", clientId, packetId);
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] Cannot find processing contexts for client on PubRec. PacketId - {}.", false);
+                    "[{}] Cannot find processing contexts for client on PubRec no PubRel delivery. PacketId - {}.", false);
         } else {
             var ack = processingContext.onPubRec(packetId, false);
             if (ack) {
                 if (isDebugEnabled) {
-                    log.debug("[{}] PubRec packet [{}] processed successfully from main context", clientId, packetId);
+                    log.debug("[{}] PubRec no PubRel delivery packet [{}] processed successfully from main context", clientId, packetId);
                 }
                 return;
             }
             processPubRecInSharedCtx(clientSessionCtx, packetId,
-                    "[{}] Cannot find shared subscriptions processing contexts for client on PubRec. PacketId - {}.", false);
+                    "[{}] Cannot find shared subscriptions processing contexts for client on PubRec no PubRel delivery. PacketId - {}.", false);
         }
     }
 
