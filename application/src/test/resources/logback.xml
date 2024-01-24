@@ -7,19 +7,19 @@
         </encoder>
     </appender>
 
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl"
-            level="TRACE"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.device.PersistedDeviceActorMessageProcessor" level="TRACE"/>
+            level="INFO"/>
+    <logger name="org.thingsboard.mqtt.broker.actors.device.PersistedDeviceActorMessageProcessor" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao" level="INFO"/>
 
     <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>
     <logger name="org.apache.kafka.common.utils.AppInfoParser" level="OFF"/>
 
-    <logger name="com.zaxxer.hikari" level="DEBUG"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
 
     <root level="WARN">
         <appender-ref ref="console"/>
