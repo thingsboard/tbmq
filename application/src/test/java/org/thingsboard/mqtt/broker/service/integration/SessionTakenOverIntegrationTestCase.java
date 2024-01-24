@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.integration;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
@@ -145,6 +146,7 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(clientId);
         config.setCleanSession(cleanSession);
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         return config;
     }
 
