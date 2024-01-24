@@ -17,6 +17,9 @@
     <logger name="org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao" level="INFO"/>
 
     <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>
+    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="OFF"/>
+
+    <logger name="com.zaxxer.hikari" level="DEBUG"/>
 
     <root level="WARN">
         <appender-ref ref="console"/>
