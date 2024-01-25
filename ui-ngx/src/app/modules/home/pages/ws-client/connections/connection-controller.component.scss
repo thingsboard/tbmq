@@ -17,15 +17,10 @@
 :host {
   .status {
     font-size: 14px;
-    color: rgba(25, 128, 56, 1);
-    background: rgba(25, 128, 56, 0.06);
     border-radius: 16px;
     padding: 8px;
-
-    &.disconnected {
-      color: rgba(209, 39, 48, 1);
-      background: rgba(209, 39, 48, 0.06);
-    }
+    line-height: 20px;
+    letter-spacing: 0.2px;
   }
 
   ::ng-deep {
