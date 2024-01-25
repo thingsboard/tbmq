@@ -108,23 +108,26 @@ export class SubscriptionComponent implements OnInit {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        connection: this.connection,
-        subscription: entity
-      }
-    }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveSubscriptionV3(this.connection.id, res, true).subscribe(
-            () => {
-              // this.updateData()
+    this.wsClientService.getSubscription(this.connection.id, entity.id).subscribe(
+      subscription =>
+        this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          data: {
+            subscription
+          }
+        })
+          .afterClosed()
+          .subscribe((res) => {
+            if (isDefinedAndNotNull(res)) {
+              this.wsClientService.saveSubscriptionV3(this.connection.id, res, true).subscribe(
+                () => {
+                  // this.updateData()
+                }
+              );
             }
-          );
-        }
-      });
+          })
+    );
   }
 
 }

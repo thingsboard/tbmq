@@ -206,15 +206,15 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
     [
       EntityType.WS_MESSAGE,
       {
-        type: 'ws-client.subscriptions.subscription',
-        typePlural: 'ws-client.subscriptions.subscription',
-        list: 'ws-client.subscriptions.list-of-subscriptions',
-        nameStartsWith: 'ws-client.subscriptions.subscription-starts-with',
-        details: 'ws-client.subscriptions.details',
-        add: 'ws-client.subscriptions.add-subscription',
-        noEntities: 'ws-client.subscriptions.no-subscriptions-text',
-        search: 'ws-client.subscriptions.search-subscription',
-        selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
+        type: 'ws-client.messages.message',
+        typePlural: 'ws-client.messages.messages',
+        list: 'ws-client.messages.list-of-messages',
+        nameStartsWith: 'ws-client.messages.message-starts-with',
+        details: 'ws-client.messages.details',
+        add: 'ws-client.messages.add-message',
+        noEntities: 'ws-client.messages.no-messages-text',
+        search: 'ws-client.messages.search-message',
+        selectedEntities: 'ws-client.messages.selected-messages'
       }
     ]
   ]

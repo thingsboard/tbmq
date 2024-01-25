@@ -35,6 +35,7 @@ import { SubscriptionComponent } from "@home/pages/ws-client/subscriptions/subsc
 import { EntitiesTableWsComponent } from "@home/components/entity/entities-table-ws.component";
 import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-json-object-edit.component';
 import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.component';
+import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/subscriptions/show-connection-logs-popover.component';
 
 @NgModule({
   declarations: [
@@ -49,6 +50,7 @@ import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.c
     PropertiesDialogComponent,
     SelectConnectionComponent,
     ShowSelectConnectionPopoverComponent,
+    ShowConnectionLogsPopoverComponent,
     ConnectionComponent,
     SubscriptionComponent,
     EntitiesTableWsComponent,
@@ -66,7 +68,8 @@ import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.c
     ConnectionWizardDialogComponent,
     SubscriptionsComponent,
     PropertiesDialogComponent,
-    ShowSelectConnectionPopoverComponent
+    ShowSelectConnectionPopoverComponent,
+    ShowConnectionLogsPopoverComponent
   ]
 })
 

@@ -22,7 +22,8 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Connection } from '@shared/models/ws-client.model';
+import { TimeUnitType, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { convertTimeUnits, isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-ws-client-properties',
@@ -36,6 +37,8 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
   entity: any;
 
   // mqttQoSTypes = mqttQoSTypes;
+  timeUnitTypes = Object.keys(TimeUnitType);
+  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
   private destroy$ = new Subject<void>();
 
@@ -50,18 +53,15 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
 
   ngOnInit(): void {
     this.entity = this.data;
-    this.buildForms(this.entity);
+    this.buildForms();
   }
 
   ngAfterContentChecked(): void {
     this.cd.detectChanges();
   }
 
-  private buildForms(entity: Connection): void {
+  private buildForms(): void {
     this.buildForm();
-    if (entity) {
-      this.updateFormsValues(entity);
-    }
   }
 
   private buildForm(): void {
@@ -69,6 +69,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
       payloadFormatIndicator: [null, []],
       contentType: [null, []],
       messageExpiryInterval: [null, []],
+      messageExpiryIntervalUnit: [TimeUnitType.SECONDS, []],
       topicAlias: [null, []],
       subscriptionIdentifier: [null, []],
       correlationData: [null, []],
@@ -82,12 +83,13 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
     this.destroy$.complete();
   }
 
-  private updateFormsValues(entity: any): void {
-    this.formGroup.patchValue({});
-  }
-
   onSave() {
-
+    const properties = this.formGroup.getRawValue();
+    if (isDefinedAndNotNull(properties.messageExpiryInterval)) {
+      properties.messageExpiryInterval = convertTimeUnits(properties.messageExpiryInterval, properties.messageExpiryIntervalUnit, TimeUnitType.SECONDS);
+    }
+    delete properties.messageExpiryIntervalUnit;
+    this.dialogRef.close(properties)
   }
 }
 

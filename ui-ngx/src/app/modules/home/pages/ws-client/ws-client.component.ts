@@ -16,35 +16,36 @@
 
 // @ts-nocheck
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { WsClientService } from '@core/http/ws-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { isDefinedAndNotNull } from '@core/utils';
+import { ConnectionShortInfo } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-ws-client',
   templateUrl: './ws-client.component.html',
   styleUrls: ['./ws-client.component.scss']
 })
-export class WsClientComponent extends PageComponent {
+export class WsClientComponent extends PageComponent implements OnInit {
 
-  clients:any = [];
+  connections: ConnectionShortInfo[] = [];
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
               private wsClientService: WsClientService) {
     super(store);
-    this.wsClientService.getConnections().subscribe(value => {
-      const data = value.data;
-      this.clients = data;
+  }
+
+  ngOnInit() {
+    this.wsClientService.getConnections().subscribe(data => {
       if (data?.length) {
-        this.client = data[0];
-      } else {
-        this.client = null;
+        this.connections = data;
+        this.wsClientService.selectConnection(data[0]);
+        this.wsClientService.setConnectionsInitState(data);
       }
     });
   }
@@ -60,16 +61,6 @@ export class WsClientComponent extends PageComponent {
         connectionsTotal: 0
       }
     }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
-            () => {
-              // this.updateData()
-            }
-          );*/
-        } else {
-          // this.onClose();
-        }
-      });
+      .subscribe();
   }
 }

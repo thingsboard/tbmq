@@ -16,10 +16,31 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
-
 export type MqttJsProtocolVersion = 3 | 4 | 5;
 export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
 export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
+
+export enum ConnectionStatus {
+  CONNECTED = 'CONNECTED',
+  CONNECTING = 'CONNECTING',
+  DISCONNECTED = 'DISCONNECTED',
+  CONNECTION_FAILED = 'CONNECTION_FAILED',
+  RECONNECTING = 'RECONNECTING',
+  CLOSE = 'CLOSE',
+  END = 'END',
+  OFFLINE = 'OFFLINE',
+}
+
+export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>([
+  [ConnectionStatus.CONNECTED, 'ws-client.connections.connected'],
+  [ConnectionStatus.CONNECTING, 'ws-client.connections.connecting'],
+  [ConnectionStatus.DISCONNECTED, 'ws-client.connections.disconnected'],
+  [ConnectionStatus.CONNECTION_FAILED, 'ws-client.connections.connection-failed'],
+  [ConnectionStatus.RECONNECTING, 'ws-client.connections.reconnecting'],
+  [ConnectionStatus.CLOSE, 'ws-client.connections.close'],
+  [ConnectionStatus.END, 'ws-client.connections.end'],
+  [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
+]);
 
 // TODO check usage
 const MqttJsProtocolIdVersionMap = new Map<MqttJsProtocolVersion, MqttJsProtocolId>([
@@ -28,10 +49,12 @@ const MqttJsProtocolIdVersionMap = new Map<MqttJsProtocolVersion, MqttJsProtocol
   [5, 'MQIsdp']
 ]);
 
-export interface TbConnectionDetails extends BaseData {
+export interface ConnectionShortInfo extends BaseData {
   name: string;
+}
+
+export interface TbConnectionDetails extends ConnectionShortInfo {
   url: string;
-  connected?: boolean; //TODO remove
   keepaliveUnit?: TimeUnitType;
   connectTimeoutUnit?: TimeUnitType;
   reconnectPeriodUnit?: TimeUnitType;
@@ -95,13 +118,26 @@ interface WillProperties extends TbWillProperties {
   correlationData: any;
 }
 
-export interface WsMessage extends PublishMessageProperties {
-  createdTime: number;
+export interface WsPublishMessageOptions {
+  qos?: number;
+  retain?: boolean;
+  dup?: boolean;
+  properties?: PublishMessageProperties;
+}
+
+export interface WsPublishMessage {
+  createdTime?: number;
   topic: string;
+  payload: any;
+  options: WsPublishMessageOptions;
+}
+
+export interface WsTableMessage extends WsPublishMessage {
   qos: number;
   retain: boolean;
-  payload: any;
   color?: string;
+  properties?: PublishMessageProperties;
+  type?: string;
 }
 
 export interface PublishMessageProperties {
@@ -109,11 +145,13 @@ export interface PublishMessageProperties {
   payloadFormatIndicator?: boolean;
   messageExpiryInterval?: number;
   topicAlias?: number;
-  subscriptionIdentifier?: number;
-  correlationData?: string;
+  subscriptionIdentifier?: number | number[],
+  correlationData?: Buffer;
   responseTopic?: string;
-  userProperties?: any
+  userProperties?: UserProperties,
 }
+
+export declare type UserProperties = {[index: string]: string | string[]}
 
 interface TopicObject {
   [topicName: string]: { qos: number };
@@ -128,7 +166,7 @@ interface Properties {
   };
 }
 
-interface Options {
+interface WsSubscriptionOptions {
   qos?: number;
   nl?: boolean;
   rap?: boolean;
@@ -136,10 +174,13 @@ interface Options {
   properties?: Properties;
 }
 
-export interface WsSubscription {
+export interface WsSubscriptionShortInfo extends BaseData {
   topic: Topic;
-  options: Options;
   color: string;
+}
+
+export interface WsSubscription extends WsSubscriptionShortInfo {
+  options?: WsSubscriptionOptions;
 }
 
 export enum WsAddressProtocolType {

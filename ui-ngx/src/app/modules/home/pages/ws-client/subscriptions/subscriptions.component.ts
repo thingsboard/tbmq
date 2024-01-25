@@ -54,7 +54,7 @@ export class SubscriptionsComponent {
   }
 
   fetchSubcription(connection) {
-    this.subscriptions$ = this.wsClientService.getSubscriptionsV3(connection.id).pipe(
+    this.subscriptions$ = this.wsClientService.getSubscriptionsShortInfo(connection.id).pipe(
       map(res => {
         if (res.length) {
           this.subscriptions = res;
@@ -76,20 +76,19 @@ export class SubscriptionsComponent {
     }
     this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        connection: this.connection
-      }
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
     }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          this.wsClientService.saveSubscriptionV3(this.connection.id, res, false).subscribe(
-            (value) => {
+      .subscribe(
+        (res) => {
+          if (isDefinedAndNotNull(res)) {
+            this.wsClientService.saveSubscriptionV3(this.connection.id, res, false).subscribe(
+              (value) => {
 
-            }
-          );
+              }
+            );
+          }
         }
-      });
+      );
   }
 
   trackById(index: number, item: Connection): string {

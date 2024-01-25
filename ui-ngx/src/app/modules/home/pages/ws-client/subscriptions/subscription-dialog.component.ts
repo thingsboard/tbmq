@@ -29,7 +29,6 @@ import { Connection, rhOptions, WsSubscription } from '@shared/models/ws-client.
 import { randomColor } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
-  connection: Connection;
   subscription?: WsSubscription;
 }
 
@@ -97,23 +96,10 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     this.destroy$.complete();
   }
 
-  /*mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    const index = mqttQoSTypes.findIndex(object => {
-      return object.value === mqttQoSValue.value;
-    });
-    const name = this.translate.instant(mqttQoSValue.name);
-    return index + ' - ' + name;
-  }*/
-
   save() {
-    console.log('1', this.formGroup.getRawValue())
-    this.dialogRef.close(this.formGroup.getRawValue());
-    // const connectionId = this.data.connection.id;
-    /*this.wsClientService.saveSubscriptionV3(connectionId, this.data?.subscription).subscribe(
-      (entity) => {
-        return this.dialogRef.close(entity);
-      }
-    );*/
+    const value = this.formGroup.getRawValue();
+    value.color = value.color || randomColor();
+    this.dialogRef.close(value);
   }
 
 }
