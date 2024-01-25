@@ -155,7 +155,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     private PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, PublishMsgProto publishMsgProto) {
         var minQoSValue = Math.min(clientSubscription.getQos(), publishMsgProto.getQos());
-        var retain = clientSubscription.getOptions().isRetain(publishMsgProto);
+        var retain = clientSubscription.getOptions().isRetain(publishMsgProto.getRetain());
         return publishMsgProto.toBuilder()
                 .setPacketId(0)
                 .setQos(minQoSValue)

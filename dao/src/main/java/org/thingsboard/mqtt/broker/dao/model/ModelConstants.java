@@ -104,6 +104,13 @@ public class ModelConstants {
     public static final String APPLICATION_SHARED_SUBSCRIPTION_NAME_PROPERTY = MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY;
 
     /**
+     * websocket_connection constants.
+     */
+    public static final String WEBSOCKET_CONNECTION_COLUMN_FAMILY_NAME = "websocket_connection";
+    public static final String WEBSOCKET_CONNECTION_CONFIGURATION_PROPERTY = "configuration";
+    public static final String WEBSOCKET_CONNECTION_NAME_PROPERTY = MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY;
+
+    /**
      * device_session_ctx constants.
      */
     public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";

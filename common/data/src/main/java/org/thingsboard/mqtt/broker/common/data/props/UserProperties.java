@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.data;
+package org.thingsboard.mqtt.broker.common.data.props;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -21,7 +21,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -63,7 +62,7 @@ public class UserProperties {
     }
 
     private static MqttProperties.UserProperties getUserProperties(MqttProperties mqttProperties) {
-        return (MqttProperties.UserProperties) mqttProperties.getProperty(BrokerConstants.USER_PROPERTY_PROP_ID);
+        return (MqttProperties.UserProperties) mqttProperties.getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value());
     }
 
     private static UserProperties getUserProperties(MqttProperties.UserProperties userProperties) {

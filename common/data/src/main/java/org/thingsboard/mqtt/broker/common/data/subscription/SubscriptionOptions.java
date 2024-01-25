@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.common.data.subscription;
 
 import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.function.Function;
 
@@ -79,11 +78,11 @@ public final class SubscriptionOptions {
         return receiverClientId.equals(senderClientId) && noLocal;
     }
 
-    public boolean isRetain(QueueProtos.PublishMsgProto publishMsgProto) {
+    public boolean isRetain(boolean retain) {
         if (!retainAsPublish) {
             return false;
         }
-        return publishMsgProto.getRetain();
+        return retain;
     }
 
     public boolean needSendRetainedForTopicSubscription(Function<TopicSubscription, Boolean> subscriptionPresentFunction,

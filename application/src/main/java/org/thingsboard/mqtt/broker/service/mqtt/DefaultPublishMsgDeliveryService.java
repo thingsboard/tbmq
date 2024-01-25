@@ -97,7 +97,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         String topicName = topicAliasResult == null ? msg.getTopicName() : topicAliasResult.getTopicName();
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         int qos = Math.min(subscription.getQos(), msg.getQos());
-        boolean retain = subscription.getOptions().isRetain(msg);
+        boolean retain = subscription.getOptions().isRetain(msg.getRetain());
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
 
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
