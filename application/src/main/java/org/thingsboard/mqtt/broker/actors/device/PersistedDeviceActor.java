@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
@@ -66,6 +67,9 @@ public class PersistedDeviceActor extends ContextAwareActor {
                 break;
             case PACKET_RECEIVED_EVENT_MSG:
                 processor.processPacketReceived((PacketReceivedEventMsg) msg);
+                break;
+            case PACKET_RECEIVED_NO_DELIVERY_EVENT_MSG:
+                processor.processPacketReceivedNoDelivery((PacketReceivedNoDeliveryEventMsg) msg);
                 break;
             case PACKET_COMPLETED_EVENT_MSG:
                 processor.processPacketComplete((PacketCompletedEventMsg) msg);

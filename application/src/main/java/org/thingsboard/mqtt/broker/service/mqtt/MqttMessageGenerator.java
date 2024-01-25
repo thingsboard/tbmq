@@ -21,12 +21,12 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubAckMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 
 import java.util.List;
 
@@ -36,13 +36,17 @@ public interface MqttMessageGenerator {
 
     MqttConnAckMessage createMqttConnAckMsg(ClientActorStateInfo actorState, ConnectionAcceptedMsg msg);
 
-    MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCode> codes);
+    MqttSubAckMessage createSubAckMessage(int msgId, List<MqttReasonCodes.SubAck> codes);
 
-    MqttSubAckMessage createSubAckMessage(int msgId, List<MqttReasonCode> codes);
+    MqttMessage createUnSubAckMessage(int msgId, List<MqttReasonCodes.UnsubAck> codes);
 
-    MqttPubAckMessage createPubAckMsg(int msgId, MqttReasonCode code);
+    MqttPubAckMessage createPubAckMsg(int msgId, MqttReasonCodes.PubAck code);
 
-    MqttMessage createPubRecMsg(int msgId, MqttReasonCode code);
+    MqttMessage createPubRecMsg(int msgId, MqttReasonCodes.PubRec code);
+
+    MqttMessage createPubRelMsg(int msgId, MqttReasonCodes.PubRel code);
+
+    MqttMessage createPubCompMsg(int msgId, MqttReasonCodes.PubComp code);
 
     MqttPublishMessage createPubMsg(PublishMsg pubMsg);
 
@@ -52,9 +56,5 @@ public interface MqttMessageGenerator {
 
     MqttMessage createPingRespMsg();
 
-    MqttMessage createPubCompMsg(int msgId, MqttReasonCode code);
-
-    MqttMessage createPubRelMsg(int msgId, MqttReasonCode code);
-
-    MqttMessage createDisconnectMsg(MqttReasonCode code);
+    MqttMessage createDisconnectMsg(MqttReasonCodes.Disconnect code);
 }

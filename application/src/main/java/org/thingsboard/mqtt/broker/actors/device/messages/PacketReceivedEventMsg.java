@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 @RequiredArgsConstructor
 @Getter
 public class PacketReceivedEventMsg implements TbActorMsg {
+
     private final int packetId;
 
     @Override

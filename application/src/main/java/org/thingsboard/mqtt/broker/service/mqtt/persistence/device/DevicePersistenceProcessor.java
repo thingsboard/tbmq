@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.Set;
 
 public interface DevicePersistenceProcessor {
+
     void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx);
 
     void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
@@ -32,6 +33,8 @@ public interface DevicePersistenceProcessor {
     void processPubAck(String clientId, int packetId);
 
     void processPubRec(String clientId, int packetId);
+
+    void processPubRecNoPubRelDelivery(String clientId, int packetId);
 
     void processPubComp(String clientId, int packetId);
 }

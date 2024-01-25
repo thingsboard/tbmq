@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,13 +31,14 @@ import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.UUID;
@@ -54,6 +56,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final AuthorizationRuleService authorizationRuleService;
+    private final FlowControlService flowControlService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -73,7 +76,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         }
 
         if (needSendDisconnectToClient(sessionCtx, reason)) {
-            MqttReasonCode code = MqttReasonCodeResolver.disconnect(reason.getType());
+            MqttReasonCodes.Disconnect code = MqttReasonCodeResolver.disconnect(reason.getType());
             sessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createDisconnectMsg(code));
         }
 
@@ -89,6 +92,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         notifyClientDisconnected(actorState, sessionExpiryInterval);
         rateLimitService.remove(sessionCtx.getClientId());
         authorizationRuleService.evict(sessionCtx.getClientId());
+        flowControlService.removeFromMap(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
         if (log.isDebugEnabled()) {
@@ -97,8 +101,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     }
 
     private int getSessionExpiryInterval(MqttProperties properties) {
-        MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) properties
-                .getProperty(BrokerConstants.SESSION_EXPIRY_INTERVAL_PROP_ID);
+        MqttProperties.IntegerProperty property = MqttPropertiesUtil.getSessionExpiryIntervalProperty(properties);
         if (property != null) {
             return property.value();
         }
@@ -170,4 +173,5 @@ public class DisconnectServiceImpl implements DisconnectService {
             }
         }
     }
+
 }

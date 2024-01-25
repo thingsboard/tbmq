@@ -37,5 +37,7 @@ public interface ApplicationPersistenceProcessor {
 
     void processPubRec(ClientSessionCtx clientSessionCtx, int packetId);
 
+    void processPubRecNoPubRelDelivery(ClientSessionCtx clientSessionCtx, int packetId);
+
     void processPubComp(String clientId, int packetId);
 }

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +67,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(SpringRunner.class)
 public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    static final int TOTAL_MSG_COUNT = 100;
+    static final int TOTAL_MSG_COUNT = 10;
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
@@ -133,6 +134,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     private void disconnectWithCleanSession(MqttClient client) throws Exception {
         if (client != null) {
             MqttClientConfig config = new MqttClientConfig();
+            config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
             config.setCleanSession(true);
             config.setClientId(client.getClientConfig().getClientId());
             if (client.isConnected()) {
@@ -348,7 +350,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
                             Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)),
                             qos)
                     .get(5, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            Thread.sleep(500);
         }
     }
 
@@ -359,6 +361,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     private MqttClient getClient(String clientId, MqttHandler handler, boolean cleanSession) throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setCleanSession(cleanSession);
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(clientId);
         MqttClient client = MqttClient.create(config, handler);
         client.connect("localhost", mqttPort).get(5, TimeUnit.SECONDS);

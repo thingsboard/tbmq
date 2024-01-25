@@ -20,9 +20,11 @@ import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import java.util.List;
 
 public interface OrderedProcessingQueue {
+
     void addAwaiting(int msgId) throws FullMsgQueueException;
 
     List<Integer> finish(int msgId) throws FullMsgQueueException;
 
     List<Integer> finishAll(int msgId) throws FullMsgQueueException;
+
 }

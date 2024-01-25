@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -45,7 +48,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import javax.annotation.PostConstruct;
@@ -95,7 +97,7 @@ public class MqttPublishHandler {
             if (TopicAliasCtx.UNKNOWN_TOPIC_ALIAS_MSG.equals(e.getMessage())) {
                 disconnectClient(ctx, DisconnectReasonType.ON_PROTOCOL_ERROR, e.getMessage());
             } else {
-                disconnectClient(ctx, DisconnectReasonType.TOPIC_ALIAS_INVALID, e.getMessage());
+                disconnectClient(ctx, DisconnectReasonType.ON_TOPIC_ALIAS_INVALID, e.getMessage());
             }
             return;
         }
@@ -108,10 +110,16 @@ public class MqttPublishHandler {
             return;
         }
 
-        if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
-        } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
-            processAtLeastOnce(ctx, msgId);
+        try {
+            if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQosLevel()) {
+                if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
+            } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQosLevel()) {
+                processAtLeastOnce(ctx, msgId);
+            }
+        } catch (FullMsgQueueException e) {
+            log.warn("[{}][{}] Failed to process publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
+            disconnectClient(ctx, DisconnectReasonType.ON_RECEIVE_MAXIMUM_EXCEEDED, e.getMessage());
+            return;
         }
 
         if (publishMsg.isRetained()) {
@@ -125,50 +133,70 @@ public class MqttPublishHandler {
         persistPubMsg(ctx, publishMsg, actorRef);
     }
 
-    private boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
+    boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
         try {
             topicValidationService.validateTopic(publishMsg.getTopicName());
         } catch (DataValidationException e) {
             log.warn("[{}] Failed to validate topic for Pub msg {}", ctx.getClientId(), publishMsg, e);
-            var code = MqttReasonCodeResolver.topicNameInvalid(ctx);
-            if (code == null) {
-                throw e;
-            }
-            pushErrorResponseWithReasonCode(ctx, publishMsg, code);
-            return false;
+            return handleTopicValidationException(ctx, publishMsg, e);
         }
         try {
             validateClientAccess(ctx, publishMsg.getTopicName());
         } catch (MqttException e) {
-            var code = MqttReasonCodeResolver.notAuthorized(ctx);
-            if (code == null) {
-                throw e;
-            }
-            pushErrorResponseWithReasonCode(ctx, publishMsg, code);
-            return false;
+            return handleClientNotAuthException(ctx, publishMsg, e);
         }
         return true;
     }
 
-    private void pushErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCode code) {
-        if (publishMsg.getQosLevel() == MqttQoS.EXACTLY_ONCE.value()) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(publishMsg.getPacketId(), code));
-        } else if (publishMsg.getQosLevel() == MqttQoS.AT_LEAST_ONCE.value()) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(publishMsg.getPacketId(), code));
+    private boolean handleTopicValidationException(ClientSessionCtx ctx, PublishMsg publishMsg, DataValidationException e) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            if (publishMsg.getQosLevel() == 2) {
+                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecTopicNameInvalid());
+            } else if (publishMsg.getQosLevel() == 1) {
+                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckTopicNameInvalid());
+            } else {
+                // QoS=0 - do nothing
+            }
+            return false;
+        } else {
+            throw e;
         }
     }
 
+    private boolean handleClientNotAuthException(ClientSessionCtx ctx, PublishMsg publishMsg, MqttException e) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            if (publishMsg.getQosLevel() == 2) {
+                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecNotAuthorized());
+            } else if (publishMsg.getQosLevel() == 1) {
+                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckNotAuthorized());
+            } else {
+                // QoS=0 - do nothing
+            }
+            return false;
+        } else {
+            throw e;
+        }
+    }
+
+    private void pushPubAckErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCodes.PubAck code) {
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(publishMsg.getPacketId(), code));
+    }
+
+    private void pushPubRecErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCodes.PubRec code) {
+        ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(publishMsg.getPacketId(), code));
+    }
+
     boolean processExactlyOnceAndCheckIfAlreadyPublished(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs(), msgId);
+        addAwaiting(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages(), msgId);
         return prepareForPubRelPacketAndCheckIfAlreadyProcessed(ctx, actorRef, msgId);
     }
 
     void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs(), msgId);
+        addAwaiting(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages(), msgId);
     }
 
-    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMsgs, int msgId) {
-        qosPublishResponseMsgs.addAwaiting(msgId);
+    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMessages, int msgId) {
+        qosPublishResponseMessages.addAwaiting(msgId);
     }
 
     void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
@@ -195,8 +223,8 @@ public class MqttPublishHandler {
     }
 
     public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
-        MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMsgs().finish(msgId);
+        MqttReasonCodes.PubAck code = MqttReasonCodeResolver.pubAckSuccess(ctx);
+        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().finish(msgId);
         for (var finishedMsgId : finishedMsgIds) {
             ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code));
         }
@@ -204,10 +232,10 @@ public class MqttPublishHandler {
     }
 
     public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
-        MqttReasonCode code = MqttReasonCodeResolver.success(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMsgs().finishAll(msgId);
+        MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(ctx);
+        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().finishAll(msgId);
         for (var finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
+            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
         }
         ctx.getChannel().flush();
 

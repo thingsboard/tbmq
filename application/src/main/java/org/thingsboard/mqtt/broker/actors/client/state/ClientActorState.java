@@ -19,8 +19,8 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
-/*
-    not thread-safe
+/**
+ * not thread-safe
  */
 public interface ClientActorState extends ClientActorStateUpdater {
 

@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
@@ -92,6 +93,8 @@ public class ConnectServiceImplTest {
     ClientSubscriptionCache clientSubscriptionCache;
     @MockBean
     RateLimitService rateLimitService;
+    @MockBean
+    FlowControlService flowControlService;
 
     @SpyBean
     ConnectServiceImpl connectService;

@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 @Getter
 public class MqttMessageHandlers {
-    // TODO: it can only be executed in one thread for one client
+
     private final MqttSubscribeHandler subscribeHandler;
     private final MqttUnsubscribeHandler unsubscribeHandler;
     private final MqttPublishHandler publishHandler;
@@ -32,4 +32,5 @@ public class MqttMessageHandlers {
     private final MqttPubRecHandler pubRecHandler;
     private final MqttPubRelHandler pubRelHandler;
     private final MqttPubCompHandler pubCompHandler;
+
 }

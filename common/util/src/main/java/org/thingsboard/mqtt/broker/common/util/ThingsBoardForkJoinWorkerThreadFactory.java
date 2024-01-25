@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @ToString
 public class ThingsBoardForkJoinWorkerThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
+
     private final String namePrefix;
     private final AtomicLong threadNumber = new AtomicLong(1);
 

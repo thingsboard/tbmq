@@ -35,6 +35,7 @@ public class MqttPubCompHandler {
         if (log.isTraceEnabled()) {
             log.trace("[{}][{}] Received PUBCOMP msg for packet {}.", ctx.getClientId(), ctx.getSessionId(), messageId);
         }
+        ctx.ackInFlightMsg(messageId);
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubComp(ctx, messageId);
         }

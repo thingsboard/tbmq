@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
@@ -35,6 +36,7 @@ import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
+import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
@@ -52,12 +54,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.util.MqttReasonCode.MESSAGE_RATE_TOO_HIGH;
 
 @Slf4j
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = DisconnectServiceImpl.class)
 public class DisconnectServiceImplTest {
+
+    private static final String CLIENT_ID = "testClient";
 
     @MockBean
     KeepAliveService keepAliveService;
@@ -75,6 +78,8 @@ public class DisconnectServiceImplTest {
     MqttMessageGenerator mqttMessageGenerator;
     @MockBean
     AuthorizationRuleService authorizationRuleService;
+    @MockBean
+    FlowControlService flowControlService;
 
     @SpyBean
     DisconnectServiceImpl disconnectService;
@@ -82,6 +87,7 @@ public class DisconnectServiceImplTest {
     ClientSessionCtx ctx;
     ClientActorStateInfo clientActorState;
     QueuedMqttMessages queuedMqttMessages;
+    SessionInfo sessionInfo;
 
     @Before
     public void setUp() {
@@ -90,7 +96,7 @@ public class DisconnectServiceImplTest {
         clientActorState = mock(ClientActorStateInfo.class);
         when(clientActorState.getCurrentSessionCtx()).thenReturn(ctx);
 
-        SessionInfo sessionInfo = mock(SessionInfo.class);
+        sessionInfo = mock(SessionInfo.class);
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
 
         ClientInfo clientInfo = mock(ClientInfo.class);
@@ -98,10 +104,12 @@ public class DisconnectServiceImplTest {
 
         queuedMqttMessages = mock(QueuedMqttMessages.class);
         when(clientActorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
+
+        when(ctx.getClientId()).thenReturn(CLIENT_ID);
     }
 
     @Test
-    public void testDisconnectFail() {
+    public void givenSessionInfoIsNull_whenDisconnectClient_thenCloseChannel() {
         when(ctx.getSessionInfo()).thenReturn(null);
 
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
@@ -113,17 +121,35 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
-    public void testDisconnect() {
+    public void givenSessionInfoIsNotNull_whenDisconnectClient_thenDisconnectCleanlyAndCloseChannel() {
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.disconnect(clientActorState, disconnectMsg);
 
         verify(disconnectService, times(1)).clearClientSession(clientActorState, disconnectMsg, -1);
         verify(disconnectService, times(1)).notifyClientDisconnected(clientActorState, -1);
         verify(disconnectService, times(1)).closeChannel(ctx);
+        verify(rateLimitService, times(1)).remove(eq(CLIENT_ID));
+        verify(authorizationRuleService, times(1)).evict(eq(CLIENT_ID));
+        verify(flowControlService, times(1)).removeFromMap(eq(CLIENT_ID));
+        verify(mqttMessageGenerator, never()).createDisconnectMsg(any());
     }
 
     @Test
-    public void testClearClientSession() {
+    public void givenMqtt5Client_whenDisconnectClientByServer_thenSendDisconnectMsgAndCloseChannel() {
+        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
+        when(ctx.getChannel()).thenReturn(handlerContext);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        disconnectService.disconnect(clientActorState, newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS)));
+
+        verify(mqttMessageGenerator, times(1)).createDisconnectMsg(MqttReasonCodes.Disconnect.MESSAGE_RATE_TOO_HIGH);
+        verify(handlerContext, times(1)).writeAndFlush(any());
+        verify(disconnectService, times(1)).closeChannel(ctx);
+    }
+
+    @Test
+    public void givenNonPersistentClient_whenClearClientSession_thenAllResourcesTerminationDone() {
+        when(sessionInfo.isPersistent()).thenReturn(false);
+
         MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
         disconnectService.clearClientSession(clientActorState, disconnectMsg, -1);
 
@@ -134,7 +160,21 @@ public class DisconnectServiceImplTest {
     }
 
     @Test
-    public void testProcessPersistenceDisconnect() {
+    public void givenPersistentClient_whenClearClientSession_thenAllResourcesTerminationDone() {
+        when(sessionInfo.isPersistent()).thenReturn(true);
+
+        MqttDisconnectMsg disconnectMsg = newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_DISCONNECT_MSG));
+        disconnectService.clearClientSession(clientActorState, disconnectMsg, -1);
+
+        verify(queuedMqttMessages, times(1)).clear();
+        verify(keepAliveService, times(1)).unregisterSession(any());
+        verify(lastWillService, times(1)).removeAndExecuteLastWillIfNeeded(any(), anyBoolean(), anyBoolean(), eq(-1));
+        verify(clientSessionCtxService, times(1)).unregisterSession(any());
+        verify(disconnectService, times(1)).processPersistenceDisconnect(any(), any(), any());
+    }
+
+    @Test
+    public void givenClient_whenProcessPersistenceDisconnect_thenExecuteCleanDisconnect() {
         ClientInfo clientInfo = mock(ClientInfo.class);
         disconnectService.processPersistenceDisconnect(ctx, clientInfo, UUID.randomUUID());
 
@@ -142,18 +182,8 @@ public class DisconnectServiceImplTest {
         verify(msgPersistenceManager, times(1)).saveAwaitingQoS2Packets(any());
     }
 
-    @Test
-    public void testSendDisconnectForMqtt5OnError() {
-        ChannelHandlerContext handlerContext = mock(ChannelHandlerContext.class);
-        when(ctx.getChannel()).thenReturn(handlerContext);
-        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
-        disconnectService.disconnect(clientActorState, newDisconnectMsg(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS)));
-
-        verify(mqttMessageGenerator, times(1)).createDisconnectMsg(MESSAGE_RATE_TOO_HIGH);
-        verify(disconnectService, times(1)).closeChannel(ctx);
-    }
-
     private MqttDisconnectMsg newDisconnectMsg(DisconnectReason reason) {
         return new MqttDisconnectMsg(UUID.randomUUID(), reason);
     }
+
 }

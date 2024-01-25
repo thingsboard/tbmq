@@ -643,8 +643,19 @@ mqtt:
   pre-connect-queue:
     # Max number of messages that can be stored in queue before client gets connected and start processing them
     max-size: "${MQTT_PRE_CONNECT_QUEUE_MAX_SIZE:10000}"
-  # Max number of PUBLISH or PUBREL messages not yet responded
+  # Max number of PUBLISH messages not yet responded
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
+  flow-control:
+    # Enable/disable flow control MQTT 5 feature for server. If disabled, the server will not control the number of messages sent to subscribers by "Receive Maximum"
+    enabled: "${MQTT_FLOW_CONTROL_ENABLED:true}"
+    # Timeout to wait in case there is nothing to process regarding the flow control feature. The separate thread is responsible for sending delayed messages to subscribers.
+    # If no clients are affected by flow control restrictions, there is no need to continuously try to find and send such messages
+    timeout: "${MQTT_FLOW_CONTROL_TIMEOUT:1000}"
+    # Time in seconds to store delayed messages for subscribers. Delayed messages are those that can not be sent immediately due to flow control restrictions.
+    # Default is 10 minutes
+    ttl: "${MQTT_FLOW_CONTROL_TTL:600}"
+    # Max allowed queue length for delayed messages - publishing messages from broker to client when in-flight window is full
+    delayed-queue-max-size: "${MQTT_FLOW_CONTROL_DELAYED_QUEUE_MAX_SIZE:1000}"
   retransmission:
     # Enable/disable MQTT msg retransmission
     enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"

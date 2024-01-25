@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,6 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasResult;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.concurrent.TimeUnit;
@@ -159,7 +159,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private void processSendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, Consumer<MqttPublishMessage> processor) {
         long startTime = System.nanoTime();
         try {
-            processor.accept(mqttPubMsg);
+            boolean added = sessionCtx.addInFlightMsg(mqttPubMsg);
+            if (added) {
+                processor.accept(mqttPubMsg);
+            }
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to send PUBLISH msg to MQTT client.",
                     sessionCtx.getClientId(), sessionCtx.getSessionId(), e);
@@ -172,7 +175,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {
-        MqttReasonCode code = MqttReasonCodeResolver.success(sessionCtx);
+        MqttReasonCodes.PubRel code = MqttReasonCodeResolver.pubRelSuccess(sessionCtx);
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId, code);
         try {
             processor.accept(mqttPubRelMsg);

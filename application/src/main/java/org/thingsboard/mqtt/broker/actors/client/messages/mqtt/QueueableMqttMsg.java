@@ -20,7 +20,9 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
 import java.util.UUID;
 
 public abstract class QueueableMqttMsg extends SessionDependentMsg {
+
     public QueueableMqttMsg(UUID sessionId) {
         super(sessionId);
     }
+
 }

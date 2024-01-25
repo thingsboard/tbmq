@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 @AllArgsConstructor
 @Slf4j
 public class MqttPingHandler {
+
     private final MqttMessageGenerator mqttMessageGenerator;
 
     public void process(ClientSessionCtx ctx) {
@@ -33,4 +34,5 @@ public class MqttPingHandler {
         }
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPingRespMsg());
     }
+
 }

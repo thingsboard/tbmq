@@ -218,33 +218,33 @@ public class MsgPersistenceManagerImplTest {
 
     @Test
     public void testProcessPubAck() {
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.processPubAck(ctx, 1);
         verify(applicationPersistenceProcessor, times(1)).processPubAck(any(), eq(1));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.processPubAck(ctx, 1);
         verify(devicePersistenceProcessor, times(1)).processPubAck(any(), eq(1));
     }
 
     @Test
     public void testProcessPubRec() {
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.processPubRec(ctx, 1);
         verify(applicationPersistenceProcessor, times(1)).processPubRec(eq(ctx), eq(1));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.processPubRec(ctx, 1);
         verify(devicePersistenceProcessor, times(1)).processPubRec(any(), eq(1));
     }
 
     @Test
     public void testProcessPubComp() {
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.processPubComp(ctx, 1);
         verify(applicationPersistenceProcessor, times(1)).processPubComp(any(), eq(1));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.processPubComp(ctx, 1);
         verify(devicePersistenceProcessor, times(1)).processPubComp(any(), eq(1));
     }

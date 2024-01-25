@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.Set;
 
 public interface DeviceActorManager {
+
     void notifyClientConnected(ClientSessionCtx clientSessionCtx);
 
     void notifySubscribeToSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions);
@@ -34,5 +35,8 @@ public interface DeviceActorManager {
 
     void notifyPacketReceived(String clientId, int packetId);
 
+    void notifyPacketReceivedNoDelivery(String clientId, int packetId);
+
     void notifyPacketCompleted(String clientId, int packetId);
+
 }

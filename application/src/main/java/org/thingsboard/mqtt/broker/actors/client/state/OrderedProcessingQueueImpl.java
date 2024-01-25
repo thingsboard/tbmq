@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
@@ -23,10 +24,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-/*
-    Not thread-safe
+/**
+ * Not thread-safe
  */
 @RequiredArgsConstructor
+@Getter
 public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
 
     private final Queue<Integer> awaitingMsgIds = new LinkedList<>();
@@ -37,7 +39,7 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
     @Override
     public void addAwaiting(int msgId) throws FullMsgQueueException {
         if (awaitingMsgIds.size() >= maxAwaitingQueueSize) {
-            throw new FullMsgQueueException("Awaiting queue size is already " + awaitingMsgIds.size());
+            throw new FullMsgQueueException("In-flight queue size is already " + awaitingMsgIds.size());
         }
         awaitingMsgIds.add(msgId);
     }
@@ -45,45 +47,55 @@ public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
     @Override
     public List<Integer> finish(int msgId) throws FullMsgQueueException {
         if (awaitingMsgIds.isEmpty()) {
-            throw new FullMsgQueueException("Awaiting msgs queue is empty");
+            throw new FullMsgQueueException("In-flight messages queue is empty, nothing to acknowledge");
         }
         if (awaitingMsgIds.peek() != msgId) {
             finishedMsgIds.add(msgId);
             if (awaitingMsgIds.size() < finishedMsgIds.size()) {
-                throw new FullMsgQueueException("Awaiting msgs - " + awaitingMsgIds.size() + ", finished msgs - " + finishedMsgIds.size());
+                throw new FullMsgQueueException("In-flight messages - " + awaitingMsgIds.size() + ", finished messages - " + finishedMsgIds.size());
             }
             return Collections.emptyList();
         }
         awaitingMsgIds.poll();
-        LinkedList<Integer> orderedFinishedMsgs = getOrderedFinishedMsgs();
-        orderedFinishedMsgs.addFirst(msgId);
-        return orderedFinishedMsgs;
+        LinkedList<Integer> orderedFinishedMessages = getOrderedFinishedMessages();
+        orderedFinishedMessages.addFirst(msgId);
+        return orderedFinishedMessages;
     }
 
     @Override
     public List<Integer> finishAll(int msgId) throws FullMsgQueueException {
-        long numberOfAwaitingMsgs = awaitingMsgIds.stream().filter(i -> i == msgId).count();
-        LinkedList<Integer> orderedFinishedMsgs = new LinkedList<>();
-        for (int i = 0; i < numberOfAwaitingMsgs; i++) {
-            orderedFinishedMsgs.addAll(finish(msgId));
+        long numberOfAwaitingMessages = getCountOfAwaitingMessagesById(msgId);
+        LinkedList<Integer> orderedFinishedMessages = new LinkedList<>();
+        for (int i = 0; i < numberOfAwaitingMessages; i++) {
+            orderedFinishedMessages.addAll(finish(msgId));
         }
-        return orderedFinishedMsgs;
+        return orderedFinishedMessages;
     }
 
-    private LinkedList<Integer> getOrderedFinishedMsgs() {
-        LinkedList<Integer> orderedFinishedMsgs = new LinkedList<>();
+    private LinkedList<Integer> getOrderedFinishedMessages() {
+        LinkedList<Integer> orderedFinishedMessages = new LinkedList<>();
         boolean isSequenceBroken = false;
         while (!awaitingMsgIds.isEmpty() && !isSequenceBroken) {
-            Integer firstAwaitingMsg = awaitingMsgIds.peek();
+            int firstAwaitingMsg = awaitingMsgIds.peek();
             if (finishedMsgIds.contains(firstAwaitingMsg)) {
                 finishedMsgIds.remove(firstAwaitingMsg);
                 awaitingMsgIds.poll();
-                orderedFinishedMsgs.add(firstAwaitingMsg);
+                orderedFinishedMessages.add(firstAwaitingMsg);
             } else {
                 isSequenceBroken = true;
             }
         }
-
-        return orderedFinishedMsgs;
+        return orderedFinishedMessages;
     }
+
+    private long getCountOfAwaitingMessagesById(int msgId) {
+        int count = 0;
+        for (int i : awaitingMsgIds) {
+            if (i == msgId) {
+                count++;
+            }
+        }
+        return count;
+    }
+
 }

@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommandMsg;
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
@@ -102,6 +103,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Start processing persisted messages on Device connect", msg.getSessionCtx().getClientId());
+        }
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
         List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
@@ -114,6 +118,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
+        }
         if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
             return;
         }
@@ -224,8 +231,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
         if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
             }
             return;
         }
@@ -322,6 +329,14 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 log.warn("[{}] Failed to process packet received, packetId - {}", targetClientId, msg.getPacketId(), e);
             }
         }, MoreExecutors.directExecutor());
+    }
+
+    public void processPacketReceivedNoDelivery(PacketReceivedNoDeliveryEventMsg msg) {
+        SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
+        var targetClientId = getTargetClientId(packet);
+
+        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+        future.addListener(() -> inFlightPacketIds.remove(msg.getPacketId()), MoreExecutors.directExecutor());
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {

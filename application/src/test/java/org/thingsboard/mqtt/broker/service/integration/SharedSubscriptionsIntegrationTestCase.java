@@ -17,9 +17,12 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +54,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    static final int TOTAL_MSG_COUNT = 30;
+    static final int TOTAL_MSG_COUNT = 10;
 
     @Autowired
     private DbConnectionChecker dbConnectionChecker;
@@ -67,6 +70,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     public void clear() throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setCleanSession(true);
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         disconnectWithCleanSession(shareSubClient1, config);
         disconnectWithCleanSession(shareSubClient2, config);
     }
@@ -104,6 +108,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     }
 
     private void process(boolean cleanSession, MqttQoS subQos, MqttQoS pubQos) throws Exception {
+        String random = RandomStringUtils.randomAlphabetic(5);
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();
@@ -113,14 +118,14 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), cleanSession);
         shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), cleanSession);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/" + random, getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/" + random, getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(30, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), pubQos).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/" + random, Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), pubQos).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
@@ -147,8 +152,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
         shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/e", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/e", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
 
         shareSubClient1.disconnect();
         shareSubClient2.disconnect();
@@ -162,14 +167,15 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/e", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.error("The result of awaiting should be [false], actual is: [{}]", await);
+        Assert.assertFalse(await);
 
         //asserts
         assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
@@ -192,8 +198,8 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
         shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
 
         shareSubClient1.disconnect();
         shareSubClient2.disconnect();
@@ -207,24 +213,23 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/d", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.EXACTLY_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
 
         boolean await = receivedResponses.await(2, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        log.error("The result of awaiting should be [false], actual is: [{}]", await);
 
         //asserts
         assertEquals(0, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
 
         shareSubClient2.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/d", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
-        await = receivedResponses.await(5, TimeUnit.SECONDS);
-        log.error("The result of awaiting is: [{}]", await);
+        receivedResponses.await(5, TimeUnit.SECONDS);
 
         //asserts
         assertEquals(TOTAL_MSG_COUNT, shareSubClient1ReceivedMessages.get() + shareSubClient2ReceivedMessages.get());
@@ -247,14 +252,14 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         shareSubClient1 = getClient(getHandler(receivedResponses, shareSubClient1ReceivedMessages), false);
         shareSubClient2 = getClient(getHandler(receivedResponses, shareSubClient2ReceivedMessages), false);
 
-        shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-        shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient1.on("$share/g1/test/+/c", getHandler(receivedResponses, shareSubClient1ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        shareSubClient2.on("$share/g1/test/+/c", getHandler(receivedResponses, shareSubClient2ReceivedMessages), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/c", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
@@ -278,17 +283,17 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         AtomicInteger shareSubClient2ReceivedMessages = new AtomicInteger();
 
         //sub
-        MqttClient shareSubClient1 = getMqttSubClient(getHandler(shareSubClient1ReceivedMessages), "$share/g1/test/+");
+        MqttClient shareSubClient1 = getMqttSubClient(getHandler(shareSubClient1ReceivedMessages), "$share/g1/test/+/b");
 
         MqttHandler handler = getHandler(receivedResponses, shareSubClient2ReceivedMessages);
-        MqttClient shareSubClient2 = getMqttSubClient(handler, "$share/g1/test/+");
-        shareSubClient2.on("+/topic", handler, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+        MqttClient shareSubClient2 = getMqttSubClient(handler, "$share/g1/test/+/b");
+        shareSubClient2.on("+/topic/b", handler, MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
 
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/b", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
@@ -308,12 +313,12 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void given2SharedSubsGroupsWith2ClientsAndSameGroupButDifferentTopicFiltersAnd1NonSharedSub_whenPubMsgToSharedTopic_thenReceiveCorrectNumberOfMessages() throws Throwable {
-        process("$share/g1/+/topic", "$share/g1/test/+");
+        process("$share/g1/+/topic/a", "$share/g1/test/+/a");
     }
 
     @Test
     public void given2SharedSubsGroupsWith2ClientsAndSameTopicFilterAnd1NonSharedSub_whenPubMsgToSharedTopic_thenReceiveCorrectNumberOfMessages() throws Throwable {
-        process("$share/g1/test/+", "$share/g2/test/+");
+        process("$share/g1/test/+/a", "$share/g2/test/+/a");
     }
 
     @Test
@@ -351,7 +356,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
             pubClient.publish("my/test/data", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            Thread.sleep(500);
         }
 
         shareSubClient1.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
@@ -390,13 +395,13 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClient shareSubClient1Group2 = getMqttSubClient(getHandler(receivedResponses, shareSubClient1Group2ReceivedMessages), group2TopicFilter);
         MqttClient shareSubClient2Group2 = getMqttSubClient(getHandler(receivedResponses, shareSubClient2Group2ReceivedMessages), group2TopicFilter);
 
-        MqttClient shareSubClient3 = getMqttSubClient(getHandler(receivedResponses, subClientReceivedMessages), "test/+");
+        MqttClient shareSubClient3 = getMqttSubClient(getHandler(receivedResponses, subClientReceivedMessages), "test/+/a");
 
         //pub
         MqttClient pubClient = getMqttPubClient();
         for (int i = 0; i < TOTAL_MSG_COUNT; i++) {
-            pubClient.publish("test/topic", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_MOST_ONCE).get(30, TimeUnit.SECONDS);
-            Thread.sleep(50);
+            pubClient.publish("test/topic/a", Unpooled.wrappedBuffer(Integer.toString(i).getBytes(StandardCharsets.UTF_8)), MqttQoS.AT_LEAST_ONCE).get(30, TimeUnit.SECONDS);
+            Thread.sleep(500);
         }
 
         boolean await = receivedResponses.await(10, TimeUnit.SECONDS);
@@ -436,6 +441,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
     private MqttClient getClient(MqttHandler handler, boolean cleanSession) throws Exception {
         MqttClientConfig config = new MqttClientConfig();
         config.setCleanSession(cleanSession);
+        config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         MqttClient client = MqttClient.create(config, handler);
         client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         return client;

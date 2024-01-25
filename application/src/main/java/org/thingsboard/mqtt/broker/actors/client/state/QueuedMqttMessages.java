@@ -24,12 +24,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.Consumer;
 
-/*
-    not thread safe
+/**
+ * not thread safe
  */
 @Slf4j
 @RequiredArgsConstructor
 public class QueuedMqttMessages {
+
     private final Queue<QueueableMqttMsg> queuedMessages = new LinkedList<>();
 
     private final int maxQueueSize;
@@ -52,4 +53,5 @@ public class QueuedMqttMessages {
     public void clear() {
         queuedMessages.clear();
     }
+
 }

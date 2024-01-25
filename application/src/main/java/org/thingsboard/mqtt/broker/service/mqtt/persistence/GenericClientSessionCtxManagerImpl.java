@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -25,7 +26,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import javax.annotation.PreDestroy;
@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class GenericClientSessionCtxManagerImpl implements GenericClientSessionCtxManager {
+
     private final GenericClientSessionCtxService genericClientSessionCtxService;
     private final ClientSessionCtxService clientSessionCtxService;
     private final MqttMessageGenerator mqttMessageGenerator;
@@ -50,7 +51,7 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
         AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = clientSessionCtx.getAwaitingPubRelPacketsCtx();
         awaitingPubRelPacketsCtx.loadPersistedPackets(awaitingQoS2PacketIds);
 
-        MqttReasonCode code = MqttReasonCodeResolver.success(clientSessionCtx);
+        MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(clientSessionCtx);
         awaitingQoS2PacketIds.forEach(packetId ->
                 clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId, code)));
     }

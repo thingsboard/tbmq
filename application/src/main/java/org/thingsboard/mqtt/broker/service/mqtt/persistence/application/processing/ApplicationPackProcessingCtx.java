@@ -99,7 +99,7 @@ public class ApplicationPackProcessingCtx {
         return false;
     }
 
-    public boolean onPubRec(Integer packetId) {
+    public boolean onPubRec(Integer packetId, boolean sendPubRelMsg) {
         // TODO: think what to do if PUBREC came after PackContext timeout
         PersistedPublishMsg msg = publishPendingMsgMap.get(packetId);
         if (msg != null) {
@@ -108,7 +108,9 @@ public class ApplicationPackProcessingCtx {
             }
             stats.logPubRecLatency(processingStartTimeNanos, TimeUnit.NANOSECONDS);
 
-            pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
+            if (sendPubRelMsg) {
+                pubRelMsgCtx.addPubRelMsg(new PersistedPubRelMsg(packetId, msg.getPacketOffset()));
+            }
             onPublishMsgSuccess(packetId);
             return true;
         } else {

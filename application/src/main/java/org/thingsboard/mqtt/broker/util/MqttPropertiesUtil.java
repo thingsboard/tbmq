@@ -117,6 +117,11 @@ public class MqttPropertiesUtil {
         return property == null ? null : property.value();
     }
 
+    public static int getReceiveMaxValue(MqttProperties mqttProperties) {
+        MqttProperties.IntegerProperty property = getIntegerProperty(mqttProperties, BrokerConstants.RECEIVE_MAXIMUM_PROP_ID);
+        return property == null ? BrokerConstants.DEFAULT_RECEIVE_MAXIMUM : property.value();
+    }
+
     private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
         MqttProperties.MqttProperty property = properties.getProperty(propertyId);
         return property != null ? (MqttProperties.IntegerProperty) property : null;
@@ -206,6 +211,10 @@ public class MqttPropertiesUtil {
 
     public static void addResponseInfoToProps(MqttProperties properties, String responseInfo) {
         properties.add(new MqttProperties.StringProperty(BrokerConstants.RESPONSE_INFORMATION_PROP_ID, responseInfo));
+    }
+
+    public static void addReceiveMaxToProps(MqttProperties properties, int receiveMax) {
+        properties.add(new MqttProperties.IntegerProperty(BrokerConstants.RECEIVE_MAXIMUM_PROP_ID, receiveMax));
     }
 
     /**

@@ -33,7 +33,7 @@ import static org.mockito.Mockito.spy;
 @RunWith(MockitoJUnitRunner.class)
 public class OrderedProcessingQueueImplTest {
 
-    OrderedProcessingQueue orderedProcessingQueue;
+    OrderedProcessingQueueImpl orderedProcessingQueue;
 
     @Before
     public void setUp() {
@@ -50,9 +50,12 @@ public class OrderedProcessingQueueImplTest {
     }
 
     @Test
-    public void givenNonEmptyQueue_whenFinishMsgs_thenReturnExpectedResult() {
+    public void givenEmptyAwaitingQueue_whenTryAcknowledgeMsg_thenThrowException() {
         assertThrows(FullMsgQueueException.class, () -> orderedProcessingQueue.finish(0));
+    }
 
+    @Test
+    public void givenNonEmptyQueue_whenFinishMessages_thenReturnExpectedResult() {
         orderedProcessingQueue.addAwaiting(1);
         orderedProcessingQueue.addAwaiting(2);
         orderedProcessingQueue.addAwaiting(3);
@@ -67,6 +70,9 @@ public class OrderedProcessingQueueImplTest {
 
         finished = orderedProcessingQueue.finish(1);
         assertEquals(List.of(1, 2, 3), finished);
+
+        assertTrue(orderedProcessingQueue.getAwaitingMsgIds().isEmpty());
+        assertEquals(2, orderedProcessingQueue.getFinishedMsgIds().size()); // msgIds = 4,5
     }
 
     @Test
@@ -82,10 +88,12 @@ public class OrderedProcessingQueueImplTest {
         orderedProcessingQueue.addAwaiting(3);
         finished = orderedProcessingQueue.finish(3);
         assertEquals(List.of(3), finished);
+
+        assertQueuesAreEmpty();
     }
 
     @Test
-    public void givenNonEmptyQueue_whenFinishAllMsgs_thenReturnResult() {
+    public void givenNonEmptyQueue_whenFinishAllMessages_thenReturnExpectedResult() {
         orderedProcessingQueue.addAwaiting(1);
         orderedProcessingQueue.addAwaiting(1);
         orderedProcessingQueue.addAwaiting(2);
@@ -101,5 +109,12 @@ public class OrderedProcessingQueueImplTest {
 
         finished = orderedProcessingQueue.finishAll(2);
         assertEquals(List.of(2, 2, 3, 3), finished);
+
+        assertQueuesAreEmpty();
+    }
+
+    private void assertQueuesAreEmpty() {
+        assertTrue(orderedProcessingQueue.getAwaitingMsgIds().isEmpty());
+        assertTrue(orderedProcessingQueue.getFinishedMsgIds().isEmpty());
     }
 }

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCode;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
@@ -53,7 +53,7 @@ public class MqttUnsubscribeHandler {
             log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
         }
 
-        List<MqttReasonCode> codes = msg.getTopics().stream().map(s -> MqttReasonCodeResolver.success(ctx)).collect(Collectors.toList());
+        List<MqttReasonCodes.UnsubAck> codes = msg.getTopics().stream().map(s -> MqttReasonCodeResolver.unsubAckSuccess(ctx)).collect(Collectors.toList());
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), codes);
         clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(),
                 CallbackUtil.createCallback(
