@@ -19,14 +19,14 @@ import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { BehaviorSubject, Observable, ReplaySubject, Subscription } from 'rxjs';
+import { Observable, ReplaySubject } from 'rxjs';
 import { map, share, tap } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection } from '@shared/models/ws-client.model';
+import { Connection, ConnectionShortInfo } from '@shared/models/ws-client.model';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { isDefinedAndNotNull } from "@core/utils";
-import { MatDialog } from "@angular/material/dialog";
+import { isDefinedAndNotNull } from '@core/utils';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'tb-show-connections-popover',
@@ -41,10 +41,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   @Input()
   popoverComponent: TbPopoverComponent;
 
-  // private notificationSubscriber: NotificationSubscriber;
-  // private notificationCountSubscriber: Subscription;
-
-  connections$: Observable<Connection[]>;
+  connections$: Observable<ConnectionShortInfo[]>;
   loadConnection = true;
   connectionsTotal: number;
 
@@ -58,13 +55,12 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   }
 
   ngOnInit() {
-    // this.notificationSubscriber = NotificationSubscriber.createNotificationsSubscription(this.notificationWsService, this.zone, 6);
     this.connections$ = this.wsClientService.getConnections().pipe(
       map(res => {
-        if (res.data?.length) {
-          this.connectionsTotal = res.data.length;
+        if (res.length) {
+          this.connectionsTotal = res.length;
           this.loadConnection = true;
-          return res.data;
+          return res;
         }
         return [];
       }),
@@ -73,14 +69,10 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
       }),
       tap(() => setTimeout(() => this.cd.markForCheck()))
     );
-    // this.notificationCountSubscriber = this.notificationSubscriber.notificationCount$.subscribe(value => this.counter.next(value));
-    // this.notificationSubscriber.subscribe();
   }
 
   ngOnDestroy() {
     super.ngOnDestroy();
-    // this.notificationCountSubscriber.unsubscribe();
-    // this.notificationSubscriber.unsubscribe();
     this.onClose();
   }
 

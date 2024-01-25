@@ -14,46 +14,20 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { UntypedFormBuilder } from '@angular/forms';
+import { Component } from '@angular/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import { Connection } from '@shared/models/ws-client.model';
-import { tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'tb-connections',
   templateUrl: './connections.component.html',
   styleUrls: ['./connections.component.scss']
 })
-export class ConnectionsComponent implements OnInit {
+export class ConnectionsComponent {
 
-  connection: Connection;
+  connection: Observable<Connection> = this.wsClientService.selectedConnection$;
 
-  constructor(protected store: Store<AppState>,
-              private wsClientService: WsClientService,
-              public fb: UntypedFormBuilder) {
-  }
-
-  ngOnInit() {
-    this.wsClientService.getConnections().pipe(
-      tap(res => {
-        if (res.data?.length) {
-          const targetConnection = res.data[0];
-          this.wsClientService.getConnection(targetConnection.id).subscribe(
-            connection => {
-              this.wsClientService.selectConnection(connection);
-            }
-          )
-        }
-      })
-    ).subscribe();
-
-    this.wsClientService.selectedConnection$.subscribe(
-      res => {
-        this.connection = res;
-      }
-    )
+  constructor(private wsClientService: WsClientService) {
   }
 }

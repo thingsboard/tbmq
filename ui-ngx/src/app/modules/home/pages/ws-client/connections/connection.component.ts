@@ -71,6 +71,16 @@ export class ConnectionComponent implements OnInit {
     this.wsClientService.selectConnection(this.connection);
   }
 
+  setStyle(): {[key: string]: any} {
+    return {
+      background: this.isConnectionConnected() ? '#008A00' : 'rgba(0,0,0,0.2)'
+    };
+  }
+
+  private isConnectionConnected() {
+    return this.wsClientService.isConnectionConnected(this.connection.id);
+  }
+
   private configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
     const actions: Array<CellActionDescriptor<Connection>> = [];
     actions.push(

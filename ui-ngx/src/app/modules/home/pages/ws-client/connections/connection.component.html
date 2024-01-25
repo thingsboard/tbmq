@@ -22,8 +22,8 @@
            (mouseenter)="onCommentMouseEnter()"
            (mouseleave)="onCommentMouseLeave()">
       <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-        <div class="status" [ngStyle]="{background: connection.connected ? '#008A00' : 'rgba(0,0,0,0.2)'}"></div>
-        <span class="label">{{connection.name}}</span>
+        <div class="status" [ngStyle]="setStyle()"></div>
+        <span class="label">{{ connection.name }}</span>
       </section>
       <div fxFlex fxLayout="row" fxLayoutAlign="end">
         <div *ngFor="let actionDescriptor of hiddenActions"

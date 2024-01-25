@@ -14,23 +14,9 @@
 /// limitations under the License.
 ///
 
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  NgZone,
-  OnDestroy,
-  Renderer2,
-  ViewContainerRef
-} from '@angular/core';
-import { BehaviorSubject, ReplaySubject, Subscription } from 'rxjs';
-import { distinctUntilChanged, map, share, tap } from 'rxjs/operators';
+import { ChangeDetectionStrategy, Component, Renderer2, ViewContainerRef } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
-import { select, Store } from '@ngrx/store';
-import { selectIsAuthenticated } from '@core/auth/auth.selectors';
-import { AppState } from '@core/core.state';
-import { WsClientService } from '@core/http/ws-client.service';
 import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
 
 @Component({
@@ -38,31 +24,17 @@ import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/conn
   templateUrl: './select-connection.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SelectConnectionComponent implements OnDestroy {
+export class SelectConnectionComponent {
 
-  // private notificationSubscriber: NotificationSubscriber;
-  // private notificationCountSubscriber: Subscription;
-  // private countSubject = new BehaviorSubject(0);
-
-  constructor(
-    private wsClientService: WsClientService,
-    private zone: NgZone,
-    private cd: ChangeDetectorRef,
-    private popoverService: TbPopoverService,
-    private renderer: Renderer2,
-    private viewContainerRef: ViewContainerRef) {
-    this.initSubscription();
-  }
-
-  ngOnDestroy() {
-    this.unsubscribeSubscription();
+  constructor(private popoverService: TbPopoverService,
+              private renderer: Renderer2,
+              private viewContainerRef: ViewContainerRef) {
   }
 
   showConnections($event: Event, createVersionButton: MatButton) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.unsubscribeSubscription();
     const trigger = createVersionButton._elementRef.nativeElement;
     if (this.popoverService.hasPopover(trigger)) {
       this.popoverService.hidePopover(trigger);
@@ -72,23 +44,12 @@ export class SelectConnectionComponent implements OnDestroy {
         {
           onClose: () => {
             showNotificationPopover.hide();
-            this.initSubscription();
           }
         },
         {maxHeight: '90vh', height: '324px', padding: '10px'},
-        {width: '400px', minWidth: '100%', maxWidth: '100%'},
+        {width: '500px', minWidth: '100%', maxWidth: '100%'},
         {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
       showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
     }
-  }
-
-  private initSubscription() {
-    // this.notificationSubscriber = NotificationSubscriber.createNotificationCountSubscription(this.notificationWsService, this.zone);
-    // this.notificationSubscriber.subscribe();
-  }
-
-  private unsubscribeSubscription() {
-    // this.notificationCountSubscriber.unsubscribe();
-    // this.notificationSubscriber.unsubscribe();
   }
 }
