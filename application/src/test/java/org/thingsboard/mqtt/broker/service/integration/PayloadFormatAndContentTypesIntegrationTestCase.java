@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
@@ -71,6 +72,8 @@ public class PayloadFormatAndContentTypesIntegrationTestCase extends AbstractPay
         TestUtils.disconnectAndCloseClient(subClient);
 
         retainedMsgListenerService.clearRetainedMsgAndPersist(TOPIC);
+
+        Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> retainedMsgListenerService.getRetainedMsgForTopic(TOPIC) == null);
 
         assertTrue(receivedMsg.get());
     }
