@@ -143,10 +143,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (this.connection) {
       this.title = 'ws-client.connections.edit';
       this.actionButtonLabel = 'action.save';
-      if (isDefinedAndNotNull(this.connection.existingCredentials)) {
+      if (isDefinedAndNotNull(this.connection.clientCredentialsId)) {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.EXISTING;
       } else {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.CUSTOM;
+        this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.CUSTOM);
       }
     }
   }
@@ -160,7 +161,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       clientId: [{value: entity ? entity.clientId : clientIdRandom(), disabled: true}, [Validators.required]],
       username: [{value: entity ? entity.username : clientUserNameRandom(), disabled: true}, []],
       password: [null, []],
-      existingCredentials: [null, []]
+      clientCredentials: [null, []],
+      clientCredentialsId: [null, []]
     });
   }
 
@@ -221,17 +223,19 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('username').patchValue(clientUserNameRandom());
       this.connectionFormGroup.get('username').disable();
       this.connectionFormGroup.get('password').patchValue(null);
-      this.connectionFormGroup.get('existingCredentials').patchValue(null);
-      this.connectionFormGroup.get('existingCredentials').clearValidators();
+      this.connectionFormGroup.get('clientCredentials').patchValue(null);
+      this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
+      this.connectionFormGroup.get('clientCredentials').clearValidators();
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
-      this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
+      this.connectionFormGroup.get('clientId').patchValue(this.connection?.clientId ? this.connection.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
-      this.connectionFormGroup.get('username').patchValue(null);
+      this.connectionFormGroup.get('username').patchValue(this.connection?.username ? this.connection.username : null);
       this.connectionFormGroup.get('password').patchValue(null);
-      this.connectionFormGroup.get('existingCredentials').patchValue(null);
-      this.connectionFormGroup.get('existingCredentials').clearValidators();
+      this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
+      this.connectionFormGroup.get('clientCredentials').patchValue(null);
+      this.connectionFormGroup.get('clientCredentials').clearValidators();
     }
     if (value === WsCredentialsGeneratorType.EXISTING) {
       this.connectionFormGroup.get('credentialsName').enable();
@@ -240,7 +244,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('username').patchValue(null);
       this.connectionFormGroup.get('username').disable();
       this.connectionFormGroup.get('password').patchValue(null);
-      this.connectionFormGroup.get('existingCredentials').setValidators(Validators.required);
+      this.connectionFormGroup.get('clientCredentials').setValidators(Validators.required);
     }
     this.connectionFormGroup.updateValueAndValidity();
   }
@@ -276,11 +280,28 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   save(): void {
     if (this.allValid()) {
-      this.createClientCredentials().subscribe(
-        (entity) => {
-          return this.dialogRef.close(entity);
-        }
-      );
+      if (this.credentialsGeneratorType === WsCredentialsGeneratorType.AUTO) {
+        const name = this.connectionFormGroup.get('credentialsName').value;
+        const clientId = this.connectionFormGroup.get('clientId').value;
+        const username = this.connectionFormGroup.get('username').value;
+        const newCredentials = new BasicClientCredentials(name, clientId, username);
+        this.clientCredentialsService.saveClientCredentials(newCredentials).subscribe(
+          credentials => {
+            this.connectionFormGroup.get('clientCredentials').patchValue(credentials);
+            this.createClientCredentials().subscribe(
+              (entity) => {
+                return this.dialogRef.close(entity);
+              }
+            );
+          }
+        )
+      } else {
+        this.createClientCredentials().subscribe(
+          (entity) => {
+            return this.dialogRef.close(entity);
+          }
+        );
+      }
     }
   }
 
@@ -304,6 +325,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   private transformValues(entity: Connection): Connection {
+    entity.clientCredentialsId = isDefinedAndNotNull(entity.clientCredentials) ? entity.clientCredentials.id : null;
     entity.keepalive = convertTimeUnits(entity.keepalive, entity.keepaliveUnit, TimeUnitType.SECONDS);
     entity.connectTimeout = convertTimeUnits(entity.connectTimeout, entity.connectTimeoutUnit, TimeUnitType.MILLISECONDS);
     entity.reconnectPeriod = convertTimeUnits(entity.reconnectPeriod, entity.reconnectPeriodUnit, TimeUnitType.MILLISECONDS);
@@ -313,6 +335,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       entity.will.properties.messageExpiryInterval = convertTimeUnits(entity.will.properties.messageExpiryInterval, entity.will.properties.messageExpiryIntervalUnit, TimeUnitType.SECONDS);
       entity.will.properties.willDelayInterval = convertTimeUnits(entity.will.properties.willDelayInterval, entity.will.properties.willDelayIntervalUnit, TimeUnitType.SECONDS);
     }
+    delete entity.clientCredentials;
     return entity;
   }
 
@@ -350,12 +373,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       }
       this.connectionFormGroup.get('password').updateValueAndValidity();
     } else {
-      this.connectionFormGroup.patchValue({
-        clientId: clientIdRandom(),
-        username: clientUserNameRandom(),
-        password: null
-      });
-      if (this.displayPasswordWarning) this.displayPasswordWarning = false;
+      this.displayPasswordWarning = false;
       this.connectionFormGroup.get('password').clearValidators();
       this.connectionFormGroup.get('password').updateValueAndValidity();
     }
@@ -383,5 +401,28 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   private generateWebSocketClientName(): string {
     return 'WebSocket Connection ' + (this.data.connectionsTotal + 1)
+  }
+}
+
+
+export class BasicClientCredentials {
+  credentialsType = CredentialsType.MQTT_BASIC;
+  clientType = ClientType.APPLICATION;
+  name: string;
+  credentialsValue: any = {};
+
+  constructor (name: string,
+               clientId: string,
+               username: string) {
+    this.name = name;
+    this.credentialsValue = JSON.stringify({
+      clientId,
+      userName: username,
+      password: null,
+      authRules: {
+        pubAuthRulePatterns: [".*"],
+        subAuthRulePatterns: [".*"]
+      }
+    });
   }
 }

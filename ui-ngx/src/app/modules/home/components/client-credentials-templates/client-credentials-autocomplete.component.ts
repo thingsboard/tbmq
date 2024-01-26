@@ -181,11 +181,14 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
           this.clientCredentialsChanged.emit(credentials);
         }
       );
-    } else if (isDefinedAndNotNull(this.entity.existingCredentials)) {
+    } else if (isDefinedAndNotNull(this.entity?.clientCredentialsId)) {
       this.modelValue = null;
-      this.selectCredentialsFormGroup.get('clientCredentials').patchValue(this.entity.existingCredentials, {emitEvent: false});
-      // @ts-ignore
-      this.clientCredentialsChanged.emit(this.entity.existingCredentials);
+      this.clientCredentialsService.getClientCredentials(this.entity.clientCredentialsId).subscribe(
+        (credentials) => {
+          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
+          this.clientCredentialsChanged.emit(credentials);
+        }
+      );
     } else {
       this.modelValue = null;
       this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null, {emitEvent: false});
@@ -215,7 +218,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     if (value?.id) {
       this.clientCredentialsService.getClientCredentials(value.id).subscribe(
         (credentials) => {
-          this.propagateChange(credentials.id);
+          this.propagateChange(credentials);
           this.clientCredentialsChanged.emit(credentials);
         }
       );

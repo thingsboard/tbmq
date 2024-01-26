@@ -44,8 +44,8 @@
           <input matInput formControlName="name">
         </mat-form-field>
 
-        <section fxLayout="column" fxLayoutGap="16px">
-          <tb-toggle-header #addressProtocol
+        <section fxLayout="column" fxLayoutGap="8px">
+          <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                             (valueChange)="onAddressProtocolChange($event)"
                             [value]="WsAddressProtocolType.WS"
                             name="addressProtocol"
@@ -68,8 +68,9 @@
         </section>
 
         <section fxLayout="column">
-          <div style="margin: 8px 0 16px 0">
+          <div fxLayout="column" style="margin: 8px 0 8px 0">
             <tb-toggle-header #wsCredentialsGeneratorType
+                              [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                               (valueChange)="onCredentialsGeneratorChange($event)"
                               [value]="credentialsGeneratorType"
                               name="CredentialsGeneratorType"
@@ -136,7 +137,7 @@
             <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.EXISTING">
               <section style="margin-bottom: 16px">
                 <tb-client-credentials-autocomplete
-                  formControlName="existingCredentials"
+                  formControlName="clientCredentials"
                   subscriptSizing="dynamic"
                   [entity]="connection"
                   (ngModelChange)="clientCredentialsChanged($event)"
@@ -163,69 +164,6 @@
             </ng-template>
           </ng-container>
         </section>
-
-        <!--<fieldset class="fields-group" fxLayout="column">
-          <legend class="group-title" translate>mqtt-client-session.client-info</legend>
-          <div fxLayout="column">
-            <mat-form-field class="mat-block">
-              <mat-label translate>ws-client.connections.client-id</mat-label>
-              <input matInput formControlName="clientId">
-              <mat-error *ngIf="connectionFormGroup.get('clientId').hasError('required')">
-                {{ 'ws-client.connections.client-id-required' | translate }}
-              </mat-error>
-            </mat-form-field>
-            <mat-form-field class="mat-block">
-              <mat-label translate>ws-client.connections.username</mat-label>
-              <input matInput formControlName="username">
-            </mat-form-field>
-            <mat-form-field class="mat-block">
-              <mat-label translate>ws-client.connections.password</mat-label>
-              <input matInput autocomplete="new-password" formControlName="password" type="password">
-              <mat-icon [fxShow]="displayPasswordWarning" matSuffix style="color: #ff9a00" [matTooltip]="'ws-client.connections.password-warning' | translate">
-                warning
-              </mat-icon>
-            </mat-form-field>
-            <section class="slider">
-              <mat-slide-toggle (change)="useExistingCredentials = !useExistingCredentials">
-                {{ 'ws-client.connections.set-from-existing-credentials' | translate }}
-              </mat-slide-toggle>
-            </section>
-            <section fxFlex *ngIf="useExistingCredentials">
-              <tb-client-credentials-autocomplete
-                formControlName="autocomplete"
-                subscriptSizing="dynamic"
-                [ngModel]="selectedExistingCredentials"
-                (ngModelChange)="clientCredentialsChanged($event)"
-                [editProfileEnabled]="false">
-              </tb-client-credentials-autocomplete>
-            </section>
-          </div>
-        </fieldset>-->
-        <!--<fieldset class="fields-group" fxLayout="column">
-          <legend class="group-title" translate>ws-client.connections.address</legend>
-          <section fxFlex fxLayout="row" fxLayoutGap="8px">
-            <mat-form-field fxFlex class="mat-block">
-              <mat-label translate>ws-client.connections.protocol</mat-label>
-              <mat-select formControlName="protocol">
-                <mat-option *ngFor="let protocol of addressProtocols" [value]="protocol.value">
-                  {{ protocol.value }}
-                </mat-option>
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field fxFlex class="mat-block">
-              <mat-label translate>ws-client.connections.host</mat-label>
-              <input matInput formControlName="host">
-            </mat-form-field>
-            <mat-form-field fxFlex class="mat-block">
-              <mat-label translate>ws-client.connections.port</mat-label>
-              <input matInput formControlName="port">
-            </mat-form-field>
-            <mat-form-field fxFlex class="mat-block">
-              <mat-label translate>ws-client.connections.path</mat-label>
-              <input matInput formControlName="path">
-            </mat-form-field>
-          </section>
-        </fieldset>-->
       </form>
     </mat-step>
     <mat-step [stepControl]="connectionAdvancedFormGroup" [optional]="true">
