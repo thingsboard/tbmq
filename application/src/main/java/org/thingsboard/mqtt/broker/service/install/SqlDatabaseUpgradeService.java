@@ -99,6 +99,8 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1002001)) {
+                        Path schemaUpdateFile = Paths.get(installScripts.getUpgradeDataDir(), "upgrade", "1.2.2", SCHEMA_UPDATE_SQL);
+                        loadSql(schemaUpdateFile, conn);
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN response_topic varchar(255);");
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN correlation_data bytea;");
