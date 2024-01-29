@@ -61,7 +61,9 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     if (isOldSchema(conn, 1000000)) {
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN msg_expiry_interval int;"); //NOSONAR, ignoring because method used to execute thingsboard_mqtt_broker database upgrade script
-
+                        } catch (Exception ignored) {
+                        }
+                        try {
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1001000;");
                         } catch (Exception ignored) {
                         }
@@ -87,7 +89,13 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     if (isOldSchema(conn, 1002000)) {
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN payload_format_indicator int;");
+                        } catch (Exception ignored) {
+                        }
+                        try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN content_type varchar(255);");
+                        } catch (Exception ignored) {
+                        }
+                        try {
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002001;");
                         } catch (Exception ignored) {
                         }
@@ -99,11 +107,16 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1002001)) {
-                        Path schemaUpdateFile = Paths.get(installScripts.getUpgradeDataDir(), "upgrade", "1.2.2", SCHEMA_UPDATE_SQL);
-                        loadSql(schemaUpdateFile, conn);
+                        runSchemaUpdateScript(conn, "1.2.2");
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN response_topic varchar(255);");
+                        } catch (Exception ignored) {
+                        }
+                        try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN correlation_data bytea;");
+                        } catch (Exception ignored) {
+                        }
+                        try {
                             conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002002;");
                         } catch (Exception ignored) {
                         }
@@ -117,7 +130,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
     }
 
     private void runSchemaUpdateScript(Connection connection, String version) throws Exception {
-        Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
+        Path schemaUpdateFile = Paths.get(installScripts.getUpgradeDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
         loadSql(schemaUpdateFile, connection);
     }
 
