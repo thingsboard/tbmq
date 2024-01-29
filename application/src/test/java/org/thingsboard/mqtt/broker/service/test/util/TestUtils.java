@@ -34,16 +34,14 @@ public class TestUtils {
 
     private static final List<String> ALLOW_ALL_LIST = List.of(".*");
 
-    public static void clearPersistedClient(MqttClient persistedClient, MqttClient newClientToClear) throws Exception {
+    public static void clearPersistedClient(MqttClient persistedClient, MqttConnectOptions connectOptions) throws Exception {
         if (persistedClient.isConnected()) {
             persistedClient.disconnect();
-            persistedClient.close();
         }
-        MqttConnectOptions connectOptions = new MqttConnectOptions();
         connectOptions.setCleanSession(true);
-        newClientToClear.connect(connectOptions);
-        newClientToClear.disconnect();
-        newClientToClear.close();
+        persistedClient.connect(connectOptions);
+        persistedClient.disconnect();
+        persistedClient.close();
     }
 
     public static void clearPersistedClient(org.eclipse.paho.mqttv5.client.MqttClient persistedClient, MqttConnectionOptions options) throws Exception {

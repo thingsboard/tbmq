@@ -83,14 +83,17 @@ public class FlowControlServiceImpl implements FlowControlService {
                         sleep();
                     }
                 } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        log.info("Flow control processing was interrupted", e);
+                        break;
+                    }
                     if (!stopped) {
                         log.error("Failed to process msg", e);
                         try {
                             sleep();
                         } catch (InterruptedException e2) {
-                            if (log.isDebugEnabled()) {
-                                log.debug("Failed to wait until the server has capacity to handle new requests", e2);
-                            }
+                            log.info("Thread was interrupted!", e2);
+                            break;
                         }
                     }
                 }
