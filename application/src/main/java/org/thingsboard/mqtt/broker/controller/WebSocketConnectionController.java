@@ -18,12 +18,17 @@ package org.thingsboard.mqtt.broker.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 
@@ -42,6 +47,53 @@ public class WebSocketConnectionController extends BaseController {
         checkNotNull(connection);
         try {
             return checkNotNull(webSocketConnectionService.saveWebSocketConnection(connection));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<WebSocketConnectionDto> getWebSocketConnections(@RequestParam int pageSize,
+                                                                    @RequestParam int page,
+                                                                    @RequestParam(required = false) String textSearch,
+                                                                    @RequestParam(required = false) String sortProperty,
+                                                                    @RequestParam(required = false) String sortOrder) throws ThingsboardException {
+        try {
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+            return checkNotNull(webSocketConnectionService.getWebSocketConnections(pageLink));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    public WebSocketConnection getWebSocketConnectionById(@PathVariable String id) throws ThingsboardException {
+        try {
+            return checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", params = {"name"}, method = RequestMethod.GET)
+    public WebSocketConnection getWebSocketConnectionByName(@RequestParam String name) throws ThingsboardException {
+        checkParameter("name", name);
+        try {
+            return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(name));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    public void deleteWebSocketConnection(@PathVariable String id) throws ThingsboardException {
+        try {
+            webSocketConnectionService.deleteWebSocketConnection(toUUID(id));
         } catch (Exception e) {
             throw handleException(e);
         }

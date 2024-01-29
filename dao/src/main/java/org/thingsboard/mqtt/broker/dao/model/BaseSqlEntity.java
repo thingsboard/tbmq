@@ -25,6 +25,7 @@ import java.util.UUID;
 @Data
 @MappedSuperclass
 public abstract class BaseSqlEntity<D> implements BaseEntity<D> {
+
     @Id
     @Column(name = ModelConstants.ID_PROPERTY, columnDefinition = "uuid")
     protected UUID id;
@@ -38,4 +39,5 @@ public abstract class BaseSqlEntity<D> implements BaseEntity<D> {
             this.createdTime = createdTime;
         }
     }
+
 }

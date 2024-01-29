@@ -23,9 +23,8 @@ public class WebSocketSubscriptionConfiguration {
 
     private String topicFilter;
     private int qos;
-    private String color; // do we need this here ???
+    private String color;
 
-    private String topicAlias;
     private SubscriptionOptions options;
 
 }

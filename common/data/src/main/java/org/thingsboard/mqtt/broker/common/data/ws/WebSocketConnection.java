@@ -16,16 +16,23 @@
 package org.thingsboard.mqtt.broker.common.data.ws;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import javax.validation.Valid;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.UUID;
+
+import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditionalInfo.mapper;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Slf4j
 public class WebSocketConnection extends SearchTextBased {
 
     @NoXss
@@ -39,6 +46,33 @@ public class WebSocketConnection extends SearchTextBased {
     @Override
     public String getSearchText() {
         return getName();
+    }
+
+    public WebSocketConnectionConfiguration getConfiguration() {
+        if (configuration != null) {
+            return configuration;
+        } else {
+            if (configurationBytes != null) {
+                try {
+                    configuration = mapper.readValue(new ByteArrayInputStream(configurationBytes), WebSocketConnectionConfiguration.class);
+                } catch (IOException e) {
+                    log.warn("Can't deserialize WebSocket configuration: ", e);
+                    return null;
+                }
+                return configuration;
+            } else {
+                return null;
+            }
+        }
+    }
+
+    public void setConfiguration(WebSocketConnectionConfiguration config) {
+        this.configuration = config;
+        try {
+            this.configurationBytes = config != null ? mapper.writeValueAsBytes(config) : null;
+        } catch (JsonProcessingException e) {
+            log.warn("Can't serialize WebSocket configuration: ", e);
+        }
     }
 
 }

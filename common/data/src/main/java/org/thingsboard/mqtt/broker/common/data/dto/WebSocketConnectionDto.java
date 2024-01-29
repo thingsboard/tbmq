@@ -13,17 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.ws;
+package org.thingsboard.mqtt.broker.common.data.dto;
 
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
-import org.thingsboard.mqtt.broker.dao.Dao;
 
-public interface WebSocketConnectionDao extends Dao<WebSocketConnection> {
+import java.util.UUID;
 
-    PageData<WebSocketConnection> findAll(PageLink pageLink);
+@Data
+@AllArgsConstructor
+public class WebSocketConnectionDto implements HasId {
 
-    WebSocketConnection findByName(String name);
+    private UUID id;
+    private String name;
+    private String clientId;
+
+    public static WebSocketConnectionDto fromWebSocketConnection(WebSocketConnection connection) {
+        return new WebSocketConnectionDto(
+                connection.getId(),
+                connection.getName(),
+                connection.getConfiguration().getClientId()
+        );
+    }
 
 }

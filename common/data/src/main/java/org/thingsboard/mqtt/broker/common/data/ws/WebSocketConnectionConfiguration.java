@@ -28,24 +28,25 @@ public class WebSocketConnectionConfiguration {
 
     private UUID clientCredentialsId;
     private String clientId;
-    private String userName;
+    private String username;
     private String password;
 
     private boolean cleanStart;
     private int keepAlive;
-    private TimeUnit keepAliveUnits;
-    private int connectionTimeout;
-    private TimeUnit connectionTimeoutUnits;
+    private TimeUnit keepAliveUnit;
+    private int connectTimeout;
+    private TimeUnit connectTimeoutUnit;
     private int reconnectPeriod;
-    private TimeUnit reconnectPeriodUnits;
-    private String mqttVersion;
+    private TimeUnit reconnectPeriodUnit;
+    private int mqttVersion;
     private int sessionExpiryInterval;
-    private TimeUnit sessionExpiryIntervalUnits;
+    private TimeUnit sessionExpiryIntervalUnit;
     private int maxPacketSize;
-    private SizeUnit maxPacketSizeUnits;
+    private SizeUnit maxPacketSizeUnit;
     private int topicAliasMax;
     private int receiveMax;
     private boolean requestResponseInfo;
+    private boolean requestProblemInfo;
 
     private LastWillMsg lastWillMsg;
 

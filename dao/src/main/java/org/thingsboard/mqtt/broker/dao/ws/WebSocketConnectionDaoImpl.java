@@ -18,10 +18,14 @@ package org.thingsboard.mqtt.broker.dao.ws;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
+import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.WebSocketConnectionEntity;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Component
@@ -30,14 +34,28 @@ public class WebSocketConnectionDaoImpl
         extends AbstractSearchTextDao<WebSocketConnectionEntity, WebSocketConnection>
         implements WebSocketConnectionDao {
 
+    private final WebSocketConnectionRepository webSocketConnectionRepository;
 
     @Override
     protected Class<WebSocketConnectionEntity> getEntityClass() {
-        return null;
+        return WebSocketConnectionEntity.class;
     }
 
     @Override
     protected CrudRepository<WebSocketConnectionEntity, UUID> getCrudRepository() {
-        return null;
+        return webSocketConnectionRepository;
     }
+
+    @Override
+    public PageData<WebSocketConnection> findAll(PageLink pageLink) {
+        return DaoUtil.toPageData(webSocketConnectionRepository.findAll(
+                Objects.toString(pageLink.getTextSearch(), ""),
+                DaoUtil.toPageable(pageLink)));
+    }
+
+    @Override
+    public WebSocketConnection findByName(String name) {
+        return DaoUtil.getData(webSocketConnectionRepository.findByName(name));
+    }
+
 }

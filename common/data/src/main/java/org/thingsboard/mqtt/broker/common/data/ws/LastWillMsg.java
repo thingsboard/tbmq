@@ -30,9 +30,9 @@ public class LastWillMsg {
     private boolean payloadFormatIndicator;
     private String contentType;
     private int willDelayInterval;
-    private TimeUnit willDelayIntervalUnits;
+    private TimeUnit willDelayIntervalUnit;
     private int msgExpiryInterval;
-    private TimeUnit msgExpiryIntervalUnits;
+    private TimeUnit msgExpiryIntervalUnit;
     private String responseTopic;
     private String correlationData;
 

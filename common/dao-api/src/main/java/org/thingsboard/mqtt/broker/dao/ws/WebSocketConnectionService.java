@@ -15,13 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.dao.ws;
 
+import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface WebSocketConnectionService {
 
     WebSocketConnection saveWebSocketConnection(WebSocketConnection connection);
+
+    PageData<WebSocketConnectionDto> getWebSocketConnections(PageLink pageLink);
+
+    Optional<WebSocketConnection> getWebSocketConnectionById(UUID id);
+
+    WebSocketConnection findWebSocketConnectionByName(String name);
 
     boolean deleteWebSocketConnection(UUID id);
 
