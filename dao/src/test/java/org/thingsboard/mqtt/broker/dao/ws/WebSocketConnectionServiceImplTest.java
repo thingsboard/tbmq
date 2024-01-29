@@ -75,6 +75,14 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
     }
 
     @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnection_whenExecuteSaveTwoTimes_thenGetConstraintViolationException() {
+        WebSocketConnection webSocketConnection = getWebSocketConnection();
+        webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
+
+        webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
+    }
+
+    @Test(expected = DataValidationException.class)
     public void givenWebSocketConnectionWithNoName_whenExecuteSave_thenFailure() {
         WebSocketConnection connection = new WebSocketConnection();
         connection.setUserId(savedUser.getId());
@@ -108,11 +116,28 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
     }
 
     @Test(expected = DataValidationException.class)
-    public void givenWebSocketConnectionWithWrongConfiguration_whenExecuteSave_thenFailure() {
+    public void givenWebSocketConnectionWithWrongConfigurationWithoutClientId_whenExecuteSave_thenFailure() {
         WebSocketConnection connection = new WebSocketConnection();
         connection.setName("test");
         connection.setUserId(savedUser.getId());
-        connection.setConfiguration(new WebSocketConnectionConfiguration());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setUrl("url");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationWithoutUrl_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        connection.setConfiguration(config);
+
         webSocketConnectionService.saveWebSocketConnection(connection);
     }
 
@@ -226,6 +251,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
     private WebSocketConnectionConfiguration getWebSocketConnectionConfiguration() {
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("testClientId");
+        config.setUrl("url");
         return config;
     }
 

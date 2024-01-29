@@ -112,6 +112,13 @@ public class ModelConstants {
     public static final String WEBSOCKET_CONNECTION_USER_ID_PROPERTY = USER_CREDENTIALS_USER_ID_PROPERTY;
 
     /**
+     * websocket_subscription constants.
+     */
+    public static final String WEBSOCKET_SUBSCRIPTION_COLUMN_FAMILY_NAME = "websocket_subscription";
+    public static final String WEBSOCKET_SUBSCRIPTION_CONFIGURATION_PROPERTY = WEBSOCKET_CONNECTION_CONFIGURATION_PROPERTY;
+    public static final String WEBSOCKET_SUBSCRIPTION_CONNECTION_ID_PROPERTY = "websocket_connection_id";
+
+    /**
      * device_session_ctx constants.
      */
     public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";

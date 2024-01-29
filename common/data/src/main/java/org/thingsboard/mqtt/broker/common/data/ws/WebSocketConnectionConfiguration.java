@@ -52,4 +52,10 @@ public class WebSocketConnectionConfiguration {
 
     private UserProperties userProperties;
 
+    public WebSocketConnectionConfiguration() {
+    }
+
+    public WebSocketConnectionConfiguration(String clientId) {
+        this.clientId = clientId;
+    }
 }

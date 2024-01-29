@@ -127,6 +127,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
                         throw new DataValidationException("WebSocket Connection configuration should be specified!");
                     }
                     validateString("WebSocket Connection clientId", webSocketConnection.getConfiguration().getClientId());
+                    validateString("WebSocket Connection URL", webSocketConnection.getConfiguration().getUrl());
                 }
             };
 

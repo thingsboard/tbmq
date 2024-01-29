@@ -56,7 +56,7 @@ public class WebSocketConnection extends SearchTextBased {
                 try {
                     configuration = mapper.readValue(new ByteArrayInputStream(configurationBytes), WebSocketConnectionConfiguration.class);
                 } catch (IOException e) {
-                    log.warn("Can't deserialize WebSocket configuration: ", e);
+                    log.warn("Can't deserialize WebSocket connection configuration: ", e);
                     return null;
                 }
                 return configuration;
@@ -71,7 +71,7 @@ public class WebSocketConnection extends SearchTextBased {
         try {
             this.configurationBytes = config != null ? mapper.writeValueAsBytes(config) : null;
         } catch (JsonProcessingException e) {
-            log.warn("Can't serialize WebSocket configuration: ", e);
+            log.warn("Can't serialize WebSocket connection configuration: ", e);
         }
     }
 

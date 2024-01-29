@@ -15,16 +15,34 @@
  */
 package org.thingsboard.mqtt.broker.common.data.ws;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class WebSocketSubscriptionConfiguration {
 
     private String topicFilter;
     private int qos;
     private String color;
-
     private SubscriptionOptions options;
+
+    public WebSocketSubscriptionConfiguration(String topicFilter) {
+        this(topicFilter, 1);
+    }
+
+    public WebSocketSubscriptionConfiguration(String topicFilter, int qos) {
+        this(topicFilter, qos, null);
+    }
+
+    public WebSocketSubscriptionConfiguration(String topicFilter, int qos, String color) {
+        this.topicFilter = topicFilter;
+        this.qos = qos;
+        this.color = color;
+        this.options = SubscriptionOptions.newInstance();
+    }
 
 }
