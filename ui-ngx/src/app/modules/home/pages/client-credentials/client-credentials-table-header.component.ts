@@ -36,7 +36,7 @@ export class ClientCredentialsTableHeaderComponent extends EntityTableHeaderComp
     super(store);
   }
 
-  alarmFilterChanged(clientCredentialsFilterConfig: ClientCredentialsFilterConfig) {
+  filterChanged(clientCredentialsFilterConfig: ClientCredentialsFilterConfig) {
     this.clientCredentialsTableConfig.clientCredentialsFilterConfig = clientCredentialsFilterConfig;
     this.clientCredentialsTableConfig.getTable().resetSortAndFilter(true, false);
   }

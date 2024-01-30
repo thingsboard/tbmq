@@ -780,9 +780,10 @@
     "messages": {
       "retained": "Retained",
       "publish-message": "Publish message",
-      "received": "Received (uplink)",
-      "published": "Published (downlink)",
-      "no-messages-text": "No messages found"
+      "received": "Received",
+      "published": "Published",
+      "no-messages-text": "No messages found",
+      "filter": "Filter messages"
     },
     "connections": {
       "add-connection": "Add new connection",
@@ -862,7 +863,8 @@
       "close": "Close",
       "offline": "Offline",
       "status-log": "Status Log",
-      "no-logs": "No logs yet"
+      "no-logs": "No logs yet",
+      "not-connected": "Not connected"
     },
     "last-will": {
       "last-will": "Last Will",
@@ -913,5 +915,11 @@
       "retain-details": "Retained messages",
       "loading-subscriptions": "Loading subscriptions..."
     }
-  }
+  },
+    "js-func": {
+        "no-return-error": "Function must return value!",
+        "return-type-mismatch": "Function must return value of '{{type}}' type!",
+        "tidy": "Tidy",
+        "mini": "Mini"
+    }
 }
