@@ -271,13 +271,13 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      // this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+      this.sortSubscription = this.sort.sortChange.subscribe(() => this.updateData());
     }
-    /*this.updateDataSubscription = ((this.displayPagination ? this.paginator.page : this.sort.sortChange) as Observable<any>)
+    this.updateDataSubscription = (this.sort.sortChange as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
-      .subscribe();*/
+      .subscribe();
   }
 
   addEnabled() {
@@ -295,10 +295,10 @@ export class WsClientTableComponent extends PageComponent implements AfterViewIn
       this.pageLink.page = 0;
     }
     if (this.sort?.active) {
-      /*this.pageLink.sortOrder = {
+      this.pageLink.sortOrder = {
         property: this.sort.active,
         direction: Direction[this.sort.direction.toUpperCase()]
-      };*/
+      };
     } else {
       this.pageLink.sortOrder = null;
     }

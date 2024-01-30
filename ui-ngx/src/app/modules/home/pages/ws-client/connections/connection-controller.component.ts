@@ -41,6 +41,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   status: ConnectionStatus;
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
   errorMessage: string;
+  passwordVisible: boolean;
 
   private destroy$ = new Subject<void>();
 
@@ -53,7 +54,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.wsClientService.selectedConnectionState$.subscribe(
+    this.wsClientService.selectedConnectionStatus$.subscribe(
       status => {
         this.status = status;
         this.updateLabels();
@@ -64,6 +65,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.wsClientService.selectedConnection$.subscribe(
       entity => {
         this.connection = entity;
+        this.updateLabels();
         this.isPasswordRequired = !!entity.password?.length;
       }
     );
@@ -122,6 +124,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       this.isConnected = false;
       this.actionLabel = 'ws-client.connections.connect';
     }
+    if (this.status !== ConnectionStatus.CONNECTION_FAILED) {
+      this.errorMessage = null;
+    }
   }
 
   private setDisabledState() {
@@ -135,22 +140,19 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.wsClientService.disconnectClient();
+    this.wsClientService.disconnectClient(true, this.connection);
   }
 
-  cancel() {
+/*  cancel() {
     this.wsClientService.disconnectClient(true);
-  }
+  }*/
 
   displayCancelButton(): boolean {
     return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING);
   }
 
   getStatus() {
-    if (this.errorMessage) {
-      this.status = ConnectionStatus.CONNECTION_FAILED;
-    }
-    return this.connectionStatusTranslationMap.get(this.status);
+    return this.connectionStatusTranslationMap.get(this.status) || 'ws-client.connections.not-connected';
   }
 
   getStateDetails() {
@@ -170,15 +172,16 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           color: '#FAA405',
           backgroundColor: 'rgba(209, 39, 48, 0.06)'
         };
-      case ConnectionStatus.DISCONNECTED:
-        return {
-          color: 'rgba(0, 0, 0, 0.54)',
-          backgroundColor: 'rgba(0, 0, 0, 0.06)'
-        };
       case ConnectionStatus.CONNECTION_FAILED:
         return {
           color: '#D12730',
           backgroundColor: 'rgba(209, 39, 48, 0.06)'
+        };
+      case ConnectionStatus.DISCONNECTED:
+      default:
+        return {
+          color: 'rgba(0, 0, 0, 0.54)',
+          backgroundColor: 'rgba(0, 0, 0, 0.06)'
         };
     }
   }

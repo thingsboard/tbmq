@@ -72,9 +72,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   @Input()
   entitiesTableConfig: EntityTableConfig<BaseData>;
 
-  @Input()
-  cardType: HomePageTitleType;
-
   translations: EntityTypeTranslation;
 
   headerActionDescriptors: Array<HeaderActionDescriptor>;
@@ -227,7 +224,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   ngAfterViewInit() {
-
     /*fromEvent(this.searchInputField.nativeElement, 'keyup')
       .pipe(
         debounceTime(150),
@@ -240,8 +236,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
         })
       )
       .subscribe();*/
-
-    // this.updatePaginationSubscriptions();
+    this.updatePaginationSubscriptions();
+    this.updateData();
     this.viewInited = true;
   }
 
@@ -553,10 +549,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   calcTableHeight(): string {
     return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
-  }
-
-  navigate() {
-    this.router.navigate([this.homePageTitleResources.get(this.cardType).link]);
   }
 
   private calcDefaultPageSize(): number {

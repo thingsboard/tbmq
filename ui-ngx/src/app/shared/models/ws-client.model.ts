@@ -16,6 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
+import { ValueType } from '@shared/models/constants';
 export type MqttJsProtocolVersion = 3 | 4 | 5;
 export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
 export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
@@ -42,6 +43,12 @@ export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>(
   [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
 ]);
 
+export interface ConnectionStatusLog {
+  createdTime: number;
+  status: ConnectionStatus;
+  details?: string;
+}
+
 // TODO check usage
 const MqttJsProtocolIdVersionMap = new Map<MqttJsProtocolVersion, MqttJsProtocolId>([
   [3, 'MQIsdp'],
@@ -58,7 +65,8 @@ export interface TbConnectionDetails extends ConnectionShortInfo {
   keepaliveUnit?: TimeUnitType;
   connectTimeoutUnit?: TimeUnitType;
   reconnectPeriodUnit?: TimeUnitType;
-  existingCredentials?: Partial<ClientCredentials>;
+  clientCredentials?: Partial<ClientCredentials>;
+  clientCredentialsId?: string;
 }
 
 export interface Connection extends TbConnectionDetails {
@@ -79,6 +87,7 @@ export interface Connection extends TbConnectionDetails {
   will?: {
     topic?: string;
     payload?: any;
+    payloadType?: any;
     qos?: number;
     retain?: boolean;
     properties?: WillProperties;
@@ -97,8 +106,8 @@ export interface ConnectionProperties extends TbConnectionProperties{
   topicAliasMaximum?: number;
   requestResponseInformation?: boolean;
   requestProblemInformation?: boolean;
-  authenticationMethod?: string;
-  authenticationData?: any;
+  // authenticationMethod?: string;
+  // authenticationData?: any;
   userProperties?: {
     [key: string]: string;
   };
@@ -115,7 +124,7 @@ interface WillProperties extends TbWillProperties {
   messageExpiryInterval: number;
   contentType: string;
   responseTopic: string;
-  correlationData: any;
+  correlationData: any; // TODO double check how to send
 }
 
 export interface WsPublishMessageOptions {
@@ -125,16 +134,13 @@ export interface WsPublishMessageOptions {
   properties?: PublishMessageProperties;
 }
 
-export interface WsPublishMessage {
+export interface WsTableMessage extends BaseData {
   createdTime?: number;
-  topic: string;
-  payload: any;
-  options: WsPublishMessageOptions;
-}
-
-export interface WsTableMessage extends WsPublishMessage {
-  qos: number;
-  retain: boolean;
+  topic?: string;
+  payload?: any;
+  options?: WsPublishMessageOptions;
+  qos?: number;
+  retain?: boolean;
   color?: string;
   properties?: PublishMessageProperties;
   type?: string;
@@ -145,7 +151,7 @@ export interface PublishMessageProperties {
   payloadFormatIndicator?: boolean;
   messageExpiryInterval?: number;
   topicAlias?: number;
-  subscriptionIdentifier?: number | number[],
+  // subscriptionIdentifier?: number | number[],
   correlationData?: Buffer;
   responseTopic?: string;
   userProperties?: UserProperties,
@@ -160,10 +166,10 @@ interface TopicObject {
 type Topic = string | string[] | TopicObject;
 
 interface Properties {
-  subscriptionIdentifier: number;
-  userProperties: {
-    [name: string]: string
-  };
+  // subscriptionIdentifier: number;
+  // userProperties: {
+  //   [name: string]: string
+  // };
 }
 
 interface WsSubscriptionOptions {
@@ -171,15 +177,12 @@ interface WsSubscriptionOptions {
   nl?: boolean;
   rap?: boolean;
   rh?: number;
-  properties?: Properties;
+  // properties?: Properties;
 }
 
-export interface WsSubscriptionShortInfo extends BaseData {
-  topic: Topic;
+export interface WsSubscription extends BaseData {
+  topic: Topic; // TODO rename topicfilter
   color: string;
-}
-
-export interface WsSubscription extends WsSubscriptionShortInfo {
   options?: WsSubscriptionOptions;
 }
 
@@ -318,3 +321,29 @@ export const WsClientMessageTypeTranslationMap = new Map<boolean, string>(
     [false, 'ws-client.messages.published']
   ]
 );
+
+export const WsMessagesTypeFilters = [
+  {
+    name: 'All',
+    value: 'all'
+  },
+  {
+    name: 'Received',
+    value: 'received'
+  },
+  {
+    name: 'Published',
+    value: 'published'
+  }
+];
+
+export const WsPayloadFormats = [
+  {
+    value: ValueType.JSON,
+    name: 'value.json'
+  },
+  {
+    value: ValueType.STRING,
+    name: 'value.string'
+  }
+];

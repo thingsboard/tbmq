@@ -17,32 +17,24 @@
 import {
   arrowIcon,
   CellActionDescriptor,
-  CellActionDescriptorType, cellWithBackground, colorIcon,
+  cellWithBackground,
   DateEntityTableColumn,
   EntityTableColumn,
-  EntityTableConfig,
-  GroupActionDescriptor
+  EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
-import { RetainedMessage } from '@shared/models/retained-message.model';
-import { RetainedMsgService } from '@core/http/retained-msg.service';
-import { forkJoin, Observable } from 'rxjs';
-import {
-  EventContentDialogComponent,
-  EventContentDialogData
-} from '@home/components/event/event-content-dialog.component';
+import { EventContentDialogComponent, EventContentDialogData } from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { WsClientMessageTypeTranslationMap, WsMessage } from '@shared/models/ws-client.model';
-import { WsClientService } from "@core/http/ws-client.service";
-import { coerceBoolean } from "@shared/decorators/coercion";
+import { WsClientMessageTypeTranslationMap, WsTableMessage } from '@shared/models/ws-client.model';
+import { WsClientService } from '@core/http/ws-client.service';
 
-export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
+export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
   constructor(private dialogService: DialogService,
               private wsClientService: WsClientService,
@@ -70,30 +62,45 @@ export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
     this.cellActionDescriptors = this.configureCellActions();
 
     this.columns.push(
-      new EntityTableColumn<WsMessage>('color', null, '30px', (entity) => {
-        const messageReceived = !!entity?.color?.length; // TODO refactor without color
+      new EntityTableColumn<WsTableMessage>('type', undefined, '30px', (entity) => {
+        const messageReceived = entity.type === 'received';
         const color = entity?.color || 'rgba(0, 0, 0, 0.38)';
         return arrowIcon(messageReceived, color);
       }, () => undefined, false, undefined, (entity) => {
-        const messageReceived = !!entity?.color?.length;
+        const messageReceived = entity.type === 'received';
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
-      new DateEntityTableColumn<WsMessage>('createdTime', 'common.time', this.datePipe, '150px'),
-      new EntityTableColumn<WsMessage>('topic', 'retained-message.topic', '50%'),
-      new EntityTableColumn<WsMessage>('qos', 'retained-message.qos', '25%', undefined,
+      new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '75%'),
+      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '25px', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
-      new EntityTableColumn<WsMessage>('retain', 'ws-client.messages.retained', '25%',
-          entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
+      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '25%',
+        entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
-      new EntityTableColumn<WsMessage>('payload', 'retained-message.payload', '200px', undefined,
-        undefined, undefined, undefined, (entity) => entity.payload)
+      new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', '200px', (entity) => {
+        const content = entity.payload;
+        try {
+          const parsedContent = JSON.parse(content);
+          return JSON.stringify(parsedContent, null, 2);
+        } catch (e) {
+          return content;
+        }
+      }, undefined, undefined, undefined, (entity) => entity.payload)
     );
 
-    this.entitiesFetchFunction = pageLink => this.wsClientService.getMessages();
+    this.entitiesFetchFunction = (pageLink) => this.wsClientService.getMessages(pageLink);
+
+    this.wsClientService.clientMessages$.subscribe(() => {
+      this.updateData();
+    });
+
+    this.wsClientService.selectedConnection$.subscribe(() => {
+      this.updateData();
+    });
   }
 
-  private configureCellActions(): Array<CellActionDescriptor<WsMessage>> {
-    const actions: Array<CellActionDescriptor<WsMessage>> = [];
+  private configureCellActions(): Array<CellActionDescriptor<WsTableMessage>> {
+    const actions: Array<CellActionDescriptor<WsTableMessage>> = [];
     actions.push(
       {
         name: this.translate.instant('retained-message.payload'),
@@ -104,8 +111,8 @@ export class MessagesTableConfig extends EntityTableConfig<WsMessage> {
       {
         name: this.translate.instant('ws-client.connections.properties'),
         icon: 'mdi:information-outline',
-        isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.user-properties')
+        isEnabled: (entity) => isDefinedAndNotNull(entity.properties),
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.properties), 'retained-message.user-properties')
       }
     );
     return actions;

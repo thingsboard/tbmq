@@ -45,7 +45,6 @@ export class WsClientComponent extends PageComponent implements OnInit {
       if (data?.length) {
         this.connections = data;
         this.wsClientService.selectConnection(data[0]);
-        this.wsClientService.setConnectionsInitState(data);
       }
     });
   }

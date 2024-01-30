@@ -19,17 +19,22 @@
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" translate>ws-client.connections.messages</span>
     <tb-toggle-select appearance="stroked"
-                      (ngModelChange)="onChange($event)"
+                      (ngModelChange)="onMessageFilterChange($event)"
                       [ngModelOptions]="{ standalone: true }"
-                      [options]="headerOptions"
+                      [options]="messagesTypeFilters"
                       [(ngModel)]="selectedOption">
     </tb-toggle-select>
   </section>
-  <button mat-stroked-button color="primary"
-          [matTooltip]="'ws-client.connections.clear-connection-history' | translate"
-          (click)="clearHistory()">
-    <span translate>ws-client.connections.clear-connection-history</span>
-  </button>
+  <section fxLayout="row" fxLayoutGap="8px">
+    <tb-message-filter-config [ngModel]="filterConfig"
+                              (ngModelChange)="filterChanged($event)"
+                              propagatedFilter="false">
+    </tb-message-filter-config>
+    <button mat-stroked-button color="primary"
+            (click)="clearHistory()">
+      <span translate>ws-client.connections.clear-connection-history</span>
+    </button>
+  </section>
 </section>
 
 <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px; margin-bottom: 8px; height: 100%">
@@ -52,8 +57,8 @@
     </mat-form-field>
     <mat-form-field fxFlex="15" subscriptSizing="dynamic">
       <mat-label translate>value.type</mat-label>
-      <mat-select formControlName="format">
-        <mat-option *ngFor="let valueType of valueTypes" [value]="valueType.value">
+      <mat-select formControlName="payloadFormat">
+        <mat-option *ngFor="let valueType of payloadFormats" [value]="valueType.value">
           {{ valueType.name | translate }}
         </mat-option>
       </mat-select>
@@ -65,7 +70,7 @@
     </section>
     <button mat-stroked-button color="primary"
             [matTooltip]="'ws-client.connections.show-meta' | translate"
-            (click)="openPublishMessageProperties()"
+            (click)="messagePropertiesDialog()"
             aria-label="Show message meta data">
       <span translate>ws-client.connections.properties</span>
     </button>
@@ -73,15 +78,16 @@
   <div style="background: #fff; position: relative;">
     <tb-ws-json-object-edit
       style="width: 100%;"
-      formControlName="value"
-      label="{{ 'value.json-value' | translate }}"
+      formControlName="payload"
+      [validateJson]="jsonFormatSelected"
+      [label]="jsonFormatSelected ? ('value.json-value' | translate) : ''"
       [jsonRequired]="false"
       [fillHeight]="false">
     </tb-ws-json-object-edit>
     <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="!messangerFormGroup.get('topic')?.value?.length">
+            [disabled]="!messangerFormGroup.get('topic')?.value?.length || !isConnected">
       <mat-icon>send</mat-icon>
     </button>
   </div>

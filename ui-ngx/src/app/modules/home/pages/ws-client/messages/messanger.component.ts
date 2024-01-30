@@ -14,26 +14,24 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
-import { DatePipe } from '@angular/common';
-import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { WsClientService } from '@core/http/ws-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
-import { MessagesDisplayData } from './messages.component';
 import { MatDialog } from '@angular/material/dialog';
 import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
 import {
   Connection,
-  PublishMessageProperties, WsSubscription
+  ConnectionStatus,
+  PublishMessageProperties,
+  WsMessagesTypeFilters, WsPayloadFormats,
+  WsSubscription
 } from '@shared/models/ws-client.model';
-import mqtt from 'mqtt';
-import { map } from "rxjs/operators";
 import { ValueType } from '@shared/models/constants';
+import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 
 @Component({
   selector: 'tb-messanger',
@@ -45,45 +43,19 @@ export class MessangerComponent implements OnInit {
   connection: Connection;
   connections: Connection[];
   subscriptions: WsSubscription[];
+  filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
-  mqttJsClients: any[] = [];
-  editMode: boolean = false;
-  mqttJsClient: any;
+
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
-  valueTypes = [
-    {
-      value: ValueType.JSON,
-      name: 'value.json'
-    },
-    {
-      value: ValueType.STRING,
-      name: 'value.string'
-    }
-  ];
-  headerOptions = [
-    {
-      name: 'All',
-      value: 'all'
-    },
-    {
-      name: 'Received',
-      value: 'received'
-    },
-    {
-      name: 'Published',
-      value: 'published'
-    }
-  ];
-  selectedOption = 'all';
-  messages: any[] = [];
+  payloadFormats = WsPayloadFormats;
+  messagesTypeFilters = WsMessagesTypeFilters;
 
-  displayData: Array<MessagesDisplayData> = new Array<MessagesDisplayData>();
+  isConnected: boolean;
+  selectedOption = 'all';
+  jsonFormatSelected = true;
 
   constructor(protected store: Store<AppState>,
-              private translate: TranslateService,
-              private datePipe: DatePipe,
-              private dateAgoPipe: DateAgoPipe,
               private wsClientService: WsClientService,
               public fb: FormBuilder,
               private dialog: MatDialog) {
@@ -93,270 +65,72 @@ export class MessangerComponent implements OnInit {
   ngOnInit() {
     this.messangerFormGroup = this.fb.group(
       {
-        value: [{temperature: 25}, []],
+        payload: [{temperature: 25}, []],
         topic: ['sensors/temperature', []],
         qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
-        format: [ValueType.JSON, []],
-        retain: [true, []],
-        meta: [null, []]
+        payloadFormat: [ValueType.JSON, []],
+        retain: [false, []],
+        properties: [null, []]
       }
     );
-    this.wsClientService.selectedConnection$.subscribe(
-      value => {
-        if (isDefinedAndNotNull(value)) {
-          this.wsClientService.getConnection(value.id).subscribe(
-            res => {
-              this.connection = res;
-              /*this.wsClientService.connectClient(res);
-              this.connectMqttJsClient(this.wsClientService.getMqttJsClient());
-              this.subscribeForTopics(res.subscriptions);*/
-            }
-          );
-        }
+
+    this.wsClientService.selectedConnectionStatus$.subscribe(
+      status => {
+        this.isConnected = status === ConnectionStatus.CONNECTED;
       }
-    )
-    this.wsClientService.selectedSubscription$.subscribe(
-      value => {
-        if (isDefinedAndNotNull(value)) {
-          // this.initSubs(value);
-        }
-      }
-    )
-  }
+    );
 
-  test() {
-    const host = 'ws://localhost:8084/mqtt';
-    /*const options = {};
-    for (let [key, value] of Object.entries(connection)) {
-      options[key] = value;
-    }*/
-    const options = {
-      clientId: 'tbmq_dev', // this.client?.clientId,
-      username: 'tbmq_dev', // this.client?.username,
-      password: 'tbmq_dev', // this.client?.password,
-      protocolId: 'MQTT',
-      clean: false,
-      keepalive: 60
-    };
-    // @ts-ignore
-    /*const mqttJsClient = mqtt.connect(host, options);
-    mqttJsClient.on('connect', () => {
-      console.log(`Client connected`)
-      // Subscribe
-    })
-    mqttJsClient.subscribe('testtopic', { qos: 1, nl: false })
-    mqttJsClient.on('message', (topic, message, packet) => {
-      console.log('999 888', topic, new TextDecoder("utf-8").decode(message));
-    });*/
-
-    // mqttJsClient.subscribe('testtopic', {qos: 1});
-
-  }
-
-  private initSubs(subs: any) {
-    const host = this.connection?.protocol + this.connection?.host + ":" + this.connection?.port + this.connection?.path;
-    const options = {
-      keepalive: 3660,
-      clientId: 'tbmq_dev', // this.client?.clientId,
-      username: 'tbmq_dev', // this.client?.username,
-      password: 'tbmq_dev', // this.client?.password,
-      protocolId: 'MQTT'
-    }
-    if (this.mqttJsClient) {
-      // this.subscribeForTopic(subs);
-    } else {
-      // const client = this.createMqttJsClient(host, options);
-      // this.mqttJsClient = client;
-      // this.mqttJsClients.push(client);
-      // this.connectMqttJsClient(client);
-      // this.subscribeForTopic(subs);
-    }
-
-  }
-
-  private createMqttJsClient(host, options) {
-    return mqtt.connect(host, options);
-  }
-
-  subscribeForTopics(subscriptions: any[]) {
-    for (let i = 0; i < subscriptions?.length; i++) {
-      this.subscribeForTopic(subscriptions[i]);
-      this.wsClientService.addSubscription(subscriptions[i]);
-    }
-  }
-
-  subscribeForTopic(subscription) {
-    const topic = subscription.topic;
-    const qos = 1;
-    this.wsClientService.getMqttJsConnection().subscribe('testtopic', { qos: 1 }, (mess) => {
-      if (mess) {
-        this.displayData.push(mess);
-        console.log('message', mess)
-      }
-    })
-  }
-
-  connectMqttJsClient(client) {
-    client.on('connect', (e) => {
-      console.log(`Client connected: ${this.connection?.clientId}`, e)
-      /*client.subscribe(this.messangerFormGroup.get('topic').value, { qos: 1 }, (mess) => {
-        if (mess) {
-          this.displayData.push(mess);
-          console.log('message', mess)
-        }
-      })*/
+    this.wsClientService.filterMessages({
+      topic: null,
+      qosList: null,
+      retainList: null
     });
-    client.on('message', (topic, message, packet) => {
-      const comment: MessagesDisplayData = {
-        commentId: '123',
-        displayName: this.connection?.clientId,
-        createdTime: this.datePipe.transform(Date.now()),
-        createdDateAgo: topic,
-        edit: false,
-        isEdited: false,
-        editedTime: 'string',
-        editedDateAgo: 'string',
-        showActions: false,
-        commentText: new TextDecoder("utf-8").decode(message),
-        isSystemComment: false,
-        avatarBgColor: 'red', // this.subscription?.color,
-        type: 'sub'
-      }
-      // this.displayData.push(comment);
-      console.log(`Received Message: ${message.toString()} On topic: ${topic}`)
-    });
-    client.on('error', (err) => {
-      console.log('Connection error: ', err)
-      client.end()
-    });
-    client.on('reconnect', () => {
-      console.log('Reconnecting...')
-    });
-    client.on('close', () => {
-      console.log('Closing...')
-    });
-    client.on('disconnect', () => {
-      console.log('Disconnecting...')
-    });
-    client.on('offline', () => {
-      console.log('Offline...')
-    });
-    client.on('end', () => {
-      console.log('End...')
-    });
-    client.on('packetsend', () => {
-      console.log('Packet Send...')
-    });
-    client.on('packetreceive', () => {
-      console.log('Packet Receive...')
-    });
-  }
 
-  /*mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    const index = mqttQoSTypes.findIndex(object => {
-      return object.value === mqttQoSValue.value;
+    this.messangerFormGroup.get('payloadFormat').valueChanges.subscribe(value => {
+      this.jsonFormatSelected = value === ValueType.JSON;
     });
-    const name = this.translate.instant(mqttQoSValue.name);
-    return index + ' - ' + name;
-  }*/
-
-  unsubscribeClient() {
-    /*this.mqttJsClient.unsubscribe(this.subscription?.topic, (e) => {
-      console.log('Unsubscribed', e);
-    });*/
-  }
-
-
-  publishMessageV2(message: any): void {
-    if (this.messages.length >= 1000) {
-      this.messages.shift(); // Remove the first element if array length is >= 1000
-    }
-    this.messages.push(message); // Add new message to the end of the array
   }
 
   publishMessage(): void {
-    const commentInputValue: string = this.messangerFormGroup.get('value').value;
-    if (commentInputValue) {
-      const topic = this.messangerFormGroup.get('topic').value;
-      const value = this.messangerFormGroup.get('value').value;
-      const qos = WsMqttQoSType.EXACTLY_ONCE; //mqttQoSValuesMap.get(this.messangerFormGroup.get('qos').value);
-      const retain = this.messangerFormGroup.get('retain').value;
-      const message = JSON.stringify({
-        value: commentInputValue,
-        type: 'pub'
-      })
-      this.wsClientService.getMqttJsConnection().publish(topic, commentInputValue, { qos, retain });
-      /*const comment: MessagesDisplayData = {
-        commentId: '123',
-        displayName: this.client?.clientId,
-        createdTime: this.datePipe.transform(Date.now()),
-        createdDateAgo: topic,
-        edit: false,
-        isEdited: false,
-        editedTime: 'string',
-        editedDateAgo: 'string',
-        showActions: false,
-        commentText: commentInputValue,
-        isSystemComment: false,
-        avatarBgColor: this.subscription?.color,
-        type: 'pub'
+    const value = this.messangerFormGroup.get('payload').value;
+    const payloadFormat = this.messangerFormGroup.get('payloadFormat').value;
+    const payload = (payloadFormat === ValueType.JSON) ? JSON.stringify(value) : value;
+    const topic = this.messangerFormGroup.get('topic').value;
+    const qos = this.messangerFormGroup.get('qos').value;
+    const retain = this.messangerFormGroup.get('retain').value;
+    const properties = this.messangerFormGroup.get('properties').value;
+    this.wsClientService.publishMessage({
+      payload,
+      topic,
+      options: {
+        qos,
+        retain,
+        properties
       }
-      this.displayData.push(comment);*/
-      this.wsClientService.publishMessage({
-        message: commentInputValue,
-        topic,
-        type: 'pub'
-      });
-    }
-  }
-
-  onCommentMouseEnter(commentId: string, displayDataIndex: number): void {
-    this.displayData[displayDataIndex].showActions = true;
-    /*if (!this.editMode) {
-      this.displayData[displayDataIndex].showActions = true;
-      const alarmUserId = this.getAlarmCommentById(commentId).userId.id;
-      if (this.authUser.userId === alarmUserId) {
-        this.displayData[displayDataIndex].showActions = true;
-      }
-    }*/
-  }
-
-  onCommentMouseLeave(displayDataIndex: number): void {
-    this.displayData[displayDataIndex].showActions = false;
+    });
   }
 
   clearHistory() {
-    this.wsClientService.clearHistory(this.connection.id).subscribe();
+    this.wsClientService.clearHistory();
   }
 
-  openPublishMessageProperties() {
+  filterChanged(value: MessageFilterConfig) {
+    this.wsClientService.filterMessages(value);
+  }
+
+  messagePropertiesDialog() {
     this.dialog.open<PropertiesDialogComponent, null, PublishMessageProperties>(PropertiesDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
     }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-
-        }
+      .subscribe((properties) => {
+        this.messangerFormGroup.patchValue({
+          properties: isDefinedAndNotNull(properties) ? properties : null
+        });
       });
   }
 
-  onChange(e) {
-    this.wsClientService.getConnectionMessages()
-      .pipe(map(el => el.data))
-      .subscribe(messages => {
-          switch (e) {
-            case 'all':
-              this.displayData = messages;
-              break;
-            case 'published':
-              this.displayData = messages.filter(el => el.type === 'pub');
-              break;
-            case 'received':
-              this.displayData = messages.filter(el => el.type === 'sub');
-              break;
-          }
-        }
-      );
+  onMessageFilterChange(type: string) {
+    this.wsClientService.filterMessages({type});
   }
 }

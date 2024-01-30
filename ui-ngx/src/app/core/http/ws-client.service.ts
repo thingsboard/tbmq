@@ -18,30 +18,27 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, mergeMap, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 import { RequestConfig } from '@core/http/http-utils';
-import { PageData } from '@shared/models/page/page-data';
+import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   Connection,
   ConnectionShortInfo,
   ConnectionStatus,
+  ConnectionStatusLog,
   DataSizeUnitType,
   TimeUnitType,
-  WsPublishMessage,
-  WsSubscription, WsSubscriptionShortInfo,
+  WsSubscription,
+  WsSubscriptionShortInfo,
   WsTableMessage
 } from '@shared/models/ws-client.model';
 import mqtt, { IClientOptions, IPublishPacket, MqttClient } from 'mqtt';
 import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { DatePipe } from '@angular/common';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { randomColor } from '@core/utils';
-
-export interface StatusLog {
-  createdTime: number;
-  state: ConnectionStatus;
-  details?: string;
-}
+import { guid, isDefinedAndNotNull, isNumber, randomColor } from '@core/utils';
+import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
+import { PageLink } from '@shared/models/page/page-link';
 
 @Injectable({
   providedIn: 'root'
@@ -51,11 +48,8 @@ export class WsClientService {
   private connections = [];
   private subscriptions = [];
   private messages: WsTableMessage[] = [];
-  private filteredMessages: WsTableMessage[] = [];
 
   private connection$ = new BehaviorSubject<Connection>(null);
-  private mqttClient$ = new BehaviorSubject<MqttClient>(null);
-  private message$ = new BehaviorSubject<WsTableMessage>(null);
   private messages$ = new BehaviorSubject<WsTableMessage[]>(this.messages);
   private connections$ = new BehaviorSubject<any>(this.connections);
   private connectionStatus$ = new BehaviorSubject<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
@@ -67,14 +61,21 @@ export class WsClientService {
   selectedConnection$ = this.connection$.asObservable();
   allConnections$ = this.connections$.asObservable();
   selectedSubscription$ = this.subscription$.asObservable();
-  allSubscriptions$ = this.subscriptions$.asObservable();
-  selectedConnectionState$ = this.connectionStatus$.asObservable();
+  selectedConnectionStatus$ = this.connectionStatus$.asObservable();
   selectedConnectionFailedError$ = this.connectionFailedError$.asObservable();
-  newMessage$ = this.message$.asObservable();
   clientMessages$ = this.messages$.asObservable();
 
-  mqttClients: any[] = [];
-  mqttClient: any;
+  connectionMessagesMap = new Map<string, WsTableMessage[]>();
+
+  mqttClients: MqttClient[] = [];
+  mqttClient: MqttClient;
+
+  private messagesFilter: MessageFilterConfig = {
+    type: 'all',
+    topic: null,
+    qosList: null,
+    retainList: null
+  };
 
   mockConnections: Connection[] = [{
     id: '1',
@@ -84,7 +85,7 @@ export class WsClientService {
     port: 8084,
     url: 'ws://localhost:8084/mqtt',
     path: '/mqtt',
-    protocolId: 'MQIsdp', // Or 'MQIsdp' in MQTT 3.1 and 5.0
+    protocolId: 'MQTT', // Or 'MQIsdp' in MQTT 3.1 and 5.0
     protocolVersion: 5, // Or 3 in MQTT 3.1, or 5 in MQTT 5.0
     clean: false, // Can also be false
     clientId: 'tbmq_dev',
@@ -96,10 +97,7 @@ export class WsClientService {
     reconnectPeriodUnit: TimeUnitType.MILLISECONDS,
     username: 'tbmq_dev',
     password: 'tbmq_dev', // Passwords are buffers
-    existingCredentials: {
-      id: "62397b5f-d04c-4d2e-957b-29209348cad3",
-      name: "TBMQ Device Demo"
-    },
+    clientCredentialsId: '62397b5f-d04c-4d2e-957b-29209348cad3',
     will: {
       topic: 'mydevice/status',
       qos: 2,
@@ -144,19 +142,16 @@ export class WsClientService {
       protocolId: 'MQIsdp', // Or 'MQIsdp' in MQTT 3.1 and 5.0
       protocolVersion: 3, // Or 3 in MQTT 3.1, or 5 in MQTT 5.0
       clean: false, // Can also be false
-      clientId: 'tbmq_app',
+      clientId: null,
       keepalive: 0, // Seconds which can be any positive number, with 0 as the default setting
       keepaliveUnit: TimeUnitType.SECONDS,
       connectTimeout: 0,
       connectTimeoutUnit: TimeUnitType.MILLISECONDS,
       reconnectPeriod: 0,
       reconnectPeriodUnit: TimeUnitType.MILLISECONDS,
-      username: null,
+      username: 'tbmq_app',
       password: null, // Passwords are buffers
-      existingCredentials: {
-        id: "62397b5f-d04c-4d2e-957b-29209348cad3",
-        name: "TBMQ Device Demo"
-      },
+      clientCredentialsId: null,
       will: {
         topic: 'mydevice/status',
         qos: 2,
@@ -195,67 +190,59 @@ export class WsClientService {
     {
       id: '1',
       data: [{
-          id: '1',
-          topic: 'sensors/temperature',
-          color: randomColor(),
-          options: {
-              qos: 1,
-              rh: null,
-              nl: null,
-              rap: null,
-              properties: {
-                subscriptionIdentifier: null
-              }
-            }
-        },
+        id: '1',
+        topic: 'sensors/temperature',
+        color: randomColor(),
+        options: {
+          qos: 0,
+          rh: null,
+          nl: null,
+          rap: null,
+          properties: {
+            subscriptionIdentifier: null
+          }
+        }
+      },
         {
           id: '2',
           topic: 'sensors/#',
           color: randomColor(),
           options: {
-              qos: 2,
-              rh: null,
-              nl: null,
-              rap: null,
-              properties: {
-                subscriptionIdentifier: null
-              }
+            qos: 2,
+            rh: null,
+            nl: null,
+            rap: null,
+            properties: {
+              subscriptionIdentifier: null
             }
+          }
         }
       ]
     },
     {
       id: '2',
-      data: []
-    }
-  ];
-
-  mockSubscriptionsShortInfo = [
-    {
-      id: '1',
-      data: [
-        {
-          id: '1',
-          topic: 'sensors/temperature',
-          color: randomColor()
-        },
-        {
-          id: '2',
-          topic: 'sensors/#',
-          color: randomColor()
+      data: [{
+        id: '3',
+        topic: 'sensors1/temperature',
+        color: randomColor(),
+        options: {
+          qos: 1,
+          rh: null,
+          nl: null,
+          rap: null,
+          properties: {
+            subscriptionIdentifier: null
+          }
         }
-      ]
-    },
-    {
-      id: '2',
-      data: []
+      },]
     }
   ];
 
-  connectionMqttClientMap = new Map<string, MqttClient>();
+  connectionMqttClientMap = new Map<string, string>();
   connectionStatusMap = new Map<string, ConnectionStatus>();
-  connectionStatusLogMap = new Map<string, StatusLog[]>();
+  connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
   clientIdSubscriptionsMap = new Map<string, any[]>();
+  mqttClientConnectionMap = new Map<string, string>();
 
   constructor(private http: HttpClient,
               private datePipe: DatePipe,
@@ -263,11 +250,13 @@ export class WsClientService {
   }
 
   connectClient(connection: Connection, password: string = null) {
-    this.createMqttClient(this.connection$.value, password);
+    this.createMqttClient(connection, password);
   }
 
-  disconnectClient(force: boolean = false) {
-    this.getMqttClientConnection().end(force);
+  disconnectClient(force: boolean = false, connection: Connection) {
+    this.getActiveMqttJsClient().end(force);
+    this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
+    this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
   }
 
   public isConnectionConnected(connectionId: string): boolean {
@@ -275,18 +264,13 @@ export class WsClientService {
   }
 
   private createMqttClient(connection: Connection, password: string) {
-    const host = connection?.protocol + connection?.host + ":" + connection?.port + connection?.path;
-    /*const options = {};
-    for (let [key, value] of Object.entries(connection)) {
-      options[key] = value;
-    }*/
     const options: IClientOptions = {
       clientId: connection.clientId, // this.client?.clientId,
       username: connection.username, // this.client?.username,
       password: connection.password, // this.client?.password,
       protocolId: connection.protocolId,
       protocolVersion: connection.protocolVersion,
-      clean: connection.clean,
+      clean: true,
       keepalive: connection.keepalive,
       connectTimeout: connection.connectTimeout,
       reconnectPeriod: connection.reconnectPeriod,
@@ -297,8 +281,10 @@ export class WsClientService {
         topicAliasMaximum: connection.properties.topicAliasMaximum,
         requestResponseInformation: connection.properties.requestResponseInformation,
         userProperties: connection.properties.userProperties
-      },
-      will: {
+      }
+    };
+    if (isDefinedAndNotNull(connection.will)) {
+      options.will = {
         topic: connection.will.topic,
         qos: connection.will.qos,
         retain: connection.will.retain,
@@ -311,43 +297,38 @@ export class WsClientService {
           responseTopic: connection.will.properties.responseTopic,
           correlationData: connection.will.properties.correlationData
         }
-      }
-    };
+      };
+    }
     const options2: IClientOptions = {
       clientId: connection.clientId,
       username: connection.username,
-      password: password, // password,
+      password: password, // connection.password,
       properties: {
         sessionExpiryInterval: connection.properties.sessionExpiryInterval
       },
     };
-    console.log('options2', options2);
+    // console.log('connection', connection);
+    // console.log('options', options);
     const mqttClient: MqttClient = mqtt.connect(connection.url, options2);
-    this.setMqttClient(mqttClient, connection)
-    this.manageMqttClientCallbacks(mqttClient, connection)
+    this.setMqttClient(mqttClient, connection);
+    this.manageMqttClientCallbacks(mqttClient, connection);
   }
 
   private setMqttClient(mqttClient: MqttClient, connection: Connection) {
-    this.connectionMqttClientMap.set(connection.id, mqttClient);
     this.mqttClient = mqttClient;
     this.mqttClients.push(mqttClient);
   }
 
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: Connection) {
-   mqttClient.on('connect', (packet: IConnackPacket) => {
+    mqttClient.on('connect', (packet: IConnackPacket) => {
+      this.connectionMqttClientMap.set(connection.id, mqttClient);
+      this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection.id);
       this.subscribeForTopics(mqttClient, connection);
       this.setConnectionStatus(connection, ConnectionStatus.CONNECTED);
       this.setConnectionLog(connection, ConnectionStatus.CONNECTED);
-      this.setConnectionFailedError();
-      console.log(`Client connected: ${connection.clientId}`, packet, mqttClient); // TODO check logic maybe use packet info for State definition
-      /*client.subscribe(this.messangerFormGroup.get('topic').value, { qos: 1 }, (mess) => {
-        if (mess) {
-          this.displayData.push(mess);
-          console.log('message', mess)
-        }
-      })*/
+      console.log(`Client connected: ${connection.clientId}`, packet, mqttClient);
     });
-   mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
+    mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
       const subscriptions = this.clientIdSubscriptionsMap.get(mqttClient.options.clientId);
       const subscription = subscriptions.find(sub => sub.topic === topic);
       let color: string;
@@ -361,7 +342,8 @@ export class WsClientService {
           console.error(`mqttClient ${mqttClient} received message. No matched subscription topic in ${subscriptions} for topic ${topic}`);
         }
       }
-      this.addMessage({
+      const message: WsTableMessage = {
+        id: guid(),
         payload: payload.toString(), //ew TextDecoder("utf-8").decode(payload),
         topic,
         qos: packet.qos,
@@ -369,52 +351,57 @@ export class WsClientService {
         retain: packet.retain,
         color,
         type: 'received'
-      })
-      console.log(`Received Message: ${payload} On topic: ${topic}`, packet)
+      };
+      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      this.addMessage(message, connectionId);
+      console.log(`Received Message: ${payload} On topic: ${topic}`, packet, mqttClient);
     });
-   mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
+    mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
       const details = error.message.split(':')[1];
       this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED);
       this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, details);
       this.setConnectionFailedError(details);
-      this.disconnectClient(true);
-      // mqttClient.end(force); // TODO check what to change
-      console.log('Connection error: ', error)
+      mqttClient.end(); // TODO check what to change
+      console.log('Connection error: ', error);
     });
-   mqttClient.on('reconnect', () => {
+    mqttClient.on('reconnect', () => {
       this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
       this.setConnectionLog(connection, ConnectionStatus.RECONNECTING);
-      console.log('Reconnecting...')
+      console.log('Reconnecting...');
     });
-   mqttClient.on('close', () => {
-      const status = mqttClient.reconnecting ? ConnectionStatus.RECONNECTING : ConnectionStatus.DISCONNECTED;
-      this.setConnectionStatus(connection, status);
-      this.setConnectionLog(connection, ConnectionStatus.CLOSE);
-      console.log('Closing...', connection, mqttClient)
+    mqttClient.on('close', () => {
+      // const status = mqttClient.reconnecting ? ConnectionStatus.RECONNECTING : ConnectionStatus.DISCONNECTED;
+      // this.setConnectionStatus(connection, status);
+      // this.setConnectionLog(connection, status);
+      console.log('Closing...', connection, mqttClient);
     });
-   mqttClient.on('disconnect', (packet: IConnackPacket) => {
-      this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
-      this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
-      console.log('Disconnecting...', packet, connection, mqttClient)
+    mqttClient.on('disconnect', (packet: IConnackPacket) => {
+      // this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
+      // this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
+      console.log('Disconnecting...', packet, connection, mqttClient);
     });
-   mqttClient.on('offline', () => {
+    mqttClient.on('offline', () => {
       this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
       this.setConnectionLog(connection, ConnectionStatus.OFFLINE);
-      console.log('Offline...', connection, mqttClient)
+      console.log('Offline...', connection, mqttClient);
     });
-   mqttClient.on('end', () => {
-      this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
-      this.setConnectionLog(connection, ConnectionStatus.END);
-      console.log('End...', connection, mqttClient)
+    mqttClient.on('end', () => {
+      // this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
+      // this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
+      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      if (this.connectionMqttClientMap.has(connectionId)) {
+        this.connectionMqttClientMap.delete(connectionId);
+      }
+      console.log('End...', connection, mqttClient);
     });
-   mqttClient.on('outgoingEmpty', () => {
-      console.log('Ongoing empty')
+    mqttClient.on('outgoingEmpty', () => {
+      console.log('Ongoing empty');
     });
-   mqttClient.on('packetsend', (packet: IConnackPacket) => {
-      console.log('Packet Send...', packet, mqttClient)
+    mqttClient.on('packetsend', (packet: IConnackPacket) => {
+      // console.log('Packet Send...', packet, mqttClient)
     });
-   mqttClient.on('packetreceive', (packet: IConnackPacket) => {
-      console.log('Packet Receive...', packet, mqttClient)
+    mqttClient.on('packetreceive', (packet: IConnackPacket) => {
+      // console.log('Packet Receive...', packet, mqttClient)
     });
 
     // TODO remove connection console.log
@@ -425,9 +412,13 @@ export class WsClientService {
       let subscriptionParts = subscription.split('/');
       let topicParts = topic.split('/');
 
-      for(let i=0; i<subscriptionParts.length; i++) {
-        if(subscriptionParts[i] === '#') return true;
-        if(subscriptionParts[i] !== '+' && subscriptionParts[i] !== topicParts[i]) return false;
+      for (let i = 0; i < subscriptionParts.length; i++) {
+        if (subscriptionParts[i] === '#') {
+          return true;
+        }
+        if (subscriptionParts[i] !== '+' && subscriptionParts[i] !== topicParts[i]) {
+          return false;
+        }
       }
 
       return subscriptionParts.length === topicParts.length;
@@ -451,7 +442,7 @@ export class WsClientService {
 
   private setConnectionStatus(connection: Connection, state: ConnectionStatus) {
     this.connectionStatusMap.set(connection.id, state);
-    this.connectionStatus$.next(state);
+    this.connectionStatus$.next(this.connectionStatusMap.get(connection.id));
   }
 
   private setConnectionLog(connection: Connection, state: ConnectionStatus, details: string = null) {
@@ -472,24 +463,9 @@ export class WsClientService {
     return Date.now();
   }
 
-  filterMessagesByType(type: string) {
-    switch (type) {
-      case 'published':
-      case 'received':
-        const newAr = [];
-        this.messages.forEach(el => {
-          if (el.type === type) {
-            newAr.push(el);
-          }
-        })
-        const messagesCopy = this.messages.filter(el => el.type === type);
-        console.log(newAr)
-        this.messages$.next(newAr);
-        break;
-      case 'all':
-        this.messages$.next(this.messages);
-        break;
-    }
+  filterMessages(filter: MessageFilterConfig) {
+    this.messagesFilter = {...this.messagesFilter, ...filter};
+    this.updateMessages();
   }
 
   private subscribeForTopics(mqttClient: MqttClient, connection: Connection) {
@@ -498,7 +474,7 @@ export class WsClientService {
         const topics = [];
         const topicObject: any = {};
         for (let i = 0; i < subscriptions?.length; i++) {
-          console.log('Subscribed for topic', subscriptions[i], mqttClient);
+          // console.log('Subscribed for topic', subscriptions[i], mqttClient);
           // this.subscribeForTopic(mqttClient, subscriptions[i]);
           const topic = subscriptions[i].topic;
           const qos = subscriptions[i].options.qos;
@@ -512,9 +488,10 @@ export class WsClientService {
     );
   }
 
-  publishMessage(message: WsPublishMessage) {
+  publishMessage(message: WsTableMessage) {
     this.mqttClient.publish(message.topic, message.payload, message.options);
-    /*this.messages.unshift({
+    const publishMessage = {
+      id: guid(),
       createdTime: this.nowTs(),
       topic: message.topic,
       payload: message.payload, //new TextDecoder("utf-8").decode(payload),
@@ -522,53 +499,96 @@ export class WsClientService {
       retain: message.options.retain,
       properties: message.options.properties,
       type: 'published'
-    });
-    this.messages$.next(this.messages);*/
-    this.addMessage({
-      createdTime: this.nowTs(),
-      topic: message.topic,
-      payload: message.payload, //new TextDecoder("utf-8").decode(payload),
-      qos: message.options.qos,
-      retain: message.options.retain,
-      properties: message.options.properties,
-      type: 'published'
-    });
+    };
+    this.addMessage(publishMessage, this.getActiveConnectionId());
   }
 
-  private addMessage(message: WsPublishMessage) {
-    if (this.messages.length >= 1000) {
-      this.messages.pop();
+  private addMessage(message: WsTableMessage, clientId: string) {
+    if (!this.connectionMessagesMap.has(clientId)) {
+      this.connectionMessagesMap.set(clientId, []);
     }
-    this.messages.unshift(message);
-    this.messages$.next(this.messages);
+    const clientMessages = this.connectionMessagesMap.get(clientId);
+    if (clientMessages.length >= 1000) {
+      clientMessages.pop();
+    }
+    clientMessages.unshift(message);
+    this.updateMessages();
+  }
+
+  private updateMessages() {
+    this.messages$.next();
   }
 
   private subscribeForTopic(mqttClient: MqttClient, topicObject: any) {
     mqttClient.subscribe(topicObject);
   }
 
-  getMqttClientConnection(): MqttClient {
-    return this.mqttClient;
+  private getActiveConnectionId() {
+    return this.connection$.value.id;
   }
 
-  addSubscription(value: any) {
+  private getActiveMqttJsClient() {
+    return this.connectionMqttClientMap.get(this.getActiveConnectionId());
+  }
+
+  addSubscription(value: WsSubscription) {
     this.subscription$.next(value);
     this.subscriptions.push(value);
     this.subscriptions$.next(this.subscriptions);
   }
 
-  selectConnection(connection: any) {
+  selectConnection(connection: Connection) {
     this.connection$.next(connection);
+    const connectionState = this.connectionStatusMap.get(this.getActiveConnectionId());
+    this.connectionStatus$.next(connectionState);
   }
 
-  public getMessages(): Observable<PageData<WsTableMessage>> {
-    // @ts-ignore
-    return of({
-      totalPages: 1,
-      totalElements: 1000,
-      hasNext: false,
-      data: this.messages
+  public getMessages(pageLink: PageLink): Observable<PageData<WsTableMessage>> {
+    const sortOrder = pageLink.sortOrder;
+    const data = this.connectionMessagesMap.get(this.getActiveConnectionId());
+    let filteredMessages = [];
+    if (data) {
+      filteredMessages = data.filter(item => {
+        let typeMatch = this.messagesFilter.type !== 'all' ? this.messagesFilter.type === item.type : true;
+        let topicMatch = this.messagesFilter.topic?.length ? item.topic.indexOf(this.messagesFilter.topic) > -1 : true;
+        let qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
+        let retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
+        return typeMatch && topicMatch && qosMatch && retainMatch;
+      });
+    }
+    const pageData = emptyPageData<WsTableMessage>();
+    filteredMessages.sort(function(objA, objB) {
+      const sortKey = sortOrder.property;
+      if (isNumber(objA[sortKey]) || typeof (objA[sortKey]) === 'boolean') {
+        if (sortOrder.direction === 'ASC') {
+          return objA[sortKey] - objB[sortKey];
+        } else {
+          return objB[sortKey] - objA[sortKey];
+        }
+      } else {
+        const propA = objA[sortKey].toLowerCase(); // ignore upper and lowercase
+        const propB = objB[sortKey].toLowerCase(); // ignore upper and lowercase
+        if (sortOrder.direction === 'ASC') {
+          if (propA < propB) {
+            return -1;
+          }
+          if (propA > propB) {
+            return 1;
+          }
+          return 0;
+        } else {
+          if (propA > propB) {
+            return -1;
+          }
+          if (propA < propB) {
+            return 1;
+          }
+          return 0;
+        }
+      }
     });
+    pageData.data = [...filteredMessages];
+    return of(pageData);
   }
 
   public getConnections(config?: RequestConfig): Observable<ConnectionShortInfo[]> {
@@ -580,16 +600,6 @@ export class WsClientService {
     // return this.http.get<Connection>(`/api/${id}`, defaultHttpOptionsFromConfig(config));
     const target = this.mockConnections.find(el => el.id == id);
     return of(target);
-  }
-
-  public setConnectionsInitState(entity: Connection[]) {
-    entity.forEach(connection => {
-      this.connectionStatusMap.set(connection.id, ConnectionStatus.DISCONNECTED);
-    });
-  }
-
-  public getConnectionState(entity: Connection): string {
-    return this.connectionStatusMap.get(entity.id);
   }
 
   public saveConnection(entity: Connection, config?: RequestConfig): Observable<Connection> {
@@ -636,7 +646,7 @@ export class WsClientService {
     }
   }
 
-  public saveSubscriptionV3(entityId: string, subscription: WsSubscription = null, isEdit:boolean, config?: RequestConfig): Observable<WsSubscription> {
+  public saveSubscriptionV3(entityId: string, subscription: WsSubscription = null, isEdit: boolean, config?: RequestConfig): Observable<WsSubscription> {
     // return this.http.post<WsSubscription>(`/api/ws/${connectionId}/subscription`, config);
     const index = this.mockSubscriptions.findIndex(el => el.id === entityId);
     const subscriptions: any = this.mockSubscriptions[index].data;
@@ -662,19 +672,21 @@ export class WsClientService {
 
   public saveSubscription(connectionId: string): Observable<any> {
     const result = {
-        topic: 'testtopic',
-        color: 'pink',
-        qos: 1,
-        nl: false,
-        rap: true,
-        rh: true,
-        subscriptionIdentifier: 1
-      };
+      topic: 'testtopic',
+      color: 'pink',
+      qos: 1,
+      nl: false,
+      rap: true,
+      rh: true,
+      subscriptionIdentifier: 1
+    };
     return of(result);
   }
 
   public clearHistory() {
-    this.messages$.next([]);
+    const connectionId = this.getActiveConnectionId();
+    this.connectionMessagesMap.set(connectionId, []);
+    this.updateMessages(this.connectionMessagesMap.get(connectionId));
   }
 
 }

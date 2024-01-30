@@ -14,19 +14,13 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { BehaviorSubject, Observable, ReplaySubject, Subscription } from 'rxjs';
-import { map, share, tap } from 'rxjs/operators';
-import { Router } from '@angular/router';
-import { StatusLog, WsClientService } from '@core/http/ws-client.service';
-import { Connection, ConnectionStatus, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
-import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { isDefinedAndNotNull } from "@core/utils";
-import { MatDialog } from "@angular/material/dialog";
+import { WsClientService } from '@core/http/ws-client.service';
+import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-show-connection-logs-popover',
@@ -44,13 +38,8 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
   @Input()
   popoverComponent: TbPopoverComponent;
 
-  statusLogs: StatusLog[] = [];
-  connectionStatus = ConnectionStatus;
+  statusLogs: ConnectionStatusLog[] = [];
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
-
-  connections$: Observable<Connection[]>;
-  loadConnection = true;
-  connectionsTotal: number;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService) {
@@ -58,7 +47,6 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
   }
 
   ngOnInit() {
-    // console.log();
     this.statusLogs = this.wsClientService.connectionStatusLogMap.get(this.connectionId);
   }
 
@@ -76,20 +64,20 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
       case ConnectionStatus.CONNECTED:
         return {
           color: '#198038',
-        }
+        };
       case ConnectionStatus.CONNECTING:
       case ConnectionStatus.RECONNECTING:
         return {
           color: '#FAA405',
-        }
+        };
       case ConnectionStatus.DISCONNECTED:
         return {
           color: 'rgba(0, 0, 0, 0.38)',
-        }
+        };
       case ConnectionStatus.CONNECTION_FAILED:
         return {
           color: '#D12730',
-        }
+        };
     }
   }
 }
