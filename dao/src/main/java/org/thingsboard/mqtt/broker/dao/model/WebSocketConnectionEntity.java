@@ -38,10 +38,10 @@ import java.util.UUID;
 @Table(name = ModelConstants.WEBSOCKET_CONNECTION_COLUMN_FAMILY_NAME)
 public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection> implements SearchTextEntity<WebSocketConnection> {
 
-    @Column(name = ModelConstants.WEBSOCKET_CONNECTION_NAME_PROPERTY, unique = true)
+    @Column(name = ModelConstants.WEBSOCKET_CONNECTION_NAME_PROPERTY)
     private String name;
 
-    @Column(name = ModelConstants.WEBSOCKET_CONNECTION_USER_ID_PROPERTY)
+    @Column(name = ModelConstants.WEBSOCKET_CONNECTION_USER_ID_PROPERTY, columnDefinition = "uuid")
     private UUID userId;
 
     @Type(type = "jsonb")

@@ -19,14 +19,17 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class WebSocketSubscriptionConfiguration {
 
+    @NoXss
     private String topicFilter;
     private int qos;
+    @NoXss
     private String color;
     private SubscriptionOptions options;
 

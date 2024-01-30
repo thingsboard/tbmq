@@ -38,7 +38,7 @@ import java.util.UUID;
 @Table(name = ModelConstants.WEBSOCKET_SUBSCRIPTION_COLUMN_FAMILY_NAME)
 public class WebSocketSubscriptionEntity extends BaseSqlEntity<WebSocketSubscription> implements BaseEntity<WebSocketSubscription> {
 
-    @Column(name = ModelConstants.WEBSOCKET_SUBSCRIPTION_CONNECTION_ID_PROPERTY)
+    @Column(name = ModelConstants.WEBSOCKET_SUBSCRIPTION_CONNECTION_ID_PROPERTY, columnDefinition = "uuid")
     private UUID webSocketConnectionId;
 
     @Type(type = "jsonb")

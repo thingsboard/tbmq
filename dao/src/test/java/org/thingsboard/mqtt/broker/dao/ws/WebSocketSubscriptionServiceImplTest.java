@@ -55,19 +55,26 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
 
     @Before
     public void setUp() throws Exception {
+        savedUser = saveUser();
+        savedWebSocketConnection = saveWebSocketConnection("Test WS Connection");
+    }
+
+    private User saveUser() {
         User user = new User();
         user.setEmail("test@.gmail.com");
         user.setAuthority(Authority.SYS_ADMIN);
-        savedUser = userService.saveUser(user);
+        return userService.saveUser(user);
+    }
 
+    private WebSocketConnection saveWebSocketConnection(String name) {
         WebSocketConnection webSocketConnection = new WebSocketConnection();
-        webSocketConnection.setName("Test WS Connection");
+        webSocketConnection.setName(name);
         webSocketConnection.setUserId(savedUser.getId());
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("clientId");
         config.setUrl("url");
         webSocketConnection.setConfiguration(config);
-        savedWebSocketConnection = webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
+        return webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
     }
 
     @After
@@ -183,6 +190,20 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         Assert.assertFalse(webSocketSubscriptionById.isPresent());
     }
 
+    @Test
+    public void givenWebSocketConnectionAndSubscription_whenDeleteWebSocketConnection_thenWebSocketSubscriptionIsAlsoRemoved() {
+        WebSocketConnection savedWebSocketConnection = saveWebSocketConnection("Test WS Connection for removal");
+
+        WebSocketSubscription webSocketSubscription = getWsSubscription("#", savedWebSocketConnection.getId());
+        WebSocketSubscription savedWebSocketSubscription = webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscription);
+
+        boolean result = webSocketConnectionService.deleteWebSocketConnection(savedWebSocketConnection.getId());
+        Assert.assertTrue(result);
+
+        Optional<WebSocketSubscription> webSocketSubscriptionById = webSocketSubscriptionService.getWebSocketSubscriptionById(savedWebSocketSubscription.getId());
+        Assert.assertFalse(webSocketSubscriptionById.isPresent());
+    }
+
     @NotNull
     private WebSocketSubscription getWebSocketSubscription(String topicFilter) {
         return getWsSubscription(topicFilter);
@@ -195,8 +216,13 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
 
     @NotNull
     private WebSocketSubscription getWsSubscription(String topicFilter) {
+        return getWsSubscription(topicFilter, savedWebSocketConnection.getId());
+    }
+
+    @NotNull
+    private WebSocketSubscription getWsSubscription(String topicFilter, UUID webSocketConnectionId) {
         WebSocketSubscription subscription = new WebSocketSubscription();
-        subscription.setWebSocketConnectionId(savedWebSocketConnection.getId());
+        subscription.setWebSocketConnectionId(webSocketConnectionId);
         subscription.setConfiguration(getWebSocketSubscriptionConfiguration(topicFilter));
         return subscription;
     }

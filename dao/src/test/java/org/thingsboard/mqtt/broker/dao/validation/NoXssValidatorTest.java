@@ -20,12 +20,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
+import org.thingsboard.mqtt.broker.common.data.ws.LastWillMsg;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.service.ConstraintValidator;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class NoXssValidatorTest {
+
+    private static final String MALICIOUS_VALUE = "qwerty<script>alert(document.cookie)</script>qwerty";
+
+    // todo: make it runnable with mvn
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -42,21 +54,73 @@ public class NoXssValidatorTest {
         User invalidUser = new User();
         invalidUser.setFirstName(maliciousString);
 
-        assertThatThrownBy(() -> {
-            ConstraintValidator.validateFields(invalidUser);
-        }).hasMessageContaining("is malformed");
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(invalidUser)).hasMessageContaining("is malformed");
     }
 
     @Test
     public void givenEntityWithMaliciousValueInAdditionalInfo_thenReturnValidationError() {
         User invalidUser = new User();
-        String maliciousValue = "qwerty<script>alert(document.cookie)</script>qwerty";
         invalidUser.setAdditionalInfo(JacksonUtil.newObjectNode()
-                .set("description", new TextNode(maliciousValue)));
+                .set("description", new TextNode(MALICIOUS_VALUE)));
 
-        assertThatThrownBy(() -> {
-            ConstraintValidator.validateFields(invalidUser);
-        }).hasMessageContaining("is malformed");
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(invalidUser)).hasMessageContaining("is malformed");
+    }
+
+    @Test
+    public void givenWebSocketConnectionWithMaliciousValueInName_thenReturnValidationError() {
+        WebSocketConnection webSocketConnection = new WebSocketConnection();
+        webSocketConnection.setName(MALICIOUS_VALUE);
+
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(webSocketConnection)).hasMessageContaining("is malformed");
+    }
+
+    @Test
+    public void givenWebSocketConnectionWithMaliciousValueInConfig_thenReturnValidationError() {
+        WebSocketConnection webSocketConnection = new WebSocketConnection();
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setUrl(MALICIOUS_VALUE);
+        webSocketConnection.setConfiguration(config);
+
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(webSocketConnection)).hasMessageContaining("is malformed");
+    }
+
+    @Test
+    public void givenWebSocketConnectionWithMaliciousValueInUserProps_thenReturnValidationError() {
+        WebSocketConnection webSocketConnection = new WebSocketConnection();
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+
+        UserProperties userProperties = new UserProperties();
+        userProperties.setValues(List.of(new UserProperties.StringPair(MALICIOUS_VALUE, MALICIOUS_VALUE)));
+        config.setUserProperties(userProperties);
+
+        webSocketConnection.setConfiguration(config);
+
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(webSocketConnection)).hasMessageContaining("is malformed");
+    }
+
+    @Test
+    public void givenWebSocketConnectionWithMaliciousValueInLastWillMsg_thenReturnValidationError() {
+        WebSocketConnection webSocketConnection = new WebSocketConnection();
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+
+        LastWillMsg lastWillMsg = new LastWillMsg();
+        lastWillMsg.setTopic(MALICIOUS_VALUE);
+        config.setLastWillMsg(lastWillMsg);
+
+        webSocketConnection.setConfiguration(config);
+
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(webSocketConnection)).hasMessageContaining("is malformed");
+    }
+
+    @Test
+    public void givenWebSocketSubscriptionWithMaliciousValueInConfig_thenReturnValidationError() {
+        WebSocketSubscription webSocketSubscription = new WebSocketSubscription();
+        WebSocketSubscriptionConfiguration config = new WebSocketSubscriptionConfiguration();
+        config.setTopicFilter(MALICIOUS_VALUE);
+
+        webSocketSubscription.setConfiguration(config);
+
+        assertThatThrownBy(() -> ConstraintValidator.validateFields(webSocketSubscription)).hasMessageContaining("is malformed");
     }
 
 }

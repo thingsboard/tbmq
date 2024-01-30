@@ -16,24 +16,30 @@
 package org.thingsboard.mqtt.broker.common.data.ws;
 
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.concurrent.TimeUnit;
 
 @Data
 public class LastWillMsg {
 
+    @NoXss
     private String topic;
     private int qos;
     private DataType payloadType;
+    @NoXss
     private String payload;
     private boolean retain;
     private boolean payloadFormatIndicator;
+    @NoXss
     private String contentType;
     private int willDelayInterval;
     private TimeUnit willDelayIntervalUnit;
     private int msgExpiryInterval;
     private TimeUnit msgExpiryIntervalUnit;
+    @NoXss
     private String responseTopic;
+    @NoXss
     private String correlationData;
 
 }

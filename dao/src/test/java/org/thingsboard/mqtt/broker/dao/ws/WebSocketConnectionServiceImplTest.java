@@ -53,10 +53,14 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
     @Before
     public void setUp() throws Exception {
+        savedUser = saveUser("test@.gmail.com");
+    }
+
+    private User saveUser(String email) {
         User user = new User();
-        user.setEmail("test@.gmail.com");
+        user.setEmail(email);
         user.setAuthority(Authority.SYS_ADMIN);
-        savedUser = userService.saveUser(user);
+        return userService.saveUser(user);
     }
 
     @After
@@ -80,6 +84,18 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
 
         webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
+    }
+
+    @Test
+    public void givenWebSocketConnectionWithSameNameDifferentUsers_whenExecuteSaveTwoTimes_thenSuccess() {
+        final String wsConnectionName = "Test WS Connection";
+
+        WebSocketConnection webSocketConnection = getWebSocketConnection(wsConnectionName, savedUser.getId());
+        webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
+
+        User anotherUser = saveUser("another@.gmail.com");
+        WebSocketConnection anotherWebSocketConnection = getWebSocketConnection(wsConnectionName, anotherUser.getId());
+        webSocketConnectionService.saveWebSocketConnection(anotherWebSocketConnection);
     }
 
     @Test(expected = DataValidationException.class)
@@ -240,10 +256,15 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
     @NotNull
     private WebSocketConnection getWebSocketConnection(String name) {
+        return getWebSocketConnection(name, savedUser.getId());
+    }
+
+    @NotNull
+    private WebSocketConnection getWebSocketConnection(String name, UUID userId) {
         WebSocketConnection connection = new WebSocketConnection();
         connection.setName(name);
         connection.setConfiguration(getWebSocketConnectionConfiguration());
-        connection.setUserId(savedUser.getId());
+        connection.setUserId(userId);
         return connection;
     }
 

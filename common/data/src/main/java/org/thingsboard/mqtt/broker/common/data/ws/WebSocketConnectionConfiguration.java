@@ -17,18 +17,24 @@ package org.thingsboard.mqtt.broker.common.data.ws;
 
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import javax.validation.Valid;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Data
 public class WebSocketConnectionConfiguration {
 
+    @NoXss
     private String url;
 
     private UUID clientCredentialsId;
+    @NoXss
     private String clientId;
+    @NoXss
     private String username;
+    @NoXss
     private String password;
 
     private boolean cleanStart;
@@ -48,8 +54,10 @@ public class WebSocketConnectionConfiguration {
     private boolean requestResponseInfo;
     private boolean requestProblemInfo;
 
+    @Valid
     private LastWillMsg lastWillMsg;
 
+    @Valid
     private UserProperties userProperties;
 
     public WebSocketConnectionConfiguration() {

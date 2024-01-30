@@ -21,7 +21,9 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 public class UserProperties {
 
     @JsonProperty("props")
+    @Valid
     private List<StringPair> values;
 
     public static MqttProperties mapToMqttProperties(UserProperties userProperties) {
@@ -83,8 +86,10 @@ public class UserProperties {
     @NoArgsConstructor
     public static final class StringPair {
         @JsonProperty("k")
+        @NoXss
         private String key;
         @JsonProperty("v")
+        @NoXss
         private String value;
     }
 }

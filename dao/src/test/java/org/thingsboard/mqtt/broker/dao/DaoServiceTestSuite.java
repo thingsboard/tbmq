@@ -26,7 +26,8 @@ import org.junit.runner.RunWith;
         "org.thingsboard.mqtt.broker.dao.data.*Test",
         "org.thingsboard.mqtt.broker.dao.sqlts.sql.*Test",
         "org.thingsboard.mqtt.broker.dao.util.protocol.*Test",
-        "org.thingsboard.mqtt.broker.dao.validation.*Test"
+        "org.thingsboard.mqtt.broker.dao.validation.*Test",
+        "org.thingsboard.mqtt.broker.dao.ws.*Test"
 })
 public class DaoServiceTestSuite {
 
