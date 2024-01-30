@@ -82,6 +82,10 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   @Input()
   readonly: boolean;
 
+  @coerceBoolean()
+  @Input()
+  validateJson: boolean;
+
   fullscreen = false;
 
   modelValue: any;
@@ -213,7 +217,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     if (this.jsonEditor && this.objectValid) {
       const res = JSON.stringify(this.modelValue, null, 2);
       this.jsonEditor.setValue(res ? res : '', -1);
-      this.updateView();
+      // this.updateView();
     }
   }
 
@@ -221,14 +225,14 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     if (this.jsonEditor && this.objectValid) {
       const res = JSON.stringify(this.modelValue);
       this.jsonEditor.setValue(res ? res : '', -1);
-      this.updateView();
+      // this.updateView();
     }
   }
 
   writeValue(value: any): void {
     this.modelValue = value;
     this.contentValue = '';
-    this.objectValid = true; //false;
+    this.objectValid = false; //false;
     try {
       if (isDefinedAndNotNull(this.modelValue)) {
         this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort) ? undefined :
@@ -250,37 +254,39 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
 
   updateView() {
     const editorValue = this.jsonEditor.getValue();
-    this.propagateChange(editorValue)
-    /*if (this.contentValue !== editorValue) {
-      this.contentValue = editorValue;
-      let data = null;
-      this.objectValid = false;
-      if (this.contentValue && this.contentValue.length > 0) {
-        try {
-          data = JSON.parse(this.contentValue);
-          if (!isObject(data)) {
-            throw new TypeError(`Value is not a valid JSON`);
+    this.propagateChange(editorValue);
+    if (this.validateJson) {
+      if (this.contentValue !== editorValue) {
+        this.contentValue = editorValue;
+        let data = null;
+        this.objectValid = false;
+        if (this.contentValue && this.contentValue.length > 0) {
+          try {
+            data = JSON.parse(this.contentValue);
+            if (!isObject(data)) {
+              throw new TypeError(`Value is not a valid JSON`);
+            }
+            this.objectValid = true;
+            this.validationError = '';
+          } catch (ex) {
+            let errorInfo = 'Error:';
+            if (ex.name) {
+              errorInfo += ' ' + ex.name + ':';
+            }
+            if (ex.message) {
+              errorInfo += ' ' + ex.message;
+            }
+            this.validationError = errorInfo;
           }
-          this.objectValid = true;
-          this.validationError = '';
-        } catch (ex) {
-          let errorInfo = 'Error:';
-          if (ex.name) {
-            errorInfo += ' ' + ex.name + ':';
-          }
-          if (ex.message) {
-            errorInfo += ' ' + ex.message;
-          }
-          this.validationError = errorInfo;
+        } else {
+          this.objectValid = !this.jsonRequired;
+          this.validationError = this.jsonRequired ? 'Json object is required.' : '';
         }
-      } else {
-        this.objectValid = !this.jsonRequired;
-        this.validationError = this.jsonRequired ? 'Json object is required.' : '';
+        this.modelValue = data;
+        this.propagateChange(data);
+        this.cd.markForCheck();
       }
-      this.modelValue = data;
-      this.propagateChange(data);
-      this.cd.markForCheck();
-    }*/
+    }
   }
 
   onFullscreen() {
