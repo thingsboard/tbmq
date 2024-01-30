@@ -84,7 +84,7 @@ public class FlowControlServiceImpl implements FlowControlService {
                     }
                 } catch (Exception e) {
                     if (e instanceof InterruptedException) {
-                        log.info("Flow control processing was interrupted", e);
+                        log.info("Flow control processing was interrupted");
                         break;
                     }
                     if (!stopped) {
@@ -92,7 +92,7 @@ public class FlowControlServiceImpl implements FlowControlService {
                         try {
                             sleep();
                         } catch (InterruptedException e2) {
-                            log.info("Thread was interrupted!", e2);
+                            log.info("Thread was interrupted!");
                             break;
                         }
                     }

@@ -40,6 +40,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
@@ -77,6 +78,8 @@ public abstract class AbstractPubSubIntegrationTest {
     @Autowired
     @Lazy
     protected BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    protected MqttClientCredentialsService mqttClientCredentialsService;
 
     @Value("${listener.tcp.bind_port}")
     protected int mqttPort;

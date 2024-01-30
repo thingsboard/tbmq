@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
@@ -147,6 +148,21 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Test
     public void testCreateValidCredentials() throws JsonProcessingException {
         mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", null));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testCreateCredentialsWithSystemWebSocketCredentialsName() throws JsonProcessingException {
+        mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME, "client", "user", null));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void testUpdateSystemWebSocketCredentials() throws JsonProcessingException {
+        MqttClientCredentials systemMqttClientCredentials = mqttClientCredentialsService.saveSystemWebSocketCredentials();
+
+        MqttClientCredentials mqttClientCredentials = validMqttClientCredentials("anotherName", "client", "user", "password");
+        mqttClientCredentials.setId(systemMqttClientCredentials.getId());
+
+        mqttClientCredentialsService.saveCredentials(mqttClientCredentials);
     }
 
     @Test(expected = DataValidationException.class)

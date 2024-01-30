@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -101,7 +102,10 @@ public class MqttClientCredentialsController extends BaseController {
     public void deleteCredentials(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
         try {
             UUID uuid = toUUID(strCredentialsId);
-            checkClientCredentialsId(uuid);
+            MqttClientCredentials mqttClientCredentials = checkClientCredentialsId(uuid);
+            if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
+                throw new ThingsboardException("System WebSocket MQTT client credentials can not be deleted!", ThingsboardErrorCode.GENERAL);
+            }
             mqttClientCredentialsService.deleteCredentials(uuid);
         } catch (Exception e) {
             throw handleException(e);

@@ -21,4 +21,5 @@ public interface SystemDataLoaderService {
 
     void createAdminSettings() throws Exception;
 
+    void createWebSocketMqttClientCredentials();
 }

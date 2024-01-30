@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
@@ -38,6 +39,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
 
     @Bean
     protected BCryptPasswordEncoder passwordEncoder() {
@@ -79,4 +81,10 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         mailSettings.setJsonValue(node);
         adminSettingsService.saveAdminSettings(mailSettings);
     }
+
+    @Override
+    public void createWebSocketMqttClientCredentials() {
+        mqttClientCredentialsService.saveSystemWebSocketCredentials();
+    }
+
 }

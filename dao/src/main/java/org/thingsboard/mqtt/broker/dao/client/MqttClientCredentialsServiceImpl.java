@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -92,6 +93,17 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                 throw t;
             }
         }
+    }
+
+    @Override
+    public MqttClientCredentials saveSystemWebSocketCredentials() {
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setName(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME);
+        mqttClientCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(BasicMqttCredentials.newInstance(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME)));
+        preprocessBasicMqttCredentials(mqttClientCredentials);
+        return mqttClientCredentialsDao.save(mqttClientCredentials);
     }
 
     @Override
@@ -287,12 +299,19 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     if (mqttClientCredentialsDao.findByCredentialsId(mqttClientCredentials.getCredentialsId()) != null) {
                         throw new DataValidationException("Such MQTT Client credentials are already created!");
                     }
+                    if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
+                        throw new DataValidationException("It is forbidden to save credentials with System WebSocket MQTT client credentials name!");
+                    }
                 }
 
                 @Override
                 protected void validateUpdate(MqttClientCredentials mqttClientCredentials) {
-                    if (mqttClientCredentialsDao.findById(mqttClientCredentials.getId()) == null) {
+                    MqttClientCredentials byId = mqttClientCredentialsDao.findById(mqttClientCredentials.getId());
+                    if (byId == null) {
                         throw new DataValidationException("Unable to update non-existent MQTT Client credentials!");
+                    }
+                    if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(byId.getName())) {
+                        throw new DataValidationException("It is forbidden to update System WebSocket MQTT client credentials!");
                     }
                     MqttClientCredentials existingCredentials = mqttClientCredentialsDao.findByCredentialsId(mqttClientCredentials.getCredentialsId());
                     if (existingCredentials != null && !existingCredentials.getId().equals(mqttClientCredentials.getId())) {

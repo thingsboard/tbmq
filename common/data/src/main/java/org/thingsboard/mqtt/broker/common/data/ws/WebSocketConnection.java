@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import javax.validation.Valid;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditionalInfo.mapper;
@@ -34,6 +35,9 @@ import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditio
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
 public class WebSocketConnection extends SearchTextBased {
+
+    @Serial
+    private static final long serialVersionUID = -2995421139460181824L;
 
     @NoXss
     private String name;
