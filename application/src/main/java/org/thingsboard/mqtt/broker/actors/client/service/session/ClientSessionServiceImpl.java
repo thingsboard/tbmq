@@ -127,7 +127,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
 
     @Override
     public int getClientSessionsCount() {
-        return clientSessionMap.size();
+        return clientSessionMap == null ? 0 : clientSessionMap.size();
     }
 
     private void processSessionUpdate(String clientId, String serviceId, ClientSessionInfo clientSessionInfo) {
