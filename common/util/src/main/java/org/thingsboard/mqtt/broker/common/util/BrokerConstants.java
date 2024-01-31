@@ -115,4 +115,9 @@ public class BrokerConstants {
     public static final String WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME = "TBMQ WebSockets MQTT Credentials";
     public static final String WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME = "tbmq_websockets_username";
 
+    public static final String WEB_SOCKET_DEFAULT_CONNECTION_NAME = "WebSocket Default Connection";
+
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
+    public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#FF5733";
 }

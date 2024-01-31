@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
@@ -69,6 +70,14 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
         return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
                 .map(DaoUtil::getData)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public MqttClientCredentials findSystemWebSocketCredentials() {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find system WebSocket credentials");
+        }
+        return DaoUtil.getData(mqttClientCredentialsRepository.findMqttClientCredentialsEntityByName(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME));
     }
 
     @Override

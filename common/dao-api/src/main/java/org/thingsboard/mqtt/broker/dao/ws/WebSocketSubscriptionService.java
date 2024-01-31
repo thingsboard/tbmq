@@ -25,6 +25,8 @@ public interface WebSocketSubscriptionService {
 
     WebSocketSubscription saveWebSocketSubscription(WebSocketSubscription subscription);
 
+    WebSocketSubscription saveDefaultWebSocketSubscription(UUID webSocketConnectionId);
+
     List<WebSocketSubscription> getWebSocketSubscriptions(UUID webSocketConnectionId);
 
     Optional<WebSocketSubscription> getWebSocketSubscriptionById(UUID id);

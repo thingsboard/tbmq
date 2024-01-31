@@ -55,7 +55,7 @@ public class AdminController extends BaseController {
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
         try {
             checkNotNull(adminDto);
-            return adminService.createAdmin(adminDto);
+            return adminService.createAdmin(adminDto, true);
         } catch (Exception e) {
             throw handleException(e);
         }

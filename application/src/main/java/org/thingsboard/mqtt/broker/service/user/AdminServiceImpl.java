@@ -20,9 +20,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 
 @Service
@@ -30,15 +32,18 @@ public class AdminServiceImpl implements AdminService {
 
     private final UserService userService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final WebSocketConnectionService webSocketConnectionService;
 
-    public AdminServiceImpl(UserService userService, @Lazy BCryptPasswordEncoder passwordEncoder) {
+    public AdminServiceImpl(UserService userService, @Lazy BCryptPasswordEncoder passwordEncoder,
+                            WebSocketConnectionService webSocketConnectionService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.webSocketConnectionService = webSocketConnectionService;
     }
 
     @Override
     @Transactional
-    public User createAdmin(AdminDto adminDto) {
+    public User createAdmin(AdminDto adminDto, boolean saveDefaultWsConnection) throws ThingsboardException {
         User user = toUser(adminDto);
         user = userService.saveUser(user);
         UserCredentials userCredentials = userService.findUserCredentialsByUserId(user.getId());
@@ -49,6 +54,9 @@ public class AdminServiceImpl implements AdminService {
         userCredentials.setEnabled(true);
         userCredentials.setActivateToken(null);
         userService.saveUserCredentials(userCredentials);
+        if (saveDefaultWsConnection) {
+            webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), null);
+        }
         return user;
     }
 

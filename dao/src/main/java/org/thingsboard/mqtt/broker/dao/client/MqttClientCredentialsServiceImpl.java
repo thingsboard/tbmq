@@ -119,6 +119,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
+    public MqttClientCredentials findSystemWebSocketCredentials() {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findSystemWebSocketCredentials");
+        }
+        return mqttClientCredentialsDao.findSystemWebSocketCredentials();
+    }
+
+    @Override
     public List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds) {
         if (log.isTraceEnabled()) {
             log.trace("Executing findMatchingCredentials [{}]", credentialIds);

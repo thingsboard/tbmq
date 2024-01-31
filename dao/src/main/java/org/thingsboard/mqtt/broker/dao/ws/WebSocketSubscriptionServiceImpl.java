@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 
@@ -43,6 +45,17 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
         }
         webSocketSubscriptionValidator.validate(subscription);
         return webSocketSubscriptionDao.save(subscription);
+    }
+
+    @Override
+    public WebSocketSubscription saveDefaultWebSocketSubscription(UUID webSocketConnectionId) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveDefaultWebSocketSubscription [{}]", webSocketConnectionId);
+        }
+        WebSocketSubscription subscription = new WebSocketSubscription();
+        subscription.setWebSocketConnectionId(webSocketConnectionId);
+        subscription.setConfiguration(getWebSocketSubscriptionConfiguration());
+        return saveWebSocketSubscription(subscription);
     }
 
     @Override
@@ -96,5 +109,12 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
                     validateString("WebSocket Subscription topicFilter", webSocketSubscription.getConfiguration().getTopicFilter());
                 }
             };
+
+    private WebSocketSubscriptionConfiguration getWebSocketSubscriptionConfiguration() {
+        return new WebSocketSubscriptionConfiguration(
+                BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER,
+                BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS,
+                BrokerConstants.WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR);
+    }
 
 }

@@ -62,6 +62,12 @@ public final class SubscriptionOptions {
     private final boolean retainAsPublish;
     private final RetainHandlingPolicy retainHandling;
 
+    public SubscriptionOptions() {
+        this.noLocal = false;
+        this.retainAsPublish = false;
+        this.retainHandling = RetainHandlingPolicy.SEND_AT_SUBSCRIBE;
+    }
+
     public static SubscriptionOptions newInstance(MqttSubscriptionOption option) {
         return new SubscriptionOptions(
                 option.isNoLocal(),

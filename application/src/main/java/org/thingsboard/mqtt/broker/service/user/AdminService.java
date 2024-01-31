@@ -16,8 +16,11 @@
 package org.thingsboard.mqtt.broker.service.user;
 
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 
 public interface AdminService {
-    User createAdmin(AdminDto adminDto);
+
+    User createAdmin(AdminDto adminDto, boolean saveDefaultWsConnection) throws ThingsboardException;
+
 }

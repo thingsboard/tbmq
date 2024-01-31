@@ -17,12 +17,21 @@ package org.thingsboard.mqtt.broker.dao.ws;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.ws.SizeUnit;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
+import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
@@ -31,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
@@ -41,7 +51,9 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class WebSocketConnectionServiceImpl implements WebSocketConnectionService {
 
     private final WebSocketConnectionDao webSocketConnectionDao;
+    private final WebSocketSubscriptionService webSocketSubscriptionService;
     private final UserService userService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
 
     @Override
     public WebSocketConnection saveWebSocketConnection(WebSocketConnection connection) {
@@ -60,6 +72,31 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
                 throw t;
             }
         }
+    }
+
+    @Override
+    @Transactional
+    public WebSocketConnection saveDefaultWebSocketConnection(UUID userId, UUID clientCredentialsId) throws ThingsboardException {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing saveDefaultWebSocketConnection [{}][{}]", userId, clientCredentialsId);
+        }
+        if (clientCredentialsId == null) {
+            MqttClientCredentials systemWebSocketCredentials = mqttClientCredentialsService.findSystemWebSocketCredentials();
+            if (systemWebSocketCredentials == null) {
+                throw new ThingsboardException("Failed to find system WebSocket MQTT client credentials", ThingsboardErrorCode.ITEM_NOT_FOUND);
+            }
+            clientCredentialsId = systemWebSocketCredentials.getId();
+        }
+
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName(BrokerConstants.WEB_SOCKET_DEFAULT_CONNECTION_NAME);
+        connection.setUserId(userId);
+        connection.setConfiguration(getWebSocketConnectionConfiguration(clientCredentialsId));
+        WebSocketConnection savedWebSocketConnection = saveWebSocketConnection(connection);
+
+        webSocketSubscriptionService.saveDefaultWebSocketSubscription(savedWebSocketConnection.getId());
+
+        return savedWebSocketConnection;
     }
 
     @Override
@@ -133,6 +170,35 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
 
     private WebSocketConnectionDto newWebSocketConnectionDto(WebSocketConnection webSocketConnection) {
         return WebSocketConnectionDto.fromWebSocketConnection(webSocketConnection);
+    }
+
+    private WebSocketConnectionConfiguration getWebSocketConnectionConfiguration(UUID clientCredentialsId) {
+        WebSocketConnectionConfiguration configuration = new WebSocketConnectionConfiguration();
+        configuration.setUrl("ws://localhost:8084/mqtt");
+        configuration.setClientCredentialsId(clientCredentialsId);
+        configuration.setClientId("tbmq_" + RandomStringUtils.randomAlphanumeric(8));
+        configuration.setUsername(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME);
+        configuration.setCleanStart(true);
+        configuration.setKeepAlive(2);
+        configuration.setKeepAliveUnit(TimeUnit.MINUTES);
+        configuration.setConnectTimeout(10);
+        configuration.setConnectTimeoutUnit(TimeUnit.SECONDS);
+        configuration.setReconnectPeriod(5);
+        configuration.setReconnectPeriodUnit(TimeUnit.SECONDS);
+        configuration.setMqttVersion(5);
+        configuration.setSessionExpiryInterval(0);
+        configuration.setSessionExpiryIntervalUnit(TimeUnit.SECONDS);
+        configuration.setMaxPacketSize(64);
+        configuration.setMaxPacketSizeUnit(SizeUnit.KILOBYTE);
+        configuration.setTopicAliasMax(0);
+        configuration.setReceiveMax(BrokerConstants.DEFAULT_RECEIVE_MAXIMUM);
+        configuration.setRequestResponseInfo(false);
+        configuration.setRequestProblemInfo(false);
+
+        configuration.setLastWillMsg(null);
+        configuration.setUserProperties(null);
+
+        return configuration;
     }
 
 }

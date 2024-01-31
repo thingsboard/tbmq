@@ -104,7 +104,7 @@ public class MqttClientCredentialsController extends BaseController {
             UUID uuid = toUUID(strCredentialsId);
             MqttClientCredentials mqttClientCredentials = checkClientCredentialsId(uuid);
             if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
-                throw new ThingsboardException("System WebSocket MQTT client credentials can not be deleted!", ThingsboardErrorCode.GENERAL);
+                throw new ThingsboardException("System WebSocket MQTT client credentials can not be deleted!", ThingsboardErrorCode.PERMISSION_DENIED);
             }
             mqttClientCredentialsService.deleteCredentials(uuid);
         } catch (Exception e) {

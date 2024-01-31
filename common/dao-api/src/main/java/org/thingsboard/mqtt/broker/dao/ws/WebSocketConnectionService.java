@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.ws;
 
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
@@ -26,6 +27,8 @@ import java.util.UUID;
 public interface WebSocketConnectionService {
 
     WebSocketConnection saveWebSocketConnection(WebSocketConnection connection);
+
+    WebSocketConnection saveDefaultWebSocketConnection(UUID userId, UUID clientCredentialsId) throws ThingsboardException;
 
     PageData<WebSocketConnectionDto> getWebSocketConnections(PageLink pageLink);
 
