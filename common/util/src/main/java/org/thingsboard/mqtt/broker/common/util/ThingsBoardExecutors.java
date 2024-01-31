@@ -59,4 +59,8 @@ public class ThingsBoardExecutors {
             return Executors.newFixedThreadPool(threadsCount, ThingsBoardThreadFactory.forName(serviceName));
         }
     }
+
+    public static ExecutorService initCachedExecutorService(String serviceName) {
+        return Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName(serviceName));
+    }
 }
