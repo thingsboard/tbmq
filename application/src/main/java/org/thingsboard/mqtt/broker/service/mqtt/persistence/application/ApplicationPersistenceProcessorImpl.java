@@ -108,16 +108,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final boolean isTraceEnabled = log.isTraceEnabled();
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
-    @Value("${queue.application-persisted-msg.threads-count}")
-    private int threadsCount;
     @Value("${queue.application-persisted-msg.poll-interval}")
     private long pollDuration;
     @Value("${queue.application-persisted-msg.pack-processing-timeout}")
     private long packProcessingTimeout;
     @Value("${queue.application-persisted-msg.shared-topic-validation:true}")
     private boolean validateSharedTopicFilter;
-    @Value("${queue.application-persisted-msg.shared-subs-threads-count}")
-    private int sharedSubsThreadsCount;
 
     private volatile boolean stopped = false;
     private ExecutorService persistedMsgsConsumerExecutor;
@@ -127,8 +123,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     public void init() {
         statsManager.registerActiveApplicationProcessorsStats(processingFutures);
         statsManager.registerActiveSharedApplicationProcessorsStats(sharedSubscriptionsProcessingJobs);
-        persistedMsgsConsumerExecutor = ThingsBoardExecutors.initExecutorService(threadsCount, "application-persisted-msg-consumers");
-        sharedSubsMsgsConsumerExecutor = ThingsBoardExecutors.initExecutorService(sharedSubsThreadsCount, "application-shared-subs-msg-consumers");
+        persistedMsgsConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-persisted-msg-consumers");
+        sharedSubsMsgsConsumerExecutor = ThingsBoardExecutors.initCachedExecutorService("application-shared-subs-msg-consumers");
     }
 
     @Override
