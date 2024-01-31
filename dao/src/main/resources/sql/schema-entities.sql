@@ -144,11 +144,7 @@ CREATE TABLE IF NOT EXISTS websocket_connection (
     user_id uuid NOT NULL,
     configuration jsonb,
     search_text varchar (255),
-    CONSTRAINT name_unq_key UNIQUE
-(
-    user_id,
-    name
-),
+    CONSTRAINT name_unq_key UNIQUE (user_id, name),
     CONSTRAINT fk_user_id
     FOREIGN KEY (user_id) REFERENCES broker_user (id) ON DELETE CASCADE
 );
