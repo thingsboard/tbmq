@@ -66,7 +66,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
 
   private buildForm(): void {
     this.formGroup = this.fb.group({
-      payloadFormatIndicator: [null, []],
+      payloadFormatIndicator: [false, []],
       contentType: [null, []],
       messageExpiryInterval: [null, []],
       messageExpiryIntervalUnit: [TimeUnitType.SECONDS, []],

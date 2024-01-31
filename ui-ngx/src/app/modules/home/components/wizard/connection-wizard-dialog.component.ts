@@ -177,13 +177,13 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       reconnectPeriodUnit: [entity ? entity.reconnectPeriodUnit : TimeUnitType.MILLISECONDS, []],
       protocolVersion: [entity ? entity.protocolVersion : 5, []],
       properties: this.fb.group({
-        sessionExpiryInterval: [entity ? convertTimeUnits(entity.properties.sessionExpiryInterval, TimeUnitType.SECONDS, entity.properties.sessionExpiryIntervalUnit) : null, []],
+        sessionExpiryInterval: [entity ? convertTimeUnits(entity.properties.sessionExpiryInterval, TimeUnitType.SECONDS, entity.properties.sessionExpiryIntervalUnit) : 0, []],
         sessionExpiryIntervalUnit: [entity ? entity.properties.sessionExpiryIntervalUnit : TimeUnitType.SECONDS, []],
-        maximumPacketSize: [entity ? convertDataSizeUnits(entity.properties.maximumPacketSize, DataSizeUnitType.B, entity.properties.maximumPacketSizeUnit) : null, []],
-        maximumPacketSizeUnit: [entity ? entity.properties.maximumPacketSizeUnit : DataSizeUnitType.KB, []],
-        topicAliasMaximum: [entity ? entity.properties.topicAliasMaximum : null, []],
-        receiveMaximum: [entity ? entity.properties.receiveMaximum : null, []],
-        requestResponseInfo: [entity ? entity.properties.requestResponseInformation : null, []],
+        maximumPacketSize: [entity ? convertDataSizeUnits(entity.properties.maximumPacketSize, DataSizeUnitType.B, entity.properties.maximumPacketSizeUnit) : 256, []],
+        maximumPacketSizeUnit: [entity ? entity.properties.maximumPacketSizeUnit : DataSizeUnitType.MB, []],
+        topicAliasMaximum: [entity ? entity.properties.topicAliasMaximum : 0, []],
+        receiveMaximum: [entity ? entity.properties.receiveMaximum : 65535, []],
+        requestResponseInfo: [entity ? entity.properties.requestResponseInformation : false, []],
       })
     });
   }

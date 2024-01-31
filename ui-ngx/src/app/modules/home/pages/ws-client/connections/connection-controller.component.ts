@@ -140,7 +140,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.wsClientService.disconnectClient(true, this.connection);
+    this.wsClientService.disconnectClient(true);
   }
 
 /*  cancel() {

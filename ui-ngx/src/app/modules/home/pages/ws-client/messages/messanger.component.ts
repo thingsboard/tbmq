@@ -63,16 +63,23 @@ export class MessangerComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.messangerFormGroup = this.fb.group(
-      {
-        payload: [{temperature: 25}, []],
-        topic: ['sensors/temperature', []],
-        qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
-        payloadFormat: [ValueType.JSON, []],
-        retain: [false, []],
-        properties: [null, []]
-      }
-    );
+    this.messangerFormGroup = this.fb.group({
+      payload: [{temperature: 25}, []],
+      topic: ['sensors/temperature', []],
+      qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
+      payloadFormat: [ValueType.JSON, []],
+      retain: [false, []],
+      properties: this.fb.group({
+        payloadFormatIndicator: [false, []],
+        messageExpiryInterval: [undefined, []],
+        topicAlias: [undefined, []],
+        responseTopic: [undefined, []],
+        correlationData: [undefined, []],
+        userProperties: [undefined, []],
+        subscriptionIdentifier: [undefined, []],
+        contentType: [undefined, []]
+      })
+    });
 
     this.wsClientService.selectedConnectionStatus$.subscribe(
       status => {
@@ -99,15 +106,17 @@ export class MessangerComponent implements OnInit {
     const qos = this.messangerFormGroup.get('qos').value;
     const retain = this.messangerFormGroup.get('retain').value;
     const properties = this.messangerFormGroup.get('properties').value;
-    this.wsClientService.publishMessage({
+    const publishOpts = {
       payload,
       topic,
       options: {
         qos,
         retain,
-        properties
+        // properties
       }
-    });
+    }
+    console.log('message', publishOpts)
+    this.wsClientService.publishMessage(publishOpts);
   }
 
   clearHistory() {

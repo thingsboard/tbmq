@@ -89,14 +89,14 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
       qos: [entity?.will ? entity?.will.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
       retain: [entity?.will ? entity?.will.retain : false, []],
       properties: this.fb.group({
-        willDelayInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.willDelayInterval, TimeUnitType.SECONDS, entity?.will.properties.willDelayIntervalUnit) : null, []],
+        willDelayInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.willDelayInterval, TimeUnitType.SECONDS, entity?.will.properties.willDelayIntervalUnit) : 0, []],
         willDelayIntervalUnit: [entity?.will ? entity?.will.properties.willDelayIntervalUnit : TimeUnitType.SECONDS, []],
-        payloadFormatIndicator: [entity?.will ? entity?.will.properties.payloadFormatIndicator : null, []],
-        messageExpiryInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.messageExpiryInterval, TimeUnitType.SECONDS, entity?.will.properties.messageExpiryIntervalUnit) : null, []],
+        payloadFormatIndicator: [entity?.will ? entity?.will.properties.payloadFormatIndicator : false, []],
+        messageExpiryInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.messageExpiryInterval, TimeUnitType.SECONDS, entity?.will.properties.messageExpiryIntervalUnit) : 0, []],
         messageExpiryIntervalUnit: [entity?.will ? entity?.will.properties.messageExpiryIntervalUnit : TimeUnitType.SECONDS, []],
-        contentType: [entity?.will ? entity?.will.properties.contentType : null, []],
-        responseTopic: [entity?.will ? entity?.will.properties.responseTopic : null, []],
-        correlationData: [entity?.will ? entity?.will.properties.correlationData : null, []]
+        contentType: [entity?.will ? entity?.will.properties.contentType : '', []],
+        responseTopic: [entity?.will ? entity?.will.properties.responseTopic : '', []],
+        correlationData: [entity?.will ? entity?.will.properties.correlationData : '', []]
       })
     });
   }

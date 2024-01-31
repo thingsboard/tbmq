@@ -85,7 +85,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
         rap: [entity ? entity.options.rap : null, []],
         rh: [entity ? entity.options.rh : null, []],
         properties: this.fb.group({
-          subscriptionIdentifier: [entity ? entity.options.properties.subscriptionIdentifier : null, []]
+          subscriptionIdentifier: [null, []]
         })
       })
     });
