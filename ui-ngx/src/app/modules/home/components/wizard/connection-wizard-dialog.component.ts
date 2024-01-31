@@ -216,6 +216,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   onCredentialsGeneratorChange(value: WsCredentialsGeneratorType) {
+    this.credentialsGeneratorType = value;
     if (value === WsCredentialsGeneratorType.AUTO) {
       this.connectionFormGroup.get('credentialsName').disable();
       this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
