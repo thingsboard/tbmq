@@ -25,7 +25,10 @@ export enum EntityType {
   RETAINED_MESSAGE = 'RETAINED_MESSAGE',
   KAFKA_TOPIC = 'KAFKA_TOPIC',
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
-  KAFKA_BROKER = 'KAFKA_BROKER'
+  KAFKA_BROKER = 'KAFKA_BROKER',
+  WS_CONNECTION = 'WS_CONNECTION',
+  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
+  WS_MESSAGE = 'WS_MESSAGE' // TODO add mappings
 }
 
 export interface EntityTypeTranslation {
@@ -171,6 +174,48 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         search: 'kafka.search-broker',
         selectedEntities: 'kafka.selected-brokers'
       }
+    ],
+    [
+      EntityType.WS_CONNECTION,
+      {
+        type: 'ws-client.connections.connection',
+        typePlural: 'ws-client.connections.connections',
+        list: 'ws-client.connections.list-of-connections',
+        nameStartsWith: 'ws-client.connections.connection-starts-with',
+        details: 'ws-client.connections.details',
+        add: 'ws-client.connections.add-connection',
+        noEntities: 'ws-client.connections.no-connections-text',
+        search: 'ws-client.connections.search-connection',
+        selectedEntities: 'ws-client.connections.selected-connections'
+      }
+    ],
+    [
+      EntityType.WS_SUBSCRIPTION,
+      {
+        type: 'ws-client.subscriptions.subscription',
+        typePlural: 'ws-client.subscriptions.subscription',
+        list: 'ws-client.subscriptions.list-of-subscriptions',
+        nameStartsWith: 'ws-client.subscriptions.subscription-starts-with',
+        details: 'ws-client.subscriptions.details',
+        add: 'ws-client.subscriptions.add-subscription',
+        noEntities: 'ws-client.subscriptions.no-subscriptions-text',
+        search: 'ws-client.subscriptions.search-subscription',
+        selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
+      }
+    ],
+    [
+      EntityType.WS_MESSAGE,
+      {
+        type: 'ws-client.messages.message',
+        typePlural: 'ws-client.messages.messages',
+        list: 'ws-client.messages.list-of-messages',
+        nameStartsWith: 'ws-client.messages.message-starts-with',
+        details: 'ws-client.messages.details',
+        add: 'ws-client.messages.add-message',
+        noEntities: 'ws-client.messages.no-messages-text',
+        search: 'ws-client.messages.search-message',
+        selectedEntities: 'ws-client.messages.selected-messages'
+      }
     ]
   ]
 );
@@ -211,6 +256,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.RETAINED_MESSAGE,
       {
         helpLinkId: 'retainedMessages'
+      }
+    ],
+    [
+      EntityType.WS_MESSAGE,
+      {
+        helpLinkId: 'wsMessage'
       }
     ]
   ]

@@ -1,0 +1,166 @@
+///
+/// Copyright © 2016-2023 The Thingsboard Authors
+///
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
+///
+///     http://www.apache.org/licenses/LICENSE-2.0
+///
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
+///
+
+import { ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
+import {
+  ControlValueAccessor,
+  FormBuilder,
+  NG_VALIDATORS,
+  NG_VALUE_ACCESSOR,
+  UntypedFormArray,
+  UntypedFormGroup,
+  ValidationErrors,
+  Validator
+} from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { SslCredentialsAuthRules } from '@shared/models/credentials.model';
+import { isDefinedAndNotNull } from '@core/utils';
+import { Connection } from '@shared/models/ws-client.model';
+
+export interface UserProperties {
+  userProperties: UserPropertiesObject[];
+}
+
+export interface UserPropertiesObject {
+  key: string;
+  value: string;
+}
+
+@Component({
+  selector: 'tb-user-properties',
+  templateUrl: './user-properties.component.html',
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => UserPropertiesComponent),
+      multi: true
+    },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => UserPropertiesComponent),
+      multi: true,
+    }],
+  styleUrls: ['./user-properties.component.scss']
+})
+export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit {
+
+  @Input()
+  disabled: boolean;
+
+  @Input()
+  entity: Connection;
+
+  userPropertiesFormGroup: UntypedFormGroup;
+
+  private valueChangeSubscription: Subscription = null;
+  private destroy$ = new Subject<void>();
+  private propagateChange = (v: any) => {
+  };
+
+  get userPropertiesFormArray(): UntypedFormArray {
+    return this.userPropertiesFormGroup.get('userProperties') as UntypedFormArray;
+  }
+
+  constructor(public fb: FormBuilder,
+              public cd: ChangeDetectorRef) {
+    this.userPropertiesFormGroup = this.fb.group({
+      userProperties: this.fb.array([])
+    });
+
+  }
+
+  ngOnInit() {
+    if (this.entity && isDefinedAndNotNull(this.entity.properties?.userProperties)) {
+      for (const [key, value] of Object.entries(this.entity.properties?.userProperties)) {
+        this.userPropertiesFormArray.push(this.fb.group({
+          key: [key, []],
+          value: [value, []]
+        }));
+      }
+    } else {
+      this.userPropertiesFormArray.push(this.fb.group({
+        key: [null, []],
+        value: [null, []]
+      }));
+    }
+  }
+
+  addRule(): void {
+    this.userPropertiesFormArray.push(this.fb.group({
+      key: [null, []],
+      value: [null, []]
+    }));
+    this.cd.markForCheck();
+  }
+
+  removeRule(index: number) {
+    this.userPropertiesFormArray.removeAt(index);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  registerOnChange(fn: any): void {
+    this.propagateChange = fn;
+  }
+
+  registerOnTouched(fn: any): void {
+  }
+
+  setDisabledState(isDisabled: boolean) {
+    this.disabled = isDisabled;
+    if (this.disabled) {
+      this.userPropertiesFormGroup.disable({emitEvent: false});
+    } else {
+      this.userPropertiesFormGroup.enable({emitEvent: false});
+    }
+  }
+
+  validate(): ValidationErrors | null {
+    return this.userPropertiesFormGroup.valid ? null : {userProperties: true};
+  }
+
+  writeValue(value: UserProperties): void {
+    if (this.valueChangeSubscription) {
+      this.valueChangeSubscription.unsubscribe();
+    }
+    this.valueChangeSubscription = this.userPropertiesFormGroup.valueChanges.subscribe((value) => {
+      this.updateView(value);
+    });
+  }
+
+  private updateView(value: UserProperties) {
+    if (isDefinedAndNotNull(value)) {
+      this.propagateChange(this.prepareValues(value));
+    }
+  }
+
+  private prepareValues(value: UserProperties): SslCredentialsAuthRules {
+    const result = {};
+    value.userProperties.map(obj => {
+      const key = obj?.key;
+      if (key) {
+        result[key] = {};
+        result[key] = obj.value;
+      }
+    });
+    return result;
+  }
+
+}
+

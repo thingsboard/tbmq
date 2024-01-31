@@ -1,0 +1,126 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!--TODO as Select Connection-->
+
+<div class="mat-table-toolbar-container sticky mat-padding">
+  <mat-toolbar class="mat-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
+    <div class="mat-toolbar-tools" fxLayoutGap="4px">
+      <h2 *ngIf="entitiesTableConfig.tableTitle">{{ entitiesTableConfig.tableTitle }}</h2>
+      <span fxFlex></span>
+      <button *ngIf="entitiesTableConfig.addEnabled" mat-icon-button
+              (click)="entitiesTableConfig.addEntity()"
+              [matTooltip]="'ws-client.connections.add-connection' | translate"
+              aria-label="Add Websocket Client Connection">
+        <mat-icon>add</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="entitiesTableConfig.searchEnabled"
+              [disabled]="isLoading$ | async" (click)="enterFilterMode()"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon>search</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+  <mat-toolbar class="mat-table-toolbar" [fxShow]="textSearchMode && dataSource.selection.isEmpty()">
+    <div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="4px"
+         class="mat-toolbar-tools search-mode">
+      <button mat-icon-button
+              class="tb-mat-32"
+              matTooltip="{{ translations.search | translate }}"
+              matTooltipPosition="above">
+        <mat-icon class="home-page-material-icons">search</mat-icon>
+      </button>
+      <input #searchInput fxFlex
+             [(ngModel)]="pageLink.textSearch"
+             placeholder="{{ translations.search | translate }}"/>
+      <button mat-icon-button (click)="exitFilterMode()"
+              class="tb-mat-32"
+              matTooltip="{{ 'action.close' | translate }}"
+              matTooltipPosition="above">
+        <mat-icon class="home-page-material-icons">close</mat-icon>
+      </button>
+    </div>
+  </mat-toolbar>
+</div>
+<div class="container">
+  <ng-container *ngIf="dataArray?.length; else noData">
+    <ng-container *ngTemplateOutlet="data"></ng-container>
+  </ng-container>
+</div>
+
+<ng-template #data>
+  <section style="height: 100%">
+    <ul style="overflow: auto" class="tb-side-menu"
+        fxFlex fxLayout="column" fxLayoutAlign="flex-start stretch" fxLayoutGap="8px">
+      <li [ngClass]="{'active': (index === selectedRow && selectionEnabled)}"
+          *ngFor="let entity of dataArray; index as index">
+        <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
+                 (mouseenter)="onCommentMouseEnter(index)"
+                 (mouseleave)="onCommentMouseLeave(index)">
+          <section fxLayout="row" fxLayoutGap="8px">
+            <div *ngIf="entity.color" class="label-color" [ngStyle]="{backgroundColor: entity.color}"></div>
+            <span class="label" (click)="onRowClick($event, entity, index)">{{entity.name}}</span>
+          </section>
+          <div fxFlex fxLayout="row" fxLayoutAlign="end">
+            <div *ngFor="let actionDescriptor of cellHiddenActionDescriptors" matTooltipPosition="above"
+                 class="action-buttons"
+                 [ngClass]="{ 'show-buttons': entity?.showActions }"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                      *ngIf="actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+              </button>
+            </div>
+            <div *ngIf="cellMoreActionDescriptors.length">
+              <button mat-icon-button
+                      (click)="$event.stopPropagation()"
+                      [matMenuTriggerFor]="cellMoreActionsMenu">
+                <mat-icon class="material-icons">more_vert</mat-icon>
+              </button>
+              <mat-menu #cellMoreActionsMenu="matMenu" xPosition="before" yPosition="above">
+                <button mat-menu-item *ngFor="let actionDescriptor of cellMoreActionDescriptors"
+                        [disabled]="isLoading$ | async"
+                        [fxShow]="actionDescriptor.isEnabled(entity)"
+                        (click)="actionDescriptor.onAction($event, entity)">
+                  <mat-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</mat-icon>
+                  <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
+                </button>
+              </mat-menu>
+            </div>
+            <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
+                 matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
+              <button mat-icon-button [disabled]="(isLoading$ | async) || !actionDescriptor.isEnabled(entity)"
+                      *ngIf="actionDescriptor.isEnabled(entity)"
+                      (click)="actionDescriptor.onAction($event, entity)">
+                <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+              </button>
+            </div>
+          </div>
+        </section>
+      </li>
+    </ul>
+  </section>
+</ng-template>
+<ng-template #noData>
+  <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px"
+           class="no-data">
+    <img src="assets/home/no_data_bg.svg">
+    <span *ngIf="entitiesTableConfig.noDataLabel">{{ entitiesTableConfig.noDataLabel | translate }}</span>
+  </section>
+</ng-template>

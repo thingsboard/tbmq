@@ -1,0 +1,72 @@
+/**
+ * Copyright © 2016-2023 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  .status {
+    font-size: 14px;
+    border-radius: 16px;
+    padding: 8px;
+    line-height: 20px;
+    letter-spacing: 0.2px;
+  }
+
+  ::ng-deep {
+    .mat-mdc-text-field-wrapper {
+      height: 36px;
+
+      &.mdc-text-field--outlined .mat-mdc-form-field-infix {
+        padding-top: 6px;
+      }
+    }
+
+    .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
+      top: 17px;
+    }
+
+    .mat-mdc-form-field .mdc-text-field--outlined .mdc-notched-outline--upgraded .mdc-floating-label--float-above {
+      top: 28px;
+    }
+
+    .mat-mdc-icon-button.mat-mdc-button-base {
+      width: 36px;
+      height: 36px;
+      padding: 6px;
+    }
+
+    .mat-mdc-form-field-icon-suffix {
+      align-self: flex-start;
+    }
+
+    .mat-badge-small.mat-badge-overlap.mat-badge-after .mat-badge-content {
+      right: 0;
+    }
+
+    .mat-badge-small.mat-badge-above .mat-badge-content {
+      top: 0;
+    }
+
+    .mat-badge-warn .mat-badge-content {
+      color: transparent;
+      background: #f44336;
+    }
+
+    .mat-badge-small .mat-badge-content {
+      width: 6px;
+      height: 6px;
+      line-height: 6px;
+    }
+  }
+}

@@ -28,7 +28,7 @@ const routes: Routes = [
       title: 'user.users',
       breadcrumb: {
         label: 'user.users',
-        icon: 'mdi:account-multiple-outline'
+        icon: 'mdi:account-multiple'
       }
     }
   }

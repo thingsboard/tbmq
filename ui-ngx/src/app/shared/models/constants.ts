@@ -115,3 +115,32 @@ export const contentTypesMap = new Map<ContentType, ContentTypeData>(
     ]
   ]
 );
+
+export interface ValueTypeData {
+  name: string;
+  icon: string;
+}
+
+export enum ValueType {
+  STRING = 'STRING',
+  JSON = 'JSON'
+}
+
+export const valueTypesMap = new Map<ValueType, ValueTypeData>(
+  [
+    [
+      ValueType.STRING,
+      {
+        name: 'value.string',
+        icon: 'mdi:format-text'
+      }
+    ],
+    [
+      ValueType.JSON,
+      {
+        name: 'value.json',
+        icon: 'mdi:code-json'
+      }
+    ]
+  ]
+);

@@ -65,7 +65,7 @@
           <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-session.keep-alive</mat-label>
             <input matInput formControlName="keepAliveSeconds">
-            <mat-hint translate>mqtt-client-session.hint-keep-alive</mat-hint>
+            <mat-hint translate>mqtt-client-session.keep-alive-hint</mat-hint>
           </mat-form-field>
         </div>
         <div fxFlex>
@@ -158,9 +158,7 @@
     <button mat-button color="primary"
             type="button"
             [disabled]="(isLoading$ | async)"
-            [mat-dialog-close]="false" cdkFocusInitial
-            matTooltip="{{ 'action.cancel' | translate }}"
-            matTooltipPosition="above">
+            [mat-dialog-close]="false" cdkFocusInitial>
       {{ 'action.cancel' | translate }}
     </button>
     <button mat-raised-button color="primary"

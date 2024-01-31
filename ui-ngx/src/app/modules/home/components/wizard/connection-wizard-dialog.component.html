@@ -1,0 +1,357 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<mat-toolbar color="primary">
+  <h2 translate>{{ title }}</h2>
+  <span fxFlex></span>
+  <div [tb-help]="'connection'"></div>
+  <button mat-icon-button
+          (click)="cancel()"
+          type="button">
+    <mat-icon class="material-icons">close</mat-icon>
+  </button>
+</mat-toolbar>
+<mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
+</mat-progress-bar>
+<div mat-dialog-content>
+  <mat-horizontal-stepper #addConnectionWizardStepper
+                          [linear]="true"
+                          [labelPosition]="(stepperLabelPosition | async)"
+                          [orientation]="(stepperOrientation | async)"
+                          (selectionChange)="changeStep($event)">
+    <ng-template matStepperIcon="edit">
+      <mat-icon>check</mat-icon>
+    </ng-template>
+    <mat-step [stepControl]="connectionFormGroup">
+      <form [formGroup]="connectionFormGroup" #conFormGroup="ngForm">
+        <ng-template matStepLabel>{{ 'ws-client.connections.connection-details' | translate}}</ng-template>
+        <mat-form-field class="mat-block">
+          <mat-label translate>ws-client.connections.name</mat-label>
+          <input matInput formControlName="name">
+        </mat-form-field>
+
+        <section fxLayout="column" fxLayoutGap="8px">
+          <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
+                            (valueChange)="onAddressProtocolChange($event)"
+                            [value]="WsAddressProtocolType.WS"
+                            name="addressProtocol"
+                            useSelectOnMdLg="true"
+                            appearance="fill">
+            <tb-toggle-option [value]="WsAddressProtocolType.WS">
+              {{ WsAddressProtocolType.WS }}
+            </tb-toggle-option>
+            <tb-toggle-option [value]="WsAddressProtocolType.WSS">
+              {{ WsAddressProtocolType.WSS }}
+            </tb-toggle-option>
+          </tb-toggle-header>
+          <mat-form-field class="mat-block">
+            <mat-label translate>ws-client.connections.url</mat-label>
+            <input matInput formControlName="url">
+            <mat-error *ngIf="connectionFormGroup.get('url').hasError('required')">
+              {{ 'ws-client.connections.url-required' | translate }}
+            </mat-error>
+          </mat-form-field>
+        </section>
+
+        <section fxLayout="column">
+          <div fxLayout="column" style="margin: 8px 0 8px 0">
+            <tb-toggle-header #wsCredentialsGeneratorType
+                              [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
+                              (valueChange)="onCredentialsGeneratorChange($event)"
+                              [value]="credentialsGeneratorType"
+                              name="CredentialsGeneratorType"
+                              useSelectOnMdLg="false"
+                              appearance="fill">
+              <tb-toggle-option [value]="WsCredentialsGeneratorType.AUTO">
+                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.AUTO) | translate }}
+              </tb-toggle-option>
+              <tb-toggle-option [value]="WsCredentialsGeneratorType.CUSTOM">
+                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.CUSTOM) | translate }}
+              </tb-toggle-option>
+              <tb-toggle-option [value]="WsCredentialsGeneratorType.EXISTING">
+                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.EXISTING) | translate }}
+              </tb-toggle-option>
+            </tb-toggle-header>
+          </div>
+          <ng-container [ngSwitch]="wsCredentialsGeneratorType.value">
+            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.AUTO">
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.credentials-name</mat-label>
+                <input matInput formControlName="credentialsName">
+                <button mat-icon-button matSuffix (click)="regenerate('name')">
+                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                    repeat
+                  </mat-icon>
+                </button>
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <input matInput formControlName="clientId">
+                <button mat-icon-button matSuffix (click)="regenerate('clientId')">
+                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                    repeat
+                  </mat-icon>
+                </button>
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.username</mat-label>
+                <input matInput formControlName="username">
+                <button mat-icon-button matSuffix (click)="regenerate('username')">
+                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                    repeat
+                  </mat-icon>
+                </button>
+              </mat-form-field>
+            </ng-template>
+
+            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.CUSTOM">
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <input matInput formControlName="clientId">
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.username</mat-label>
+                <input matInput formControlName="username">
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.password</mat-label>
+                <input matInput autocomplete="new-password" formControlName="password" type="password">
+                <tb-toggle-password matSuffix></tb-toggle-password>
+              </mat-form-field>
+            </ng-template>
+
+            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.EXISTING">
+              <section style="margin-bottom: 16px">
+                <tb-client-credentials-autocomplete
+                  formControlName="clientCredentials"
+                  subscriptSizing="dynamic"
+                  [entity]="connection"
+                  (ngModelChange)="clientCredentialsChanged($event)"
+                  [editProfileEnabled]="false">
+                </tb-client-credentials-autocomplete>
+              </section>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <input matInput formControlName="clientId">
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.username</mat-label>
+                <input matInput formControlName="username">
+              </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.password</mat-label>
+                <input matInput autocomplete="new-password" formControlName="password" type="password">
+                <tb-toggle-password matSuffix></tb-toggle-password>
+                <button matSuffix mat-icon-button type="button" [fxShow]="displayPasswordWarning"
+                        [matTooltip]="'ws-client.connections.password-warning' | translate">
+                  <mat-icon style="color: #ff9a00">warning</mat-icon>
+                </button>
+              </mat-form-field>
+            </ng-template>
+          </ng-container>
+        </section>
+      </form>
+    </mat-step>
+    <mat-step [stepControl]="connectionAdvancedFormGroup" [optional]="true">
+      <form [formGroup]="connectionAdvancedFormGroup" #conFormGroup="ngForm" style="padding-bottom: 16px;">
+        <ng-template matStepLabel>{{ 'ws-client.connections.advanced-settings' | translate}}</ng-template>
+        <section fxLayout="column" fxLayoutGap="8px">
+          <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+            <mat-slide-toggle formControlName="clean">
+              <span translate>ws-client.connections.clean-start</span>
+            </mat-slide-toggle>
+            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                      [matTooltip]="'ws-client.connections.clean-start-hint' | translate"
+                      matTooltipPosition="right">
+              info</mat-icon>
+          </section>
+
+          <section fxLayout="row" fxLayoutGap="8px">
+            <mat-form-field fxFlex>
+              <mat-label translate>ws-client.connections.keep-alive</mat-label>
+              <input matInput formControlName="keepalive" type="number" min="0">
+              <mat-icon matSuffix [matTooltip]="'mqtt-client-session.keep-alive-hint' | translate">
+                help
+              </mat-icon>
+              <mat-error *ngIf="connectionAdvancedFormGroup.get('keepalive').hasError('required')">
+                {{ 'mqtt-client-session.keep-alive-required' | translate }}
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field fxFlex>
+              <mat-label translate>timeunit.units</mat-label>
+              <mat-select formControlName="keepaliveUnit">
+                <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+                  {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </section>
+
+          <section fxLayout="row" fxLayoutGap="8px">
+            <mat-form-field fxFlex>
+              <mat-label translate>ws-client.connections.connect-timeout</mat-label>
+              <input matInput formControlName="connectTimeout" type="number" min="0">
+              <mat-icon matSuffix [matTooltip]="'ws-client.connections.connect-timeout-hint' | translate">
+                help
+              </mat-icon>
+              <mat-error *ngIf="connectionAdvancedFormGroup.get('connectTimeout').hasError('required')">
+                {{ 'ws-client.connections.connect-timeout-required' | translate }}
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field fxFlex>
+              <mat-label translate>timeunit.units</mat-label>
+              <mat-select formControlName="connectTimeoutUnit">
+                <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+                  {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </section>
+
+          <section fxLayout="row" fxLayoutGap="8px">
+            <mat-form-field fxFlex>
+              <mat-label translate>ws-client.connections.reconnect-period</mat-label>
+              <input matInput formControlName="reconnectPeriod" type="number" min="0">
+              <mat-icon matSuffix [matTooltip]="'ws-client.connections.reconnect-period-hint' | translate">
+                help
+              </mat-icon>
+              <mat-error *ngIf="connectionAdvancedFormGroup.get('reconnectPeriod').hasError('required')">
+                {{ 'ws-client.connections.reconnect-period-required' | translate }}
+              </mat-error>
+            </mat-form-field>
+            <mat-form-field fxFlex>
+              <mat-label translate>timeunit.units</mat-label>
+              <mat-select formControlName="reconnectPeriodUnit">
+                <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+                  {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </section>
+
+          <mat-form-field fxFlex class="mat-block">
+            <mat-label translate>ws-client.connections.mqtt-version</mat-label>
+            <mat-select formControlName="protocolVersion">
+              <mat-option *ngFor="let mqttVersion of mqttVersions" [value]="mqttVersion.value">
+                {{ mqttVersion.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <section fxLayout="column" formGroupName="properties" *ngIf="connectionAdvancedFormGroup.get('protocolVersion').value === 5">
+            <section fxLayout="row" fxLayoutGap="8px">
+              <mat-form-field fxFlex>
+                <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
+                <input matInput formControlName="sessionExpiryInterval" type="number" min="0">
+              </mat-form-field>
+              <mat-form-field fxFlex>
+                <mat-label translate>timeunit.units</mat-label>
+                <mat-select formControlName="sessionExpiryIntervalUnit">
+                  <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+                    {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </section>
+            <section fxLayout="row" fxLayoutGap="8px">
+              <mat-form-field fxFlex>
+                <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
+                <input matInput formControlName="maximumPacketSize" type="number" min="0">
+                <mat-icon matSuffix [matTooltip]="'ws-client.connections.maximum-packet-size-hint' | translate">
+                  help
+                </mat-icon>
+              </mat-form-field>
+              <mat-form-field fxFlex>
+                <mat-label translate>timeunit.units</mat-label>
+                <mat-select formControlName="maximumPacketSizeUnit">
+                  <mat-option *ngFor="let unit of dataSizeUnitTypes" [value]="unit">
+                    {{ dataSizeUnitTypeTranslationMap.get(unit) | translate }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+            </section>
+            <mat-form-field class="mat-block">
+              <mat-label translate>ws-client.connections.topic-alias-maximum</mat-label>
+              <input matInput formControlName="topicAliasMaximum" type="number" min="0">
+              <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-maximum-hint' | translate">
+                help
+              </mat-icon>
+            </mat-form-field>
+            <mat-form-field class="mat-block">
+              <mat-label translate>ws-client.connections.receive-maximum</mat-label>
+              <input matInput formControlName="receiveMaximum" type="number" min="0">
+              <mat-icon matSuffix [matTooltip]="'ws-client.connections.receive-maximum-hint' | translate">
+                help
+              </mat-icon>
+            </mat-form-field>
+            <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+              <mat-slide-toggle formControlName="requestResponseInfo">
+                <span translate>ws-client.connections.request-response-information</span>
+              </mat-slide-toggle>
+              <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                        [matTooltip]="'ws-client.connections.request-response-information-hint' | translate"
+                        matTooltipPosition="right">
+                info</mat-icon>
+            </section>
+          </section>
+        </section>
+      </form>
+    </mat-step>
+
+    <mat-step [stepControl]="lastWillFormGroup" [optional]="true">
+      <ng-template matStepLabel>{{ 'ws-client.last-will.last-will' | translate }}</ng-template>
+      <form [formGroup]="lastWillFormGroup" #lwFormGroup="ngForm">
+        <tb-last-will formControlName="will"
+                      [entity]="connection"
+                      [disabled]="isLoading$ | async"
+                      [mqttVersion]="connectionAdvancedFormGroup.get('protocolVersion').value">
+        </tb-last-will>
+      </form>
+    </mat-step>
+    <mat-step [stepControl]="userPropertiesFormGroup" [optional]="true">
+      <ng-template matStepLabel>{{ 'retained-message.user-properties' | translate }}</ng-template>
+      <form [formGroup]="userPropertiesFormGroup" #upFormGroup="ngForm">
+        <tb-user-properties formControlName="userProperties"
+                            [entity]="connection">
+        </tb-user-properties>
+      </form>
+    </mat-step>
+  </mat-horizontal-stepper>
+</div>
+<div mat-dialog-actions class="tb-dialog-actions">
+  <div class="dialog-actions-row">
+    <button mat-stroked-button *ngIf="selectedIndex > 0"
+            [disabled]="(isLoading$ | async)"
+            (click)="previousStep()">{{ 'action.back' | translate }}</button>
+    <span fxFlex></span>
+    <button mat-stroked-button
+            color="primary"
+            *ngIf="showNext"
+            [disabled]="(isLoading$ | async)"
+            (click)="nextStep()">{{ 'action.next-with-label' | translate:{label: (getFormLabel(this.selectedIndex+1) | translate)} }}</button>
+  </div>
+  <mat-divider style="width: 100%"></mat-divider>
+  <div class="dialog-actions-row">
+    <button mat-button
+            [disabled]="(isLoading$ | async)"
+            (click)="cancel()">{{ 'action.cancel' | translate }}</button>
+    <button mat-raised-button
+            [disabled]="(isLoading$ | async) || conFormGroup?.invalid || lwFormGroup?.invalid || upFormGroup?.invalid"
+            color="primary"
+            (click)="save()">{{ actionButtonLabel | translate }}</button>
+  </div>
+</div>

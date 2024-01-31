@@ -1,0 +1,40 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section fxLayout="row" fxLayoutAlign="space-between start" class="subscription">
+  <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
+           (mouseenter)="onCommentMouseEnter()"
+           (mouseleave)="onCommentMouseLeave()">
+      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+        <div class="label-color" [ngStyle]="{backgroundColor: subscription.color}"></div>
+        <span class="label">{{ subscription.topic }}</span>
+      </section>
+      <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+        <div *ngFor="let actionDescriptor of hiddenActions"
+             class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
+             matTooltipPosition="above"
+             matTooltip="{{ actionDescriptor.name }}">
+          <button mat-icon-button
+                  *ngIf="actionDescriptor.isEnabled(subscription)"
+                  [disabled]="!actionDescriptor.isEnabled(subscription)"
+                  (click)="actionDescriptor.onAction($event, subscription)">
+            <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+          </button>
+        </div>
+      </div>
+    </section>
+</section>

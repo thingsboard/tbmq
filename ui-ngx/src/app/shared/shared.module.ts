@@ -106,8 +106,22 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
-import { SHARED_MODULE_TOKEN } from '@shared/components/tokens';
+import { HELP_MARKDOWN_COMPONENT_TOKEN, SHARED_MODULE_TOKEN } from '@shared/components/tokens';
 import { MarkedOptionsService } from '@shared/components/marked-options.service';
+import { ValueInputComponent } from '@shared/components/value-input.component';
+import { JsonObjectEditDialogComponent } from '@shared/components/dialog/json-object-edit-dialog.component';
+import { TbJsonToStringDirective } from '@shared/components/directives/tb-json-to-string.directive';
+import { JsonObjectEditComponent } from '@shared/components/json-object-edit.component';
+import { ColorPickerModule } from '@iplab/ngx-color-picker';
+import { ColorInputComponent } from '@shared/components/color-input.component';
+import { ColorPickerPanelComponent } from '@shared/components/color-picker/color-picker-panel.component';
+import { TbPopoverComponent, TbPopoverDirective } from '@shared/components/popover.component';
+import { ColorPickerDialogComponent } from './components/dialog/color-picker-dialog.component';
+import { TbPopoverService } from '@shared/components/popover.service';
+import { HelpMarkdownComponent } from '@shared/components/help-markdown.component';
+import { TbComponentOutletDirective } from '@shared/components/directives/component-outlet.directive';
+import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
+import { HelpPageComponent } from '@shared/components/help-page.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -116,6 +130,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
 @NgModule({
   providers: [
     DatePipe,
+    DateAgoPipe,
     SafePipe,
     ShortNumberPipe,
     TbJsonPipe,
@@ -129,7 +144,12 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
       provide: SHARED_MODULE_TOKEN,
       useValue: SharedModule
     },
-    TbBreakPointsProvider
+    {
+      provide: HELP_MARKDOWN_COMPONENT_TOKEN,
+      useValue: HelpMarkdownComponent
+    },
+    TbBreakPointsProvider,
+    TbPopoverService
   ],
   declarations: [
     FooterComponent,
@@ -181,7 +201,20 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     GtMdLgLayoutGapDirective,
     GtMdLgShowHideDirective,
     LtXmdShowHideDirective,
-    TbMarkdownComponent
+    TbMarkdownComponent,
+    ValueInputComponent,
+    JsonObjectEditDialogComponent,
+    TbJsonToStringDirective,
+    JsonObjectEditComponent,
+    ColorInputComponent,
+    ColorPickerPanelComponent,
+    TbPopoverDirective,
+    ColorPickerDialogComponent,
+    HelpMarkdownComponent,
+    TbPopoverComponent,
+    TbComponentOutletDirective,
+    ColorPickerComponent,
+    HelpPageComponent
   ],
   imports: [
     CommonModule,
@@ -226,6 +259,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     OverlayModule,
     NgxHmCarouselModule,
     DndModule,
+    ColorPickerModule,
     // ngx-markdown
     MarkdownModule.forRoot({
       sanitize: SecurityContext.NONE,
@@ -326,7 +360,21 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     GtMdLgLayoutGapDirective,
     GtMdLgShowHideDirective,
     LtXmdShowHideDirective,
-    TbMarkdownComponent
+    TbMarkdownComponent,
+    ValueInputComponent,
+    JsonObjectEditDialogComponent,
+    TbJsonToStringDirective,
+    JsonObjectEditComponent,
+    ColorInputComponent,
+    ColorPickerPanelComponent,
+    TbPopoverDirective,
+    ColorPickerDialogComponent,
+    HelpMarkdownComponent,
+    TbPopoverComponent,
+    TbComponentOutletDirective,
+    ColorPickerComponent,
+    ColorPickerModule,
+    HelpPageComponent
   ]
 })
 export class SharedModule { }

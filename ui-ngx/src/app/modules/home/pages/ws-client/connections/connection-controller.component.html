@@ -1,0 +1,58 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
+  <section class="tb-ws-client-title-toolbar">
+    <span class="tb-ws-client-title" translate>ws-client.connections.connection-status</span>
+    <span class="status" [ngStyle]="setStyle()"
+          #showConnectionStatusLogs (mouseover)="showStatusLogs($event, showConnectionStatusLogs)">
+      {{ getStatus() | translate }}{{ getStateDetails() }}
+    </span>
+  </section>
+  <ng-container *ngIf="isConnected; else disconnected">
+    <ng-container *ngTemplateOutlet="connected"></ng-container>
+  </ng-container>
+</div>
+
+<ng-template #connected>
+  <button mat-stroked-button (click)="onClick()"
+          [color]="!isConnected ? 'primary' : 'warn'">
+    <span translate>{{ actionLabel }}</span>
+  </button>
+</ng-template>
+<ng-template #disconnected>
+  <section fxLayout="row" fxLayoutGap="16px">
+    <mat-form-field *ngIf="isPasswordRequired && !isDisabled" appearance="outline" subscriptSizing="dynamic">
+      <mat-label translate>mqtt-client-credentials.password</mat-label>
+      <input matInput [(ngModel)]="password" [type]="!passwordVisible ? 'password' : 'text'" required>
+      <button mat-icon-button matSuffix (click)="passwordVisible = !passwordVisible"
+              [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!passwordVisible">
+        <mat-icon class="tb-mat-18">{{ !passwordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
+      </button>
+    </mat-form-field>
+    <button mat-button color="primary" *ngIf="displayCancelButton()"
+            (click)="disconnect()">
+      <span translate>action.cancel</span>
+    </button>
+    <button mat-raised-button (click)="onClick()"
+            cdkFocusInitial
+            [disabled]="(isPasswordRequired && !password?.length) || isDisabled"
+            [color]="!isConnected ? 'primary' : 'warn'">
+      <span translate>{{ actionLabel }}</span>
+    </button>
+  </section>
+</ng-template>

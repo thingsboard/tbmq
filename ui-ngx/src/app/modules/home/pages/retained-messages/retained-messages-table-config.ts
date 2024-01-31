@@ -35,7 +35,7 @@ import {
 } from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
-import { QoSTranslationMap } from '@shared/models/session.model';
+import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
@@ -94,9 +94,9 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
           onAction: ($event, entity) => entity.topic,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', (entity) => {
-        return entity.qos + ' - ' + this.translate.instant(QoSTranslationMap.get(entity.qos));
-      })
+      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%',
+        (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))
+      )
     );
 
     this.entitiesFetchFunction = pageLink => this.retainedMsgService.getRetainedMessages(pageLink)
@@ -125,10 +125,10 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
         onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data')
       },
       {
-        name: this.translate.instant('retained-message.show-user-properties'),
+        name: this.translate.instant('retained-message.user-properties'),
         icon: 'mdi:code-brackets',
         isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.show-user-properties')
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.user-properties')
       },
       {
         name: this.translate.instant('action.delete'),

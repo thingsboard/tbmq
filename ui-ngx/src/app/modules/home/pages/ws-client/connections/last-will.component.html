@@ -1,0 +1,115 @@
+<!--
+
+    Copyright © 2016-2023 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<form [formGroup]="formGroup">
+  <section fxLayout="row" fxLayoutGap="8px">
+    <mat-form-field fxFlex>
+      <mat-label translate>ws-client.last-will.topic</mat-label>
+      <input matInput formControlName="topic">
+    </mat-form-field>
+    <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
+      <mat-label translate>mqtt-client-session.qos</mat-label>
+      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
+          {{ qoSTranslationMap.get(qos) | translate }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+  </section>
+
+  <fieldset class="fields-group" fxLayout="column">
+    <legend class="group-title" translate>ws-client.last-will.payload</legend>
+    <section fxFlex fxLayout="row" fxLayoutGap="8px">
+      <tb-value-input fxFlex formControlName="payload" [required]="false" [flexCorrelation]="[30, 70]">
+      </tb-value-input>
+    </section>
+  </fieldset>
+  <section class="slider">
+    <mat-slide-toggle formControlName="retain">
+      {{ 'ws-client.last-will.retain' | translate }}
+    </mat-slide-toggle>
+  </section>
+
+  <section fxLayout="column" *ngIf="mqttVersion === 5" formGroupName="properties">
+    <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+      <mat-slide-toggle formControlName="payloadFormatIndicator">
+        <span translate>ws-client.last-will.payload-format-indicator</span>
+      </mat-slide-toggle>
+      <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                [matTooltip]="'ws-client.last-will.payload-format-indicator-hint' | translate"
+                matTooltipPosition="right">
+        info</mat-icon>
+    </section>
+    <mat-form-field class="mat-block">
+      <mat-label translate>ws-client.last-will.content-type</mat-label>
+      <input matInput formControlName="contentType">
+      <mat-icon matSuffix [matTooltip]="'ws-client.last-will.content-type-hint' | translate">
+        help
+      </mat-icon>
+    </mat-form-field>
+
+    <section fxLayout="row" fxLayoutGap="8px">
+      <mat-form-field fxFlex>
+        <mat-label translate>ws-client.last-will.will-delay-interval</mat-label>
+        <input matInput formControlName="willDelayInterval" type="number" min="0">
+        <mat-icon matSuffix [matTooltip]="'ws-client.last-will.will-delay-interval-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field fxFlex>
+        <mat-label translate>timeunit.units</mat-label>
+        <mat-select formControlName="willDelayIntervalUnit">
+          <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+            {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+
+    <section fxLayout="row" fxLayoutGap="8px">
+      <mat-form-field fxFlex>
+        <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
+        <input matInput formControlName="messageExpiryInterval" type="number" min="0">
+        <mat-icon matSuffix [matTooltip]="'ws-client.last-will.message-expiry-interval-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field fxFlex>
+        <mat-label translate>timeunit.units</mat-label>
+        <mat-select formControlName="messageExpiryIntervalUnit">
+          <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+            {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </section>
+    <mat-form-field class="mat-block">
+      <mat-label translate>ws-client.last-will.response-topic</mat-label>
+      <input matInput formControlName="responseTopic">
+      <mat-icon matSuffix [matTooltip]="'ws-client.last-will.response-topic-hint' | translate">
+        help
+      </mat-icon>
+    </mat-form-field>
+    <mat-form-field class="mat-block">
+      <mat-label translate>ws-client.last-will.correlation-data</mat-label>
+      <input matInput formControlName="correlationData">
+      <mat-icon matSuffix [matTooltip]="'ws-client.last-will.correlation-data-hint' | translate">
+        help
+      </mat-icon>
+    </mat-form-field>
+  </section>
+</form>
