@@ -121,7 +121,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         } while (pageData.hasNext());
 
         for (User user : foundUsers) {
-            webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), null);
+            webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), systemWebSocketCredentials.getId());
         }
     }
 

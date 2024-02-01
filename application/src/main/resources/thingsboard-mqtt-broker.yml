@@ -223,8 +223,6 @@ queue:
     # It is recommended to count the impact of this parameter before setting it on production
     msg-parallel-processing: "${TB_MSG_ALL_PARALLEL_PROCESSING:false}"
   application-persisted-msg:
-    # Number of threads in the pool to process Application consumers tasks
-    threads-count: "${TB_APP_PERSISTED_MSG_THREADS_COUNT:16}"
     # Interval in milliseconds to poll messages from Application topics
     poll-interval: "${TB_APP_PERSISTED_MSG_POLL_INTERVAL:100}"
     # Timeout in milliseconds for processing the pack of messages
@@ -238,8 +236,6 @@ queue:
     client-id-validation: "${TB_APP_PERSISTED_MSG_CLIENT_ID_VALIDATION:true}"
     # Enable/disable check that application shared subscription topic filter contains only alphanumeric chars or '+' or '#' for Kafka topic creation
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
-    # Number of threads in the pool to process Application shared subscriptions consumers tasks
-    shared-subs-threads-count: "${TB_APP_PERSISTED_MSG_SHARED_SUBS_THREADS_COUNT:16}"
   device-persisted-msg:
     # Number of parallel consumers for 'tbmq.msg.persisted' topic. Should not be more than the number of partitions in topic
     consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
