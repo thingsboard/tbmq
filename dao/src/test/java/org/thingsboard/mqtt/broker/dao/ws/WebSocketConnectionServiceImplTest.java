@@ -65,7 +65,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        PageData<WebSocketConnectionDto> connections = webSocketConnectionService.getWebSocketConnections(new PageLink(1000));
+        PageData<WebSocketConnectionDto> connections = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), new PageLink(1000));
         for (var connection : connections.getData()) {
             webSocketConnectionService.deleteWebSocketConnection(connection.getId());
         }
@@ -178,7 +178,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         PageLink pageLink = new PageLink(23);
         PageData<WebSocketConnectionDto> pageData;
         do {
-            pageData = webSocketConnectionService.getWebSocketConnections(pageLink);
+            pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
             loadedWebSocketConnectionDtoList.addAll(pageData.getData());
             if (pageData.hasNext()) {
                 pageLink = pageLink.nextPageLink();
@@ -194,7 +194,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
                 webSocketConnectionService.deleteWebSocketConnection(wsc.getId()));
 
         pageLink = new PageLink(33);
-        pageData = webSocketConnectionService.getWebSocketConnections(pageLink);
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
         Assert.assertFalse(pageData.hasNext());
         Assert.assertTrue(pageData.getData().isEmpty());
     }
@@ -221,14 +221,14 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         WebSocketConnection webSocketConnection = getWebSocketConnection();
         WebSocketConnection savedWebSocketConnection = webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
 
-        WebSocketConnection webSocketConnectionByName = webSocketConnectionService.findWebSocketConnectionByName(savedWebSocketConnection.getName());
+        WebSocketConnection webSocketConnectionByName = webSocketConnectionService.findWebSocketConnectionByName(savedUser.getId(), savedWebSocketConnection.getName());
 
         Assert.assertEquals(savedWebSocketConnection, webSocketConnectionByName);
     }
 
     @Test
     public void givenNoWebSocketConnection_whenFindWebSocketConnectionByName_thenNothingFound() {
-        WebSocketConnection webSocketConnectionByName = webSocketConnectionService.findWebSocketConnectionByName("absent");
+        WebSocketConnection webSocketConnectionByName = webSocketConnectionService.findWebSocketConnectionByName(savedUser.getId(), "absent");
         Assert.assertNull(webSocketConnectionByName);
     }
 

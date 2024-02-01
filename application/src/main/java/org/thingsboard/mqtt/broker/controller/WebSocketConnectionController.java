@@ -32,6 +32,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/ws/connection")
@@ -61,8 +63,9 @@ public class WebSocketConnectionController extends BaseController {
                                                                     @RequestParam(required = false) String sortProperty,
                                                                     @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
+            UUID userId = getCurrentUser().getId();
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(webSocketConnectionService.getWebSocketConnections(pageLink));
+            return checkNotNull(webSocketConnectionService.getWebSocketConnections(userId, pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -83,7 +86,8 @@ public class WebSocketConnectionController extends BaseController {
     public WebSocketConnection getWebSocketConnectionByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
         try {
-            return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(name));
+            UUID userId = getCurrentUser().getId();
+            return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(userId, name));
         } catch (Exception e) {
             throw handleException(e);
         }

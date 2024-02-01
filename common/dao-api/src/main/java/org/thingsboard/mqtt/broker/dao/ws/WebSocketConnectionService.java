@@ -30,11 +30,11 @@ public interface WebSocketConnectionService {
 
     WebSocketConnection saveDefaultWebSocketConnection(UUID userId, UUID clientCredentialsId) throws ThingsboardException;
 
-    PageData<WebSocketConnectionDto> getWebSocketConnections(PageLink pageLink);
+    PageData<WebSocketConnectionDto> getWebSocketConnections(UUID userId, PageLink pageLink);
 
     Optional<WebSocketConnection> getWebSocketConnectionById(UUID id);
 
-    WebSocketConnection findWebSocketConnectionByName(String name);
+    WebSocketConnection findWebSocketConnectionByName(UUID userId, String name);
 
     boolean deleteWebSocketConnection(UUID id);
 

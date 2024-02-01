@@ -26,10 +26,12 @@ import java.util.UUID;
 
 public interface WebSocketConnectionRepository extends JpaRepository<WebSocketConnectionEntity, UUID> {
 
-    @Query("SELECT w FROM WebSocketConnectionEntity w WHERE " +
-            "LOWER(w.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
-    Page<WebSocketConnectionEntity> findAll(@Param("textSearch") String textSearch,
+    @Query("SELECT w FROM WebSocketConnectionEntity w WHERE w.userId = :userId " +
+            "AND LOWER(w.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+    Page<WebSocketConnectionEntity> findAll(@Param("userId") UUID userId,
+                                            @Param("textSearch") String textSearch,
                                             Pageable pageable);
 
-    WebSocketConnectionEntity findByName(String name);
+    WebSocketConnectionEntity findByUserIdAndName(UUID userId, String name);
+
 }
