@@ -62,11 +62,69 @@ export interface ConnectionShortInfo extends BaseData {
 
 export interface TbConnectionDetails extends ConnectionShortInfo {
   url: string;
-  keepaliveUnit?: TimeUnitType;
-  connectTimeoutUnit?: TimeUnitType;
-  reconnectPeriodUnit?: TimeUnitType;
+  keepaliveUnit?: WebSocketTimeUnit;
+  connectTimeoutUnit?: WebSocketTimeUnit;
+  reconnectPeriodUnit?: WebSocketTimeUnit;
   clientCredentials?: Partial<ClientCredentials>;
   clientCredentialsId?: string;
+}
+
+export interface WebSocketConnectionDto extends BaseData {
+  name: string;
+  clientId?: string;
+}
+
+export interface WebSocketConnection extends WebSocketConnectionDto {
+  userId: string;
+  configuration: WebSocketConnectionConfiguration;
+}
+
+export interface WebSocketConnectionConfiguration {
+  url: string;
+  clientCredentialsId?: string;
+  clientCredentials?: Partial<ClientCredentials>;
+  clientId?: string;
+  username?: string;
+  password?: string;
+  cleanStart?: boolean;
+  keepAlive?: number;
+  keepAliveUnit?: WebSocketTimeUnit;
+  connectTimeout?: number;
+  connectTimeoutUnit?: WebSocketTimeUnit;
+  reconnectPeriod?: number;
+  reconnectPeriodUnit?: WebSocketTimeUnit;
+  mqttVersion?: MqttJsProtocolVersion;
+  sessionExpiryInterval?: number;
+  sessionExpiryIntervalUnit?: WebSocketTimeUnit;
+  maxPacketSize?: number;
+  maxPacketSizeUnit?: DataSizeUnitType;
+  topicAliasMax?: number;
+  receiveMax?: number;
+  requestResponseInfo?: boolean;
+  requestProblemInfo?: boolean;
+  lastWillMsg?: LastWillMsg;
+  userProperties?: WebSocketUserProperties;
+}
+
+export interface LastWillMsg {
+  topic?: string;
+  qos?: number;
+  payload?: string;
+  payloadType?: WsDataType;
+  retain?: boolean;
+  payloadFormatIndicator?: boolean;
+  contentType?: string;
+  willDelayInterval?: number;
+  willDelayIntervalUnit?: WebSocketTimeUnit;
+  msgExpiryInterval?: number;
+  msgExpiryIntervalUnit?: WebSocketTimeUnit;
+  responseTopic?: string;
+  correlationData?: string;
+}
+
+export enum WsDataType {
+  STRING = 'STRING',
+  JSON = 'JSON'
 }
 
 export interface Connection extends TbConnectionDetails {
@@ -84,6 +142,7 @@ export interface Connection extends TbConnectionDetails {
   username?: string;
   password?: string;
   properties?: ConnectionProperties;
+  userProperties?: WebSocketUserProperties;
   will?: {
     topic?: string;
     payload?: any;
@@ -94,8 +153,17 @@ export interface Connection extends TbConnectionDetails {
   };
 }
 
+export interface WebSocketUserProperties {
+  props: WebSocketUserPropertiesKeyValue[]
+}
+
+export interface WebSocketUserPropertiesKeyValue {
+  k: string;
+  v: string;
+}
+
 interface TbConnectionProperties {
-  sessionExpiryIntervalUnit?: TimeUnitType;
+  sessionExpiryIntervalUnit?: WebSocketTimeUnit;
   maximumPacketSizeUnit?: DataSizeUnitType;
 }
 
@@ -106,16 +174,11 @@ export interface ConnectionProperties extends TbConnectionProperties{
   topicAliasMaximum?: number;
   requestResponseInformation?: boolean;
   requestProblemInformation?: boolean;
-  // authenticationMethod?: string;
-  // authenticationData?: any;
-  userProperties?: {
-    [key: string]: string;
-  };
 }
 
 interface TbWillProperties {
-  willDelayIntervalUnit?: TimeUnitType;
-  messageExpiryIntervalUnit?: TimeUnitType;
+  willDelayIntervalUnit?: WebSocketTimeUnit;
+  messageExpiryIntervalUnit?: WebSocketTimeUnit;
 }
 
 interface WillProperties extends TbWillProperties {
@@ -172,12 +235,29 @@ interface Properties {
   // };
 }
 
+export interface WebSocketSubscription extends BaseData {
+  webSocketConnectionId: string;
+  configuration: WebSocketSubscriptionConfiguration;
+}
+
+export interface WebSocketSubscriptionConfiguration {
+  topicFilter?: string;
+  qos?: number;
+  color?: string;
+  options: WebSocketSubscriptionOptions;
+}
+
+export interface WebSocketSubscriptionOptions {
+  noLocal?: boolean;
+  retainAsPublish?: boolean;
+  retainHandling?: number;
+}
+
 interface WsSubscriptionOptions {
   qos?: number;
   nl?: boolean;
   rap?: boolean;
   rh?: number;
-  // properties?: Properties;
 }
 
 export interface WsSubscription extends BaseData {
@@ -266,52 +346,33 @@ export const mqttPropertyTimeUnit = [
   }
 ];
 
-export const TimeUnitTypesV2 = [
-  {
-    value: 'MILLISECONDS',
-    name: 'timeunit.milliseconds'
-  },
-  {
-    value: 'SECONDS',
-    name: 'timeunit.seconds'
-  },
-  {
-    value: 'MINUTES',
-    name: 'timeunit.minutes'
-  },
-  {
-    value: 'HOURS',
-    name: 'timeunit.milliseconds'
-  }
-];
-
-export enum TimeUnitType {
+export enum WebSocketTimeUnit {
   MILLISECONDS = 'MILLISECONDS',
   SECONDS = 'SECONDS',
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
 
-export const timeUnitTypeTranslationMap = new Map<TimeUnitType, string>(
+export const timeUnitTypeTranslationMap = new Map<WebSocketTimeUnit, string>(
   [
-    [TimeUnitType.MILLISECONDS, 'timeunit.milliseconds'],
-    [TimeUnitType.SECONDS, 'timeunit.seconds'],
-    [TimeUnitType.MINUTES, 'timeunit.minutes'],
-    [TimeUnitType.HOURS, 'timeunit.hours']
+    [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
+    [WebSocketTimeUnit.SECONDS, 'timeunit.seconds'],
+    [WebSocketTimeUnit.MINUTES, 'timeunit.minutes'],
+    [WebSocketTimeUnit.HOURS, 'timeunit.hours']
   ]
 );
 
 export enum DataSizeUnitType {
-  B = 'B',
-  KB = 'KB',
-  MB = 'MB'
+  BYTE = 'BYTE',
+  KILOBYTE = 'KILOBYTE',
+  MEGABYTE = 'MEGABYTE'
 }
 
 export const dataSizeUnitTypeTranslationMap = new Map<DataSizeUnitType, string>(
   [
-    [DataSizeUnitType.B, 'B'],
-    [DataSizeUnitType.KB, 'KB'],
-    [DataSizeUnitType.MB, 'MB']
+    [DataSizeUnitType.BYTE, 'B'],
+    [DataSizeUnitType.KILOBYTE, 'KB'],
+    [DataSizeUnitType.MEGABYTE, 'MB']
   ]
 );
 

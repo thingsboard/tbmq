@@ -22,7 +22,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { TimeUnitType, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
+import { WebSocketTimeUnit, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import { convertTimeUnits, isDefinedAndNotNull } from '@core/utils';
 
 @Component({
@@ -36,8 +36,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
   formGroup: UntypedFormGroup;
   entity: any;
 
-  // mqttQoSTypes = mqttQoSTypes;
-  timeUnitTypes = Object.keys(TimeUnitType);
+  timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
   private destroy$ = new Subject<void>();
@@ -69,7 +68,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
       payloadFormatIndicator: [false, []],
       contentType: [null, []],
       messageExpiryInterval: [null, []],
-      messageExpiryIntervalUnit: [TimeUnitType.SECONDS, []],
+      messageExpiryIntervalUnit: [WebSocketTimeUnit.SECONDS, []],
       topicAlias: [null, []],
       subscriptionIdentifier: [null, []],
       correlationData: [null, []],
@@ -86,7 +85,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
   onSave() {
     const properties = this.formGroup.getRawValue();
     if (isDefinedAndNotNull(properties.messageExpiryInterval)) {
-      properties.messageExpiryInterval = convertTimeUnits(properties.messageExpiryInterval, properties.messageExpiryIntervalUnit, TimeUnitType.SECONDS);
+      properties.messageExpiryInterval = convertTimeUnits(properties.messageExpiryInterval, properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS);
     }
     delete properties.messageExpiryIntervalUnit;
     this.dialogRef.close(properties)

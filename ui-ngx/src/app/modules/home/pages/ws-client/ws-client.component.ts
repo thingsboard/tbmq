@@ -23,7 +23,7 @@ import { Store } from '@ngrx/store';
 import { WsClientService } from '@core/http/ws-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { ConnectionShortInfo } from '@shared/models/ws-client.model';
+import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-ws-client',
@@ -32,7 +32,7 @@ import { ConnectionShortInfo } from '@shared/models/ws-client.model';
 })
 export class WsClientComponent extends PageComponent implements OnInit {
 
-  connections: ConnectionShortInfo[] = [];
+  connections: WebSocketConnectionDto[] = [];
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
@@ -41,12 +41,20 @@ export class WsClientComponent extends PageComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.wsClientService.getConnections().subscribe(data => {
-      if (data?.length) {
-        this.connections = data;
-        this.wsClientService.selectConnection(data[0]);
+    this.wsClientService.getWebSocketConnections().subscribe(res => {
+      if (res.data?.length) {
+        this.connections = res.data;
+        this.selectFirstConnection(res.data[0].id);
       }
     });
+  }
+
+  private selectFirstConnection(connectionId: string) {
+    this.wsClientService.getWebSocketConnectionById(connectionId).subscribe(
+      connection => {
+        this.wsClientService.selectConnection(connection);
+      }
+    );
   }
 
   addConnection($event: Event) {

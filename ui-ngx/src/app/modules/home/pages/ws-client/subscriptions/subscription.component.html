@@ -20,8 +20,8 @@
            (mouseenter)="onCommentMouseEnter()"
            (mouseleave)="onCommentMouseLeave()">
       <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-        <div class="label-color" [ngStyle]="{backgroundColor: subscription.color}"></div>
-        <span class="label">{{ subscription.topic }}</span>
+        <div class="label-color" [ngStyle]="{backgroundColor: subscription.configuration.color}"></div>
+        <span class="label">{{ subscription.configuration.topicFilter }}</span>
       </section>
       <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
         <div *ngFor="let actionDescriptor of hiddenActions"

@@ -19,24 +19,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { RequestConfig } from '@core/http/http-utils';
+import { defaultHttpOptionsFromConfig, RequestConfig } from '@core/http/http-utils';
 import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   Connection,
-  ConnectionShortInfo,
   ConnectionStatus,
   ConnectionStatusLog,
   DataSizeUnitType,
-  TimeUnitType,
-  WsSubscription,
-  WsSubscriptionShortInfo,
+  WebSocketConnection,
+  WebSocketConnectionDto,
+  WebSocketSubscription,
+  WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
 import mqtt, { IClientOptions, IPublishPacket, MqttClient } from 'mqtt';
-import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
-import { DatePipe } from '@angular/common';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { convertTimeUnits, guid, isDefinedAndNotNull, isNumber, randomColor } from '@core/utils';
+import { clientIdRandom, convertTimeUnits, guid, isDefinedAndNotNull, isNumber, randomColor } from '@core/utils';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
@@ -50,7 +48,7 @@ export class WsClientService {
   private subscriptions = [];
   private messages: WsTableMessage[] = [];
 
-  private connection$ = new BehaviorSubject<Connection>(null);
+  private connection$ = new BehaviorSubject<WebSocketConnection>(null);
   private messages$ = new BehaviorSubject<WsTableMessage[]>(this.messages);
   private connections$ = new BehaviorSubject<any>(this.connections);
   private connectionStatus$ = new BehaviorSubject<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
@@ -92,11 +90,11 @@ export class WsClientService {
       clean: true, // Can also be false
       clientId: 'tbmq_dev',
       keepalive: 60, // Seconds which can be any positive number, with 0 as the default setting
-      keepaliveUnit: TimeUnitType.SECONDS,
+      keepaliveUnit: WebSocketTimeUnit.SECONDS,
       connectTimeout: 30,
-      connectTimeoutUnit: TimeUnitType.SECONDS,
+      connectTimeoutUnit: WebSocketTimeUnit.SECONDS,
       reconnectPeriod: 1,
-      reconnectPeriodUnit: TimeUnitType.SECONDS,
+      reconnectPeriodUnit: WebSocketTimeUnit.SECONDS,
       username: 'tbmq_dev',
       password: 'tbmq_dev', // Passwords are buffers
       clientCredentialsId: '62397b5f-d04c-4d2e-957b-29209348cad3',
@@ -107,10 +105,10 @@ export class WsClientService {
         payload: 'WILL PAYLOAD TEST', // Payloads are buffers
         properties: { // MQTT 5.0
           willDelayInterval: 0,
-          willDelayIntervalUnit: TimeUnitType.SECONDS,
+          willDelayIntervalUnit: WebSocketTimeUnit.SECONDS,
           payloadFormatIndicator: false,
           messageExpiryInterval: 0,
-          messageExpiryIntervalUnit: TimeUnitType.SECONDS,
+          messageExpiryIntervalUnit: WebSocketTimeUnit.SECONDS,
           contentType: '',
           responseTopic: 'sensors1/temperature',
           correlationData: '12345'
@@ -118,10 +116,10 @@ export class WsClientService {
       },
       properties: { // MQTT 5.0 properties
         sessionExpiryInterval: 0,
-        sessionExpiryIntervalUnit: TimeUnitType.SECONDS,
+        sessionExpiryIntervalUnit: WebSocketTimeUnit.SECONDS,
         receiveMaximum: 65535,
         maximumPacketSize: 100000,
-        maximumPacketSizeUnit: DataSizeUnitType.KB,
+        maximumPacketSizeUnit: DataSizeUnitType.KILOBYTE,
         topicAliasMaximum: 0,
         requestResponseInformation: false,
         requestProblemInformation: false,
@@ -191,12 +189,49 @@ export class WsClientService {
   clientIdSubscriptionsMap = new Map<string, any[]>();
   mqttClientConnectionMap = new Map<string, string>();
 
-  constructor(private http: HttpClient,
-              private datePipe: DatePipe,
-              private dateAgoPipe: DateAgoPipe) {
+  constructor(private http: HttpClient) {
   }
 
-  connectClient(connection: Connection, password: string = null) {
+  // Connections
+
+  public saveWebSocketConnection(connection: WebSocketConnection, config?: RequestConfig): Observable<WebSocketConnection> {
+    return this.http.post<WebSocketConnection>('/api/ws/connection', connection, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getWebSocketConnections(config?: RequestConfig): Observable<PageData<WebSocketConnectionDto>> {
+    const pageLink = new PageLink(1000);
+    return this.http.get<PageData<WebSocketConnectionDto>>(`/api/ws/connection${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getWebSocketConnectionById(connectionId: string, config?: RequestConfig): Observable<WebSocketConnection> {
+    return this.http.get<WebSocketConnection>(`/api/ws/connection/${connectionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public deleteWebSocketConnection(connectionId: string, config?: RequestConfig) {
+    return this.http.delete(`/api/ws/connection/${connectionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  // Subscriptions
+
+  public saveWebSocketSubscription(subscription: WebSocketSubscription, config?: RequestConfig): Observable<WebSocketSubscription> {
+    return this.http.post<WebSocketSubscription>('/api/ws/subscription', subscription, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getWebSocketSubscriptions(webSocketConnectionId: string, config?: RequestConfig): Observable<WebSocketSubscription[]> {
+    return this.http.get<WebSocketSubscription>(`/api/ws/subscription?webSocketConnectionId=${webSocketConnectionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getWebSocketSubscriptionById(webSocketSubscriptionId: string, config?: RequestConfig): Observable<WebSocketSubscription> {
+    return this.http.get<WebSocketSubscription>(`/api/ws/subscription/${webSocketSubscriptionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public deleteWebSocketSubscription(webSocketSubscriptionId: string, config?: RequestConfig) {
+    return this.http.delete(`/api/ws/subscription/${webSocketSubscriptionId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  // TODO split into WebSocketConnection/WebSocketSubscription services
+
+  connectClient(connection: WebSocketConnection, password: string = null) {
     this.addMqttClient(connection, password);
   }
 
@@ -208,44 +243,43 @@ export class WsClientService {
     return this.connectionStatusMap.get(connectionId) === ConnectionStatus.CONNECTED;
   }
 
-  private addMqttClient(connection: Connection, password: string) {
+  private addMqttClient(connection: WebSocketConnection, password: string) {
     const options: IClientOptions = {
-      clientId: connection.clientId,
-      username: connection.username,
-      password: connection.password, // password
-      protocolId: connection.protocolId,
-      protocolVersion: connection.protocolVersion,
-      clean: true,
-      keepalive: convertTimeUnits(connection.keepalive, connection.keepaliveUnit, TimeUnitType.SECONDS),
-      connectTimeout: convertTimeUnits(connection.connectTimeout, connection.connectTimeoutUnit, TimeUnitType.MILLISECONDS),
-      reconnectPeriod: convertTimeUnits(connection.reconnectPeriod, connection.reconnectPeriodUnit, TimeUnitType.MILLISECONDS),
+      clientId: connection.clientId || clientIdRandom(),
+      username: connection.configuration.username,
+      password: connection.configuration.password, // password
+      protocolVersion: connection.configuration.mqttVersion,
+      clean: connection.configuration.cleanStart,
+      keepalive: convertTimeUnits(connection.configuration.keepAlive, connection.configuration.keepAliveUnit, WebSocketTimeUnit.SECONDS),
+      connectTimeout: convertTimeUnits(connection.configuration.connectTimeout, connection.configuration.connectTimeoutUnit, WebSocketTimeUnit.MILLISECONDS),
+      reconnectPeriod: convertTimeUnits(connection.configuration.reconnectPeriod, connection.configuration.reconnectPeriodUnit, WebSocketTimeUnit.MILLISECONDS),
       properties: {
-        sessionExpiryInterval: connection.properties.sessionExpiryInterval,
-        receiveMaximum: connection.properties.receiveMaximum,
-        maximumPacketSize: connection.properties.maximumPacketSize,
-        topicAliasMaximum: connection.properties.topicAliasMaximum,
-        requestResponseInformation: connection.properties.requestResponseInformation,
-        userProperties: connection.properties.userProperties
+        sessionExpiryInterval: connection.configuration.sessionExpiryInterval,
+        receiveMaximum: connection.configuration.receiveMax,
+        maximumPacketSize: connection.configuration.maxPacketSize,
+        topicAliasMaximum: connection.configuration.topicAliasMax,
+        requestResponseInformation: connection.configuration.requestResponseInfo,
+        // userProperties: connection.configuration.userProperties
       }
     };
-    if (isDefinedAndNotNull(connection.will)) {
+    if (isDefinedAndNotNull(connection.configuration?.lastWillMsg)) {
       options.will = {
-        topic: connection.will.topic,
-        qos: connection.will.qos,
-        retain: connection.will.retain,
-        payload: connection.will.payload,
+        topic: connection.configuration.lastWillMsg.topic,
+        qos: connection.configuration.lastWillMsg.qos,
+        retain: connection.configuration.lastWillMsg.retain,
+        payload: connection.configuration.lastWillMsg.payload,
         properties: {
-          contentType: connection.will.properties.contentType,
-          responseTopic: connection.will.properties.responseTopic,
-          willDelayInterval: convertTimeUnits(connection.will.properties.willDelayInterval, connection.will.properties.willDelayIntervalUnit, TimeUnitType.SECONDS),
-          messageExpiryInterval: convertTimeUnits(connection.will.properties.messageExpiryInterval, connection.will.properties.messageExpiryIntervalUnit, TimeUnitType.SECONDS),
-          payloadFormatIndicator: connection.will.properties.payloadFormatIndicator,
-          correlationData: Buffer.from(connection.will.properties.correlationData)
+          contentType: connection.configuration.lastWillMsg.contentType,
+          responseTopic: connection.configuration.lastWillMsg.responseTopic,
+          willDelayInterval: convertTimeUnits(connection.configuration.lastWillMsg.willDelayInterval, connection.configuration.lastWillMsg.willDelayIntervalUnit, WebSocketTimeUnit.SECONDS),
+          messageExpiryInterval: convertTimeUnits(connection.configuration.lastWillMsg.msgExpiryInterval, connection.configuration.lastWillMsg.msgExpiryIntervalUnit, WebSocketTimeUnit.SECONDS),
+          payloadFormatIndicator: connection.configuration.lastWillMsg.payloadFormatIndicator,
+          correlationData: Buffer.from(connection.configuration.lastWillMsg.correlationData)
         }
       };
     }
     console.log('options', options);
-    const mqttClient: MqttClient = mqtt.connect(connection.url, options);
+    const mqttClient: MqttClient = mqtt.connect(connection.configuration.url, options);
     this.setMqttClient(mqttClient, connection);
     this.manageMqttClientCallbacks(mqttClient, connection);
   }
@@ -273,7 +307,7 @@ export class WsClientService {
       } else {
         const wildcardSubscription = this.findWildcardSubscription(subscriptions, topic);
         if (wildcardSubscription) {
-          color = wildcardSubscription.color;
+          color = wildcardSubscription.configuration.color;
         } else {
           console.error(`mqttClient ${mqttClient} received message. No matched subscription topic in ${subscriptions} for topic ${topic}`);
         }
@@ -335,14 +369,14 @@ export class WsClientService {
       console.log('Ongoing empty');
     });
     mqttClient.on('packetsend', (packet: IConnackPacket) => {
-      console.log('Packet Send...', packet, mqttClient)
+      console.log('Packet Send...', packet, mqttClient);
     });
     mqttClient.on('packetreceive', (packet: IConnackPacket) => {
-      console.log('Packet Receive...', packet, mqttClient)
+      console.log('Packet Receive...', packet, mqttClient);
     });
   }
 
-  private findWildcardSubscription(subscriptions: WsSubscription[], topic: string): WsSubscription {
+  private findWildcardSubscription(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {
     function isTopicMatched(subscription: string, topic: string): boolean {
       let subscriptionParts = subscription.split('/');
       let topicParts = topic.split('/');
@@ -359,10 +393,10 @@ export class WsClientService {
       return subscriptionParts.length === topicParts.length;
     }
 
-    function checkTopicInSubscriptions(subscriptions: WsSubscription[], topic: string): boolean {
-      for (let subscriptionTopic of subscriptions.map(el => el.topic)) {
+    function checkTopicInSubscriptions(subscriptions: WebSocketSubscription[], topic: string): boolean {
+      for (let subscriptionTopic of subscriptions.map(el => el.configuration.topicFilter)) {
         if (isTopicMatched(subscriptionTopic, topic)) {
-          return subscriptions.find(el => el.topic === subscriptionTopic);
+          return subscriptions.find(el => el.configuration.topicFilter === subscriptionTopic);
         }
       }
       return false;
@@ -404,15 +438,15 @@ export class WsClientService {
   }
 
   private subscribeForTopics(mqttClient: MqttClient, connection: Connection) {
-    this.getSubscriptionsShortInfo(connection.id).subscribe(
+    this.getWebSocketSubscriptions(connection.id).subscribe(
       subscriptions => {
         const topics = [];
         const topicObject: any = {};
         for (let i = 0; i < subscriptions?.length; i++) {
           // console.log('Subscribed for topic', subscriptions[i], mqttClient);
           // this.subscribeForTopic(mqttClient, subscriptions[i]);
-          const topic = subscriptions[i].topic;
-          const qos = subscriptions[i].options.qos;
+          const topic = subscriptions[i].configuration.topicFilter;
+          const qos = subscriptions[i].configuration.qos;
           topicObject[topic] = {qos};
           topics.push(subscriptions[i]);
         }
@@ -459,20 +493,14 @@ export class WsClientService {
   }
 
   private getActiveConnectionId() {
-    return this.connection$.value.id;
+    return this.connection$?.value?.id;
   }
 
   private getActiveMqttJsClient() {
     return this.connectionMqttClientMap.get(this.getActiveConnectionId());
   }
 
-  addSubscription(value: WsSubscription) {
-    this.subscription$.next(value);
-    this.subscriptions.push(value);
-    this.subscriptions$.next(this.subscriptions);
-  }
-
-  selectConnection(connection: Connection) {
+  selectConnection(connection: WebSocketConnection) {
     this.connection$.next(connection);
     const connectionState = this.connectionStatusMap.get(this.getActiveConnectionId());
     this.connectionStatus$.next(connectionState);
@@ -524,98 +552,6 @@ export class WsClientService {
     });
     pageData.data = [...filteredMessages];
     return of(pageData);
-  }
-
-  public getConnections(config?: RequestConfig): Observable<ConnectionShortInfo[]> {
-    // return this.http.get<PageData<Connection>>(`/api/`, defaultHttpOptionsFromConfig(config));
-    return of(this.mockConnections);
-  }
-
-  public getConnection(id: string, config?: RequestConfig): Observable<Connection> {
-    // return this.http.get<Connection>(`/api/${id}`, defaultHttpOptionsFromConfig(config));
-    const target = this.mockConnections.find(el => el.id == id);
-    return of(target);
-  }
-
-  public saveConnection(entity: Connection, config?: RequestConfig): Observable<Connection> {
-    const index = this.mockConnections.findIndex(el => el.id == entity.id);
-    if (index > -1) {
-      this.mockConnections[index] = entity;
-    } else {
-      entity.id = (this.mockConnections?.length + 1).toString();
-      this.mockConnections.push(entity);
-    }
-    return of(entity);
-  }
-
-  public deleteConnection(entity: Connection, selectedConnection: Connection, config?: RequestConfig) {
-    const activeConnectionId = selectedConnection.id;
-    const index = this.mockConnections.findIndex(el => el.id === entity.id);
-    if (index > -1) {
-      this.mockConnections.splice(index, 1);
-      this.connectionStatusMap.delete(entity.id);
-    }
-    if (entity.id === activeConnectionId) {
-      if (this.mockConnections.length) {
-        this.selectConnection(this.mockConnections[0]);
-      }
-    }
-  }
-
-  public getSubscriptionsShortInfo(connectionId: any, config?: RequestConfig): Observable<WsSubscriptionShortInfo[]> {
-    const index = this.mockSubscriptions.findIndex(el => el.id == connectionId);
-    if (index > -1) {
-      return of(this.mockSubscriptions[index].data as WsSubscriptionShortInfo[]);
-    } else {
-      return of([]);
-    }
-  }
-
-  public getSubscription(connectionId: string, subscriptionId: string, config?: RequestConfig): Observable<WsSubscription> {
-    const index = this.mockSubscriptions.findIndex(el => el.id == connectionId);
-    if (index > -1) {
-      const subscription = this.mockSubscriptions[index].data.find(el => el.id === subscriptionId);
-      return of(subscription as WsSubscription[]);
-    } else {
-      return of([]);
-    }
-  }
-
-  public saveSubscriptionV3(entityId: string, subscription: WsSubscription = null, isEdit: boolean, config?: RequestConfig): Observable<WsSubscription> {
-    // return this.http.post<WsSubscription>(`/api/ws/${connectionId}/subscription`, config);
-    const index = this.mockSubscriptions.findIndex(el => el.id === entityId);
-    const subscriptions: any = this.mockSubscriptions[index].data;
-    if (isEdit) {
-      const subIndex = subscriptions.findIndex(el => el.topic === subscription.topic);
-      // @ts-ignore
-      this.mockSubscriptions[index].data[subIndex] = subscription;
-    } else {
-      // @ts-ignore
-      this.mockSubscriptions[index].data.push(subscription);
-    }
-    return of(subscription);
-  }
-
-  public deleteSubscriptionV3(entityId: string, subscription: WsSubscription = null) {
-    const index = this.mockSubscriptions.findIndex(el => el.id === entityId);
-    const subscriptions: any = this.mockSubscriptions[index].data;
-    const subIndex = subscriptions.findIndex(el => el.topic === subscription.topic);
-    // @ts-ignore
-    this.mockSubscriptions[index].data.splice(subIndex, 1);
-    return of(null);
-  }
-
-  public saveSubscription(connectionId: string): Observable<any> {
-    const result = {
-      topic: 'testtopic',
-      color: 'pink',
-      qos: 1,
-      nl: false,
-      rap: true,
-      rh: true,
-      subscriptionIdentifier: 1
-    };
-    return of(result);
   }
 
   public clearHistory() {

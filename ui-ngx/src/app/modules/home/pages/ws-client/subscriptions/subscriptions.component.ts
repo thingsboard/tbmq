@@ -16,7 +16,7 @@
 
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection, WsSubscription } from '@shared/models/ws-client.model';
+import { Connection, WebSocketConnection, WebSocketSubscription, WsSubscription } from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
 import { Observable, ReplaySubject } from 'rxjs';
 import { map, share, tap } from 'rxjs/operators';
@@ -33,9 +33,9 @@ import { isDefinedAndNotNull } from '@core/utils';
 })
 export class SubscriptionsComponent {
 
-  subscriptions$: Observable<WsSubscription[]>;
-  subscriptions: WsSubscription[];
-  connection: Connection;
+  subscriptions$: Observable<WebSocketSubscription[]>;
+  subscriptions: WebSocketSubscription[];
+  connection: WebSocketConnection;
   loadSubscriptions = false;
 
   constructor(private dialog: MatDialog,
@@ -45,16 +45,18 @@ export class SubscriptionsComponent {
 
   ngOnInit() {
     this.wsClientService.selectedConnection$.subscribe(
-      res => {
-        this.loadSubscriptions = true;
-        this.connection = res;
-        this.fetchSubcription(res);
+      connection => {
+        if (connection) {
+          this.loadSubscriptions = true;
+          this.connection = connection;
+          this.fetchSubcriptions();
+        }
       }
     );
   }
 
-  fetchSubcription(connection) {
-    this.subscriptions$ = this.wsClientService.getSubscriptionsShortInfo(connection.id).pipe(
+  fetchSubcriptions() {
+    this.subscriptions$ = this.wsClientService.getWebSocketSubscriptions(this.connection.id).pipe(
       map(res => {
         if (res.length) {
           this.subscriptions = res;
@@ -67,7 +69,6 @@ export class SubscriptionsComponent {
       }),
       tap(() => setTimeout(() => this.cd.markForCheck()))
     );
-    // this.subscriptions$.subscribe();
   }
 
   addSubscription($event: Event) {
@@ -76,14 +77,18 @@ export class SubscriptionsComponent {
     }
     this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        mqttVersion: this.connection.configuration.mqttVersion
+      }
     }).afterClosed()
       .subscribe(
-        (res) => {
-          if (isDefinedAndNotNull(res)) {
-            this.wsClientService.saveSubscriptionV3(this.connection.id, res, false).subscribe(
-              (value) => {
-
+        (subscription) => {
+          if (isDefinedAndNotNull(subscription)) {
+            subscription.webSocketConnectionId = this.connection.id;
+            this.wsClientService.saveWebSocketSubscription(subscription).subscribe(
+              () => {
+                this.fetchSubcriptions();
               }
             );
           }

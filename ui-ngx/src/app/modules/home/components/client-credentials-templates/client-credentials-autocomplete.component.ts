@@ -32,7 +32,7 @@ import { SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
-import { Connection } from '@shared/models/ws-client.model';
+import { WebSocketConnection } from '@shared/models/ws-client.model';
 import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
@@ -52,7 +52,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   modelValue: ClientCredentials | null;
 
   @Input()
-  entity: Connection;
+  entity: WebSocketConnection;
 
   @Input()
   subscriptSizing: SubscriptSizing = 'fixed';
@@ -181,9 +181,9 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
           this.clientCredentialsChanged.emit(credentials);
         }
       );
-    } else if (isDefinedAndNotNull(this.entity?.clientCredentialsId)) {
+    } else if (isDefinedAndNotNull(this.entity?.configuration?.clientCredentialsId)) {
       this.modelValue = null;
-      this.clientCredentialsService.getClientCredentials(this.entity.clientCredentialsId).subscribe(
+      this.clientCredentialsService.getClientCredentials(this.entity.configuration.clientCredentialsId).subscribe(
         (credentials) => {
           this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
           this.clientCredentialsChanged.emit(credentials);
@@ -241,8 +241,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     return this.clientCredentialsService.getClientsCredentials(pageLink, {ignoreLoading: true}).pipe(
       catchError(() => of(emptyPageData<ClientCredentials>())),
       map(pageData => {
-        let data = pageData.data;
-        let basicCredentials = data.filter(el => el.credentialsType === CredentialsType.MQTT_BASIC);
+        const basicCredentials = pageData.data.filter(el => el.credentialsType === CredentialsType.MQTT_BASIC);
         return basicCredentials;
       })
     );

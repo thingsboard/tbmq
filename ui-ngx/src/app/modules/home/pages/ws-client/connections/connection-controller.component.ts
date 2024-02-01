@@ -20,7 +20,7 @@ import { AppState } from '@core/core.state';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection, ConnectionStatus, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
+import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection } from '@shared/models/ws-client.model';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/subscriptions/show-connection-logs-popover.component';
 
@@ -31,7 +31,7 @@ import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/subscr
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
-  connection: Connection;
+  connection: WebSocketConnection;
 
   isConnected: boolean;
   isDisabled: boolean;
@@ -64,9 +64,11 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
     this.wsClientService.selectedConnection$.subscribe(
       entity => {
-        this.connection = entity;
-        this.updateLabels();
-        this.isPasswordRequired = !!entity.password?.length;
+        if (entity) {
+          this.connection = entity;
+          this.updateLabels();
+          this.isPasswordRequired = !!entity.configuration.password?.length;
+        }
       }
     );
 
@@ -143,9 +145,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.wsClientService.disconnectClient(true);
   }
 
-/*  cancel() {
-    this.wsClientService.disconnectClient(true);
-  }*/
+  /*  cancel() {
+      this.wsClientService.disconnectClient(true);
+    }*/
 
   displayCancelButton(): boolean {
     return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING);

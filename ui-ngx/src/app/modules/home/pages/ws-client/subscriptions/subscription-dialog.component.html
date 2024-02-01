@@ -33,26 +33,25 @@
   <div mat-dialog-content>
     <section fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center">
       <mat-form-field fxFlex class="mat-block">
-        <mat-label translate>ws-client.subscriptions.topic</mat-label>
-        <input matInput required formControlName="topic" placeholder="{{ 'ws-client.subscriptions.topic' | translate }}">
-        <mat-error *ngIf="formGroup.get('topic').hasError('required')">
-          {{ 'ws-client.subscriptions.topic-required' | translate }}
+        <mat-label translate>ws-client.subscriptions.topic-filter</mat-label>
+        <input matInput required formControlName="topicFilter" placeholder="{{ 'ws-client.subscriptions.topic-filter' | translate }}">
+        <mat-error *ngIf="formGroup.get('topicFilter').hasError('required')">
+          {{ 'ws-client.subscriptions.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
       <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
       </tb-color-input>
     </section>
+    <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
+      <mat-label translate>mqtt-client-session.qos</mat-label>
+      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
+          {{ qoSTranslationMap.get(qos) | translate }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
     <section formGroupName="options" fxLayout="column" fxLayoutGap="16px">
-      <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
-        <mat-label translate>mqtt-client-session.qos</mat-label>
-        <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-          <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
-            {{ qoSTranslationMap.get(qos) | translate }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-accordion multi="true" class="mat-body-2">
+      <mat-accordion multi="true" class="mat-body-1">
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -61,32 +60,19 @@
           </mat-expansion-panel-header>
           <ng-template matExpansionPanelContent>
             <div fxLayout="column" fxLayoutGap="16px">
-              <section formGroupName="properties">
-                <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
-                  <mat-label translate>ws-client.subscriptions.subscription-identifier</mat-label>
-                  <input matInput type="number" min="1" max="268435455" formControlName="subscriptionIdentifier"
-                         placeholder="{{ 'ws-client.subscriptions.subscription-identifier' | translate }}">
-                  <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate"
-                            matTooltipPosition="right">
-                    info</mat-icon>
-                  <mat-error *ngIf="formGroup.get('options').get('properties').get('subscriptionIdentifier').hasError('min')">
-                    {{ 'ws-client.subscriptions.subscription-identifier-min' | translate }}
-                  </mat-error>
-                  <mat-error *ngIf="formGroup.get('options').get('properties').get('subscriptionIdentifier').hasError('max')">
-                    {{ 'ws-client.subscriptions.subscription-identifier-max' | translate }}
-                  </mat-error>
-                </mat-form-field>
+              <section *ngIf="disableMqtt5Features()" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">
+                <span>{{'ws-client.subscriptions.mqtt-5-features' | translate}}</span>
               </section>
               <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
                 <mat-label translate>ws-client.subscriptions.rh</mat-label>
-                <mat-select formControlName="rh">
+                <mat-select formControlName="retainHandling">
                   <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
                     {{ rh.name }}
                   </mat-option>
                 </mat-select>
               </mat-form-field>
               <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-                <mat-slide-toggle formControlName="nl">
+                <mat-slide-toggle formControlName="noLocal">
                   {{ 'ws-client.subscriptions.nl' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
@@ -95,7 +81,7 @@
                   info</mat-icon>
               </section>
               <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-                <mat-slide-toggle formControlName="rap">
+                <mat-slide-toggle formControlName="retainAsPublish">
                   {{ 'ws-client.subscriptions.rap' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"

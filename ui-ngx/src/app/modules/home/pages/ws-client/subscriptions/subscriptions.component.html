@@ -31,7 +31,7 @@
     <div style="overflow: auto">
       <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
         <div *ngFor="let subscription of (subscriptions$ | async);">
-          <tb-subscription [connection]="connection" [subscription]="subscription"></tb-subscription>
+          <tb-subscription [connection]="connection" [subscription]="subscription" (subscriptionUpdated)="fetchSubcriptions()"></tb-subscription>
         </div>
       </section>
     </div>

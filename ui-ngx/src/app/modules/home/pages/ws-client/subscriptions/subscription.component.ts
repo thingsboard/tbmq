@@ -25,7 +25,7 @@ import {
   AddWsClientSubscriptionDialogData,
   SubscriptionDialogComponent
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
-import { Connection, WsSubscription } from '@shared/models/ws-client.model';
+import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-subscription',
@@ -35,16 +35,13 @@ import { Connection, WsSubscription } from '@shared/models/ws-client.model';
 export class SubscriptionComponent implements OnInit {
 
   @Input()
-  subscription: WsSubscription;
+  subscription: WebSocketSubscription;
 
   @Input()
-  connection: Connection;
+  connection: WebSocketConnection;
 
   @Output()
-  subscriptionDeleted = new EventEmitter<WsSubscription>();
-
-  @Output()
-  subscriptionEdited = new EventEmitter<WsSubscription>();
+  subscriptionUpdated = new EventEmitter<void>();
 
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
@@ -67,8 +64,8 @@ export class SubscriptionComponent implements OnInit {
     this.showActions = false;
   }
 
-  private configureCellHiddenActions(): Array<CellActionDescriptor<WsSubscription>> {
-    const actions: Array<CellActionDescriptor<WsSubscription>> = [];
+  private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketSubscription>> {
+    const actions: Array<CellActionDescriptor<WebSocketSubscription>> = [];
     actions.push(
       {
         name: this.translate.instant('action.edit'),
@@ -86,48 +83,54 @@ export class SubscriptionComponent implements OnInit {
     return actions;
   }
 
-  private delete($event: Event, entity: WsSubscription) {
+  private delete($event: Event, entity: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('ws-client.subscriptions.delete-subscription-title', {topic: this.subscription.topic}),
-      this.translate.instant('ws-client.subscriptions.delete-subscription-text', {topic: this.subscription.topic}),
+      this.translate.instant('ws-client.subscriptions.delete-subscription-title', {topic: this.subscription.configuration.topicFilter}),
+      this.translate.instant('ws-client.subscriptions.delete-subscription-text', {topic: this.subscription.configuration.topicFilter}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
     ).subscribe((result) => {
       if (result) {
-        this.wsClientService.deleteSubscriptionV3(this.connection.id, this.subscription).subscribe()
-        // this.subscriptionDeleted.emit(this.subscription);
+        this.wsClientService.deleteWebSocketSubscription(entity.id).subscribe(() => {
+          this.updateData(entity);
+        });
       }
     });
   }
 
-  private edit($event: Event, entity: WsSubscription) {
+  private edit($event: Event, entity: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.getSubscription(this.connection.id, entity.id).subscribe(
+    this.wsClientService.getWebSocketSubscriptionById(entity.id).subscribe(
       subscription =>
         this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
+            mqttVersion: this.connection.configuration.mqttVersion,
             subscription
           }
-        })
-          .afterClosed()
+        }).afterClosed()
           .subscribe((res) => {
             if (isDefinedAndNotNull(res)) {
-              this.wsClientService.saveSubscriptionV3(this.connection.id, res, true).subscribe(
-                () => {
-                  // this.updateData()
+              this.wsClientService.saveWebSocketSubscription(res).subscribe(
+                (subscriptionUpdated) => {
+                  this.updateData(subscriptionUpdated);
                 }
               );
             }
           })
     );
+  }
+
+  private updateData(subscription: WebSocketSubscription) {
+    this.subscriptionUpdated.emit();
+    // TODO update connected client subscription
   }
 
 }

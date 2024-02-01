@@ -17,7 +17,7 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
-import { DataSizeUnitType, TimeUnitType } from '@shared/models/ws-client.model';
+import { DataSizeUnitType, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -536,31 +536,31 @@ export const camelCase = (str: string): string => {
   return _.camelCase(str);
 };
 
-export const convertTimeUnits = (value: number, valueUnit: TimeUnitType, targetUnit: TimeUnitType): number => {
+export const convertTimeUnits = (value: number, valueUnit: WebSocketTimeUnit, targetUnit: WebSocketTimeUnit): number => {
   let milliseconds: number = convertToMilliseconds(value, valueUnit);
   switch(targetUnit) {
-    case TimeUnitType.MILLISECONDS:
+    case WebSocketTimeUnit.MILLISECONDS:
       return milliseconds;
-    case TimeUnitType.SECONDS:
+    case WebSocketTimeUnit.SECONDS:
       return milliseconds / 1000;
-    case TimeUnitType.MINUTES:
+    case WebSocketTimeUnit.MINUTES:
       return milliseconds / (60 * 1000);
-    case TimeUnitType.HOURS:
+    case WebSocketTimeUnit.HOURS:
       return milliseconds / (60 * 60 * 1000);
     default:
       throw new Error(`Unsupported target unit: ${targetUnit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
   }
 }
 
-const convertToMilliseconds = (value: number, unit: TimeUnitType): number => {
+const convertToMilliseconds = (value: number, unit: WebSocketTimeUnit): number => {
   switch(unit) {
-    case TimeUnitType.MILLISECONDS:
+    case WebSocketTimeUnit.MILLISECONDS:
       return value;
-    case TimeUnitType.SECONDS:
+    case WebSocketTimeUnit.SECONDS:
       return value * 1000;
-    case TimeUnitType.MINUTES:
+    case WebSocketTimeUnit.MINUTES:
       return value * 60 * 1000;
-    case TimeUnitType.HOURS:
+    case WebSocketTimeUnit.HOURS:
       return value * 60 * 60 * 1000;
     default:
       throw new Error(`Unsupported unit: ${unit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
@@ -570,11 +570,11 @@ const convertToMilliseconds = (value: number, unit: TimeUnitType): number => {
 export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType, targetUnit: DataSizeUnitType): number => {
   let bytes: number = convertToBytes(value, valueUnit);
   switch(targetUnit) {
-    case DataSizeUnitType.B:
+    case DataSizeUnitType.BYTE:
       return bytes;
-    case DataSizeUnitType.KB:
+    case DataSizeUnitType.KILOBYTE:
       return bytes / 1024;
-    case DataSizeUnitType.MB:
+    case DataSizeUnitType.MEGABYTE:
       return bytes / (1024 * 1024);
     default:
       throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`)
@@ -583,11 +583,11 @@ export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType,
 
 const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
   switch(valueUnit) {
-    case DataSizeUnitType.B:
+    case DataSizeUnitType.BYTE:
       return value;
-    case DataSizeUnitType.KB:
+    case DataSizeUnitType.KILOBYTE:
       return value * 1024;
-    case DataSizeUnitType.MB:
+    case DataSizeUnitType.MEGABYTE:
       return value * 1024 * 1024;
     default:
       throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`);

@@ -16,20 +16,19 @@
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
+import { Subject } from 'rxjs';
 import { WsMqttQoSType, WsQoSTypes, WsQoSTranslationMap } from '@shared/models/session.model';
-import { TranslateService } from '@ngx-translate/core';
-import { WsClientService } from '@core/http/ws-client.service';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Connection, rhOptions, WsSubscription } from '@shared/models/ws-client.model';
+import { rhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { randomColor } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
-  subscription?: WsSubscription;
+  mqttVersion: number;
+  subscription?: WebSocketSubscription;
 }
 
 @Component({
@@ -49,6 +48,9 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   title = 'ws-client.subscriptions.add-subscription';
   actionButtonLabel = 'action.add';
 
+  entity: WebSocketSubscription;
+  mqttVersion: number;
+
   private destroy$ = new Subject<void>();
 
   constructor(public fb: FormBuilder,
@@ -56,37 +58,33 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
               protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: any,
-              public dialogRef: MatDialogRef<SubscriptionDialogComponent>,
-              private wsClientService: WsClientService,
-              private translate: TranslateService) {
+              public dialogRef: MatDialogRef<SubscriptionDialogComponent>) {
     super(store, router, dialogRef);
   }
 
   ngOnInit(): void {
-    const subscription: WsSubscription = this.data?.subscription;
-    if (subscription) {
+    this.entity = this.data?.subscription;
+    this.mqttVersion = this.data.mqttVersion;
+    if (this.entity) {
       this.title = 'ws-client.subscriptions.edit-subscription';
       this.actionButtonLabel = 'action.save';
     }
-    this.buildForms(subscription);
+    this.buildForms();
   }
 
   ngAfterContentChecked(): void {
     this.cd.detectChanges();
   }
 
-  private buildForms(entity: WsSubscription): void {
+  private buildForms(): void {
     this.formGroup = this.fb.group({
-      topic: [{value: entity ? entity.topic : 'sensors/#', disabled: !!entity}, [Validators.required]],
-      color: [entity ? entity.color : randomColor(), []],
+      topicFilter: [this.entity ? this.entity.configuration.topicFilter : 'sensors/#', [Validators.required]],
+      qos: [this.entity ? this.entity.configuration.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
+      color: [this.entity ? this.entity.configuration.color : randomColor(), []],
       options: this.fb.group({
-        qos: [entity ? entity.options.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
-        nl: [entity ? entity.options.nl : null, []],
-        rap: [entity ? entity.options.rap : null, []],
-        rh: [entity ? entity.options.rh : null, []],
-        properties: this.fb.group({
-          subscriptionIdentifier: [null, []]
-        })
+        noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled: this.disableMqtt5Features()}, []],
+        retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled: this.disableMqtt5Features()}, []],
+        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : null, disabled: this.disableMqtt5Features()}, []]
       })
     });
   }
@@ -97,10 +95,14 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   }
 
   save() {
-    const value = this.formGroup.getRawValue();
-    value.color = value.color || randomColor();
-    this.dialogRef.close(value);
+    const formValues = this.formGroup.getRawValue();
+    formValues.color = formValues.color || randomColor();
+    const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
+    this.dialogRef.close(result);
   }
 
+  disableMqtt5Features() {
+    return this.mqttVersion !== 5;
+  }
 }
 

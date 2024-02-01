@@ -14,19 +14,17 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Observable, ReplaySubject } from 'rxjs';
 import { map, share, tap } from 'rxjs/operators';
-import { Router } from '@angular/router';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection, ConnectionShortInfo } from '@shared/models/ws-client.model';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
+import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-show-connections-popover',
@@ -41,26 +39,28 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   @Input()
   popoverComponent: TbPopoverComponent;
 
-  connections$: Observable<ConnectionShortInfo[]>;
+  connections$: Observable<WebSocketConnectionDto[]>;
   loadConnection = true;
   connectionsTotal: number;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,
               private dialog: MatDialog,
-              private zone: NgZone,
-              private cd: ChangeDetectorRef,
-              private router: Router) {
+              private cd: ChangeDetectorRef) {
     super(store);
   }
 
   ngOnInit() {
-    this.connections$ = this.wsClientService.getConnections().pipe(
+    this.updateData();
+  }
+
+  updateData() {
+    this.connections$ = this.wsClientService.getWebSocketConnections().pipe(
       map(res => {
-        if (res.length) {
-          this.connectionsTotal = res.length;
+        if (res.data?.length) {
+          this.connectionsTotal = res.data?.length;
           this.loadConnection = true;
-          return res;
+          return res.data;
         }
         return [];
       }),
@@ -87,20 +87,16 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
         connectionsTotal: this.connectionsTotal
       }
     }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
-            () => {
-              // this.updateData()
-            }
-          );*/
+      .subscribe(result => {
+        if (result) {
+          this.updateData();
         } else {
           this.onClose();
         }
       });
   }
 
-  trackById(index: number, item: Connection): string {
+  trackById(index: number, item: WebSocketConnection): string {
     return item.id;
   }
 

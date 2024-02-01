@@ -892,11 +892,11 @@
       "add-subscription": "Add Subscription",
       "edit-subscription": "Edit Subscription",
       "delete-subscription": "Delete Subscription",
-      "delete-subscription-title": "Are you sure you want to delete the topic '{{topic}}'?",
-      "delete-subscription-text": "Be careful, after the confirmation the '{{topic}}' topic and all related data will become unrecoverable.",
+      "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",
+      "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",
       "subscriptions": "Subscriptions",
-      "topic": "Topic",
-      "topic-required": "Topic is required.",
+      "topic-filter": "Topic filter",
+      "topic-filter-required": "Topic filter is required.",
       "subscription": "Subscription",
       "subscription-details": "Subscription details",
       "rh": "Retain Handling",
@@ -913,7 +913,8 @@
       "search-subscription": "Search by Topic",
       "no-subscriptions": "No subscriptions yet",
       "retain-details": "Retained messages",
-      "loading-subscriptions": "Loading subscriptions..."
+      "loading-subscriptions": "Loading subscriptions...",
+      "mqtt-5-features": "MQTT 5 version features only"
     }
   },
     "js-func": {

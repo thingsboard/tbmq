@@ -315,10 +315,10 @@
     <mat-step [stepControl]="lastWillFormGroup" [optional]="true">
       <ng-template matStepLabel>{{ 'ws-client.last-will.last-will' | translate }}</ng-template>
       <form [formGroup]="lastWillFormGroup" #lwFormGroup="ngForm">
-        <tb-last-will formControlName="will"
+        <tb-last-will formControlName="lastWillMsg"
                       [entity]="connection"
                       [disabled]="isLoading$ | async"
-                      [mqttVersion]="connectionAdvancedFormGroup.get('protocolVersion').value">
+                      [mqttVersion]="mqttVersion">
         </tb-last-will>
       </form>
     </mat-step>

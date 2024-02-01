@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
+import { Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -26,9 +26,7 @@ import {
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
-import { TranslateService } from '@ngx-translate/core';
-import { Connection, TimeUnitType, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import { convertTimeUnits } from '@core/utils';
+import { timeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 export interface LastWill {
   topic: string;
@@ -51,7 +49,7 @@ export interface LastWill {
     }],
   styleUrls: ['./last-will.component.scss']
 })
-export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
+export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
   @Input()
   disabled: boolean;
@@ -60,12 +58,12 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   mqttVersion: number;
 
   @Input()
-  entity: Connection;
+  entity: WebSocketConnection;
 
   formGroup: UntypedFormGroup;
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
-  timeUnitTypes = Object.keys(TimeUnitType);
+  timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
   private valueChangeSubscription: Subscription = null;
@@ -73,32 +71,48 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   private propagateChange = (v: any) => {
   };
 
-  constructor(public fb: FormBuilder,
-              public cd: ChangeDetectorRef,
-              private translate: TranslateService) {
+  constructor(public fb: FormBuilder) {
   }
 
   ngOnInit() {
     this.initForm(this.entity);
   }
 
-  private initForm(entity: Connection) {
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'mqttVersion' && change.currentValue) {
+          this.mqttVersion = change.currentValue;
+          this.disableMqtt5Features();
+        }
+      }
+    }
+  }
+
+  private initForm(entity: WebSocketConnection) {
+    const lastWillMsg = entity?.configuration?.lastWillMsg;
     this.formGroup = this.fb.group({
-      topic: [entity?.will ? entity?.will.topic : null, []],
-      payload: [entity?.will ? entity?.will.payload : null, []],
-      qos: [entity?.will ? entity?.will.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
-      retain: [entity?.will ? entity?.will.retain : false, []],
-      properties: this.fb.group({
-        willDelayInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.willDelayInterval, TimeUnitType.SECONDS, entity?.will.properties.willDelayIntervalUnit) : 0, []],
-        willDelayIntervalUnit: [entity?.will ? entity?.will.properties.willDelayIntervalUnit : TimeUnitType.SECONDS, []],
-        payloadFormatIndicator: [entity?.will ? entity?.will.properties.payloadFormatIndicator : false, []],
-        messageExpiryInterval: [entity?.will ? convertTimeUnits(entity?.will.properties.messageExpiryInterval, TimeUnitType.SECONDS, entity?.will.properties.messageExpiryIntervalUnit) : 0, []],
-        messageExpiryIntervalUnit: [entity?.will ? entity?.will.properties.messageExpiryIntervalUnit : TimeUnitType.SECONDS, []],
-        contentType: [entity?.will ? entity?.will.properties.contentType : '', []],
-        responseTopic: [entity?.will ? entity?.will.properties.responseTopic : '', []],
-        correlationData: [entity?.will ? entity?.will.properties.correlationData : '', []]
-      })
+      topic: [lastWillMsg ? lastWillMsg.topic : null, []],
+      payload: [lastWillMsg ? lastWillMsg.payload : null, []],
+      qos: [lastWillMsg ? lastWillMsg.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
+      retain: [lastWillMsg ? lastWillMsg.retain : false, []],
+      willDelayInterval: [{value: lastWillMsg ? lastWillMsg.willDelayInterval : 0, disabled: this.mqttVersion !== 5}, []],
+      willDelayIntervalUnit: [{
+        value: lastWillMsg ? lastWillMsg.willDelayIntervalUnit : WebSocketTimeUnit.SECONDS,
+        disabled: this.mqttVersion !== 5
+      }, []],
+      payloadFormatIndicator: [{value: lastWillMsg ? lastWillMsg.payloadFormatIndicator : false, disabled: this.mqttVersion !== 5}, []],
+      msgExpiryInterval: [{value: lastWillMsg ? lastWillMsg.msgExpiryInterval : 0, disabled: this.mqttVersion !== 5}, []],
+      msgExpiryIntervalUnit: [{
+        value: lastWillMsg ? lastWillMsg.msgExpiryIntervalUnit : WebSocketTimeUnit.SECONDS,
+        disabled: this.mqttVersion !== 5
+      }, []],
+      contentType: [{value: lastWillMsg ? lastWillMsg.contentType : null, disabled: this.mqttVersion !== 5}, []],
+      responseTopic: [{value: lastWillMsg ? lastWillMsg.responseTopic : null, disabled: this.mqttVersion !== 5}, []],
+      correlationData: [{value: lastWillMsg ? lastWillMsg.correlationData : null, disabled: this.mqttVersion !== 5}, []]
     });
+    this.disableMqtt5Features();
   }
 
   ngOnDestroy(): void {
@@ -114,12 +128,12 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
-      this.formGroup.disable({emitEvent: false});
-    } else {
-      this.formGroup.enable({emitEvent: false});
-    }
+    /*    this.disabled = isDisabled;
+        if (this.disabled) {
+          this.formGroup.disable({emitEvent: false});
+        } else {
+          this.formGroup.enable({emitEvent: false});
+        }*/
   }
 
   validate(): ValidationErrors | null {
@@ -127,16 +141,36 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   }
 
   writeValue(value: LastWill): void {
-    if (this.valueChangeSubscription) {
-      this.valueChangeSubscription.unsubscribe();
-    }
-    this.valueChangeSubscription = this.formGroup.valueChanges.subscribe((value) => {
+    this.formGroup.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
   }
 
   private updateView(value: LastWill) {
     this.propagateChange(value);
+  }
+
+  private disableMqtt5Features() {
+    if (this.mqttVersion !== 5) {
+      this.formGroup.get('willDelayInterval').disable();
+      this.formGroup.get('willDelayIntervalUnit').disable();
+      this.formGroup.get('payloadFormatIndicator').disable();
+      this.formGroup.get('msgExpiryInterval').disable();
+      this.formGroup.get('msgExpiryIntervalUnit').disable();
+      this.formGroup.get('contentType').disable();
+      this.formGroup.get('responseTopic').disable();
+      this.formGroup.get('correlationData').disable();
+    } else {
+      this.formGroup.get('willDelayInterval').enable();
+      this.formGroup.get('willDelayIntervalUnit').enable();
+      this.formGroup.get('payloadFormatIndicator').enable();
+      this.formGroup.get('msgExpiryInterval').enable();
+      this.formGroup.get('msgExpiryIntervalUnit').enable();
+      this.formGroup.get('contentType').enable();
+      this.formGroup.get('responseTopic').enable();
+      this.formGroup.get('correlationData').enable();
+    }
+    this.formGroup.updateValueAndValidity();
   }
 }
 

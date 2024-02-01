@@ -27,35 +27,29 @@ import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
-import {
-  clientCredentialsNameRandom,
-  clientIdRandom,
-  clientUserNameRandom,
-  convertDataSizeUnits,
-  convertTimeUnits,
-  deepTrim,
-  isDefinedAndNotNull
-} from '@core/utils';
+import { clientCredentialsNameRandom, clientIdRandom, clientUserNameRandom, deepTrim, isDefinedAndNotNull } from '@core/utils';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
   addressProtocols,
-  Connection,
   DataSizeUnitType,
   dataSizeUnitTypeTranslationMap,
   mqttVersions,
-  TimeUnitType,
   timeUnitTypeTranslationMap,
+  WebSocketConnection,
+  WebSocketConnectionConfiguration,
+  WebSocketTimeUnit,
   WsAddressProtocolType,
   wsAddressProtocolTypeValueMap,
   WsCredentialsGeneratortTypeTranslationMap,
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
 import { WsClientService } from '@core/http/ws-client.service';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 export interface ConnectionDialogData {
-  entity?: Connection;
+  entity?: WebSocketConnection;
   connectionsTotal?: number;
 }
 
@@ -64,7 +58,7 @@ export interface ConnectionDialogData {
   templateUrl: './connection-wizard-dialog.component.html',
   styleUrls: ['./connection-wizard-dialog.component.scss']
 })
-export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, Connection> {
+export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 
   @ViewChild('addConnectionWizardStepper', {static: true}) addConnectionWizardStepper: MatStepper;
 
@@ -98,13 +92,14 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   WsCredentialsGeneratorType = WsCredentialsGeneratorType;
   WsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
 
-  timeUnitTypes = Object.keys(TimeUnitType);
+  timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
 
   dataSizeUnitTypes = Object.keys(DataSizeUnitType);
   dataSizeUnitTypeTranslationMap = dataSizeUnitTypeTranslationMap;
 
   mqttVersions = mqttVersions;
+  mqttVersion: number;
   displayPasswordWarning: boolean;
   connectionFormGroup: UntypedFormGroup;
   connectionAdvancedFormGroup: UntypedFormGroup;
@@ -113,13 +108,13 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   title = 'ws-client.connections.add-connection';
   actionButtonLabel = 'action.add';
-  connection: Connection;
+  connection: WebSocketConnection;
 
   credentialsGeneratorType = WsCredentialsGeneratorType.AUTO;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
-              public dialogRef: MatDialogRef<ConnectionWizardDialogComponent, Connection>,
+              public dialogRef: MatDialogRef<ConnectionWizardDialogComponent, WebSocketConnection>,
               private clientCredentialsService: ClientCredentialsService,
               private wsClientService: WsClientService,
               private breakpointObserver: BreakpointObserver,
@@ -135,15 +130,15 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
     this.connection = this.data.entity;
 
-    this.setConnectionFormGroup(this.connection);
-    this.setConnectionAdvancedFormGroup(this.connection);
+    this.setConnectionFormGroup();
+    this.setConnectionAdvancedFormGroup();
     this.setLastWillFormGroup();
     this.setUserPropertiesFormGroup();
 
     if (this.connection) {
       this.title = 'ws-client.connections.edit';
       this.actionButtonLabel = 'action.save';
-      if (isDefinedAndNotNull(this.connection.clientCredentialsId)) {
+      if (isDefinedAndNotNull(this.connection.configuration.clientCredentialsId)) {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.EXISTING;
       } else {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.CUSTOM;
@@ -152,52 +147,57 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
   }
 
-  private setConnectionFormGroup(entity: Connection) {
+  private setConnectionFormGroup() {
+    const entity: WebSocketConnection = this.connection;
     const url = 'ws://' + window.location.hostname + ':' + 8084 + '/mqtt';
     this.connectionFormGroup = this.fb.group({
       name: [entity ? entity.name : this.generateWebSocketClientName(), [Validators.required]],
-      url: [entity ? entity.url : url, [Validators.required]],
+      url: [entity ? entity.configuration.url : url, [Validators.required]],
       credentialsName: [{value: this.generateWebSocketClientName(), disabled: true}, [Validators.required]],
-      clientId: [{value: entity ? entity.clientId : clientIdRandom(), disabled: true}, [Validators.required]],
-      username: [{value: entity ? entity.username : clientUserNameRandom(), disabled: true}, []],
+      clientId: [{value: entity ? entity.configuration.clientId : clientIdRandom(), disabled: true}, [Validators.required]],
+      username: [{value: entity ? entity.configuration.username : clientUserNameRandom(), disabled: true}, []],
       password: [null, []],
       clientCredentials: [null, []],
-      clientCredentialsId: [null, []]
+      clientCredentialsId: [entity ? entity.configuration.clientCredentialsId : null, []]
     });
   }
 
-  private setConnectionAdvancedFormGroup(entity: Connection) {
+  private setConnectionAdvancedFormGroup() {
+    const entity: WebSocketConnection = this.connection;
     this.connectionAdvancedFormGroup = this.fb.group({
-      clean: [entity ? entity.clean : false, []],
-      keepalive: [entity ? convertTimeUnits(entity.keepalive, TimeUnitType.SECONDS, entity.keepaliveUnit) : 60, [Validators.required]],
-      keepaliveUnit: [entity ? entity.keepaliveUnit : TimeUnitType.SECONDS, []],
-      connectTimeout: [entity ? convertTimeUnits(entity.connectTimeout, TimeUnitType.MILLISECONDS, entity.connectTimeoutUnit) : 30 * 1000, [Validators.required]],
-      connectTimeoutUnit: [entity ? entity.connectTimeoutUnit : TimeUnitType.MILLISECONDS, []],
-      reconnectPeriod: [entity ? convertTimeUnits(entity.reconnectPeriod, TimeUnitType.MILLISECONDS, entity.reconnectPeriodUnit) : 1000, [Validators.required]],
-      reconnectPeriodUnit: [entity ? entity.reconnectPeriodUnit : TimeUnitType.MILLISECONDS, []],
-      protocolVersion: [entity ? entity.protocolVersion : 5, []],
+      clean: [entity ? entity.configuration.cleanStart : false, []],
+      keepalive: [entity ? entity.configuration.keepAlive : 60, [Validators.required]],
+      keepaliveUnit: [entity ? entity.configuration.keepAliveUnit : WebSocketTimeUnit.SECONDS, []],
+      connectTimeout: [entity ? entity.configuration.connectTimeout : 30 * 1000, [Validators.required]],
+      connectTimeoutUnit: [entity ? entity.configuration.connectTimeoutUnit : WebSocketTimeUnit.MILLISECONDS, []],
+      reconnectPeriod: [entity ? entity.configuration.reconnectPeriod : 1000, [Validators.required]],
+      reconnectPeriodUnit: [entity ? entity.configuration.reconnectPeriodUnit : WebSocketTimeUnit.MILLISECONDS, []],
+      protocolVersion: [entity ? entity.configuration.mqttVersion : 5, []],
       properties: this.fb.group({
-        sessionExpiryInterval: [entity ? convertTimeUnits(entity.properties.sessionExpiryInterval, TimeUnitType.SECONDS, entity.properties.sessionExpiryIntervalUnit) : 0, []],
-        sessionExpiryIntervalUnit: [entity ? entity.properties.sessionExpiryIntervalUnit : TimeUnitType.SECONDS, []],
-        maximumPacketSize: [entity ? convertDataSizeUnits(entity.properties.maximumPacketSize, DataSizeUnitType.B, entity.properties.maximumPacketSizeUnit) : 256, []],
-        maximumPacketSizeUnit: [entity ? entity.properties.maximumPacketSizeUnit : DataSizeUnitType.MB, []],
-        topicAliasMaximum: [entity ? entity.properties.topicAliasMaximum : 0, []],
-        receiveMaximum: [entity ? entity.properties.receiveMaximum : 65535, []],
-        requestResponseInfo: [entity ? entity.properties.requestResponseInformation : false, []],
+        sessionExpiryInterval: [entity ? entity.configuration.sessionExpiryInterval : 0, []],
+        sessionExpiryIntervalUnit: [entity ? entity.configuration.sessionExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
+        maximumPacketSize: [entity ? entity.configuration.maxPacketSize : 256, []],
+        maximumPacketSizeUnit: [entity ? entity.configuration.maxPacketSizeUnit : DataSizeUnitType.MEGABYTE, []],
+        topicAliasMaximum: [entity ? entity.configuration.topicAliasMax : 0, []],
+        receiveMaximum: [entity ? entity.configuration.receiveMax : 65535, []],
+        requestResponseInfo: [entity ? entity.configuration.requestResponseInfo : false, []],
       })
     });
+    this.mqttVersion = entity ? entity.configuration.mqttVersion : 5;
+    this.connectionAdvancedFormGroup.get('protocolVersion').valueChanges.subscribe((version) => {
+      this.mqttVersion = version;
+    })
   }
 
   private setLastWillFormGroup() {
-    this.lastWillFormGroup  = this.fb.group({
-        will: [null, []]
-      }
-    );
+    this.lastWillFormGroup = this.fb.group({
+      lastWillMsg: [this.connection?.configuration?.lastWillMsg ? this.connection.configuration.lastWillMsg : null, []]
+    });
   }
 
   private setUserPropertiesFormGroup() {
-    this.userPropertiesFormGroup  = this.fb.group({
-        userProperties: [null, []]
+    this.userPropertiesFormGroup = this.fb.group({
+        userProperties: [this.connection?.configuration?.userProperties ? this.connection.configuration.userProperties : null, []]
       }
     );
   }
@@ -209,10 +209,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     const host = protocol[1] ? protocol[1] : (window.location.hostname + ':' + 8084 + '/mqtt');
     const newUrl = value.toLowerCase() + divider + host;
     this.connectionFormGroup.get('url').patchValue(newUrl);
-    /*const newUrl = this.connectionFormGroup.get('url').value === WsAddressProtocolType.WSS
-      ? url.replace('ws://', 'wss://')
-      : url.replace('wss://', 'ws://');
-    this.connectionFormGroup.get('url').patchValue('1234');*/
   }
 
   onCredentialsGeneratorChange(value: WsCredentialsGeneratorType) {
@@ -230,9 +226,9 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
-      this.connectionFormGroup.get('clientId').patchValue(this.connection?.clientId ? this.connection.clientId : clientIdRandom());
+      this.connectionFormGroup.get('clientId').patchValue(this.connection?.configuration?.clientId ? this.connection.configuration.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
-      this.connectionFormGroup.get('username').patchValue(this.connection?.username ? this.connection.username : null);
+      this.connectionFormGroup.get('username').patchValue(this.connection?.configuration.username ? this.connection.configuration.username : null);
       this.connectionFormGroup.get('password').patchValue(null);
       this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').patchValue(null);
@@ -295,7 +291,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               }
             );
           }
-        )
+        );
       } else {
         this.createClientCredentials().subscribe(
           (entity) => {
@@ -306,18 +302,15 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
   }
 
-  private createClientCredentials(): Observable<Connection> {
+  private createClientCredentials(): Observable<WebSocketConnection> {
     const connectionFormGroupValue = {
       ...this.connectionFormGroup.getRawValue(),
       ...this.connectionAdvancedFormGroup.getRawValue(),
-      ...this.lastWillFormGroup.getRawValue()
+      ...this.lastWillFormGroup.getRawValue(),
+      ...this.userPropertiesFormGroup.getRawValue()
     };
-    const result: Connection = this.transformValues(deepTrim(connectionFormGroupValue));
-    const userProperties = this.userPropertiesFormGroup.getRawValue().userProperties;
-    if (isDefinedAndNotNull(userProperties)) {
-      result.properties.userProperties = userProperties;
-    }
-    return this.wsClientService.saveConnection(result).pipe(
+    const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
+    return this.wsClientService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
         this.addConnectionWizardStepper.selectedIndex = 0;
         return throwError(e);
@@ -325,18 +318,56 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     );
   }
 
-  private transformValues(entity: Connection): Connection {
-    entity.clientCredentialsId = isDefinedAndNotNull(entity.clientCredentials) ? entity.clientCredentials.id : null;
-    entity.keepalive = convertTimeUnits(entity.keepalive, entity.keepaliveUnit, TimeUnitType.SECONDS);
-    entity.connectTimeout = convertTimeUnits(entity.connectTimeout, entity.connectTimeoutUnit, TimeUnitType.MILLISECONDS);
-    entity.reconnectPeriod = convertTimeUnits(entity.reconnectPeriod, entity.reconnectPeriodUnit, TimeUnitType.MILLISECONDS);
-    entity.properties.sessionExpiryInterval = convertTimeUnits(entity.properties.sessionExpiryInterval, entity.properties.sessionExpiryIntervalUnit, TimeUnitType.SECONDS);
-    entity.properties.maximumPacketSize = convertDataSizeUnits(entity.properties.maximumPacketSize, entity.properties.maximumPacketSizeUnit, DataSizeUnitType.B);
-    if (isDefinedAndNotNull(entity.will?.properties)) {
-      entity.will.properties.messageExpiryInterval = convertTimeUnits(entity.will.properties.messageExpiryInterval, entity.will.properties.messageExpiryIntervalUnit, TimeUnitType.SECONDS);
-      entity.will.properties.willDelayInterval = convertTimeUnits(entity.will.properties.willDelayInterval, entity.will.properties.willDelayIntervalUnit, TimeUnitType.SECONDS);
+  private transformValues(formValues: any): WebSocketConnection {
+    const entity = {} as WebSocketConnection;
+    const config = {} as WebSocketConnectionConfiguration;
+
+    entity.name = formValues.name;
+    if (isDefinedAndNotNull(this.connection)) {
+      entity.id = this.connection.id;
+      entity.userId = this.connection.userId;
+    } else {
+      entity.userId = getCurrentAuthUser(this.store).userId;
     }
-    delete entity.clientCredentials;
+    config.url = formValues.url;
+    config.clientCredentialsId = isDefinedAndNotNull(formValues.clientCredentials) ? formValues.clientCredentials.id : null;
+    config.clientId = formValues.clientId;
+    config.username = formValues.username;
+    config.password = formValues.password;
+    config.cleanStart = formValues.clean;
+    config.keepAlive = formValues.keepalive;
+    config.connectTimeout = formValues.connectTimeout;
+    config.reconnectPeriod = formValues.reconnectPeriod;
+    config.sessionExpiryInterval = formValues.properties?.sessionExpiryInterval;
+    config.maxPacketSize = formValues.properties?.maximumPacketSize;
+    config.topicAliasMax = formValues.properties?.topicAliasMaximum;
+    config.receiveMax = formValues.properties?.receiveMaximum;
+    config.requestResponseInfo = formValues.properties?.requestResponseInformation;
+    config.requestProblemInfo = formValues.properties?.requestProblemInformation;
+    config.mqttVersion = formValues.protocolVersion;
+    config.keepAliveUnit = formValues.keepaliveUnit;
+    config.connectTimeoutUnit = formValues.connectTimeoutUnit;
+    config.reconnectPeriodUnit = formValues.reconnectPeriodUnit;
+    config.sessionExpiryIntervalUnit = formValues.properties?.sessionExpiryIntervalUnit;
+    config.maxPacketSizeUnit = formValues.properties?.maximumPacketSizeUnit;
+    config.userProperties = formValues.userProperties;
+    if (isDefinedAndNotNull(formValues.lastWillMsg)) {
+      config.lastWillMsg = {};
+      config.lastWillMsg.topic = formValues.lastWillMsg.topic;
+      config.lastWillMsg.qos = formValues.lastWillMsg.qos;
+      config.lastWillMsg.payload = formValues.lastWillMsg.payload;
+      config.lastWillMsg.payloadType = formValues.lastWillMsg.payloadType;
+      config.lastWillMsg.retain = formValues.lastWillMsg.retain;
+      config.lastWillMsg.payloadFormatIndicator = formValues.lastWillMsg.payloadFormatIndicator;
+      config.lastWillMsg.contentType = formValues.lastWillMsg.contentType;
+      config.lastWillMsg.msgExpiryInterval = formValues.lastWillMsg.msgExpiryInterval;
+      config.lastWillMsg.msgExpiryIntervalUnit = formValues.lastWillMsg.msgExpiryIntervalUnit;
+      config.lastWillMsg.willDelayInterval = formValues.lastWillMsg.willDelayInterval;
+      config.lastWillMsg.willDelayIntervalUnit = formValues.lastWillMsg.willDelayIntervalUnit;
+      config.lastWillMsg.responseTopic = formValues.lastWillMsg.responseTopic;
+      config.lastWillMsg.correlationData = formValues.lastWillMsg.correlationData;
+    }
+    entity.configuration = config;
     return entity;
   }
 
@@ -401,7 +432,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   private generateWebSocketClientName(): string {
-    return 'WebSocket Connection ' + (this.data.connectionsTotal + 1)
+    return 'WebSocket Connection ' + (this.data.connectionsTotal + 1);
   }
 }
 
@@ -412,17 +443,17 @@ export class BasicClientCredentials {
   name: string;
   credentialsValue: any = {};
 
-  constructor (name: string,
-               clientId: string,
-               username: string) {
+  constructor(name: string,
+              clientId: string,
+              username: string) {
     this.name = name;
     this.credentialsValue = JSON.stringify({
       clientId,
       userName: username,
       password: null,
       authRules: {
-        pubAuthRulePatterns: [".*"],
-        subAuthRulePatterns: [".*"]
+        pubAuthRulePatterns: ['.*'],
+        subAuthRulePatterns: ['.*']
       }
     });
   }

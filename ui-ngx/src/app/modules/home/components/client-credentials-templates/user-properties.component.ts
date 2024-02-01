@@ -25,10 +25,9 @@ import {
   ValidationErrors,
   Validator
 } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
-import { SslCredentialsAuthRules } from '@shared/models/credentials.model';
+import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
-import { Connection } from '@shared/models/ws-client.model';
+import { WebSocketConnection, WebSocketUserProperties } from '@shared/models/ws-client.model';
 
 export interface UserProperties {
   userProperties: UserPropertiesObject[];
@@ -61,11 +60,10 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   disabled: boolean;
 
   @Input()
-  entity: Connection;
+  entity: WebSocketConnection;
 
   userPropertiesFormGroup: UntypedFormGroup;
 
-  private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {
   };
@@ -83,11 +81,11 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   ngOnInit() {
-    if (this.entity && isDefinedAndNotNull(this.entity.properties?.userProperties)) {
-      for (const [key, value] of Object.entries(this.entity.properties?.userProperties)) {
+    if (isDefinedAndNotNull(this.entity?.configuration?.userProperties?.props?.length)) {
+      for (const prop in this.entity.configuration.userProperties.props) {
         this.userPropertiesFormArray.push(this.fb.group({
-          key: [key, []],
-          value: [value, []]
+          key: [this.entity.configuration.userProperties.props[prop].k, []],
+          value: [this.entity.configuration.userProperties.props[prop].v, []]
         }));
       }
     } else {
@@ -136,10 +134,7 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   writeValue(value: UserProperties): void {
-    if (this.valueChangeSubscription) {
-      this.valueChangeSubscription.unsubscribe();
-    }
-    this.valueChangeSubscription = this.userPropertiesFormGroup.valueChanges.subscribe((value) => {
+    this.userPropertiesFormGroup.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
   }
@@ -150,17 +145,18 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
     }
   }
 
-  private prepareValues(value: UserProperties): SslCredentialsAuthRules {
-    const result = {};
+  private prepareValues(value: UserProperties): WebSocketUserProperties {
+    const userProperties = {
+      props: []
+    };
     value.userProperties.map(obj => {
-      const key = obj?.key;
-      if (key) {
-        result[key] = {};
-        result[key] = obj.value;
+      const k = obj?.key;
+      const v = obj?.value;
+      if (k) {
+        userProperties.props.push({k, v});
       }
     });
-    return result;
+    return userProperties;
   }
-
 }
 

@@ -16,7 +16,7 @@
 
 import { Component } from '@angular/core';
 import { WsClientService } from '@core/http/ws-client.service';
-import { Connection } from '@shared/models/ws-client.model';
+import { WebSocketConnection } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -26,7 +26,7 @@ import { Observable } from 'rxjs';
 })
 export class ConnectionsComponent {
 
-  connection: Observable<Connection> = this.wsClientService.selectedConnection$;
+  connection: Observable<WebSocketConnection> = this.wsClientService.selectedConnection$;
 
   constructor(private wsClientService: WsClientService) {
   }

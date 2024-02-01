@@ -15,14 +15,13 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Connection } from '@shared/models/ws-client.model';
+import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { WsClientService } from '@core/http/ws-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
-import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-connection',
@@ -32,15 +31,12 @@ import { isDefinedAndNotNull } from '@core/utils';
 export class ConnectionComponent implements OnInit {
 
   @Input()
-  connection: Connection;
+  connection: WebSocketConnectionDto;
 
   @Output()
-  connectionDeleted = new EventEmitter<Connection>();
+  connectionUpdated = new EventEmitter<void>();
 
-  @Output()
-  connectionEdited = new EventEmitter<Connection>();
-
-  selectedConnection: Connection;
+  selectedConnection: WebSocketConnectionDto;
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
 
@@ -68,10 +64,12 @@ export class ConnectionComponent implements OnInit {
   }
 
   selectConnection() {
-    this.wsClientService.selectConnection(this.connection);
+    this.wsClientService.getWebSocketConnectionById(this.connection.id).subscribe(connection => {
+      this.wsClientService.selectConnection(connection);
+    });
   }
 
-  setStyle(): {[key: string]: any} {
+  setStyle(): { [key: string]: any } {
     return {
       background: this.isConnectionConnected() ? '#008A00' : 'rgba(0,0,0,0.2)'
     };
@@ -81,8 +79,8 @@ export class ConnectionComponent implements OnInit {
     return this.wsClientService.isConnectionConnected(this.connection.id);
   }
 
-  private configureCellHiddenActions(): Array<CellActionDescriptor<Connection>> {
-    const actions: Array<CellActionDescriptor<Connection>> = [];
+  private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketConnectionDto>> {
+    const actions: Array<CellActionDescriptor<WebSocketConnectionDto>> = [];
     actions.push(
       {
         name: this.translate.instant('action.edit'),
@@ -94,13 +92,13 @@ export class ConnectionComponent implements OnInit {
         name: this.translate.instant('action.delete'),
         icon: 'delete',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.delete($event, entity)
+        onAction: ($event) => this.delete($event)
       }
     );
     return actions;
   }
 
-  private delete($event: Event, entity: Connection) {
+  private delete($event: Event) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -112,39 +110,31 @@ export class ConnectionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
-        this.wsClientService.deleteConnection(this.connection, this.selectedConnection);
-        if (this.selectedConnection.id === this.connection.id) {
-          // TODO move implementation to the select-connection-component
-          /*this.wsClientService.selectFirstConnection().subscribe(
-            () => {
-              this.wsClientService.deleteConnection(this.connection.id).subscribe();
-            }
-          );*/
-        }
+        this.wsClientService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
+          this.connectionUpdated.emit();
+        });
       }
     });
   }
 
-  private edit($event: Event, entity: Connection) {
+  private edit($event: Event, entity: WebSocketConnectionDto) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        entity
-      }
-    }).afterClosed()
-      .subscribe((res) => {
-        if (isDefinedAndNotNull(res)) {
-          /*this.wsClientService.saveConnection(res).subscribe(
-            (connection) => {
-              this.connectionEdited.emit(connection);
-            }
-          );*/
+    this.wsClientService.getWebSocketConnectionById(entity.id).subscribe(connection => {
+      this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
+        disableClose: true,
+        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        data: {
+          entity: connection
         }
-      });
+      }).afterClosed()
+        .subscribe((result) => {
+          if (result) {
+            this.connectionUpdated.emit();
+          }
+        });
+    });
   }
 
 }
