@@ -54,7 +54,7 @@ public class WebSocketSubscriptionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", params = {"webSocketConnectionId"}, method = RequestMethod.GET)
     @ResponseBody
-    public List<WebSocketSubscription> getWebSocketConnections(@RequestParam String webSocketConnectionId) throws ThingsboardException {
+    public List<WebSocketSubscription> getWebSocketSubscriptions(@RequestParam String webSocketConnectionId) throws ThingsboardException {
         checkParameter("webSocketConnectionId", webSocketConnectionId);
         try {
             return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptions(toUUID(webSocketConnectionId)));
