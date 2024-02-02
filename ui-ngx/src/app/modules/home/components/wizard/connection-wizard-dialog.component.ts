@@ -243,6 +243,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientCredentials').patchValue(null);
       this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').clearValidators();
+      this.connectionFormGroup.get('clientCredentials').updateValueAndValidity();
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
@@ -253,6 +254,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').clearValidators();
+      this.connectionFormGroup.get('clientCredentials').updateValueAndValidity();
     }
     if (value === WsCredentialsGeneratorType.EXISTING) {
       this.connectionFormGroup.get('credentialsName').enable();
