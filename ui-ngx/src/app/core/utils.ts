@@ -596,6 +596,7 @@ const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
 
 export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
 export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
-export const clientCredentialsNameRandom = () => 'WebSocket Connection_' + randomAlphanumeric(3);
+export const clientCredentialsNameRandom = (number = randomAlphanumeric(3)) => 'WebSocket Credentials ' + number;
+export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
 
 export const randomColor = () => '#' + Math.floor(Math.random()*16777215).toString(16);

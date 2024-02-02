@@ -16,7 +16,7 @@
 
 import { Component, Inject, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
+import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -27,15 +27,22 @@ import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
-import { clientCredentialsNameRandom, clientIdRandom, clientUserNameRandom, deepTrim, isDefinedAndNotNull } from '@core/utils';
+import {
+  clientCredentialsNameRandom,
+  clientIdRandom,
+  clientUserNameRandom,
+  connectionName,
+  deepTrim,
+  isDefinedAndNotNull
+} from '@core/utils';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
-  addressProtocols,
+  WsAddressProtocols,
   DataSizeUnitType,
   dataSizeUnitTypeTranslationMap,
-  mqttVersions,
+  MqttVersions,
   timeUnitTypeTranslationMap,
   WebSocketConnection,
   WebSocketConnectionConfiguration,
@@ -46,7 +53,9 @@ import {
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
 import { WsClientService } from '@core/http/ws-client.service';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { getCurrentAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
+import { ConfigParams } from '@shared/models/config.model';
+import { BasicClientCredentials } from '@home/pages/client-credentials/client-credentials.component';
 
 export interface ConnectionDialogData {
   entity?: WebSocketConnection;
@@ -62,55 +71,53 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   @ViewChild('addConnectionWizardStepper', {static: true}) addConnectionWizardStepper: MatStepper;
 
-  stepperOrientation: Observable<StepperOrientation>;
-
-  stepperLabelPosition: Observable<'bottom' | 'end'>;
-
-  selectedIndex = 0;
-
-  credentialsOptionalStep = true;
-
-  showNext = true;
-  useExistingCredentials = false;
-
-  CredentialsType = CredentialsType;
-
-  ClientType = ClientType;
-
-  CredentialsTypes = Object.values(CredentialsType);
-
-  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
-
-  clientTypeTranslationMap = clientTypeTranslationMap;
-
-  clientTypes = Object.values(ClientType);
-
-  addressProtocols = addressProtocols;
-  WsAddressProtocolType = WsAddressProtocolType;
-  wsAddressProtocolTypeValueMap = wsAddressProtocolTypeValueMap;
-
-  WsCredentialsGeneratorType = WsCredentialsGeneratorType;
-  WsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
-
-  timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
-
-  dataSizeUnitTypes = Object.keys(DataSizeUnitType);
-  dataSizeUnitTypeTranslationMap = dataSizeUnitTypeTranslationMap;
-
-  mqttVersions = mqttVersions;
-  mqttVersion: number;
-  displayPasswordWarning: boolean;
   connectionFormGroup: UntypedFormGroup;
   connectionAdvancedFormGroup: UntypedFormGroup;
   lastWillFormGroup: UntypedFormGroup;
   userPropertiesFormGroup: UntypedFormGroup;
 
+  credentialsType = CredentialsType;
+  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
+  credentialsTypes = Object.values(CredentialsType);
+  credentialsGeneratorType = WsCredentialsGeneratorType.AUTO;
+  useExistingCredentials = false;
+
+  clientType = ClientType;
+  clientTypeTranslationMap = clientTypeTranslationMap;
+  clientTypes = Object.values(ClientType);
+
+  wsAddressProtocolType = WsAddressProtocolType;
+  wsAddressProtocolTypeValueMap = wsAddressProtocolTypeValueMap;
+  wsCredentialsGeneratorType = WsCredentialsGeneratorType;
+  wsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
+
+  timeUnitTypes = Object.keys(WebSocketTimeUnit);
+  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
+  dataSizeUnitTypes = Object.keys(DataSizeUnitType);
+  dataSizeUnitTypeTranslationMap = dataSizeUnitTypeTranslationMap;
+
   title = 'ws-client.connections.add-connection';
   actionButtonLabel = 'action.add';
   connection: WebSocketConnection;
+  displayPasswordWarning: boolean;
+  mqttVersions = MqttVersions;
+  mqttVersion: number;
+  stepperOrientation: Observable<StepperOrientation>;
+  stepperLabelPosition: Observable<'bottom' | 'end'>;
+  selectedIndex = 0;
+  showNext = true;
 
-  credentialsGeneratorType = WsCredentialsGeneratorType.AUTO;
+  private urlConfig = {
+    [WsAddressProtocolType.WS]: {
+      port: 8084,
+      protocol: 'ws://'
+    },
+    [WsAddressProtocolType.WSS]: {
+      port: 8085,
+      protocol: 'wss://'
+    }
+  };
+  private readonly urlPrefix: string = '/mqtt';
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -121,20 +128,24 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private fb: FormBuilder,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
     super(store, router, dialogRef);
+    this.connection = this.data.entity;
+    this.iniForms();
+    this.init();
+  }
 
+  private init() {
     this.stepperOrientation = this.breakpointObserver.observe(MediaBreakpoints['gt-sm'])
       .pipe(map(({matches}) => matches ? 'horizontal' : 'vertical'));
-
     this.stepperLabelPosition = this.breakpointObserver.observe(MediaBreakpoints['gt-sm'])
       .pipe(map(({matches}) => matches ? 'end' : 'bottom'));
-
-    this.connection = this.data.entity;
-
-    this.setConnectionFormGroup();
-    this.setConnectionAdvancedFormGroup();
-    this.setLastWillFormGroup();
-    this.setUserPropertiesFormGroup();
-
+    this.store.pipe(
+      select(selectUserDetails),
+      map((user) => user?.additionalInfo?.config))
+      .pipe(map((data) => {
+        this.urlConfig[WsAddressProtocolType.WS].port = data[ConfigParams.wsPort];
+        this.urlConfig[WsAddressProtocolType.WSS].port = data[ConfigParams.wssPort];
+        return data;
+      })).subscribe();
     if (this.connection) {
       this.title = 'ws-client.connections.edit';
       this.actionButtonLabel = 'action.save';
@@ -147,18 +158,27 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
   }
 
+  private iniForms() {
+    this.setConnectionFormGroup();
+    this.setConnectionAdvancedFormGroup();
+    this.setLastWillFormGroup();
+    this.setUserPropertiesFormGroup();
+  }
+
   private setConnectionFormGroup() {
     const entity: WebSocketConnection = this.connection;
-    const url = 'ws://' + window.location.hostname + ':' + 8084 + '/mqtt';
     this.connectionFormGroup = this.fb.group({
-      name: [entity ? entity.name : this.generateWebSocketClientName(), [Validators.required]],
-      url: [entity ? entity.configuration.url : url, [Validators.required]],
-      credentialsName: [{value: this.generateWebSocketClientName(), disabled: true}, [Validators.required]],
+      name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required]],
+      url: [entity ? entity.configuration.url : this.generateUrl(WsAddressProtocolType.WS), [Validators.required]],
+      credentialsName: [{
+        value: clientCredentialsNameRandom((this.data.connectionsTotal + 1).toString()),
+        disabled: true
+      }, [Validators.required]],
       clientId: [{value: entity ? entity.configuration.clientId : clientIdRandom(), disabled: true}, [Validators.required]],
       username: [{value: entity ? entity.configuration.username : clientUserNameRandom(), disabled: true}, []],
       password: [null, []],
-      clientCredentials: [null, []],
-      clientCredentialsId: [entity ? entity.configuration.clientCredentialsId : null, []]
+      clientCredentials: [entity ? entity.configuration.clientCredentialsId : null, []],
+      clientCredentialsId: [null, []]
     });
   }
 
@@ -183,10 +203,10 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         requestResponseInfo: [entity ? entity.configuration.requestResponseInfo : false, []],
       })
     });
-    this.mqttVersion = entity ? entity.configuration.mqttVersion : 5;
+    this.mqttVersion = this.connectionAdvancedFormGroup.get('protocolVersion').value;
     this.connectionAdvancedFormGroup.get('protocolVersion').valueChanges.subscribe((version) => {
       this.mqttVersion = version;
-    })
+    });
   }
 
   private setLastWillFormGroup() {
@@ -202,18 +222,18 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     );
   }
 
-  onAddressProtocolChange(value: WsAddressProtocolType) {
-    const url = this.connectionFormGroup.get('url').value;
-    const divider = '://';
-    const protocol = url.split(divider);
-    const host = protocol[1] ? protocol[1] : (window.location.hostname + ':' + 8084 + '/mqtt');
-    const newUrl = value.toLowerCase() + divider + host;
-    this.connectionFormGroup.get('url').patchValue(newUrl);
+  onAddressProtocolChange(type: WsAddressProtocolType) {
+    this.connectionFormGroup.get('url').patchValue(this.generateUrl(type));
+  }
+
+  private generateUrl(type: WsAddressProtocolType) {
+    return `${this.urlConfig[WsAddressProtocolType[type]].protocol}${window.location.hostname}:${this.urlConfig[WsAddressProtocolType[type]].port}${this.urlPrefix}`;
   }
 
   onCredentialsGeneratorChange(value: WsCredentialsGeneratorType) {
     this.credentialsGeneratorType = value;
     if (value === WsCredentialsGeneratorType.AUTO) {
+      this.connectionFormGroup.get('credentialsName').patchValue(clientCredentialsNameRandom());
       this.connectionFormGroup.get('credentialsName').disable();
       this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
       this.connectionFormGroup.get('clientId').disable();
@@ -429,32 +449,5 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         });
         break;
     }
-  }
-
-  private generateWebSocketClientName(): string {
-    return 'WebSocket Connection ' + (this.data.connectionsTotal + 1);
-  }
-}
-
-
-export class BasicClientCredentials {
-  credentialsType = CredentialsType.MQTT_BASIC;
-  clientType = ClientType.APPLICATION;
-  name: string;
-  credentialsValue: any = {};
-
-  constructor(name: string,
-              clientId: string,
-              username: string) {
-    this.name = name;
-    this.credentialsValue = JSON.stringify({
-      clientId,
-      userName: username,
-      password: null,
-      authRules: {
-        pubAuthRulePatterns: ['.*'],
-        subAuthRulePatterns: ['.*']
-      }
-    });
   }
 }

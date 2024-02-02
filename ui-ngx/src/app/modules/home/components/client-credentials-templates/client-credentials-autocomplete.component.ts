@@ -171,13 +171,13 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     }
   }
 
-  writeValue(value: ClientCredentials | null): void {
+  writeValue(credentialsId: string | null): void {
     this.searchText = '';
-    if (value != null) {
-      this.clientCredentialsService.getClientCredentials(value.id).subscribe(
+    if (credentialsId != null) {
+      this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
         (credentials) => {
           this.modelValue = credentials;
-          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
+          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials);
           this.clientCredentialsChanged.emit(credentials);
         }
       );
@@ -185,13 +185,13 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
       this.modelValue = null;
       this.clientCredentialsService.getClientCredentials(this.entity.configuration.clientCredentialsId).subscribe(
         (credentials) => {
-          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
+          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials);
           this.clientCredentialsChanged.emit(credentials);
         }
       );
     } else {
       this.modelValue = null;
-      this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null, {emitEvent: false});
+      this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null);
     }
     this.dirty = true;
   }

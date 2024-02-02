@@ -47,15 +47,15 @@
         <section fxLayout="column" fxLayoutGap="8px">
           <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                             (valueChange)="onAddressProtocolChange($event)"
-                            [value]="WsAddressProtocolType.WS"
+                            [value]="wsAddressProtocolType.WS"
                             name="addressProtocol"
                             useSelectOnMdLg="true"
                             appearance="fill">
-            <tb-toggle-option [value]="WsAddressProtocolType.WS">
-              {{ WsAddressProtocolType.WS }}
+            <tb-toggle-option [value]="wsAddressProtocolType.WS">
+              {{ wsAddressProtocolType.WS }}
             </tb-toggle-option>
-            <tb-toggle-option [value]="WsAddressProtocolType.WSS">
-              {{ WsAddressProtocolType.WSS }}
+            <tb-toggle-option [value]="wsAddressProtocolType.WSS">
+              {{ wsAddressProtocolType.WSS }}
             </tb-toggle-option>
           </tb-toggle-header>
           <mat-form-field class="mat-block">
@@ -69,26 +69,26 @@
 
         <section fxLayout="column">
           <div fxLayout="column" style="margin: 8px 0 8px 0">
-            <tb-toggle-header #wsCredentialsGeneratorType
+            <tb-toggle-header #credentialsToggle
                               [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                               (valueChange)="onCredentialsGeneratorChange($event)"
                               [value]="credentialsGeneratorType"
                               name="CredentialsGeneratorType"
                               useSelectOnMdLg="false"
                               appearance="fill">
-              <tb-toggle-option [value]="WsCredentialsGeneratorType.AUTO">
-                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.AUTO) | translate }}
+              <tb-toggle-option [value]="wsCredentialsGeneratorType.AUTO">
+                {{ wsCredentialsGeneratortTypeTranslationMap.get(wsCredentialsGeneratorType.AUTO) | translate }}
               </tb-toggle-option>
-              <tb-toggle-option [value]="WsCredentialsGeneratorType.CUSTOM">
-                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.CUSTOM) | translate }}
+              <tb-toggle-option [value]="wsCredentialsGeneratorType.CUSTOM">
+                {{ wsCredentialsGeneratortTypeTranslationMap.get(wsCredentialsGeneratorType.CUSTOM) | translate }}
               </tb-toggle-option>
-              <tb-toggle-option [value]="WsCredentialsGeneratorType.EXISTING">
-                {{ WsCredentialsGeneratortTypeTranslationMap.get(WsCredentialsGeneratorType.EXISTING) | translate }}
+              <tb-toggle-option [value]="wsCredentialsGeneratorType.EXISTING">
+                {{ wsCredentialsGeneratortTypeTranslationMap.get(wsCredentialsGeneratorType.EXISTING) | translate }}
               </tb-toggle-option>
             </tb-toggle-header>
           </div>
-          <ng-container [ngSwitch]="wsCredentialsGeneratorType.value">
-            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.AUTO">
+          <ng-container [ngSwitch]="credentialsToggle.value">
+            <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.AUTO">
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.credentials-name</mat-label>
                 <input matInput formControlName="credentialsName">
@@ -118,7 +118,7 @@
               </mat-form-field>
             </ng-template>
 
-            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.CUSTOM">
+            <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.CUSTOM">
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
                 <input matInput formControlName="clientId">
@@ -134,7 +134,7 @@
               </mat-form-field>
             </ng-template>
 
-            <ng-template [ngSwitchCase]="WsCredentialsGeneratorType.EXISTING">
+            <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.EXISTING">
               <section style="margin-bottom: 16px">
                 <tb-client-credentials-autocomplete
                   formControlName="clientCredentials"

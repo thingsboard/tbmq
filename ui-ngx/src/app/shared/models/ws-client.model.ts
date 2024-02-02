@@ -292,7 +292,7 @@ export const wsAddressProtocolTypeValueMap = new Map<WsAddressProtocolType, Mqtt
   ]
 );
 
-export const addressProtocols = [
+export const WsAddressProtocols = [
   {
     value: 'ws://'
   },
@@ -301,7 +301,7 @@ export const addressProtocols = [
   }
 ];
 
-export const mqttVersions = [
+export const MqttVersions = [
   {
     value: 3,
     name: 'MQTT 3.1'

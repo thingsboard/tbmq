@@ -35,7 +35,7 @@ import {
   ClientCredentialsQuery,
   CredentialsType,
   credentialsTypeTranslationMap,
-  credentialsWarningTranslations
+  credentialsWarningTranslations, wsSystemCredentials
 } from '@shared/models/credentials.model';
 import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
@@ -73,10 +73,12 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     this.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
     this.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
-    this.entityTitle = (mqttClient) => mqttClient ? mqttClient.name : '';
+    this.entityTitle = (entity) => entity ? entity.name : '';
     this.addDialogStyle = {width: 'fit-content'};
     this.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
     this.onEntityAction = action => this.onAction(action);
+    this.deleteEnabled = (entity) => entity?.name !== wsSystemCredentials;
+    this.entitySelectionEnabled = (entity) => entity?.name !== wsSystemCredentials;
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;
