@@ -22,7 +22,7 @@ import { Subject } from 'rxjs';
 import { WsClientService } from '@core/http/ws-client.service';
 import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection } from '@shared/models/ws-client.model';
 import { TbPopoverService } from '@shared/components/popover.service';
-import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/subscriptions/show-connection-logs-popover.component';
+import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 
 @Component({
   selector: 'tb-connection-controller',
@@ -154,7 +154,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   getStatus() {
-    return this.connectionStatusTranslationMap.get(this.status) || 'ws-client.connections.not-connected';
+    return this.connectionStatusTranslationMap.get(this.status) || 'ws-client.connections.disconnected';
   }
 
   getStateDetails() {

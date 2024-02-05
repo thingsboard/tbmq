@@ -219,6 +219,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
       this.resizeWindows.unsubscribe();
       this.filterOverlayRef.dispose();
     }
+    this.filterConfigForm.markAsPristine();
   }
 
   update() {

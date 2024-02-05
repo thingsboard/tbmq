@@ -106,7 +106,7 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
 
 export class BasicClientCredentials {
   credentialsType = CredentialsType.MQTT_BASIC;
-  clientType = ClientType.APPLICATION;
+  clientType = ClientType.DEVICE;
   name: string;
   credentialsValue: any = {};
 

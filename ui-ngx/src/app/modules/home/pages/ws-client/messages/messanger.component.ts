@@ -27,7 +27,8 @@ import {
   Connection,
   ConnectionStatus,
   PublishMessageProperties,
-  WsMessagesTypeFilters, WsPayloadFormats,
+  WsMessagesTypeFilters,
+  WsPayloadFormats,
   WsSubscription
 } from '@shared/models/ws-client.model';
 import { ValueType } from '@shared/models/constants';
@@ -54,6 +55,7 @@ export class MessangerComponent implements OnInit {
   isConnected: boolean;
   selectedOption = 'all';
   jsonFormatSelected = true;
+  isPayloadValid = true;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,
@@ -95,6 +97,9 @@ export class MessangerComponent implements OnInit {
 
     this.messangerFormGroup.get('payloadFormat').valueChanges.subscribe(value => {
       this.jsonFormatSelected = value === ValueType.JSON;
+      if (!this.jsonFormatSelected) {
+        this.isPayloadValid = true;
+      }
     });
   }
 
@@ -114,8 +119,8 @@ export class MessangerComponent implements OnInit {
         retain,
         // properties
       }
-    }
-    console.log('message', publishOpts)
+    };
+    console.log('message', publishOpts);
     this.wsClientService.publishMessage(publishOpts);
   }
 
@@ -141,5 +146,9 @@ export class MessangerComponent implements OnInit {
 
   onMessageFilterChange(type: string) {
     this.wsClientService.filterMessages({type});
+  }
+
+  onJsonValidation(isValid: boolean) {
+    this.isPayloadValid = isValid;
   }
 }

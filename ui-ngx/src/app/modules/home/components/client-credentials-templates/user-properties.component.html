@@ -16,7 +16,7 @@
 
 -->
 <form [formGroup]="userPropertiesFormGroup">
-  <fieldset class="fields-group" fxLayout="column">
+  <fieldset class="fields-group" fxLayout="column" [disabled]="mqttVersion !== 5">
     <legend class="group-title" translate>ws-client.connections.user-properties</legend>
     <div fxLayout="column">
       <section class="container">

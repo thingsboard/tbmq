@@ -863,8 +863,7 @@
       "close": "Close",
       "offline": "Offline",
       "status-log": "Status Log",
-      "no-logs": "No logs yet",
-      "not-connected": "Not connected"
+      "no-logs": "No logs yet"
     },
     "last-will": {
       "last-will": "Last Will",
@@ -914,7 +913,7 @@
       "no-subscriptions": "No subscriptions yet",
       "retain-details": "Retained messages",
       "loading-subscriptions": "Loading subscriptions...",
-      "mqtt-5-features": "MQTT 5 version features only"
+      "mqtt-5-features": "MQTT 5 Subscription Options"
     }
   },
     "js-func": {

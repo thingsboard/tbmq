@@ -44,7 +44,7 @@
     </mat-slide-toggle>
   </section>
 
-  <section fxLayout="column">
+  <fieldset fxLayout="column" [disabled]="mqttVersion !== 5">
     <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
       <mat-slide-toggle formControlName="payloadFormatIndicator">
         <span translate>ws-client.last-will.payload-format-indicator</span>
@@ -61,7 +61,6 @@
         help
       </mat-icon>
     </mat-form-field>
-
     <section fxLayout="row" fxLayoutGap="8px">
       <mat-form-field fxFlex>
         <mat-label translate>ws-client.last-will.will-delay-interval</mat-label>
@@ -79,7 +78,6 @@
         </mat-select>
       </mat-form-field>
     </section>
-
     <section fxLayout="row" fxLayoutGap="8px">
       <mat-form-field fxFlex>
         <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
@@ -111,5 +109,5 @@
         help
       </mat-icon>
     </mat-form-field>
-  </section>
+  </fieldset>
 </form>

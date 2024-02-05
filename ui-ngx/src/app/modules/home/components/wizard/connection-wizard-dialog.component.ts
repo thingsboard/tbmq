@@ -18,7 +18,7 @@ import { Component, Inject, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, UntypedFormGroup, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { MatStepper, StepperOrientation } from '@angular/material/stepper';
@@ -39,7 +39,6 @@ import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } fro
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
-  WsAddressProtocols,
   DataSizeUnitType,
   dataSizeUnitTypeTranslationMap,
   MqttVersions,
@@ -185,7 +184,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   private setConnectionAdvancedFormGroup() {
     const entity: WebSocketConnection = this.connection;
     this.connectionAdvancedFormGroup = this.fb.group({
-      clean: [entity ? entity.configuration.cleanStart : false, []],
+      clean: [entity ? entity.configuration.cleanStart : true, []],
       keepalive: [entity ? entity.configuration.keepAlive : 60, [Validators.required]],
       keepaliveUnit: [entity ? entity.configuration.keepAliveUnit : WebSocketTimeUnit.SECONDS, []],
       connectTimeout: [entity ? entity.configuration.connectTimeout : 30 * 1000, [Validators.required]],
@@ -204,8 +203,20 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       })
     });
     this.mqttVersion = this.connectionAdvancedFormGroup.get('protocolVersion').value;
+    setTimeout(() => {
+      this.connectionAdvancedFormGroup.get('protocolVersion').patchValue(this.connectionAdvancedFormGroup.get('protocolVersion').value, {emitEvent: true});
+    }, 0);
     this.connectionAdvancedFormGroup.get('protocolVersion').valueChanges.subscribe((version) => {
       this.mqttVersion = version;
+      const properties = this.connectionAdvancedFormGroup.get('properties') as FormGroup;
+      Object.keys(properties.controls).forEach(key => {
+        if (version !== 5) {
+          properties.controls[key].disable();
+        } else {
+          properties.controls[key].enable();
+        }
+        properties.controls[key].updateValueAndValidity();
+      });
     });
   }
 

@@ -87,7 +87,8 @@ export class SubscriptionsComponent {
           if (isDefinedAndNotNull(subscription)) {
             subscription.webSocketConnectionId = this.connection.id;
             this.wsClientService.saveWebSocketSubscription(subscription).subscribe(
-              () => {
+              (res) => {
+                this.wsClientService.subscribeForTopicActiveMqttJsClient(res);
                 this.fetchSubcriptions();
               }
             );

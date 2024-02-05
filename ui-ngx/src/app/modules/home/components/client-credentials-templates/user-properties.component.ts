@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -60,6 +60,9 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   disabled: boolean;
 
   @Input()
+  mqttVersion: number;
+
+  @Input()
   entity: WebSocketConnection;
 
   userPropertiesFormGroup: UntypedFormGroup;
@@ -74,13 +77,12 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
 
   constructor(public fb: FormBuilder,
               public cd: ChangeDetectorRef) {
-    this.userPropertiesFormGroup = this.fb.group({
-      userProperties: this.fb.array([])
-    });
-
   }
 
   ngOnInit() {
+    this.userPropertiesFormGroup = this.fb.group({
+      userProperties: this.fb.array([])
+    });
     if (isDefinedAndNotNull(this.entity?.configuration?.userProperties?.props?.length)) {
       for (const prop in this.entity.configuration.userProperties.props) {
         this.userPropertiesFormArray.push(this.fb.group({

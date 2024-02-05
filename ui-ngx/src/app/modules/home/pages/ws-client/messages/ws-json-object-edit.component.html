@@ -22,7 +22,7 @@
     <label class="tb-title no-padding"
            [ngClass]="{'tb-required': jsonRequired,
                        'tb-readonly': readonly,
-                       'tb-error': !objectValid}">{{ label }}</label>
+                       'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>
     <span fxFlex></span>
     <button type="button"
             mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="beautifyJSON()">

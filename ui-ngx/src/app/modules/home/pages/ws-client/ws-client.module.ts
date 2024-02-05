@@ -35,7 +35,7 @@ import { SubscriptionComponent } from "@home/pages/ws-client/subscriptions/subsc
 import { EntitiesTableWsComponent } from "@home/components/entity/entities-table-ws.component";
 import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-json-object-edit.component';
 import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.component';
-import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/subscriptions/show-connection-logs-popover.component';
+import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/message-filter-config.component';
 
 @NgModule({

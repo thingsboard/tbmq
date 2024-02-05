@@ -252,7 +252,7 @@
             </mat-select>
           </mat-form-field>
 
-          <section fxLayout="column" formGroupName="properties" *ngIf="connectionAdvancedFormGroup.get('protocolVersion').value === 5">
+          <section fxLayout="column" formGroupName="properties">
             <section fxLayout="row" fxLayoutGap="8px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
@@ -316,9 +316,8 @@
       <ng-template matStepLabel>{{ 'ws-client.last-will.last-will' | translate }}</ng-template>
       <form [formGroup]="lastWillFormGroup" #lwFormGroup="ngForm">
         <tb-last-will formControlName="lastWillMsg"
-                      [entity]="connection"
-                      [disabled]="isLoading$ | async"
-                      [mqttVersion]="mqttVersion">
+                      [mqttVersion]="mqttVersion"
+                      [entity]="connection">
         </tb-last-will>
       </form>
     </mat-step>
@@ -326,6 +325,7 @@
       <ng-template matStepLabel>{{ 'retained-message.user-properties' | translate }}</ng-template>
       <form [formGroup]="userPropertiesFormGroup" #upFormGroup="ngForm">
         <tb-user-properties formControlName="userProperties"
+                            [mqttVersion]="mqttVersion"
                             [entity]="connection">
         </tb-user-properties>
       </form>

@@ -198,6 +198,7 @@ export interface WsPublishMessageOptions {
 }
 
 export interface WsTableMessage extends BaseData {
+  subscriptionId?: string;
   createdTime?: number;
   topic?: string;
   payload?: any;

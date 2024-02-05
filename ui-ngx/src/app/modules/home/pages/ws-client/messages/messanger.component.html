@@ -79,15 +79,16 @@
     <tb-ws-json-object-edit
       style="width: 100%;"
       formControlName="payload"
-      [validateJson]="jsonFormatSelected"
-      [label]="jsonFormatSelected ? ('value.json-value' | translate) : ''"
+      [jsonFormatSelected]="jsonFormatSelected"
+      [label]="'value.json-value-invalid' | translate"
       [jsonRequired]="false"
+      (isJsonValid)="onJsonValidation($event)"
       [fillHeight]="false">
     </tb-ws-json-object-edit>
     <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="!messangerFormGroup.get('topic')?.value?.length || !isConnected">
+            [disabled]="!messangerFormGroup.get('topic')?.value?.length || !isConnected || !isPayloadValid">
       <mat-icon>send</mat-icon>
     </button>
   </div>

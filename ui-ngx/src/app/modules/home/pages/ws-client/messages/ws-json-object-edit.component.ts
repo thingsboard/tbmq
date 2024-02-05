@@ -14,7 +14,18 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  forwardRef,
+  Input, OnChanges,
+  OnDestroy,
+  OnInit,
+  Output, SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -29,7 +40,7 @@ import { ActionNotificationHide, ActionNotificationShow } from '@core/notificati
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { CancelAnimationFrame, RafService } from '@core/services/raf.service';
-import { guid, isDefinedAndNotNull, isObject, isUndefined } from '@core/utils';
+import { guid, isDefinedAndNotNull, isEmptyStr, isObject, isUndefined } from '@core/utils';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -53,10 +64,13 @@ export const jsonRequired = (control: AbstractControl): ValidationErrors | null 
     }
   ]
 })
-export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
+export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
   @ViewChild('jsonEditor', {static: true})
   jsonEditorElmRef: ElementRef;
+
+  @Output()
+  isJsonValid = new EventEmitter<boolean>();
 
   private jsonEditor: Ace.Editor;
   private editorsResizeCaf: CancelAnimationFrame;
@@ -84,7 +98,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
 
   @coerceBoolean()
   @Input()
-  validateJson: boolean;
+  jsonFormatSelected: boolean;
 
   fullscreen = false;
 
@@ -150,6 +164,17 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     }
     if (this.jsonEditor) {
       this.jsonEditor.destroy();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'jsonFormatSelected') {
+          this.updateView();
+        }
+      }
     }
   }
 
@@ -255,8 +280,8 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   updateView() {
     const editorValue = this.jsonEditor.getValue();
     this.propagateChange(editorValue);
-    if (this.validateJson) {
-      if (this.contentValue !== editorValue) {
+    if (this.jsonFormatSelected) {
+      if (this.contentValue !== editorValue || isEmptyStr(editorValue)) {
         this.contentValue = editorValue;
         let data = null;
         this.objectValid = false;
@@ -282,6 +307,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
           this.objectValid = !this.jsonRequired;
           this.validationError = this.jsonRequired ? 'Json object is required.' : '';
         }
+        this.isJsonValid.emit(!this.validationError?.length);
         this.modelValue = data;
         this.propagateChange(data);
         this.cd.markForCheck();

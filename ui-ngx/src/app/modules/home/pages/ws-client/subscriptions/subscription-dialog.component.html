@@ -55,14 +55,11 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              {{ 'ws-client.connections.advanced-settings' | translate }}
+              {{ 'ws-client.subscriptions.mqtt-5-features' | translate }}
             </mat-panel-title>
           </mat-expansion-panel-header>
           <ng-template matExpansionPanelContent>
             <div fxLayout="column" fxLayoutGap="16px">
-              <section *ngIf="disableMqtt5Features()" class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">
-                <span>{{'ws-client.subscriptions.mqtt-5-features' | translate}}</span>
-              </section>
               <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
                 <mat-label translate>ws-client.subscriptions.rh</mat-label>
                 <mat-select formControlName="retainHandling">
