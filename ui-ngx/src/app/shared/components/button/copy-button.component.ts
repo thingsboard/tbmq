@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {ClipboardService} from 'ngx-clipboard';
-import {TooltipPosition} from '@angular/material/tooltip';
-import {TranslateService} from '@ngx-translate/core';
-import {ThemePalette} from '@angular/material/core';
-import {coerceBoolean} from '@shared/decorators/coercion';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ClipboardService } from 'ngx-clipboard';
+import { TooltipPosition } from '@angular/material/tooltip';
+import { TranslateService } from '@ngx-translate/core';
+import { ThemePalette } from '@angular/material/core';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 @Component({
   selector: 'tb-copy-button',

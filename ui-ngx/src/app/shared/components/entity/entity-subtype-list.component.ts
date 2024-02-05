@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
 /// limitations under the License.
 ///
 
-import {AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
-import {ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators} from '@angular/forms';
-import {Observable, ReplaySubject, throwError} from 'rxjs';
-import {debounceTime, map, mergeMap, share} from 'rxjs/operators';
-import {TranslateService} from '@ngx-translate/core';
-import {EntityType} from '@shared/models/entity-type.models';
-import {MatAutocomplete, MatAutocompleteSelectedEvent} from '@angular/material/autocomplete';
-import {MatChipGrid, MatChipInputEvent} from '@angular/material/chips';
-import {COMMA, ENTER, SEMICOLON} from '@angular/cdk/keycodes';
-import {FloatLabelType, MatFormFieldAppearance, SubscriptSizing} from '@angular/material/form-field';
-import {coerceArray, coerceBoolean} from '@shared/decorators/coercion';
-import {ConfigService} from "@core/http/config.service";
+import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
+import { Observable, ReplaySubject, throwError } from 'rxjs';
+import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
+import { TranslateService } from '@ngx-translate/core';
+import { EntityType } from '@shared/models/entity-type.models';
+import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatChipGrid, MatChipInputEvent } from '@angular/material/chips';
+import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
+import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
+import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
+import { ConfigService } from "@core/http/config.service";
 
 @Component({
   selector: 'tb-entity-subtype-list',

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,31 +14,32 @@
 /// limitations under the License.
 ///
 
-import {AfterViewInit, Component} from '@angular/core';
-import {Observable, of} from 'rxjs';
-import {InstructionsService} from '@core/http/instructions.service';
-import {MatDialog} from '@angular/material/dialog';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {ClientCredentials, CredentialsType} from '@shared/models/credentials.model';
-import {EntityType, entityTypeResources, entityTypeTranslations} from '@shared/models/entity-type.models';
-import {ClientCredentialsComponent} from '@home/pages/client-credentials/client-credentials.component';
-import {AddEntityDialogData} from '@home/models/entity/entity-component.models';
-import {ClientCredentialsService} from '@core/http/client-credentials.service';
-import {BrokerConfig, ConfigParams} from '@shared/models/config.model';
-import {select, Store} from '@ngrx/store';
-import {selectUserDetails} from '@core/auth/auth.selectors';
-import {map} from 'rxjs/operators';
-import {AppState} from '@core/core.state';
-import {HomePageTitleType} from '@shared/models/home-page.model';
-import {ClientType} from '@shared/models/client.model';
-import {ActionNotificationShow} from '@core/notification/notification.actions';
-import {TranslateService} from '@ngx-translate/core';
-import {STEPPER_GLOBAL_OPTIONS} from '@angular/cdk/stepper';
+import { AfterViewInit, Component } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { InstructionsService } from '@core/http/instructions.service';
+import { MatDialog } from '@angular/material/dialog';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
+import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
+import { select, Store } from '@ngrx/store';
+import { selectUserDetails } from '@core/auth/auth.selectors';
+import { map } from 'rxjs/operators';
+import { AppState } from '@core/core.state';
+import { HomePageTitleType } from '@shared/models/home-page.model';
+import { ClientType } from '@shared/models/client.model';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
+import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   ClientCredentialsWizardDialogComponent
 } from "@home/components/wizard/client-credentials-wizard-dialog.component";
-import {Router} from '@angular/router';
-import {ConnectionState} from '@shared/models/session.model';
+import { Router } from '@angular/router';
+import { ConnectionState } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-getting-started',

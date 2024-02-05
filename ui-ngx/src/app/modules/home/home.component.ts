@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,17 +14,22 @@
 /// limitations under the License.
 ///
 
-import {Component, ElementRef, Inject, OnInit, ViewChild} from '@angular/core';
-import {Store} from '@ngrx/store';
+import { AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { fromEvent, Observable, Subject } from 'rxjs';
+import { select, Store } from '@ngrx/store';
+import { debounceTime, distinctUntilChanged, map, skip, startWith, takeUntil, tap } from 'rxjs/operators';
 
-import {BreakpointObserver, BreakpointState} from '@angular/cdk/layout';
-import {PageComponent} from '@shared/components/page.component';
-import {AppState} from '@core/core.state';
-import {MediaBreakpoints} from '@shared/models/constants';
+import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
+import { User } from '@shared/models/user.model';
+import { PageComponent } from '@shared/components/page.component';
+import { AppState } from '@core/core.state';
+import { selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
+import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
-import {MatSidenav} from '@angular/material/sidenav';
-import {WINDOW} from '@core/services/window.service';
-import {UntypedFormBuilder} from '@angular/forms';
+import { MatSidenav } from '@angular/material/sidenav';
+import { WINDOW } from '@core/services/window.service';
+import { instanceOfSearchableComponent, ISearchableComponent } from '@home/models/searchable-component.models';
+import { UntypedFormBuilder } from '@angular/forms';
 
 // @ts-ignore
 // const screenfull = _screenfull as _screenfull.Screenfull;

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,25 +14,25 @@
 /// limitations under the License.
 ///
 
-import {Component, Inject, ViewChild} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {FormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
-import {DialogComponent} from '@shared/components/dialog.component';
-import {Router} from '@angular/router';
-import {MatStepper, StepperOrientation} from '@angular/material/stepper';
-import {Observable, throwError} from 'rxjs';
-import {catchError, map} from 'rxjs/operators';
-import {StepperSelectionEvent} from '@angular/cdk/stepper';
-import {BreakpointObserver} from '@angular/cdk/layout';
-import {MediaBreakpoints} from '@shared/models/constants';
-import {deepTrim, isDefinedAndNotNull} from '@core/utils';
-import {ClientCredentials, CredentialsType, credentialsTypeTranslationMap} from "@shared/models/credentials.model";
-import {ClientCredentialsService} from "@core/http/client-credentials.service";
-import {ClientType, clientTypeTranslationMap} from "@shared/models/client.model";
-import {AddEntityDialogData} from "@home/models/entity/entity-component.models";
-import {BaseData} from "@shared/models/base-data";
+import { Component, Inject, ViewChild } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { Router } from '@angular/router';
+import { MatStepper, StepperOrientation } from '@angular/material/stepper';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { MediaBreakpoints } from '@shared/models/constants';
+import { deepTrim, isDefinedAndNotNull } from '@core/utils';
+import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from "@shared/models/credentials.model";
+import { ClientCredentialsService } from "@core/http/client-credentials.service";
+import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
+import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
+import { BaseData } from "@shared/models/base-data";
 
 @Component({
   selector: 'tb-client-credentials-wizard',

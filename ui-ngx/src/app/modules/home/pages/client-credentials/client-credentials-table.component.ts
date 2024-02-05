@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,16 +14,18 @@
 /// limitations under the License.
 ///
 
-import {Component, Input, OnInit, ViewChild} from '@angular/core';
-import {EntitiesTableComponent} from '@home/components/entity/entities-table.component';
-import {TranslateService} from '@ngx-translate/core';
-import {DatePipe} from '@angular/common';
-import {ActivatedRoute, Router} from '@angular/router';
-import {ClientCredentialsTableConfig} from '@home/pages/client-credentials/client-credentials-table-config';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {ClientCredentialsService} from '@core/http/client-credentials.service';
-import {MatDialog} from "@angular/material/dialog";
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { TranslateService } from '@ngx-translate/core';
+import { DatePipe } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ClientCredentialsTableConfig
+} from '@home/pages/client-credentials/client-credentials-table-config';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { MatDialog } from "@angular/material/dialog";
 
 @Component({
   selector: 'tb-client-credentials-table',

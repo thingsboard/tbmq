@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -28,22 +28,22 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import {ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
-import {coerceBoolean} from '@shared/decorators/coercion';
-import {Overlay, OverlayConfig, OverlayRef} from '@angular/cdk/overlay';
-import {TemplatePortal} from '@angular/cdk/portal';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { coerceBoolean } from '@shared/decorators/coercion';
+import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
 
-import {TranslateService} from '@ngx-translate/core';
-import {deepClone, isNotEmptyStr} from '@core/utils';
-import {EntityType} from '@shared/models/entity-type.models';
-import {fromEvent, Subscription} from 'rxjs';
-import {POSITION_MAP} from '@app/shared/models/overlay.models';
-import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/models/client.model';
+import { TranslateService } from '@ngx-translate/core';
+import { deepClone, isNotEmptyStr } from '@core/utils';
+import { EntityType } from '@shared/models/entity-type.models';
+import { fromEvent, Subscription } from 'rxjs';
+import { POSITION_MAP } from '@app/shared/models/overlay.models';
+import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
   ClientCredentialsFilterConfig,
   clientCredentialsFilterConfigEquals,
-  CredentialsType,
-  credentialsTypeTranslationMap
+  credentialsTypeTranslationMap,
+  CredentialsType
 } from '@shared/models/credentials.model';
 
 export const CLIENT_CREDENTIALS_FILTER_CONFIG_DATA = new InjectionToken<any>('ClientCredentialsFilterConfigData');

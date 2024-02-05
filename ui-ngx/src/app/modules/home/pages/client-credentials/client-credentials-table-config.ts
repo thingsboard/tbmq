@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2023 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,25 +14,21 @@
 /// limitations under the License.
 ///
 
-import {ActivatedRoute, Router} from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   cellWithIcon,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
-import {TranslateService} from '@ngx-translate/core';
-import {DatePipe} from '@angular/common';
-import {EntityType, entityTypeResources, entityTypeTranslations} from '@shared/models/entity-type.models';
-import {select, Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {ClientCredentialsService} from '@core/http/client-credentials.service';
-import {
-  clientTypeColor,
-  clientTypeIcon,
-  clientTypeTranslationMap,
-  clientTypeValueColor
-} from '@shared/models/client.model';
+import { TranslateService } from '@ngx-translate/core';
+import { DatePipe } from '@angular/common';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { select, Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { Direction } from '@shared/models/page/sort-order';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap, clientTypeValueColor } from '@shared/models/client.model';
 import {
   ClientCredentials,
   ClientCredentialsFilterConfig,
@@ -41,23 +37,19 @@ import {
   credentialsTypeTranslationMap,
   credentialsWarningTranslations
 } from '@shared/models/credentials.model';
-import {map} from 'rxjs/operators';
-import {selectUserDetails} from '@core/auth/auth.selectors';
-import {ConfigParams} from '@shared/models/config.model';
-import {TimePageLink} from '@shared/models/page/page-link';
-import {Observable, of} from 'rxjs';
-import {PageData} from '@shared/models/page/page-data';
-import {deepClone} from '@core/utils';
-import {
-  ClientCredentialsTableHeaderComponent
-} from '@home/pages/client-credentials/client-credentials-table-header.component';
-import {ClientCredentialsComponent} from '@home/pages/client-credentials/client-credentials.component';
-import {MatDialog} from '@angular/material/dialog';
-import {
-  ClientCredentialsWizardDialogComponent
-} from '@home/components/wizard/client-credentials-wizard-dialog.component';
-import {AddEntityDialogData, EntityAction} from '@home/models/entity/entity-component.models';
-import {BaseData} from '@shared/models/base-data';
+import { map } from 'rxjs/operators';
+import { selectUserDetails } from '@core/auth/auth.selectors';
+import { ConfigParams } from '@shared/models/config.model';
+import { TimePageLink } from '@shared/models/page/page-link';
+import { Observable, of } from 'rxjs';
+import { PageData } from '@shared/models/page/page-data';
+import { deepClone } from '@core/utils';
+import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
+import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
+import { MatDialog } from '@angular/material/dialog';
+import { ClientCredentialsWizardDialogComponent } from '@home/components/wizard/client-credentials-wizard-dialog.component';
+import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
+import { BaseData } from '@shared/models/base-data';
 import {
   CheckConnectivityDialogComponent,
   CheckConnectivityDialogData
