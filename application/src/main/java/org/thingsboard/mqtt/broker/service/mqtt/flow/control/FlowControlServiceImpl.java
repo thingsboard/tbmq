@@ -40,6 +40,7 @@ public class FlowControlServiceImpl implements FlowControlService {
     @Setter
     @Value("${mqtt.flow-control.enabled:true}")
     private boolean flowControlEnabled;
+    @Setter
     @Value("${mqtt.flow-control.timeout:1000}")
     private int timeout;
     @Value("${mqtt.flow-control.ttl:600}")
