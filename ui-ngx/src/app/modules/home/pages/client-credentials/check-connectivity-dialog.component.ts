@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,18 +14,18 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { select, Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
-import { ClientType } from '@shared/models/client.model';
-import { selectUserDetails } from '@core/auth/auth.selectors';
-import { map } from 'rxjs/operators';
-import { ConfigParams } from '@shared/models/config.model';
-import { getOS } from '@core/utils';
+import {Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {select, Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {Router} from '@angular/router';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {AuthRulePatternsType, BasicCredentials, ClientCredentials} from '@shared/models/credentials.model';
+import {ClientType} from '@shared/models/client.model';
+import {selectUserDetails} from '@core/auth/auth.selectors';
+import {map} from 'rxjs/operators';
+import {ConfigParams} from '@shared/models/config.model';
+import {getOS} from '@core/utils';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;

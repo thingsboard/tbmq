@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
 /// limitations under the License.
 ///
 
-import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NgModule } from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {NgModule} from '@angular/core';
 
-import { AppRoutingModule } from './app-routing.module';
-import { CoreModule } from '@core/core.module';
-import { LoginModule } from '@modules/login/login.module';
-import { HomeModule } from '@home/home.module';
+import {AppRoutingModule} from './app-routing.module';
+import {CoreModule} from '@core/core.module';
+import {LoginModule} from '@modules/login/login.module';
+import {HomeModule} from '@home/home.module';
 
-import { AppComponent } from './app.component';
-import { RouterModule, Routes } from '@angular/router';
+import {AppComponent} from './app.component';
+import {RouterModule, Routes} from '@angular/router';
 
 const routes: Routes = [
   { path: '**',

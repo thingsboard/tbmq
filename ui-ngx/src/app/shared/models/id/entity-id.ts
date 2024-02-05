@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import { EntityType } from '@shared/models/entity-type.models';
-import { HasUUID } from '@shared/models/id/has-uuid';
-import { isDefinedAndNotNull } from '@core/utils';
+import {EntityType} from '@shared/models/entity-type.models';
+import {HasUUID} from '@shared/models/id/has-uuid';
+import {isDefinedAndNotNull} from '@core/utils';
 
 export interface EntityId extends HasUUID {
   entityType: EntityType;

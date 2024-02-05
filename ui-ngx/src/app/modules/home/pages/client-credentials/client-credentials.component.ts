@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,21 +14,17 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { EntityComponent } from '@home/components/entity/entity.component';
-import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import {
-  credentialsTypeTranslationMap,
-  ClientCredentials,
-  CredentialsType
-} from '@shared/models/credentials.model';
-import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { appearance } from '@shared/models/constants';
-import { isDefinedAndNotNull } from '@core/utils';
+import {ChangeDetectorRef, Component, EventEmitter, Inject, Output} from '@angular/core';
+import {UntypedFormBuilder, UntypedFormGroup, Validators} from '@angular/forms';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {EntityComponent} from '@home/components/entity/entity.component';
+import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
+import {ClientCredentials, CredentialsType, credentialsTypeTranslationMap} from '@shared/models/credentials.model';
+import {ClientType, clientTypeTranslationMap} from '@shared/models/client.model';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import {appearance} from '@shared/models/constants';
+import {isDefinedAndNotNull} from '@core/utils';
 
 @Component({
   selector: 'tb-client-credentials',

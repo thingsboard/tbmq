@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -26,26 +26,26 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ErrorStateMatcher } from '@angular/material/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { UntypedFormGroup } from '@angular/forms';
-import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { BaseData } from '@shared/models/base-data';
-import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { EntityComponent } from './entity.component';
-import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { Router } from '@angular/router';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
-import { MatStepper } from '@angular/material/stepper';
-import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
-import { MediaBreakpoints } from '@app/shared/models/constants';
-import { Subscription } from 'rxjs/internal/Subscription';
-import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import {ErrorStateMatcher} from '@angular/material/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
+import {UntypedFormGroup} from '@angular/forms';
+import {EntityType, EntityTypeResource, EntityTypeTranslation} from '@shared/models/entity-type.models';
+import {BaseData} from '@shared/models/base-data';
+import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
+import {EntityComponent} from './entity.component';
+import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
+import {AddEntityDialogData} from '@home/models/entity/entity-component.models';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {Router} from '@angular/router';
+import {ActionNotificationShow} from '@core/notification/notification.actions';
+import {TranslateService} from '@ngx-translate/core';
+import {MatStepper} from '@angular/material/stepper';
+import {BreakpointObserver, BreakpointState} from '@angular/cdk/layout';
+import {MediaBreakpoints} from '@app/shared/models/constants';
+import {Subscription} from 'rxjs/internal/Subscription';
+import {StepperSelectionEvent} from '@angular/cdk/stepper';
 
 @Component({
   selector: 'tb-add-entity-dialog',

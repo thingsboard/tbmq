@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,23 +14,22 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
-import { EntitiesDataSource, EntitiesFetchFunction } from '@home/models/datasource/entity-datasource';
-import { Observable, of } from 'rxjs';
-import { emptyPageData } from '@shared/models/page/page-data';
-import { DatePipe } from '@angular/common';
-import { Direction, SortOrder } from '@shared/models/page/sort-order';
-import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { EntityComponent } from '@home/components/entity/entity.component';
-import { Type } from '@angular/core';
-import { EntityAction } from './entity-component.models';
-import { PageLink } from '@shared/models/page/page-link';
-import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
-import { ActivatedRoute } from '@angular/router';
-import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
-import { ClientType } from '@shared/models/client.model';
-import { IEntitiesTableComponent } from './entity-table-component.models';
-import { DAY, historyInterval } from '@shared/models/time/time.models';
+import {BaseData} from '@shared/models/base-data';
+import {EntitiesDataSource, EntitiesFetchFunction} from '@home/models/datasource/entity-datasource';
+import {Observable, of} from 'rxjs';
+import {emptyPageData} from '@shared/models/page/page-data';
+import {DatePipe} from '@angular/common';
+import {Direction, SortOrder} from '@shared/models/page/sort-order';
+import {EntityType, EntityTypeResource, EntityTypeTranslation} from '@shared/models/entity-type.models';
+import {EntityComponent} from '@home/components/entity/entity.component';
+import {Type} from '@angular/core';
+import {EntityAction} from './entity-component.models';
+import {PageLink} from '@shared/models/page/page-link';
+import {EntityTableHeaderComponent} from '@home/components/entity/entity-table-header.component';
+import {ActivatedRoute} from '@angular/router';
+import {EntityTabsComponent} from '../../components/entity/entity-tabs.component';
+import {IEntitiesTableComponent} from './entity-table-component.models';
+import {DAY, historyInterval} from '@shared/models/time/time.models';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;

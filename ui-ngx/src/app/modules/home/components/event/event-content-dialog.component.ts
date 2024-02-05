@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,22 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
+import {Component, ElementRef, Inject, OnDestroy, OnInit, Renderer2, ViewChild} from '@angular/core';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {Store} from '@ngrx/store';
+import {AppState} from '@core/core.state';
 
-import { Ace } from 'ace-builds';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { Router } from '@angular/router';
-import { ContentType, contentTypesMap } from '@shared/models/constants';
-import { getAce } from '@shared/models/ace/ace.models';
-import { Observable } from 'rxjs/internal/Observable';
-import { beautifyJs } from '@shared/models/beautify.models';
-import { of } from 'rxjs';
-import { base64toString, isLiteralObject } from '@core/utils';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import {Ace} from 'ace-builds';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {Router} from '@angular/router';
+import {ContentType, contentTypesMap} from '@shared/models/constants';
+import {getAce} from '@shared/models/ace/ace.models';
+import {Observable} from 'rxjs/internal/Observable';
+import {beautifyJs} from '@shared/models/beautify.models';
+import {of} from 'rxjs';
+import {base64toString, isLiteralObject} from '@core/utils';
+import {ActionNotificationShow} from '@core/notification/notification.actions';
+import {TranslateService} from '@ngx-translate/core';
 
 export interface EventContentDialogData {
   content: string;

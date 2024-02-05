@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,15 +14,15 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Directive, OnInit, ViewChild } from '@angular/core';
-import { PageLink } from '@shared/models/page/page-link';
-import { MatSort } from '@angular/material/sort';
-import { Observable } from 'rxjs';
-import { BaseData } from '@shared/models/base-data';
-import { EntityColumn, EntityTableColumn } from '@home/models/entity/entities-table-config.models';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { isUndefined } from '@core/utils';
-import { MatTableDataSource } from '@angular/material/table';
+import {AfterViewInit, Directive, OnInit, ViewChild} from '@angular/core';
+import {PageLink} from '@shared/models/page/page-link';
+import {MatSort} from '@angular/material/sort';
+import {Observable} from 'rxjs';
+import {BaseData} from '@shared/models/base-data';
+import {EntityColumn, EntityTableColumn} from '@home/models/entity/entities-table-config.models';
+import {DomSanitizer, SafeHtml} from '@angular/platform-browser';
+import {isUndefined} from '@core/utils';
+import {MatTableDataSource} from '@angular/material/table';
 
 @Directive()
 export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit, AfterViewInit {

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
-import { EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { SafeHtml } from '@angular/platform-browser';
-import { PageLink } from '@shared/models/page/page-link';
-import { Timewindow } from '@shared/models/time/time.models';
-import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
-import { ElementRef, EventEmitter } from '@angular/core';
-import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
-import { EntityAction } from '@home/models/entity/entity-component.models';
+import {BaseData} from '@shared/models/base-data';
+import {EntityTypeTranslation} from '@shared/models/entity-type.models';
+import {SafeHtml} from '@angular/platform-browser';
+import {PageLink} from '@shared/models/page/page-link';
+import {Timewindow} from '@shared/models/time/time.models';
+import {EntitiesDataSource} from '@home/models/datasource/entity-datasource';
+import {ElementRef, EventEmitter} from '@angular/core';
+import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
+import {MatPaginator} from '@angular/material/paginator';
+import {MatSort} from '@angular/material/sort';
+import {EntityAction} from '@home/models/entity/entity-component.models';
 import {
   CellActionDescriptor,
   EntityActionTableColumn,
@@ -34,7 +34,7 @@ import {
   GroupActionDescriptor,
   HeaderActionDescriptor
 } from '@home/models/entity/entities-table-config.models';
-import { ActivatedRoute } from '@angular/router';
+import {ActivatedRoute} from '@angular/router';
 
 export type EntitiesTableAction = 'add';
 

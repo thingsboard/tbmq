@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,14 +14,19 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
-import { forkJoin, Observable, retry, Subject, timer } from 'rxjs';
-import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
-import { ClientCredentialsInfo } from '@shared/models/credentials.model';
-import { ClientCredentialsService } from '@core/http/client-credentials.service';
-import { ClientSessionService } from '@core/http/client-session.service';
-import { ClientSessionStatsInfo } from '@shared/models/session.model';
-import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
+import {AfterViewInit, Component, Input, OnDestroy} from '@angular/core';
+import {forkJoin, Observable, retry, Subject, timer} from 'rxjs';
+import {shareReplay, switchMap, takeUntil} from 'rxjs/operators';
+import {ClientCredentialsInfo} from '@shared/models/credentials.model';
+import {ClientCredentialsService} from '@core/http/client-credentials.service';
+import {ClientSessionService} from '@core/http/client-session.service';
+import {ClientSessionStatsInfo} from '@shared/models/session.model';
+import {
+  CredentialsHomeCardConfig,
+  HomePageTitleType,
+  POLLING_INTERVAL,
+  SessionsHomeCardConfig
+} from '@shared/models/home-page.model';
 
 @Component({
   selector: 'tb-home-cards-sessions-credentials',

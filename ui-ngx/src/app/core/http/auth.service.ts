@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,30 +14,30 @@
 /// limitations under the License.
 ///
 
-import { Injectable, NgZone } from '@angular/core';
-import { JwtHelperService } from '@auth0/angular-jwt';
-import { HttpClient } from '@angular/common/http';
+import {Injectable, NgZone} from '@angular/core';
+import {JwtHelperService} from '@auth0/angular-jwt';
+import {HttpClient} from '@angular/common/http';
 
-import { Observable, of, ReplaySubject, throwError } from 'rxjs';
-import { catchError, mergeMap, tap } from 'rxjs/operators';
+import {Observable, of, ReplaySubject, throwError} from 'rxjs';
+import {catchError, mergeMap, tap} from 'rxjs/operators';
 
-import { LoginRequest, LoginResponse, PublicLoginRequest } from '@shared/models/login.models';
-import { ActivatedRoute, Router, UrlTree } from '@angular/router';
-import { defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
-import { UserService } from './user.service';
-import { Store } from '@ngrx/store';
-import { AppState } from '../core.state';
-import { Authority } from '@shared/models/authority.enum';
-import { ActionSettingsChangeLanguage } from '@app/core/settings/settings.actions';
-import { AuthPayload, AuthState } from '@core/auth/auth.models';
-import { TranslateService } from '@ngx-translate/core';
-import { AuthUser, User } from '@shared/models/user.model';
-import { UtilsService } from '@core/services/utils.service';
-import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
-import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
-import { ConfigService } from '@core/http/config.service';
+import {LoginRequest, LoginResponse, PublicLoginRequest} from '@shared/models/login.models';
+import {ActivatedRoute, Router, UrlTree} from '@angular/router';
+import {defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig} from '../http/http-utils';
+import {UserService} from './user.service';
+import {Store} from '@ngrx/store';
+import {AppState} from '../core.state';
+import {Authority} from '@shared/models/authority.enum';
+import {ActionSettingsChangeLanguage} from '@app/core/settings/settings.actions';
+import {AuthPayload, AuthState} from '@core/auth/auth.models';
+import {TranslateService} from '@ngx-translate/core';
+import {AuthUser, User} from '@shared/models/user.model';
+import {UtilsService} from '@core/services/utils.service';
+import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
+import {AlertDialogComponent} from '@shared/components/dialog/alert-dialog.component';
+import {ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated} from '@core/auth/auth.actions';
+import {getCurrentAuthUser} from '@core/auth/auth.selectors';
+import {ConfigService} from '@core/http/config.service';
 
 @Injectable({
   providedIn: 'root'

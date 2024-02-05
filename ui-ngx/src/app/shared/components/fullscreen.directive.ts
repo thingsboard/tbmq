@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2023 The Thingsboard Authors
+/// Copyright © 2016-2024 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import {
   SecurityContext,
   SimpleChanges,
 } from '@angular/core';
-import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
-import { ComponentPortal } from '@angular/cdk/portal';
-import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
-import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
+import {Overlay, OverlayConfig, OverlayRef} from '@angular/cdk/overlay';
+import {ComponentPortal} from '@angular/cdk/portal';
+import {TbAnchorComponent} from '@shared/components/tb-anchor.component';
+import {DomSanitizer, SafeStyle} from '@angular/platform-browser';
 
 @Directive({
   selector: '[tb-fullscreen]'
