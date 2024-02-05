@@ -70,6 +70,7 @@
     </section>
     <button mat-stroked-button color="primary"
             [matTooltip]="'ws-client.connections.show-meta' | translate"
+            [disabled]="mqttVersion !== 5"
             (click)="messagePropertiesDialog()"
             aria-label="Show message meta data">
       <span translate>ws-client.connections.properties</span>

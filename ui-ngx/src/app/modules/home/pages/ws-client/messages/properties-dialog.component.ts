@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import { AfterContentChecked, ChangeDetectorRef, Component, Inject, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -25,14 +25,18 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { WebSocketTimeUnit, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 import { convertTimeUnits, isDefinedAndNotNull } from '@core/utils';
 
+export interface PropertiesDialogComponentData {
+  mqttVersion?: number;
+}
+
 @Component({
   selector: 'tb-ws-client-properties',
   templateUrl: './properties-dialog.component.html',
   styleUrls: ['./properties-dialog.component.scss']
 })
-export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogComponent>
-  implements OnInit, OnDestroy, AfterContentChecked {
+export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 
+  mqttVersion: number;
   formGroup: UntypedFormGroup;
   entity: any;
 
@@ -48,6 +52,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
               @Inject(MAT_DIALOG_DATA) public data: any,
               public dialogRef: MatDialogRef<null>) {
     super(store, router, dialogRef);
+    this.mqttVersion = this.data.mqttVersion;
   }
 
   ngOnInit(): void {

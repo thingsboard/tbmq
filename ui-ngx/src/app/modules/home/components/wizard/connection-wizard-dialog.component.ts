@@ -318,7 +318,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.clientCredentialsService.saveClientCredentials(newCredentials).subscribe(
           credentials => {
             this.connectionFormGroup.get('clientCredentials').patchValue(credentials);
-            this.createClientCredentials().subscribe(
+            this.saveWebSocketConnection().subscribe(
               (entity) => {
                 return this.dialogRef.close(entity);
               }
@@ -326,7 +326,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
           }
         );
       } else {
-        this.createClientCredentials().subscribe(
+        this.saveWebSocketConnection().subscribe(
           (entity) => {
             return this.dialogRef.close(entity);
           }
@@ -335,7 +335,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
   }
 
-  private createClientCredentials(): Observable<WebSocketConnection> {
+  private saveWebSocketConnection(): Observable<WebSocketConnection> {
     const connectionFormGroupValue = {
       ...this.connectionFormGroup.getRawValue(),
       ...this.connectionAdvancedFormGroup.getRawValue(),

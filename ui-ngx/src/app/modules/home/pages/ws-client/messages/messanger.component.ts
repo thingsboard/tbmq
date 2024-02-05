@@ -20,19 +20,20 @@ import { AppState } from '@core/core.state';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { WsClientService } from '@core/http/ws-client.service';
-import { isDefinedAndNotNull } from '@core/utils';
+import { isDefinedAndNotNull, isNotEmptyStr } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
-import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
+import { PropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/properties-dialog.component';
 import {
   Connection,
   ConnectionStatus,
   PublishMessageProperties,
   WsMessagesTypeFilters,
   WsPayloadFormats,
-  WsSubscription
+  WsSubscription, WsTableMessage
 } from '@shared/models/ws-client.model';
 import { ValueType } from '@shared/models/constants';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
+import { Buffer } from 'buffer';
 
 @Component({
   selector: 'tb-messanger',
@@ -56,6 +57,7 @@ export class MessangerComponent implements OnInit {
   selectedOption = 'all';
   jsonFormatSelected = true;
   isPayloadValid = true;
+  mqttVersion = 5;
 
   constructor(protected store: Store<AppState>,
               private wsClientService: WsClientService,
@@ -72,7 +74,7 @@ export class MessangerComponent implements OnInit {
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
       properties: this.fb.group({
-        payloadFormatIndicator: [false, []],
+        payloadFormatIndicator: [undefined, []],
         messageExpiryInterval: [undefined, []],
         topicAlias: [undefined, []],
         responseTopic: [undefined, []],
@@ -82,6 +84,14 @@ export class MessangerComponent implements OnInit {
         contentType: [undefined, []]
       })
     });
+
+    this.wsClientService.selectedConnection$.subscribe(
+      connection => {
+        if (connection) {
+          this.mqttVersion = connection.configuration.mqttVersion;
+        }
+      }
+    )
 
     this.wsClientService.selectedConnectionStatus$.subscribe(
       status => {
@@ -106,22 +116,27 @@ export class MessangerComponent implements OnInit {
   publishMessage(): void {
     const value = this.messangerFormGroup.get('payload').value;
     const payloadFormat = this.messangerFormGroup.get('payloadFormat').value;
-    const payload = (payloadFormat === ValueType.JSON) ? JSON.stringify(value) : value;
+    const message = (payloadFormat === ValueType.JSON) ? JSON.stringify(value) : value;
     const topic = this.messangerFormGroup.get('topic').value;
     const qos = this.messangerFormGroup.get('qos').value;
     const retain = this.messangerFormGroup.get('retain').value;
-    const properties = this.messangerFormGroup.get('properties').value;
-    const publishOpts = {
-      payload,
-      topic,
-      options: {
-        qos,
-        retain,
-        // properties
-      }
+    const propertiesForm = this.messangerFormGroup.get('properties').value;
+    const options: WsTableMessage = {
+      qos,
+      retain
     };
-    console.log('message', publishOpts);
-    this.wsClientService.publishMessage(publishOpts);
+    if (this.mqttVersion === 5) {
+      options.properties = {};
+      if (isDefinedAndNotNull(propertiesForm?.payloadFormatIndicator)) options.properties.payloadFormatIndicator = propertiesForm.payloadFormatIndicator;
+      if (isNotEmptyStr(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
+      if (isNotEmptyStr(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
+      if (isNotEmptyStr(propertiesForm?.correlationData)) options.properties.correlationData = Buffer.from(propertiesForm.correlationData);
+      if (isDefinedAndNotNull(propertiesForm?.userProperties)) options.properties.userProperties = propertiesForm.userProperties;
+      if (isNotEmptyStr(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
+    }
+    console.log(`On topic ${topic} send message ${message} with qos ${qos}, retain ${retain}`);
+    console.log('props', JSON.stringify(options?.properties));
+    this.wsClientService.publishMessage(topic, message, options);
   }
 
   clearHistory() {
@@ -133,9 +148,12 @@ export class MessangerComponent implements OnInit {
   }
 
   messagePropertiesDialog() {
-    this.dialog.open<PropertiesDialogComponent, null, PublishMessageProperties>(PropertiesDialogComponent, {
+    this.dialog.open<PropertiesDialogComponent, PropertiesDialogComponentData, PublishMessageProperties>(PropertiesDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        mqttVersion: this.mqttVersion
+      }
     }).afterClosed()
       .subscribe((properties) => {
         this.messangerFormGroup.patchValue({

@@ -215,7 +215,6 @@ export interface PublishMessageProperties {
   payloadFormatIndicator?: boolean;
   messageExpiryInterval?: number;
   topicAlias?: number;
-  // subscriptionIdentifier?: number | number[],
   correlationData?: Buffer;
   responseTopic?: string;
   userProperties?: UserProperties,

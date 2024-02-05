@@ -83,7 +83,7 @@ export class SubscriptionComponent implements OnInit {
     return actions;
   }
 
-  private delete($event: Event, entity: WebSocketSubscription) {
+  private delete($event: Event, webSocketSubscription: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -95,18 +95,19 @@ export class SubscriptionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
-        this.wsClientService.deleteWebSocketSubscription(entity.id).subscribe(() => {
-          this.updateData(entity);
+        this.wsClientService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
+          this.wsClientService.unsubscribeForTopicActiveMqttJsClient(webSocketSubscription);
+          this.updateData();
         });
       }
     });
   }
 
-  private edit($event: Event, entity: WebSocketSubscription) {
+  private edit($event: Event, prevWebSocketSubscription: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.getWebSocketSubscriptionById(entity.id).subscribe(
+    this.wsClientService.getWebSocketSubscriptionById(prevWebSocketSubscription.id).subscribe(
       subscription =>
         this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
           disableClose: true,
@@ -116,11 +117,13 @@ export class SubscriptionComponent implements OnInit {
             subscription
           }
         }).afterClosed()
-          .subscribe((res) => {
-            if (isDefinedAndNotNull(res)) {
-              this.wsClientService.saveWebSocketSubscription(res).subscribe(
-                (subscriptionUpdated) => {
-                  this.updateData(subscriptionUpdated);
+          .subscribe((webSocketSubscriptionData) => {
+            if (isDefinedAndNotNull(webSocketSubscriptionData)) {
+              this.wsClientService.saveWebSocketSubscription(webSocketSubscriptionData).subscribe(
+                (currentWebSocketSubscription) => {
+                  this.wsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
+                  this.wsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);
+                  this.updateData();
                 }
               );
             }
@@ -128,7 +131,7 @@ export class SubscriptionComponent implements OnInit {
     );
   }
 
-  private updateData(subscription: WebSocketSubscription) {
+  private updateData() {
     this.subscriptionUpdated.emit();
     // TODO update connected client subscription
   }

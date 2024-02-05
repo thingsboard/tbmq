@@ -138,7 +138,11 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   connect() {
     this.status = ConnectionStatus.CONNECTING;
     const password = this.isPasswordRequired ? this.password : null;
-    this.wsClientService.connectClient(this.connection, password);
+    this.wsClientService.getWebSocketConnectionById(this.connection.id).subscribe(
+      connection => {
+        this.wsClientService.connectClient(connection, password);
+      }
+    );
   }
 
   disconnect() {
