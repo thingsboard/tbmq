@@ -47,15 +47,15 @@ public class WebSocketConnectionDaoImpl
     }
 
     @Override
-    public PageData<WebSocketConnection> findAll(PageLink pageLink) {
-        return DaoUtil.toPageData(webSocketConnectionRepository.findAll(
+    public PageData<WebSocketConnection> findAll(UUID userId, PageLink pageLink) {
+        return DaoUtil.toPageData(webSocketConnectionRepository.findAll(userId,
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
     }
 
     @Override
-    public WebSocketConnection findByName(String name) {
-        return DaoUtil.getData(webSocketConnectionRepository.findByName(name));
+    public WebSocketConnection findByUserIdAndName(UUID userId, String name) {
+        return DaoUtil.getData(webSocketConnectionRepository.findByUserIdAndName(userId, name));
     }
 
 }

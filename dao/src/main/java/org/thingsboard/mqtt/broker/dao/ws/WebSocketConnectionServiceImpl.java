@@ -100,12 +100,12 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     }
 
     @Override
-    public PageData<WebSocketConnectionDto> getWebSocketConnections(PageLink pageLink) {
+    public PageData<WebSocketConnectionDto> getWebSocketConnections(UUID userId, PageLink pageLink) {
         if (log.isTraceEnabled()) {
-            log.trace("Executing getWebSocketConnections, pageLink [{}]", pageLink);
+            log.trace("[{}] Executing getWebSocketConnections, pageLink [{}]", userId, pageLink);
         }
         validatePageLink(pageLink);
-        return toShortWebSocketConnectionPageData(webSocketConnectionDao.findAll(pageLink));
+        return toShortWebSocketConnectionPageData(webSocketConnectionDao.findAll(userId, pageLink));
     }
 
     private PageData<WebSocketConnectionDto> toShortWebSocketConnectionPageData(PageData<WebSocketConnection> pageData) {
@@ -124,11 +124,11 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     }
 
     @Override
-    public WebSocketConnection findWebSocketConnectionByName(String name) {
+    public WebSocketConnection findWebSocketConnectionByName(UUID userId, String name) {
         if (log.isTraceEnabled()) {
-            log.trace("Executing findWebSocketConnectionByName [{}]", name);
+            log.trace("[{}] Executing findWebSocketConnectionByName [{}]", userId, name);
         }
-        return webSocketConnectionDao.findByName(name);
+        return webSocketConnectionDao.findByUserIdAndName(userId, name);
     }
 
     @Override

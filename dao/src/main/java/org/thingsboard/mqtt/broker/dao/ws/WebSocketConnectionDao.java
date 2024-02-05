@@ -20,10 +20,12 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
+import java.util.UUID;
+
 public interface WebSocketConnectionDao extends Dao<WebSocketConnection> {
 
-    PageData<WebSocketConnection> findAll(PageLink pageLink);
+    PageData<WebSocketConnection> findAll(UUID userId, PageLink pageLink);
 
-    WebSocketConnection findByName(String name);
+    WebSocketConnection findByUserIdAndName(UUID userId, String name);
 
 }
