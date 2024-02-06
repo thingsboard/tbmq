@@ -72,7 +72,7 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         webSocketConnection.setUserId(savedUser.getId());
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("clientId");
-        config.setUrl("url");
+        config.setUrl("ws://localhost:8084/mqtt");
         webSocketConnection.setConfiguration(config);
         return webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
     }

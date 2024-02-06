@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
+import org.thingsboard.mqtt.broker.common.data.ws.LastWillMsg;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
@@ -152,6 +153,99 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("clientId");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationUrlScheme_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("wrong://localhost:8084/mqtt");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationUrlNoHost_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("ws://:8084/mqtt");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationUrlWrongPort_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("ws://localhost:656565/mqtt");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationUrlNoPath_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("ws://localhost:8084");
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationNoTopicInLastWillMsg_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("ws://localhost:8084/mqtt");
+
+        LastWillMsg lastWillMsg = new LastWillMsg();
+        config.setLastWillMsg(lastWillMsg);
+
+        connection.setConfiguration(config);
+
+        webSocketConnectionService.saveWebSocketConnection(connection);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketConnectionWithWrongConfigurationInvalidTopicInLastWillMsg_whenExecuteSave_thenFailure() {
+        WebSocketConnection connection = new WebSocketConnection();
+        connection.setName("test");
+        connection.setUserId(savedUser.getId());
+
+        WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
+        config.setClientId("clientId");
+        config.setUrl("ws://localhost:8084/mqtt");
+
+        LastWillMsg lastWillMsg = new LastWillMsg();
+        lastWillMsg.setTopic("test/topic/#");
+        config.setLastWillMsg(lastWillMsg);
+
         connection.setConfiguration(config);
 
         webSocketConnectionService.saveWebSocketConnection(connection);
