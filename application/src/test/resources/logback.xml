@@ -18,12 +18,14 @@
     <logger name="org.thingsboard.mqtt.broker.actors.device.PersistedDeviceActorMessageProcessor" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.dao.sqlts.sql.JpaSqlTimeseriesDao" level="INFO"/>
 
-    <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>
-    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="OFF"/>
+    <!--    <logger name="org.apache.kafka.clients.NetworkClient" level="OFF"/>-->
+    <!--    <logger name="org.apache.kafka.common.utils.AppInfoParser" level="OFF"/>-->
+    <!--    <logger name="org.apache.kafka.common.metrics.Metrics" level="OFF"/>-->
+    <logger name="org.apache.kafka" level="OFF"/>
 
     <logger name="com.zaxxer.hikari" level="INFO"/>
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="console"/>
     </root>
 
