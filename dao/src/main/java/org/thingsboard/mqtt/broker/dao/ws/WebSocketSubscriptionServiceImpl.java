@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfigura
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +38,7 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
 
     private final WebSocketSubscriptionDao webSocketSubscriptionDao;
     private final WebSocketConnectionDao webSocketConnectionDao;
+    private final TopicValidationService topicValidationService;
 
     @Override
     public WebSocketSubscription saveWebSocketSubscription(WebSocketSubscription subscription) {
@@ -107,6 +109,7 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
                         throw new DataValidationException("WebSocket Subscription configuration should be specified!");
                     }
                     validateString("WebSocket Subscription topicFilter", webSocketSubscription.getConfiguration().getTopicFilter());
+                    topicValidationService.validateTopicFilter(webSocketSubscription.getConfiguration().getTopicFilter());
                 }
             };
 

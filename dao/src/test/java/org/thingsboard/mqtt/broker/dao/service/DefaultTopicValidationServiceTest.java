@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.validation;
+package org.thingsboard.mqtt.broker.dao.service;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.Random;
 
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-public class TopicValidationSuitTest {
+public class DefaultTopicValidationServiceTest {
 
     private DefaultTopicValidationService topicValidationService;
 

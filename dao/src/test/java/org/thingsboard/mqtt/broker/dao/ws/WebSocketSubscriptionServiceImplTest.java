@@ -126,6 +126,17 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
     }
 
     @Test(expected = DataValidationException.class)
+    public void givenWebSocketSubscriptionWithWrongConfigurationIncorrectTopicFilter_whenExecuteSave_thenFailure() {
+        WebSocketSubscription subscription = new WebSocketSubscription();
+        subscription.setWebSocketConnectionId(savedWebSocketConnection.getId());
+        WebSocketSubscriptionConfiguration config = new WebSocketSubscriptionConfiguration();
+        config.setTopicFilter("test/#/wrong");
+        subscription.setConfiguration(config);
+
+        webSocketSubscriptionService.saveWebSocketSubscription(subscription);
+    }
+
+    @Test(expected = DataValidationException.class)
     public void givenWebSocketSubscriptionWithId_whenSaveWithAbsentInDbId_thenFailure() {
         WebSocketSubscription webSocketSubscription = getWebSocketSubscription();
         webSocketSubscription.setId(UUID.randomUUID());
