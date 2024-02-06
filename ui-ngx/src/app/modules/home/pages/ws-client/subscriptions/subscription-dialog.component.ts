@@ -25,10 +25,13 @@ import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { rhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { randomColor } from '@core/utils';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { TranslateService } from '@ngx-translate/core';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
   subscription?: WebSocketSubscription;
+  subscriptions?: WebSocketSubscription[];
 }
 
 @Component({
@@ -40,16 +43,15 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
-  rhOptions = rhOptions;
 
+  rhOptions = rhOptions;
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
 
   title = 'ws-client.subscriptions.add-subscription';
   actionButtonLabel = 'action.add';
-
   entity: WebSocketSubscription;
-  mqttVersion: number;
+  topicFilterDuplicate: boolean;
 
   private destroy$ = new Subject<void>();
 
@@ -58,33 +60,41 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
               protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: any,
-              public dialogRef: MatDialogRef<SubscriptionDialogComponent>) {
+              public dialogRef: MatDialogRef<SubscriptionDialogComponent>,
+              private translate: TranslateService) {
     super(store, router, dialogRef);
   }
 
   ngOnInit(): void {
     this.entity = this.data?.subscription;
-    this.mqttVersion = this.data.mqttVersion;
     if (this.entity) {
       this.title = 'ws-client.subscriptions.edit-subscription';
       this.actionButtonLabel = 'action.save';
     }
-    this.buildForms();
+    this.buildForm();
+    const connectionTopicFilterList: string[] = this.data?.subscriptions
+      .filter(el => !(this.entity?.id === el.id))
+      .map(el => el.configuration.topicFilter);
+    this.topicFilterDuplicate = connectionTopicFilterList.includes(this.formGroup.get('topicFilter').value);
+    this.formGroup.get('topicFilter').valueChanges.subscribe(topicFilter => {
+      this.topicFilterDuplicate = connectionTopicFilterList.includes(topicFilter);
+    });
   }
 
   ngAfterContentChecked(): void {
     this.cd.detectChanges();
   }
 
-  private buildForms(): void {
+  private buildForm(): void {
+    const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
       topicFilter: [this.entity ? this.entity.configuration.topicFilter : 'sensors/#', [Validators.required]],
       qos: [this.entity ? this.entity.configuration.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
       color: [this.entity ? this.entity.configuration.color : randomColor(), []],
       options: this.fb.group({
-        noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled: this.disableMqtt5Features()}, []],
-        retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled: this.disableMqtt5Features()}, []],
-        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : null, disabled: this.disableMqtt5Features()}, []]
+        noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
+        retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled}, []],
+        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : null, disabled}, []]
       })
     });
   }
@@ -98,11 +108,19 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     const formValues = this.formGroup.getRawValue();
     formValues.color = formValues.color || randomColor();
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
-    this.dialogRef.close(result);
-  }
-
-  disableMqtt5Features() {
-    return this.mqttVersion !== 5;
+    if (!this.topicFilterDuplicate) {
+      this.dialogRef.close(result);
+    } else {
+      this.store.dispatch(new ActionNotificationShow(
+        {
+          message: this.translate.instant('ws-client.subscriptions.topic-filter-duplicate'),
+          type: 'error',
+          duration: 2000,
+          verticalPosition: 'top',
+          horizontalPosition: 'left'
+        })
+      );
+    }
   }
 }
 

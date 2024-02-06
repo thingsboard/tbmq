@@ -14,51 +14,43 @@
 /// limitations under the License.
 ///
 
-// @ts-nocheck
-
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { defaultHttpOptionsFromConfig, RequestConfig } from '@core/http/http-utils';
 import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
-  Connection,
   ConnectionStatus,
   ConnectionStatusLog,
   DataSizeUnitType,
   WebSocketConnection,
-  WebSocketConnectionDto,
   WebSocketSubscription,
   WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
-import mqtt, { IClientOptions, IPublishPacket, MqttClient } from 'mqtt';
+import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
 import { clientIdRandom, convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber } from '@core/utils';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
+import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class WsClientService {
+export class MqttJsClientService {
 
-  private connections = [];
-  private subscriptions = [];
   private messages: WsTableMessage[] = [];
 
   private connection$ = new BehaviorSubject<WebSocketConnection>(null);
   private messages$ = new BehaviorSubject<WsTableMessage[]>(this.messages);
-  private connections$ = new BehaviorSubject<any>(this.connections);
+  private connections$ = new BehaviorSubject<boolean>(true);
   private connectionStatus$ = new BehaviorSubject<ConnectionStatus>(ConnectionStatus.DISCONNECTED);
   private connectionFailedError$ = new BehaviorSubject<string>(null);
 
   private subscription$ = new BehaviorSubject<any>(null);
-  private subscriptions$ = new BehaviorSubject<any>(this.subscriptions);
 
   selectedConnection$ = this.connection$.asObservable();
-  allConnections$ = this.connections$.asObservable();
+  connectionsUpdated$ = this.connections$.asObservable();
   selectedSubscription$ = this.subscription$.asObservable();
   selectedConnectionStatus$ = this.connectionStatus$.asObservable();
   selectedConnectionFailedError$ = this.connectionFailedError$.asObservable();
@@ -76,53 +68,18 @@ export class WsClientService {
     retainList: null
   };
 
-  connectionMqttClientMap = new Map<string, string>();
+  connectionMqttClientMap = new Map<string, MqttClient>();
   connectionStatusMap = new Map<string, ConnectionStatus>();
   connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
   clientIdSubscriptionsMap = new Map<string, any[]>();
   mqttClientConnectionMap = new Map<string, string>();
 
-  constructor(private http: HttpClient) {
+  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService) {
   }
 
-  // Connections
-
-  public saveWebSocketConnection(connection: WebSocketConnection, config?: RequestConfig): Observable<WebSocketConnection> {
-    return this.http.post<WebSocketConnection>('/api/ws/connection', connection, defaultHttpOptionsFromConfig(config));
+  public onConnectionsUpdated(selectFirst: boolean = true) {
+    this.connections$.next(selectFirst);
   }
-
-  public getWebSocketConnections(config?: RequestConfig): Observable<PageData<WebSocketConnectionDto>> {
-    const pageLink = new PageLink(1000);
-    return this.http.get<PageData<WebSocketConnectionDto>>(`/api/ws/connection${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getWebSocketConnectionById(connectionId: string, config?: RequestConfig): Observable<WebSocketConnection> {
-    return this.http.get<WebSocketConnection>(`/api/ws/connection/${connectionId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public deleteWebSocketConnection(connectionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/ws/connection/${connectionId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  // Subscriptions
-
-  public saveWebSocketSubscription(subscription: WebSocketSubscription, config?: RequestConfig): Observable<WebSocketSubscription> {
-    return this.http.post<WebSocketSubscription>('/api/ws/subscription', subscription, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getWebSocketSubscriptions(webSocketConnectionId: string, config?: RequestConfig): Observable<WebSocketSubscription[]> {
-    return this.http.get<WebSocketSubscription>(`/api/ws/subscription?webSocketConnectionId=${webSocketConnectionId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getWebSocketSubscriptionById(webSocketSubscriptionId: string, config?: RequestConfig): Observable<WebSocketSubscription> {
-    return this.http.get<WebSocketSubscription>(`/api/ws/subscription/${webSocketSubscriptionId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public deleteWebSocketSubscription(webSocketSubscriptionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/ws/subscription/${webSocketSubscriptionId}`, defaultHttpOptionsFromConfig(config));
-  }
-
-  // TODO split into WebSocketConnection/WebSocketSubscription services
 
   connectClient(connection: WebSocketConnection, password: string = null) {
     this.addMqttClient(connection, password);
@@ -176,23 +133,24 @@ export class WsClientService {
           willDelayInterval: convertTimeUnits(connection.configuration.lastWillMsg.willDelayInterval, connection.configuration.lastWillMsg.willDelayIntervalUnit, WebSocketTimeUnit.SECONDS),
           messageExpiryInterval: convertTimeUnits(connection.configuration.lastWillMsg.msgExpiryInterval, connection.configuration.lastWillMsg.msgExpiryIntervalUnit, WebSocketTimeUnit.SECONDS),
           payloadFormatIndicator: connection.configuration.lastWillMsg.payloadFormatIndicator,
-          correlationData: Buffer.from([connection.configuration.lastWillMsg.correlationData])
         };
+        // @ts-ignore
+        options.will.properties.correlationData = Buffer.from([connection.configuration.lastWillMsg.correlationData]);
       }
     }
     console.log('options', options);
     console.log('connection', connection);
     const mqttClient: MqttClient = mqtt.connect(connection.configuration.url, options);
-    this.setMqttClient(mqttClient, connection);
+    this.setMqttClient(mqttClient);
     this.manageMqttClientCallbacks(mqttClient, connection);
   }
 
-  private setMqttClient(mqttClient: MqttClient, connection: Connection) {
+  private setMqttClient(mqttClient: MqttClient) {
     this.mqttClient = mqttClient;
     this.mqttClients.push(mqttClient);
   }
 
-  private manageMqttClientCallbacks(mqttClient: MqttClient, connection: Connection) {
+  private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {
     mqttClient.on('connect', (packet: IConnackPacket) => {
       this.connectionMqttClientMap.set(connection.id, mqttClient);
       this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection.id);
@@ -251,10 +209,10 @@ export class WsClientService {
       mqttClient.end();
       console.log('Closing...', mqttClient);
     });
-    mqttClient.on('disconnect', (packet: IConnackPacket) => {
+    mqttClient.on('disconnect', () => {
       this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
       this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
-      console.log('Disconnecting...', packet, mqttClient);
+      console.log('Disconnecting...', mqttClient);
     });
     mqttClient.on('offline', () => {
       this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
@@ -298,13 +256,12 @@ export class WsClientService {
       return subscriptionParts.length === topicParts.length;
     }
 
-    function checkTopicInSubscriptions(subscriptions: WebSocketSubscription[], topic: string): boolean {
+    function checkTopicInSubscriptions(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {
       for (let subscriptionTopic of subscriptions.map(el => el.configuration.topicFilter)) {
         if (isTopicMatched(subscriptionTopic, topic)) {
           return subscriptions.find(el => el.configuration.topicFilter === subscriptionTopic);
         }
       }
-      return false;
     }
 
     return checkTopicInSubscriptions(subscriptions, topic);
@@ -314,15 +271,15 @@ export class WsClientService {
     this.connectionFailedError$.next(error);
   }
 
-  private setConnectionStatus(connection: Connection, state: ConnectionStatus) {
+  private setConnectionStatus(connection: WebSocketConnection, state: ConnectionStatus) {
     this.connectionStatusMap.set(connection.id, state);
     this.connectionStatus$.next(this.connectionStatusMap.get(connection.id));
   }
 
-  private setConnectionLog(connection: Connection, state: ConnectionStatus, details: string = null) {
-    const log = {
+  private setConnectionLog(connection: WebSocketConnection, status: ConnectionStatus, details: string = null) {
+    const log: ConnectionStatusLog = {
       createdTime: this.nowTs(),
-      state,
+      status,
       details
     };
     if (this.connectionStatusLogMap.has(connection.id)) {
@@ -342,8 +299,8 @@ export class WsClientService {
     this.updateMessages();
   }
 
-  private subscribeForTopicsOnConnect(mqttClient: MqttClient, connection: Connection) {
-    this.getWebSocketSubscriptions(connection.id).subscribe(
+  private subscribeForTopicsOnConnect(mqttClient: MqttClient, connection: WebSocketConnection) {
+    this.webSocketSubscriptionService.getWebSocketSubscriptions(connection.id).subscribe(
       webSocketSubscriptions => {
         const subscriptions = [];
         const topicObject: any = {};
@@ -405,7 +362,7 @@ export class WsClientService {
     }
   }
 
-  publishMessage(topic: string, payload: WsTableMessage, options: WsTableMessage) {
+  publishMessage(topic: string, payload: string, options: IClientPublishOptions) {
     this.mqttClient.publish(topic, payload, options);
     const publishMessage = {
       topic,
@@ -433,7 +390,7 @@ export class WsClientService {
   }
 
   private updateMessages() {
-    this.messages$.next();
+    this.messages$.next(null);
   }
 
   private subscribeForTopic(mqttClient: MqttClient, topicObject: any) {
@@ -505,7 +462,7 @@ export class WsClientService {
   public clearHistory() {
     const connectionId = this.getActiveConnectionId();
     this.connectionMessagesMap.set(connectionId, []);
-    this.updateMessages(this.connectionMessagesMap.get(connectionId));
+    this.updateMessages();
   }
 
 }

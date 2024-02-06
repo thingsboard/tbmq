@@ -103,13 +103,13 @@ export interface WebSocketConnectionConfiguration {
   requestResponseInfo?: boolean;
   requestProblemInfo?: boolean;
   lastWillMsg?: LastWillMsg;
-  userProperties?: WebSocketUserProperties;
+  userProperties?: any;
 }
 
 export interface LastWillMsg {
   topic?: string;
-  qos?: number;
-  payload?: string;
+  qos?: QoS;
+  payload?: Buffer;
   payloadType?: WsDataType;
   retain?: boolean;
   payloadFormatIndicator?: boolean;
@@ -119,8 +119,12 @@ export interface LastWillMsg {
   msgExpiryInterval?: number;
   msgExpiryIntervalUnit?: WebSocketTimeUnit;
   responseTopic?: string;
-  correlationData?: string;
+  correlationData?: Buffer;
 }
+
+export declare type CorrelationData = WithImplicitCoercion<string> | {  [Symbol.toPrimitive](hint: 'string'): string; }
+
+export declare type QoS = 0 | 1 | 2
 
 export enum WsDataType {
   STRING = 'STRING',
@@ -142,12 +146,12 @@ export interface Connection extends TbConnectionDetails {
   username?: string;
   password?: string;
   properties?: ConnectionProperties;
-  userProperties?: WebSocketUserProperties;
+  userProperties?: any;
   will?: {
     topic?: string;
     payload?: any;
     payloadType?: any;
-    qos?: number;
+    qos?: QoS;
     retain?: boolean;
     properties?: WillProperties;
   };
@@ -187,11 +191,11 @@ interface WillProperties extends TbWillProperties {
   messageExpiryInterval: number;
   contentType: string;
   responseTopic: string;
-  correlationData: any; // TODO double check how to send
+  correlationData: Buffer;
 }
 
 export interface WsPublishMessageOptions {
-  qos?: number;
+  qos?: QoS;
   retain?: boolean;
   dup?: boolean;
   properties?: PublishMessageProperties;
@@ -203,7 +207,7 @@ export interface WsTableMessage extends BaseData {
   topic?: string;
   payload?: any;
   options?: WsPublishMessageOptions;
-  qos?: number;
+  qos?: QoS;
   retain?: boolean;
   color?: string;
   properties?: PublishMessageProperties;
@@ -217,23 +221,16 @@ export interface PublishMessageProperties {
   topicAlias?: number;
   correlationData?: Buffer;
   responseTopic?: string;
-  userProperties?: UserProperties,
+  userProperties?: any,
 }
 
 export declare type UserProperties = {[index: string]: string | string[]}
 
 interface TopicObject {
-  [topicName: string]: { qos: number };
+  [topicName: string]: { qos: QoS };
 }
 
 type Topic = string | string[] | TopicObject;
-
-interface Properties {
-  // subscriptionIdentifier: number;
-  // userProperties: {
-  //   [name: string]: string
-  // };
-}
 
 export interface WebSocketSubscription extends BaseData {
   webSocketConnectionId: string;
@@ -242,7 +239,7 @@ export interface WebSocketSubscription extends BaseData {
 
 export interface WebSocketSubscriptionConfiguration {
   topicFilter?: string;
-  qos?: number;
+  qos?: QoS;
   color?: string;
   options: WebSocketSubscriptionOptions;
 }
@@ -254,7 +251,7 @@ export interface WebSocketSubscriptionOptions {
 }
 
 interface WsSubscriptionOptions {
-  qos?: number;
+  qos?: QoS;
   nl?: boolean;
   rap?: boolean;
   rh?: number;

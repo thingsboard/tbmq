@@ -19,10 +19,11 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection } from '@shared/models/ws-client.model';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
+import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 @Component({
   selector: 'tb-connection-controller',
@@ -46,7 +47,8 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
-              private wsClientService: WsClientService,
+              private mqttJsClientService: MqttJsClientService,
+              private webSocketConnectionService: WebSocketConnectionService,
               public fb: UntypedFormBuilder,
               private popoverService: TbPopoverService,
               private renderer: Renderer2,
@@ -54,7 +56,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.wsClientService.selectedConnectionStatus$.subscribe(
+    this.mqttJsClientService.selectedConnectionStatus$.subscribe(
       status => {
         this.status = status;
         this.updateLabels();
@@ -62,7 +64,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       }
     );
 
-    this.wsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.selectedConnection$.subscribe(
       entity => {
         if (entity) {
           this.connection = entity;
@@ -72,7 +74,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       }
     );
 
-    this.wsClientService.selectedConnectionFailedError$.subscribe(
+    this.mqttJsClientService.selectedConnectionFailedError$.subscribe(
       error => {
         if (error) {
           this.errorMessage = error;
@@ -138,20 +140,16 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   connect() {
     this.status = ConnectionStatus.CONNECTING;
     const password = this.isPasswordRequired ? this.password : null;
-    this.wsClientService.getWebSocketConnectionById(this.connection.id).subscribe(
+    this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(
       connection => {
-        this.wsClientService.connectClient(connection, password);
+        this.mqttJsClientService.connectClient(connection, password);
       }
     );
   }
 
   disconnect() {
-    this.wsClientService.disconnectClient(true);
+    this.mqttJsClientService.disconnectClient(true);
   }
-
-  /*  cancel() {
-      this.wsClientService.disconnectClient(true);
-    }*/
 
   displayCancelButton(): boolean {
     return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING);

@@ -16,14 +16,17 @@
 
 // @ts-nocheck
 
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
+import { Observable, ReplaySubject } from 'rxjs';
+import { map, share, tap } from 'rxjs/operators';
+import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 @Component({
   selector: 'tb-ws-client',
@@ -32,27 +35,26 @@ import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 })
 export class WsClientComponent extends PageComponent implements OnInit {
 
-  connections: WebSocketConnectionDto[] = [];
+  connections: Observable<WebSocketConnectionDto[]>;
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
-              private wsClientService: WsClientService) {
+              private mqttJsClientService: MqttJsClientService,
+              private webSocketConnectionService: WebSocketConnectionService,
+              private cd: ChangeDetectorRef) {
     super(store);
   }
 
   ngOnInit() {
-    this.wsClientService.getWebSocketConnections().subscribe(res => {
-      if (res.data?.length) {
-        this.connections = res.data;
-        this.selectFirstConnection(res.data[0].id);
-      }
+    this.mqttJsClientService.connectionsUpdated$.subscribe((res) => {
+      this.updateData(res);
     });
   }
 
   private selectFirstConnection(connectionId: string) {
-    this.wsClientService.getWebSocketConnectionById(connectionId).subscribe(
+    this.webSocketConnectionService.getWebSocketConnectionById(connectionId).subscribe(
       connection => {
-        this.wsClientService.selectConnection(connection);
+        this.mqttJsClientService.selectConnection(connection);
       }
     );
   }
@@ -68,6 +70,26 @@ export class WsClientComponent extends PageComponent implements OnInit {
         connectionsTotal: 0
       }
     }).afterClosed()
-      .subscribe();
+      .subscribe(() => {
+        this.mqttJsClientService.onConnectionsUpdated();
+      });
+  }
+
+  private updateData(selectFirst: boolean = true) {
+    this.connections = this.webSocketConnectionService.getWebSocketConnections().pipe(
+      map((res) => {
+        if (res.data?.length) {
+          if (selectFirst) {
+            this.selectFirstConnection(res.data[0].id);
+          }
+          return res.data;
+        }
+        return [];
+      }),
+      share({
+        connector: () => new ReplaySubject(1)
+      }),
+      tap(() => setTimeout(() => this.cd.markForCheck()))
+    );
   }
 }

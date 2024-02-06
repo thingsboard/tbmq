@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<ng-container *ngIf="connections?.length; else noConnections">
+<ng-container *ngIf="(connections | async)?.length; else noConnections">
   <ng-container *ngTemplateOutlet="hasConnections"></ng-container>
 </ng-container>
 

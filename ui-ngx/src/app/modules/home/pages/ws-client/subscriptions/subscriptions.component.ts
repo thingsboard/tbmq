@@ -14,17 +14,17 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component } from '@angular/core';
-import { WsClientService } from '@core/http/ws-client.service';
-import { Connection, WebSocketConnection, WebSocketSubscription, WsSubscription } from '@shared/models/ws-client.model';
+import { Component } from '@angular/core';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import { Connection, WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
-import { Observable, ReplaySubject } from 'rxjs';
-import { map, share, tap } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import {
   AddWsClientSubscriptionDialogData,
   SubscriptionDialogComponent
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { isDefinedAndNotNull } from '@core/utils';
+import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 
 @Component({
   selector: 'tb-subscriptions',
@@ -33,42 +33,40 @@ import { isDefinedAndNotNull } from '@core/utils';
 })
 export class SubscriptionsComponent {
 
-  subscriptions$: Observable<WebSocketSubscription[]>;
   subscriptions: WebSocketSubscription[];
   connection: WebSocketConnection;
   loadSubscriptions = false;
 
   constructor(private dialog: MatDialog,
-              private wsClientService: WsClientService,
-              private cd: ChangeDetectorRef) {
+              private mqttJsClientService: MqttJsClientService,
+              private webSocketSubscriptionService: WebSocketSubscriptionService) {
   }
 
   ngOnInit() {
-    this.wsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.selectedConnection$.subscribe(
       connection => {
-        if (connection) {
+        if (isDefinedAndNotNull(connection)) {
           this.loadSubscriptions = true;
-          this.connection = connection;
-          this.fetchSubcriptions();
+          if (isDefinedAndNotNull(this.connection)) {
+            if (this.connection.id !== connection.id) {
+              this.fetchSubcriptions(connection);
+              this.connection = connection;
+            }
+          } else {
+            this.fetchSubcriptions(connection);
+            this.connection = connection;
+          }
         }
       }
     );
   }
 
-  fetchSubcriptions() {
-    this.subscriptions$ = this.wsClientService.getWebSocketSubscriptions(this.connection.id).pipe(
-      map(res => {
-        if (res.length) {
-          this.subscriptions = res;
-          return res;
-        }
-        return [];
-      }),
-      share({
-        connector: () => new ReplaySubject(1)
-      }),
-      tap(() => setTimeout(() => this.cd.markForCheck()))
-    );
+  fetchSubcriptions(connection: WebSocketConnection) {
+    this.webSocketSubscriptionService.getWebSocketSubscriptions(connection.id)
+      .pipe(map(res => {
+        this.subscriptions = res;
+      }))
+      .subscribe();
   }
 
   addSubscription($event: Event) {
@@ -79,22 +77,21 @@ export class SubscriptionsComponent {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
+        subscriptions: this.subscriptions,
         mqttVersion: this.connection.configuration.mqttVersion
       }
     }).afterClosed()
-      .subscribe(
-        (subscription) => {
-          if (isDefinedAndNotNull(subscription)) {
-            subscription.webSocketConnectionId = this.connection.id;
-            this.wsClientService.saveWebSocketSubscription(subscription).subscribe(
-              (res) => {
-                this.wsClientService.subscribeForTopicActiveMqttJsClient(res);
-                this.fetchSubcriptions();
-              }
-            );
-          }
+      .subscribe((subscriptionFormValue) => {
+        if (isDefinedAndNotNull(subscriptionFormValue)) {
+          subscriptionFormValue.webSocketConnectionId = this.connection.id;
+          this.webSocketSubscriptionService.saveWebSocketSubscription(subscriptionFormValue).subscribe(
+            (webSocketSubscription) => {
+              this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(webSocketSubscription);
+              this.fetchSubcriptions(this.connection);
+            }
+          );
         }
-      );
+      });
   }
 
   trackById(index: number, item: Connection): string {

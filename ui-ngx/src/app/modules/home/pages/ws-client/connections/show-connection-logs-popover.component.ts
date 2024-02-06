@@ -19,7 +19,7 @@ import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
 
 @Component({
@@ -42,12 +42,12 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
 
   constructor(protected store: Store<AppState>,
-              private wsClientService: WsClientService) {
+              private mqttJsClientService: MqttJsClientService) {
     super(store);
   }
 
   ngOnInit() {
-    this.statusLogs = this.wsClientService.connectionStatusLogMap.get(this.connectionId);
+    this.statusLogs = this.mqttJsClientService.connectionStatusLogMap.get(this.connectionId);
   }
 
   ngOnDestroy() {

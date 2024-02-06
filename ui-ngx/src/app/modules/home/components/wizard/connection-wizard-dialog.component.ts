@@ -51,10 +51,10 @@ import {
   WsCredentialsGeneratortTypeTranslationMap,
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
-import { WsClientService } from '@core/http/ws-client.service';
 import { getCurrentAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
 import { ConfigParams } from '@shared/models/config.model';
 import { BasicClientCredentials } from '@home/pages/client-credentials/client-credentials.component';
+import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 export interface ConnectionDialogData {
   entity?: WebSocketConnection;
@@ -122,7 +122,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               protected router: Router,
               public dialogRef: MatDialogRef<ConnectionWizardDialogComponent, WebSocketConnection>,
               private clientCredentialsService: ClientCredentialsService,
-              private wsClientService: WsClientService,
+              private webSocketConnectionService: WebSocketConnectionService,
               private breakpointObserver: BreakpointObserver,
               private fb: FormBuilder,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
@@ -343,7 +343,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       ...this.userPropertiesFormGroup.getRawValue()
     };
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
-    return this.wsClientService.saveWebSocketConnection(connection).pipe(
+    return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
         this.addConnectionWizardStepper.selectedIndex = 0;
         return throwError(e);

@@ -18,10 +18,11 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
+import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 @Component({
   selector: 'tb-connection',
@@ -40,7 +41,8 @@ export class ConnectionComponent implements OnInit {
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
 
-  constructor(private wsClientService: WsClientService,
+  constructor(private mqttJsClientService: MqttJsClientService,
+              private webSocketConnectionService: WebSocketConnectionService,
               private dialog: MatDialog,
               private dialogService: DialogService,
               private translate: TranslateService) {
@@ -48,7 +50,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.wsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.selectedConnection$.subscribe(
       res => {
         this.selectedConnection = res;
       }
@@ -64,8 +66,8 @@ export class ConnectionComponent implements OnInit {
   }
 
   selectConnection() {
-    this.wsClientService.getWebSocketConnectionById(this.connection.id).subscribe(connection => {
-      this.wsClientService.selectConnection(connection);
+    this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(connection => {
+      this.mqttJsClientService.selectConnection(connection);
     });
   }
 
@@ -76,7 +78,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   private isConnectionConnected() {
-    return this.wsClientService.isConnectionConnected(this.connection.id);
+    return this.mqttJsClientService.isConnectionConnected(this.connection.id);
   }
 
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketConnectionDto>> {
@@ -110,8 +112,9 @@ export class ConnectionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
-        this.wsClientService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
+        this.webSocketConnectionService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
           this.connectionUpdated.emit();
+          this.mqttJsClientService.onConnectionsUpdated(false);
         });
       }
     });
@@ -121,7 +124,7 @@ export class ConnectionComponent implements OnInit {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.getWebSocketConnectionById(entity.id).subscribe(connection => {
+    this.webSocketConnectionService.getWebSocketConnectionById(entity.id).subscribe(connection => {
       this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],

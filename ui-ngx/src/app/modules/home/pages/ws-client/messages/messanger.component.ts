@@ -19,7 +19,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull, isNotEmptyStr } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { PropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/properties-dialog.component';
@@ -34,6 +34,7 @@ import {
 import { ValueType } from '@shared/models/constants';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 import { Buffer } from 'buffer';
+import { IClientPublishOptions } from 'mqtt';
 
 @Component({
   selector: 'tb-messanger',
@@ -60,7 +61,7 @@ export class MessangerComponent implements OnInit {
   mqttVersion = 5;
 
   constructor(protected store: Store<AppState>,
-              private wsClientService: WsClientService,
+              private mqttJsClientService: MqttJsClientService,
               public fb: FormBuilder,
               private dialog: MatDialog) {
 
@@ -85,7 +86,7 @@ export class MessangerComponent implements OnInit {
       })
     });
 
-    this.wsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.selectedConnection$.subscribe(
       connection => {
         if (connection) {
           this.mqttVersion = connection.configuration.mqttVersion;
@@ -93,13 +94,13 @@ export class MessangerComponent implements OnInit {
       }
     )
 
-    this.wsClientService.selectedConnectionStatus$.subscribe(
+    this.mqttJsClientService.selectedConnectionStatus$.subscribe(
       status => {
         this.isConnected = status === ConnectionStatus.CONNECTED;
       }
     );
 
-    this.wsClientService.filterMessages({
+    this.mqttJsClientService.filterMessages({
       topic: null,
       qosList: null,
       retainList: null
@@ -121,7 +122,7 @@ export class MessangerComponent implements OnInit {
     const qos = this.messangerFormGroup.get('qos').value;
     const retain = this.messangerFormGroup.get('retain').value;
     const propertiesForm = this.messangerFormGroup.get('properties').value;
-    const options: WsTableMessage = {
+    const options: IClientPublishOptions = {
       qos,
       retain
     };
@@ -136,15 +137,15 @@ export class MessangerComponent implements OnInit {
     }
     console.log(`On topic ${topic} send message ${message} with qos ${qos}, retain ${retain}`);
     console.log('props', JSON.stringify(options?.properties));
-    this.wsClientService.publishMessage(topic, message, options);
+    this.mqttJsClientService.publishMessage(topic, message, options);
   }
 
   clearHistory() {
-    this.wsClientService.clearHistory();
+    this.mqttJsClientService.clearHistory();
   }
 
   filterChanged(value: MessageFilterConfig) {
-    this.wsClientService.filterMessages(value);
+    this.mqttJsClientService.filterMessages(value);
   }
 
   messagePropertiesDialog() {
@@ -163,7 +164,7 @@ export class MessangerComponent implements OnInit {
   }
 
   onMessageFilterChange(type: string) {
-    this.wsClientService.filterMessages({type});
+    this.mqttJsClientService.filterMessages({type});
   }
 
   onJsonValidation(isValid: boolean) {

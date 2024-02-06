@@ -14,14 +14,9 @@
 /// limitations under the License.
 ///
 
-import { inject, NgModule } from '@angular/core';
-import { ResolveFn, RouterModule, Routes } from '@angular/router';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
-import { of } from 'rxjs';
-import { ConfigService } from '@core/http/config.service';
-import { TOTAL_KEY } from '@shared/models/chart.model';
-import { mergeMap } from 'rxjs/operators';
 import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 
 const routes: Routes = [

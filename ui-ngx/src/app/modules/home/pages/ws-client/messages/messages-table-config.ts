@@ -32,12 +32,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WsClientMessageTypeTranslationMap, WsTableMessage } from '@shared/models/ws-client.model';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 
 export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
   constructor(private dialogService: DialogService,
-              private wsClientService: WsClientService,
+              private mqttJsClientService: MqttJsClientService,
               private translate: TranslateService,
               private dialog: MatDialog,
               private datePipe: DatePipe,
@@ -88,13 +88,13 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
       }, undefined, undefined, undefined, (entity) => entity.payload)
     );
 
-    this.entitiesFetchFunction = (pageLink) => this.wsClientService.getMessages(pageLink);
+    this.entitiesFetchFunction = (pageLink) => this.mqttJsClientService.getMessages(pageLink);
 
-    this.wsClientService.clientMessages$.subscribe(() => {
+    this.mqttJsClientService.clientMessages$.subscribe(() => {
       this.updateData();
     });
 
-    this.wsClientService.selectedConnection$.subscribe(() => {
+    this.mqttJsClientService.selectedConnection$.subscribe(() => {
       this.updateData();
     });
   }
@@ -112,7 +112,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         name: this.translate.instant('ws-client.connections.properties'),
         icon: 'mdi:information-outline',
         isEnabled: (entity) => isDefinedAndNotNull(entity.properties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.properties), 'retained-message.user-properties')
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.properties), 'ws-client.connections.properties')
       }
     );
     return actions;

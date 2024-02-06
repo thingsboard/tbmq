@@ -15,7 +15,7 @@
 ///
 
 import { Component } from '@angular/core';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 
@@ -26,8 +26,8 @@ import { Observable } from 'rxjs';
 })
 export class ConnectionsComponent {
 
-  connection: Observable<WebSocketConnection> = this.wsClientService.selectedConnection$;
+  connection: Observable<WebSocketConnection> = this.mqttJsClientService.selectedConnection$;
 
-  constructor(private wsClientService: WsClientService) {
+  constructor(private mqttJsClientService: MqttJsClientService) {
   }
 }

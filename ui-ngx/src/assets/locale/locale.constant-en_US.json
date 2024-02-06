@@ -913,7 +913,8 @@
       "no-subscriptions": "No subscriptions yet",
       "retain-details": "Retained messages",
       "loading-subscriptions": "Loading subscriptions...",
-      "mqtt-5-features": "MQTT 5 Subscription Options"
+      "mqtt-5-features": "MQTT 5 Subscription Options",
+      "topic-filter-duplicate": "Topic filter must be unique"
     }
   },
     "js-func": {

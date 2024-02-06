@@ -17,7 +17,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
-import { WsClientService } from '@core/http/ws-client.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -26,6 +26,7 @@ import {
   SubscriptionDialogComponent
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
+import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 
 @Component({
   selector: 'tb-subscription',
@@ -38,6 +39,9 @@ export class SubscriptionComponent implements OnInit {
   subscription: WebSocketSubscription;
 
   @Input()
+  subscriptions: WebSocketSubscription[];
+
+  @Input()
   connection: WebSocketConnection;
 
   @Output()
@@ -46,7 +50,8 @@ export class SubscriptionComponent implements OnInit {
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
 
-  constructor(private wsClientService: WsClientService,
+  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
+              private mqttJsClientService: MqttJsClientService,
               private dialog: MatDialog,
               private dialogService: DialogService,
               private translate: TranslateService) {
@@ -95,8 +100,8 @@ export class SubscriptionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
-        this.wsClientService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
-          this.wsClientService.unsubscribeForTopicActiveMqttJsClient(webSocketSubscription);
+        this.webSocketSubscriptionService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
+          this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(webSocketSubscription);
           this.updateData();
         });
       }
@@ -107,22 +112,23 @@ export class SubscriptionComponent implements OnInit {
     if ($event) {
       $event.stopPropagation();
     }
-    this.wsClientService.getWebSocketSubscriptionById(prevWebSocketSubscription.id).subscribe(
+    this.webSocketSubscriptionService.getWebSocketSubscriptionById(prevWebSocketSubscription.id).subscribe(
       subscription =>
         this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
             mqttVersion: this.connection.configuration.mqttVersion,
+            subscriptions: this.subscriptions,
             subscription
           }
         }).afterClosed()
           .subscribe((webSocketSubscriptionData) => {
             if (isDefinedAndNotNull(webSocketSubscriptionData)) {
-              this.wsClientService.saveWebSocketSubscription(webSocketSubscriptionData).subscribe(
+              this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionData).subscribe(
                 (currentWebSocketSubscription) => {
-                  this.wsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
-                  this.wsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);
+                  this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
+                  this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);
                   this.updateData();
                 }
               );
@@ -133,7 +139,6 @@ export class SubscriptionComponent implements OnInit {
 
   private updateData() {
     this.subscriptionUpdated.emit();
-    // TODO update connected client subscription
   }
 
 }

@@ -21,10 +21,10 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Observable, ReplaySubject } from 'rxjs';
 import { map, share, tap } from 'rxjs/operators';
-import { WsClientService } from '@core/http/ws-client.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
+import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 @Component({
   selector: 'tb-show-connections-popover',
@@ -44,7 +44,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   connectionsTotal: number;
 
   constructor(protected store: Store<AppState>,
-              private wsClientService: WsClientService,
+              private webSocketConnectionService: WebSocketConnectionService,
               private dialog: MatDialog,
               private cd: ChangeDetectorRef) {
     super(store);
@@ -55,7 +55,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   }
 
   updateData() {
-    this.connections$ = this.wsClientService.getWebSocketConnections().pipe(
+    this.connections$ = this.webSocketConnectionService.getWebSocketConnections().pipe(
       map(res => {
         if (res.data?.length) {
           this.connectionsTotal = res.data?.length;

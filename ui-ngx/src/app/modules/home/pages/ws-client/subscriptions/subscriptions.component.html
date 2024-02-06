@@ -27,11 +27,15 @@
 </section>
 
 <ng-container *ngIf="loadSubscriptions; else loadingSubscriptions">
-  <div *ngIf="(subscriptions$ | async)?.length; else emptySubscriptions" style="overflow: auto">
+  <div *ngIf="subscriptions?.length; else emptySubscriptions" style="overflow: auto">
     <div style="overflow: auto">
       <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
-        <div *ngFor="let subscription of (subscriptions$ | async);">
-          <tb-subscription [connection]="connection" [subscription]="subscription" (subscriptionUpdated)="fetchSubcriptions()"></tb-subscription>
+        <div *ngFor="let subscription of subscriptions; trackBy: trackById">
+          <tb-subscription [connection]="connection"
+                           [subscription]="subscription"
+                           [subscriptions]="subscriptions"
+                           (subscriptionUpdated)="fetchSubcriptions(connection)">
+          </tb-subscription>
         </div>
       </section>
     </div>

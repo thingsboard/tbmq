@@ -23,7 +23,7 @@
 </section>
 
 <ng-container *ngIf="loadConnection; else loadingConnections">
-  <div *ngIf="(connections$ | async)?.length; else emptyConnections" style="overflow: auto; height: 100%">
+  <div style="overflow: auto; height: 100%">
     <div style="overflow: auto">
       <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
         <div *ngFor="let connection of (connections$ | async); trackBy: trackById">
@@ -39,8 +39,6 @@
     </button>
   </section>
 </ng-container>
-<ng-template #emptyConnections>
-</ng-template>
 <ng-template #loadingConnections>
   <div class="tb-no-data-available" style="margin: 20px; gap: 16px;">
     <mat-spinner color="accent" diameter="65" strokeWidth="4"></mat-spinner>
