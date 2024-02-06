@@ -366,7 +366,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
     private WebSocketConnectionConfiguration getWebSocketConnectionConfiguration() {
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("testClientId");
-        config.setUrl("url");
+        config.setUrl("ws://localhost:8084/mqtt");
         return config;
     }
 
