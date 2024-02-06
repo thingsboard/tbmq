@@ -147,9 +147,11 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setCleanSession(false);
         persistedClient = MqttClient.create(config, (s, byteBuf) -> {
         });
-        persistedClient.connect("localhost", mqttPort).get();
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
-        Assert.assertNotNull(clientSessionCtx);
+        persistedClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
+        Awaitility
+                .await()
+                .atMost(10, TimeUnit.SECONDS)
+                .until(() -> clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID) != null);
         persistedClient.disconnect();
         awaitUntilDisconnected();
     }
@@ -296,6 +298,9 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
     private void awaitUntilDisconnected() {
         Awaitility.await()
                 .atMost(30, TimeUnit.SECONDS)
-                .until(() -> !persistedClient.isConnected());
+                .until(() -> {
+                    ClientSession session = clientSessionCache.getClientSession(TEST_CLIENT_ID);
+                    return session == null || !session.isConnected();
+                });
     }
 }

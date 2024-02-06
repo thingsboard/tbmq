@@ -7,6 +7,8 @@
         </encoder>
     </appender>
 
+    <logger name="org.thingsboard.mqtt.broker.service.processing.MsgDispatcherServiceImpl" level="DEBUG"/>
+    <logger name="org.thingsboard.mqtt.broker.service.mqtt.DefaultPublishMsgDeliveryService" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
