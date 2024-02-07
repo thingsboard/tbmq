@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterContentChecked, ChangeDetectorRef, Component, Inject, Input, OnDestroy, OnInit } from '@angular/core';
+import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -22,23 +22,23 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { WebSocketTimeUnit, timeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
-import { convertTimeUnits, isDefinedAndNotNull } from '@core/utils';
+import { PublishMessageProperties, timeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 export interface PropertiesDialogComponentData {
   mqttVersion?: number;
+  entity?: PublishMessageProperties;
 }
 
 @Component({
   selector: 'tb-ws-client-properties',
-  templateUrl: './properties-dialog.component.html',
-  styleUrls: ['./properties-dialog.component.scss']
+  templateUrl: './ws-publish-message-properties-dialog.component.html',
+  styleUrls: ['./ws-publish-message-properties-dialog.component.scss']
 })
-export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
+export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<WsPublishMessagePropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 
   mqttVersion: number;
   formGroup: UntypedFormGroup;
-  entity: any;
+  entity: PublishMessageProperties;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
@@ -52,11 +52,11 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
               @Inject(MAT_DIALOG_DATA) public data: any,
               public dialogRef: MatDialogRef<null>) {
     super(store, router, dialogRef);
-    this.mqttVersion = this.data.mqttVersion;
   }
 
   ngOnInit(): void {
-    this.entity = this.data;
+    this.mqttVersion = this.data.mqttVersion;
+    this.entity = this.data.entity;
     this.buildForms();
   }
 
@@ -70,15 +70,14 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
 
   private buildForm(): void {
     this.formGroup = this.fb.group({
-      payloadFormatIndicator: [false, []],
-      contentType: [null, []],
-      messageExpiryInterval: [null, []],
-      messageExpiryIntervalUnit: [WebSocketTimeUnit.SECONDS, []],
-      topicAlias: [null, []],
-      subscriptionIdentifier: [null, []],
-      correlationData: [null, []],
-      responseTopic: [null, []],
-      userProperties: [null, []]
+      payloadFormatIndicator: [this.entity ? this.entity.payloadFormatIndicator : true, []],
+      contentType: [this.entity ? this.entity.contentType : null, []],
+      messageExpiryInterval: [this.entity ? this.entity.messageExpiryInterval : null, []],
+      messageExpiryIntervalUnit: [this.entity ? this.entity.messageExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
+      topicAlias: [this.entity ? this.entity.topicAlias : null, []],
+      correlationData: [this.entity ? this.entity.correlationData : null, []],
+      responseTopic: [this.entity ? this.entity.responseTopic : null, []],
+      userProperties: [this.entity ? this.entity.userProperties : null, []]
     });
   }
 
@@ -89,11 +88,7 @@ export class PropertiesDialogComponent extends DialogComponent<PropertiesDialogC
 
   onSave() {
     const properties = this.formGroup.getRawValue();
-    if (isDefinedAndNotNull(properties.messageExpiryInterval)) {
-      properties.messageExpiryInterval = convertTimeUnits(properties.messageExpiryInterval, properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS);
-    }
-    delete properties.messageExpiryIntervalUnit;
-    this.dialogRef.close(properties)
+    this.dialogRef.close(properties);
   }
 }
 

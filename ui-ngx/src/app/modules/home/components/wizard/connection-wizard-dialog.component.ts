@@ -28,10 +28,6 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
 import {
-  clientCredentialsNameRandom,
-  clientIdRandom,
-  clientUserNameRandom,
-  connectionName,
   deepTrim,
   isDefinedAndNotNull
 } from '@core/utils';
@@ -39,6 +35,10 @@ import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } fro
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
+  clientCredentialsNameRandom,
+  clientIdRandom,
+  clientUserNameRandom,
+  connectionName,
   DataSizeUnitType,
   dataSizeUnitTypeTranslationMap,
   MqttVersions,
@@ -150,6 +150,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.actionButtonLabel = 'action.save';
       if (isDefinedAndNotNull(this.connection.configuration.clientCredentialsId)) {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.EXISTING;
+        this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.EXISTING);
       } else {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.CUSTOM;
         this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.CUSTOM);
@@ -246,6 +247,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (value === WsCredentialsGeneratorType.AUTO) {
       this.connectionFormGroup.get('credentialsName').patchValue(clientCredentialsNameRandom());
       this.connectionFormGroup.get('credentialsName').disable();
+      this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(clientUserNameRandom());
@@ -258,6 +260,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
+      this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(this.connection?.configuration?.clientId ? this.connection.configuration.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
       this.connectionFormGroup.get('username').patchValue(this.connection?.configuration.username ? this.connection.configuration.username : null);
@@ -269,6 +272,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.EXISTING) {
       this.connectionFormGroup.get('credentialsName').enable();
+      this.connectionFormGroup.get('clientId').setValidators(null);
       this.connectionFormGroup.get('clientId').patchValue(null);
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(null);
@@ -343,6 +347,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       ...this.userPropertiesFormGroup.getRawValue()
     };
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
+    console.log('connection', connection);
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
         this.addConnectionWizardStepper.selectedIndex = 0;
@@ -364,7 +369,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     config.url = formValues.url;
     config.clientCredentialsId = isDefinedAndNotNull(formValues.clientCredentials) ? formValues.clientCredentials.id : null;
-    config.clientId = formValues.clientId;
+    config.clientId = formValues.clientId || this.connection?.configuration?.clientId || clientIdRandom();
     config.username = formValues.username;
     config.password = formValues.password;
     config.cleanStart = formValues.clean;
@@ -425,7 +430,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (credentials?.credentialsValue) {
       const credentialsValue = JSON.parse(credentials.credentialsValue);
       this.connectionFormGroup.patchValue({
-        clientId: credentialsValue.clientId || clientIdRandom(),
+        clientId: credentialsValue.clientId,
         username: credentialsValue.userName,
         password: null
       });

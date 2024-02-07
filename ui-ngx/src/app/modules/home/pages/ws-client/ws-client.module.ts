@@ -26,7 +26,7 @@ import { MessagesComponent } from '@home/pages/ws-client/messages/messages.compo
 import { SubscriptionDialogComponent } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { ConnectionWizardDialogComponent } from "@home/components/wizard/connection-wizard-dialog.component";
 import { SubscriptionsComponent } from "@home/pages/ws-client/subscriptions/subscriptions.component";
-import { PropertiesDialogComponent } from '@home/pages/ws-client/messages/properties-dialog.component';
+import { WsPublishMessagePropertiesDialogComponent } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import { ConnectionControllerComponent } from '@home/pages/ws-client/connections/connection-controller.component';
 import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
 import { SelectConnectionComponent } from '@home/pages/ws-client/connections/select-connection.component';
@@ -37,6 +37,8 @@ import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-jso
 import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.component';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/message-filter-config.component';
+import { WsMessagePayloadDialogComponent } from '@home/pages/ws-client/messages/ws-message-payload-dialog.component';
+import { WsMessagePropertiesDialogComponent } from '@home/pages/ws-client/messages/ws-message-properties-dialog.component';
 
 @NgModule({
   declarations: [
@@ -48,7 +50,7 @@ import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/mes
     ConnectionWizardDialogComponent,
     MessagesComponent,
     SubscriptionsComponent,
-    PropertiesDialogComponent,
+    WsPublishMessagePropertiesDialogComponent,
     SelectConnectionComponent,
     ShowSelectConnectionPopoverComponent,
     ShowConnectionLogsPopoverComponent,
@@ -57,7 +59,9 @@ import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/mes
     EntitiesTableWsComponent,
     WsJsonObjectEditComponent,
     LastWillComponent,
-    MessageFilterConfigComponent
+    MessageFilterConfigComponent,
+    WsMessagePayloadDialogComponent,
+    WsMessagePropertiesDialogComponent
   ],
   imports: [
     CommonModule,
@@ -69,7 +73,7 @@ import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/mes
     SubscriptionDialogComponent,
     ConnectionWizardDialogComponent,
     SubscriptionsComponent,
-    PropertiesDialogComponent,
+    WsPublishMessagePropertiesDialogComponent,
     ShowSelectConnectionPopoverComponent,
     ShowConnectionLogsPopoverComponent
   ]

@@ -23,7 +23,7 @@
         [matTooltip]="matTooltipText"
         [matTooltipPosition]="matTooltipPosition"
         (click)="copy($event)">
-  <mat-icon [svgIcon]="mdiIcon" [ngStyle]="style" *ngIf="!copied; else copiedTemplate">
+  <mat-icon [svgIcon]="mdiIcon" class="tb-mat-24" [ngStyle]="style" *ngIf="!copied; else copiedTemplate">
     {{ icon }}
   </mat-icon>
   <ng-template #copiedTemplate>

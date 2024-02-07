@@ -23,8 +23,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { rhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
-import { randomColor } from '@core/utils';
+import { colorRandom, rhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -90,7 +89,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     this.formGroup = this.fb.group({
       topicFilter: [this.entity ? this.entity.configuration.topicFilter : 'sensors/#', [Validators.required]],
       qos: [this.entity ? this.entity.configuration.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
-      color: [this.entity ? this.entity.configuration.color : randomColor(), []],
+      color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
         retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled}, []],
@@ -106,7 +105,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
 
   save() {
     const formValues = this.formGroup.getRawValue();
-    formValues.color = formValues.color || randomColor();
+    formValues.color = formValues.color || colorRandom();
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
     if (!this.topicFilterDuplicate) {
       this.dialogRef.close(result);

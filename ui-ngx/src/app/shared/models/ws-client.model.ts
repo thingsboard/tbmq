@@ -17,9 +17,16 @@
 import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
+import { randomAlphanumeric } from '@core/utils';
 export type MqttJsProtocolVersion = 3 | 4 | 5;
 export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
 export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
+
+export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
+export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
+export const clientCredentialsNameRandom = (number = randomAlphanumeric(3)) => 'WebSocket Credentials ' + number;
+export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
+export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -218,6 +225,7 @@ export interface PublishMessageProperties {
   contentType?: string;
   payloadFormatIndicator?: boolean;
   messageExpiryInterval?: number;
+  messageExpiryIntervalUnit?: WebSocketTimeUnit;
   topicAlias?: number;
   correlationData?: Buffer;
   responseTopic?: string;

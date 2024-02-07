@@ -257,7 +257,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   writeValue(value: any): void {
     this.modelValue = value;
     this.contentValue = '';
-    this.objectValid = false; //false;
+    this.objectValid = false;
     try {
       if (isDefinedAndNotNull(this.modelValue)) {
         this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort) ? undefined :
@@ -281,37 +281,37 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     const editorValue = this.jsonEditor.getValue();
     this.propagateChange(editorValue);
     if (this.jsonFormatSelected) {
-      if (this.contentValue !== editorValue || isEmptyStr(editorValue)) {
-        this.contentValue = editorValue;
-        let data = null;
-        this.objectValid = false;
-        if (this.contentValue && this.contentValue.length > 0) {
-          try {
-            data = JSON.parse(this.contentValue);
-            if (!isObject(data)) {
-              throw new TypeError(`Value is not a valid JSON`);
-            }
-            this.objectValid = true;
-            this.validationError = '';
-          } catch (ex) {
-            let errorInfo = 'Error:';
-            if (ex.name) {
-              errorInfo += ' ' + ex.name + ':';
-            }
-            if (ex.message) {
-              errorInfo += ' ' + ex.message;
-            }
-            this.validationError = errorInfo;
+      this.contentValue = editorValue;
+      let data = null;
+      this.objectValid = false;
+      if (this.contentValue && this.contentValue.length > 0) {
+        try {
+          data = JSON.parse(this.contentValue);
+          if (!isObject(data)) {
+            throw new TypeError(`Value is not a valid JSON`);
           }
-        } else {
-          this.objectValid = !this.jsonRequired;
-          this.validationError = this.jsonRequired ? 'Json object is required.' : '';
+          this.objectValid = true;
+          this.validationError = '';
+        } catch (ex) {
+          let errorInfo = 'Error:';
+          if (ex.name) {
+            errorInfo += ' ' + ex.name + ':';
+          }
+          if (ex.message) {
+            errorInfo += ' ' + ex.message;
+          }
+          this.validationError = errorInfo;
         }
-        this.isJsonValid.emit(!this.validationError?.length);
-        this.modelValue = data;
-        this.propagateChange(data);
-        this.cd.markForCheck();
+      } else {
+        this.objectValid = !this.jsonRequired;
+        this.validationError = this.jsonRequired ? 'Json object is required.' : '';
       }
+      this.isJsonValid.emit(!this.validationError?.length);
+      this.modelValue = data;
+      this.propagateChange(data);
+      this.cd.markForCheck();
+    } else {
+      this.objectValid = true;
     }
   }
 

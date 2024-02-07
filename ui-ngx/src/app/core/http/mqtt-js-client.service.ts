@@ -28,7 +28,7 @@ import {
 } from '@shared/models/ws-client.model';
 import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { clientIdRandom, convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber } from '@core/utils';
+import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber } from '@core/utils';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
@@ -97,9 +97,9 @@ export class MqttJsClientService {
 
   private addMqttClient(connection: WebSocketConnection, password: string) {
     const options: IClientOptions = {
-      clientId: connection.clientId || clientIdRandom(),
+      clientId: connection.configuration.clientId,
       username: connection.configuration.username,
-      password: password, //connection.configuration.password,
+      password,
       protocolVersion: connection.configuration.mqttVersion,
       clean: connection.configuration.cleanStart,
       keepalive: convertTimeUnits(connection.configuration.keepAlive, connection.configuration.keepAliveUnit, WebSocketTimeUnit.SECONDS),
@@ -177,7 +177,7 @@ export class MqttJsClientService {
       const message: WsTableMessage = {
         id: guid(),
         subscriptionId: subscription?.id || wildcardSubscription?.id,
-        payload: payload.toString(), //ew TextDecoder("utf-8").decode(payload),
+        payload: payload.toString(),
         topic,
         qos: packet.qos,
         createdTime: this.nowTs(),
@@ -203,9 +203,6 @@ export class MqttJsClientService {
       console.log('Reconnecting...', mqttClient);
     });
     mqttClient.on('close', () => {
-      // const status = mqttClient.reconnecting ? ConnectionStatus.RECONNECTING : ConnectionStatus.DISCONNECTED;
-      // this.setConnectionStatus(connection, status);
-      // this.setConnectionLog(connection, status);
       mqttClient.end();
       console.log('Closing...', mqttClient);
     });
@@ -313,7 +310,6 @@ export class MqttJsClientService {
           subscriptions.push(webSocketSubscriptions[i]);
         }
         this.clientIdSubscriptionsMap.set(mqttClient.options.clientId, subscriptions);
-        // const topicList = topics.map(el => el.topic);
         this.subscribeForTopic(mqttClient, topicObject);
       }
     );
@@ -363,18 +359,28 @@ export class MqttJsClientService {
   }
 
   publishMessage(topic: string, payload: string, options: IClientPublishOptions) {
-    this.mqttClient.publish(topic, payload, options);
-    const publishMessage = {
+    let properties;
+    if (isDefinedAndNotNull(options?.properties)) properties = JSON.parse(JSON.stringify(options?.properties));
+    const message = {
       topic,
       payload,
       qos: options.qos,
       retain: options.retain,
-      properties: options?.properties,
+      properties,
       id: guid(),
       createdTime: this.nowTs(),
       type: 'published'
     };
-    this.addMessage(publishMessage, this.getActiveConnectionId());
+    this.addMessage(message, this.getActiveConnectionId());
+
+    if (isDefinedAndNotNull(options?.properties?.correlationData)) {
+      options.properties.correlationData = Buffer.from(options.properties.correlationData);
+    }
+    // @ts-ignore
+    if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
+    // @ts-ignore
+    if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
+    this.mqttClient.publish(topic, payload, options);
   }
 
   private addMessage(message: WsTableMessage, clientId: string) {

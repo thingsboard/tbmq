@@ -29,8 +29,8 @@
         <div *ngFor="let log of statusLogs" fxFlex fxLayout="row" fxLayoutGap="16px">
           <span>{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
           <section>
-            <span [ngStyle]="setStyle(log.state)" translate>
-              {{ connectionStatusTranslationMap.get(log.state) }}
+            <span [ngStyle]="setStyle(log.status)" translate>
+              {{ connectionStatusTranslationMap.get(log.status) }}
             </span>
             <span *ngIf="log.details" style="color: rgba(0, 0, 0, 0.38)">{{ log.details }}</span>
           </section>

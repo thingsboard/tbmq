@@ -20,7 +20,7 @@
     <h2 translate>ws-client.connections.properties</h2>
     <span fxFlex></span>
     <button mat-icon-button
-            [mat-dialog-close]="false"
+            [mat-dialog-close]="null"
             type="button"
             matTooltip="{{ 'action.close' | translate }}"
             matTooltipPosition="above">
@@ -42,8 +42,8 @@
           info</mat-icon>
       </section>
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
-        <input matInput formControlName="contentType"
-               placeholder="{{ 'ws-client.last-will.content-type' | translate }}">
+        <mat-label translate>ws-client.last-will.content-type</mat-label>
+        <input matInput formControlName="contentType">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.content-type-hint' | translate">
           help
         </mat-icon>
@@ -65,24 +65,23 @@
           </mat-select>
         </mat-form-field>
       </section>
-
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
-        <input matInput type="number" min="0" formControlName="topicAlias"
-               placeholder="{{ 'ws-client.connections.topic-alias' | translate }}">
+        <mat-label translate>ws-client.connections.topic-alias</mat-label>
+        <input matInput type="number" min="0" formControlName="topicAlias">
         <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-hint' | translate">
           help
         </mat-icon>
       </mat-form-field>
       <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
-        <input matInput formControlName="correlationData"
-               placeholder="{{ 'ws-client.last-will.correlation-data' | translate }}">
+        <mat-label translate>ws-client.last-will.correlation-data</mat-label>
+        <input matInput formControlName="correlationData">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.correlation-data-hint' | translate">
           help
         </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
-        <input matInput formControlName="responseTopic"
-               placeholder="{{ 'ws-client.last-will.response-topic' | translate }}">
+        <mat-label translate>ws-client.last-will.response-topic</mat-label>
+        <input matInput formControlName="responseTopic">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.response-topic-hint' | translate">
           help
         </mat-icon>

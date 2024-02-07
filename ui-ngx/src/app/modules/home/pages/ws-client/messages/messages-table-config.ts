@@ -26,13 +26,20 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
-import { EventContentDialogComponent, EventContentDialogData } from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { WsClientMessageTypeTranslationMap, WsTableMessage } from '@shared/models/ws-client.model';
+import { PublishMessageProperties, WsClientMessageTypeTranslationMap, WsTableMessage } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import {
+  WsMessageContentDialogComponentDialogData,
+  WsMessagePayloadDialogComponent
+} from '@home/pages/ws-client/messages/ws-message-payload-dialog.component';
+import {
+  WsMessagePropertiesDialogComponent,
+  WsMessagePropertiesDialogData
+} from '@home/pages/ws-client/messages/ws-message-properties-dialog.component';
 
 export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
@@ -106,13 +113,13 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         name: this.translate.instant('retained-message.payload'),
         icon: 'mdi:code-braces',
         isEnabled: (entity) => isDefinedAndNotNull(entity.payload),
-        onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data')
+        onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.payload')
       },
       {
         name: this.translate.instant('ws-client.connections.properties'),
         icon: 'mdi:information-outline',
         isEnabled: (entity) => isDefinedAndNotNull(entity.properties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.properties), 'ws-client.connections.properties')
+        onAction: ($event, entity) => this.showPayloadProperties($event, entity.properties)
       }
     );
     return actions;
@@ -122,13 +129,27 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogComponent, EventContentDialogData>(EventContentDialogComponent, {
-      disableClose: true,
+    this.dialog.open<WsMessagePayloadDialogComponent, WsMessageContentDialogComponentDialogData>(WsMessagePayloadDialogComponent, {
+      disableClose: false,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         content,
         title,
+        icon: 'mdi:code-braces',
         contentType: ContentType.JSON
+      }
+    });
+  }
+
+  private showPayloadProperties($event: MouseEvent, entity: PublishMessageProperties): void {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<WsMessagePropertiesDialogComponent, WsMessagePropertiesDialogData>(WsMessagePropertiesDialogComponent, {
+      disableClose: false,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        entity
       }
     });
   }

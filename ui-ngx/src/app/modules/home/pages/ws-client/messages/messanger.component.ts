@@ -22,7 +22,7 @@ import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/s
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull, isNotEmptyStr } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
-import { PropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/properties-dialog.component';
+import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
   Connection,
   ConnectionStatus,
@@ -60,6 +60,8 @@ export class MessangerComponent implements OnInit {
   isPayloadValid = true;
   mqttVersion = 5;
 
+  private publishMessagePropertiesTemp: PublishMessageProperties = null;
+
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
               public fb: FormBuilder,
@@ -77,11 +79,11 @@ export class MessangerComponent implements OnInit {
       properties: this.fb.group({
         payloadFormatIndicator: [undefined, []],
         messageExpiryInterval: [undefined, []],
+        messageExpiryIntervalUnit: [undefined, []],
         topicAlias: [undefined, []],
         responseTopic: [undefined, []],
         correlationData: [undefined, []],
         userProperties: [undefined, []],
-        subscriptionIdentifier: [undefined, []],
         contentType: [undefined, []]
       })
     });
@@ -115,9 +117,9 @@ export class MessangerComponent implements OnInit {
   }
 
   publishMessage(): void {
-    const value = this.messangerFormGroup.get('payload').value;
+    const payload = this.messangerFormGroup.get('payload').value;
     const payloadFormat = this.messangerFormGroup.get('payloadFormat').value;
-    const message = (payloadFormat === ValueType.JSON) ? JSON.stringify(value) : value;
+    const message = this.transformMessage(payload, payloadFormat);
     const topic = this.messangerFormGroup.get('topic').value;
     const qos = this.messangerFormGroup.get('qos').value;
     const retain = this.messangerFormGroup.get('retain').value;
@@ -126,14 +128,17 @@ export class MessangerComponent implements OnInit {
       qos,
       retain
     };
-    if (this.mqttVersion === 5) {
+    if (this.mqttVersion === 5 && Object.values(propertiesForm).some(value => isDefinedAndNotNull(value))) {
       options.properties = {};
       if (isDefinedAndNotNull(propertiesForm?.payloadFormatIndicator)) options.properties.payloadFormatIndicator = propertiesForm.payloadFormatIndicator;
-      if (isNotEmptyStr(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
-      if (isNotEmptyStr(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
-      if (isNotEmptyStr(propertiesForm?.correlationData)) options.properties.correlationData = Buffer.from(propertiesForm.correlationData);
+      if (isDefinedAndNotNull(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
+      // @ts-ignore
+      if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
+      if (isDefinedAndNotNull(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
       if (isDefinedAndNotNull(propertiesForm?.userProperties)) options.properties.userProperties = propertiesForm.userProperties;
-      if (isNotEmptyStr(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
+      if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
+      if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
+      if (isDefinedAndNotNull(propertiesForm?.responseTopic)) options.properties.responseTopic = propertiesForm.responseTopic;
     }
     console.log(`On topic ${topic} send message ${message} with qos ${qos}, retain ${retain}`);
     console.log('props', JSON.stringify(options?.properties));
@@ -149,17 +154,21 @@ export class MessangerComponent implements OnInit {
   }
 
   messagePropertiesDialog() {
-    this.dialog.open<PropertiesDialogComponent, PropertiesDialogComponentData, PublishMessageProperties>(PropertiesDialogComponent, {
+    this.dialog.open<WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData, PublishMessageProperties>(WsPublishMessagePropertiesDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        mqttVersion: this.mqttVersion
+        mqttVersion: this.mqttVersion,
+        entity: this.publishMessagePropertiesTemp
       }
     }).afterClosed()
       .subscribe((properties) => {
-        this.messangerFormGroup.patchValue({
-          properties: isDefinedAndNotNull(properties) ? properties : null
-        });
+        if (isDefinedAndNotNull(properties)) {
+          this.publishMessagePropertiesTemp = properties;
+          this.messangerFormGroup.patchValue({
+            properties: properties
+          });
+        }
       });
   }
 
@@ -169,5 +178,12 @@ export class MessangerComponent implements OnInit {
 
   onJsonValidation(isValid: boolean) {
     this.isPayloadValid = isValid;
+  }
+
+  private transformMessage(payload: string, payloadFormat: ValueType) {
+    if (payloadFormat === ValueType.JSON) {
+      return JSON.stringify(payload) === 'null' ? '' : JSON.stringify(payload);
+    }
+    return payload;
   }
 }
