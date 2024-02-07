@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,16 @@ package org.thingsboard.mqtt.broker.common.data.page;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Sort;
+
+import java.util.Map;
 
 @Data
 @NoArgsConstructor(force = true)
 public class PageLink {
+
+    private static final String DEFAULT_SORT_PROPERTY = "id";
+    private static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, DEFAULT_SORT_PROPERTY);
 
     private final int pageSize;
     private final int page;
@@ -57,6 +63,18 @@ public class PageLink {
     @JsonIgnore
     public PageLink nextPageLink() {
         return new PageLink(this.pageSize, this.page + 1, this.textSearch, this.sortOrder);
+    }
+
+    public Sort toSort(SortOrder sortOrder, Map<String, String> columnMap) {
+        if (sortOrder == null) {
+            return DEFAULT_SORT;
+        } else {
+            String property = sortOrder.getProperty();
+            if (columnMap.containsKey(property)) {
+                property = columnMap.get(property);
+            }
+            return Sort.by(Sort.Direction.fromString(sortOrder.getDirection().name()), property);
+        }
     }
 
 }

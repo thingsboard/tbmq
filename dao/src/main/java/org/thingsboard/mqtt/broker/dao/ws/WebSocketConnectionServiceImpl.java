@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -34,9 +35,12 @@ import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,6 +58,7 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
     private final WebSocketSubscriptionService webSocketSubscriptionService;
     private final UserService userService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final TopicValidationService topicValidationService;
 
     @Override
     public WebSocketConnection saveWebSocketConnection(WebSocketConnection connection) {
@@ -165,6 +170,11 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
                     }
                     validateString("WebSocket Connection clientId", webSocketConnection.getConfiguration().getClientId());
                     validateString("WebSocket Connection URL", webSocketConnection.getConfiguration().getUrl());
+                    validateURL(webSocketConnection.getConfiguration().getUrl());
+                    if (webSocketConnection.getConfiguration().getLastWillMsg() != null) {
+                        validateString("WebSocket Connection Last Will Msg topic", webSocketConnection.getConfiguration().getLastWillMsg().getTopic());
+                        topicValidationService.validateTopic(webSocketConnection.getConfiguration().getLastWillMsg().getTopic());
+                    }
                 }
             };
 
@@ -199,6 +209,31 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
         configuration.setUserProperties(null);
 
         return configuration;
+    }
+
+    void validateURL(String url) {
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            int port = uri.getPort();
+            String path = uri.getPath();
+
+            if (!(BrokerConstants.WS.equalsIgnoreCase(scheme) || BrokerConstants.WSS.equalsIgnoreCase(scheme))) {
+                throw new DataValidationException("WebSocket Connection URL has incorrect scheme!");
+            }
+            if (StringUtils.isEmpty(host)) {
+                throw new DataValidationException("WebSocket Connection URL does not contain host!");
+            }
+            if ((port < -1) || (port > 65535)) {
+                throw new DataValidationException("WebSocket Connection URL has incorrect port!");
+            }
+            if (StringUtils.isEmpty(path)) {
+                throw new DataValidationException("WebSocket Connection URL does not contain path! In most cases it should be '/mqtt'");
+            }
+        } catch (URISyntaxException e) {
+            throw new DataValidationException("WebSocket Connection URL is not formatted strictly according to RFC2396!");
+        }
     }
 
 }

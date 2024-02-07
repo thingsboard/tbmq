@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.validation;
+package org.thingsboard.mqtt.broker.dao.service;
 
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MULTI_LEVEL_WILDCARD;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SINGLE_LEVEL_WILDCARD;

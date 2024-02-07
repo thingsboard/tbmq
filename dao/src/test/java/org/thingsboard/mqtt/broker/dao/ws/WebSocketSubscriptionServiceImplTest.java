@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         webSocketConnection.setUserId(savedUser.getId());
         WebSocketConnectionConfiguration config = new WebSocketConnectionConfiguration();
         config.setClientId("clientId");
-        config.setUrl("url");
+        config.setUrl("ws://localhost:8084/mqtt");
         webSocketConnection.setConfiguration(config);
         return webSocketConnectionService.saveWebSocketConnection(webSocketConnection);
     }
@@ -121,6 +121,17 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         WebSocketSubscription subscription = new WebSocketSubscription();
         subscription.setWebSocketConnectionId(savedWebSocketConnection.getId());
         subscription.setConfiguration(new WebSocketSubscriptionConfiguration());
+
+        webSocketSubscriptionService.saveWebSocketSubscription(subscription);
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenWebSocketSubscriptionWithWrongConfigurationIncorrectTopicFilter_whenExecuteSave_thenFailure() {
+        WebSocketSubscription subscription = new WebSocketSubscription();
+        subscription.setWebSocketConnectionId(savedWebSocketConnection.getId());
+        WebSocketSubscriptionConfiguration config = new WebSocketSubscriptionConfiguration();
+        config.setTopicFilter("test/#/wrong");
+        subscription.setConfiguration(config);
 
         webSocketSubscriptionService.saveWebSocketSubscription(subscription);
     }

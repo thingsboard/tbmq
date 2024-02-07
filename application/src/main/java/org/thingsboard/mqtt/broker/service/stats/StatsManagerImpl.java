@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +90,12 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         this.managedClientSubscriptionConsumerStats = new DefaultClientSubscriptionConsumerStats(statsFactory);
         this.retainedMsgConsumerStats = new DefaultRetainedMsgConsumerStats(statsFactory);
         this.clientActorStats = new DefaultClientActorStats(statsFactory);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        log.info("Print Stats before exit");
+        printStats();
     }
 
     @Override

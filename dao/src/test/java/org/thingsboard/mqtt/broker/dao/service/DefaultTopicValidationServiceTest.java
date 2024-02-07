@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.validation;
+package org.thingsboard.mqtt.broker.dao.service;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.Random;
 
-@Slf4j
-@RunWith(MockitoJUnitRunner.class)
-public class TopicValidationSuitTest {
+public class DefaultTopicValidationServiceTest {
 
     private DefaultTopicValidationService topicValidationService;
 
