@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.ConsumerGroupState;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
@@ -63,7 +64,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -193,7 +193,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Override
     public int getNumberOfPartitions(String topic) {
         try {
-            return client.describeTopics(Collections.singletonList(topic)).all().get().get(topic).partitions().size();
+            return client.describeTopics(Collections.singletonList(topic)).allTopicNames().get().get(topic).partitions().size();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -232,7 +232,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
             Set<String> topics = client.listTopics().names().get();
-            Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).all().get();
+            Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).allTopicNames().get();
 
             for (Map.Entry<String, TopicDescription> topicDescriptionEntry : topicDescriptionsMap.entrySet()) {
                 String topic = topicDescriptionEntry.getKey();
@@ -347,7 +347,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 kafkaConsumerGroups = kafkaConsumerGroups
                         .stream()
                         .filter(kafkaTopic -> kafkaTopic.getGroupId().toLowerCase().contains(pageLink.getTextSearch().toLowerCase()))
-                        .collect(Collectors.toList());
+                        .toList();
             }
 
             List<KafkaConsumerGroup> data = kafkaConsumerGroups.stream()
@@ -417,35 +417,41 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     private void deleteOldConsumerGroups() {
-        try {
-            long start = System.nanoTime();
-            List<String> groupIdsToDelete = client.listConsumerGroups().all().get(5, TimeUnit.SECONDS)
-                    .stream().map(ConsumerGroupListing::groupId)
-                    .filter(this::isConsumerGroupToDelete)
-                    .collect(Collectors.toList());
+        long start = System.nanoTime();
+        KafkaFuture<Collection<ConsumerGroupListing>> allCgsFuture = client.listConsumerGroups().all();
+        allCgsFuture.whenComplete((consumerGroupListings, throwable) -> {
+            if (throwable == null) {
+                List<String> groupIdsToDelete = consumerGroupListings
+                        .stream()
+                        .map(ConsumerGroupListing::groupId)
+                        .filter(this::isConsumerGroupToDelete)
+                        .toList();
 
-            if (log.isDebugEnabled()) {
-                log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+                if (log.isDebugEnabled()) {
+                    log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+                }
+                KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
+                deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
+                    if (deleteThrowable == null) {
+                        long end = System.nanoTime();
+                        if (log.isDebugEnabled()) {
+                            log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
+                        }
+                    } else {
+                        log.warn("Failed to delete old consumer groups!", deleteThrowable);
+                    }
+                });
+            } else {
+                log.warn("Failed to get old consumer groups!", throwable);
             }
-            client.deleteConsumerGroups(groupIdsToDelete).all().get(5, TimeUnit.SECONDS);
-            long end = System.nanoTime();
-
-            if (log.isDebugEnabled()) {
-                log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
-            }
-        } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Failed to get/delete old consumer groups!", e);
-            }
-        }
+        });
     }
 
     private boolean isConsumerGroupToDelete(String consumerGroupId) {
-        return consumerGroupId.startsWith(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX) ||
-                consumerGroupId.startsWith(BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX) ||
-                consumerGroupId.startsWith(BrokerConstants.CLIENT_SESSION_CG_PREFIX) ||
-                consumerGroupId.startsWith(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX) ||
-                consumerGroupId.startsWith(BrokerConstants.RETAINED_MSG_CG_PREFIX);
+        if (consumerGroupId == null) {
+            throw new IllegalArgumentException("Consumer group ID cannot be null");
+        }
+        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().anyMatch(consumerGroupId::startsWith);
     }
 
     @PreDestroy

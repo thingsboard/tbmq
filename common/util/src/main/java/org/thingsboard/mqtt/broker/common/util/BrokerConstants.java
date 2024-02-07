@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2023 The Thingsboard Authors
+ * Copyright © 2016-2024 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.util;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Set;
 
 public class BrokerConstants {
 
@@ -107,6 +108,14 @@ public class BrokerConstants {
     public static final String CLIENT_SESSION_CG_PREFIX = "client-session-consumer-group-";
     public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-consumer-group-";
     public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-consumer-group-";
+
+    public static final Set<String> CG_TO_DELETE_PREFIXES = Set.of(
+            BrokerConstants.BASIC_DOWNLINK_CG_PREFIX,
+            BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX,
+            BrokerConstants.CLIENT_SESSION_CG_PREFIX,
+            BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX,
+            BrokerConstants.RETAINED_MSG_CG_PREFIX
+    );
 
     public static final int BLANK_PACKET_ID = -1;
     public static final long BLANK_SERIAL_NUMBER = -1L;
