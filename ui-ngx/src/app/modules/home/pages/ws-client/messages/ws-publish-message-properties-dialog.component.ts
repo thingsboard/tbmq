@@ -25,7 +25,6 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { PublishMessageProperties, timeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 export interface PropertiesDialogComponentData {
-  mqttVersion?: number;
   entity?: PublishMessageProperties;
 }
 
@@ -36,7 +35,6 @@ export interface PropertiesDialogComponentData {
 })
 export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<WsPublishMessagePropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 
-  mqttVersion: number;
   formGroup: UntypedFormGroup;
   entity: PublishMessageProperties;
 
@@ -55,7 +53,6 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
   }
 
   ngOnInit(): void {
-    this.mqttVersion = this.data.mqttVersion;
     this.entity = this.data.entity;
     this.buildForms();
   }

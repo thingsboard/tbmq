@@ -29,7 +29,8 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
 import {
   deepTrim,
-  isDefinedAndNotNull
+  isDefinedAndNotNull,
+  isNotEmptyStr
 } from '@core/utils';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
@@ -223,7 +224,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   private setLastWillFormGroup() {
     this.lastWillFormGroup = this.fb.group({
-      lastWillMsg: [this.connection?.configuration?.lastWillMsg ? this.connection.configuration.lastWillMsg : null, []]
+      lastWillMsg: [this.connection?.configuration?.lastWillMsg?.topic?.length ? this.connection.configuration.lastWillMsg : null, []]
     });
   }
 
@@ -389,7 +390,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     config.sessionExpiryIntervalUnit = formValues.properties?.sessionExpiryIntervalUnit;
     config.maxPacketSizeUnit = formValues.properties?.maximumPacketSizeUnit;
     config.userProperties = formValues.userProperties;
-    if (isDefinedAndNotNull(formValues.lastWillMsg)) {
+    if (isNotEmptyStr(formValues.lastWillMsg?.topic)) {
       config.lastWillMsg = {};
       config.lastWillMsg.topic = formValues.lastWillMsg.topic;
       config.lastWillMsg.qos = formValues.lastWillMsg.qos;

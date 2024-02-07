@@ -20,7 +20,7 @@ import { AppState } from '@core/core.state';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { isDefinedAndNotNull, isNotEmptyStr } from '@core/utils';
+import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
@@ -29,11 +29,10 @@ import {
   PublishMessageProperties,
   WsMessagesTypeFilters,
   WsPayloadFormats,
-  WsSubscription, WsTableMessage
+  WsSubscription
 } from '@shared/models/ws-client.model';
 import { ValueType } from '@shared/models/constants';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
-import { Buffer } from 'buffer';
 import { IClientPublishOptions } from 'mqtt';
 
 @Component({
@@ -158,7 +157,6 @@ export class MessangerComponent implements OnInit {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        mqttVersion: this.mqttVersion,
         entity: this.publishMessagePropertiesTemp
       }
     }).afterClosed()
