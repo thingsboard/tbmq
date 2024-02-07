@@ -327,7 +327,7 @@
       <form [formGroup]="userPropertiesFormGroup" #upFormGroup="ngForm">
         <tb-user-properties formControlName="userProperties"
                             [mqttVersion]="mqttVersion"
-                            [entity]="connection">
+                            [entity]="connection?.configuration?.userProperties">
         </tb-user-properties>
       </form>
     </mat-step>

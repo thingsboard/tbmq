@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div mat-dialog-content fxLayout="column" fxLayoutGap="27px" style="min-height: 620px;">
+<div mat-dialog-content fxLayout="column" fxLayoutGap="24px">
   <section fxLayout="row" fxLayoutAlign="flex-start">
     <div fxLayout="row" fxLayoutGap="8px">
       <mat-icon svgIcon="mdi:information-outline" class="material-icons"></mat-icon>
@@ -28,7 +28,7 @@
       <mat-icon class="material-icons">close</mat-icon>
     </button>
   </section>
-  <form [formGroup]="formGroup">
+  <form [formGroup]="formGroup" style="overflow: auto" class="mat-padding">
     <section fxLayout="column" fxLayoutGap="16px">
       <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
         <mat-slide-toggle formControlName="payloadFormatIndicator">
@@ -85,7 +85,7 @@
           help
         </mat-icon>
       </mat-form-field>
-      <tb-user-properties formControlName="userProperties"></tb-user-properties>
+      <tb-user-properties [entity]="entity?.userProperties" formControlName="userProperties"></tb-user-properties>
     </section>
   </form>
 </div>

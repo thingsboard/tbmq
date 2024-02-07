@@ -115,9 +115,6 @@ export class MqttJsClientService {
         topicAliasMaximum: connection.configuration.topicAliasMax,
         requestResponseInformation: connection.configuration.requestResponseInfo
       };
-      if (isDefinedAndNotNull(connection.configuration.userProperties)) {
-        options.properties.userProperties = connection.configuration.userProperties;
-      }
     }
     if (isNotEmptyStr(connection.configuration?.lastWillMsg?.topic)) {
       options.will = {
@@ -136,6 +133,9 @@ export class MqttJsClientService {
         };
         // @ts-ignore
         options.will.properties.correlationData = Buffer.from([connection.configuration.lastWillMsg.correlationData]);
+        if (isDefinedAndNotNull(connection.configuration.userProperties)) {
+          options.will.properties.userProperties = connection.configuration.userProperties;
+        }
       }
     }
     console.log('options', options);
@@ -373,8 +373,14 @@ export class MqttJsClientService {
     };
     this.addMessage(message, this.getActiveConnectionId());
 
-    if (isDefinedAndNotNull(options?.properties?.correlationData)) {
-      options.properties.correlationData = Buffer.from(options.properties.correlationData);
+    if (isDefinedAndNotNull(options?.properties?.correlationData)) options.properties.correlationData = Buffer.from(options.properties.correlationData);
+    if (isDefinedAndNotNull(options?.properties?.userProperties)) {
+      const result = {}
+      // @ts-ignore
+      options.properties.userProperties = options.properties.userProperties.props.map(el => {
+        result[el['k']] = el['v'];
+      });
+      options.properties.userProperties = result;
     }
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)

@@ -111,7 +111,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           onClose: () => {
             showNotificationPopover.hide();
           },
-          connectionId: this.connection.id
+          connectionId: this.connection?.id
         },
         {maxHeight: '90vh', height: '324px', padding: '10px'},
         {width: '500px', minWidth: '100%', maxWidth: '100%'},

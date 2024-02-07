@@ -27,15 +27,15 @@ import {
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
-import { WebSocketConnection, WebSocketUserProperties } from '@shared/models/ws-client.model';
+import { WebSocketUserProperties } from '@shared/models/ws-client.model';
 
 export interface UserProperties {
-  userProperties: UserPropertiesObject[];
+  props: UserPropertiesObject[];
 }
 
 export interface UserPropertiesObject {
-  key: string;
-  value: string;
+  k: string;
+  v: string;
 }
 
 @Component({
@@ -63,7 +63,7 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   mqttVersion: number;
 
   @Input()
-  entity: WebSocketConnection;
+  entity: UserProperties;
 
   userPropertiesFormGroup: UntypedFormGroup;
 
@@ -72,7 +72,7 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   };
 
   get userPropertiesFormArray(): UntypedFormArray {
-    return this.userPropertiesFormGroup.get('userProperties') as UntypedFormArray;
+    return this.userPropertiesFormGroup.get('props') as UntypedFormArray;
   }
 
   constructor(public fb: FormBuilder,
@@ -80,28 +80,30 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   ngOnInit() {
+    const properties = this.entity?.props;
     this.userPropertiesFormGroup = this.fb.group({
-      userProperties: this.fb.array([])
+      props: this.fb.array([])
     });
-    if (isDefinedAndNotNull(this.entity?.configuration?.userProperties?.props?.length)) {
-      for (const prop in this.entity.configuration.userProperties.props) {
+    if (isDefinedAndNotNull(properties?.length)) {
+      for (let i=0; i < properties.length; i++) {
+        const property = properties[i];
         this.userPropertiesFormArray.push(this.fb.group({
-          key: [this.entity.configuration.userProperties.props[prop].k, []],
-          value: [this.entity.configuration.userProperties.props[prop].v, []]
+          k: [property.k, []],
+          v: [property.v, []]
         }));
       }
     } else {
       this.userPropertiesFormArray.push(this.fb.group({
-        key: [null, []],
-        value: [null, []]
+        k: [null, []],
+        v: [null, []]
       }));
     }
   }
 
   addRule(): void {
     this.userPropertiesFormArray.push(this.fb.group({
-      key: [null, []],
-      value: [null, []]
+      k: [null, []],
+      v: [null, []]
     }));
     this.cd.markForCheck();
   }
@@ -136,6 +138,9 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   writeValue(value: UserProperties): void {
+    if (isDefinedAndNotNull(value)) {
+      this.updateView(value);
+    }
     this.userPropertiesFormGroup.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
@@ -151,9 +156,9 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
     const userProperties = {
       props: []
     };
-    value.userProperties.map(obj => {
-      const k = obj?.key;
-      const v = obj?.value;
+    value.props.map(obj => {
+      const k = obj?.k;
+      const v = obj?.v;
       if (k) {
         userProperties.props.push({k, v});
       }
