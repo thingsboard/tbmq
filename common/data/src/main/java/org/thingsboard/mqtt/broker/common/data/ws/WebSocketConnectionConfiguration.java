@@ -34,8 +34,7 @@ public class WebSocketConnectionConfiguration {
     private String clientId;
     @NoXss
     private String username;
-    @NoXss
-    private String password;
+    private boolean passwordRequired;
 
     private boolean cleanStart;
     private int keepAlive;
