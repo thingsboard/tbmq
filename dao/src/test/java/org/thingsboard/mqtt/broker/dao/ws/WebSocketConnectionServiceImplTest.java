@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.ws.LastWillMsg;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
@@ -285,6 +286,49 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         Assert.assertEquals(webSocketConnectionDtoList, loadedWebSocketConnectionDtoList);
 
         loadedWebSocketConnectionDtoList.forEach(wsc ->
+                webSocketConnectionService.deleteWebSocketConnection(wsc.getId()));
+
+        pageLink = new PageLink(33);
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertFalse(pageData.hasNext());
+        Assert.assertTrue(pageData.getData().isEmpty());
+    }
+
+    @Test
+    public void givenWebSocketConnections_whenGetWebSocketConnectionsWithTextSearchAndSortOrder_thenSuccess() {
+        List<WebSocketConnectionDto> webSocketConnectionDtoList = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
+            WebSocketConnection savedWebSocketConnection = webSocketConnectionService.saveWebSocketConnection(
+                    getWebSocketConnection("Test" + i)
+            );
+            webSocketConnectionDtoList.add(WebSocketConnectionDto.fromWebSocketConnection(savedWebSocketConnection));
+        }
+
+        PageLink pageLink = new PageLink(100, 0, "wrong");
+        PageData<WebSocketConnectionDto> pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertTrue(pageData.getData().isEmpty());
+
+        pageLink = new PageLink(100, 1);
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertTrue(pageData.getData().isEmpty());
+
+        pageLink = new PageLink(100, 0, "test");
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertEquals(32, pageData.getData().size());
+
+        pageLink = new PageLink(100, 0, null, new SortOrder("createdTime", SortOrder.Direction.ASC));
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertEquals("Test0", pageData.getData().get(0).getName());
+
+        pageLink = new PageLink(100, 0, null, new SortOrder("createdTime", SortOrder.Direction.DESC));
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertEquals("Test31", pageData.getData().get(0).getName());
+
+        pageLink = new PageLink(100, 0, null, new SortOrder("name", SortOrder.Direction.DESC));
+        pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        Assert.assertEquals("Test9", pageData.getData().get(0).getName());
+
+        webSocketConnectionDtoList.forEach(wsc ->
                 webSocketConnectionService.deleteWebSocketConnection(wsc.getId()));
 
         pageLink = new PageLink(33);
