@@ -45,6 +45,8 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final ClientLogger clientLogger;
 
+    private final boolean isTraceEnabled = log.isTraceEnabled();
+
     private TbPublishServiceImpl<QueueProtos.ClientPublishMsgProto> basicPublisher;
     private TbPublishServiceImpl<QueueProtos.DevicePublishMsgProto> persistentPublisher;
 
@@ -62,7 +64,6 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
         this.persistentPublisher.init();
     }
 
-    // TODO: what to do if sending msg to Kafka fails?
     @Override
     public void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(targetServiceId);
@@ -76,7 +77,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Sent msg to basic down-link queue");
-                        if (log.isTraceEnabled()) {
+                        if (isTraceEnabled) {
                             log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
                         }
                     }
@@ -100,7 +101,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
                         clientLogger.logEvent(clientId, this.getClass(), "Sent msg to persistent down-link queue");
-                        if (log.isTraceEnabled()) {
+                        if (isTraceEnabled) {
                             log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
                         }
                     }

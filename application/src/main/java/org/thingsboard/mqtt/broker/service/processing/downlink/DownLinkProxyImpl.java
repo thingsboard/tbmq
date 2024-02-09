@@ -35,6 +35,10 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     private final BasicDownLinkProcessor basicDownLinkProcessor;
     private final PersistentDownLinkProcessor persistentDownLinkProcessor;
 
+    /**
+     * This method will almost never be executed since it is called when Postgres was
+     * not reachable to persist Device messages before delivery to client
+     */
     @Override
     public void sendBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
         if (belongsToThisNode(targetServiceId)) {
@@ -69,9 +73,15 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
         var retain = subscription.getOptions().isRetain(publishMsgProto);
-        return publishMsgProto.toBuilder()
-                .setQos(minQos)
-                .setRetain(retain)
-                .build();
+
+        if (minQos != publishMsgProto.getQos() || retain != publishMsgProto.getRetain()) {
+            return publishMsgProto.toBuilder()
+                    .setQos(minQos)
+                    .setRetain(retain)
+                    .build();
+        } else {
+            return publishMsgProto;
+        }
     }
+
 }

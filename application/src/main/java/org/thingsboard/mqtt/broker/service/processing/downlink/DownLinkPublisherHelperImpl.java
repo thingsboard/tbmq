@@ -23,8 +23,10 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.PersistentDownLinkPublis
 @Service
 @RequiredArgsConstructor
 public class DownLinkPublisherHelperImpl implements DownLinkPublisherHelper {
+
     private final BasicDownLinkPublishMsgKafkaSettings basicDownLinkPublishMsgKafkaSettings;
     private final PersistentDownLinkPublishMsgKafkaSettings persistentDownLinkPublishMsgKafkaSettings;
+
     @Override
     public String getBasicDownLinkServiceTopic(String serviceId) {
         return basicDownLinkPublishMsgKafkaSettings.getTopicPrefix() + "." + serviceId;
