@@ -53,7 +53,7 @@ public class DownLinkProxyImpl implements DownLinkProxy {
         if (belongsToThisNode(subscription.getServiceId())) {
             basicDownLinkProcessor.process(subscription, msg);
         } else {
-            queuePublisher.publishBasicMsg(subscription.getServiceId(), subscription.getClientId(), createBasicPublishMsg(subscription, msg));
+            queuePublisher.publishBasicMsg(subscription.getServiceId(), subscription.getClientId(), updatePublishMsg(subscription, msg));
         }
     }
 
@@ -70,7 +70,7 @@ public class DownLinkProxyImpl implements DownLinkProxy {
         return serviceInfoProvider.getServiceId().equals(targetServiceId);
     }
 
-    private PublishMsgProto createBasicPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
+    PublishMsgProto updatePublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
         var retain = subscription.getOptions().isRetain(publishMsgProto);
 
