@@ -19,6 +19,13 @@
   .fill-height {
     height: 100%;
   }
+
+  .toolbar-buttons {
+    position: absolute;
+    top: 10px;
+    right: 6px;
+    z-index: 1;
+  }
 }
 
 .tb-json-object-toolbar {
@@ -33,7 +40,7 @@
     font-size: .8rem;
     line-height: 15px;
     color: #7b7b7b;
-    background: rgba(220, 220, 220, .35);
+    //background: rgba(220, 220, 220, .35);
 
     &:not(:last-child) {
       margin-right: 4px;
