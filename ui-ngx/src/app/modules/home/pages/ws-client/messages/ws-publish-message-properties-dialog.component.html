@@ -71,6 +71,9 @@
         <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-hint' | translate">
           help
         </mat-icon>
+        <mat-error *ngIf="formGroup.get('topicAlias').errors?.topicAliasMaxError">
+          {{ 'ws-client.connections.topic-alias-error' | translate }}
+        </mat-error>
       </mat-form-field>
       <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>ws-client.last-will.correlation-data</mat-label>
@@ -86,7 +89,7 @@
           help
         </mat-icon>
       </mat-form-field>
-      <tb-user-properties [entity]="entity?.userProperties" [mqttVersion]="5" formControlName="userProperties"></tb-user-properties>
+      <tb-user-properties [entity]="props?.userProperties" [mqttVersion]="5" formControlName="userProperties"></tb-user-properties>
     </section>
   </div>
   <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">

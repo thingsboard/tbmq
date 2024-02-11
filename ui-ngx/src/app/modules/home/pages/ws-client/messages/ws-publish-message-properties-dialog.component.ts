@@ -15,17 +15,23 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, FormBuilder, UntypedFormGroup, ValidatorFn } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { PublishMessageProperties, timeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import {
+  PublishMessageProperties,
+  timeUnitTypeTranslationMap,
+  WebSocketConnection,
+  WebSocketTimeUnit
+} from '@shared/models/ws-client.model';
 
 export interface PropertiesDialogComponentData {
-  entity?: PublishMessageProperties;
+  props: PublishMessageProperties;
+  connection: WebSocketConnection;
 }
 
 @Component({
@@ -36,7 +42,8 @@ export interface PropertiesDialogComponentData {
 export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<WsPublishMessagePropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
-  entity: PublishMessageProperties;
+  props: PublishMessageProperties;
+  connection: WebSocketConnection;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
@@ -53,7 +60,8 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
   }
 
   ngOnInit(): void {
-    this.entity = this.data.entity;
+    this.props = this.data.props;
+    this.connection = this.data.connection;
     this.buildForms();
   }
 
@@ -67,14 +75,14 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   private buildForm(): void {
     this.formGroup = this.fb.group({
-      payloadFormatIndicator: [this.entity ? this.entity.payloadFormatIndicator : true, []],
-      contentType: [this.entity ? this.entity.contentType : null, []],
-      messageExpiryInterval: [this.entity ? this.entity.messageExpiryInterval : null, []],
-      messageExpiryIntervalUnit: [this.entity ? this.entity.messageExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
-      topicAlias: [this.entity ? this.entity.topicAlias : null, []],
-      correlationData: [this.entity ? this.entity.correlationData : null, []],
-      responseTopic: [this.entity ? this.entity.responseTopic : null, []],
-      userProperties: [this.entity ? this.entity.userProperties : null, []]
+      payloadFormatIndicator: [this.props ? this.props.payloadFormatIndicator : true, []],
+      contentType: [this.props ? this.props.contentType : null, []],
+      messageExpiryInterval: [this.props ? this.props.messageExpiryInterval : null, []],
+      messageExpiryIntervalUnit: [this.props ? this.props.messageExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
+      topicAlias: [{value: this.props ? this.props.topicAlias : null, disabled: this.connection.configuration?.topicAliasMax === 0}, [this.topicAliasMaxValidator()]],
+      correlationData: [this.props ? this.props.correlationData : null, []],
+      responseTopic: [this.props ? this.props.responseTopic : null, []],
+      userProperties: [this.props ? this.props.userProperties : null, []]
     });
   }
 
@@ -86,6 +94,15 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
   onSave() {
     const properties = this.formGroup.getRawValue();
     this.dialogRef.close(properties);
+  }
+
+  private topicAliasMaxValidator(): ValidatorFn {
+    return (control: AbstractControl): {[key: string]: boolean} | null => {
+      if (control.value !== undefined && control.value > this.connection.configuration?.topicAliasMax) {
+        return { 'topicAliasMaxError': true };
+      }
+      return null;
+    };
   }
 }
 
