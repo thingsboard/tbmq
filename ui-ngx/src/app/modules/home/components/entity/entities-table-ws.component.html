@@ -84,14 +84,14 @@
     </mat-cell>
   </ng-container>
   <ng-container matColumnDef="actions" stickyEnd>
-    <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                            maxWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                            width: (cellActionDescriptors.length * 40) + 'px' }">
+    <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 50) + 'px',
+                                                            maxWidth: (cellActionDescriptors.length * 50) + 'px',
+                                                            width: (cellActionDescriptors.length * 50) + 'px' }">
       {{ entitiesTableConfig.actionsColumnTitle ? (entitiesTableConfig.actionsColumnTitle | translate) : '' }}
     </mat-header-cell>
-    <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                            maxWidth: (cellActionDescriptors.length * 40) + 'px',
-                                                            width: (cellActionDescriptors.length * 40) + 'px' }">
+    <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 50) + 'px',
+                                                            maxWidth: (cellActionDescriptors.length * 50) + 'px',
+                                                            width: (cellActionDescriptors.length * 50) + 'px' }">
       <div fxHide fxShow.gt-md fxFlex fxLayout="row" fxLayoutAlign="end">
         <div *ngFor="let actionDescriptor of cellActionDescriptors" matTooltipPosition="above"
              matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}">
