@@ -70,7 +70,27 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test
-    public void testPutDifferentClients() {
+    public void givenNonSharedSubscriptions_whenPutSubscriptions_thenNothingAdded() {
+        when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
+
+        sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
+                new TopicSubscription("/test/topic/1", 1),
+                new TopicSubscription("/test/topic/2", 1),
+                new TopicSubscription("/test/topic/3", 1)
+        ));
+
+        sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
+                new TopicSubscription("/test/topic/4", 2),
+                new TopicSubscription("/test/topic/5", 2),
+                new TopicSubscription("/test/topic/6", 2)
+        ));
+
+        assertEquals(0, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
+    }
+
+    @Test
+    public void givenDifferentClientsAndSubscriptions_whenPutSubscriptions_thenAddedSuccessfully() {
         when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
         when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
 
@@ -107,7 +127,7 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test
-    public void testPutSameClientAndSubscription() {
+    public void givenSameClientAndItsSubscriptions_whenExecutePut_thenAddedSuccessfully() {
         when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
@@ -121,6 +141,7 @@ public class SharedSubscriptionCacheServiceImplTest {
                 .get(new TopicSharedSubscription("/test/topic/1", "g1"));
         assertTrue(sharedSubscriptions.getApplicationSubscriptions().isEmpty());
         assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().size());
+        assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().stream().toList().get(0).getQos());
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
                 new TopicSubscription("/test/topic/1", 2, "g1")
@@ -132,10 +153,11 @@ public class SharedSubscriptionCacheServiceImplTest {
                 .get(new TopicSharedSubscription("/test/topic/1", "g1"));
         assertTrue(sharedSubscriptions.getApplicationSubscriptions().isEmpty());
         assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().size());
+        assertEquals(2, sharedSubscriptions.getDeviceSubscriptions().stream().toList().get(0).getQos());
     }
 
     @Test
-    public void remove() {
+    public void givenSubscriptions_whenExecuteRemove_thenUpdatedSuccessfully() {
         when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
@@ -177,13 +199,13 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test
-    public void testGetNothing() {
+    public void givenNullOrEmpty_whenGetSubscriptions_thenNothingReturned() {
         assertNull(sharedSubscriptionCache.get(null));
         assertNull(sharedSubscriptionCache.get(Set.of()));
     }
 
     @Test
-    public void testGet() {
+    public void givenSubscriptions_whenGetSubscriptions_thenReturnedCorrectResult() {
         when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
@@ -218,13 +240,13 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testIsAnyOtherDeviceClientConnectedThrowsException() {
+    public void givenWrongSubscription_whenCheckIsAnyOtherDeviceClientConnected_thenThrowsException() {
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
         sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
     }
 
     @Test
-    public void testIsAnyOtherDeviceClientConnectedWithSameClient() {
+    public void givenSameClient_whenCheckIsAnyOtherDeviceClientConnected_thenFalse() {
         when(clientSessionInfo1.isConnected()).thenReturn(true);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
@@ -239,7 +261,7 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test
-    public void testIsAnyOtherDeviceClientConnectedFalse() {
+    public void givenDisconnectedClients_whenCheckIsAnyOtherDeviceClientConnected_thenFalse() {
         when(clientSessionInfo1.isConnected()).thenReturn(false);
         when(clientSessionInfo2.isConnected()).thenReturn(false);
 
@@ -260,7 +282,7 @@ public class SharedSubscriptionCacheServiceImplTest {
     }
 
     @Test
-    public void testIsAnyOtherDeviceClientConnectedTrue() {
+    public void givenConnectedClient_whenCheckIsAnyOtherDeviceClientConnected_thenTrue() {
         when(clientSessionInfo1.isConnected()).thenReturn(true);
         when(clientSessionInfo2.isConnected()).thenReturn(false);
 
@@ -279,4 +301,5 @@ public class SharedSubscriptionCacheServiceImplTest {
         boolean anyDeviceClientConnected = sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
         assertTrue(anyDeviceClientConnected);
     }
+
 }
