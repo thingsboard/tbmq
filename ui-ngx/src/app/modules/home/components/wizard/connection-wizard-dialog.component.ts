@@ -97,9 +97,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   dataSizeUnitTypeTranslationMap = dataSizeUnitTypeTranslationMap;
 
   title = 'ws-client.connections.add-connection';
-  actionButtonLabel = 'action.add';
   connection: WebSocketConnection;
-  displayPasswordWarning: boolean;
+  passwordRequired: boolean;
   mqttVersions = MqttVersions;
   mqttVersion: number;
   stepperOrientation: Observable<StepperOrientation>;
@@ -148,7 +147,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       })).subscribe();
     if (this.connection) {
       this.title = 'ws-client.connections.edit';
-      this.actionButtonLabel = 'action.save';
       if (isDefinedAndNotNull(this.connection.configuration.clientCredentialsId)) {
         this.credentialsGeneratorType = WsCredentialsGeneratorType.EXISTING;
         this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.EXISTING);
@@ -253,6 +251,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(clientUserNameRandom());
       this.connectionFormGroup.get('username').disable();
+      this.connectionFormGroup.get('password').disable();
       this.connectionFormGroup.get('password').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').patchValue(null);
       this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
@@ -265,6 +264,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientId').patchValue(this.connection?.configuration?.clientId ? this.connection.configuration.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
       this.connectionFormGroup.get('username').patchValue(this.connection?.configuration.username ? this.connection.configuration.username : null);
+      this.connectionFormGroup.get('password').enable();
       this.connectionFormGroup.get('password').patchValue(null);
       this.connectionFormGroup.get('clientCredentialsId').patchValue(null);
       this.connectionFormGroup.get('clientCredentials').patchValue(null);
@@ -325,6 +325,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
             this.connectionFormGroup.get('clientCredentials').patchValue(credentials);
             this.saveWebSocketConnection().subscribe(
               (entity) => {
+                entity.configuration.password = this.connectionFormGroup.get('password').value;
                 return this.dialogRef.close(entity);
               }
             );
@@ -333,6 +334,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       } else {
         this.saveWebSocketConnection().subscribe(
           (entity) => {
+            entity.configuration.password = this.connectionFormGroup.get('password').value;
             return this.dialogRef.close(entity);
           }
         );
@@ -348,7 +350,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       ...this.userPropertiesFormGroup.getRawValue()
     };
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
-    console.log('connection', connection);
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
         this.addConnectionWizardStepper.selectedIndex = 0;
@@ -360,8 +361,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   private transformValues(formValues: any): WebSocketConnection {
     const entity = {} as WebSocketConnection;
     const config = {} as WebSocketConnectionConfiguration;
-
     entity.name = formValues.name;
+    entity.createdTime = this.connection?.createdTime;
     if (isDefinedAndNotNull(this.connection)) {
       entity.id = this.connection.id;
       entity.userId = this.connection.userId;
@@ -372,7 +373,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     config.clientCredentialsId = isDefinedAndNotNull(formValues.clientCredentials) ? formValues.clientCredentials.id : null;
     config.clientId = formValues.clientId || this.connection?.configuration?.clientId || clientIdRandom();
     config.username = formValues.username;
-    config.password = formValues.password;
+    config.passwordRequired = !!formValues.password?.length;
     config.cleanStart = formValues.clean;
     config.keepAlive = formValues.keepalive;
     config.connectTimeout = formValues.connectTimeout;
@@ -431,23 +432,22 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (credentials?.credentialsValue) {
       const credentialsValue = JSON.parse(credentials.credentialsValue);
       this.connectionFormGroup.patchValue({
-        clientId: credentialsValue.clientId,
+        clientId: credentialsValue.clientId || this.connection?.configuration?.clientId || clientIdRandom(),
         username: credentialsValue.userName,
         password: null
       });
       if (isDefinedAndNotNull(credentialsValue.password)) {
-        this.displayPasswordWarning = true;
+        this.passwordRequired = true;
         this.connectionFormGroup.get('password').setValidators([Validators.required]);
       } else {
-        this.displayPasswordWarning = false;
+        this.passwordRequired = false;
         this.connectionFormGroup.get('password').clearValidators();
       }
-      this.connectionFormGroup.get('password').updateValueAndValidity();
     } else {
-      this.displayPasswordWarning = false;
+      this.passwordRequired = false;
       this.connectionFormGroup.get('password').clearValidators();
-      this.connectionFormGroup.get('password').updateValueAndValidity();
     }
+    this.connectionFormGroup.get('password').updateValueAndValidity();
   }
 
   regenerate(type: string) {

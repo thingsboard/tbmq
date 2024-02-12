@@ -24,19 +24,18 @@
 
 <div style="overflow: auto; height: 100%" class="mat-padding">
   <div *ngIf="statusLogs?.length; else noLogs" >
-    <div style="overflow: auto">
-      <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
-        <div *ngFor="let log of statusLogs" fxFlex fxLayout="row" fxLayoutGap="16px">
-          <span>{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
-          <section>
-            <span [ngStyle]="setStyle(log.status)" translate>
-              {{ connectionStatusTranslationMap.get(log.status) }}
-            </span>
-            <span *ngIf="log.details" style="color: rgba(0, 0, 0, 0.38)">{{ log.details }}</span>
-          </section>
-        </div>
-      </section>
-    </div>
+    <section class="container">
+      <div *ngFor="let log of statusLogs" fxFlex fxLayout="row" fxLayoutGap="8px">
+        <span class="date">{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+        <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+          <span [ngStyle]="setStyle(log.status)" translate>
+            {{ connectionStatusTranslationMap.get(log.status) }}
+          </span>
+          <span class="details" *ngIf="log.details" [matTooltip]="log.details">
+            {{ log.details }}</span>
+        </section>
+      </div>
+    </section>
   </div>
   <ng-template #noLogs>
     <div style="text-align: center; margin-top: 80px" translate>ws-client.connections.no-logs</div>

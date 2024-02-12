@@ -24,6 +24,7 @@ import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection }
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-connection-controller',
@@ -41,8 +42,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   isPasswordRequired: boolean;
   status: ConnectionStatus;
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
-  errorMessage: string;
   passwordVisible: boolean;
+  errorMessage: string;
+  private logs: ConnectionStatus[] = [];
 
   private destroy$ = new Subject<void>();
 
@@ -58,6 +60,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.mqttJsClientService.selectedConnectionStatus$.subscribe(
       status => {
+        this.logs.push(status);
         this.status = status;
         this.updateLabels();
         this.setDisabledState();
@@ -69,7 +72,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
         if (entity) {
           this.connection = entity;
           this.updateLabels();
-          this.isPasswordRequired = !!entity.configuration.password?.length;
+          this.isPasswordRequired = entity.configuration.passwordRequired;
         }
       }
     );
@@ -77,7 +80,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.mqttJsClientService.selectedConnectionFailedError$.subscribe(
       error => {
         if (error) {
-          this.errorMessage = error;
+          this.errorMessage = ': ' + error;
         } else {
           this.errorMessage = null;
         }
@@ -124,11 +127,12 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     if (this.status === ConnectionStatus.CONNECTED) {
       this.isConnected = true;
       this.actionLabel = 'ws-client.connections.disconnect';
+      this.errorMessage = null;
     } else {
       this.isConnected = false;
       this.actionLabel = 'ws-client.connections.connect';
     }
-    if (this.status !== ConnectionStatus.CONNECTION_FAILED) {
+    if (this.status !== ConnectionStatus.CONNECTION_FAILED && !isDefinedAndNotNull(this.errorMessage)) {
       this.errorMessage = null;
     }
   }
@@ -148,7 +152,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.mqttJsClientService.disconnectClient(true);
+    this.mqttJsClientService.disconnectSelectedClient();
   }
 
   displayCancelButton(): boolean {
@@ -157,10 +161,6 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   getStatus() {
     return this.connectionStatusTranslationMap.get(this.status) || 'ws-client.connections.disconnected';
-  }
-
-  getStateDetails() {
-    return this.errorMessage ? `: ${this.errorMessage}` : null;
   }
 
   setStyle() {

@@ -20,8 +20,10 @@ import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   ConnectionStatus,
   ConnectionStatusLog,
-  DataSizeUnitType,
-  WebSocketConnection,
+  DataSizeUnitType, DisconnectReasonCodes,
+  transformObjectToProps,
+  transformPropsToObject,
+  WebSocketConnection, WebSocketConnectionDto,
   WebSocketSubscription,
   WebSocketTimeUnit,
   WsTableMessage
@@ -72,7 +74,7 @@ export class MqttJsClientService {
   connectionStatusMap = new Map<string, ConnectionStatus>();
   connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
   clientIdSubscriptionsMap = new Map<string, any[]>();
-  mqttClientConnectionMap = new Map<string, string>();
+  mqttClientConnectionMap = new Map<string, WebSocketConnection>();
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService) {
   }
@@ -85,10 +87,25 @@ export class MqttJsClientService {
     this.addMqttClient(connection, password);
   }
 
-  disconnectClient(force: boolean = false) {
-    if (this.getActiveMqttJsClient().connected) {
-      this.getActiveMqttJsClient().end(force);
+  disconnectSelectedClient() {
+    const mqttClient = this.getActiveMqttJsClient();
+    if (mqttClient.connected) {
+      const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      this.setDisconnectedStatusAndEnd(connection, mqttClient);
     }
+  }
+
+  findAndDisconnectClientByConnection(connection: WebSocketConnectionDto) {
+    const mqttClient = this.connectionMqttClientMap.get(connection.id);
+    if (mqttClient?.connected) {
+      this.setDisconnectedStatusAndEnd(connection, mqttClient);
+    }
+  }
+
+  private setDisconnectedStatusAndEnd(connection: WebSocketConnection | WebSocketConnectionDto, mqttClient: MqttClient) {
+    this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
+    this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
+    mqttClient.end();
   }
 
   public isConnectionConnected(connectionId: string): boolean {
@@ -105,6 +122,7 @@ export class MqttJsClientService {
       keepalive: convertTimeUnits(connection.configuration.keepAlive, connection.configuration.keepAliveUnit, WebSocketTimeUnit.SECONDS),
       connectTimeout: convertTimeUnits(connection.configuration.connectTimeout, connection.configuration.connectTimeoutUnit, WebSocketTimeUnit.MILLISECONDS),
       reconnectPeriod: convertTimeUnits(connection.configuration.reconnectPeriod, connection.configuration.reconnectPeriodUnit, WebSocketTimeUnit.MILLISECONDS),
+      rejectUnauthorized: false
     };
     options.protocolId = options.protocolVersion === 3 ? 'MQIsdp' : 'MQTT';
     if (connection.configuration.mqttVersion === 5) {
@@ -134,7 +152,8 @@ export class MqttJsClientService {
         // @ts-ignore
         options.will.properties.correlationData = Buffer.from([connection.configuration.lastWillMsg.correlationData]);
         if (isDefinedAndNotNull(connection.configuration.userProperties)) {
-          options.will.properties.userProperties = connection.configuration.userProperties;
+          // @ts-ignore
+          options.will.properties.userProperties = transformPropsToObject(connection.configuration.userProperties);
         }
       }
     }
@@ -153,13 +172,19 @@ export class MqttJsClientService {
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {
     mqttClient.on('connect', (packet: IConnackPacket) => {
       this.connectionMqttClientMap.set(connection.id, mqttClient);
-      this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection.id);
+      this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
       this.subscribeForTopicsOnConnect(mqttClient, connection);
       this.setConnectionStatus(connection, ConnectionStatus.CONNECTED);
       this.setConnectionLog(connection, ConnectionStatus.CONNECTED);
       console.log(`Client connected!`, packet, mqttClient);
     });
     mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
+      if (packet.properties && packet.properties.userProperties) {
+        // @ts-ignore
+        console.log(`User Properties: ${JSON.stringify(packet.properties.userProperties)}`);
+      } else {
+        console.log('No User Properties found in the message');
+      }
       const subscriptions = this.clientIdSubscriptionsMap.get(mqttClient.options.clientId);
       const subscription = subscriptions.find(sub => sub.topic === topic);
       let wildcardSubscription;
@@ -178,24 +203,31 @@ export class MqttJsClientService {
         id: guid(),
         subscriptionId: subscription?.id || wildcardSubscription?.id,
         payload: payload.toString(),
-        topic,
+        topic: topic,
         qos: packet.qos,
         createdTime: this.nowTs(),
         retain: packet.retain,
         color,
         type: 'received'
       };
-      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      if (isDefinedAndNotNull(packet?.properties)) {
+        const properties = JSON.parse(JSON.stringify(packet?.properties));
+        if (isDefinedAndNotNull(properties.userProperties)) {
+          properties.userProperties = transformObjectToProps(properties.userProperties);
+        }
+        message.properties = properties;
+      }
+      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
       this.addMessage(message, connectionId);
       console.log(`Received Message: ${payload} On topic: ${topic}`, packet, mqttClient);
     });
     mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
       const details = error.message.split(':')[1];
       this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED);
-      this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, details);
+      this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, details || error.message);
       this.setConnectionFailedError(details);
       mqttClient.end();
-      console.log('Connection error: ', error, mqttClient);
+      console.log('Connection error: ', error);
     });
     mqttClient.on('reconnect', () => {
       this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
@@ -212,14 +244,14 @@ export class MqttJsClientService {
       console.log('Disconnecting...', mqttClient);
     });
     mqttClient.on('offline', () => {
-      this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
-      this.setConnectionLog(connection, ConnectionStatus.RECONNECTING);
+      // this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
+      // this.setConnectionLog(connection, ConnectionStatus.RECONNECTING);
       console.log('Offline...', mqttClient);
     });
     mqttClient.on('end', () => {
       this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
-      this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
-      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      // this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
+      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
       if (this.connectionMqttClientMap.has(connectionId)) {
         this.connectionMqttClientMap.delete(connectionId);
       }
@@ -232,6 +264,13 @@ export class MqttJsClientService {
       console.log('Packet Send...', packet);
     });
     mqttClient.on('packetreceive', (packet: IConnackPacket) => {
+      // @ts-ignore
+      if (packet.cmd == 'disconnect') {
+        const reason = DisconnectReasonCodes[packet.reasonCode];
+        this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED);
+        this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
+        this.setConnectionFailedError(reason);
+      }
       console.log('Packet Receive...', packet);
     });
   }
@@ -268,12 +307,12 @@ export class MqttJsClientService {
     this.connectionFailedError$.next(error);
   }
 
-  private setConnectionStatus(connection: WebSocketConnection, state: ConnectionStatus) {
+  private setConnectionStatus(connection: WebSocketConnection | WebSocketConnectionDto, state: ConnectionStatus) {
     this.connectionStatusMap.set(connection.id, state);
     this.connectionStatus$.next(this.connectionStatusMap.get(connection.id));
   }
 
-  private setConnectionLog(connection: WebSocketConnection, status: ConnectionStatus, details: string = null) {
+  private setConnectionLog(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
     const log: ConnectionStatusLog = {
       createdTime: this.nowTs(),
       status,
@@ -360,32 +399,33 @@ export class MqttJsClientService {
 
   publishMessage(topic: string, payload: string, options: IClientPublishOptions) {
     let properties;
+    // @ts-ignore
+    let color = options.color;
     if (isDefinedAndNotNull(options?.properties)) properties = JSON.parse(JSON.stringify(options?.properties));
-    const message = {
-      topic,
+    const message: any = {
+      topic: topic,
       payload,
       qos: options.qos,
       retain: options.retain,
+      color,
       properties,
       id: guid(),
       createdTime: this.nowTs(),
       type: 'published'
     };
+
     this.addMessage(message, this.getActiveConnectionId());
 
     if (isDefinedAndNotNull(options?.properties?.correlationData)) options.properties.correlationData = Buffer.from(options.properties.correlationData);
     if (isDefinedAndNotNull(options?.properties?.userProperties)) {
-      const result = {}
       // @ts-ignore
-      options.properties.userProperties = options.properties.userProperties.props.map(el => {
-        result[el['k']] = el['v'];
-      });
-      options.properties.userProperties = result;
+      options.properties.userProperties = transformPropsToObject(options.properties.userProperties);
     }
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
+    console.log('publish message options', options);
     this.mqttClient.publish(topic, payload, options);
   }
 

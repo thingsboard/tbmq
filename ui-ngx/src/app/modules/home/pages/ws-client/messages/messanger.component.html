@@ -37,7 +37,7 @@
   </section>
 </section>
 
-<section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px; margin-bottom: 8px; height: 100%">
+<section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px; margin-bottom: 8px; height: 100%; border-bottom: 1px solid rgba(0,0,0,0.12)">
   <tb-messages style="overflow: auto"></tb-messages>
 </section>
 
@@ -46,6 +46,12 @@
     <mat-form-field fxFlex="40" subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic">
+<!--      <tb-copy-button matSuffix
+                      [fxShow]="messangerFormGroup.get('topic')?.value?.length"
+                      [copyText]="messangerFormGroup.get('topic')?.value">
+      </tb-copy-button>-->
+      <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
+      </tb-color-input>
     </mat-form-field>
     <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-session.qos</mat-label>
@@ -89,7 +95,7 @@
     <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="!messangerFormGroup.get('topic')?.value?.length || !isConnected || !isPayloadValid">
+            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !hasTopicAliasMax) || !isConnected || !isPayloadValid">
       <mat-icon>send</mat-icon>
     </button>
   </div>

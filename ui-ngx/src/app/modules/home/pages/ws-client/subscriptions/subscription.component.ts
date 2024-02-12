@@ -27,6 +27,7 @@ import {
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
+import { ClipboardService } from 'ngx-clipboard';
 
 @Component({
   selector: 'tb-subscription',
@@ -52,6 +53,7 @@ export class SubscriptionComponent implements OnInit {
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
               private mqttJsClientService: MqttJsClientService,
+              private clipboardService: ClipboardService,
               private dialog: MatDialog,
               private dialogService: DialogService,
               private translate: TranslateService) {
@@ -73,6 +75,12 @@ export class SubscriptionComponent implements OnInit {
     const actions: Array<CellActionDescriptor<WebSocketSubscription>> = [];
     actions.push(
       {
+        name: this.translate.instant('ws-client.subscriptions.copy-topic'),
+        icon: 'mdi:content-copy',
+        isEnabled: () => true,
+        onAction: ($event, entity) => this.copyContent($event, entity)
+      },
+      {
         name: this.translate.instant('action.edit'),
         icon: 'edit',
         isEnabled: () => true,
@@ -86,6 +94,13 @@ export class SubscriptionComponent implements OnInit {
       }
     );
     return actions;
+  }
+
+  private copyContent($event: Event, webSocketSubscription: WebSocketSubscription) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.clipboardService.copy(webSocketSubscription.configuration.topicFilter);
   }
 
   private delete($event: Event, webSocketSubscription: WebSocketSubscription) {

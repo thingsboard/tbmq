@@ -36,6 +36,7 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 export class WsClientComponent extends PageComponent implements OnInit {
 
   connections: Observable<WebSocketConnectionDto[]>;
+  private connectConnection = false;
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
@@ -55,6 +56,9 @@ export class WsClientComponent extends PageComponent implements OnInit {
     this.webSocketConnectionService.getWebSocketConnectionById(connectionId).subscribe(
       connection => {
         this.mqttJsClientService.selectConnection(connection);
+        if (this.connectConnection) {
+          this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
+        }
       }
     );
   }
@@ -71,6 +75,7 @@ export class WsClientComponent extends PageComponent implements OnInit {
       }
     }).afterClosed()
       .subscribe(() => {
+        this.connectConnection = true;
         this.mqttJsClientService.onConnectionsUpdated();
       });
   }

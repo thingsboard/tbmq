@@ -90,9 +90,10 @@ export interface WebSocketConnectionConfiguration {
   url: string;
   clientCredentialsId?: string;
   clientCredentials?: Partial<ClientCredentials>;
-  clientId?: string;
+  clientId: string;
   username?: string;
   password?: string;
+  passwordRequired: boolean;
   cleanStart?: boolean;
   keepAlive?: number;
   keepAliveUnit?: WebSocketTimeUnit;
@@ -413,3 +414,64 @@ export const WsPayloadFormats = [
     name: 'value.string'
   }
 ];
+
+export function transformPropsToObject(input: {props: Array<{k: string, v: number|string}>}): {[key: string]: number|string|Array<number|string>} {
+  return input.props.reduce((result: {[key: string]: number|string|Array<number|string>}, current) => {
+    if (Object.prototype.hasOwnProperty.call(result,current.k)) {
+      if (Array.isArray(result[current.k])) {
+        // @ts-ignore
+        result[current.k].push(current.v);
+      } else {
+        // @ts-ignore
+        result[current.k] = [result[current.k], current.v];
+      }
+    } else {
+      result[current.k] = current.v;
+    }
+    return result;
+  }, {});
+}
+
+export function transformObjectToProps(input: {[key: string]: number|string|Array<number|string>}): {props: Array<{k: string, v: number|string}>}  {
+  let props = Object.entries(input).flatMap(([k, v]) => {
+    if (Array.isArray(v)) {
+      return v.map(value => ({k, v: value}));
+    } else {
+      return [{k, v}];
+    }
+  });
+  return { props };
+}
+
+export const DisconnectReasonCodes = {
+  0: 'Normal disconnection',
+  4: 'Disconnect with Will Message',
+  128: 'Unspecified error',
+  129: 'Malformed Packet',
+  130: 'Protocol Error',
+  131: 'Implementation specific error',
+  135: 'Not authorized',
+  137: 'Server busy',
+  139: 'Server shutting down',
+  140: 'Bad authentication method',
+  141: 'Keep Alive timeout',
+  142: 'Session taken over',
+  143: 'Topic Filter invalid',
+  144: 'Topic Name invalid',
+  147: 'Receive Maximum exceeded',
+  148: 'Topic Alias invalid',
+  149: 'Packet too large',
+  150: 'Message rate too high',
+  151: 'Quota exceeded',
+  152: 'Administrative action',
+  153: 'Payload format invalid',
+  154: 'Retain not supported',
+  155: 'QoS not supported',
+  156: 'Use another server',
+  157: 'Server moved',
+  158: 'Shared Subscriptions not supported',
+  159: 'Connection rate exceeded',
+  160: 'Maximum connect time',
+  161: 'Subscription Identifiers not supported',
+  162: 'Wildcard Subscriptions not supported'
+}

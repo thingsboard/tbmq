@@ -35,6 +35,10 @@
       <mat-form-field fxFlex class="mat-block">
         <mat-label translate>ws-client.subscriptions.topic-filter</mat-label>
         <input matInput required formControlName="topicFilter" placeholder="{{ 'ws-client.subscriptions.topic-filter' | translate }}">
+        <tb-copy-button matSuffix
+                        [fxShow]="formGroup.get('topicFilter')?.value?.length"
+                        [copyText]="formGroup.get('topicFilter')?.value">
+        </tb-copy-button>
         <mat-error *ngIf="formGroup.get('topicFilter').hasError('required')">
           {{ 'ws-client.subscriptions.topic-filter-required' | translate }}
         </mat-error>

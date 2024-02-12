@@ -15,7 +15,7 @@
 ///
 
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
+import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -113,8 +113,9 @@ export class ConnectionComponent implements OnInit {
     ).subscribe((result) => {
       if (result) {
         this.webSocketConnectionService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
+          this.mqttJsClientService.findAndDisconnectClientByConnection(this.connection);
           this.connectionUpdated.emit();
-          this.mqttJsClientService.onConnectionsUpdated(false);
+          this.mqttJsClientService.onConnectionsUpdated(true);
         });
       }
     });
@@ -132,12 +133,17 @@ export class ConnectionComponent implements OnInit {
           entity: connection
         }
       }).afterClosed()
-        .subscribe((result) => {
-          if (result) {
+        .subscribe((connection) => {
+          if (connection) {
             this.connectionUpdated.emit();
+            this.connectAndSelect(connection);
           }
         });
     });
   }
 
+  private connectAndSelect(connection: WebSocketConnection) {
+    this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
+    this.mqttJsClientService.selectConnection(connection);
+  }
 }

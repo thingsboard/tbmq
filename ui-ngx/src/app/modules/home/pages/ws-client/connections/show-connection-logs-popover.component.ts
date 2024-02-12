@@ -25,7 +25,7 @@ import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap }
 @Component({
   selector: 'tb-show-connection-logs-popover',
   templateUrl: './show-connection-logs-popover.component.html',
-  styleUrls: []
+  styleUrls: ['./show-connection-logs-popover.component.scss']
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

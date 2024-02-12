@@ -24,12 +24,11 @@ import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
-  Connection,
   ConnectionStatus,
   PublishMessageProperties,
+  WebSocketConnection,
   WsMessagesTypeFilters,
   WsPayloadFormats,
-  WsSubscription
 } from '@shared/models/ws-client.model';
 import { ValueType } from '@shared/models/constants';
 import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
@@ -42,9 +41,7 @@ import { IClientPublishOptions } from 'mqtt';
 })
 export class MessangerComponent implements OnInit {
 
-  connection: Connection;
-  connections: Connection[];
-  subscriptions: WsSubscription[];
+  connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
 
@@ -58,6 +55,7 @@ export class MessangerComponent implements OnInit {
   jsonFormatSelected = true;
   isPayloadValid = true;
   mqttVersion = 5;
+  hasTopicAliasMax = false;
 
   private publishMessagePropertiesTemp: PublishMessageProperties = null;
 
@@ -75,6 +73,7 @@ export class MessangerComponent implements OnInit {
       qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
+      color: ['#CECECE', []],
       properties: this.fb.group({
         payloadFormatIndicator: [undefined, []],
         messageExpiryInterval: [undefined, []],
@@ -90,6 +89,7 @@ export class MessangerComponent implements OnInit {
     this.mqttJsClientService.selectedConnection$.subscribe(
       connection => {
         if (connection) {
+          this.connection = connection;
           this.mqttVersion = connection.configuration.mqttVersion;
         }
       }
@@ -113,6 +113,11 @@ export class MessangerComponent implements OnInit {
         this.isPayloadValid = true;
       }
     });
+
+    this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
+      this.hasTopicAliasMax = isDefinedAndNotNull(value?.topicAlias);
+      console.log('this.hasTopicAliasMax', this.hasTopicAliasMax, value);
+    })
   }
 
   publishMessage(): void {
@@ -122,11 +127,13 @@ export class MessangerComponent implements OnInit {
     const topic = this.messangerFormGroup.get('topic').value;
     const qos = this.messangerFormGroup.get('qos').value;
     const retain = this.messangerFormGroup.get('retain').value;
+    const color = this.messangerFormGroup.get('color').value;
     const propertiesForm = this.messangerFormGroup.get('properties').value;
     const options: IClientPublishOptions = {
       qos,
-      retain
-    };
+      retain,
+      color
+    } as IClientPublishOptions;
     if (this.mqttVersion === 5 && Object.values(propertiesForm).some(value => isDefinedAndNotNull(value))) {
       options.properties = {};
       if (isDefinedAndNotNull(propertiesForm?.payloadFormatIndicator)) options.properties.payloadFormatIndicator = propertiesForm.payloadFormatIndicator;
@@ -139,8 +146,6 @@ export class MessangerComponent implements OnInit {
       if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
       if (isDefinedAndNotNull(propertiesForm?.responseTopic)) options.properties.responseTopic = propertiesForm.responseTopic;
     }
-    console.log(`On topic ${topic} send message ${message} with qos ${qos}, retain ${retain}`);
-    console.log('props', JSON.stringify(options?.properties));
     this.mqttJsClientService.publishMessage(topic, message, options);
   }
 
@@ -157,7 +162,8 @@ export class MessangerComponent implements OnInit {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        entity: this.publishMessagePropertiesTemp
+        props: this.publishMessagePropertiesTemp,
+        connection: this.connection
       }
     }).afterClosed()
       .subscribe((properties) => {

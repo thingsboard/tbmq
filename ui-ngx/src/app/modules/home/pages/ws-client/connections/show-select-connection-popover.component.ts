@@ -25,6 +25,7 @@ import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/com
 import { MatDialog } from '@angular/material/dialog';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 
 @Component({
   selector: 'tb-show-connections-popover',
@@ -45,6 +46,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
 
   constructor(protected store: Store<AppState>,
               private webSocketConnectionService: WebSocketConnectionService,
+              private mqttJsClientService: MqttJsClientService,
               private dialog: MatDialog,
               private cd: ChangeDetectorRef) {
     super(store);
@@ -54,7 +56,13 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
     this.updateData();
   }
 
-  updateData() {
+  updateData(close = false, connection: WebSocketConnection = null) {
+    if (connection) {
+      this.connectAndSelect(connection);
+    }
+    if (close) {
+      this.onClose();
+    }
     this.connections$ = this.webSocketConnectionService.getWebSocketConnections().pipe(
       map(res => {
         if (res.data?.length) {
@@ -69,6 +77,11 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
       }),
       tap(() => setTimeout(() => this.cd.markForCheck()))
     );
+  }
+
+  private connectAndSelect(connection: WebSocketConnection) {
+    this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
+    this.mqttJsClientService.selectConnection(connection);
   }
 
   ngOnDestroy() {
@@ -87,9 +100,9 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
         connectionsTotal: this.connectionsTotal
       }
     }).afterClosed()
-      .subscribe(result => {
-        if (result) {
-          this.updateData();
+      .subscribe(connection => {
+        if (connection) {
+          this.updateData(true, connection);
         } else {
           this.onClose();
         }
