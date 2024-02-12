@@ -778,11 +778,11 @@
     "sub": "Subscribe",
     "options": "Options",
     "messages": {
-      "retained": "Retained",
+      "retained": "Retain",
       "publish-message": "Publish message",
       "received": "Received",
       "published": "Published",
-      "no-messages-text": "No messages found",
+      "no-messages-text": "No messages yet",
       "filter": "Filter messages"
     },
     "connections": {
@@ -838,6 +838,7 @@
       "maximum-packet-size-hint": "Maximum Packet Size the Client is willing to accept",
       "topic-alias": "Topic Alias",
       "topic-alias-hint": "Value is used to identify the Topic instead of using the Topic Name",
+      "topic-alias-error": "Topic Alias must be less than the Topic Alias Maximum",
       "topic-alias-maximum": "Topic Alias Maximum",
       "topic-alias-maximum-hint": "The highest value that the Client will accept as a Topic Alias sent by the Server ",
       "reconnect-period": "Reconnect Period",
@@ -869,7 +870,7 @@
       "last-will": "Last Will",
       "topic": "Topic",
       "payload": "Payload",
-      "payload-format-indicator": "Format Payload Indicator",
+      "payload-format-indicator": "Payload Format Indicator",
       "payload-format-indicator-hint": "True indicates that the payload is UTF-8 Encoded Character Data",
       "qos": "QoS",
       "retain": "Retain",
@@ -890,6 +891,7 @@
     "subscriptions": {
       "add-subscription": "Add Subscription",
       "edit-subscription": "Edit Subscription",
+      "copy-topic": "Copy Topic Filter",
       "delete-subscription": "Delete Subscription",
       "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",
       "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",

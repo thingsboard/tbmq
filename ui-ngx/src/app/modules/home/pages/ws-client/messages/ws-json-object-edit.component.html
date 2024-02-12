@@ -19,7 +19,7 @@
      tb-fullscreen
      [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" fxLayout="column">
   <div fxLayout="row" fxLayoutAlign="start center" class="tb-json-object-toolbar">
-    <label class="tb-title no-padding"
+    <label class="tb-title no-padding toolbar-label"
            [ngClass]="{'tb-required': jsonRequired,
                        'tb-readonly': readonly,
                        'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>

@@ -20,6 +20,13 @@
     height: 100%;
   }
 
+  .toolbar-label {
+    position: absolute;
+    bottom: 10px;
+    left: 6px;
+    z-index: 1;
+  }
+
   .toolbar-buttons {
     position: absolute;
     top: 10px;
