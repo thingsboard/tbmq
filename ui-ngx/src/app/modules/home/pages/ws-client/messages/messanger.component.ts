@@ -25,13 +25,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
   ConnectionStatus,
+  MessageFilterConfig,
   PublishMessageProperties,
   WebSocketConnection,
   WsMessagesTypeFilters,
   WsPayloadFormats,
 } from '@shared/models/ws-client.model';
 import { ValueType } from '@shared/models/constants';
-import { MessageFilterConfig } from '@home/pages/ws-client/messages/message-filter-config.component';
 import { IClientPublishOptions } from 'mqtt';
 
 @Component({
@@ -86,7 +86,7 @@ export class MessangerComponent implements OnInit {
       })
     });
 
-    this.mqttJsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.connectionUpdated$.subscribe(
       connection => {
         if (connection) {
           this.connection = connection;
@@ -95,9 +95,9 @@ export class MessangerComponent implements OnInit {
       }
     )
 
-    this.mqttJsClientService.selectedConnectionStatus$.subscribe(
+    this.mqttJsClientService.connectionStatusUpdated$.subscribe(
       status => {
-        this.isConnected = status === ConnectionStatus.CONNECTED;
+        this.isConnected = status?.status === ConnectionStatus.CONNECTED;
       }
     );
 
@@ -116,7 +116,6 @@ export class MessangerComponent implements OnInit {
 
     this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
       this.hasTopicAliasMax = isDefinedAndNotNull(value?.topicAlias);
-      console.log('this.hasTopicAliasMax', this.hasTopicAliasMax, value);
     })
   }
 

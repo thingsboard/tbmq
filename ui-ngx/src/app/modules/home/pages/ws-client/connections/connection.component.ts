@@ -50,7 +50,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.connectionUpdated$.subscribe(
       res => {
         this.selectedConnection = res;
       }

@@ -42,15 +42,9 @@ import {
   WsQoSTypes
 } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
+import { MessageFilterConfig } from '@shared/models/ws-client.model';
 
 export const MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('MessageFilterConfigData');
-
-export interface MessageFilterConfig {
-  topic?: string;
-  qosList?: number[];
-  retainList?: boolean[];
-  type?: string;
-}
 
 export interface MessageFilterConfigData {
   panelMode: boolean;

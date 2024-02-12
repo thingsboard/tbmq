@@ -22,7 +22,7 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
-import { PublishMessageProperties, timeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import { PublishMessageProperties, TimeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 export interface WsMessagePropertiesDialogData {
   entity: PublishMessageProperties;
@@ -39,7 +39,7 @@ export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessag
   formGroup: UntypedFormGroup;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
+  timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,

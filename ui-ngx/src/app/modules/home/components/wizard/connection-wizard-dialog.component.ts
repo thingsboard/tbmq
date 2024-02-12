@@ -41,14 +41,14 @@ import {
   clientUserNameRandom,
   connectionName,
   DataSizeUnitType,
-  dataSizeUnitTypeTranslationMap,
+  DataSizeUnitTypeTranslationMap,
   MqttVersions,
-  timeUnitTypeTranslationMap,
+  TimeUnitTypeTranslationMap,
   WebSocketConnection,
   WebSocketConnectionConfiguration,
   WebSocketTimeUnit,
   WsAddressProtocolType,
-  wsAddressProtocolTypeValueMap,
+  WsAddressProtocolTypeValueMap,
   WsCredentialsGeneratortTypeTranslationMap,
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
@@ -87,14 +87,14 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   clientTypes = Object.values(ClientType);
 
   wsAddressProtocolType = WsAddressProtocolType;
-  wsAddressProtocolTypeValueMap = wsAddressProtocolTypeValueMap;
+  wsAddressProtocolTypeValueMap = WsAddressProtocolTypeValueMap;
   wsCredentialsGeneratorType = WsCredentialsGeneratorType;
   wsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
+  timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
   dataSizeUnitTypes = Object.keys(DataSizeUnitType);
-  dataSizeUnitTypeTranslationMap = dataSizeUnitTypeTranslationMap;
+  dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
 
   title = 'ws-client.connections.add-connection';
   connection: WebSocketConnection;

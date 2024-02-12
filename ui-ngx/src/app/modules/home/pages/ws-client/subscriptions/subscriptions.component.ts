@@ -43,7 +43,7 @@ export class SubscriptionsComponent {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.connectionUpdated$.subscribe(
       connection => {
         if (isDefinedAndNotNull(connection)) {
           this.loadSubscriptions = true;

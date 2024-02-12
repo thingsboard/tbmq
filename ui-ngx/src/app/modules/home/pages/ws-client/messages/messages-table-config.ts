@@ -97,11 +97,11 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
     this.entitiesFetchFunction = (pageLink) => this.mqttJsClientService.getMessages(pageLink);
 
-    this.mqttJsClientService.clientMessages$.subscribe(() => {
+    this.mqttJsClientService.connectionMessages$.subscribe(() => {
       this.updateData();
     });
 
-    this.mqttJsClientService.selectedConnection$.subscribe(() => {
+    this.mqttJsClientService.connectionUpdated$.subscribe(() => {
       this.updateData();
     });
   }

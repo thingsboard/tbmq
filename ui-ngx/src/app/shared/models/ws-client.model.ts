@@ -18,15 +18,6 @@ import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
 import { randomAlphanumeric } from '@core/utils';
-export type MqttJsProtocolVersion = 3 | 4 | 5;
-export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
-export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
-
-export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
-export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
-export const clientCredentialsNameRandom = (number = randomAlphanumeric(3)) => 'WebSocket Credentials ' + number;
-export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
-export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -39,29 +30,16 @@ export enum ConnectionStatus {
   OFFLINE = 'OFFLINE',
 }
 
-export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>([
-  [ConnectionStatus.CONNECTED, 'ws-client.connections.connected'],
-  [ConnectionStatus.CONNECTING, 'ws-client.connections.connecting'],
-  [ConnectionStatus.DISCONNECTED, 'ws-client.connections.disconnected'],
-  [ConnectionStatus.CONNECTION_FAILED, 'ws-client.connections.connection-failed'],
-  [ConnectionStatus.RECONNECTING, 'ws-client.connections.reconnecting'],
-  [ConnectionStatus.CLOSE, 'ws-client.connections.close'],
-  [ConnectionStatus.END, 'ws-client.connections.end'],
-  [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
-]);
+export type MqttJsProtocolVersion = 3 | 4 | 5;
+export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
+export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
+export declare type QoS = 0 | 1 | 2
 
 export interface ConnectionStatusLog {
-  createdTime: number;
+  createdTime?: number;
   status: ConnectionStatus;
   details?: string;
 }
-
-// TODO check usage
-const MqttJsProtocolIdVersionMap = new Map<MqttJsProtocolVersion, MqttJsProtocolId>([
-  [3, 'MQIsdp'],
-  [4, 'MQTT'],
-  [5, 'MQIsdp']
-]);
 
 export interface ConnectionShortInfo extends BaseData {
   name: string;
@@ -128,15 +106,6 @@ export interface LastWillMsg {
   msgExpiryIntervalUnit?: WebSocketTimeUnit;
   responseTopic?: string;
   correlationData?: Buffer;
-}
-
-export declare type CorrelationData = WithImplicitCoercion<string> | {  [Symbol.toPrimitive](hint: 'string'): string; }
-
-export declare type QoS = 0 | 1 | 2
-
-export enum WsDataType {
-  STRING = 'STRING',
-  JSON = 'JSON'
 }
 
 export interface Connection extends TbConnectionDetails {
@@ -233,14 +202,6 @@ export interface PublishMessageProperties {
   userProperties?: any,
 }
 
-export declare type UserProperties = {[index: string]: string | string[]}
-
-interface TopicObject {
-  [topicName: string]: { qos: QoS };
-}
-
-type Topic = string | string[] | TopicObject;
-
 export interface WebSocketSubscription extends BaseData {
   webSocketConnectionId: string;
   configuration: WebSocketSubscriptionConfiguration;
@@ -259,161 +220,37 @@ export interface WebSocketSubscriptionOptions {
   retainHandling?: number;
 }
 
-interface WsSubscriptionOptions {
-  qos?: QoS;
-  nl?: boolean;
-  rap?: boolean;
-  rh?: number;
+export interface MessageFilterConfig {
+  topic?: string;
+  qosList?: number[];
+  retainList?: boolean[];
+  type?: string;
 }
 
-export interface WsSubscription extends BaseData {
-  topic: Topic; // TODO rename topicfilter
-  color: string;
-  options?: WsSubscriptionOptions;
+export enum WsDataType {
+  STRING = 'STRING',
+  JSON = 'JSON'
 }
-
 export enum WsAddressProtocolType {
   WS = 'WS',
   WSS = 'WSS'
 }
-
 export enum WsCredentialsGeneratorType {
   AUTO = 'AUTO',
   CUSTOM = 'CUSTOM',
   EXISTING = 'EXISTING'
 }
-
-export const WsCredentialsGeneratortTypeTranslationMap = new Map<WsCredentialsGeneratorType, string>(
-  [
-    [WsCredentialsGeneratorType.AUTO, 'ws-client.connections.credentials-auto-generated'],
-    [WsCredentialsGeneratorType.CUSTOM, 'ws-client.connections.credentials-custom'],
-    [WsCredentialsGeneratorType.EXISTING, 'ws-client.connections.credentials-existing']
-  ]
-);
-
-export const wsAddressProtocolTypeValueMap = new Map<WsAddressProtocolType, MqttJsProtocolSecurity>(
-  [
-    [WsAddressProtocolType.WS, 'ws://'],
-    [WsAddressProtocolType.WSS, 'wss://']
-  ]
-);
-
-export const WsAddressProtocols = [
-  {
-    value: 'ws://'
-  },
-  {
-    value: 'wss://'
-  }
-];
-
-export const MqttVersions = [
-  {
-    value: 3,
-    name: 'MQTT 3.1'
-  },
-  {
-    value: 4,
-    name: 'MQTT 3.1.1'
-  },
-  {
-    value: 5,
-    name: 'MQTT 5'
-  }
-];
-
-export const rhOptions = [
-  {
-    value: 0,
-    name: '0 - Send retained messages at the time of the subscribe'
-  },
-  {
-    value: 1,
-    name: '1 - Send retained messages at subscribe only if the subscription does not currently exist'
-  },
-  {
-    value: 2,
-    name: '2 - Do not send retained messages at the time of the subscribe'
-  }
-];
-
-export const mqttPropertyTimeUnit = [
-  {
-    value: 3,
-    name: 'MQTT 3.1'
-  },
-  {
-    value: 4,
-    name: 'MQTT 3.1.1'
-  },
-  {
-    value: 5,
-    name: 'MQTT 5'
-  }
-];
-
 export enum WebSocketTimeUnit {
   MILLISECONDS = 'MILLISECONDS',
   SECONDS = 'SECONDS',
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
-
-export const timeUnitTypeTranslationMap = new Map<WebSocketTimeUnit, string>(
-  [
-    [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
-    [WebSocketTimeUnit.SECONDS, 'timeunit.seconds'],
-    [WebSocketTimeUnit.MINUTES, 'timeunit.minutes'],
-    [WebSocketTimeUnit.HOURS, 'timeunit.hours']
-  ]
-);
-
 export enum DataSizeUnitType {
   BYTE = 'BYTE',
   KILOBYTE = 'KILOBYTE',
   MEGABYTE = 'MEGABYTE'
 }
-
-export const dataSizeUnitTypeTranslationMap = new Map<DataSizeUnitType, string>(
-  [
-    [DataSizeUnitType.BYTE, 'B'],
-    [DataSizeUnitType.KILOBYTE, 'KB'],
-    [DataSizeUnitType.MEGABYTE, 'MB']
-  ]
-);
-
-export const WsClientMessageTypeTranslationMap = new Map<boolean, string>(
-  [
-    [true, 'ws-client.messages.received'],
-    [false, 'ws-client.messages.published']
-  ]
-);
-
-export const WsMessagesTypeFilters = [
-  {
-    name: 'All',
-    value: 'all'
-  },
-  {
-    name: 'Received',
-    value: 'received'
-  },
-  {
-    name: 'Published',
-    value: 'published'
-  }
-];
-
-export const WsPayloadFormats = [
-  {
-    value: ValueType.JSON,
-    name: 'value.json'
-  },
-  {
-    value: ValueType.STRING,
-    name: 'value.string'
-  }
-];
 
 export function transformPropsToObject(input: {props: Array<{k: string, v: number|string}>}): {[key: string]: number|string|Array<number|string>} {
   return input.props.reduce((result: {[key: string]: number|string|Array<number|string>}, current) => {
@@ -431,7 +268,6 @@ export function transformPropsToObject(input: {props: Array<{k: string, v: numbe
     return result;
   }, {});
 }
-
 export function transformObjectToProps(input: {[key: string]: number|string|Array<number|string>}): {props: Array<{k: string, v: number|string}>}  {
   let props = Object.entries(input).flatMap(([k, v]) => {
     if (Array.isArray(v)) {
@@ -442,6 +278,106 @@ export function transformObjectToProps(input: {[key: string]: number|string|Arra
   });
   return { props };
 }
+
+export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
+export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
+export const clientCredentialsNameRandom = (number = randomAlphanumeric(3)) => 'WebSocket Credentials ' + number;
+export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
+export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
+
+export const MessageFilterDefaultConfig: MessageFilterConfig = {
+  type: 'all',
+  topic: null,
+  qosList: null,
+  retainList: null
+};
+export const WsMessagesTypeFilters = [
+  {
+    name: 'All',
+    value: 'all'
+  },
+  {
+    name: 'Received',
+    value: 'received'
+  },
+  {
+    name: 'Published',
+    value: 'published'
+  }
+];
+export const WsPayloadFormats = [
+  {
+    value: ValueType.JSON,
+    name: 'value.json'
+  },
+  {
+    value: ValueType.STRING,
+    name: 'value.string'
+  }
+];
+export const MqttVersions = [
+  {
+    value: 3,
+    name: 'MQTT 3.1'
+  },
+  {
+    value: 4,
+    name: 'MQTT 3.1.1'
+  },
+  {
+    value: 5,
+    name: 'MQTT 5'
+  }
+];
+export const RhOptions = [
+  {
+    value: 0,
+    name: '0 - Send retained messages at the time of the subscribe'
+  },
+  {
+    value: 1,
+    name: '1 - Send retained messages at subscribe only if the subscription does not currently exist'
+  },
+  {
+    value: 2,
+    name: '2 - Do not send retained messages at the time of the subscribe'
+  }
+];
+
+export const WsAddressProtocolTypeValueMap = new Map<WsAddressProtocolType, MqttJsProtocolSecurity>([
+  [WsAddressProtocolType.WS, 'ws://'],
+  [WsAddressProtocolType.WSS, 'wss://']
+]);
+export const WsCredentialsGeneratortTypeTranslationMap = new Map<WsCredentialsGeneratorType, string>([
+    [WsCredentialsGeneratorType.AUTO, 'ws-client.connections.credentials-auto-generated'],
+    [WsCredentialsGeneratorType.CUSTOM, 'ws-client.connections.credentials-custom'],
+    [WsCredentialsGeneratorType.EXISTING, 'ws-client.connections.credentials-existing']
+  ]);
+export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>([
+  [ConnectionStatus.CONNECTED, 'ws-client.connections.connected'],
+  [ConnectionStatus.CONNECTING, 'ws-client.connections.connecting'],
+  [ConnectionStatus.DISCONNECTED, 'ws-client.connections.disconnected'],
+  [ConnectionStatus.CONNECTION_FAILED, 'ws-client.connections.connection-failed'],
+  [ConnectionStatus.RECONNECTING, 'ws-client.connections.reconnecting'],
+  [ConnectionStatus.CLOSE, 'ws-client.connections.close'],
+  [ConnectionStatus.END, 'ws-client.connections.end'],
+  [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
+]);
+export const DataSizeUnitTypeTranslationMap = new Map<DataSizeUnitType, string>([
+    [DataSizeUnitType.BYTE, 'B'],
+    [DataSizeUnitType.KILOBYTE, 'KB'],
+    [DataSizeUnitType.MEGABYTE, 'MB']
+  ]);
+export const TimeUnitTypeTranslationMap = new Map<WebSocketTimeUnit, string>([
+    [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
+    [WebSocketTimeUnit.SECONDS, 'timeunit.seconds'],
+    [WebSocketTimeUnit.MINUTES, 'timeunit.minutes'],
+    [WebSocketTimeUnit.HOURS, 'timeunit.hours']
+  ]);
+export const WsClientMessageTypeTranslationMap = new Map<boolean, string>([
+    [true, 'ws-client.messages.received'],
+    [false, 'ws-client.messages.published']
+  ]);
 
 export const DisconnectReasonCodes = {
   0: 'Normal disconnection',

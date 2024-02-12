@@ -26,7 +26,7 @@ import {
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
-import { timeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import { TimeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 export interface LastWill {
   topic: string;
@@ -64,7 +64,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
+  timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();

@@ -24,7 +24,6 @@ import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection }
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
-import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-connection-controller',
@@ -33,19 +32,16 @@ import { isDefinedAndNotNull } from '@core/utils';
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
-  connection: WebSocketConnection;
-
   isConnected: boolean;
   isDisabled: boolean;
-  actionLabel: string = 'ws-client.connections.connect';
-  password: string;
   isPasswordRequired: boolean;
-  status: ConnectionStatus;
-  connectionStatusTranslationMap = ConnectionStatusTranslationMap;
-  passwordVisible: boolean;
+  isPasswordVisible: boolean;
+  password: string;
   errorMessage: string;
-  private logs: ConnectionStatus[] = [];
+  actionLabel: string = 'ws-client.connections.connect';
 
+  private connection: WebSocketConnection;
+  private status: ConnectionStatus;
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
@@ -58,31 +54,19 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.selectedConnectionStatus$.subscribe(
-      status => {
-        this.logs.push(status);
-        this.status = status;
-        this.updateLabels();
-        this.setDisabledState();
+    this.mqttJsClientService.connectionStatusUpdated$.subscribe(
+      statusObject => {
+        const status = statusObject?.status;
+        const details = statusObject?.details?.trim();
+        this.updateLabels(status, details);
       }
     );
 
-    this.mqttJsClientService.selectedConnection$.subscribe(
+    this.mqttJsClientService.connectionUpdated$.subscribe(
       entity => {
         if (entity) {
           this.connection = entity;
-          this.updateLabels();
           this.isPasswordRequired = entity.configuration.passwordRequired;
-        }
-      }
-    );
-
-    this.mqttJsClientService.selectedConnectionFailedError$.subscribe(
-      error => {
-        if (error) {
-          this.errorMessage = ': ' + error;
-        } else {
-          this.errorMessage = null;
         }
       }
     );
@@ -123,22 +107,21 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     }
   }
 
-  private updateLabels() {
-    if (this.status === ConnectionStatus.CONNECTED) {
+  private updateLabels(status: ConnectionStatus, error: string) {
+    this.status = status;
+    this.isDisabled = status === ConnectionStatus.CONNECTED || status === ConnectionStatus.RECONNECTING;
+    if (status === ConnectionStatus.CONNECTED) {
       this.isConnected = true;
       this.actionLabel = 'ws-client.connections.disconnect';
-      this.errorMessage = null;
     } else {
       this.isConnected = false;
       this.actionLabel = 'ws-client.connections.connect';
     }
-    if (this.status !== ConnectionStatus.CONNECTION_FAILED && !isDefinedAndNotNull(this.errorMessage)) {
+    if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
+      this.errorMessage = error?.length ? (': ' + error) : null;
+    } else {
       this.errorMessage = null;
     }
-  }
-
-  private setDisabledState() {
-    this.isDisabled = this.status === ConnectionStatus.CONNECTED || this.status === ConnectionStatus.RECONNECTING;
   }
 
   connect() {
@@ -156,11 +139,11 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   displayCancelButton(): boolean {
-    return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING);
+    return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING); // TODO check reconnecting cases
   }
 
   getStatus() {
-    return this.connectionStatusTranslationMap.get(this.status) || 'ws-client.connections.disconnected';
+    return ConnectionStatusTranslationMap.get(this.status) || 'ws-client.connections.disconnected';
   }
 
   setStyle() {

@@ -24,7 +24,7 @@ import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import {
   PublishMessageProperties,
-  timeUnitTypeTranslationMap,
+  TimeUnitTypeTranslationMap,
   WebSocketConnection,
   WebSocketTimeUnit
 } from '@shared/models/ws-client.model';
@@ -46,7 +46,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
   connection: WebSocketConnection;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  timeUnitTypeTranslationMap = timeUnitTypeTranslationMap;
+  timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
 
   private destroy$ = new Subject<void>();
 

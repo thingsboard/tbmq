@@ -18,9 +18,9 @@
 <div class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" translate>ws-client.connections.connection-status</span>
-    <span class="status" [ngStyle]="setStyle()"
-          #showConnectionStatusLogs (mouseover)="showStatusLogs($event, showConnectionStatusLogs)">
-      {{ getStatus() | translate }}{{ errorMessage }}
+    <span class="status" #showConnectionStatusLogs
+          [ngStyle]="setStyle()" (mouseover)="showStatusLogs($event, showConnectionStatusLogs)">
+      {{ getStatus() | translate }}{{ errorMessage | lowercase }}
     </span>
   </section>
   <ng-container *ngIf="isConnected; else disconnected">
@@ -38,10 +38,10 @@
   <section fxLayout="row" fxLayoutGap="16px">
     <mat-form-field *ngIf="isPasswordRequired && !isDisabled" appearance="outline" subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-credentials.password</mat-label>
-      <input matInput [(ngModel)]="password" [type]="!passwordVisible ? 'password' : 'text'" required>
-      <button mat-icon-button matSuffix (click)="passwordVisible = !passwordVisible"
-              [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!passwordVisible">
-        <mat-icon class="tb-mat-18">{{ passwordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
+      <input matInput [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
+      <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"
+              [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
+        <mat-icon class="tb-mat-18">{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
       </button>
     </mat-form-field>
     <button mat-button color="primary" *ngIf="displayCancelButton()"

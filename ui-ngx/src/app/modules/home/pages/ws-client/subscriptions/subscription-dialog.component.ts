@@ -23,7 +23,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { colorRandom, rhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
+import { colorRandom, RhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -43,7 +43,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
 
   formGroup: UntypedFormGroup;
 
-  rhOptions = rhOptions;
+  rhOptions = RhOptions;
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
 
