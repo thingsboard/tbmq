@@ -81,7 +81,18 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     @Override
+    public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg) {
+        sendPublishMsgProtoToClient(sessionCtx, msg, msg.getQos(), msg.getRetain());
+    }
+
+    @Override
     public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
+        int qos = Math.min(subscription.getQos(), msg.getQos());
+        boolean retain = subscription.getOptions().isRetain(msg);
+        sendPublishMsgProtoToClient(sessionCtx, msg, qos, retain);
+    }
+
+    private void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, int qos, boolean retain) {
         if (isTraceEnabled) {
             log.trace("[{}] Sending Pub msg to client {}", sessionCtx.getClientId(), msg);
         }
@@ -96,8 +107,6 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
         String topicName = topicAliasResult == null ? msg.getTopicName() : topicAliasResult.getTopicName();
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
-        int qos = Math.min(subscription.getQos(), msg.getQos());
-        boolean retain = subscription.getOptions().isRetain(msg);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
 
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);

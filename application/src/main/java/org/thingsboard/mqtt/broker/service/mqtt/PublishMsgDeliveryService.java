@@ -24,6 +24,8 @@ public interface PublishMsgDeliveryService {
 
     void sendPublishMsgToClient(ClientSessionCtx sessionCtx, PublishMsg publishMsg);
 
+    void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto publishMsgProto);
+
     void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto publishMsgProto, Subscription subscription);
 
     void sendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, PublishMsg publishMsg);

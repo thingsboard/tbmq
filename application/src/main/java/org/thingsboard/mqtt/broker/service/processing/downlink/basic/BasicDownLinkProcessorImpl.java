@@ -18,10 +18,8 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -45,8 +43,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             }
             return;
         }
-        PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(clientSessionCtx, msg);
-        publishMsgDeliveryService.sendPublishMsgToClient(clientSessionCtx, publishMsg);
+        publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg);
         clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
     }
 
