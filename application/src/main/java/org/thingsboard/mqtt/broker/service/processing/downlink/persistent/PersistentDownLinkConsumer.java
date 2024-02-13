@@ -16,5 +16,6 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink.persistent;
 
 public interface PersistentDownLinkConsumer {
+
     void startConsuming();
 }

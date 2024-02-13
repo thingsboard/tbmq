@@ -16,16 +16,19 @@
 package org.thingsboard.mqtt.broker.common.stats;
 
 import io.micrometer.core.instrument.Timer;
+import lombok.Getter;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ResettableTimer {
+
     private final AtomicInteger logCount = new AtomicInteger(0);
     private final AtomicLong passedNanoseconds = new AtomicLong(0);
     private final AtomicLong currentMaxValue = new AtomicLong(0);
 
+    @Getter
     private final Timer timer;
     private final boolean storeMaxValue;
 
@@ -68,7 +71,4 @@ public class ResettableTimer {
         currentMaxValue.getAndSet(0);
     }
 
-    public Timer getTimer() {
-        return timer;
-    }
 }

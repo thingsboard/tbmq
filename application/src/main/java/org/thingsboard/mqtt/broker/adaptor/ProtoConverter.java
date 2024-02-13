@@ -37,7 +37,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
@@ -101,10 +100,6 @@ public class ProtoConverter {
     public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId,
                                                  int qos, boolean isDup) {
         return convertProtoToPublishMsg(msg, packetId, qos, isDup);
-    }
-
-    public static PublishMsg convertToPublishMsg(ClientSessionCtx clientSessionCtx, QueueProtos.PublishMsgProto msg) {
-        return convertProtoToPublishMsg(msg, clientSessionCtx.getMsgIdSeq().nextMsgId(), msg.getQos(), false);
     }
 
     private static PublishMsg convertProtoToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId, int qos, boolean isDup) {

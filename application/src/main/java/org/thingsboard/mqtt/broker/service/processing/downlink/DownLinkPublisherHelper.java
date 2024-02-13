@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 public interface DownLinkPublisherHelper {
+
     String getBasicDownLinkServiceTopic(String serviceId);
 
     String getPersistentDownLinkServiceTopic(String serviceId);
