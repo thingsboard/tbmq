@@ -44,7 +44,7 @@ public class WebSocketConnectionConfiguration {
     private int reconnectPeriod;
     private TimeUnit reconnectPeriodUnit;
     private int mqttVersion;
-    private int sessionExpiryInterval;
+    private long sessionExpiryInterval;
     private TimeUnit sessionExpiryIntervalUnit;
     private int maxPacketSize;
     private SizeUnit maxPacketSizeUnit;
