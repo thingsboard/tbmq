@@ -54,7 +54,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connectionStatusUpdated$.subscribe(
+    this.mqttJsClientService.connectionStatus$.subscribe(
       statusObject => {
         const status = statusObject?.status;
         const details = statusObject?.details?.trim();
@@ -62,7 +62,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       }
     );
 
-    this.mqttJsClientService.connectionUpdated$.subscribe(
+    this.mqttJsClientService.connection$.subscribe(
       entity => {
         if (entity) {
           this.connection = entity;
@@ -125,7 +125,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   connect() {
-    this.status = ConnectionStatus.CONNECTING;
+    // this.status = ConnectionStatus.CONNECTING;
     const password = this.isPasswordRequired ? this.password : null;
     this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(
       connection => {
@@ -135,7 +135,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.mqttJsClientService.disconnectSelectedClient();
+    this.mqttJsClientService.disconnectActiveConnectedClient();
   }
 
   displayCancelButton(): boolean {

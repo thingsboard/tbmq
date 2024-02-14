@@ -122,6 +122,7 @@ import { HelpMarkdownComponent } from '@shared/components/help-markdown.componen
 import { TbComponentOutletDirective } from '@shared/components/directives/component-outlet.directive';
 import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
 import { HelpPageComponent } from '@shared/components/help-page.component';
+import { MatBadgeModule } from '@angular/material/badge';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -249,6 +250,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     MatAutocompleteModule,
     MatChipsModule,
     MatListModule,
+    MatBadgeModule,
     MatDatepickerModule,
     MatNativeDatetimeModule,
     MatDatetimepickerModule,
@@ -318,6 +320,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     MatAutocompleteModule,
     MatChipsModule,
     MatListModule,
+    MatBadgeModule,
     MatDatepickerModule,
     MatNativeDatetimeModule,
     MatDatetimepickerModule,

@@ -78,13 +78,13 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
       new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
-      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '75%'),
-      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '25px', entity => entity.qos.toString(),
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '60%'),
+      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '20%', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
-      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '25%',
+      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '20%',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
-      new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', '200px', (entity) => {
+      new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', '150px', (entity) => {
         const content = entity.payload;
         try {
           const parsedContent = JSON.parse(content);
@@ -97,11 +97,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
     this.entitiesFetchFunction = (pageLink) => this.mqttJsClientService.getMessages(pageLink);
 
-    this.mqttJsClientService.connectionMessages$.subscribe(() => {
-      this.updateData();
-    });
-
-    this.mqttJsClientService.connectionUpdated$.subscribe(() => {
+    this.mqttJsClientService.messages$.subscribe(() => {
       this.updateData();
     });
   }

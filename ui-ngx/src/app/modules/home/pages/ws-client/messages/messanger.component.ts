@@ -44,6 +44,7 @@ export class MessangerComponent implements OnInit {
   connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
+  counter = 0;
 
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
@@ -86,7 +87,7 @@ export class MessangerComponent implements OnInit {
       })
     });
 
-    this.mqttJsClientService.connectionUpdated$.subscribe(
+    this.mqttJsClientService.connection$.subscribe(
       connection => {
         if (connection) {
           this.connection = connection;
@@ -95,11 +96,15 @@ export class MessangerComponent implements OnInit {
       }
     )
 
-    this.mqttJsClientService.connectionStatusUpdated$.subscribe(
+    this.mqttJsClientService.connectionStatus$.subscribe(
       status => {
         this.isConnected = status?.status === ConnectionStatus.CONNECTED;
       }
     );
+
+    this.mqttJsClientService.messageCounter.subscribe(value => {
+      this.counter = value;
+    })
 
     this.mqttJsClientService.filterMessages({
       topic: null,
@@ -176,6 +181,7 @@ export class MessangerComponent implements OnInit {
   }
 
   onMessageFilterChange(type: string) {
+    this.selectedOption = type;
     this.mqttJsClientService.filterMessages({type});
   }
 

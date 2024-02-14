@@ -26,7 +26,7 @@ import { Observable } from 'rxjs';
 })
 export class ConnectionsComponent {
 
-  connection: Observable<WebSocketConnection> = this.mqttJsClientService.connectionUpdated$;
+  connection: Observable<WebSocketConnection> = this.mqttJsClientService.connection$;
 
   constructor(private mqttJsClientService: MqttJsClientService) {
   }

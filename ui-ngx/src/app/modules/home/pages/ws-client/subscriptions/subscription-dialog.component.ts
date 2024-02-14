@@ -93,7 +93,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
         retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled}, []],
-        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : null, disabled}, []]
+        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : 0, disabled}, []]
       })
     });
   }

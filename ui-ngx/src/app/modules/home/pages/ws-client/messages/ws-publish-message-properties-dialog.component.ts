@@ -96,6 +96,20 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
     this.dialogRef.close(properties);
   }
 
+  calcMax(unitControl: string) {
+    const messageExpiryInterval = this.formGroup.get(unitControl)?.value;
+    switch (messageExpiryInterval) {
+      case WebSocketTimeUnit.MILLISECONDS:
+        return 4294967295000;
+      case WebSocketTimeUnit.SECONDS:
+        return 4294967295;
+      case WebSocketTimeUnit.MINUTES:
+        return 71582788;
+      case WebSocketTimeUnit.HOURS:
+        return 1193046;
+    }
+  }
+
   private topicAliasMaxValidator(): ValidatorFn {
     return (control: AbstractControl): {[key: string]: boolean} | null => {
       if (control.value !== undefined && control.value > this.connection.configuration?.topicAliasMax) {

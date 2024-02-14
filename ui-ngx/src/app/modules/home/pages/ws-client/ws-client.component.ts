@@ -24,8 +24,8 @@ import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
-import { Observable, ReplaySubject } from 'rxjs';
-import { map, share, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 
 @Component({
@@ -47,7 +47,7 @@ export class WsClientComponent extends PageComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connectionsUpdated$.subscribe((res) => {
+    this.mqttJsClientService.connections$.subscribe((res) => {
       this.updateData(res);
     });
   }
@@ -90,11 +90,7 @@ export class WsClientComponent extends PageComponent implements OnInit {
           return res.data;
         }
         return [];
-      }),
-      share({
-        connector: () => new ReplaySubject(1)
-      }),
-      tap(() => setTimeout(() => this.cd.markForCheck()))
+      })
     );
   }
 }

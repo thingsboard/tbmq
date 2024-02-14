@@ -17,7 +17,7 @@
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm } from '@angular/forms';
 import { ValueType, valueTypesMap } from '@shared/models/constants';
-import { isObject } from '@core/utils';
+import { isValidObjectString } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import {
   JsonObjectEditDialogComponent,
@@ -103,10 +103,11 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
   }
 
   writeValue(value: any): void {
-    this.modelValue = value;
-    if (isObject(this.modelValue)) {
+    if (isValidObjectString(value)) {
+      this.modelValue = JSON.parse(value);
       this.valueType = ValueType.JSON;
     } else {
+      this.modelValue = value;
       this.valueType = ValueType.STRING;
     }
   }

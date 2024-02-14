@@ -17,8 +17,10 @@
 -->
 <section class="tb-ws-client-title-toolbar mat-padding">
   <section class="tb-ws-client-title-toolbar">
-    <span class="tb-ws-client-title" translate>ws-client.connections.messages</span>
+    <span class="tb-ws-client-title" style="margin-right: 8px" translate>ws-client.connections.messages</span>
     <tb-toggle-select appearance="stroked"
+                      [matBadge]="counter"
+                      matBadgePosition="above before"
                       (ngModelChange)="onMessageFilterChange($event)"
                       [ngModelOptions]="{ standalone: true }"
                       [options]="messagesTypeFilters"

@@ -87,7 +87,7 @@ export interface WebSocketConnectionConfiguration {
   topicAliasMax?: number;
   receiveMax?: number;
   requestResponseInfo?: boolean;
-  requestProblemInfo?: boolean;
+  // requestProblemInfo?: boolean;
   lastWillMsg?: LastWillMsg;
   userProperties?: any;
 }
@@ -96,7 +96,7 @@ export interface LastWillMsg {
   topic?: string;
   qos?: QoS;
   payload?: Buffer;
-  payloadType?: WsDataType;
+  payloadType?: ValueType;
   retain?: boolean;
   payloadFormatIndicator?: boolean;
   contentType?: string;
@@ -154,7 +154,7 @@ export interface ConnectionProperties extends TbConnectionProperties{
   maximumPacketSize?: number;
   topicAliasMaximum?: number;
   requestResponseInformation?: boolean;
-  requestProblemInformation?: boolean;
+  // requestProblemInformation?: boolean;
 }
 
 interface TbWillProperties {
@@ -227,10 +227,6 @@ export interface MessageFilterConfig {
   type?: string;
 }
 
-export enum WsDataType {
-  STRING = 'STRING',
-  JSON = 'JSON'
-}
 export enum WsAddressProtocolType {
   WS = 'WS',
   WSS = 'WSS'
@@ -281,7 +277,7 @@ export function transformObjectToProps(input: {[key: string]: number|string|Arra
 
 export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
 export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
-export const clientCredentialsNameRandom = (number = randomAlphanumeric(3)) => 'WebSocket Credentials ' + number;
+export const clientCredentialsNameRandom = (number = randomAlphanumeric(8)) => 'WebSocket Credentials ' + number;
 export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
 export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
 

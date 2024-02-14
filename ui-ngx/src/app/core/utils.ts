@@ -124,6 +124,15 @@ export function isLiteralObject(value: any) {
   return (!!value) && (value.constructor === Object);
 }
 
+export function isValidObjectString(s: string): boolean {
+  try {
+    JSON.parse(s);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 export const formatValue = (value: any, dec?: number, units?: string, showZeroDecimals?: boolean): string | undefined => {
   if (isDefinedAndNotNull(value) && isNumeric(value) &&
     (isDefinedAndNotNull(dec) || isDefinedAndNotNull(units) || Number(value).toString() === value)) {

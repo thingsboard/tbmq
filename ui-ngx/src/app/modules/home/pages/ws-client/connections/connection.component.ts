@@ -50,7 +50,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connectionUpdated$.subscribe(
+    this.mqttJsClientService.connection$.subscribe(
       res => {
         this.selectedConnection = res;
       }
@@ -143,6 +143,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   private connectAndSelect(connection: WebSocketConnection) {
+    this.mqttJsClientService.findAndDisconnectClientByConnection(connection);
     this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
     this.mqttJsClientService.selectConnection(connection);
   }

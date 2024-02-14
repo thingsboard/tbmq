@@ -26,12 +26,8 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { MediaBreakpoints } from '@shared/models/constants';
-import {
-  deepTrim,
-  isDefinedAndNotNull,
-  isNotEmptyStr
-} from '@core/utils';
+import { MediaBreakpoints, ValueType } from '@shared/models/constants';
+import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject } from '@core/utils';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
@@ -170,7 +166,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required]],
       url: [entity ? entity.configuration.url : this.generateUrl(WsAddressProtocolType.WS), [Validators.required]],
       credentialsName: [{
-        value: clientCredentialsNameRandom((this.data.connectionsTotal + 1).toString()),
+        value: clientCredentialsNameRandom(),
         disabled: true
       }, [Validators.required]],
       clientId: [{value: entity ? entity.configuration.clientId : clientIdRandom(), disabled: true}, [Validators.required]],
@@ -246,7 +242,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (value === WsCredentialsGeneratorType.AUTO) {
       this.connectionFormGroup.get('credentialsName').patchValue(clientCredentialsNameRandom());
       this.connectionFormGroup.get('credentialsName').disable();
-      this.connectionFormGroup.get('clientId').setValidators(Validators.required);
+      // this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(clientUserNameRandom());
@@ -260,7 +256,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
-      this.connectionFormGroup.get('clientId').setValidators(Validators.required);
+      // this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(this.connection?.configuration?.clientId ? this.connection.configuration.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
       this.connectionFormGroup.get('username').patchValue(this.connection?.configuration.username ? this.connection.configuration.username : null);
@@ -273,7 +269,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.EXISTING) {
       this.connectionFormGroup.get('credentialsName').enable();
-      this.connectionFormGroup.get('clientId').setValidators(null);
+      // this.connectionFormGroup.get('clientId').setValidators(null);
       this.connectionFormGroup.get('clientId').patchValue(null);
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(null);
@@ -382,8 +378,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     config.maxPacketSize = formValues.properties?.maximumPacketSize;
     config.topicAliasMax = formValues.properties?.topicAliasMaximum;
     config.receiveMax = formValues.properties?.receiveMaximum;
-    config.requestResponseInfo = formValues.properties?.requestResponseInformation;
-    config.requestProblemInfo = formValues.properties?.requestProblemInformation;
+    config.requestResponseInfo = formValues.properties?.requestResponseInfo;
+    // config.requestProblemInfo = formValues.properties?.requestProblemInformation;
     config.mqttVersion = formValues.protocolVersion;
     config.keepAliveUnit = formValues.keepaliveUnit;
     config.connectTimeoutUnit = formValues.connectTimeoutUnit;
@@ -395,8 +391,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       config.lastWillMsg = {};
       config.lastWillMsg.topic = formValues.lastWillMsg.topic;
       config.lastWillMsg.qos = formValues.lastWillMsg.qos;
-      config.lastWillMsg.payload = formValues.lastWillMsg.payload;
-      config.lastWillMsg.payloadType = formValues.lastWillMsg.payloadType;
+      config.lastWillMsg.payload = isObject(formValues.lastWillMsg.payload) ? JSON.stringify(formValues.lastWillMsg.payload) : formValues.lastWillMsg.payload;
+      config.lastWillMsg.payloadType = isObject(formValues.lastWillMsg.payload) ? ValueType.JSON : ValueType.STRING;
       config.lastWillMsg.retain = formValues.lastWillMsg.retain;
       config.lastWillMsg.payloadFormatIndicator = formValues.lastWillMsg.payloadFormatIndicator;
       config.lastWillMsg.contentType = formValues.lastWillMsg.contentType;
@@ -443,6 +439,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.passwordRequired = false;
         this.connectionFormGroup.get('password').clearValidators();
       }
+      if (isDefinedAndNotNull(credentialsValue.clientId)) {
+        this.connectionFormGroup.get('clientId').disable();
+      } else {
+        this.connectionFormGroup.get('clientId').enable();
+      }
     } else {
       this.passwordRequired = false;
       this.connectionFormGroup.get('password').clearValidators();
@@ -467,6 +468,46 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
           username: clientUserNameRandom()
         });
         break;
+    }
+  }
+
+  calcMax(type: string): number {
+    if (type === 'keepalive') {
+      const keepaliveUnit = this.connectionAdvancedFormGroup.get('keepaliveUnit')?.value;
+      switch (keepaliveUnit) {
+        case WebSocketTimeUnit.MILLISECONDS:
+          return 65535000;
+        case WebSocketTimeUnit.SECONDS:
+          return 65535;
+        case WebSocketTimeUnit.MINUTES:
+          return 1092;
+        case WebSocketTimeUnit.HOURS:
+          return 18;
+      }
+    }
+    if (type === 'sessionExpiryInterval') {
+      const sessionExpiryIntervalUnit = this.connectionAdvancedFormGroup.get('properties')?.get('sessionExpiryIntervalUnit')?.value;
+      switch (sessionExpiryIntervalUnit) {
+        case WebSocketTimeUnit.MILLISECONDS:
+          return 2147483647000;
+        case WebSocketTimeUnit.SECONDS:
+          return 2147483647;
+        case WebSocketTimeUnit.MINUTES:
+          return 35791394;
+        case WebSocketTimeUnit.HOURS:
+          return 596523;
+      }
+    }
+    if (type === 'maximumPacketSize') {
+      const sessionExpiryIntervalUnit = this.connectionAdvancedFormGroup.get('properties')?.get('maximumPacketSizeUnit')?.value;
+      switch (sessionExpiryIntervalUnit) {
+        case DataSizeUnitType.BYTE:
+          return 268435456;
+        case DataSizeUnitType.KILOBYTE:
+          return 262144;
+        case DataSizeUnitType.MEGABYTE:
+          return 256;
+      }
     }
   }
 }

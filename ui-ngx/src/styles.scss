@@ -1296,4 +1296,14 @@ mat-label {
   line-height: 24px;
   letter-spacing: 0.2px;
   color: rgba(0, 0, 0, 0.76);
+  text-overflow: ellipsis;
+  overflow-y: clip;
+  max-width: 400px;
+}
+
+.tb-ws-client-subtitle {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.2px;
+  color: rgba(0, 0, 0, 0.38);
 }

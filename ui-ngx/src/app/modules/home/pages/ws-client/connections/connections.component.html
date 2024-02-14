@@ -16,6 +16,11 @@
 
 -->
 <section class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
-  <span class="tb-ws-client-title">{{ (connection | async)?.name }}</span>
+  <section fxLayout="column">
+    <span class="tb-ws-client-title">{{ (connection | async)?.name }}</span>
+    <span class="tb-ws-client-subtitle">
+      {{'mqtt-client.client-id' | translate }}: {{ (connection | async)?.configuration?.clientId }}
+    </span>
+  </section>
   <tb-select-connection></tb-select-connection>
 </section>

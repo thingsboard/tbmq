@@ -202,7 +202,8 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   reset() {
     this.updateConfigForm(this.initialFilterConfig);
-    this.configUpdated(this.initialFilterConfig);
+    this.filterConfigForm.markAsDirty();
+    this.filterConfigForm.updateValueAndValidity();
   }
 
   cancel() {

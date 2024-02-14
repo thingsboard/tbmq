@@ -71,11 +71,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
           return res.data;
         }
         return [];
-      }),
-      share({
-        connector: () => new ReplaySubject(1)
-      }),
-      tap(() => setTimeout(() => this.cd.markForCheck()))
+      })
     );
   }
 

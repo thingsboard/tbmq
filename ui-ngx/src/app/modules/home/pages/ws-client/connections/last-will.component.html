@@ -68,7 +68,7 @@
     <section fxLayout="row" fxLayoutGap="8px">
       <mat-form-field fxFlex>
         <mat-label translate>ws-client.last-will.will-delay-interval</mat-label>
-        <input matInput formControlName="willDelayInterval" type="number" min="0">
+        <input matInput formControlName="willDelayInterval" type="number" min="0" [max]="calcMax('willDelayIntervalUnit')">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.will-delay-interval-hint' | translate">
           help
         </mat-icon>
@@ -85,7 +85,7 @@
     <section fxLayout="row" fxLayoutGap="8px">
       <mat-form-field fxFlex>
         <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
-        <input matInput formControlName="msgExpiryInterval" type="number" min="0">
+        <input matInput formControlName="msgExpiryInterval" type="number" min="0" [max]="calcMax('msgExpiryIntervalUnit')">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.message-expiry-interval-hint' | translate">
           help
         </mat-icon>

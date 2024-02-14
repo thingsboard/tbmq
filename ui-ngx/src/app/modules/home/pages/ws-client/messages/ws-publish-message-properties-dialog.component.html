@@ -51,7 +51,7 @@
       <section fxLayout="row" fxLayoutGap="8px">
         <mat-form-field fxFlex subscriptSizing="dynamic">
           <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
-          <input matInput formControlName="messageExpiryInterval" type="number" min="0">
+          <input matInput formControlName="messageExpiryInterval" type="number" min="0" [max]="calcMax('messageExpiryIntervalUnit')">
           <mat-icon matSuffix [matTooltip]="'ws-client.last-will.message-expiry-interval-hint' | translate">
             help
           </mat-icon>
