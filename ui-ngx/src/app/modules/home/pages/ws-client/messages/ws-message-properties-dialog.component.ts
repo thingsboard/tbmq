@@ -64,7 +64,7 @@ export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessag
       payloadFormatIndicator: [{value: entity.payloadFormatIndicator, disabled: true}, []],
       contentType: [{value: entity.contentType, disabled: true}, []],
       messageExpiryInterval: [{value: entity.messageExpiryInterval, disabled: true}, []],
-      messageExpiryIntervalUnit: [{value: entity.messageExpiryIntervalUnit, disabled: true}, []],
+      messageExpiryIntervalUnit: [{value: entity.messageExpiryIntervalUnit || WebSocketTimeUnit.SECONDS, disabled: true}, []],
       topicAlias: [{value: entity.topicAlias, disabled: true}, []],
       correlationData: [{value: entity.correlationData, disabled: true}, []],
       responseTopic: [{value: entity.responseTopic, disabled: true}, []],
