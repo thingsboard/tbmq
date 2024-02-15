@@ -28,7 +28,7 @@ import {
   WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
-import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient } from 'mqtt';
+import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IDisconnectPacket, IPublishPacket, MqttClient } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
 import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber } from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
@@ -370,11 +370,6 @@ export class MqttJsClientService {
       if (this.connectionMqttClientMap.has(connectionId)) {
         this.connectionMqttClientMap.delete(connectionId);
       }
-      if (!!mqttClient.reconnecting && !mqttClient.connected) {
-        const details = this.translate.instant('ws-client.connections.check-connection-options');
-        this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED, details);
-        this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, details);
-      }
       console.log('End...', mqttClient);
     });
     mqttClient.on('outgoingEmpty', () => {
@@ -383,19 +378,11 @@ export class MqttJsClientService {
     mqttClient.on('packetsend', (packet: IConnackPacket) => {
       console.log('Packet Send...', packet);
     });
-    mqttClient.on('packetreceive', (packet: IConnackPacket) => {
-      // @ts-ignore
+    mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
       if (packet.cmd == 'disconnect') {
         const reason = DisconnectReasonCodes[packet.reasonCode];
         this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED, reason);
         this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
-      } else {
-        if (packet?.reasonCode) {
-          console.log('REASON CODE NOT SET ERROR', packet);
-          /*const reason = DisconnectReasonCodes[packet.reasonCode];
-          this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED, reason);
-          this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);*/
-        }
       }
       console.log('Packet Receive...', packet);
     });
