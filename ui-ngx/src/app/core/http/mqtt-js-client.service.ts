@@ -275,9 +275,8 @@ export class MqttJsClientService {
           willDelayInterval: convertTimeUnits(connection.configuration.lastWillMsg.willDelayInterval, connection.configuration.lastWillMsg.willDelayIntervalUnit, WebSocketTimeUnit.SECONDS),
           messageExpiryInterval: convertTimeUnits(connection.configuration.lastWillMsg.msgExpiryInterval, connection.configuration.lastWillMsg.msgExpiryIntervalUnit, WebSocketTimeUnit.SECONDS),
           payloadFormatIndicator: connection.configuration.lastWillMsg.payloadFormatIndicator,
+          correlationData: Buffer.from(connection.configuration.lastWillMsg.correlationData)
         };
-        // @ts-ignore
-        options.will.properties.correlationData = Buffer.from([connection.configuration.lastWillMsg.correlationData]);
         if (isDefinedAndNotNull(connection.configuration.userProperties)) {
           // @ts-ignore
           options.will.properties.userProperties = transformPropsToObject(connection.configuration.userProperties);
@@ -421,7 +420,9 @@ export class MqttJsClientService {
       status,
       details
     });
-    this.connectionStatusSubject$.next(this.connectionStatusMap.get(connection.id));
+    if (this.getActiveConnectionId() === connection.id) {
+      this.connectionStatusSubject$.next(this.connectionStatusMap.get(connection.id));
+    }
   }
 
   private setConnectionLog(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
