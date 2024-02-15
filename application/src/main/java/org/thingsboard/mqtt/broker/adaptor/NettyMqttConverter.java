@@ -25,6 +25,7 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
+import io.netty.handler.codec.mqtt.MqttSubscriptionOption;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -55,6 +57,22 @@ import java.util.stream.Collectors;
 public class NettyMqttConverter {
 
     public static MqttConnectMsg createMqttConnectMsg(UUID sessionId, MqttConnectMessage nettyConnectMsg) {
+
+        try {
+            MqttProperties properties = nettyConnectMsg.variableHeader().properties();
+
+            log.info("Clean start: {}", nettyConnectMsg.variableHeader().isCleanSession());
+            log.info("Keep alive: {}", nettyConnectMsg.variableHeader().keepAliveTimeSeconds());
+            log.info("Session expiry interval: {}", properties.getProperty(MqttProperties.MqttPropertyType.SESSION_EXPIRY_INTERVAL.value()).value());
+            log.info("Max packet size: {}", properties.getProperty(MqttProperties.MqttPropertyType.MAXIMUM_PACKET_SIZE.value()).value());
+            log.info("Topic alias max: {}", properties.getProperty(MqttProperties.MqttPropertyType.TOPIC_ALIAS_MAXIMUM.value()).value());
+            log.info("Receive max: {}", properties.getProperty(MqttProperties.MqttPropertyType.RECEIVE_MAXIMUM.value()).value());
+            log.info("Request response info: {}", properties.getProperty(MqttProperties.MqttPropertyType.REQUEST_RESPONSE_INFORMATION.value()).value());
+        } catch (Exception ignored) {
+
+        }
+
+
         return new MqttConnectMsg(
                 sessionId,
                 nettyConnectMsg.payload().clientIdentifier(),
@@ -68,11 +86,15 @@ public class NettyMqttConverter {
         List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions()
                 .stream()
                 .map(mqttTopicSubscription ->
-                        new TopicSubscription(
-                                getTopicName(mqttTopicSubscription.topicFilter()),
-                                mqttTopicSubscription.qualityOfService().value(),
-                                getShareName(mqttTopicSubscription.topicFilter()),
-                                SubscriptionOptions.newInstance(mqttTopicSubscription.option())))
+                {
+                    MqttSubscriptionOption option = mqttTopicSubscription.option();
+                    log.info("Subscription options: {}", option);
+                    return new TopicSubscription(
+                            getTopicName(mqttTopicSubscription.topicFilter()),
+                            mqttTopicSubscription.qualityOfService().value(),
+                            getShareName(mqttTopicSubscription.topicFilter()),
+                            SubscriptionOptions.newInstance(option));
+                })
                 .collect(Collectors.toList());
         MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
         int messageId = mqttMessageIdVariableHeader.messageId();
@@ -178,6 +200,26 @@ public class NettyMqttConverter {
     }
 
     private static PublishMsg extractLastWillPublishMsg(MqttConnectMessage msg) {
+
+        try {
+            MqttProperties properties = msg.payload().willProperties();
+
+            log.info("Last will topic: {}", msg.payload().willTopic());
+            log.info("Last will qos: {}", msg.variableHeader().willQos());
+            log.info("Last will payload: {}", new String(msg.payload().willMessageInBytes(), StandardCharsets.UTF_8));
+            log.info("Last will retain: {}", msg.variableHeader().isWillRetain());
+
+            log.info("Last will payload format indicator: {}", properties.getProperty(MqttProperties.MqttPropertyType.PAYLOAD_FORMAT_INDICATOR.value()).value());
+            log.info("Last will content type: {}", properties.getProperty(MqttProperties.MqttPropertyType.CONTENT_TYPE.value()).value());
+            log.info("Last will will delay interval: {}", properties.getProperty(MqttProperties.MqttPropertyType.WILL_DELAY_INTERVAL.value()).value());
+            log.info("Last will msg expiry interval: {}", properties.getProperty(MqttProperties.MqttPropertyType.PUBLICATION_EXPIRY_INTERVAL.value()).value());
+            log.info("Last will response topic: {}", properties.getProperty(MqttProperties.MqttPropertyType.RESPONSE_TOPIC.value()).value());
+            log.info("Last will Correlation data: {}", new String((byte[]) (properties.getProperty(MqttProperties.MqttPropertyType.CORRELATION_DATA.value())).value(), StandardCharsets.UTF_8));
+            log.info("Last will User props: {}", properties.getProperty(MqttProperties.MqttPropertyType.USER_PROPERTY.value()));
+        } catch (Exception ignored) {
+
+        }
+
         return PublishMsg.builder()
                 .packetId(-1)
                 .topicName(msg.payload().willTopic())
