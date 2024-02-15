@@ -14,18 +14,15 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, EventEmitter, forwardRef, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { PageLink } from '@shared/models/page/page-link';
 import { Direction } from '@shared/models/page/sort-order';
 import { catchError, debounceTime, distinctUntilChanged, map, share, switchMap, tap } from 'rxjs/operators';
-import { Store } from '@ngrx/store';
-import { AppState } from '@app/core/core.state';
 import { TranslateService } from '@ngx-translate/core';
 import { TruncatePipe } from '@shared//pipe/truncate.pipe';
 import { ENTER } from '@angular/cdk/keycodes';
-import { MatDialog } from '@angular/material/dialog';
 import { MatAutocomplete } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
 import { SubscriptSizing } from '@angular/material/form-field';
@@ -33,7 +30,6 @@ import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
-import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-client-credentials-autocomplete',
@@ -85,12 +81,6 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   @Input()
   hint: string;
 
-  @Output()
-  clientCredentialsUpdated = new EventEmitter<ClientCredentials>();
-
-  @Output()
-  clientCredentialsChanged = new EventEmitter<ClientCredentials>();
-
   @ViewChild('clientCredentialsInput', {static: true})
   clientCredentialsInput: ElementRef;
 
@@ -105,15 +95,14 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
 
   private ignoreClosedPanel = false;
 
-  private propagateChange = (v: any) => { };
+  private propagateChange = (v: any) => {
+  };
 
-  constructor(private store: Store<AppState>,
-              public translate: TranslateService,
+  constructor(public translate: TranslateService,
               public truncate: TruncatePipe,
               private clientCredentialsService: ClientCredentialsService,
               private fb: UntypedFormBuilder,
-              private zone: NgZone,
-              private dialog: MatDialog) {
+              private zone: NgZone) {
     this.selectCredentialsFormGroup = this.fb.group({
       clientCredentials: [null]
     });
@@ -137,7 +126,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
             modelValue = value;
           }
           if (!this.displayAllOnEmpty || modelValue) {
-            this.updateView(modelValue);
+            this.updateView(modelValue?.id);
           }
         }),
         map(value => {
@@ -171,29 +160,10 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     }
   }
 
-  writeValue(credentialsId: string | null): void {
+  writeValue(credentialsId: string): void {
     this.searchText = '';
-    if (credentialsId != null) {
-      this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
-        (credentials) => {
-          this.modelValue = credentials;
-          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials);
-          this.clientCredentialsChanged.emit(credentials);
-        }
-      );
-    } else if (isDefinedAndNotNull(this.entity?.configuration?.clientCredentialsId)) {
-      this.modelValue = null;
-      this.clientCredentialsService.getClientCredentials(this.entity.configuration.clientCredentialsId).subscribe(
-        (credentials) => {
-          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials);
-          this.clientCredentialsChanged.emit(credentials);
-        }
-      );
-    } else {
-      this.modelValue = null;
-      this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null);
-    }
     this.dirty = true;
+    this.updateView(credentialsId);
   }
 
   onFocus() {
@@ -214,17 +184,16 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     }
   }
 
-  updateView(value: ClientCredentials | null) {
-    if (value?.id) {
-      this.clientCredentialsService.getClientCredentials(value.id).subscribe(
+  updateView(credentialsId: string) {
+    if (credentialsId) {
+      this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
         (credentials) => {
+          this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
           this.propagateChange(credentials);
-          this.clientCredentialsChanged.emit(credentials);
         }
       );
     } else {
       this.propagateChange(null);
-      this.clientCredentialsChanged.emit(null);
     }
   }
 
@@ -234,7 +203,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
 
   fetchClientCredentials(searchText?: string): Observable<Array<ClientCredentials>> {
     this.searchText = searchText;
-    const pageLink = new PageLink(10, 0, searchText, {
+    const pageLink = new PageLink(100, 0, searchText, {
       property: 'name',
       direction: Direction.ASC
     });

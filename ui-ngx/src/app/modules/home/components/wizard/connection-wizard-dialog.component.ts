@@ -175,6 +175,34 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       clientCredentials: [entity ? entity.configuration.clientCredentialsId : null, []],
       clientCredentialsId: [null, []]
     });
+    this.connectionFormGroup.get('clientCredentials').valueChanges.subscribe(
+      credentials => {
+        if (credentials?.credentialsValue) {
+          const credentialsValue = JSON.parse(credentials.credentialsValue);
+          this.connectionFormGroup.patchValue({
+            clientId: credentialsValue.clientId || this.connection?.configuration?.clientId || clientIdRandom(),
+            username: credentialsValue.userName,
+            password: null
+          });
+          if (isDefinedAndNotNull(credentialsValue.password)) {
+            this.passwordRequired = true;
+            this.connectionFormGroup.get('password').setValidators([Validators.required]);
+          } else {
+            this.passwordRequired = false;
+            this.connectionFormGroup.get('password').clearValidators();
+          }
+          if (isDefinedAndNotNull(credentialsValue.clientId)) {
+            this.connectionFormGroup.get('clientId').disable();
+          } else {
+            this.connectionFormGroup.get('clientId').enable();
+          }
+        } else {
+          this.passwordRequired = false;
+          this.connectionFormGroup.get('password').clearValidators();
+        }
+        this.connectionFormGroup.get('password').updateValueAndValidity();
+      }
+    )
   }
 
   private setConnectionAdvancedFormGroup() {
@@ -422,33 +450,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   changeStep($event: StepperSelectionEvent): void {
     this.selectedIndex = $event.selectedIndex;
     this.showNext = this.selectedIndex !== this.maxStepperIndex;
-  }
-
-  clientCredentialsChanged(credentials: ClientCredentials) {
-    if (credentials?.credentialsValue) {
-      const credentialsValue = JSON.parse(credentials.credentialsValue);
-      this.connectionFormGroup.patchValue({
-        clientId: credentialsValue.clientId || this.connection?.configuration?.clientId || clientIdRandom(),
-        username: credentialsValue.userName,
-        password: null
-      });
-      if (isDefinedAndNotNull(credentialsValue.password)) {
-        this.passwordRequired = true;
-        this.connectionFormGroup.get('password').setValidators([Validators.required]);
-      } else {
-        this.passwordRequired = false;
-        this.connectionFormGroup.get('password').clearValidators();
-      }
-      if (isDefinedAndNotNull(credentialsValue.clientId)) {
-        this.connectionFormGroup.get('clientId').disable();
-      } else {
-        this.connectionFormGroup.get('clientId').enable();
-      }
-    } else {
-      this.passwordRequired = false;
-      this.connectionFormGroup.get('password').clearValidators();
-    }
-    this.connectionFormGroup.get('password').updateValueAndValidity();
   }
 
   regenerate(type: string) {
