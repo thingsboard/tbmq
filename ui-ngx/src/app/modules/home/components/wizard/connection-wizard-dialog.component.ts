@@ -490,13 +490,13 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       const unit = this.connectionAdvancedFormGroup.get('properties')?.get(type)?.value;
       switch (unit) {
         case WebSocketTimeUnit.MILLISECONDS:
-          return 2147483647000;
+          return 4294967295000;
         case WebSocketTimeUnit.SECONDS:
-          return 2147483647;
+          return 4294967295;
         case WebSocketTimeUnit.MINUTES:
-          return 35791394;
+          return 71582788;
         case WebSocketTimeUnit.HOURS:
-          return 596523;
+          return 1193046;
       }
     }
     if (type === 'maximumPacketSizeUnit') {
