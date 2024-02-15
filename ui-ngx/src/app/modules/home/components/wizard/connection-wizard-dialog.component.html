@@ -226,7 +226,7 @@
             <mat-form-field fxFlex>
               <mat-label translate>timeunit.units</mat-label>
               <mat-select formControlName="keepaliveUnit">
-                <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+                <mat-option *ngFor="let unit of keepAliveTimeUnitTypes" [value]="unit">
                   {{ timeUnitTypeTranslationMap.get(unit) | translate }}
                 </mat-option>
               </mat-select>

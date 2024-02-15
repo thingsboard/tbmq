@@ -242,6 +242,11 @@ export enum WebSocketTimeUnit {
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
+export enum WebSocketKeepAliveTimeUnit {
+  SECONDS = 'SECONDS',
+  MINUTES = 'MINUTES',
+  HOURS = 'HOURS'
+}
 export enum DataSizeUnitType {
   BYTE = 'BYTE',
   KILOBYTE = 'KILOBYTE',

@@ -62,7 +62,7 @@ export class MqttJsClientService {
   private connectionMessagesMap = new Map<string, WsTableMessage[]>();
 
   private publishMsgStartTs = null;
-  private publishMsgDelay = 1000;
+  private publishMsgDelay = 250;
   private publishMsgTimeout = null;
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfig;
