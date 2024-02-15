@@ -473,9 +473,9 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   calcMax(type: string): number {
-    if (type === 'keepalive') {
-      const keepaliveUnit = this.connectionAdvancedFormGroup.get('keepaliveUnit')?.value;
-      switch (keepaliveUnit) {
+    if (type === 'keepaliveUnit') {
+      const unit = this.connectionAdvancedFormGroup.get(type)?.value;
+      switch (unit) {
         case WebSocketTimeUnit.MILLISECONDS:
           return 65535000;
         case WebSocketTimeUnit.SECONDS:
@@ -486,9 +486,9 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
           return 18;
       }
     }
-    if (type === 'sessionExpiryInterval') {
-      const sessionExpiryIntervalUnit = this.connectionAdvancedFormGroup.get('properties')?.get('sessionExpiryIntervalUnit')?.value;
-      switch (sessionExpiryIntervalUnit) {
+    if (type === 'sessionExpiryIntervalUnit') {
+      const unit = this.connectionAdvancedFormGroup.get('properties')?.get(type)?.value;
+      switch (unit) {
         case WebSocketTimeUnit.MILLISECONDS:
           return 2147483647000;
         case WebSocketTimeUnit.SECONDS:
@@ -499,9 +499,9 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
           return 596523;
       }
     }
-    if (type === 'maximumPacketSize') {
-      const sessionExpiryIntervalUnit = this.connectionAdvancedFormGroup.get('properties')?.get('maximumPacketSizeUnit')?.value;
-      switch (sessionExpiryIntervalUnit) {
+    if (type === 'maximumPacketSizeUnit') {
+      const unit = this.connectionAdvancedFormGroup.get('properties')?.get(type)?.value;
+      switch (unit) {
         case DataSizeUnitType.BYTE:
           return 268435456;
         case DataSizeUnitType.KILOBYTE:

@@ -249,7 +249,7 @@ export class MqttJsClientService {
       keepalive: convertTimeUnits(connection.configuration.keepAlive, connection.configuration.keepAliveUnit, WebSocketTimeUnit.SECONDS),
       connectTimeout: convertTimeUnits(connection.configuration.connectTimeout, connection.configuration.connectTimeoutUnit, WebSocketTimeUnit.MILLISECONDS),
       reconnectPeriod: convertTimeUnits(connection.configuration.reconnectPeriod, connection.configuration.reconnectPeriodUnit, WebSocketTimeUnit.MILLISECONDS),
-      rejectUnauthorized: false
+      // rejectUnauthorized: false
     };
     options.protocolId = options.protocolVersion === 3 ? 'MQIsdp' : 'MQTT';
     if (connection.configuration.mqttVersion === 5) {

@@ -212,7 +212,7 @@
           <section fxLayout="row" fxLayoutGap="8px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.keep-alive</mat-label>
-              <input matInput formControlName="keepalive" type="number" min="0" [max]="calcMax('keepalive')">
+              <input matInput formControlName="keepalive" type="number" min="0" [max]="calcMax('keepaliveUnit')">
               <mat-icon matSuffix [matTooltip]="'mqtt-client-session.keep-alive-hint' | translate">
                 help
               </mat-icon>
@@ -288,7 +288,7 @@
             <section fxLayout="row" fxLayoutGap="8px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
-                <input matInput formControlName="sessionExpiryInterval" type="number" min="0" [max]="calcMax('sessionExpiryInterval')">
+                <input matInput formControlName="sessionExpiryInterval" type="number" min="0" [max]="calcMax('sessionExpiryIntervalUnit')">
                 <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('sessionExpiryInterval').hasError('max')">
                   {{ 'ws-client.connections.session-expiry-interval-max' | translate }}
                 </mat-error>-->
@@ -305,7 +305,7 @@
             <section fxLayout="row" fxLayoutGap="8px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
-                <input matInput formControlName="maximumPacketSize" type="number" min="0" [max]="calcMax('maximumPacketSize')">
+                <input matInput formControlName="maximumPacketSize" type="number" min="0" [max]="calcMax('maximumPacketSizeUnit')">
                 <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('maximumPacketSize').hasError('max')">
                   {{ 'ws-client.connections.maximum-packet-size-max' | translate }}
                 </mat-error>-->
