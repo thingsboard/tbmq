@@ -15,10 +15,8 @@
 ///
 
 import { Component, Input, ViewChild } from '@angular/core';
-import { DialogService } from '@core/services/dialog.service';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { DateAgoPipe } from '@shared/pipe/date-ago.pipe';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { MessagesTableConfig } from '@home/pages/ws-client/messages/messages-table-config';
 import { MatDialog } from '@angular/material/dialog';
@@ -61,14 +59,11 @@ export class MessagesComponent {
 
   messagesTableConfig: MessagesTableConfig;
 
-  constructor(private dialogService: DialogService,
-              private mqttJsClientService: MqttJsClientService,
+  constructor(private mqttJsClientService: MqttJsClientService,
               public dialog: MatDialog,
               public datePipe: DatePipe,
-              public dateAgoPipe: DateAgoPipe,
               private translate: TranslateService) {
     this.messagesTableConfig = new MessagesTableConfig(
-      this.dialogService,
       this.mqttJsClientService,
       this.translate,
       this.dialog,

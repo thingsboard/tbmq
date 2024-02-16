@@ -25,7 +25,6 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { DialogService } from '@core/services/dialog.service';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
@@ -43,8 +42,7 @@ import {
 
 export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
-  constructor(private dialogService: DialogService,
-              private mqttJsClientService: MqttJsClientService,
+  constructor(private mqttJsClientService: MqttJsClientService,
               private translate: TranslateService,
               private dialog: MatDialog,
               private datePipe: DatePipe,
@@ -78,10 +76,11 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
       new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
-      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '60%'),
-      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '20%', entity => entity.qos.toString(),
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '250px', entity => entity.topic,
+        undefined, undefined, undefined, (entity) => entity.topic),
+      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
-      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '20%',
+      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50%',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
       new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', '150px', (entity) => {

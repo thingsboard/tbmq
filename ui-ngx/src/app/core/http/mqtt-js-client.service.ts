@@ -61,8 +61,9 @@ export class MqttJsClientService {
   private mqttClientConnectionMap = new Map<string, WebSocketConnection>();
   private connectionMessagesMap = new Map<string, WsTableMessage[]>();
 
-  private publishMsgStartTs = null;
+  private messagesLimit = 50;
   private publishMsgDelay = 200;
+  private publishMsgStartTs = null;
   private publishMsgTimeout = null;
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfig;
@@ -201,7 +202,7 @@ export class MqttJsClientService {
         let qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
         let retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
         return typeMatch && topicMatch && qosMatch && retainMatch;
-      });
+      }).slice(0, this.messagesLimit);
     }
     const pageData = emptyPageData<WsTableMessage>();
     filteredMessages.sort(function(objA, objB) {
@@ -235,7 +236,11 @@ export class MqttJsClientService {
       }
     });
     pageData.data = [...filteredMessages];
-    this.messageCounterSubject$.next(pageData?.data?.length);
+    let counter = data?.length;
+    if (this.messagesFilter.type !== 'all') {
+      counter = data.filter(el => el.type === this.messagesFilter.type)?.length;
+    }
+    this.messageCounterSubject$.next(counter);
     return of(pageData);
   }
 
@@ -481,9 +486,9 @@ export class MqttJsClientService {
       this.connectionMessagesMap.set(clientId, []);
     }
     const clientMessages = this.connectionMessagesMap.get(clientId);
-    if (clientMessages.length >= 50) {
+    /*if (clientMessages.length >= 50) {
       clientMessages.pop();
-    }
+    }*/
     clientMessages.unshift(message);
     if (message.type === 'received') {
       if (!this.publishMsgStartTs) {
