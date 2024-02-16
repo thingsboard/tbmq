@@ -97,6 +97,9 @@ public class WebSocketConnectionController extends BaseController {
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public void deleteWebSocketConnection(@PathVariable String id) throws ThingsboardException {
         try {
+            WebSocketConnection webSocketConnection = checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
+            clientSessionCleanUpService.disconnectClientSession(webSocketConnection.getConfiguration().getClientId());
+
             webSocketConnectionService.deleteWebSocketConnection(toUUID(id));
         } catch (Exception e) {
             throw handleException(e);

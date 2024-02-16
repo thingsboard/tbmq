@@ -31,7 +31,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.UUID;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -68,11 +67,11 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
         });
     }
 
-
     @PreDestroy
     public void destroy() {
         if (clientDisconnectCommandProducer != null) {
             clientDisconnectCommandProducer.stop();
         }
     }
+
 }
