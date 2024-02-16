@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
@@ -71,6 +72,8 @@ public abstract class BaseController {
     protected TbQueueAdmin tbQueueAdmin;
     @Autowired
     protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
+    @Autowired
+    protected ClientSessionCleanUpService clientSessionCleanUpService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter

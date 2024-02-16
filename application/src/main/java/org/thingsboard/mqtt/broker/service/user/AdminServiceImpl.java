@@ -50,12 +50,14 @@ public class AdminServiceImpl implements AdminService {
         if (userCredentials == null) {
             throw new IllegalArgumentException("User credentials were not created for user.");
         }
-        userCredentials.setPassword(passwordEncoder.encode(adminDto.getPassword()));
-        userCredentials.setEnabled(true);
-        userCredentials.setActivateToken(null);
-        userService.saveUserCredentials(userCredentials);
-        if (saveDefaultWsConnection) {
-            webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), null);
+        if (adminDto.getId() == null) {
+            userCredentials.setPassword(passwordEncoder.encode(adminDto.getPassword()));
+            userCredentials.setEnabled(true);
+            userCredentials.setActivateToken(null);
+            userService.saveUserCredentials(userCredentials);
+            if (saveDefaultWsConnection) {
+                webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), null);
+            }
         }
         return user;
     }
