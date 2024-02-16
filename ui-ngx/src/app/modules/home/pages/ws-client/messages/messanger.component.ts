@@ -44,7 +44,7 @@ export class MessangerComponent implements OnInit {
   connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
-  counter = 0;
+  counter: number;
 
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
@@ -103,7 +103,7 @@ export class MessangerComponent implements OnInit {
     );
 
     this.mqttJsClientService.messageCounter.subscribe(value => {
-      this.counter = value;
+      this.counter = value || 0;
     })
 
     this.mqttJsClientService.filterMessages({

@@ -19,8 +19,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '@core/http/http-utils';
 import { PageData } from '@shared/models/page/page-data';
-import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
+import { WebSocketConnection, WebSocketConnectionDto, WebSocketConnectionsLimit } from '@shared/models/ws-client.model';
 import { PageLink } from '@shared/models/page/page-link';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +36,7 @@ export class WebSocketConnectionService {
   }
 
   public getWebSocketConnections(config?: RequestConfig): Observable<PageData<WebSocketConnectionDto>> {
-    const pageLink = new PageLink(1000);
+    const pageLink = new PageLink(WebSocketConnectionsLimit, 0, null, { property: 'createdTime', direction: Direction.DESC });
     return this.http.get<PageData<WebSocketConnectionDto>>(`/api/ws/connection${pageLink.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
