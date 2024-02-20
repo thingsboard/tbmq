@@ -82,7 +82,7 @@ export class MqttJsClientService {
 
   public disconnectActiveConnectedClient() {
     const mqttClient = this.getActiveMqttJsClient();
-    if (mqttClient.connected) {
+    if (mqttClient?.connected) {
       const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
       this.setDisconnectedStatusEndSession(connection, mqttClient);
     }
@@ -280,7 +280,7 @@ export class MqttJsClientService {
           willDelayInterval: convertTimeUnits(connection.configuration.lastWillMsg.willDelayInterval, connection.configuration.lastWillMsg.willDelayIntervalUnit, WebSocketTimeUnit.SECONDS),
           messageExpiryInterval: convertTimeUnits(connection.configuration.lastWillMsg.msgExpiryInterval, connection.configuration.lastWillMsg.msgExpiryIntervalUnit, WebSocketTimeUnit.SECONDS),
           payloadFormatIndicator: connection.configuration.lastWillMsg.payloadFormatIndicator,
-          correlationData: Buffer.from(connection.configuration.lastWillMsg.correlationData)
+          correlationData: Buffer.from(connection.configuration.lastWillMsg.correlationData || '')
         };
         if (isDefinedAndNotNull(connection.configuration.userProperties)) {
           // @ts-ignore

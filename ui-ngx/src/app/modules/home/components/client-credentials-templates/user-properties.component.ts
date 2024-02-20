@@ -156,14 +156,18 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
     const userProperties = {
       props: []
     };
-    value.props.map(obj => {
-      const k = obj?.k;
-      const v = obj?.v;
-      if (k) {
-        userProperties.props.push({k, v});
-      }
-    });
-    return userProperties;
+    if (value.props.length) {
+      value.props.map(obj => {
+        const k = obj?.k;
+        const v = obj?.v;
+        if (k) {
+          userProperties.props.push({k, v});
+        }
+      });
+      return userProperties;
+    } else {
+      return null;
+    }
   }
 }
 
