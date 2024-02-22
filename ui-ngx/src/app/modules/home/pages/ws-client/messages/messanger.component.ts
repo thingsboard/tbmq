@@ -62,7 +62,7 @@ export class MessangerComponent implements OnInit {
 
   publishMsgProps: PublishMessageProperties = null;
   publishMsgPropsChanged: boolean;
-  wrap = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
+  isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
