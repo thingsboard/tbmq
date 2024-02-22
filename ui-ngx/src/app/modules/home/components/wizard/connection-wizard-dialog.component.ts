@@ -42,7 +42,7 @@ import {
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
   WebSocketConnectionConfiguration,
-  WebSocketKeepAliveTimeUnit,
+  AboveSecWebSocketTimeUnit,
   WebSocketTimeUnit,
   WsAddressProtocolType,
   WsAddressProtocolTypeValueMap,
@@ -89,7 +89,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   wsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
 
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
-  keepAliveTimeUnitTypes = Object.keys(WebSocketKeepAliveTimeUnit);
+  keepAliveTimeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
   dataSizeUnitTypes = Object.keys(DataSizeUnitType);
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;

@@ -244,7 +244,7 @@ export enum WebSocketTimeUnit {
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
-export enum WebSocketKeepAliveTimeUnit {
+export enum AboveSecWebSocketTimeUnit {
   SECONDS = 'SECONDS',
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
