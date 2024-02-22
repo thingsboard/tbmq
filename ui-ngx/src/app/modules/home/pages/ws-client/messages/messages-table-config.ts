@@ -25,7 +25,7 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { ContentType } from '@shared/models/constants';
+import { ContentType, MediaBreakpoints } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -39,6 +39,7 @@ import {
   WsMessagePropertiesDialogComponent,
   WsMessagePropertiesDialogData
 } from '@home/pages/ws-client/messages/ws-message-properties-dialog.component';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
 
@@ -46,6 +47,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
               private translate: TranslateService,
               private dialog: MatDialog,
               private datePipe: DatePipe,
+              private breakpointObserver: BreakpointObserver,
               public entityId: string = null) {
     super();
 
@@ -76,14 +78,14 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
       new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
-      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '250px', entity => entity.topic,
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', this.colWidth(), entity => entity.topic,
         undefined, undefined, undefined, (entity) => entity.topic),
       new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
       new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50%',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
-      new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', '150px', (entity) => {
+      new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', this.colWidth(), (entity) => {
         const content = entity.payload;
         try {
           const parsedContent = JSON.parse(content);
@@ -147,5 +149,9 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         entity
       }
     });
+  }
+
+  private colWidth(): string {
+    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '400px' : '150px';
   }
 }

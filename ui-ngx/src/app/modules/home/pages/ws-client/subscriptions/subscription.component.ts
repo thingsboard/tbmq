@@ -63,11 +63,11 @@ export class SubscriptionComponent implements OnInit {
   ngOnInit() {
   }
 
-  onCommentMouseEnter(): void {
+  onMouseEnter(): void {
     this.showActions = true;
   }
 
-  onCommentMouseLeave(): void {
+  onMouseLeave(): void {
     this.showActions = false;
   }
 
@@ -82,13 +82,13 @@ export class SubscriptionComponent implements OnInit {
       },
       {
         name: this.translate.instant('action.edit'),
-        icon: 'edit',
+        icon: 'mdi:pencil',
         isEnabled: () => true,
         onAction: ($event, entity) => this.edit($event, entity)
       },
       {
         name: this.translate.instant('action.delete'),
-        icon: 'delete',
+        icon: 'mdi:delete',
         isEnabled: () => true,
         onAction: ($event, entity) => this.delete($event, entity)
       }
@@ -138,9 +138,9 @@ export class SubscriptionComponent implements OnInit {
             subscription
           }
         }).afterClosed()
-          .subscribe((webSocketSubscriptionData) => {
-            if (isDefinedAndNotNull(webSocketSubscriptionData)) {
-              this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionData).subscribe(
+          .subscribe((webSocketSubscriptionDialogData) => {
+            if (isDefinedAndNotNull(webSocketSubscriptionDialogData)) {
+              this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionDialogData).subscribe(
                 (currentWebSocketSubscription) => {
                   this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
                   this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);

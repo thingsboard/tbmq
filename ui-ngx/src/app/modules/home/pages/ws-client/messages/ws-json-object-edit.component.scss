@@ -16,6 +16,10 @@
 :host {
   position: relative;
 
+  div:first-child {
+    background: #FFFFFF;
+  }
+
   .fill-height {
     height: 100%;
   }
@@ -36,6 +40,7 @@
 }
 
 .tb-json-object-toolbar {
+  position: relative;
   margin-bottom: 8px;
   button.mat-mdc-button-base, button.mat-mdc-button-base.tb-mat-32 {
     align-items: center;

@@ -169,6 +169,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
     if (!this.initialFilterConfig && filterConfig) {
       this.initialFilterConfig = deepClone(filterConfig);
     }
+    this.updateButtonDisplayValue();
     this.updateConfigForm(filterConfig);
   }
 
@@ -202,6 +203,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   reset() {
     this.updateConfigForm(this.initialFilterConfig);
+    this.updateButtonDisplayValue();
     this.filterConfigForm.markAsDirty();
     this.filterConfigForm.updateValueAndValidity();
   }
@@ -241,6 +243,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   private configUpdated(formValue: any) {
     this.filterConfig = this.filterConfigFormValue(formValue);
+    this.updateButtonDisplayValue();
     this.propagateChange(this.filterConfig);
   }
 
@@ -251,4 +254,24 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
       retainList: formValue.retainList
     };
   }
+
+  private updateButtonDisplayValue() {
+      if (this.buttonMode) {
+        const filterTextParts: string[] = [];
+        if (this.filterConfig?.topic?.length) {
+          filterTextParts.push(`${this.translate.instant('retained-message.topic')}: ${this.filterConfig?.topic}`);
+        }
+        if (this.filterConfig?.qosList?.length) {
+          filterTextParts.push(`${this.translate.instant('mqtt-client-session.qos')}: ${this.filterConfig.qosList.join(', ')}`);
+        }
+        if (this.filterConfig?.retainList?.length) {
+          filterTextParts.push(`${this.translate.instant('ws-client.last-will.retain')}: ${this.filterConfig.retainList.join(', ')}`);
+        }
+        if (!filterTextParts.length) {
+          this.buttonDisplayValue = '';
+        } else {
+          this.buttonDisplayValue = `${filterTextParts.join('; ')}`;
+        }
+      }
+    }
 }

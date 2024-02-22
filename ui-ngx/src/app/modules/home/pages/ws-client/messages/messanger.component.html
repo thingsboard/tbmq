@@ -39,23 +39,20 @@
   </section>
 </section>
 
-<section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px; margin-bottom: 8px; height: 100%; border-bottom: 1px solid rgba(0,0,0,0.12)">
+<section class="tb-messages-container">
   <tb-messages style="overflow: auto"></tb-messages>
 </section>
 
-<div [formGroup]="messangerFormGroup" fxLayout="column" fxLayoutGap="16px" class="mat-padding">
-  <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="space-between center">
-    <mat-form-field fxFlex="40" subscriptSizing="dynamic">
+<div [formGroup]="messangerFormGroup" fxLayout="column" class="mat-padding">
+  <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center"
+           style="flex-wrap: nowrap;" [ngClass]="{'wrap': (wrap | async)}">
+    <mat-form-field style="min-width: 250px !important; width: 100%">
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic">
-<!--      <tb-copy-button matSuffix
-                      [fxShow]="messangerFormGroup.get('topic')?.value?.length"
-                      [copyText]="messangerFormGroup.get('topic')?.value">
-      </tb-copy-button>-->
       <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
       </tb-color-input>
     </mat-form-field>
-    <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
+    <mat-form-field fxFlex="20" fxFlex.lt-xl="25" hideRequiredMarker>
       <mat-label translate>mqtt-client-session.qos</mat-label>
       <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
         <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
@@ -63,30 +60,30 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-    <mat-form-field fxFlex="15" subscriptSizing="dynamic">
-      <mat-label translate>value.type</mat-label>
+    <mat-form-field fxFlex="20" fxFlex.lt-xl="25">
+      <mat-label translate>value.format</mat-label>
       <mat-select formControlName="payloadFormat">
         <mat-option *ngFor="let valueType of payloadFormats" [value]="valueType.value">
           {{ valueType.name | translate }}
         </mat-option>
       </mat-select>
     </mat-form-field>
-    <section style="border: 1px solid rgba(0,0,0,0.12); height: 36px; padding: 8px 16px 8px 12px; border-radius: 4px">
+    <section class="retain-container">
       <mat-slide-toggle formControlName="retain" color="success">
         {{ 'ws-client.last-will.retain' | translate }}
       </mat-slide-toggle>
     </section>
     <button mat-stroked-button color="primary"
+            style="min-width: 100px !important;"
             [matTooltip]="'ws-client.connections.show-meta' | translate"
             [disabled]="mqttVersion !== 5"
             (click)="messagePropertiesDialog()"
             aria-label="Show message meta data">
-      <span translate>ws-client.connections.properties</span>
+      <span>{{ 'ws-client.connections.properties' | translate }}{{ publishMsgPropsChanged ? '*' : '' }}</span>
     </button>
   </section>
-  <div style="background: #fff; position: relative;">
+  <section class="tb-message-input-container">
     <tb-ws-json-object-edit
-      style="width: 100%;"
       formControlName="payload"
       [jsonFormatSelected]="jsonFormatSelected"
       [label]="'value.json-value-invalid' | translate"
@@ -100,7 +97,7 @@
             [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !hasTopicAliasMax) || !isConnected || !isPayloadValid">
       <mat-icon>send</mat-icon>
     </button>
-  </div>
+  </section>
 </div>
 
 

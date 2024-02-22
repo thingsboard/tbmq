@@ -20,27 +20,9 @@
 </ng-container>
 
 <ng-template #hasConnections>
-  <div style="display: flex; height: 100%; gap: 12px" class="mat-padding">
-    <section class="container" style="width: 30%">
-      <section class="border-bg">
-        <tb-connections></tb-connections>
-      </section>
-      <section class="subscriptions border-bg">
-        <tb-subscriptions></tb-subscriptions>
-      </section>
-      <section class="border-bg">
-        <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker'"></tb-help-page>
-      </section>
-    </section>
-    <section class="container border-bg" style="width: 70%;">
-      <section class="border-bg">
-        <tb-connection-controller></tb-connection-controller>
-      </section>
-      <section class="subscriptions border-bg">
-        <tb-messanger></tb-messanger>
-      </section>
-    </section>
-  </div>
+  <ng-container *ngIf="layoutSingleColumn | async; else grid">
+    <ng-container *ngTemplateOutlet="column"></ng-container>
+  </ng-container>
 </ng-template>
 <ng-template #noConnections>
   <section style="width: 100%; height: 100%;">
@@ -52,5 +34,51 @@
       </div>
     </div>
   </section>
+</ng-template>
+
+<ng-template #grid>
+  <div style="display: flex; height: 100%; gap: 12px" class="mat-padding">
+    <section class="container" style="width: 30%">
+      <section class="border-bg">
+        <tb-connections></tb-connections>
+      </section>
+      <section class="subscriptions border-bg" style="min-height: 418px">
+        <tb-subscriptions></tb-subscriptions>
+      </section>
+      <section class="border-bg">
+        <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker'"></tb-help-page>
+      </section>
+    </section>
+    <section class="container border-bg" style="width: 70%;">
+      <section class="border-bg">
+        <tb-connection-controller></tb-connection-controller>
+      </section>
+      <section class="subscriptions border-bg" style="min-height: 500px; height: auto">
+        <tb-messanger></tb-messanger>
+      </section>
+    </section>
+  </div>
+</ng-template>
+
+<ng-template #column>
+  <div style="display: flex; height: auto; gap: 12px" class="mat-padding">
+    <section class="container">
+      <section class="border-bg">
+        <tb-connections></tb-connections>
+      </section>
+      <section class="border-bg">
+        <tb-connection-controller></tb-connection-controller>
+      </section>
+      <section class="subscriptions border-bg" style="min-height: 500px">
+        <tb-messanger></tb-messanger>
+      </section>
+      <section class="subscriptions border-bg" style="min-height: 200px">
+        <tb-subscriptions></tb-subscriptions>
+      </section>
+      <section class="border-bg">
+        <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/getting-started-guides/what-is-thingsboard-mqtt-broker'"></tb-help-page>
+      </section>
+    </section>
+  </div>
 </ng-template>
 

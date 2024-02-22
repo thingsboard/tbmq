@@ -15,10 +15,8 @@
     limitations under the License.
 
 -->
-<div style="background: #fff;" [ngClass]="{'fill-height': fillHeight}"
-     tb-fullscreen
-     [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" fxLayout="column">
-  <div fxLayout="row" fxLayoutAlign="start center" class="tb-json-object-toolbar">
+<div fxLayout="column" tb-fullscreen [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" [ngClass]="{'fill-height': fillHeight}">
+  <div class="tb-json-object-toolbar">
     <label class="tb-title no-padding toolbar-label"
            [ngClass]="{'tb-required': jsonRequired,
                        'tb-readonly': readonly,

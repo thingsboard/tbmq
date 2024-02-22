@@ -19,8 +19,8 @@ import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { Observable, ReplaySubject } from 'rxjs';
-import { map, share, tap } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
@@ -41,7 +41,6 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   popoverComponent: TbPopoverComponent;
 
   connections$: Observable<WebSocketConnectionDto[]>;
-  loadConnection = true;
   connectionsTotal: number;
 
   constructor(protected store: Store<AppState>,
@@ -67,7 +66,6 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
       map(res => {
         if (res.data?.length) {
           this.connectionsTotal = res.data?.length;
-          this.loadConnection = true;
           return res.data;
         }
         return [];

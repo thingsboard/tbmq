@@ -1298,7 +1298,10 @@ mat-label {
   color: rgba(0, 0, 0, 0.76);
   text-overflow: ellipsis;
   overflow-y: clip;
-  max-width: 400px;
+
+  @media #{$mat-lt-xl} {
+    font-size: 16px;
+  }
 }
 
 .tb-ws-client-subtitle {
@@ -1306,4 +1309,8 @@ mat-label {
   line-height: 20px;
   letter-spacing: 0.2px;
   color: rgba(0, 0, 0, 0.38);
+
+  @media #{$mat-lt-xl} {
+    font-size: 13px;
+  }
 }

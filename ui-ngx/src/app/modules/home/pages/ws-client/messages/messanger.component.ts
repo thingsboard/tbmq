@@ -31,8 +31,10 @@ import {
   WsMessagesTypeFilters,
   WsPayloadFormats,
 } from '@shared/models/ws-client.model';
-import { ValueType } from '@shared/models/constants';
+import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
+import { map } from 'rxjs/operators';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 @Component({
   selector: 'tb-messanger',
@@ -58,13 +60,15 @@ export class MessangerComponent implements OnInit {
   mqttVersion = 5;
   hasTopicAliasMax = false;
 
-  private publishMessagePropertiesTemp: PublishMessageProperties = null;
+  publishMsgProps: PublishMessageProperties = null;
+  publishMsgPropsChanged: boolean;
+  wrap = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
-              public fb: FormBuilder,
+              private breakpointObserver: BreakpointObserver,
+              private fb: FormBuilder,
               private dialog: MatDialog) {
-
   }
 
   ngOnInit() {
@@ -166,13 +170,14 @@ export class MessangerComponent implements OnInit {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        props: this.publishMessagePropertiesTemp,
+        props: this.publishMsgProps,
         connection: this.connection
       }
     }).afterClosed()
       .subscribe((properties) => {
         if (isDefinedAndNotNull(properties)) {
-          this.publishMessagePropertiesTemp = properties;
+          this.publishMsgProps = properties;
+          this.publishMsgPropsChanged = properties.changed;
           this.messangerFormGroup.patchValue({
             properties: properties
           });

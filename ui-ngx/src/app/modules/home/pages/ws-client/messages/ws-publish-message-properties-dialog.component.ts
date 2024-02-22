@@ -75,7 +75,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   private buildForm(): void {
     this.formGroup = this.fb.group({
-      payloadFormatIndicator: [this.props ? this.props.payloadFormatIndicator : true, []],
+      payloadFormatIndicator: [this.props ? this.props.payloadFormatIndicator : null, []],
       contentType: [this.props ? this.props.contentType : null, []],
       messageExpiryInterval: [this.props ? this.props.messageExpiryInterval : null, []],
       messageExpiryIntervalUnit: [this.props ? this.props.messageExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
@@ -93,6 +93,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   onSave() {
     const properties = this.formGroup.getRawValue();
+    properties.changed = this.countNonNull(properties) > 1;
     this.dialogRef.close(properties);
   }
 
@@ -117,6 +118,16 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
       }
       return null;
     };
+  }
+
+  private countNonNull(obj: any): number {
+    let count = 0;
+    for (let key in obj) {
+      if (obj[key] !== null && obj[key] !== '') {
+        count++;
+      }
+    }
+    return count;
   }
 }
 

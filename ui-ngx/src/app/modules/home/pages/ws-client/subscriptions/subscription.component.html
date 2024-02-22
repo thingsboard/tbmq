@@ -15,27 +15,49 @@
     limitations under the License.
 
 -->
-<section fxLayout="row" fxLayoutAlign="space-between start" class="subscription">
-  <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
-           (mouseenter)="onCommentMouseEnter()"
-           (mouseleave)="onCommentMouseLeave()">
-      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+<section class="subscription-container">
+  <section fxLayout="row" fxLayoutAlign="space-between center" class="subscription-row"
+           (mouseenter)="onMouseEnter()"
+           (mouseleave)="onMouseLeave()">
+    <section fxFlex="90" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" class="subscription-row-label">
         <div class="label-color" [ngStyle]="{backgroundColor: subscription.configuration.color}"></div>
         <span class="label" [matTooltip]="subscription.configuration.topicFilter">{{ subscription.configuration.topicFilter }}</span>
-        <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription.configuration.qos }}</span>
       </section>
-      <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+      <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription.configuration.qos }}</span>
+    </section>
+    <section fxFlex="10" fxLayout="row" fxLayoutAlign="end">
+      <div [ngClass]="{ 'action-buttons-container': showActions }" fxHide fxShow.md fxShow.xl fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
         <div *ngFor="let actionDescriptor of hiddenActions"
              class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
              matTooltipPosition="above"
              matTooltip="{{ actionDescriptor.name }}">
           <button mat-icon-button
+                  class="tb-mat-32"
                   *ngIf="actionDescriptor.isEnabled(subscription)"
                   [disabled]="!actionDescriptor.isEnabled(subscription)"
                   (click)="actionDescriptor.onAction($event, subscription)">
-            <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+            <mat-icon [svgIcon]="actionDescriptor.icon"></mat-icon>
           </button>
         </div>
       </div>
+      <div fxHide fxShow.lg fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+        <button mat-icon-button
+                class="tb-mat-32"
+                (click)="$event.stopPropagation()"
+                [matMenuTriggerFor]="cellActionsMenu">
+          <mat-icon class="material-icons">more_vert</mat-icon>
+        </button >
+        <mat-menu #cellActionsMenu="matMenu" xPosition="before">
+          <button mat-menu-item *ngFor="let actionDescriptor of hiddenActions"
+                  class="matMenu"
+                  [fxShow]="actionDescriptor.isEnabled(subscription)"
+                  (click)="actionDescriptor.onAction($event, subscription)">
+            <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+            <span>{{ actionDescriptor.name }}</span>
+          </button>
+        </mat-menu>
+      </div>
     </section>
+  </section>
 </section>

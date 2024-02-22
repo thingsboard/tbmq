@@ -200,7 +200,8 @@ export interface PublishMessageProperties {
   topicAlias?: number;
   correlationData?: Buffer;
   responseTopic?: string;
-  userProperties?: any,
+  userProperties?: any;
+  changed?: boolean;
 }
 
 export interface WebSocketSubscription extends BaseData {
