@@ -15,10 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
-import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -108,10 +106,7 @@ public class MqttSubscribeHandler {
     List<MqttReasonCodes.SubAck> collectMqttReasonCodes(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        List<MqttReasonCodes.SubAck> codes = populateReasonCodesIfSubscriptionIdPresent(ctx, msg);
-        if (!codes.isEmpty()) {
-            return codes;
-        }
+        List<MqttReasonCodes.SubAck> codes = new ArrayList<>(topicSubscriptions.size());
 
         for (TopicSubscription subscription : topicSubscriptions) {
             var topic = subscription.getTopicFilter();
@@ -154,27 +149,9 @@ public class MqttSubscribeHandler {
         return codes;
     }
 
-    private List<MqttReasonCodes.SubAck> populateReasonCodesIfSubscriptionIdPresent(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
-        var subscriptionsCount = msg.getTopicSubscriptions().size();
-        List<MqttReasonCodes.SubAck> codes = new ArrayList<>(subscriptionsCount);
-        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            MqttProperties.MqttProperty subscriptionIdProperty = MqttPropertiesUtil.getSubscriptionIdProperty(msg.getProperties());
-            if (subscriptionIdProperty != null) {
-                log.warn("[{}] Subscription id MQTT property present, server not support this!", ctx.getClientId());
-                for (int i = 0; i < subscriptionsCount; i++) {
-                    codes.add(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED);
-                }
-            }
-        }
-        return codes;
-    }
-
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions, MqttSubAckMessage subAckMessage) {
         if (CollectionUtils.isEmpty(newSubscriptions)) {
             sendSubAck(ctx, subAckMessage);
-            if (isSubscriptionIdNotSupportedCodePresent(subAckMessage)) {
-                disconnectClient(ctx, DisconnectReasonType.ON_SUBSCRIPTION_ID_NOT_SUPPORTED);
-            }
             return;
         }
 
@@ -201,10 +178,6 @@ public class MqttSubscribeHandler {
 
     private void sendSubAck(ClientSessionCtx ctx, MqttSubAckMessage subAckMessage) {
         ctx.getChannel().writeAndFlush(subAckMessage);
-    }
-
-    private boolean isSubscriptionIdNotSupportedCodePresent(MqttSubAckMessage subAckMessage) {
-        return subAckMessage.payload().reasonCodes().contains(MqttReasonCodeUtil.byteToInt(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byteValue()));
     }
 
     private void processRetainedMessages(ClientSessionCtx ctx,

@@ -31,9 +31,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -100,7 +100,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         MqttProperties properties = new MqttProperties();
         properties.setMessageExpiryInterval(100L);
-        MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), 1, true, properties);
+        MqttMessage message = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, 1, true, properties);
         pubClient.publish("expiration/retain", message);
         disconnectAndCloseClient(pubClient);
 
@@ -124,7 +124,7 @@ public class RetainedMsgIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         MqttProperties properties = new MqttProperties();
         properties.setMessageExpiryInterval(1L);
-        MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), 1, true, properties);
+        MqttMessage message = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, 1, true, properties);
         pubClient.publish("expiration/retain", message);
         disconnectAndCloseClient(pubClient);
 

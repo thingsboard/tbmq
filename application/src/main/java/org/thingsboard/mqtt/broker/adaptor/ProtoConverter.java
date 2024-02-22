@@ -320,20 +320,28 @@ public class ProtoConverter {
     }
 
     private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
-        return QueueProtos.TopicSubscriptionProto.newBuilder()
+        QueueProtos.TopicSubscriptionProto.Builder builder = QueueProtos.TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopicFilter())
-                .setOptions(prepareOptionsProto(topicSubscription))
-                .build();
+                .setOptions(prepareOptionsProto(topicSubscription));
+        setSubscriptionIdIfPresent(topicSubscription, builder);
+        return builder.build();
     }
 
     private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProtoWithShareName(TopicSubscription topicSubscription) {
-        return QueueProtos.TopicSubscriptionProto.newBuilder()
+        QueueProtos.TopicSubscriptionProto.Builder builder = QueueProtos.TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopicFilter())
                 .setShareName(topicSubscription.getShareName())
-                .setOptions(prepareOptionsProto(topicSubscription))
-                .build();
+                .setOptions(prepareOptionsProto(topicSubscription));
+        setSubscriptionIdIfPresent(topicSubscription, builder);
+        return builder.build();
+    }
+
+    private static void setSubscriptionIdIfPresent(TopicSubscription topicSubscription, QueueProtos.TopicSubscriptionProto.Builder builder) {
+        if (topicSubscription.getSubscriptionId() != -1) {
+            builder.setSubscriptionId(topicSubscription.getSubscriptionId());
+        }
     }
 
     public static Set<TopicSubscription> convertProtoToClientSubscriptions(QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
@@ -343,6 +351,7 @@ public class ProtoConverter {
                         .topicFilter(topicSubscriptionProto.getTopic())
                         .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
                         .options(createSubscriptionOptions(topicSubscriptionProto))
+                        .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
                         .build())
                 .collect(Collectors.toSet());
     }

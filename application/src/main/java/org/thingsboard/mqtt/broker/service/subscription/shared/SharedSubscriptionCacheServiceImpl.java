@@ -50,6 +50,8 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     @Getter
     private final ConcurrentMap<TopicSharedSubscription, SharedSubscriptions> sharedSubscriptionsMap = new ConcurrentHashMap<>();
 
+    // todo: sub_id?
+
     @Override
     public void put(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         if (log.isTraceEnabled()) {

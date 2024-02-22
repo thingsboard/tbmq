@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
@@ -41,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class AbstractRequestResponseIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     protected static final String RESPONSE_TOPIC = "response/topic";
-    protected static final byte[] CORRELATION_DATA = "test".getBytes(StandardCharsets.UTF_8);
+    protected static final byte[] CORRELATION_DATA = BrokerConstants.DUMMY_PAYLOAD;
     protected static final String TOPIC = "request/response/topic";
     protected static final String REQUEST_RESPONSE_USER_NAME = "requestResponseUn";
 

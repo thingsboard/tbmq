@@ -79,8 +79,13 @@ public class MqttPropertiesUtil {
         return requestResponseInfoProp == null ? 0 : requestResponseInfoProp.value();
     }
 
-    public static MqttProperties.MqttProperty getSubscriptionIdProperty(MqttProperties properties) {
-        return properties.getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+    public static MqttProperties.IntegerProperty getSubscriptionIdProperty(MqttProperties properties) {
+        return getIntegerProperty(properties, BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+    }
+
+    public static int getSubscriptionIdValue(MqttProperties properties) {
+        MqttProperties.IntegerProperty integerProperty = getIntegerProperty(properties, BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+        return integerProperty != null ? integerProperty.value() : -1;
     }
 
     public static MqttProperties.IntegerProperty getSessionExpiryIntervalProperty(MqttProperties properties) {

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
@@ -51,6 +52,7 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         }
         Set<TopicSubscription> oldSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
         oldSubscriptions = filterOutSharedSubscriptions(oldSubscriptions);
+
         Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
@@ -58,20 +60,22 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         }
 
         Set<String> unsubscribeTopics = prepareTopicsForUnsubscribe(newSubscriptions, oldSubscriptions);
-        clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
+        if (!CollectionUtils.isEmpty(unsubscribeTopics)) {
+            clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
+        }
 
         Set<TopicSubscription> subscribeTopicSubscriptions = prepareTopicsForSubscribe(newSubscriptions, oldSubscriptions);
-        clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(subscribeTopicSubscriptions));
+        if (!CollectionUtils.isEmpty(subscribeTopicSubscriptions)) {
+            clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(subscribeTopicSubscriptions));
+        }
     }
 
     private Set<TopicSubscription> prepareTopicsForSubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
-        return CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions,
-                Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos));
+        return CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions, getComparator());
     }
 
     private Set<String> prepareTopicsForUnsubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
-        return CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions,
-                        Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos))
+        return CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions, getComparator())
                 .stream()
                 .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toSet());
@@ -85,5 +89,9 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
 
     private Set<TopicSubscription> filterOutSharedSubscriptions(Set<TopicSubscription> subscriptions) {
         return subscriptions.stream().filter(subscription -> subscription.getShareName() == null).collect(Collectors.toSet());
+    }
+
+    private Comparator<TopicSubscription> getComparator() {
+        return Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos);
     }
 }

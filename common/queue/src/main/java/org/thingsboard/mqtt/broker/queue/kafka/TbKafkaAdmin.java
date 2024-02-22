@@ -423,6 +423,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             if (throwable == null) {
                 List<String> groupIdsToDelete = consumerGroupListings
                         .stream()
+                        .filter(cg -> cg.state().orElse(ConsumerGroupState.UNKNOWN).equals(ConsumerGroupState.EMPTY))
                         .map(ConsumerGroupListing::groupId)
                         .filter(this::isConsumerGroupToDelete)
                         .toList();

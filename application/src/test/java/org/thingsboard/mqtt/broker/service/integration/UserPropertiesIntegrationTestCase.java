@@ -37,6 +37,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -144,7 +145,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, pubClientId);
         pubClient.connect();
 
-        MqttMessage message = new MqttMessage("test".getBytes(StandardCharsets.UTF_8), qos, false, MQTT_PROPERTIES);
+        MqttMessage message = new MqttMessage(BrokerConstants.DUMMY_PAYLOAD, qos, false, MQTT_PROPERTIES);
         pubClient.publish(MY_TOPIC, message);
 
         boolean await = latch.await(10, TimeUnit.SECONDS);

@@ -15,8 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BinaryOperator;
@@ -45,5 +49,20 @@ public class CollectionsUtil {
         oldValuesTreeSet.addAll(oldValues);
 
         return binaryOperator.apply(newValuesTreeSet, oldValuesTreeSet);
+    }
+
+    public static SubscriptionsUpdate getSubscriptionsUpdate(Set<TopicSubscription> currentSubscriptions, Set<TopicSubscription> newSubscriptions) {
+        Set<TopicSubscription> toUnsubscribe = new HashSet<>(currentSubscriptions);
+        Set<TopicSubscription> toSubscribe = new HashSet<>(newSubscriptions);
+
+        toUnsubscribe.removeAll(newSubscriptions);
+
+        return new SubscriptionsUpdate(toSubscribe, toUnsubscribe);
+    }
+
+    @Data
+    public static class SubscriptionsUpdate {
+        private final Set<TopicSubscription> toSubscribe;
+        private final Set<TopicSubscription> toUnsubscribe;
     }
 }

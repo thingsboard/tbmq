@@ -65,6 +65,11 @@ public class NettyMqttConverter {
     }
 
     public static MqttSubscribeMsg createMqttSubscribeMsg(UUID sessionId, MqttSubscribeMessage nettySubscribeMsg) {
+        MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
+        int messageId = mqttMessageIdVariableHeader.messageId();
+        MqttProperties properties = mqttMessageIdVariableHeader.properties();
+        int subscriptionIdValue = MqttPropertiesUtil.getSubscriptionIdValue(properties);
+
         List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions()
                 .stream()
                 .map(mqttTopicSubscription ->
@@ -72,11 +77,9 @@ public class NettyMqttConverter {
                                 getTopicName(mqttTopicSubscription.topicFilter()),
                                 mqttTopicSubscription.qualityOfService().value(),
                                 getShareName(mqttTopicSubscription.topicFilter()),
-                                SubscriptionOptions.newInstance(mqttTopicSubscription.option())))
+                                SubscriptionOptions.newInstance(mqttTopicSubscription.option()),
+                                subscriptionIdValue))
                 .collect(Collectors.toList());
-        MqttMessageIdAndPropertiesVariableHeader mqttMessageIdVariableHeader = nettySubscribeMsg.idAndPropertiesVariableHeader();
-        int messageId = mqttMessageIdVariableHeader.messageId();
-        MqttProperties properties = mqttMessageIdVariableHeader.properties();
         return new MqttSubscribeMsg(sessionId, messageId, topicSubscriptions, properties);
     }
 

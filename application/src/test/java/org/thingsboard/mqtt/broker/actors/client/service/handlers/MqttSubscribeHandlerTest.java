@@ -108,7 +108,9 @@ public class MqttSubscribeHandlerTest {
 
     @After
     public void tearDown() {
-        Mockito.reset(ctx);
+        Mockito.reset(ctx, mqttMessageGenerator, clientSubscriptionService, topicValidationService,
+                authorizationRuleService, retainedMsgService, publishMsgDeliveryService, clientMqttActorManager,
+                applicationSharedSubscriptionService, msgPersistenceManager, applicationPersistenceProcessor);
     }
 
     @Test
@@ -255,6 +257,7 @@ public class MqttSubscribeHandlerTest {
         TopicSharedSubscription resultSubscription = new TopicSharedSubscription("tf1", "s1", 2);
         assertTrue(result.contains(resultSubscription));
         verify(applicationPersistenceProcessor, times(1)).stopProcessingSharedSubscriptions(eq(ctx), eq(Set.of(resultSubscription)));
+        assertEquals(2, result.stream().toList().get(0).getQos());
     }
 
     @Test
@@ -297,6 +300,7 @@ public class MqttSubscribeHandlerTest {
 
         Set<TopicSharedSubscription> result = mqttSubscribeHandler.findSameSubscriptionsWithDifferentQos(ctx, newSharedSubscriptions, currentSharedSubscriptions);
         assertTrue(result.contains(new TopicSharedSubscription("tf1", "s1", 2)));
+        assertEquals(2, result.stream().toList().get(0).getQos());
     }
 
     @Test
@@ -439,17 +443,18 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
-    public void givenMqttSubscribeMsgWithSubscriptionIdentifier_whenCollectMqttReasonCodes_thenReturnSubscriptionIdNotSupported() {
+    public void givenMqttSubscribeMsgWithSubscriptionIdentifier_whenCollectMqttReasonCodes_thenReturnSubscriptionIdIsSupported() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(authorizationRuleService.isSubAuthorized(any(), any())).thenReturn(true);
 
         MqttSubscribeMsg msg = getMqttSubscribeMsg();
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
         assertEquals(
                 List.of(
-                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
-                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
-                        MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED),
+                        MqttReasonCodes.SubAck.GRANTED_QOS_0,
+                        MqttReasonCodes.SubAck.GRANTED_QOS_1,
+                        MqttReasonCodes.SubAck.GRANTED_QOS_2),
                 reasonCodes);
     }
 

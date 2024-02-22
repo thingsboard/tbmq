@@ -404,7 +404,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
         return new Subscription(
                 clientSubscription.getTopicFilter(),
-                clientSubscription.getValue().getQosValue(),
+                clientSubscription.getValue().getQos(),
                 clientSessionInfo,
                 clientSubscription.getValue().getShareName(),
                 clientSubscription.getValue().getOptions());

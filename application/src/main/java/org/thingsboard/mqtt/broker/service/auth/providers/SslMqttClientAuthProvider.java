@@ -50,7 +50,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
-            log.error("[{}] Could not authenticate client with SSL credentials since SSL listener is not enabled!", authContext);
+            log.error("[{}] Could not authenticate client with SSL credentials since SSL handler is not constructed!", authContext);
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {

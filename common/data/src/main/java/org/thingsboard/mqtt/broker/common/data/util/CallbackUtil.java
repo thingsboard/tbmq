@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import java.util.function.Consumer;
 
 public class CallbackUtil {
+
     public static BasicCallback createCallback(Runnable onSuccess, Consumer<Throwable> onFailure) {
         return new BasicCallback() {
             @Override
