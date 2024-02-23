@@ -27,6 +27,10 @@
     flex-wrap: wrap;
   }
 
+  .topic-mat-form-field {
+    margin-right: 0 !important;
+  }
+
   .tb-messages-container {
     min-height: 260px;
     overflow-y: auto;

@@ -43,6 +43,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   private connection: WebSocketConnection;
   private status: ConnectionStatus;
   private destroy$ = new Subject<void>();
+  private timeout;
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
@@ -88,23 +89,29 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     if ($event) {
       $event.stopPropagation();
     }
-    const trigger = element;
-    if (this.popoverService.hasPopover(trigger)) {
-      this.popoverService.hidePopover(trigger);
-    } else {
-      const showNotificationPopover = this.popoverService.displayPopover(trigger, this.renderer,
-        this.viewContainerRef, ShowConnectionLogsPopoverComponent, 'bottom', true, null,
-        {
-          onClose: () => {
-            showNotificationPopover.hide();
+    this.timeout = setTimeout(() => {
+      const trigger = element;
+      if (this.popoverService.hasPopover(trigger)) {
+        this.popoverService.hidePopover(trigger);
+      } else {
+        const showNotificationPopover = this.popoverService.displayPopover(trigger, this.renderer,
+          this.viewContainerRef, ShowConnectionLogsPopoverComponent, 'bottom', true, null,
+          {
+            onClose: () => {
+              showNotificationPopover.hide();
+            },
+            connectionId: this.connection?.id
           },
-          connectionId: this.connection?.id
-        },
-        {maxHeight: '90vh', height: '324px', padding: '10px'},
-        {width: '500px', minWidth: '100%', maxWidth: '100%'},
-        {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
-      showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
-    }
+          {maxHeight: '90vh', height: '324px', padding: '10px'},
+          {width: '500px', minWidth: '100%', maxWidth: '100%'},
+          {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
+        showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
+      }
+    }, 200);
+  }
+
+  clearTimeout() {
+    clearTimeout(this.timeout);
   }
 
   private updateLabels(status: ConnectionStatus, error: string) {
@@ -125,7 +132,6 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   connect() {
-    // this.status = ConnectionStatus.CONNECTING;
     const password = this.isPasswordRequired ? this.password : null;
     this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(
       connection => {

@@ -46,7 +46,7 @@
 <div [formGroup]="messangerFormGroup" fxLayout="column" class="mat-padding">
   <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center"
            style="flex-wrap: nowrap;" [ngClass]="{'wrap': (isLtLg | async)}">
-    <mat-form-field style="min-width: 250px !important; width: 100%">
+    <mat-form-field [ngClass]="{'topic-mat-form-field': (isLtLg | async)}" style="min-width: 250px !important; width: 100%">
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic">
       <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
