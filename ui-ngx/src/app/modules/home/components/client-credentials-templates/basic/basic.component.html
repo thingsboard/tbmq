@@ -21,7 +21,7 @@
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client.client-id</mat-label>
-      <input matInput formControlName="clientId">
+      <input matInput formControlName="clientId" name="client-id">
       <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
                       [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
@@ -33,7 +33,7 @@
       <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
         <mat-form-field fxFlex class="mat-block">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
-          <input matInput formControlName="userName">
+          <input matInput formControlName="userName" name="user-name">
           <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
                           [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
@@ -44,7 +44,7 @@
         <mat-form-field fxFlex class="mat-block" *ngIf="!entity?.id">
           <mat-label translate>mqtt-client-credentials.password</mat-label>
           <input matInput formControlName="password"
-                 autocomplete="new-password"
+                 autocomplete="new-password" name="new-password"
                  type="password">
           <tb-toggle-password matSuffix></tb-toggle-password>
         </mat-form-field>

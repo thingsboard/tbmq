@@ -38,7 +38,7 @@
   <section fxLayout="row" fxLayoutGap="16px">
     <mat-form-field *ngIf="isPasswordRequired && !isDisabled" appearance="outline" subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-credentials.password</mat-label>
-      <input matInput [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
+      <input matInput name="new-password" [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
       <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"
               [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
         <mat-icon class="tb-mat-18">{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
