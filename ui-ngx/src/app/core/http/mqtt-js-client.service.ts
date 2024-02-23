@@ -360,7 +360,6 @@ export class MqttJsClientService {
       console.log('Reconnecting...', mqttClient);
     });
     mqttClient.on('close', () => {
-      mqttClient.end();
       console.log('Closing...', mqttClient);
     });
     mqttClient.on('disconnect', () => {
