@@ -34,7 +34,6 @@ import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNo
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
-import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -68,8 +67,7 @@ export class MqttJsClientService {
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfig;
 
-  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
-              private translate: TranslateService) {
+  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService) {
   }
 
   public onConnectionsUpdated(selectFirst: boolean = true) {
@@ -80,18 +78,19 @@ export class MqttJsClientService {
     this.addMqttClient(connection, password);
   }
 
-  public disconnectActiveConnectedClient() {
-    const mqttClient = this.getActiveMqttJsClient();
+  public disconnectSelectedClient() {
+    const mqttClient = this.getSelectedMqttJsClient();
+    const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+    this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
+    this.endMqttClient(mqttClient);
     if (mqttClient?.connected) {
-      const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
-      this.setDisconnectedStatusEndSession(connection, mqttClient);
     }
   }
 
-  public findAndDisconnectClientByConnection(connection: WebSocketConnectionDto) {
+  public disconnectClient(connection: WebSocketConnectionDto) {
     const mqttClient = this.connectionMqttClientMap.get(connection.id);
     if (mqttClient?.connected) {
-      this.setDisconnectedStatusEndSession(connection, mqttClient);
+      this.setDisconnectedStatusEndClient(connection, mqttClient);
     }
   }
 
@@ -104,8 +103,8 @@ export class MqttJsClientService {
     this.updateMessages();
   }
 
-  public subscribeForTopicActiveMqttJsClient(subscription: WebSocketSubscription) {
-    const mqttClient: MqttClient = this.getActiveMqttJsClient();
+  public subscribeWebSocketSubscription(subscription: WebSocketSubscription) {
+    const mqttClient: MqttClient = this.getSelectedMqttJsClient();
     if (mqttClient) {
       const topic = subscription.configuration.topicFilter;
       const qos = subscription.configuration.qos;
@@ -120,21 +119,21 @@ export class MqttJsClientService {
       }
       const currentSubscription = this.mqttClientIdSubscriptionsMap.get(mqttClient.options.clientId);
       currentSubscription.push(subscription);
-      this.subscribeForTopic(mqttClient, topicObject);
+      this.subscribeMqttClient(mqttClient, topicObject);
     }
   }
 
-  public unsubscribeForTopicActiveMqttJsClient(prevSubscription: WebSocketSubscription, currentSubscription: WebSocketSubscription = null) {
-    const mqttClient: MqttClient = this.getActiveMqttJsClient();
+  public unsubscribeWebSocketSubscription(initSubscription: WebSocketSubscription, currentSubscription: WebSocketSubscription = null) {
+    const mqttClient: MqttClient = this.getSelectedMqttJsClient();
     if (mqttClient) {
-      const topic = prevSubscription.configuration.topicFilter;
+      const topic = initSubscription.configuration.topicFilter;
       const clientSubscriptions = this.mqttClientIdSubscriptionsMap.get(mqttClient.options.clientId);
-      const prevSubscriptionIndex = clientSubscriptions.findIndex(el => el.id === prevSubscription.id);
+      const prevSubscriptionIndex = clientSubscriptions.findIndex(el => el.id === initSubscription.id);
       if (currentSubscription && clientSubscriptions[prevSubscriptionIndex].configuration.color !== currentSubscription.configuration.color) {
         this.changeSubscriptionColor(currentSubscription);
       }
       clientSubscriptions.splice(prevSubscriptionIndex, 1);
-      mqttClient.unsubscribe(topic);
+      this.unsubscribeMqttClient(mqttClient, topic);
     }
   }
 
@@ -155,7 +154,7 @@ export class MqttJsClientService {
       type: 'published'
     };
 
-    this.addMessage(message, this.getActiveConnectionId());
+    this.addMessage(message, this.getSelectedConnectionId());
 
     if (isDefinedAndNotNull(options?.properties?.correlationData)) options.properties.correlationData = Buffer.from(options.properties.correlationData);
     if (isDefinedAndNotNull(options?.properties?.userProperties)) {
@@ -166,34 +165,38 @@ export class MqttJsClientService {
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
-    this.getActiveMqttJsClient().publish(topic, payload, options);
+    this.getSelectedMqttJsClient().publish(topic, payload, options, function (error) {
+      if (error) {
+        console.log(`Error ${error} on publish message ${payload.toString()} on topic ${topic} with options ${options}`)
+      }
+    });
   }
 
   public clearHistory() {
-    const connectionId = this.getActiveConnectionId();
+    const connectionId = this.getSelectedConnectionId();
     this.connectionMessagesMap.set(connectionId, []);
     this.updateMessages();
   }
 
   public selectConnection(connection: WebSocketConnection) {
     this.connectionSubject$.next(connection);
-    const connectionStatus = this.connectionStatusMap.get(this.getActiveConnectionId());
+    const connectionStatus = this.connectionStatusMap.get(this.getSelectedConnectionId());
     this.connectionStatusSubject$.next(connectionStatus);
     this.updateMessages();
   }
 
-  public disconnectAllConnectedClients() {
+  public disconnectAllClients() {
     for (let mqttClient of this.connectionMqttClientMap.values()) {
       if (mqttClient?.connected) {
         const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
-        this.setDisconnectedStatusEndSession(connection, mqttClient);
+        this.setDisconnectedStatusEndClient(connection, mqttClient);
       }
     }
   }
 
   public getMessages(pageLink: PageLink): Observable<PageData<WsTableMessage>> {
     const sortOrder = pageLink.sortOrder;
-    const data = this.connectionMessagesMap.get(this.getActiveConnectionId());
+    const data = this.connectionMessagesMap.get(this.getSelectedConnectionId());
     let filteredMessages = [];
     if (data) {
       filteredMessages = data.filter(item => {
@@ -292,19 +295,17 @@ export class MqttJsClientService {
     this.manageMqttClientCallbacks(mqttClient, connection);
   }
 
-  private setDisconnectedStatusEndSession(connection: WebSocketConnection | WebSocketConnectionDto, mqttClient: MqttClient) {
-    this.setConnectionStatus(connection, ConnectionStatus.DISCONNECTED);
-    this.setConnectionLog(connection, ConnectionStatus.DISCONNECTED);
-    mqttClient.end();
+  private setDisconnectedStatusEndClient(connection: WebSocketConnection | WebSocketConnectionDto, mqttClient: MqttClient) {
+    this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
+    this.endMqttClient(mqttClient);
   }
 
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {
     mqttClient.on('connect', (packet: IConnackPacket) => {
       this.connectionMqttClientMap.set(connection.id, mqttClient);
       this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
-      this.subscribeForTopicsOnConnect(mqttClient, connection);
-      this.setConnectionStatus(connection, ConnectionStatus.CONNECTED);
-      this.setConnectionLog(connection, ConnectionStatus.CONNECTED);
+      this.subscribeForWebSocketSubscriptions(mqttClient, connection);
+      this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTED);
       console.log(`Client connected!`, packet, mqttClient);
     });
     mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
@@ -348,15 +349,13 @@ export class MqttJsClientService {
       console.log(`Received Message: ${payload} On topic: ${topic}`, packet);
     });
     mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
-      const details = error.message.split(':')[1] || error.message;
-      this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED, details);
-      this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, details);
-      mqttClient.end();
+      const reason = error.message.split(':')[1] || error.message;
+      this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
+      this.endMqttClient(mqttClient);
       console.log('Connection error: ', error);
     });
     mqttClient.on('reconnect', () => {
-      this.setConnectionStatus(connection, ConnectionStatus.RECONNECTING);
-      this.setConnectionLog(connection, ConnectionStatus.RECONNECTING);
+      this.updateConnectionStatusLog(connection, ConnectionStatus.RECONNECTING);
       console.log('Reconnecting...', mqttClient);
     });
     mqttClient.on('close', () => {
@@ -384,8 +383,7 @@ export class MqttJsClientService {
     mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
       if (packet.cmd == 'disconnect') {
         const reason = DisconnectReasonCodes[packet.reasonCode];
-        this.setConnectionStatus(connection, ConnectionStatus.CONNECTION_FAILED, reason);
-        this.setConnectionLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
+        this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
       }
       console.log('Packet Receive...', packet);
     });
@@ -419,17 +417,22 @@ export class MqttJsClientService {
     return checkTopicInSubscriptions(subscriptions, topic);
   }
 
-  private setConnectionStatus(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
+  private updateConnectionStatusLog(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
+    this.updateConnectionStatus(connection, status, details);
+    this.updateConnectionLog(connection, status, details);
+  }
+
+  private updateConnectionStatus(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
     this.connectionStatusMap.set(connection.id, {
       status,
       details
     });
-    if (this.getActiveConnectionId() === connection.id) {
+    if (this.getSelectedConnectionId() === connection.id) {
       this.connectionStatusSubject$.next(this.connectionStatusMap.get(connection.id));
     }
   }
 
-  private setConnectionLog(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
+  private updateConnectionLog(connection: WebSocketConnection | WebSocketConnectionDto, status: ConnectionStatus, details: string = null) {
     const log: ConnectionStatusLog = {
       createdTime: this.nowTs(),
       status,
@@ -447,7 +450,7 @@ export class MqttJsClientService {
     return Date.now();
   }
 
-  private subscribeForTopicsOnConnect(mqttClient: MqttClient, connection: WebSocketConnection) {
+  private subscribeForWebSocketSubscriptions(mqttClient: MqttClient, connection: WebSocketConnection) {
     this.webSocketSubscriptionService.getWebSocketSubscriptions(connection.id).subscribe(
       webSocketSubscriptions => {
         const subscriptions = [];
@@ -463,13 +466,13 @@ export class MqttJsClientService {
           subscriptions.push(subscription);
         }
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, subscriptions);
-        this.subscribeForTopic(mqttClient, topicObject);
+        this.subscribeMqttClient(mqttClient, topicObject);
       }
     );
   }
 
   private changeSubscriptionColor(subscription: WebSocketSubscription) {
-    const clientMessages = this.connectionMessagesMap.get(this.getActiveConnectionId());
+    const clientMessages = this.connectionMessagesMap.get(this.getSelectedConnectionId());
     if (clientMessages) {
       const subscriptionMessages = clientMessages.filter(el => el?.subscriptionId === subscription.id);
       for (let i = 0; i < subscriptionMessages?.length; i++) {
@@ -516,16 +519,24 @@ export class MqttJsClientService {
     this.messagesSubject$.next(null);
   }
 
-  private subscribeForTopic(mqttClient: MqttClient, topicObject: any) {
+  private subscribeMqttClient(mqttClient: MqttClient, topicObject: any) {
     mqttClient.subscribe(topicObject);
   }
 
-  private getActiveConnectionId(): string {
+  private unsubscribeMqttClient(mqttClient: MqttClient, topic: string) {
+    mqttClient.unsubscribe(topic);
+  }
+
+  private endMqttClient(mqttClient: MqttClient) {
+    mqttClient.end();
+  }
+
+  private getSelectedConnectionId(): string {
     return this.connectionSubject$?.value?.id;
   }
 
-  private getActiveMqttJsClient(): MqttClient {
-    return this.connectionMqttClientMap.get(this.getActiveConnectionId());
+  private getSelectedMqttJsClient(): MqttClient {
+    return this.connectionMqttClientMap.get(this.getSelectedConnectionId());
   }
 
 }

@@ -113,7 +113,6 @@ export class ConnectionComponent implements OnInit {
     ).subscribe((result) => {
       if (result) {
         this.webSocketConnectionService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
-          // this.mqttJsClientService.findAndDisconnectClientByConnection(this.connection);
           this.connectionUpdated.emit();
           this.mqttJsClientService.onConnectionsUpdated(true);
         });
@@ -143,7 +142,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   private connectAndSelect(connection: WebSocketConnection) {
-    this.mqttJsClientService.findAndDisconnectClientByConnection(connection);
+    this.mqttJsClientService.disconnectClient(connection);
     this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
     this.mqttJsClientService.selectConnection(connection);
   }

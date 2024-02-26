@@ -33,12 +33,12 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   isConnected: boolean;
-  isDisabled: boolean;
   isPasswordRequired: boolean;
   isPasswordVisible: boolean;
   password: string;
   errorMessage: string;
   actionLabel: string = 'ws-client.connections.connect';
+  reconnecting: boolean;
 
   private connection: WebSocketConnection;
   private status: ConnectionStatus;
@@ -66,6 +66,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.mqttJsClientService.connection$.subscribe(
       entity => {
         if (entity) {
+          this.reconnecting = false;
           this.connection = entity;
           this.isPasswordRequired = entity.configuration.passwordRequired;
         }
@@ -116,13 +117,12 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   private updateLabels(status: ConnectionStatus, error: string) {
     this.status = status;
-    this.isDisabled = status === ConnectionStatus.CONNECTED || status === ConnectionStatus.RECONNECTING;
-    if (status === ConnectionStatus.CONNECTED) {
-      this.isConnected = true;
-      this.actionLabel = 'ws-client.connections.disconnect';
+    this.isConnected = status === ConnectionStatus.CONNECTED;
+    this.actionLabel = this.isConnected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect';
+    if (status === ConnectionStatus.RECONNECTING) {
+      this.reconnecting = true;
     } else {
-      this.isConnected = false;
-      this.actionLabel = 'ws-client.connections.connect';
+      this.reconnecting = status === ConnectionStatus.CONNECTION_FAILED;
     }
     if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
       this.errorMessage = error?.length ? (': ' + error) : null;
@@ -141,11 +141,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.mqttJsClientService.disconnectActiveConnectedClient();
-  }
-
-  displayCancelButton(): boolean {
-    return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING); // TODO check reconnecting cases
+    this.mqttJsClientService.disconnectSelectedClient();
   }
 
   getStatus() {

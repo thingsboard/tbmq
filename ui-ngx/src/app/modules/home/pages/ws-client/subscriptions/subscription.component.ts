@@ -116,18 +116,18 @@ export class SubscriptionComponent implements OnInit {
     ).subscribe((result) => {
       if (result) {
         this.webSocketSubscriptionService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
-          this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(webSocketSubscription);
+          this.mqttJsClientService.unsubscribeWebSocketSubscription(webSocketSubscription);
           this.updateData();
         });
       }
     });
   }
 
-  private edit($event: Event, prevWebSocketSubscription: WebSocketSubscription) {
+  private edit($event: Event, initWebSocketSubscription: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.webSocketSubscriptionService.getWebSocketSubscriptionById(prevWebSocketSubscription.id).subscribe(
+    this.webSocketSubscriptionService.getWebSocketSubscriptionById(initWebSocketSubscription.id).subscribe(
       subscription =>
         this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
           disableClose: true,
@@ -142,8 +142,8 @@ export class SubscriptionComponent implements OnInit {
             if (isDefinedAndNotNull(webSocketSubscriptionDialogData)) {
               this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionDialogData).subscribe(
                 (currentWebSocketSubscription) => {
-                  this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
-                  this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);
+                  this.mqttJsClientService.unsubscribeWebSocketSubscription(initWebSocketSubscription, currentWebSocketSubscription);
+                  this.mqttJsClientService.subscribeWebSocketSubscription(currentWebSocketSubscription);
                   this.updateData();
                 }
               );
