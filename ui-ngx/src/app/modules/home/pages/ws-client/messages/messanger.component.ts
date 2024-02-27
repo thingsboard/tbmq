@@ -17,7 +17,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, UntypedFormGroup } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -74,7 +74,7 @@ export class MessangerComponent implements OnInit {
   ngOnInit() {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
-      topic: ['sensors/temperature', []],
+      topic: ['sensors/temperature', [this.topicValidator]],
       qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
@@ -199,5 +199,11 @@ export class MessangerComponent implements OnInit {
       return JSON.stringify(payload) === 'null' ? '' : JSON.stringify(payload);
     }
     return payload;
+  }
+
+  private topicValidator(control: FormControl): {[key: string]: boolean} | null {
+    const invalidChars = /[+#]/;
+    const isValid = !invalidChars.test(control.value);
+    return isValid ? null : { 'invalidTopic': true };
   }
 }

@@ -94,7 +94,7 @@
     <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !hasTopicAliasMax) || !isConnected || !isPayloadValid">
+            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !hasTopicAliasMax) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
       <mat-icon>send</mat-icon>
     </button>
   </section>
