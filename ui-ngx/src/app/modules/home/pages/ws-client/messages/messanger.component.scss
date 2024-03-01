@@ -56,9 +56,16 @@
 
   .retain-container {
     border: 1px solid rgba(0, 0, 0, 0.12);
-    height: 36px;
-    padding: 8px 16px 8px 12px;
+    padding: 8px 16px 8px 16px;
     border-radius: 4px;
+  }
+
+  .margin-bottom {
+    margin-bottom: 22px;
+  }
+
+  .btn-properties {
+    min-width: 100px;
   }
 
   ::ng-deep {
@@ -71,10 +78,10 @@
       }
     }
 
-    .publish-button {
+    .send-message-btn {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
+      bottom: 16px;
+      right: 16px;
       z-index: 1;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 4px;

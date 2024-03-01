@@ -1119,6 +1119,7 @@ mat-label {
     display: flex;
     height: calc(100% - 60px);
     text-align: center;
+    color: rgba(0, 0, 0, 0.38);
   }
 
   .mat-mdc-tab-group {
@@ -1290,6 +1291,10 @@ mat-label {
   gap: 8px;
 }
 
+.tb-ws-client-padding {
+  padding: 8px 16px 16px 16px;
+}
+
 .tb-ws-client-title {
   font-size: 18px;
   font-weight: 600;
@@ -1313,4 +1318,8 @@ mat-label {
   @media #{$mat-lt-xl} {
     font-size: 13px;
   }
+}
+
+.home-page-material-icons {
+  color: rgba(0,0,0,0.54);
 }

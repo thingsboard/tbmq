@@ -16,7 +16,7 @@
 
 -->
 <form #inputForm="ngForm">
-  <section fxLayout="row" fxLayoutGap="8px">
+  <section fxLayout="row" fxLayoutGap="16px">
     <mat-form-field [fxFlex]="flexCorrelation[0]" class="mat-block tb-value-type">
       <mat-label translate>value.type</mat-label>
       <mat-select [disabled]="disabled" matInput name="valueType" [(ngModel)]="valueType" (ngModelChange)="onValueTypeChanged()">

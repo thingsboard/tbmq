@@ -88,19 +88,15 @@
       }
     }
   }
+}
 
-  ::ng-deep {
-    .mat-mdc-icon-button svg, .mat-mdc-icon-button img {
-      height: 20px;
-      width: 20px;
-    }
+::ng-deep {
+  .mat-mdc-icon-button svg, .mat-mdc-icon-button img {
+    height: 20px;
+    width: 20px;
+  }
 
-    .matMenu {
-      > span {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-    }
+  .mat-mdc-menu-content .mat-mdc-menu-item .mdc-list-item__primary-text {
+    display: flex;
   }
 }

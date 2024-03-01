@@ -46,11 +46,10 @@
                 class="tb-mat-32"
                 (click)="$event.stopPropagation()"
                 [matMenuTriggerFor]="cellActionsMenu">
-          <mat-icon class="material-icons">more_vert</mat-icon>
+          <mat-icon class="home-page-material-icons material-icons">more_vert</mat-icon>
         </button >
         <mat-menu #cellActionsMenu="matMenu" xPosition="before">
           <button mat-menu-item *ngFor="let actionDescriptor of hiddenActions"
-                  class="matMenu"
                   [fxShow]="actionDescriptor.isEnabled(subscription)"
                   (click)="actionDescriptor.onAction($event, subscription)">
             <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>

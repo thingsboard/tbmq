@@ -78,19 +78,28 @@ export class SubscriptionComponent implements OnInit {
         name: this.translate.instant('ws-client.subscriptions.copy-topic'),
         icon: 'mdi:content-copy',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.copyContent($event, entity)
+        onAction: ($event, entity) => this.copyContent($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       },
       {
         name: this.translate.instant('action.edit'),
         icon: 'mdi:pencil',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.edit($event, entity)
+        onAction: ($event, entity) => this.edit($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       },
       {
         name: this.translate.instant('action.delete'),
         icon: 'mdi:delete',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.delete($event, entity)
+        onAction: ($event, entity) => this.delete($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       }
     );
     return actions;

@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<section class="tb-ws-client-title-toolbar mat-padding">
+<section class="tb-ws-client-title-toolbar tb-ws-client-padding">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" style="margin-right: 8px" translate>ws-client.connections.messages</span>
     <tb-toggle-select appearance="stroked"
@@ -68,13 +68,12 @@
         </mat-option>
       </mat-select>
     </mat-form-field>
-    <section class="retain-container">
-      <mat-slide-toggle formControlName="retain" color="success">
+    <section class="retain-container margin-bottom">
+      <mat-slide-toggle formControlName="retain">
         {{ 'ws-client.last-will.retain' | translate }}
       </mat-slide-toggle>
     </section>
-    <button mat-stroked-button color="primary"
-            style="min-width: 100px !important;"
+    <button mat-stroked-button color="primary" class="btn-properties margin-bottom"
             [matTooltip]="'ws-client.connections.show-meta' | translate"
             [disabled]="mqttVersion !== 5"
             (click)="messagePropertiesDialog()"
@@ -91,7 +90,7 @@
       (isJsonValid)="onJsonValidation($event)"
       [fillHeight]="false">
     </tb-ws-json-object-edit>
-    <button class="tb-mat-32 publish-button" mat-icon-button color="primary"
+    <button mat-icon-button color="primary" class="send-message-btn" style="width: 40px; height: 40px; padding: 8px;"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
             [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !hasTopicAliasMax) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">

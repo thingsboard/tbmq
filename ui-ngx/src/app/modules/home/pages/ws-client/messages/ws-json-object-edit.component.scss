@@ -34,7 +34,7 @@
   .toolbar-buttons {
     position: absolute;
     top: 10px;
-    right: 6px;
+    right: 10px;
     z-index: 1;
   }
 }
@@ -52,7 +52,6 @@
     font-size: .8rem;
     line-height: 15px;
     color: #7b7b7b;
-    //background: rgba(220, 220, 220, .35);
 
     &:not(:last-child) {
       margin-right: 4px;
@@ -60,6 +59,8 @@
   }
   button.mat-mdc-button-base:not(.mat-mdc-icon-button) {
     height: 23px;
+    border-radius: 4px;
+    background: #F3F3F3;
   }
 }
 

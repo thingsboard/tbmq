@@ -15,9 +15,11 @@
  */
 :host ::ng-deep {
   .mat-mdc-outlined-button:not(.mat-mdc-icon-button) {
-    min-width: 40px;
+    min-width: 36px;
   }
-
+  .mat-mdc-outlined-button.mat-mdc-button-base {
+    height: 36px;
+  }
   .mat-mdc-outlined-button:not(.mat-mdc-icon-button) .mat-icon {
     margin-right: -3px;
   }

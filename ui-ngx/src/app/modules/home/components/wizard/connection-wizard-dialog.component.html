@@ -69,7 +69,7 @@
         </section>
 
         <section fxLayout="column">
-          <div fxLayout="column" style="margin: 8px 0 8px 0">
+          <div fxLayout="column" style="margin: 8px 0 16px 0">
             <tb-toggle-header #credentialsToggle
                               [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                               (valueChange)="onCredentialsGeneratorChange($event)"
@@ -209,7 +209,7 @@
               info</mat-icon>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.keep-alive</mat-label>
               <input matInput formControlName="keepalive" type="number" min="0" [max]="calcMax('keepaliveUnit')">
@@ -233,7 +233,7 @@
             </mat-form-field>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.connect-timeout</mat-label>
               <input matInput formControlName="connectTimeout" type="number" min="0">
@@ -254,7 +254,7 @@
             </mat-form-field>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.reconnect-period</mat-label>
               <input matInput formControlName="reconnectPeriod" type="number" min="0">
@@ -285,7 +285,7 @@
           </mat-form-field>
 
           <section fxLayout="column" formGroupName="properties">
-            <section fxLayout="row" fxLayoutGap="8px">
+            <section fxLayout="row" fxLayoutGap="16px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
                 <input matInput formControlName="sessionExpiryInterval" type="number" min="0" [max]="calcMax('sessionExpiryIntervalUnit')">
@@ -302,7 +302,7 @@
                 </mat-select>
               </mat-form-field>
             </section>
-            <section fxLayout="row" fxLayoutGap="8px">
+            <section fxLayout="row" fxLayoutGap="16px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
                 <input matInput formControlName="maximumPacketSize" type="number" min="0" [max]="calcMax('maximumPacketSizeUnit')">
