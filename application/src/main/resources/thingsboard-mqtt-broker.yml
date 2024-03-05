@@ -87,6 +87,9 @@ listener:
     config:
       # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_SSL_PROTOCOL:TLSv1.2}"
+      # Sets the cipher suites enabled for use on mqtts listener. The value is a comma-separated list of cipher suits (e.g. TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256).
+      # Defaults to empty list meaning all supported cipher suites of the used provider are taken
+      enabled_cipher_suites: "${LISTENER_SSL_ENABLED_CIPHER_SUITES:}"
       # Server SSL credentials
       credentials:
         # Server credentials type (PEM - pem certificate file; KEYSTORE - java keystore)
@@ -160,6 +163,9 @@ listener:
     config:
       # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_WSS_PROTOCOL:TLSv1.2}"
+      # Sets the cipher suites enabled for use on wss listener. The value is a comma-separated list of cipher suits (e.g. TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256).
+      # Defaults to empty list meaning all supported cipher suites of the used provider are taken
+      enabled_cipher_suites: "${LISTENER_WSS_ENABLED_CIPHER_SUITES:}"
       # Server SSL credentials
       credentials:
         # Server credentials type (PEM - pem certificate file; KEYSTORE - java keystore)
