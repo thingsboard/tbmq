@@ -32,10 +32,12 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 @Getter
 public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer {
 
+    private final MqttWssServerContext context;
+
     @Value("${listener.wss.netty.sub_protocols}")
     private String subprotocols;
-
-    private final MqttWssServerContext context;
+    @Value("${listener.wss.config.enabled_cipher_suites}")
+    private String[] enabledCipherSuites;
 
     public MqttWssChannelInitializer(MqttHandlerFactory handlerFactory, MqttWssServerContext context) {
         super(handlerFactory);
@@ -59,6 +61,6 @@ public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer 
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getWssHandlerProvider().getSslHandler();
+        return context.getWssHandlerProvider().getSslHandler(enabledCipherSuites);
     }
 }
