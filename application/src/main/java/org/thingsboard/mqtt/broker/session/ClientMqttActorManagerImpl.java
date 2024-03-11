@@ -83,6 +83,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             log.warn("[{}] Cannot find client actor to process MQTT message, sessionId - {}, msgType - {}.", clientId, mqttMsg.getSessionId(), mqttMsg.getMsgType());
+            mqttMsg.release();
         } else {
             clientActorRef.tell(mqttMsg);
         }

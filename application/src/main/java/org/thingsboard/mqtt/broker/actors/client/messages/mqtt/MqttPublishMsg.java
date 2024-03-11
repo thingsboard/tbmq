@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
@@ -36,5 +37,15 @@ public class MqttPublishMsg extends QueueableMqttMsg {
     @Override
     public MsgType getMsgType() {
         return MsgType.MQTT_PUBLISH_MSG;
+    }
+
+    @Override
+    public void release() {
+        this.publishMsg.getByteBuf().release();
+    }
+
+    @Override
+    public void onTbActorStopped(TbActorId actorId) {
+        release();
     }
 }

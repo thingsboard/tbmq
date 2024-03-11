@@ -64,12 +64,9 @@ public class ProtoConverter {
                 .setRetain(publishMsg.isRetained())
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setClientId(sessionInfo.getClientInfo().getClientId());
-        if (publishMsg.getByteBuf() != null) {
-            builder.setPayload(ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()));
-            publishMsg.getByteBuf().release();
-        } else {
-            builder.setPayload(ByteString.copyFrom(publishMsg.getPayload()));
-        }
+        builder.setPayload(publishMsg.getByteBuf() != null ?
+                ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()) :
+                ByteString.copyFrom(publishMsg.getPayload()));
 
         QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(publishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
