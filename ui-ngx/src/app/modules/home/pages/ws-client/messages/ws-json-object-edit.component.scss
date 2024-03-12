@@ -41,7 +41,9 @@
 
 .tb-json-object-toolbar {
   position: relative;
+  text-align: end;
   margin-bottom: 8px;
+  padding-right: 8px;
   button.mat-mdc-button-base, button.mat-mdc-button-base.tb-mat-32 {
     align-items: center;
     vertical-align: middle;

@@ -151,7 +151,7 @@ export class MessangerComponent implements OnInit {
       // @ts-ignore
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
       if (isDefinedAndNotNull(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
-      if (isDefinedAndNotNull(propertiesForm?.userProperties)) options.properties.userProperties = propertiesForm.userProperties;
+      if (isDefinedAndNotNull(propertiesForm?.userProperties) && propertiesForm?.userProperties?.props?.length) options.properties.userProperties = propertiesForm.userProperties;
       if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
       if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
       if (isDefinedAndNotNull(propertiesForm?.responseTopic)) options.properties.responseTopic = propertiesForm.responseTopic;
