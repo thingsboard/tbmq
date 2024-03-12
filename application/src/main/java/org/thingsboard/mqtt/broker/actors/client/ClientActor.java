@@ -134,7 +134,7 @@ public class ClientActor extends ContextAwareActor {
                         processClearSessionMsg((ClearSessionMsg) msg);
                         break;
                     case REMOVE_APPLICATION_TOPIC_REQUEST_MSG:
-                        sessionClusterManager.processRemoveApplicationTopicRequest(state.getClientId(), ((RemoveApplicationTopicRequestMsg)msg).getCallback());
+                        sessionClusterManager.processRemoveApplicationTopicRequest(state.getClientId(), ((RemoveApplicationTopicRequestMsg) msg).getCallback());
                         break;
 
                     case SUBSCRIBE_COMMAND_MSG:
@@ -246,12 +246,14 @@ public class ClientActor extends ContextAwareActor {
                 log.debug("[{}][{}] Session is in {} state, ignoring message, msg type - {}.",
                         state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTED, msg.getMsgType());
             }
+            release(msg);
             return true;
         }
         if (state.getCurrentSessionState() != SessionState.CONNECTING
                 && state.getCurrentSessionState() != SessionState.CONNECTED) {
             log.warn("[{}][{}] Msg {} cannot be processed in state - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), state.getCurrentSessionState());
+            release(msg);
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process message")));
             return true;
@@ -275,7 +277,13 @@ public class ClientActor extends ContextAwareActor {
             ctx.tellWithHighPriority(new MqttDisconnectMsg(state.getCurrentSessionId(), new DisconnectReason(DisconnectReasonType.ON_ERROR,
                     "Failed to process MQTT message. Exception message - " + e.getMessage())));
             return true;
+        } finally {
+            release(msg);
         }
+    }
+
+    private void release(QueueableMqttMsg msg) {
+        msg.release();
     }
 
     private void processConnectMsg(MqttConnectMsg msg) {

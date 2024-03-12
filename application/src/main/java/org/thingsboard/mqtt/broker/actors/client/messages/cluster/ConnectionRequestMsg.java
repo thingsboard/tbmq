@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.exception.ActorStoppedException;
 @Slf4j
 @Getter
 public class ConnectionRequestMsg extends CallbackMsg implements SessionClusterManagementMsg {
+
     private final SessionInfo sessionInfo;
     private final ConnectionRequestInfo requestInfo;
 

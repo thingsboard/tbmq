@@ -193,7 +193,17 @@ public class ConnectServiceImpl implements ConnectService {
             startProcessingSharedSubscriptionsIfPresent(sessionCtx);
         }
 
-        actorState.getQueuedMessages().process(msg -> messageHandler.process(sessionCtx, msg, actorRef));
+        processQueuedMessages(actorState, sessionCtx, actorRef);
+    }
+
+    private void processQueuedMessages(ClientActorStateInfo actorState, ClientSessionCtx sessionCtx, TbActorRef actorRef) {
+        actorState.getQueuedMessages().process(msg -> {
+            try {
+                messageHandler.process(sessionCtx, msg, actorRef);
+            } finally {
+                msg.release();
+            }
+        });
     }
 
     private void startProcessingSharedSubscriptionsIfPresent(ClientSessionCtx sessionCtx) {
