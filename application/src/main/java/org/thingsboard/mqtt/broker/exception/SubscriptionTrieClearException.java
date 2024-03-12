@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class SubscriptionTrieClearException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = 7773537415502097514L;
+
     public SubscriptionTrieClearException(String message) {
         super(message);
     }

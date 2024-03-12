@@ -21,6 +21,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import java.util.Date;
 
 public class ThingsboardErrorResponse {
+
     // HTTP Response Status Code
     private final HttpStatus status;
 

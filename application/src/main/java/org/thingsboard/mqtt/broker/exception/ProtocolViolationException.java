@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class ProtocolViolationException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 6130139932588069150L;
+
     public ProtocolViolationException(String message) {
         super(message);
     }

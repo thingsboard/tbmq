@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class ActorStoppedException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 5921862447098318040L;
+
     public ActorStoppedException() {
         super();
     }

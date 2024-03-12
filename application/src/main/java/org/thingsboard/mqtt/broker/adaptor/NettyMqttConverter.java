@@ -183,6 +183,7 @@ public class NettyMqttConverter {
                 .topicName(msg.payload().willTopic())
                 .payload(msg.payload().willMessageInBytes())
                 .isRetained(msg.variableHeader().isWillRetain())
+                .isDup(false)
                 .qosLevel(msg.variableHeader().willQos())
                 .properties(msg.payload().willProperties())
                 .build();

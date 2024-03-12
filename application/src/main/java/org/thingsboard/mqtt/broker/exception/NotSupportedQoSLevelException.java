@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class NotSupportedQoSLevelException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = -1562571769482869670L;
+
     public NotSupportedQoSLevelException() {
     }
 
