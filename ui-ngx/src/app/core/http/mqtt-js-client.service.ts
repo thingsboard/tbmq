@@ -20,7 +20,7 @@ import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   ConnectionStatus,
   ConnectionStatusLog,
-  DataSizeUnitType, DisconnectReasonCodes, MessageFilterConfig, MessageFilterDefaultConfig,
+  DataSizeUnitType, DisconnectReasonCodes, MessageCounters, MessageFilterConfig, MessageFilterDefaultConfig,
   transformObjectToProps,
   transformPropsToObject,
   WebSocketConnection, WebSocketConnectionDto,
@@ -45,7 +45,7 @@ export class MqttJsClientService {
   private connectionsSubject$ = new BehaviorSubject<boolean>(true);
   private connectionStatusSubject$ = new BehaviorSubject<ConnectionStatusLog>({status: ConnectionStatus.DISCONNECTED, details: null});
   private messagesSubject$ = new BehaviorSubject<WsTableMessage[]>(this.messagesList);
-  private messageCounterSubject$ = new BehaviorSubject<number>(0);
+  private messageCounterSubject$ = new BehaviorSubject<MessageCounters>(null);
 
   public connection$ = this.connectionSubject$.asObservable();
   public connections$ = this.connectionsSubject$.asObservable();
@@ -239,11 +239,7 @@ export class MqttJsClientService {
       }
     });
     pageData.data = [...filteredMessages];
-    let counter = data?.length;
-    if (this.messagesFilter.type !== 'all') {
-      counter = data.filter(el => el.type === this.messagesFilter.type)?.length;
-    }
-    this.messageCounterSubject$.next(counter);
+    this.updateMessageCounter(data);
     return of(pageData);
   }
 
@@ -537,6 +533,16 @@ export class MqttJsClientService {
 
   private getSelectedMqttJsClient(): MqttClient {
     return this.connectionMqttClientMap.get(this.getSelectedConnectionId());
+  }
+
+  private updateMessageCounter(data: WsTableMessage[]) {
+    const all = data?.length || 0;
+    const received = data?.filter(el => el.type === 'received')?.length || 0;
+    this.messageCounterSubject$.next({
+      all,
+      received,
+      published: all - received
+    });
   }
 
 }

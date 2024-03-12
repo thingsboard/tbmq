@@ -229,6 +229,12 @@ export interface MessageFilterConfig {
   type?: string;
 }
 
+export interface MessageCounters {
+  all: number;
+  received: number;
+  published: number;
+}
+
 export enum WsAddressProtocolType {
   WS = 'WS',
   WSS = 'WSS'

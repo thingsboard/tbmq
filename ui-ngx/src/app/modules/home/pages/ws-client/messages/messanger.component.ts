@@ -46,7 +46,6 @@ export class MessangerComponent implements OnInit {
   connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
-  counter: number;
 
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
@@ -58,7 +57,7 @@ export class MessangerComponent implements OnInit {
   jsonFormatSelected = true;
   isPayloadValid = true;
   mqttVersion = 5;
-  hasTopicAliasMax = false;
+  isDefinedTopicAlias = false;
 
   publishMsgProps: PublishMessageProperties = null;
   publishMsgPropsChanged: boolean;
@@ -98,7 +97,7 @@ export class MessangerComponent implements OnInit {
           this.mqttVersion = connection.configuration.mqttVersion;
         }
       }
-    )
+    );
 
     this.mqttJsClientService.connectionStatus$.subscribe(
       status => {
@@ -107,7 +106,10 @@ export class MessangerComponent implements OnInit {
     );
 
     this.mqttJsClientService.messageCounter.subscribe(value => {
-      this.counter = value || 0;
+      this.messagesTypeFilters = WsMessagesTypeFilters.map(filter => ({
+        ...filter,
+        name: `${filter.name} (${value[filter.value]})`,
+      }));
     })
 
     this.mqttJsClientService.filterMessages({
@@ -124,7 +126,7 @@ export class MessangerComponent implements OnInit {
     });
 
     this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
-      this.hasTopicAliasMax = isDefinedAndNotNull(value?.topicAlias);
+      this.isDefinedTopicAlias = isDefinedAndNotNull(value?.topicAlias);
     })
   }
 
