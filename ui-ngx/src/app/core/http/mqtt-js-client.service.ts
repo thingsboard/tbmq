@@ -45,7 +45,7 @@ export class MqttJsClientService {
   private connectionsSubject$ = new BehaviorSubject<boolean>(true);
   private connectionStatusSubject$ = new BehaviorSubject<ConnectionStatusLog>({status: ConnectionStatus.DISCONNECTED, details: null});
   private messagesSubject$ = new BehaviorSubject<WsTableMessage[]>(this.messagesList);
-  private messageCounterSubject$ = new BehaviorSubject<MessageCounters>(null);
+  private messageCounterSubject$ = new BehaviorSubject<MessageCounters>({all: 0, received: 0, published: 0});
 
   public connection$ = this.connectionSubject$.asObservable();
   public connections$ = this.connectionsSubject$.asObservable();
