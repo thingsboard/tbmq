@@ -39,8 +39,7 @@ export class RetainedMsgService {
   }
 
   public deleteRetainedMessage(topicName: string, config?: RequestConfig): Observable<void> {
-    const topicNameEncoded = encodeURIComponent(topicName);
-    return this.http.delete<void>(`/api/retained-msg?topicName=${topicNameEncoded}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete<void>(`/api/retained-msg?topicName=${topicName}`, defaultHttpOptionsFromConfig(config));
   }
 
   public clearEmptyRetainedMsgNodes(config?: RequestConfig): Observable<void> {
