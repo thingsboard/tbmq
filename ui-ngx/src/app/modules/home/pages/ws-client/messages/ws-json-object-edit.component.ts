@@ -134,7 +134,8 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     const advancedOptions = {
       enableSnippets: true,
       enableBasicAutocompletion: false,
-      enableLiveAutocompletion: false
+      enableLiveAutocompletion: false,
+      highlightActiveLine: false
     };
 
     editorOptions = {...editorOptions, ...advancedOptions};

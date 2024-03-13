@@ -124,7 +124,8 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
     const advancedOptions = {
       enableSnippets: true,
       enableBasicAutocompletion: true,
-      enableLiveAutocompletion: true
+      enableLiveAutocompletion: true,
+      highlightActiveLine: false
     };
 
     editorOptions = {...editorOptions, ...advancedOptions};
