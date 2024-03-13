@@ -202,6 +202,7 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenSessionsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
@@ -214,8 +215,9 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenLastWillMsgInvalid_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
-        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any());
+        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any(), any());
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
@@ -228,8 +230,9 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenLastWillMsgNotAuth_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
-        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(false);
+        when(publishMsgValidationService.validatePubMsg(any(), any(), any())).thenReturn(false);
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
@@ -254,6 +257,7 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenSessionsLimitMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
@@ -267,9 +271,10 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenLastWillMsgInvalidMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
-        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any());
+        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any(), any());
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
@@ -282,9 +287,10 @@ public class ConnectServiceImplTest {
 
     @Test
     public void givenLastWillMsgNotAuthMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
-        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(false);
+        when(publishMsgValidationService.validatePubMsg(any(), any(), any())).thenReturn(false);
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
