@@ -167,7 +167,7 @@ export class MqttJsClientService {
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
     this.getSelectedMqttJsClient().publish(topic, payload, options, function (error) {
       if (error) {
-        console.log(`Error ${error} on publish message ${payload.toString()} on topic ${topic} with options ${options}`)
+        console.error(`Error ${error} on publish message ${payload.toString()} on topic ${topic} with options ${options}`)
       }
     });
   }
@@ -302,7 +302,7 @@ export class MqttJsClientService {
       this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
       this.subscribeForWebSocketSubscriptions(mqttClient, connection);
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTED);
-      console.log(`Client connected!`, packet, mqttClient);
+      // console.log(`Client connected!`, packet, mqttClient);
     });
     mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
       const subscriptions = this.mqttClientIdSubscriptionsMap.get(mqttClient.options.clientId);
@@ -342,17 +342,34 @@ export class MqttJsClientService {
       }
       const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
       this.addMessage(message, connectionId);
-      console.log(`Received Message: ${payload} On topic: ${topic}`, packet);
+      // console.log(`Received Message: ${payload} On topic: ${topic}`, packet);
     });
     mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
       const reason = error.message.split(':')[1] || error.message;
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
       this.endMqttClient(mqttClient);
-      console.log('Connection error: ', error);
+      // console.log('Connection error: ', error);
     });
     mqttClient.on('reconnect', () => {
       this.updateConnectionStatusLog(connection, ConnectionStatus.RECONNECTING);
-      console.log('Reconnecting...', mqttClient);
+      // console.log('Reconnecting...', mqttClient);
+    });
+    mqttClient.on('end', () => {
+      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
+      if (this.connectionMqttClientMap.has(connectionId)) {
+        this.connectionMqttClientMap.delete(connectionId);
+      }
+      // console.log('End...', mqttClient);
+    });
+    mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
+      if (packet.cmd == 'disconnect') {
+        const reason = DisconnectReasonCodes[packet.reasonCode];
+        this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
+      }
+      // console.log('Packet Receive...', packet);
+    });
+    /*mqttClient.on('packetsend', (packet: IConnackPacket) => {
+      console.log('Packet Send...', packet);
     });
     mqttClient.on('close', () => {
       console.log('Closing...', mqttClient);
@@ -363,26 +380,9 @@ export class MqttJsClientService {
     mqttClient.on('offline', () => {
       console.log('Offline...', mqttClient);
     });
-    mqttClient.on('end', () => {
-      const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
-      if (this.connectionMqttClientMap.has(connectionId)) {
-        this.connectionMqttClientMap.delete(connectionId);
-      }
-      console.log('End...', mqttClient);
-    });
     mqttClient.on('outgoingEmpty', () => {
       console.log('Ongoing empty');
-    });
-    mqttClient.on('packetsend', (packet: IConnackPacket) => {
-      console.log('Packet Send...', packet);
-    });
-    mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
-      if (packet.cmd == 'disconnect') {
-        const reason = DisconnectReasonCodes[packet.reasonCode];
-        this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
-      }
-      console.log('Packet Receive...', packet);
-    });
+    });*/
   }
 
   private findWildcardSubscription(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {
