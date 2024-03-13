@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 @Slf4j
 @Service
 public class ClientSessionEventActorManagerImpl implements ClientSessionEventActorManager {
+
     private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
 
