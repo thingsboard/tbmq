@@ -31,7 +31,6 @@
                 <input matInput formControlName="v" type="text">
               </mat-form-field>
               <button mat-icon-button color="warn" type="button" (click)="removeRule($index)"
-                      class="tb-mat-32"
                       matTooltip="{{ 'ws-client.connections.remove-user-property' | translate }}"
                       matTooltipPosition="above">
                 <mat-icon>remove_circle_outline</mat-icon>
@@ -44,7 +43,6 @@
                 [fxShow]="!disabled"
                 (click)="addRule()"
                 type="button">
-          <mat-icon>add_circle_outline</mat-icon>
           {{ 'ws-client.connections.add-user-property' | translate }}
         </button>
       </div>
