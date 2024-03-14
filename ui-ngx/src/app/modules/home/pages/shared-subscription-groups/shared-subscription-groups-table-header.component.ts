@@ -36,7 +36,7 @@ export class SharedSubscriptionGroupsTableHeaderComponent extends EntityTableHea
     super(store);
   }
 
-  alarmFilterChanged(sharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig) {
+  filterChanged(sharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig) {
     this.sharedSubscriptionsTableConfig.sharedSubscriptionFilterConfig = sharedSubscriptionFilterConfig;
     this.sharedSubscriptionsTableConfig.getTable().resetSortAndFilter(true, true);
   }

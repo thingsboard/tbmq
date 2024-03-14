@@ -1,0 +1,91 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div mat-dialog-content fxLayout="column" fxLayoutGap="24px">
+  <section fxLayout="row" fxLayoutAlign="flex-start">
+    <div fxLayout="row" fxLayoutGap="8px">
+      <mat-icon svgIcon="mdi:information-outline" class="material-icons"></mat-icon>
+      <span class="title" translate>ws-client.connections.properties</span>
+    </div>
+    <span fxFlex></span>
+    <button mat-icon-button
+            [mat-dialog-close]="false"
+            class="tb-mat-24">
+      <mat-icon class="material-icons">close</mat-icon>
+    </button>
+  </section>
+  <form [formGroup]="formGroup" style="overflow: auto" class="mat-padding">
+    <section fxLayout="column" fxLayoutGap="16px">
+      <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+        <mat-slide-toggle formControlName="payloadFormatIndicator">
+          {{ 'ws-client.last-will.payload-format-indicator' | translate }}
+        </mat-slide-toggle>
+        <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                  [matTooltip]="'ws-client.last-will.payload-format-indicator-hint' | translate"
+                  matTooltipPosition="right">
+          info</mat-icon>
+      </section>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>ws-client.last-will.content-type</mat-label>
+        <input matInput formControlName="contentType">
+        <mat-icon matSuffix [matTooltip]="'ws-client.last-will.content-type-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <section fxLayout="row" fxLayoutGap="8px">
+        <mat-form-field fxFlex subscriptSizing="dynamic">
+          <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
+          <input matInput formControlName="messageExpiryInterval" type="number" min="0">
+          <mat-icon matSuffix [matTooltip]="'ws-client.last-will.message-expiry-interval-hint' | translate">
+            help
+          </mat-icon>
+        </mat-form-field>
+        <mat-form-field fxFlex subscriptSizing="dynamic">
+          <mat-label translate>timeunit.units</mat-label>
+          <mat-select formControlName="messageExpiryIntervalUnit">
+            <mat-option *ngFor="let unit of timeUnitTypes" [value]="unit">
+              {{ timeUnitTypeTranslationMap.get(unit) | translate }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </section>
+
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>ws-client.connections.topic-alias</mat-label>
+        <input matInput type="number" min="0" formControlName="topicAlias">
+        <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>ws-client.last-will.correlation-data</mat-label>
+        <input matInput formControlName="correlationData">
+        <mat-icon matSuffix [matTooltip]="'ws-client.last-will.correlation-data-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>ws-client.last-will.response-topic</mat-label>
+        <input matInput formControlName="responseTopic">
+        <mat-icon matSuffix [matTooltip]="'ws-client.last-will.response-topic-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <tb-user-properties [entity]="entity?.userProperties" formControlName="userProperties"></tb-user-properties>
+    </section>
+  </form>
+</div>

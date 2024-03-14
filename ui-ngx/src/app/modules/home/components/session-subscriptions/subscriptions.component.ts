@@ -144,11 +144,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   }
 
   mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    const index = mqttQoSTypes.findIndex(object => {
-      return object.value === mqttQoSValue.value;
-    });
-    const name = this.translate.instant(mqttQoSValue.name);
-    return index + ' - ' + name;
+    return this.translate.instant(mqttQoSValue.name);
   }
 
   private updateView() {

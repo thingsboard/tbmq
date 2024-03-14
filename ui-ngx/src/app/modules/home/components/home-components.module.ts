@@ -23,6 +23,10 @@ import { DetailsPanelComponent } from '@home/components/details-panel.component'
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
 import { EventContentDialogComponent } from '@home/components/event/event-content-dialog.component';
+import {
+  ClientCredentialsAutocompleteComponent
+} from '@home/components/client-credentials-templates/client-credentials-autocomplete.component';
+import { UserPropertiesComponent } from '@home/components/client-credentials-templates/user-properties.component';
 
 @NgModule({
   declarations:
@@ -31,7 +35,9 @@ import { EventContentDialogComponent } from '@home/components/event/event-conten
       AddEntityDialogComponent,
       DetailsPanelComponent,
       EntityDetailsPanelComponent,
-      EventContentDialogComponent
+      EventContentDialogComponent,
+      ClientCredentialsAutocompleteComponent,
+      UserPropertiesComponent
     ],
   imports: [
     CommonModule,
@@ -42,7 +48,9 @@ import { EventContentDialogComponent } from '@home/components/event/event-conten
     EntitiesTableComponent,
     AddEntityDialogComponent,
     DetailsPanelComponent,
-    EntityDetailsPanelComponent
+    EntityDetailsPanelComponent,
+    ClientCredentialsAutocompleteComponent,
+    UserPropertiesComponent
   ]
 })
 export class HomeComponentsModule {

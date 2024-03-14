@@ -37,4 +37,9 @@ public class BasicMqttCredentials {
     public static BasicMqttCredentials newInstance(String clientId, String userName, String password, List<String> authRules) {
         return new BasicMqttCredentials(clientId, userName, password, PubSubAuthorizationRules.newInstance(authRules));
     }
+
+    public static BasicMqttCredentials newInstance(String userName) {
+        return new BasicMqttCredentials(null, userName, null, PubSubAuthorizationRules.newInstance(List.of(".*")));
+    }
+
 }

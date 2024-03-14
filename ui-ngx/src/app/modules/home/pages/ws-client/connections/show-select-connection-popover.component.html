@@ -1,0 +1,38 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section class="tb-ws-client-title-toolbar" style="min-height: 36px; padding: 0 16px 0 16px">
+  <span class="tb-ws-client-title" translate>ws-client.connections.select-connection</span>
+  <button mat-icon-button (click)="close()">
+    <mat-icon class="material-icons">close</mat-icon>
+  </button>
+</section>
+<div style="overflow: auto; height: 100%">
+  <div style="overflow: auto">
+    <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
+      <div *ngFor="let connection of (connections$ | async); trackBy: trackById">
+        <tb-connection (connectionUpdated)="updateData(true)" [connection]="connection"></tb-connection>
+      </div>
+    </section>
+  </div>
+</div>
+<section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
+  <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
+    <mat-icon class="material-icons">add</mat-icon>
+    {{ 'ws-client.connections.add-connection' | translate }}
+  </button>
+</section>

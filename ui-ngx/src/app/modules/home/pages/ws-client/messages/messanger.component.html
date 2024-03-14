@@ -1,0 +1,103 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section class="tb-ws-client-title-toolbar tb-ws-client-padding">
+  <section class="tb-ws-client-title-toolbar">
+    <span class="tb-ws-client-title" style="margin-right: 8px" translate>ws-client.connections.messages</span>
+    <tb-toggle-select appearance="stroked"
+                      (ngModelChange)="onMessageFilterChange($event)"
+                      [ngModelOptions]="{ standalone: true }"
+                      [options]="messagesTypeFilters"
+                      [(ngModel)]="selectedOption">
+    </tb-toggle-select>
+  </section>
+  <section fxLayout="row" fxLayoutGap="8px">
+    <tb-message-filter-config [ngModel]="filterConfig"
+                              (ngModelChange)="filterChanged($event)"
+                              propagatedFilter="false">
+    </tb-message-filter-config>
+    <button mat-stroked-button color="primary"
+            (click)="clearHistory()">
+      <span translate>ws-client.connections.clear-connection-history</span>
+    </button>
+  </section>
+</section>
+
+<section class="tb-messages-container" [ngClass]="{'limit-height': (isLtLg | async)}">
+  <tb-messages style="overflow: auto"></tb-messages>
+</section>
+
+<div [formGroup]="messangerFormGroup" fxLayout="column" class="mat-padding">
+  <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center"
+           style="flex-wrap: nowrap;" [ngClass]="{'wrap': (isLtLg | async)}">
+    <mat-form-field [ngClass]="{'topic-mat-form-field': (isLtLg | async)}" style="min-width: 250px !important; width: 100%">
+      <mat-label translate>mqtt-client-session.topic</mat-label>
+      <input matInput formControlName="topic">
+      <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
+      </tb-color-input>
+    </mat-form-field>
+    <mat-form-field fxFlex="20" fxFlex.lt-xl="25" hideRequiredMarker>
+      <mat-label translate>mqtt-client-session.qos</mat-label>
+      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
+        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
+          {{ qoSTranslationMap.get(qos) | translate }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field fxFlex="20" fxFlex.lt-xl="25">
+      <mat-label translate>value.format</mat-label>
+      <mat-select formControlName="payloadFormat">
+        <mat-option *ngFor="let valueType of payloadFormats" [value]="valueType.value">
+          {{ valueType.name | translate }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <section class="retain-container margin-bottom">
+      <mat-slide-toggle formControlName="retain">
+        {{ 'ws-client.last-will.retain' | translate }}
+      </mat-slide-toggle>
+    </section>
+    <button mat-stroked-button color="primary" class="btn-properties margin-bottom"
+            [matTooltip]="'ws-client.connections.show-meta' | translate"
+            [disabled]="mqttVersion !== 5"
+            (click)="messagePropertiesDialog()"
+            aria-label="Show message meta data">
+      <span>{{ 'ws-client.connections.properties' | translate }}{{ publishMsgPropsChanged ? '*' : '' }}</span>
+    </button>
+  </section>
+  <section class="tb-message-input-container">
+    <tb-ws-json-object-edit
+      formControlName="payload"
+      [jsonFormatSelected]="jsonFormatSelected"
+      [label]="'value.json-value-invalid' | translate"
+      [jsonRequired]="false"
+      (isJsonValid)="onJsonValidation($event)"
+      [fillHeight]="false">
+    </tb-ws-json-object-edit>
+    <button mat-icon-button color="primary" class="send-message-btn" style="width: 40px; height: 40px; padding: 8px;"
+            (click)="publishMessage()"
+            [matTooltip]="'ws-client.messages.publish-message' | translate"
+            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !isDefinedTopicAlias) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
+      <mat-icon>send</mat-icon>
+    </button>
+  </section>
+</div>
+
+
+
+
+

@@ -66,6 +66,7 @@ export const HelpLinks = {
     clientCredentials: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/',
     sessions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/sessions',
     sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
+    connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/web-socket-client',
   }
 };
 
@@ -111,6 +112,35 @@ export const contentTypesMap = new Map<ContentType, ContentTypeData>(
       {
         name: 'content-type.binary',
         code: 'text'
+      }
+    ]
+  ]
+);
+
+export interface ValueTypeData {
+  name: string;
+  icon: string;
+}
+
+export enum ValueType {
+  STRING = 'STRING',
+  JSON = 'JSON'
+}
+
+export const valueTypesMap = new Map<ValueType, ValueTypeData>(
+  [
+    [
+      ValueType.STRING,
+      {
+        name: 'value.string',
+        icon: 'mdi:format-text'
+      }
+    ],
+    [
+      ValueType.JSON,
+      {
+        name: 'value.json',
+        icon: 'mdi:code-json'
       }
     ]
   ]

@@ -15,16 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
 import java.util.List;
 
-/*
-    not thread-safe for operations with the same 'clientId'
+/**
+ * not thread-safe for operations with the same 'clientId'
  */
 public interface SubscriptionService {
 

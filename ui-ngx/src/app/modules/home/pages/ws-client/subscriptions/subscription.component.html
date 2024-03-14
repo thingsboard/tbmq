@@ -1,0 +1,62 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section class="subscription-container">
+  <section fxLayout="row" fxLayoutAlign="space-between center" class="subscription-row"
+           (mouseenter)="onMouseEnter()"
+           (mouseleave)="onMouseLeave()">
+    <section fxFlex="90" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" class="subscription-row-label">
+        <div class="label-color" [ngStyle]="{backgroundColor: subscription.configuration.color}"></div>
+        <span class="label" [matTooltip]="subscription.configuration.topicFilter">{{ subscription.configuration.topicFilter }}</span>
+      </section>
+      <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription.configuration.qos }}</span>
+    </section>
+    <section fxFlex="10" fxLayout="row" fxLayoutAlign="end">
+      <div [ngClass]="{ 'action-buttons-container': showActions }" fxHide fxShow.md fxShow.xl fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+        <div *ngFor="let actionDescriptor of hiddenActions"
+             class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
+             matTooltipPosition="above"
+             matTooltip="{{ actionDescriptor.name }}">
+          <button mat-icon-button
+                  class="tb-mat-32"
+                  *ngIf="actionDescriptor.isEnabled(subscription)"
+                  [disabled]="!actionDescriptor.isEnabled(subscription)"
+                  (click)="actionDescriptor.onAction($event, subscription)">
+            <mat-icon [svgIcon]="actionDescriptor.icon"></mat-icon>
+          </button>
+        </div>
+      </div>
+      <div fxHide fxShow.lg fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+        <button mat-icon-button
+                class="tb-mat-32"
+                (click)="$event.stopPropagation()"
+                [matMenuTriggerFor]="cellActionsMenu">
+          <mat-icon class="home-page-material-icons material-icons">more_vert</mat-icon>
+        </button >
+        <mat-menu #cellActionsMenu="matMenu" xPosition="before">
+          <button mat-menu-item *ngFor="let actionDescriptor of hiddenActions"
+                  [fxShow]="actionDescriptor.isEnabled(subscription)"
+                  (click)="actionDescriptor.onAction($event, subscription)">
+            <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+            <span>{{ actionDescriptor.name }}</span>
+          </button>
+        </mat-menu>
+      </div>
+    </section>
+  </section>
+</section>

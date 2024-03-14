@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
 import java.util.Collection;
 import java.util.Map;

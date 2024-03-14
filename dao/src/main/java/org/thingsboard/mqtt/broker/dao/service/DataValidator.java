@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dao.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.regex.Matcher;
@@ -55,6 +56,15 @@ public abstract class DataValidator<D extends BaseData> {
     }
 
     protected void validateUpdate(D data) {
+    }
+
+    public void validateString(String exceptionPrefix, String name) {
+        if (StringUtils.isEmpty(name) || name.trim().isEmpty()) {
+            throw new DataValidationException(exceptionPrefix + " should be specified!");
+        }
+        if (StringUtils.contains0x00(name)) {
+            throw new DataValidationException(exceptionPrefix + " should not contain 0x00 symbol!");
+        }
     }
 
     protected boolean isSameData(D existentData, D actualData) {

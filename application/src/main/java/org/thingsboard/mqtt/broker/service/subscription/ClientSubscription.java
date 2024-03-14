@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 
 import java.util.Objects;
 

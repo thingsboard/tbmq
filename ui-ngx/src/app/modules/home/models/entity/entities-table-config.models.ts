@@ -53,7 +53,9 @@ export type CopyCellContent<T extends BaseData> = (entity: T, key: string, lengt
 
 export enum CellActionDescriptorType { 'DEFAULT', 'COPY_BUTTON'}
 
-export interface CellActionDescriptor<T extends BaseData> {
+type AnyOrBaseData = any | BaseData;
+
+export interface CellActionDescriptor<T extends AnyOrBaseData> {
   name: string;
   nameFunction?: (entity: T) => string;
   icon?: string;
@@ -61,6 +63,7 @@ export interface CellActionDescriptor<T extends BaseData> {
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
   type?: CellActionDescriptorType;
+  showOnHover?: boolean;
 }
 
 export interface GroupActionDescriptor<T extends BaseData> {
@@ -167,6 +170,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultTimewindowInterval = historyInterval(DAY);
   entityType: EntityType = null;
   tableTitle = '';
+  noDataLabel: string = null;
   selectionEnabled = true;
   defaultCursor = false;
   searchEnabled = true;
@@ -174,6 +178,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entitiesDeleteEnabled = true;
   detailsPanelEnabled = true;
   hideDetailsTabsOnEdit = true;
+  showColorBadge = false;
   actionsColumnTitle = null;
   entityTranslations: EntityTypeTranslation;
   entityResources: EntityTypeResource<T>;
@@ -186,6 +191,8 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultPageSize = 10;
   columns: Array<EntityColumn<L>> = [];
   cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
+  cellMoreActionDescriptors: Array<CellActionDescriptor<L>> = [];
+  cellHiddenActionDescriptors: Array<CellActionDescriptor<L>> = [];
   groupActionDescriptors: Array<GroupActionDescriptor<L>> = [];
   headerActionDescriptors: Array<HeaderActionDescriptor> = [];
   addActionDescriptors: Array<HeaderActionDescriptor> = [];
@@ -263,27 +270,33 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   }
 }
 
+const createHtmlElement = (tag: string, styles: any, content: any, classes = '') => {
+  const styleString = Object.entries(styles)
+    .map(([property, value]) => `${property}: ${value}`)
+    .join('; ');
+  return `<${tag} class="${classes}" style="${styleString}">${content}</${tag}>`;
+};
+
 export const checkBoxCell = (value: boolean): string =>
-  `<mat-icon class="material-icons mat-icon">${value ? 'check_box' : 'check_box_outline_blank'}</mat-icon>`;
+  createHtmlElement('mat-icon',{}, value ? 'check_box' : 'check_box_outline_blank', 'material-icons mat-icon');
 
 export const cellWithIcon = (value: string, icon: string, backgroundColor: string,
                              iconColor: string = 'rgba(0,0,0,0.54)', valueColor: string = 'inherit'): string =>
-  `<section style="background: ${backgroundColor}; border-radius: 16px; padding: 4px 8px; white-space: nowrap; width: fit-content;">
-    <span style="display: inline-flex; align-items: center; gap: 4px;">
+  createHtmlElement('section', {background: backgroundColor, 'border-radius': '16px', padding: '4px 8px', 'white-space': 'nowrap', width: 'fit-content'},
+    `<span style="display: inline-flex; align-items: center; gap: 4px;">
         <span style="color: ${valueColor};">${value}</span>
-        <mat-icon class="material-icons mat-icon"
-                  style="color: ${iconColor}; height: 20px; width: 20px; font-size: 20px;">
-          ${icon}
-        </mat-icon>
-    </span>
-  </section>`;
+        ${createHtmlElement('mat-icon', {color: iconColor, height: '20px', width: '20px', 'font-size': '20px'}, icon, 'material-icons mat-icon')}
+    </span>`);
 
 export const cellWithBackground = (value: string | number, backgroundColor: string = 'rgba(111, 116, 242, 0.07)'): string =>
-  `<span style="background: ${backgroundColor}; border-radius: 16px; padding: 4px 8px;">${value}</span>`;
+  createHtmlElement('span', {background: backgroundColor, 'border-radius': '16px', padding: '4px 8px'}, value);
 
 export const connectedStateCell = (connectionState: string, color: string): string =>
-  `<span style="vertical-align: bottom; font-size: 32px; color: ${color}">&#8226;</span>
-   <span style="color: ${color}; background: rgba(111, 116, 242, 0); border-radius: 16px; padding: 4px 8px;">${connectionState}</span>`;
+  `${createHtmlElement('span', {'vertical-align': 'bottom', 'font-size': '32px', color: color}, '&#8226;')}
+   ${createHtmlElement('span', {color: color, background: 'rgba(111, 116, 242, 0)', 'border-radius': '16px', padding: '4px 8px'}, connectionState)}`;
+
+export const colorIcon = (icon: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
+  createHtmlElement('mat-icon', {color: iconColor, height: '20px', width: '20px', 'font-size': '20px'}, icon, 'material-icons mat-icon');
 
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) {
@@ -295,3 +308,20 @@ export function formatBytes(bytes, decimals = 1) {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
+
+export const arrowIcon = (messageReceived: boolean, iconColor: string = 'rgba(0, 0, 0, 0.38)'): string =>
+  messageReceived ? arrowDown(iconColor) : arrowUp(iconColor);
+
+const arrowDown = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M12 2C13.3132 2 14.6136 2.25866 15.8268 2.7612C17.0401 3.26375 18.1425 4.00035 19.0711 4.92893C19.9997 5.85752 20.7362 6.95991 21.2388 8.17317C21.7413 9.38642 22 10.6868 22 12C22 14.6522 20.9464 17.1957 19.0711 19.0711C17.1957 20.9464 14.6522 22 12 22C10.6868 22 9.38642 21.7413 8.17317 21.2388C6.95991 20.7362 5.85752 19.9997 4.92893 19.0711C3.05357 17.1957 2 14.6522 2 12C2 9.34784 3.05357 6.8043 4.92893 4.92893C6.8043 3.05357 9.34784 2 12 2ZM12 17L17 12H14V8H10V12H7L12 17Z" fill="${color}"/>
+</svg>`;
+
+const arrowUp = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M12 22C10.6868 22 9.38642 21.7413 8.17317 21.2388C6.95991 20.7362 5.85752 19.9997 4.92893 19.0711C3.05357 17.1957 2 14.6522 2 12C2 9.34784 3.05357 6.8043 4.92893 4.92893C6.8043 3.05357 9.34784 2 12 2C13.3132 2 14.6136 2.25866 15.8268 2.7612C17.0401 3.26375 18.1425 4.00035 19.0711 4.92893C19.9997 5.85752 20.7362 6.95991 21.2388 8.17317C21.7413 9.38642 22 10.6868 22 12C22 14.6522 20.9464 17.1957 19.0711 19.0711C17.1957 20.9464 14.6522 22 12 22ZM12 7L7 12H10V16H14V12H17L12 7Z" fill="${color}"/>
+</svg>`;
+
+/*const arrowDown = (color) => createHtmlElement('svg', {color: color}, pathDown, 'http://www.w3.org/2000/svg');
+const arrowUp = (color) => createHtmlElement('svg', {color: color}, pathUp, 'http://www.w3.org/2000/svg');
+
+const pathDown = `...`;
+const pathUp = `...`;*/

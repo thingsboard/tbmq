@@ -21,6 +21,10 @@ import {TranslateService} from '@ngx-translate/core';
 import {ConfirmDialogComponent} from '@shared/components/dialog/confirm-dialog.component';
 import {AlertDialogComponent} from '@shared/components/dialog/alert-dialog.component';
 import {AuthService} from "@core/http/auth.service";
+import {
+  ColorPickerDialogComponent,
+  ColorPickerDialogData, ColorPickerDialogResult
+} from '@shared/components/dialog/color-picker-dialog.component';
 
 @Injectable(
   {
@@ -83,6 +87,19 @@ export class DialogService {
       }
     });
     return observable;
+  }
+
+  colorPicker(color: string, colorClearButton = false): Observable<ColorPickerDialogResult> {
+    return this.dialog.open<ColorPickerDialogComponent, ColorPickerDialogData, ColorPickerDialogResult>(ColorPickerDialogComponent,
+      {
+        disableClose: true,
+        panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        data: {
+          color,
+          colorClearButton
+        },
+        autoFocus: false
+      }).afterClosed();
   }
 
 }

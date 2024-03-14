@@ -20,6 +20,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import java.util.Optional;
 
 public class DbExceptionUtil {
+
     public static Optional<ConstraintViolationException> extractConstraintViolationException(Exception t) {
         if (t instanceof ConstraintViolationException) {
             return Optional.of((ConstraintViolationException) t);
@@ -29,4 +30,5 @@ public class DbExceptionUtil {
             return Optional.empty();
         }
     }
+
 }

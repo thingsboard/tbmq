@@ -120,4 +120,13 @@ public class BrokerConstants {
     public static final int BLANK_PACKET_ID = -1;
     public static final long BLANK_SERIAL_NUMBER = -1L;
 
+    public static final String PUB_SUB_AUTH_RULES_ALLOW_ALL = ".*";
+    public static final String WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME = "TBMQ WebSockets MQTT Credentials";
+    public static final String WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME = "tbmq_websockets_username";
+
+    public static final String WEB_SOCKET_DEFAULT_CONNECTION_NAME = "WebSocket Default Connection";
+
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
+    public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#FF5733";
 }

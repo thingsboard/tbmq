@@ -32,8 +32,8 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
-import org.thingsboard.mqtt.broker.service.mqtt.validation.TopicValidationService;
 
 @RestController
 @RequiredArgsConstructor
