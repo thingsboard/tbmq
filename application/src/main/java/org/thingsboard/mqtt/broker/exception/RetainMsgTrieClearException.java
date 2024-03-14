@@ -15,7 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class RetainMsgTrieClearException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = -3828895138875161803L;
 
     public RetainMsgTrieClearException(String message) {
         super(message);

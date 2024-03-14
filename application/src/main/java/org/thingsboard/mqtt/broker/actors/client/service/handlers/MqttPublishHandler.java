@@ -30,17 +30,16 @@ import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
-import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.exception.NotSupportedQoSLevelException;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
 import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -63,11 +62,10 @@ public class MqttPublishHandler {
 
     private final MqttMessageGenerator mqttMessageGenerator;
     private final MsgDispatcherService msgDispatcherService;
-    private final TopicValidationService topicValidationService;
-    private final AuthorizationRuleService authorizationRuleService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final RetainedMsgProcessor retainedMsgProcessor;
+    private final PublishMsgValidationService publishMsgValidationService;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -134,16 +132,15 @@ public class MqttPublishHandler {
     }
 
     boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
+        boolean validationSucceed;
         try {
-            topicValidationService.validateTopic(publishMsg.getTopicName());
+            validationSucceed = publishMsgValidationService.validatePubMsg(ctx, publishMsg);
         } catch (DataValidationException e) {
             log.warn("[{}] Failed to validate topic for Pub msg {}", ctx.getClientId(), publishMsg, e);
             return handleTopicValidationException(ctx, publishMsg, e);
         }
-        try {
-            validateClientAccess(ctx, publishMsg.getTopicName());
-        } catch (MqttException e) {
-            return handleClientNotAuthException(ctx, publishMsg, e);
+        if (!validationSucceed) {
+            return handleClientNotAuthException(ctx, publishMsg);
         }
         return true;
     }
@@ -163,7 +160,7 @@ public class MqttPublishHandler {
         }
     }
 
-    private boolean handleClientNotAuthException(ClientSessionCtx ctx, PublishMsg publishMsg, MqttException e) {
+    private boolean handleClientNotAuthException(ClientSessionCtx ctx, PublishMsg publishMsg) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
             if (publishMsg.getQosLevel() == 2) {
                 pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecNotAuthorized());
@@ -174,7 +171,7 @@ public class MqttPublishHandler {
             }
             return false;
         } else {
-            throw e;
+            throw new MqttException("Client is not authorized to publish to the topic");
         }
     }
 
@@ -285,15 +282,6 @@ public class MqttPublishHandler {
             }
         } catch (Exception e) {
             log.error("[{}][{}] Failed to send msg finished event to actor", actorRef.getActorId(), sessionId, e);
-        }
-    }
-
-    void validateClientAccess(ClientSessionCtx ctx, String topic) {
-        boolean isClientAuthorized = authorizationRuleService.isPubAuthorized(ctx.getClientId(), topic, ctx.getAuthRulePatterns());
-        if (!isClientAuthorized) {
-            log.warn("[{}][{}][{}] Client is not authorized to publish to the topic {}",
-                    ctx.getClientId(), ctx.getSessionId(), ctx.getAuthRulePatterns(), topic);
-            throw new MqttException("Client is not authorized to publish to the topic");
         }
     }
 

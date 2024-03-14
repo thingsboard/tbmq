@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.exception;
+package org.thingsboard.mqtt.broker.service.mqtt.validation;
 
-import java.io.Serial;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-public class ProtocolViolationException extends RuntimeException {
+public interface PublishMsgValidationService {
 
-    @Serial
-    private static final long serialVersionUID = 6130139932588069150L;
+    boolean validatePubMsg(ClientSessionCtx ctx, String clientId, PublishMsg publishMsg);
 
-    public ProtocolViolationException(String message) {
-        super(message);
-    }
+    boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg);
+
 }

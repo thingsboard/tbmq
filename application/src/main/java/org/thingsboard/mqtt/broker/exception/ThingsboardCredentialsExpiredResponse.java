@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 
+@Getter
 public class ThingsboardCredentialsExpiredResponse extends ThingsboardErrorResponse {
 
     private final String resetToken;
@@ -31,7 +33,4 @@ public class ThingsboardCredentialsExpiredResponse extends ThingsboardErrorRespo
         return new ThingsboardCredentialsExpiredResponse(message, resetToken);
     }
 
-    public String getResetToken() {
-        return resetToken;
-    }
 }

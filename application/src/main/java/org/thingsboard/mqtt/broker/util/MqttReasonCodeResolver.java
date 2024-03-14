@@ -28,6 +28,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 
 public final class MqttReasonCodeResolver {
 
@@ -45,6 +46,10 @@ public final class MqttReasonCodeResolver {
 
     public static MqttConnectReturnCode connectionRefusedQuotaExceeded(ClientSessionCtx ctx) {
         return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_QUOTA_EXCEEDED : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+    }
+
+    public static MqttConnectReturnCode connectionRefusedTopicNameInvalid(ClientSessionCtx ctx) {
+        return ctx.getMqttVersion() == MqttVersion.MQTT_5 ? CONNECTION_REFUSED_TOPIC_NAME_INVALID : CONNECTION_REFUSED_SERVER_UNAVAILABLE;
     }
 
     public static MqttReasonCodes.PubComp packetIdNotFound(ClientSessionCtx ctx) {

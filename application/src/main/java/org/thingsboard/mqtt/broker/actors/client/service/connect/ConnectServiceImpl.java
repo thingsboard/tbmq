@@ -41,15 +41,19 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -85,6 +89,7 @@ public class ConnectServiceImpl implements ConnectService {
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final RateLimitService rateLimitService;
     private final FlowControlService flowControlService;
+    private final PublishMsgValidationService publishMsgValidationService;
 
     private ExecutorService connectHandlerExecutor;
 
@@ -120,7 +125,7 @@ public class ConnectServiceImpl implements ConnectService {
             log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
         }
 
-        boolean proceedWithConnection = shouldProceedWithConnection(sessionCtx, msg);
+        boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg);
         if (!proceedWithConnection) {
             return;
         }
@@ -136,7 +141,7 @@ public class ConnectServiceImpl implements ConnectService {
             sessionCtx.initPublishedInFlightCtx(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
         }
 
-        sessionCtx.setTopicAliasCtx(getTopicAliasCtx(msg));
+        sessionCtx.setTopicAliasCtx(getTopicAliasCtx(clientId, msg));
         int keepAliveSeconds = getKeepAliveSeconds(actorState, msg);
         keepAliveService.registerSession(clientId, sessionId, keepAliveSeconds);
 
@@ -266,19 +271,52 @@ public class ConnectServiceImpl implements ConnectService {
                 sessionExpiryInterval);
     }
 
-    boolean shouldProceedWithConnection(ClientSessionCtx ctx, MqttConnectMsg msg) {
-        if (isPersistentClientWithoutClientId(msg)) {
-            log.warn("[{}] Client identifier is empty and clean session flag is set to false!", ctx.getSessionId());
-            createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx), ctx);
-            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
-            return false;
-        }
-        if (!rateLimitService.checkSessionsLimit(msg.getClientIdentifier())) {
-            createAndSendConnAckMsg(MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx), ctx);
-            disconnect(msg.getClientIdentifier(), ctx.getSessionId());
+    boolean shouldProceedWithConnection(ClientActorStateInfo actorState, MqttConnectMsg msg) {
+        ClientSessionCtx ctx = actorState.getCurrentSessionCtx();
+        String clientId = actorState.getClientId();
+        try {
+            validateClientId(ctx, msg);
+            validateSessionsRateLimit(ctx, clientId);
+            validateLastWillMessage(ctx, clientId, msg);
+        } catch (ConnectionValidationException e) {
+            log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
+            createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
+            disconnect(clientId, ctx.getSessionId());
             return false;
         }
         return true;
+    }
+
+    private void validateClientId(ClientSessionCtx ctx, MqttConnectMsg msg) throws ConnectionValidationException {
+        if (isPersistentClientWithoutClientId(msg)) {
+            throw new ConnectionValidationException("Client identifier is empty and clean session flag is set to false",
+                    MqttReasonCodeResolver.connectionRefusedClientIdNotValid(ctx));
+        }
+    }
+
+    private void validateSessionsRateLimit(ClientSessionCtx ctx, String clientId) throws ConnectionValidationException {
+        if (!rateLimitService.checkSessionsLimit(clientId)) {
+            throw new ConnectionValidationException("Sessions limit exceeded",
+                    MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx));
+        }
+    }
+
+    private void validateLastWillMessage(ClientSessionCtx ctx, String clientId, MqttConnectMsg msg) throws ConnectionValidationException {
+        PublishMsg lastWillMsg = msg.getLastWillMsg();
+        if (lastWillMsg != null) {
+            boolean validationSucceed;
+            try {
+                validationSucceed = publishMsgValidationService.validatePubMsg(ctx, clientId, lastWillMsg);
+            } catch (DataValidationException e) {
+                throw new ConnectionValidationException("Topic name of Last will message is invalid",
+                        MqttReasonCodeResolver.connectionRefusedTopicNameInvalid(ctx));
+            }
+            if (!validationSucceed) {
+                throw new ConnectionValidationException("Last will message validation failed. Client is not authorized to " +
+                        "publish to the topic",
+                        MqttReasonCodeResolver.connectionRefusedNotAuthorized(ctx));
+            }
+        }
     }
 
     private boolean isPersistentClientWithoutClientId(MqttConnectMsg msg) {
@@ -294,12 +332,12 @@ public class ConnectServiceImpl implements ConnectService {
         return mqttMessageGenerator.createMqttConnAckMsg(code);
     }
 
-    private TopicAliasCtx getTopicAliasCtx(MqttConnectMsg msg) {
+    private TopicAliasCtx getTopicAliasCtx(String clientId, MqttConnectMsg msg) {
         MqttProperties.IntegerProperty property = MqttPropertiesUtil.getTopicAliasMaxProperty(msg.getProperties());
         if (property != null) {
             int value = Math.min(property.value(), maxTopicAlias);
             if (log.isDebugEnabled()) {
-                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, msg.getClientIdentifier());
+                log.debug("Max Topic Alias [{}] received on CONNECT for client {}", value, clientId);
             }
             return value > 0 ? new TopicAliasCtx(true, value) : TopicAliasCtx.DISABLED_TOPIC_ALIASES;
         }
