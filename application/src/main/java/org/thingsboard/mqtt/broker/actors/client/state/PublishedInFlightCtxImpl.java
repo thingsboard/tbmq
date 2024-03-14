@@ -127,7 +127,9 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                         }
                     }
                 } else {
-                    log.warn("[{}] Received ack [{}] in the wrong order. Head - [{}]", clientId, msgId, publishedInFlightHead);
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Received ack [{}] in the wrong order. Head - [{}]", clientId, msgId, publishedInFlightHead);
+                    }
                     receivedAckMsgInWrongOrderQueue.add(msgId);
                 }
             } else {
