@@ -89,9 +89,7 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public void initPublishedInFlightCtx(FlowControlService flowControlService, ClientSessionCtx sessionCtx, int receiveMaxValue, int delayedQueueMaxSize) {
-        if (MqttVersion.MQTT_5 == this.mqttVersion) {
-            publishedInFlightCtx = new PublishedInFlightCtxImpl(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
-        }
+        publishedInFlightCtx = new PublishedInFlightCtxImpl(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
     }
 
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {
