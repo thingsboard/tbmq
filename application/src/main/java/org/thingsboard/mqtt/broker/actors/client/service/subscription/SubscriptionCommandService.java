@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
-import org.thingsboard.mqtt.broker.service.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
 import java.util.Collection;
 

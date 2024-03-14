@@ -31,6 +31,8 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
 
     MqttClientCredentialsEntity findByCredentialsId(String credentialsId);
 
+    MqttClientCredentialsEntity findMqttClientCredentialsEntityByName(String name);
+
     List<MqttClientCredentialsEntity> findByCredentialsIdIn(List<String> credentialsIds);
 
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);

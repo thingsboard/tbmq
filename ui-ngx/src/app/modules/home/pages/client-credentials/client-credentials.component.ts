@@ -103,3 +103,25 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
     this.entityForm.patchValue({clientType: entity.clientType});
   }
 }
+
+export class BasicClientCredentials {
+  credentialsType = CredentialsType.MQTT_BASIC;
+  clientType = ClientType.DEVICE;
+  name: string;
+  credentialsValue: any = {};
+
+  constructor(name: string,
+              clientId: string,
+              username: string) {
+    this.name = name;
+    this.credentialsValue = JSON.stringify({
+      clientId,
+      userName: username,
+      password: null,
+      authRules: {
+        pubAuthRulePatterns: ['.*'],
+        subAuthRulePatterns: ['.*']
+      }
+    });
+  }
+}

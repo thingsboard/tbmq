@@ -20,7 +20,10 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import java.util.UUID;
 
 public interface ClientSessionCleanUpService {
+
     void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException;
 
     void disconnectClientSession(String clientId, UUID sessionId) throws ThingsboardException;
+
+    void disconnectClientSession(String clientId);
 }

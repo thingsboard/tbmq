@@ -17,6 +17,7 @@
 import _ from 'lodash';
 import { Observable, Subject } from 'rxjs';
 import { finalize, share } from 'rxjs/operators';
+import { DataSizeUnitType, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -121,6 +122,15 @@ export function isString(value: any): boolean {
 
 export function isLiteralObject(value: any) {
   return (!!value) && (value.constructor === Object);
+}
+
+export function isValidObjectString(s: string): boolean {
+  try {
+    JSON.parse(s);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 export const formatValue = (value: any, dec?: number, units?: string, showZeroDecimals?: boolean): string | undefined => {
@@ -531,7 +541,66 @@ export const getOS = (): string => {
   return os;
 };
 
-
 export const camelCase = (str: string): string => {
   return _.camelCase(str);
 };
+
+export const convertTimeUnits = (value: number, valueUnit: WebSocketTimeUnit, targetUnit: WebSocketTimeUnit): number => {
+  if (!valueUnit) return 0;
+  let milliseconds: number = convertToMilliseconds(value, valueUnit);
+  switch(targetUnit) {
+    case WebSocketTimeUnit.MILLISECONDS:
+      return milliseconds;
+    case WebSocketTimeUnit.SECONDS:
+      return milliseconds / 1000;
+    case WebSocketTimeUnit.MINUTES:
+      return milliseconds / (60 * 1000);
+    case WebSocketTimeUnit.HOURS:
+      return milliseconds / (60 * 60 * 1000);
+    default:
+      throw new Error(`Unsupported target unit: ${targetUnit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
+  }
+}
+
+const convertToMilliseconds = (value: number, unit: WebSocketTimeUnit): number => {
+  switch(unit) {
+    case WebSocketTimeUnit.MILLISECONDS:
+      return value;
+    case WebSocketTimeUnit.SECONDS:
+      return value * 1000;
+    case WebSocketTimeUnit.MINUTES:
+      return value * 60 * 1000;
+    case WebSocketTimeUnit.HOURS:
+      return value * 60 * 60 * 1000;
+    default:
+      throw new Error(`Unsupported unit: ${unit}. Expected 'milliseconds', 'seconds', 'minutes', or 'hours'`);
+  }
+}
+
+export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType, targetUnit: DataSizeUnitType): number => {
+  if (!valueUnit) return 0;
+  let bytes: number = convertToBytes(value, valueUnit);
+  switch(targetUnit) {
+    case DataSizeUnitType.BYTE:
+      return bytes;
+    case DataSizeUnitType.KILOBYTE:
+      return bytes / 1024;
+    case DataSizeUnitType.MEGABYTE:
+      return bytes / (1024 * 1024);
+    default:
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`)
+  }
+}
+
+const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
+  switch(valueUnit) {
+    case DataSizeUnitType.BYTE:
+      return value;
+    case DataSizeUnitType.KILOBYTE:
+      return value * 1024;
+    case DataSizeUnitType.MEGABYTE:
+      return value * 1024 * 1024;
+    default:
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`);
+  }
+}

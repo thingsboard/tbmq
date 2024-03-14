@@ -83,6 +83,22 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, true);
     }
 
+    @Override
+    public void disconnectClientSession(String clientId) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Disconnecting ClientSession", clientId);
+        }
+        ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
+        if (clientSessionInfo == null || !clientSessionInfo.isConnected()) {
+            return;
+        }
+        disconnectClientCommandService.disconnectSession(
+                clientSessionInfo.getServiceId(),
+                clientId,
+                clientSessionInfo.getSessionId(),
+                true);
+    }
+
     private boolean differentSession(UUID sessionId, ClientSessionInfo clientSessionInfo) {
         UUID currentSessionId = clientSessionInfo.getSessionId();
         return !sessionId.equals(currentSessionId);

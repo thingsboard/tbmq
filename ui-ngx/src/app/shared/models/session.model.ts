@@ -52,7 +52,7 @@ export interface ShortClientSessionInfo {
 
 export interface TopicSubscription {
   topic: string;
-  qos: MqttQoS;
+  qos: WsMqttQoSType;
   shareName: string;
 }
 
@@ -82,7 +82,23 @@ export const mqttQoSTypes = [
   }
 ];
 
-export const QoSTranslationMap = new Map<number, string>(
+export const mqttQoSValuesMap = new Map<MqttQoS, number>(
+  [
+    [MqttQoS.AT_MOST_ONCE, 0],
+    [MqttQoS.AT_LEAST_ONCE, 1],
+    [MqttQoS.EXACTLY_ONCE, 2]
+  ]
+);
+
+export enum WsMqttQoSType {
+  AT_MOST_ONCE = 0,
+  AT_LEAST_ONCE = 1,
+  EXACTLY_ONCE = 2
+}
+
+export const WsQoSTypes = [0, 1, 2];
+
+export const WsQoSTranslationMap = new Map<WsMqttQoSType, string>(
   [
     [0, 'mqtt-client-session.qos-at-most-once'],
     [1, 'mqtt-client-session.qos-at-least-once'],

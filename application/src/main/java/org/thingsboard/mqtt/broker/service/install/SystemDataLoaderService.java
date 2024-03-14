@@ -15,10 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.service.install;
 
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+
 public interface SystemDataLoaderService {
 
     void createAdmin() throws Exception;
 
     void createAdminSettings() throws Exception;
+
+    void createWebSocketMqttClientCredentials();
+
+    void createDefaultWebSocketConnection() throws ThingsboardException;
+
+    void createDefaultWebSocketConnections() throws ThingsboardException;
 
 }

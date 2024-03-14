@@ -42,6 +42,10 @@ public class StringUtils {
         return source != null && !source.isEmpty() && !source.trim().isEmpty();
     }
 
+    public static boolean contains0x00(final String s) {
+        return s != null && s.contains("\u0000");
+    }
+
     public static String removeStart(final String str, final String remove) {
         if (isEmpty(str) || isEmpty(remove)) {
             return str;

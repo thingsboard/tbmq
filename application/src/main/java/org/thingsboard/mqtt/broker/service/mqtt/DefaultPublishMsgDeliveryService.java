@@ -88,7 +88,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     @Override
     public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
         int qos = Math.min(subscription.getQos(), msg.getQos());
-        boolean retain = subscription.getOptions().isRetain(msg);
+        boolean retain = subscription.getOptions().isRetain(msg.getRetain());
         sendPublishMsgProtoToClient(sessionCtx, msg, qos, retain);
     }
 

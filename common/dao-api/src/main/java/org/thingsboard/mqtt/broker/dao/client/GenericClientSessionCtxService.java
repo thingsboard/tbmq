@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.dao.client;
 
-
 import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 
@@ -23,6 +22,7 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface GenericClientSessionCtxService {
+
     void saveAllGenericClientSessionCtx(Collection<GenericClientSessionCtx> genericClientSessionContexts);
 
     GenericClientSessionCtx saveGenericClientSessionCtx(GenericClientSessionCtx genericClientSessionCtx);

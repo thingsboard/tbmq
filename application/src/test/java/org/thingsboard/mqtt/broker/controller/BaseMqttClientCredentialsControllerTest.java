@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest.IdComparator;
@@ -394,6 +395,22 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
                 new TypeReference<>() {
                 }, pageLink);
         Assert.assertEquals(4, pageData.getData().size());
+    }
+
+    @Test
+    public void deleteSystemWebSocketCredentialsTest() throws Exception {
+        MqttClientCredentials mqttClientCredentials = mqttClientCredentialsService.saveSystemWebSocketCredentials();
+
+        PageLink pageLink = new PageLink(1, 0, BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME);
+        PageData<ShortMqttClientCredentials> pageData = doGetTypedWithPageLink("/api/mqtt/client/credentials?",
+                new TypeReference<>() {
+                }, pageLink);
+        ShortMqttClientCredentials shortMqttClientCredentials = pageData.getData().get(0);
+
+        doDelete("/api/mqtt/client/credentials/" + shortMqttClientCredentials.getId())
+                .andExpect(status().is4xxClientError());
+
+        mqttClientCredentialsService.deleteCredentials(mqttClientCredentials.getId());
     }
 
     @Test

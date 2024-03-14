@@ -27,15 +27,19 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +52,7 @@ public class AdminController extends BaseController {
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
+    private final WebSocketConnectionService webSocketConnectionService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -55,7 +60,7 @@ public class AdminController extends BaseController {
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
         try {
             checkNotNull(adminDto);
-            return adminService.createAdmin(adminDto);
+            return adminService.createAdmin(adminDto, true);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -123,6 +128,10 @@ public class AdminController extends BaseController {
                 throw new ThingsboardException("It is not allowed to delete its own user!", ThingsboardErrorCode.PERMISSION_DENIED);
             }
             checkUserId(userId);
+
+            List<WebSocketConnectionDto> webSocketConnections = getWebSocketConnections(userId);
+            webSocketConnections.forEach(wsConn -> clientSessionCleanUpService.disconnectClientSession(wsConn.getClientId()));
+
             userService.deleteUser(userId);
         } catch (Exception e) {
             throw handleException(e);
@@ -168,5 +177,19 @@ public class AdminController extends BaseController {
         } catch (Exception e) {
             throw handleException(e);
         }
+    }
+
+    private List<WebSocketConnectionDto> getWebSocketConnections(UUID userId) {
+        List<WebSocketConnectionDto> webSocketConnections = new ArrayList<>();
+        PageLink pageLink = new PageLink(100);
+        PageData<WebSocketConnectionDto> pageData;
+        do {
+            pageData = webSocketConnectionService.getWebSocketConnections(userId, pageLink);
+            webSocketConnections.addAll(pageData.getData());
+            if (pageData.hasNext()) {
+                pageLink = pageLink.nextPageLink();
+            }
+        } while (pageData.hasNext());
+        return webSocketConnections;
     }
 }

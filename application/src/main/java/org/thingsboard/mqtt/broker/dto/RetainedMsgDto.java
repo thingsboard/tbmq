@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.dto;
 
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
-import org.thingsboard.mqtt.broker.dao.data.UserProperties;
+import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.nio.charset.StandardCharsets;

@@ -33,7 +33,7 @@
       <div *ngFor="let rulesControl of rulesFormArray.controls; let $index = index" formArrayName="authRulesMapping">
           <fieldset class="fields-group">
             <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ ($index +  1) }}</legend>
-            <div [formGroupName]="$index" fxFlex fxLayoutAlign="flex-start center">
+            <div [formGroupName]="$index" fxFlex fxLayoutAlign="flex-start center" fxLayoutGap="8px">
               <div fxFlex fxLayout="column">
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
@@ -111,7 +111,6 @@
             [fxShow]="!disabled"
             (click)="addRule()"
             type="button">
-      <mat-icon>add_circle_outline</mat-icon>
       {{ 'mqtt-client-credentials.add-authorization-rules' | translate }}
     </button>
   </mat-expansion-panel>

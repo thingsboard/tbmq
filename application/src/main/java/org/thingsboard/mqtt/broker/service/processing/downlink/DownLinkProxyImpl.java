@@ -72,7 +72,7 @@ public class DownLinkProxyImpl implements DownLinkProxy {
 
     PublishMsgProto updatePublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
-        var retain = subscription.getOptions().isRetain(publishMsgProto);
+        var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
 
         if (minQos != publishMsgProto.getQos() || retain != publishMsgProto.getRetain()) {
             return publishMsgProto.toBuilder()

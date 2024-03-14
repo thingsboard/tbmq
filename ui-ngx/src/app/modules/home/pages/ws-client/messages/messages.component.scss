@@ -1,0 +1,137 @@
+/**
+ * Copyright © 2016-2024 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+:host {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0px;
+  flex-direction: column;
+  height: 100%;
+
+  .tb-ws-client-messages {
+    background-color: rgba(244,245,246,1);
+    width: 100%;
+
+    .messages-container {
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: unset;
+      //overflow: auto;
+      padding: 16px;
+      height: auto;
+    }
+    .message-container {
+      max-width: 50%;
+    }
+    .message {
+      min-width: 20vw;
+      max-width: 35vw;
+      overflow: auto;
+      padding: 4px;
+      border-radius: 8px;
+
+      pre {
+        margin: 0;
+        &.is-string {
+          white-space: initial;
+        }
+      }
+
+      .message-properties {
+        color: rgba(0, 0, 0, 0.38);
+        font-weight: 500;
+        line-height: 20px;
+        letter-spacing: 0.25px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        background: rgba(31, 139, 77, 0.04);
+      }
+
+      .user-properties section {
+        padding: 8px 12px 8px 12px;
+
+        color: #000;
+        background-color: #fff;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        overflow: auto;
+
+        >span {
+          font-weight: 400;
+          font-size: 12px;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .sub-message {
+      padding: 8px 8px 8px 16px;
+      border: 1px solid rgba(0,0,0,0.16);
+      border-radius: 0 8px 8px 0;
+      background-color: #fff;
+      //overflow: auto;
+    }
+    .sub-message-container {
+      align-self: flex-start;
+    }
+    .sub-message-time {
+      text-align: start;
+    }
+
+    .pub-message {
+      padding: 8px 8px 8px 12px;
+      border: 1px solid rgba(31,139,77,0.16);
+      border-radius: 8px 0 0 8px;
+      background-color: rgba(31,139,77,0.08);
+    }
+    .pub-message-container {
+      align-self: flex-end;
+    }
+    .pub-message-time {
+      text-align: end;
+    }
+
+    .topic {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.38);
+      font-weight: 500;
+      letter-spacing: 0.25px;
+    }
+    .details {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.38);
+      font-weight: 400;
+      letter-spacing: 0.25px;
+    }
+    .retain {
+      font-size: 14px;
+      border-radius: 4px;
+      padding: 2px 4px 2px 4px;
+      color: rgba(0, 0, 0, 0.76);
+      background: #DBDBDB;
+    }
+    .time {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.38);
+      letter-spacing: 0.2px;
+      border-radius: 16px;
+      padding: 0 3px;
+      &:hover {
+        background: rgba(0, 0, 0, 0.04);
+      }
+    }
+  }
+}

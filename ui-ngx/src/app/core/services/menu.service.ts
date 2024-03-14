@@ -83,11 +83,19 @@ export class MenuService {
         icon: 'mdi:shield-lock'
       },
       {
+        id: 'web_socket_client',
+        name: 'ws-client.ws-client',
+        type: 'link',
+        path: '/ws-client',
+        icon: 'mdi:chat',
+        isNew: true
+      },
+      {
         id: 'retained_messages',
         name: 'retained-message.retained-messages',
         type: 'link',
         path: '/retained-messages',
-        icon: 'mdi:archive-outline'
+        icon: 'mdi:archive'
       },
       {
         id: 'shared_subscriptions_management',
@@ -154,7 +162,7 @@ export class MenuService {
         name: 'user.users',
         type: 'link',
         path: '/users',
-        icon: 'mdi:account-multiple-outline'
+        icon: 'mdi:account-multiple'
       },
       {
         id: 'system_settings',
@@ -220,7 +228,7 @@ export class MenuService {
       {
         name: 'home.retained-messages',
         path: 'user-guide/retained-messages',
-        icon: 'mdi:archive-outline'
+        icon: 'mdi:archive'
       }
     ]);
   }

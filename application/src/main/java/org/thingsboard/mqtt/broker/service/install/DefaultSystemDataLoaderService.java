@@ -24,9 +24,20 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.User;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @Profile("install")
@@ -38,6 +49,12 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final WebSocketConnectionService webSocketConnectionService;
+    private final UserService userService;
+
+    private User sysadmin;
+    private MqttClientCredentials systemWebSocketCredentials;
 
     @Bean
     protected BCryptPasswordEncoder passwordEncoder() {
@@ -45,11 +62,12 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
     }
 
     @Override
-    public void createAdmin() {
-        adminService.createAdmin(AdminDto.builder()
+    public void createAdmin() throws ThingsboardException {
+        AdminDto adminDto = AdminDto.builder()
                 .email("sysadmin@thingsboard.org")
                 .password("sysadmin")
-                .build());
+                .build();
+        sysadmin = adminService.createAdmin(adminDto, false);
     }
 
     @Override
@@ -79,4 +97,32 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         mailSettings.setJsonValue(node);
         adminSettingsService.saveAdminSettings(mailSettings);
     }
+
+    @Override
+    public void createWebSocketMqttClientCredentials() {
+        systemWebSocketCredentials = mqttClientCredentialsService.saveSystemWebSocketCredentials();
+    }
+
+    @Override
+    public void createDefaultWebSocketConnection() throws ThingsboardException {
+        webSocketConnectionService.saveDefaultWebSocketConnection(sysadmin.getId(), systemWebSocketCredentials.getId());
+    }
+
+    @Override
+    public void createDefaultWebSocketConnections() throws ThingsboardException {
+        List<User> foundUsers = new ArrayList<>();
+
+        PageLink pageLink = new PageLink(100);
+        PageData<User> pageData;
+        do {
+            pageData = userService.findUsers(pageLink);
+            foundUsers.addAll(pageData.getData());
+            pageLink = pageLink.nextPageLink();
+        } while (pageData.hasNext());
+
+        for (User user : foundUsers) {
+            webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), systemWebSocketCredentials.getId());
+        }
+    }
+
 }

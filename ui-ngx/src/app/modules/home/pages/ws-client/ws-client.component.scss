@@ -1,0 +1,108 @@
+/**
+ * Copyright © 2016-2024 The Thingsboard Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+:host {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+
+  .container {
+    display: flex;
+    flex-direction: column;
+    height: inherit;
+    max-height: 100%;
+    width: 100%;
+    gap: 12px;
+
+    .border-bg {
+      background: #fff;
+      border-radius: 4px;
+    }
+
+    .subscriptions {
+      flex: 1 1 auto;
+      min-height: 0px;
+    }
+  }
+
+  .add-connection-container {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+
+    .add-connection-btn {
+      padding: 16px 24px 16px 16px;
+      border: 2px dashed rgba(0, 0, 0, 0.16);
+      border-radius: 8px;
+      color: rgba(0, 0, 0, 0.38);
+
+      &:hover {
+        cursor: pointer;
+        color: rgba(0, 0, 0, 0.54);
+        border: 2px dashed rgba(0, 0, 0, 0.38);
+      }
+
+      span {
+        color: inherit;
+        font-size: 24px;
+      }
+    }
+  }
+
+/*
+  .tb-ws-client {
+    height: 90vh;
+
+    padding: 12px 12px 8px 12px;
+
+    div:first-child {
+      height: inherit;
+    }
+  }
+
+  .add-connection-container {
+    margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 40%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+  }
+
+  .add-connection-btn {
+    padding: 16px;
+    border: 2px dashed rgba(0, 0, 0, 0.16);
+    border-radius: 8px;
+    color: rgba(0, 0, 0, 0.38);
+
+    &:hover {
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.54);
+      border: 2px dashed rgba(0, 0, 0, 0.38);
+    }
+
+    span {
+      color: inherit;
+      font-size: 24px;
+    }
+  }*/
+}

@@ -19,5 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 
 public interface SessionSubscriptionService {
+
     DetailedClientSessionInfoDto getDetailedClientSessionInfo(String clientId) throws ThingsboardException;
+
 }

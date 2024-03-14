@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
-import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 
@@ -47,7 +46,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClientSessionController extends BaseController {
 
-    private final ClientSessionCleanUpService clientSessionCleanUpService;
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
 

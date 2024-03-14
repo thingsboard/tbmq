@@ -36,7 +36,7 @@ export class SessionTableHeaderComponent extends EntityTableHeaderComponent<Deta
     super(store);
   }
 
-  alarmFilterChanged(sessionFilterConfig: SessionFilterConfig) {
+  filterChanged(sessionFilterConfig: SessionFilterConfig) {
     this.sessionTableConfig.sessionFilterConfig = sessionFilterConfig;
     this.sessionTableConfig.getTable().resetSortAndFilter(true, true);
   }
