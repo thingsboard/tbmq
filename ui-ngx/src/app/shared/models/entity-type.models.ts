@@ -28,7 +28,7 @@ export enum EntityType {
   KAFKA_BROKER = 'KAFKA_BROKER',
   WS_CONNECTION = 'WS_CONNECTION',
   WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
-  WS_MESSAGE = 'WS_MESSAGE' // TODO add mappings
+  WS_MESSAGE = 'WS_MESSAGE'
 }
 
 export interface EntityTypeTranslation {

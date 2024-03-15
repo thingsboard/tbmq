@@ -49,23 +49,10 @@
       align-self: flex-start;
     }
 
-    .mat-badge-small.mat-badge-overlap.mat-badge-after .mat-badge-content {
-      right: 0;
+    .mat-mdc-icon-button {
+      --mat-mdc-button-persistent-ripple-color: unset;
+      --mat-mdc-button-ripple-color: unset;
     }
 
-    .mat-badge-small.mat-badge-above .mat-badge-content {
-      top: 0;
-    }
-
-    .mat-badge-warn .mat-badge-content {
-      color: transparent;
-      background: #f44336;
-    }
-
-    .mat-badge-small .mat-badge-content {
-      width: 6px;
-      height: 6px;
-      line-height: 6px;
-    }
   }
 }

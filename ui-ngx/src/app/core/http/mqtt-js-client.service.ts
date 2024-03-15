@@ -15,7 +15,7 @@
 ///
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   ConnectionStatus,
@@ -46,12 +46,15 @@ export class MqttJsClientService {
   private connectionStatusSubject$ = new BehaviorSubject<ConnectionStatusLog>({status: ConnectionStatus.DISCONNECTED, details: null});
   private messagesSubject$ = new BehaviorSubject<WsTableMessage[]>(this.messagesList);
   private messageCounterSubject$ = new BehaviorSubject<MessageCounters>({all: 0, received: 0, published: 0});
+  private logsUpdatedSubject$ = new Subject<void>();
 
   public connection$ = this.connectionSubject$.asObservable();
   public connections$ = this.connectionsSubject$.asObservable();
   public connectionStatus$ = this.connectionStatusSubject$.asObservable();
   public messages$ = this.messagesSubject$.asObservable();
   public messageCounter = this.messageCounterSubject$.asObservable();
+  public logsUpdated = this.logsUpdatedSubject$.asObservable();
+
   public connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
 
   private connectionMqttClientMap = new Map<string, MqttClient>();
@@ -80,10 +83,10 @@ export class MqttJsClientService {
 
   public disconnectSelectedClient() {
     const mqttClient = this.getSelectedMqttJsClient();
-    const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
-    this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
-    this.endMqttClient(mqttClient);
-    if (mqttClient?.connected) {
+    if (mqttClient) {
+      const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
+      this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
+      this.endMqttClient(mqttClient);
     }
   }
 
@@ -297,9 +300,9 @@ export class MqttJsClientService {
   }
 
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {
+    this.connectionMqttClientMap.set(connection.id, mqttClient);
+    this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
     mqttClient.on('connect', (packet: IConnackPacket) => {
-      this.connectionMqttClientMap.set(connection.id, mqttClient);
-      this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
       this.subscribeForWebSocketSubscriptions(mqttClient, connection);
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTED);
       // console.log(`Client connected!`, packet, mqttClient);
@@ -439,7 +442,7 @@ export class MqttJsClientService {
     } else {
       this.connectionStatusLogMap.set(connection.id, [log]);
     }
-
+    this.logsUpdatedSubject$.next();
   }
 
   private nowTs() {
@@ -544,5 +547,4 @@ export class MqttJsClientService {
       published: all - received
     });
   }
-
 }

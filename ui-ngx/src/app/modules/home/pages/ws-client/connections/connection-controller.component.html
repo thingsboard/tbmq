@@ -36,7 +36,7 @@
 </ng-template>
 <ng-template #disconnected>
   <section fxLayout="row" fxLayoutGap="16px">
-    <mat-form-field *ngIf="isPasswordRequired" appearance="outline" subscriptSizing="dynamic">
+    <mat-form-field *ngIf="isPasswordRequired && !reconnecting" appearance="outline" subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-credentials.password</mat-label>
       <input matInput name="new-password" [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
       <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"

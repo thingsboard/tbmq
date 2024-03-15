@@ -272,7 +272,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     if (value === WsCredentialsGeneratorType.AUTO) {
       this.connectionFormGroup.get('credentialsName').patchValue(clientCredentialsNameRandom());
       this.connectionFormGroup.get('credentialsName').disable();
-      // this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(clientIdRandom());
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(clientUserNameRandom());
@@ -286,7 +285,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.CUSTOM) {
       this.connectionFormGroup.get('clientId').enable();
-      // this.connectionFormGroup.get('clientId').setValidators(Validators.required);
       this.connectionFormGroup.get('clientId').patchValue(this.connection?.configuration?.clientId ? this.connection.configuration.clientId : clientIdRandom());
       this.connectionFormGroup.get('username').enable();
       this.connectionFormGroup.get('username').patchValue(this.connection?.configuration.username ? this.connection.configuration.username : null);
@@ -299,12 +297,12 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
     if (value === WsCredentialsGeneratorType.EXISTING) {
       this.connectionFormGroup.get('credentialsName').enable();
-      // this.connectionFormGroup.get('clientId').setValidators(null);
       this.connectionFormGroup.get('clientId').patchValue(null);
       this.connectionFormGroup.get('clientId').disable();
       this.connectionFormGroup.get('username').patchValue(null);
       this.connectionFormGroup.get('username').disable();
       this.connectionFormGroup.get('password').patchValue(null);
+      this.connectionFormGroup.get('password').enable();
       this.connectionFormGroup.get('clientCredentials').setValidators(Validators.required);
     }
     this.connectionFormGroup.updateValueAndValidity();

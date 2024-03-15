@@ -119,11 +119,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.status = status;
     this.isConnected = status === ConnectionStatus.CONNECTED;
     this.actionLabel = this.isConnected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect';
-    if (status === ConnectionStatus.RECONNECTING) {
-      this.reconnecting = true;
-    } else {
-      this.reconnecting = status === ConnectionStatus.CONNECTION_FAILED;
-    }
+    this.reconnecting = status === ConnectionStatus.RECONNECTING;
     if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
       this.errorMessage = error?.length ? (': ' + error) : null;
     } else {
