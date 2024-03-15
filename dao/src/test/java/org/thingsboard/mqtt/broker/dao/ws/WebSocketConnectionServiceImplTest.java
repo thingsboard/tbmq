@@ -324,7 +324,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
         pageLink = new PageLink(100, 0, null, new SortOrder("createdTime", SortOrder.Direction.DESC));
         pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
-        log.error("Sorted WS connections pageData: {}", pageData);
+        log.error("Sorted WS connections data: {}", pageData.getData());
         Assert.assertEquals("Test31", pageData.getData().get(0).getName());
 
         pageLink = new PageLink(100, 0, null, new SortOrder("name", SortOrder.Direction.DESC));
