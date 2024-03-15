@@ -21,12 +21,16 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.thingsboard.mqtt.broker.common.data.User;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SecurityUser extends User {
+
+    @Serial
+    private static final long serialVersionUID = 6291161815919039798L;
 
     private Collection<GrantedAuthority> authorities;
 

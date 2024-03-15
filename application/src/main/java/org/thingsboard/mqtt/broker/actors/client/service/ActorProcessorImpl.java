@@ -159,7 +159,8 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         if (state.getCurrentSessionState() == SessionState.DISCONNECTING) {
-            log.warn("[{}][{}] Session is in {} state. Will try to disconnect again.", state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTING);
+            log.warn("[{}][{}] Session is in {} state. Skipping this msg", state.getClientId(), state.getCurrentSessionId(), SessionState.DISCONNECTING);
+            return;
         }
 
         state.updateSessionState(SessionState.DISCONNECTING);

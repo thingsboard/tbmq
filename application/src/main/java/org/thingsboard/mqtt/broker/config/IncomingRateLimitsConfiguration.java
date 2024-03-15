@@ -20,9 +20,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "mqtt.rate-limits")
+@ConfigurationProperties(prefix = "mqtt.rate-limits.incoming-publish")
 @Data
-public class RateLimitsConfiguration {
+public class IncomingRateLimitsConfiguration {
 
     private boolean enabled;
     private String clientConfig;

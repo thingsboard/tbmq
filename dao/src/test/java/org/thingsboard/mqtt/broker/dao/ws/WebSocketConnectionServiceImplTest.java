@@ -301,6 +301,11 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
             WebSocketConnection savedWebSocketConnection = webSocketConnectionService.saveWebSocketConnection(
                     getWebSocketConnection("Test" + i)
             );
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             webSocketConnectionDtoList.add(WebSocketConnectionDto.fromWebSocketConnection(savedWebSocketConnection));
         }
 

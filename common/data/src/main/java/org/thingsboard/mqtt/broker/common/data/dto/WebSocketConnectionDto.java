@@ -20,11 +20,15 @@ import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 public class WebSocketConnectionDto implements HasId {
+
+    @Serial
+    private static final long serialVersionUID = -5480586232821461732L;
 
     private UUID id;
     private String name;

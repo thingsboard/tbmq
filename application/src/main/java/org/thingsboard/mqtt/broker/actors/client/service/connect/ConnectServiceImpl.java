@@ -106,6 +106,9 @@ public class ConnectServiceImpl implements ConnectService {
     private boolean flowControlEnabled;
     @Value("${mqtt.flow-control.delayed-queue-max-size:1000}")
     private int delayedQueueMaxSize;
+    @Setter
+    @Value("${mqtt.flow-control.mqtt3x-receive-max:65535}")
+    private int mqtt3xReceiveMax;
 
     @PostConstruct
     public void init() {
@@ -137,7 +140,7 @@ public class ConnectServiceImpl implements ConnectService {
         );
 
         if (flowControlEnabled) {
-            int receiveMaxValue = MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties());
+            int receiveMaxValue = getReceiveMaxValue(msg, sessionCtx);
             sessionCtx.initPublishedInFlightCtx(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
         }
 
@@ -364,6 +367,11 @@ public class ConnectServiceImpl implements ConnectService {
             keepAliveSeconds = maxServerKeepAlive;
         }
         return keepAliveSeconds;
+    }
+
+    int getReceiveMaxValue(MqttConnectMsg msg, ClientSessionCtx ctx) {
+        return MqttVersion.MQTT_5 == ctx.getMqttVersion() ?
+                MqttPropertiesUtil.getReceiveMaxValue(msg.getProperties()) : mqtt3xReceiveMax;
     }
 
     @PreDestroy

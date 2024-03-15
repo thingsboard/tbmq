@@ -318,6 +318,39 @@ public class ConnectServiceImplTest {
         Assert.assertEquals(expectedSessionInfo, actualSessionInfo);
     }
 
+    @Test
+    public void givenConnectPacketForMqtt3Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(10, receiveMaxValue);
+    }
+
+    @Test
+    public void givenConnectPacketWithReceiveMaxForMqtt5Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.RECEIVE_MAXIMUM.value(), 20));
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", null, properties);
+
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(20, receiveMaxValue);
+    }
+
+    @Test
+    public void givenConnectPacketWithoutReceiveMaxForMqtt5Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", null, new MqttProperties());
+
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, receiveMaxValue);
+    }
+
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
         return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000, new MqttProperties());
     }
@@ -327,6 +360,10 @@ public class ConnectServiceImplTest {
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId, PublishMsg lastWillMsg) {
-        return new MqttConnectMsg(sessionId, clientId, false, 1000, lastWillMsg);
+        return getMqttConnectMsg(sessionId, clientId, lastWillMsg, MqttProperties.NO_PROPERTIES);
+    }
+
+    private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId, PublishMsg lastWillMsg, MqttProperties properties) {
+        return new MqttConnectMsg(sessionId, clientId, false, 1000, lastWillMsg, properties);
     }
 }

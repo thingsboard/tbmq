@@ -172,7 +172,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private boolean checkLimits(MqttMessage msg) {
-        return rateLimitService.checkLimits(clientId, sessionId, msg);
+        return rateLimitService.checkIncomingLimits(clientId, sessionId, msg);
     }
 
     private void initSession(MqttConnectMessage connectMessage) {
