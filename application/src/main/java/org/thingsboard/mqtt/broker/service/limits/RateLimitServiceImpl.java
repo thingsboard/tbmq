@@ -98,8 +98,12 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Override
     public void remove(String clientId) {
         if (clientId != null) {
-            incomingPublishClientLimits.remove(clientId);
-            outgoingPublishClientLimits.remove(clientId);
+            if (incomingPublishClientLimits != null) {
+                incomingPublishClientLimits.remove(clientId);
+            }
+            if (outgoingPublishClientLimits != null) {
+                outgoingPublishClientLimits.remove(clientId);
+            }
         }
     }
 
