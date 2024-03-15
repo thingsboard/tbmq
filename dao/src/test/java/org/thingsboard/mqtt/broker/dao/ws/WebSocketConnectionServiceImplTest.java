@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.ws;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -42,6 +43,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @DaoSqlTest
+@Slf4j
 public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
     private final IdComparator<WebSocketConnectionDto> idComparator = new IdComparator<>();
@@ -322,6 +324,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
 
         pageLink = new PageLink(100, 0, null, new SortOrder("createdTime", SortOrder.Direction.DESC));
         pageData = webSocketConnectionService.getWebSocketConnections(savedUser.getId(), pageLink);
+        log.error("Sorted WS connections pageData: {}", pageData);
         Assert.assertEquals("Test31", pageData.getData().get(0).getName());
 
         pageLink = new PageLink(100, 0, null, new SortOrder("name", SortOrder.Direction.DESC));
