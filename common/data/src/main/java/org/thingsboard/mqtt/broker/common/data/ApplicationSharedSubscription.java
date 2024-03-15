@@ -20,12 +20,16 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationSharedSubscription extends SearchTextBased {
+
+    @Serial
+    private static final long serialVersionUID = -3332462179399001894L;
 
     @NoXss
     private String name;

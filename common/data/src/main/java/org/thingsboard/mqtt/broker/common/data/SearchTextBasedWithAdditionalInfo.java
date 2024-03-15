@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
@@ -34,6 +35,9 @@ import java.util.function.Supplier;
 public abstract class SearchTextBasedWithAdditionalInfo extends SearchTextBased implements HasAdditionalInfo {
 
     public static final ObjectMapper mapper = new ObjectMapper();
+    @Serial
+    private static final long serialVersionUID = 1019819528913153295L;
+
     @NoXss
     private transient JsonNode additionalInfo;
     @JsonIgnore
