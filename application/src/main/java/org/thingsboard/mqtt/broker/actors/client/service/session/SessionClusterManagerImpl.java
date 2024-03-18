@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
@@ -204,10 +205,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
         try {
             ClientSession clientSession = getClientSessionForClient(clientId);
-            Set<TopicSubscription> clientSubscriptions = getClientSubscriptionsForClient(clientId);
             if (clientSession == null) {
-                log.warn("[{}] Trying to clear non-existent session, clearing subscriptions - {}", clientId, clientSubscriptions);
-                clearClientSubscriptions(clientId);
+                Set<TopicSubscription> clientSubscriptions = getClientSubscriptionsForClient(clientId);
+                log.warn("[{}] Trying to clear non-existent session, session subscriptions - {}", clientId, clientSubscriptions);
+                if (!CollectionUtils.isEmpty(clientSubscriptions)) {
+                    clearClientSubscriptions(clientId);
+                }
             } else {
                 UUID currentSessionId = getSessionIdFromClientSession(clientSession);
                 if (!sessionId.equals(currentSessionId)) {
