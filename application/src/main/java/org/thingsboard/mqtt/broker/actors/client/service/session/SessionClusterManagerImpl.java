@@ -353,7 +353,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     private void disconnectCurrentSession(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, newSessionCleanStart);
+        disconnectClientCommandService.disconnectOnSessionConflict(serviceId, clientId, sessionId, newSessionCleanStart);
     }
 
     private void clearSessionAndSubscriptions(String clientId) {
