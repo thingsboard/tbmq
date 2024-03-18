@@ -122,7 +122,8 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
         const advancedOptions = {
           enableSnippets: false,
           enableBasicAutocompletion: false,
-          enableLiveAutocompletion: false
+          enableLiveAutocompletion: false,
+          highlightActiveLine: false
         };
 
         editorOptions = {...editorOptions, ...advancedOptions};

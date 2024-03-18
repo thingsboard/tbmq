@@ -80,7 +80,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
             return;
         }
         String serviceId = clientSessionInfo.getServiceId();
-        disconnectClientCommandService.disconnectSession(serviceId, clientId, sessionId, true);
+        disconnectClientCommandService.disconnectSessionOnAdminAction(serviceId, clientId, sessionId, true);
     }
 
     @Override
@@ -92,7 +92,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         if (clientSessionInfo == null || !clientSessionInfo.isConnected()) {
             return;
         }
-        disconnectClientCommandService.disconnectSession(
+        disconnectClientCommandService.disconnectSessionOnAdminAction(
                 clientSessionInfo.getServiceId(),
                 clientId,
                 clientSessionInfo.getSessionId(),

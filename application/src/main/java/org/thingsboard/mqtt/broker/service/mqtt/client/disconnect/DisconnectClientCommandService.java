@@ -19,6 +19,8 @@ import java.util.UUID;
 
 public interface DisconnectClientCommandService {
 
-    void disconnectSession(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart);
+    void disconnectOnSessionConflict(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart);
+
+    void disconnectSessionOnAdminAction(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart);
 
 }

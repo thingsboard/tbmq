@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class QueuePersistenceException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = 7818039060546289297L;
+
     public QueuePersistenceException() {
     }
 

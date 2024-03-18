@@ -26,7 +26,7 @@ import {
   PublishMessageProperties,
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
-  WebSocketTimeUnit
+  AboveSecWebSocketTimeUnit
 } from '@shared/models/ws-client.model';
 
 export interface PropertiesDialogComponentData {
@@ -45,7 +45,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
   props: PublishMessageProperties;
   connection: WebSocketConnection;
 
-  timeUnitTypes = Object.keys(WebSocketTimeUnit);
+  timeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
 
   private destroy$ = new Subject<void>();
@@ -75,10 +75,10 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   private buildForm(): void {
     this.formGroup = this.fb.group({
-      payloadFormatIndicator: [this.props ? this.props.payloadFormatIndicator : true, []],
+      payloadFormatIndicator: [this.props ? this.props.payloadFormatIndicator : null, []],
       contentType: [this.props ? this.props.contentType : null, []],
       messageExpiryInterval: [this.props ? this.props.messageExpiryInterval : null, []],
-      messageExpiryIntervalUnit: [this.props ? this.props.messageExpiryIntervalUnit : WebSocketTimeUnit.SECONDS, []],
+      messageExpiryIntervalUnit: [this.props ? this.props.messageExpiryIntervalUnit : AboveSecWebSocketTimeUnit.SECONDS, []],
       topicAlias: [{value: this.props ? this.props.topicAlias : null, disabled: this.connection.configuration?.topicAliasMax === 0}, [this.topicAliasMaxValidator()]],
       correlationData: [this.props ? this.props.correlationData : null, []],
       responseTopic: [this.props ? this.props.responseTopic : null, []],
@@ -93,19 +93,18 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   onSave() {
     const properties = this.formGroup.getRawValue();
+    properties.changed = this.countNonNull(properties) > 1;
     this.dialogRef.close(properties);
   }
 
   calcMax(unitControl: string) {
     const messageExpiryInterval = this.formGroup.get(unitControl)?.value;
     switch (messageExpiryInterval) {
-      case WebSocketTimeUnit.MILLISECONDS:
-        return 4294967295000;
-      case WebSocketTimeUnit.SECONDS:
+      case AboveSecWebSocketTimeUnit.SECONDS:
         return 4294967295;
-      case WebSocketTimeUnit.MINUTES:
+      case AboveSecWebSocketTimeUnit.MINUTES:
         return 71582788;
-      case WebSocketTimeUnit.HOURS:
+      case AboveSecWebSocketTimeUnit.HOURS:
         return 1193046;
     }
   }
@@ -117,6 +116,16 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
       }
       return null;
     };
+  }
+
+  private countNonNull(obj: any): number {
+    let count = 0;
+    for (let key in obj) {
+      if (obj[key] !== null && obj[key] !== '') {
+        count++;
+      }
+    }
+    return count;
   }
 }
 

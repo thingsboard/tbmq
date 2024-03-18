@@ -17,7 +17,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, UntypedFormGroup } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -31,8 +31,10 @@ import {
   WsMessagesTypeFilters,
   WsPayloadFormats,
 } from '@shared/models/ws-client.model';
-import { ValueType } from '@shared/models/constants';
+import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
+import { map } from 'rxjs/operators';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 @Component({
   selector: 'tb-messanger',
@@ -44,7 +46,6 @@ export class MessangerComponent implements OnInit {
   connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
-  counter: number;
 
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
@@ -56,21 +57,23 @@ export class MessangerComponent implements OnInit {
   jsonFormatSelected = true;
   isPayloadValid = true;
   mqttVersion = 5;
-  hasTopicAliasMax = false;
+  isDefinedTopicAlias = false;
 
-  private publishMessagePropertiesTemp: PublishMessageProperties = null;
+  publishMsgProps: PublishMessageProperties = null;
+  publishMsgPropsChanged: boolean;
+  isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
-              public fb: FormBuilder,
+              private breakpointObserver: BreakpointObserver,
+              private fb: FormBuilder,
               private dialog: MatDialog) {
-
   }
 
   ngOnInit() {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
-      topic: ['sensors/temperature', []],
+      topic: ['sensors/temperature', [this.topicValidator]],
       qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
@@ -94,7 +97,7 @@ export class MessangerComponent implements OnInit {
           this.mqttVersion = connection.configuration.mqttVersion;
         }
       }
-    )
+    );
 
     this.mqttJsClientService.connectionStatus$.subscribe(
       status => {
@@ -103,7 +106,10 @@ export class MessangerComponent implements OnInit {
     );
 
     this.mqttJsClientService.messageCounter.subscribe(value => {
-      this.counter = value || 0;
+      this.messagesTypeFilters = WsMessagesTypeFilters.map(filter => ({
+        ...filter,
+        name: `${filter.name} (${value[filter.value]})`,
+      }));
     })
 
     this.mqttJsClientService.filterMessages({
@@ -120,7 +126,7 @@ export class MessangerComponent implements OnInit {
     });
 
     this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
-      this.hasTopicAliasMax = isDefinedAndNotNull(value?.topicAlias);
+      this.isDefinedTopicAlias = isDefinedAndNotNull(value?.topicAlias);
     })
   }
 
@@ -145,7 +151,7 @@ export class MessangerComponent implements OnInit {
       // @ts-ignore
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
       if (isDefinedAndNotNull(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
-      if (isDefinedAndNotNull(propertiesForm?.userProperties)) options.properties.userProperties = propertiesForm.userProperties;
+      if (isDefinedAndNotNull(propertiesForm?.userProperties) && propertiesForm?.userProperties?.props?.length) options.properties.userProperties = propertiesForm.userProperties;
       if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
       if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
       if (isDefinedAndNotNull(propertiesForm?.responseTopic)) options.properties.responseTopic = propertiesForm.responseTopic;
@@ -166,13 +172,14 @@ export class MessangerComponent implements OnInit {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
-        props: this.publishMessagePropertiesTemp,
+        props: this.publishMsgProps,
         connection: this.connection
       }
     }).afterClosed()
       .subscribe((properties) => {
         if (isDefinedAndNotNull(properties)) {
-          this.publishMessagePropertiesTemp = properties;
+          this.publishMsgProps = properties;
+          this.publishMsgPropsChanged = properties.changed;
           this.messangerFormGroup.patchValue({
             properties: properties
           });
@@ -194,5 +201,11 @@ export class MessangerComponent implements OnInit {
       return JSON.stringify(payload) === 'null' ? '' : JSON.stringify(payload);
     }
     return payload;
+  }
+
+  private topicValidator(control: FormControl): {[key: string]: boolean} | null {
+    const invalidChars = /[+#]/;
+    const isValid = !invalidChars.test(control.value);
+    return isValid ? null : { 'invalidTopic': true };
   }
 }

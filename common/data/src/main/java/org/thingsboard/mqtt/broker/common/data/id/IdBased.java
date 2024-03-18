@@ -18,11 +18,16 @@ package org.thingsboard.mqtt.broker.common.data.id;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.util.UUID;
 
+@Getter
+@Setter
 public abstract class IdBased implements HasId {
-	@Getter
-	@Setter
+
+	@Serial
+	private static final long serialVersionUID = -6032671969414305750L;
+
 	protected UUID id;
 	
 	public IdBased() {

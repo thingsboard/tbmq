@@ -16,12 +16,12 @@
 
 -->
 <form [formGroup]="userPropertiesFormGroup">
-  <fieldset class="fields-group" fxLayout="column" [disabled]="mqttVersion !== 5">
+  <fieldset fxLayout="column" class="fields-group" style="padding: 0 16px 16px 16px" [disabled]="mqttVersion !== 5">
     <legend class="group-title" translate>ws-client.connections.user-properties</legend>
     <div fxLayout="column">
       <section class="container">
         <div formArrayName="props" *ngFor="let control of userPropertiesFormArray.controls; let $index = index">
-            <div [formGroupName]="$index" fxFlex fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="center center">
+            <div [formGroupName]="$index" fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="center center">
               <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
                 <mat-label translate>ws-client.connections.key</mat-label>
                 <input matInput formControlName="k">
@@ -43,7 +43,6 @@
                 [fxShow]="!disabled"
                 (click)="addRule()"
                 type="button">
-          <mat-icon>add_circle_outline</mat-icon>
           {{ 'ws-client.connections.add-user-property' | translate }}
         </button>
       </div>

@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client;
 
-
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActor;
 import org.thingsboard.mqtt.broker.actors.TbActorId;

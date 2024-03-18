@@ -200,7 +200,8 @@ export interface PublishMessageProperties {
   topicAlias?: number;
   correlationData?: Buffer;
   responseTopic?: string;
-  userProperties?: any,
+  userProperties?: any;
+  changed?: boolean;
 }
 
 export interface WebSocketSubscription extends BaseData {
@@ -228,6 +229,12 @@ export interface MessageFilterConfig {
   type?: string;
 }
 
+export interface MessageCounters {
+  all: number;
+  received: number;
+  published: number;
+}
+
 export enum WsAddressProtocolType {
   WS = 'WS',
   WSS = 'WSS'
@@ -243,7 +250,7 @@ export enum WebSocketTimeUnit {
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'
 }
-export enum WebSocketKeepAliveTimeUnit {
+export enum AboveSecWebSocketTimeUnit {
   SECONDS = 'SECONDS',
   MINUTES = 'MINUTES',
   HOURS = 'HOURS'

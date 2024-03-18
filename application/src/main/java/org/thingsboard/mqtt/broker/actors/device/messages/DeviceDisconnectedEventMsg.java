@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
 public class DeviceDisconnectedEventMsg implements TbActorMsg {
+
     @Override
     public MsgType getMsgType() {
         return MsgType.DEVICE_DISCONNECTED_EVENT_MSG;

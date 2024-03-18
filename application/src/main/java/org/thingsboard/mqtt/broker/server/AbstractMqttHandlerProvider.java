@@ -35,7 +35,7 @@ public abstract class AbstractMqttHandlerProvider {
 
     private SSLContext sslContext;
 
-    public SslHandler getSslHandler() {
+    public SslHandler getSslHandler(String[] enabledCipherSuites) {
         if (sslContext == null) {
             sslContext = createSslContext();
         }
@@ -44,7 +44,7 @@ public abstract class AbstractMqttHandlerProvider {
         sslEngine.setNeedClientAuth(false);
         sslEngine.setWantClientAuth(true);
         sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
-        sslEngine.setEnabledCipherSuites(sslEngine.getSupportedCipherSuites());
+        sslEngine.setEnabledCipherSuites(getEnabledCipherSuites(enabledCipherSuites, sslEngine));
         sslEngine.setEnableSessionCreation(true);
         return new SslHandler(sslEngine);
     }
@@ -127,4 +127,8 @@ public abstract class AbstractMqttHandlerProvider {
     protected abstract String getSslProtocol();
 
     protected abstract SslCredentials getSslCredentials();
+
+    private String[] getEnabledCipherSuites(String[] enabledCipherSuites, SSLEngine sslEngine) {
+        return enabledCipherSuites == null || enabledCipherSuites.length == 0 ? sslEngine.getSupportedCipherSuites() : enabledCipherSuites;
+    }
 }

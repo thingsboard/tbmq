@@ -16,13 +16,17 @@
 :host {
   position: relative;
 
+  div:first-child {
+    background: #FFFFFF;
+  }
+
   .fill-height {
     height: 100%;
   }
 
   .toolbar-label {
     position: absolute;
-    bottom: 10px;
+    bottom: 0;
     left: 6px;
     z-index: 1;
   }
@@ -30,13 +34,16 @@
   .toolbar-buttons {
     position: absolute;
     top: 10px;
-    right: 6px;
+    right: 10px;
     z-index: 1;
   }
 }
 
 .tb-json-object-toolbar {
+  position: relative;
+  text-align: end;
   margin-bottom: 8px;
+  padding-right: 8px;
   button.mat-mdc-button-base, button.mat-mdc-button-base.tb-mat-32 {
     align-items: center;
     vertical-align: middle;
@@ -47,7 +54,6 @@
     font-size: .8rem;
     line-height: 15px;
     color: #7b7b7b;
-    //background: rgba(220, 220, 220, .35);
 
     &:not(:last-child) {
       margin-right: 4px;
@@ -55,6 +61,8 @@
   }
   button.mat-mdc-button-base:not(.mat-mdc-icon-button) {
     height: 23px;
+    border-radius: 4px;
+    background: #F3F3F3;
   }
 }
 

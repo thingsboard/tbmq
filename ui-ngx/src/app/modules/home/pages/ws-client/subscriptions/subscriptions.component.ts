@@ -86,7 +86,7 @@ export class SubscriptionsComponent {
           subscriptionFormValue.webSocketConnectionId = this.connection.id;
           this.webSocketSubscriptionService.saveWebSocketSubscription(subscriptionFormValue).subscribe(
             (webSocketSubscription) => {
-              this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(webSocketSubscription);
+              this.mqttJsClientService.subscribeWebSocketSubscription(webSocketSubscription);
               this.fetchSubcriptions(this.connection);
             }
           );

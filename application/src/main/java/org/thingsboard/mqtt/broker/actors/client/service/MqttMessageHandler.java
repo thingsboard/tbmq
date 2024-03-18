@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface MqttMessageHandler {
+
     boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef);
 
     void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId);

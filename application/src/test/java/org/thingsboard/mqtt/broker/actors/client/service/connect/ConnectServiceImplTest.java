@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -46,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxS
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.keepalive.KeepAliveService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
+import org.thingsboard.mqtt.broker.service.mqtt.validation.PublishMsgValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.will.LastWillService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -55,9 +57,16 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.UUID;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_QUOTA_EXCEEDED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_TOPIC_NAME_INVALID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -95,6 +104,8 @@ public class ConnectServiceImplTest {
     RateLimitService rateLimitService;
     @MockBean
     FlowControlService flowControlService;
+    @MockBean
+    PublishMsgValidationService publishMsgValidationService;
 
     @SpyBean
     ConnectServiceImpl connectService;
@@ -182,17 +193,112 @@ public class ConnectServiceImplTest {
     @Test
     public void givenPersistentClientWithoutClientId_whenCheckIfProceedConnection_thenConnectionRefused() {
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "");
-        boolean result = connectService.shouldProceedWithConnection(ctx, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
         Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
     }
 
     @Test
     public void givenSessionsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
-        boolean result = connectService.shouldProceedWithConnection(ctx, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
         Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenLastWillMsgInvalid_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any(), any());
+
+        PublishMsg lastWillMsg = PublishMsg.builder().build();
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenLastWillMsgNotAuth_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        when(publishMsgValidationService.validatePubMsg(any(), any(), any())).thenReturn(false);
+
+        PublishMsg lastWillMsg = PublishMsg.builder().build();
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenPersistentClientWithoutClientIdMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "");
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenSessionsLimitMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenLastWillMsgInvalidMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        doThrow(DataValidationException.class).when(publishMsgValidationService).validatePubMsg(any(), any(), any());
+
+        PublishMsg lastWillMsg = PublishMsg.builder().build();
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_TOPIC_NAME_INVALID);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenLastWillMsgNotAuthMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        when(publishMsgValidationService.validatePubMsg(any(), any(), any())).thenReturn(false);
+
+        PublishMsg lastWillMsg = PublishMsg.builder().build();
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED_5);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
     }
 
     @Test
@@ -212,11 +318,52 @@ public class ConnectServiceImplTest {
         Assert.assertEquals(expectedSessionInfo, actualSessionInfo);
     }
 
+    @Test
+    public void givenConnectPacketForMqtt3Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(10, receiveMaxValue);
+    }
+
+    @Test
+    public void givenConnectPacketWithReceiveMaxForMqtt5Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttProperties properties = new MqttProperties();
+        properties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.RECEIVE_MAXIMUM.value(), 20));
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", null, properties);
+
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(20, receiveMaxValue);
+    }
+
+    @Test
+    public void givenConnectPacketWithoutReceiveMaxForMqtt5Client_whenGetReceiveMaxValue_thenGetExpectedValue() {
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        connectService.setMqtt3xReceiveMax(10);
+
+        MqttConnectMsg mqttConnectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", null, new MqttProperties());
+
+        int receiveMaxValue = connectService.getReceiveMaxValue(mqttConnectMsg, ctx);
+        Assert.assertEquals(BrokerConstants.DEFAULT_RECEIVE_MAXIMUM, receiveMaxValue);
+    }
+
     private ConnectionAcceptedMsg getConnectionAcceptedMsg(PublishMsg publishMsg) {
         return new ConnectionAcceptedMsg(UUID.randomUUID(), false, publishMsg, 1000, new MqttProperties());
     }
 
     private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId) {
-        return new MqttConnectMsg(sessionId, clientId, false, 1000, null);
+        return getMqttConnectMsg(sessionId, clientId, null);
+    }
+
+    private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId, PublishMsg lastWillMsg) {
+        return getMqttConnectMsg(sessionId, clientId, lastWillMsg, MqttProperties.NO_PROPERTIES);
+    }
+
+    private MqttConnectMsg getMqttConnectMsg(UUID sessionId, String clientId, PublishMsg lastWillMsg, MqttProperties properties) {
+        return new MqttConnectMsg(sessionId, clientId, false, 1000, lastWillMsg, properties);
     }
 }

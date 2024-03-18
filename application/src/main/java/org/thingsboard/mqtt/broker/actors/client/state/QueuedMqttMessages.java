@@ -51,6 +51,7 @@ public class QueuedMqttMessages {
     }
 
     public void clear() {
+        queuedMessages.forEach(QueueableMqttMsg::release);
         queuedMessages.clear();
     }
 

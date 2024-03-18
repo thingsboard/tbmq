@@ -37,11 +37,11 @@
       <mat-icon>check</mat-icon>
     </ng-template>
     <mat-step [stepControl]="connectionFormGroup">
-      <form [formGroup]="connectionFormGroup" #conFormGroup="ngForm">
+      <form [formGroup]="connectionFormGroup" #conFormGroup="ngForm" autocomplete="off">
         <ng-template matStepLabel>{{ 'ws-client.connections.connection-details' | translate}}</ng-template>
         <mat-form-field class="mat-block">
           <mat-label translate>ws-client.connections.name</mat-label>
-          <input matInput formControlName="name" maxlength="40">
+          <input matInput formControlName="name">
         </mat-form-field>
 
         <section fxLayout="column" fxLayoutGap="8px">
@@ -69,7 +69,7 @@
         </section>
 
         <section fxLayout="column">
-          <div fxLayout="column" style="margin: 8px 0 8px 0">
+          <div fxLayout="column" style="margin: 8px 0 16px 0">
             <tb-toggle-header #credentialsToggle
                               [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                               (valueChange)="onCredentialsGeneratorChange($event)"
@@ -101,7 +101,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId">
+                <input matInput formControlName="clientId" name="client-id-auto">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
@@ -114,7 +114,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput formControlName="username">
+                <input matInput formControlName="username" name="user-name-auto">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
@@ -130,7 +130,7 @@
             <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.CUSTOM">
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId">
+                <input matInput formControlName="clientId" name="client-id-custom">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
@@ -138,7 +138,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput formControlName="username">
+                <input matInput name="user-name-custom" formControlName="username">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
@@ -146,7 +146,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.password</mat-label>
-                <input matInput autocomplete="new-password" formControlName="password" type="password">
+                <input matInput name="new-password" autocomplete="off" formControlName="password" type="password">
                 <tb-toggle-password matSuffix></tb-toggle-password>
               </mat-form-field>
             </ng-template>
@@ -163,7 +163,7 @@
               </section>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId">
+                <input matInput formControlName="clientId" name="client-id-existing">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
@@ -176,7 +176,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput formControlName="username">
+                <input matInput formControlName="username" name="un-existing">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
@@ -184,7 +184,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block" [fxShow]="passwordRequired">
                 <mat-label translate>ws-client.connections.password</mat-label>
-                <input matInput autocomplete="new-password" formControlName="password" type="password">
+                <input matInput name="new-password" autocomplete="off" formControlName="password" type="password">
                 <tb-toggle-password matSuffix></tb-toggle-password>
                 <button matSuffix mat-icon-button type="button" [matTooltip]="'ws-client.connections.password-warning' | translate">
                   <mat-icon style="color: #ff9a00">warning</mat-icon>
@@ -209,7 +209,7 @@
               info</mat-icon>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.keep-alive</mat-label>
               <input matInput formControlName="keepalive" type="number" min="0" [max]="calcMax('keepaliveUnit')">
@@ -233,7 +233,7 @@
             </mat-form-field>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.connect-timeout</mat-label>
               <input matInput formControlName="connectTimeout" type="number" min="0">
@@ -254,7 +254,7 @@
             </mat-form-field>
           </section>
 
-          <section fxLayout="row" fxLayoutGap="8px">
+          <section fxLayout="row" fxLayoutGap="16px">
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.reconnect-period</mat-label>
               <input matInput formControlName="reconnectPeriod" type="number" min="0">
@@ -285,7 +285,7 @@
           </mat-form-field>
 
           <section fxLayout="column" formGroupName="properties">
-            <section fxLayout="row" fxLayoutGap="8px">
+            <section fxLayout="row" fxLayoutGap="16px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
                 <input matInput formControlName="sessionExpiryInterval" type="number" min="0" [max]="calcMax('sessionExpiryIntervalUnit')">
@@ -302,7 +302,7 @@
                 </mat-select>
               </mat-form-field>
             </section>
-            <section fxLayout="row" fxLayoutGap="8px">
+            <section fxLayout="row" fxLayoutGap="16px">
               <mat-form-field fxFlex>
                 <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
                 <input matInput formControlName="maximumPacketSize" type="number" min="0" [max]="calcMax('maximumPacketSizeUnit')">

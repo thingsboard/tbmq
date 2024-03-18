@@ -17,8 +17,14 @@ package org.thingsboard.mqtt.broker.exception;
 
 import lombok.Getter;
 
+import java.io.Serial;
+
+@Getter
 public class AuthorizationException extends Exception {
-    @Getter
+
+    @Serial
+    private static final long serialVersionUID = 4536818723254827699L;
+
     private final String deniedTopic;
 
     public AuthorizationException(String deniedTopic) {
@@ -44,6 +50,5 @@ public class AuthorizationException extends Exception {
         super(message, cause, enableSuppression, writableStackTrace);
         this.deniedTopic = deniedTopic;
     }
-
 
 }

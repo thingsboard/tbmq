@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.exception;
 
+import java.io.Serial;
+
 public class AuthenticationException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = -7002005596902290927L;
+
     public AuthenticationException() {
     }
 

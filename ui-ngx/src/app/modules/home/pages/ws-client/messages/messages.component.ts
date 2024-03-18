@@ -21,6 +21,7 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { MessagesTableConfig } from '@home/pages/ws-client/messages/messages-table-config';
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 @Component({
   selector: 'tb-messages',
@@ -62,12 +63,14 @@ export class MessagesComponent {
   constructor(private mqttJsClientService: MqttJsClientService,
               public dialog: MatDialog,
               public datePipe: DatePipe,
+              private breakpointObserver: BreakpointObserver,
               private translate: TranslateService) {
     this.messagesTableConfig = new MessagesTableConfig(
       this.mqttJsClientService,
       this.translate,
       this.dialog,
       this.datePipe,
+      this.breakpointObserver,
       this.entityIdValue
     );
   }

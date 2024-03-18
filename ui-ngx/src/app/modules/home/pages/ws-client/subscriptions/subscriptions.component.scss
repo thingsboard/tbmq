@@ -19,4 +19,8 @@
   min-height: 0px;
   flex-direction: column;
   height: 100%;
+
+  .subscriptions-toolbar {
+    min-height: 36px;
+  }
 }

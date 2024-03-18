@@ -178,7 +178,6 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   entitiesDeleteEnabled = true;
   detailsPanelEnabled = true;
   hideDetailsTabsOnEdit = true;
-  showColorBadge = false;
   actionsColumnTitle = null;
   entityTranslations: EntityTypeTranslation;
   entityResources: EntityTypeResource<T>;

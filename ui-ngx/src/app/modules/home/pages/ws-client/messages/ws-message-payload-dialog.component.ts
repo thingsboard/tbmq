@@ -125,7 +125,8 @@ export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageCo
         const advancedOptions = {
           enableSnippets: false,
           enableBasicAutocompletion: false,
-          enableLiveAutocompletion: false
+          enableLiveAutocompletion: false,
+          highlightActiveLine: false
         };
 
         editorOptions = {...editorOptions, ...advancedOptions};

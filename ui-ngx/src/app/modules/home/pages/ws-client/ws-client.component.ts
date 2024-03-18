@@ -27,6 +27,8 @@ import { WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { MediaBreakpoints } from '@shared/models/constants';
+import { BreakpointObserver } from '@angular/cdk/layout';
 
 @Component({
   selector: 'tb-ws-client',
@@ -36,13 +38,15 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 export class WsClientComponent extends PageComponent implements OnInit {
 
   connections: Observable<WebSocketConnectionDto[]>;
+  layoutSingleColumn = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
+
   private connectConnection = false;
 
   constructor(protected store: Store<AppState>,
               private dialog: MatDialog,
               private mqttJsClientService: MqttJsClientService,
               private webSocketConnectionService: WebSocketConnectionService,
-              private cd: ChangeDetectorRef) {
+              private breakpointObserver: BreakpointObserver) {
     super(store);
   }
 

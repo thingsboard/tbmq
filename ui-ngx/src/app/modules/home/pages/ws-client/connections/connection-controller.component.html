@@ -18,8 +18,8 @@
 <div class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" translate>ws-client.connections.connection-status</span>
-    <span class="status" #showConnectionStatusLogs
-          [ngStyle]="setStyle()" (mouseover)="showStatusLogs($event, showConnectionStatusLogs)">
+    <span class="status" #showConnectionStatusLogs [ngStyle]="setStyle()"
+          (mouseover)="showStatusLogs($event, showConnectionStatusLogs)" (mouseleave)="clearTimeout()">
       {{ getStatus() | translate }}{{ errorMessage | lowercase }}
     </span>
   </section>
@@ -36,21 +36,21 @@
 </ng-template>
 <ng-template #disconnected>
   <section fxLayout="row" fxLayoutGap="16px">
-    <mat-form-field *ngIf="isPasswordRequired && !isDisabled" appearance="outline" subscriptSizing="dynamic">
+    <mat-form-field *ngIf="isPasswordRequired && !reconnecting" appearance="outline" subscriptSizing="dynamic">
       <mat-label translate>mqtt-client-credentials.password</mat-label>
-      <input matInput [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
+      <input matInput name="new-password" [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
       <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"
-              [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
-        <mat-icon class="tb-mat-18">{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
+              class="tb-mat-20" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
+        <mat-icon>{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
       </button>
     </mat-form-field>
-    <button mat-button color="primary" *ngIf="displayCancelButton()"
+    <button mat-button color="primary" *ngIf="reconnecting"
             (click)="disconnect()">
       <span translate>action.cancel</span>
     </button>
     <button mat-raised-button (click)="onClick()"
             cdkFocusInitial
-            [disabled]="(isPasswordRequired && !password?.length) || isDisabled"
+            [disabled]="(isPasswordRequired && !password?.length) || reconnecting"
             [color]="!isConnected ? 'primary' : 'warn'">
       <span translate>{{ actionLabel }}</span>
     </button>

@@ -23,6 +23,51 @@
   flex-direction: column;
   height: 100%;
 
+  .wrap {
+    flex-wrap: wrap;
+  }
+
+  .topic-mat-form-field {
+    margin-right: 0 !important;
+  }
+
+  .tb-messages-container {
+    min-height: 260px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 12px 0 12px;
+    margin-bottom: 8px;
+    height: 100%;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  }
+
+  .limit-height {
+    max-height: 260px;
+  }
+
+  .tb-message-input-container {
+    background: #fff;
+    position: relative;
+
+    tb-ws-json-object-edit {
+      width: 100%;
+    }
+  }
+
+  .retain-container {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    padding: 8px 16px 8px 16px;
+    border-radius: 4px;
+  }
+
+  .margin-bottom {
+    margin-bottom: 22px;
+  }
+
+  .btn-properties {
+    min-width: 100px;
+  }
+
   ::ng-deep {
     .mat-mdc-slide-toggle.mat-mdc-slide-toggle-checked:not(.mat-disabled) {
       .mdc-switch__shadow {
@@ -33,10 +78,10 @@
       }
     }
 
-    .publish-button {
+    .send-message-btn {
       position: absolute;
-      bottom: 12px;
-      right: 12px;
+      bottom: 16px;
+      right: 16px;
       z-index: 1;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 4px;

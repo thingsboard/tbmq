@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'tb-show-connection-logs-popover',
@@ -40,17 +41,23 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
 
   statusLogs: ConnectionStatusLog[] = [];
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
+  logsSubscription: Subscription;
 
   constructor(protected store: Store<AppState>,
+              private cd: ChangeDetectorRef,
               private mqttJsClientService: MqttJsClientService) {
     super(store);
   }
 
   ngOnInit() {
-    this.statusLogs = this.mqttJsClientService.connectionStatusLogMap.get(this.connectionId);
+    this.updateView();
+    this.logsSubscription = this.mqttJsClientService.logsUpdated.subscribe(() => {
+      this.updateView();
+    });
   }
 
   ngOnDestroy() {
+    this.logsSubscription.unsubscribe();
     super.ngOnDestroy();
     this.onClose();
   }
@@ -79,5 +86,10 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
           color: '#D12730',
         };
     }
+  }
+
+  private updateView() {
+    this.statusLogs = this.mqttJsClientService.connectionStatusLogMap.get(this.connectionId) || [];
+    this.cd.detectChanges();
   }
 }

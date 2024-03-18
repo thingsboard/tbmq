@@ -15,25 +15,22 @@
     limitations under the License.
 
 -->
-<div style="background: #fff;" [ngClass]="{'fill-height': fillHeight}"
-     tb-fullscreen
-     [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" fxLayout="column">
-  <div fxLayout="row" fxLayoutAlign="start center" class="tb-json-object-toolbar">
+<div fxLayout="column" tb-fullscreen [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" [ngClass]="{'fill-height': fillHeight}">
+  <div class="tb-json-object-toolbar">
     <label class="tb-title no-padding toolbar-label"
            [ngClass]="{'tb-required': jsonRequired,
                        'tb-readonly': readonly,
                        'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>
     <span fxFlex></span>
     <section class="toolbar-buttons">
-      <button type="button"
-              mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="beautifyJSON()">
+      <button type="button" mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="beautifyJSON()">
         {{'js-func.tidy' | translate }}
       </button>
-      <button type="button"
-              mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="minifyJSON()">
+      <button type="button" mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="minifyJSON()">
         {{'js-func.mini' | translate }}
       </button>
-      <button mat-icon-button class="tb-mat-32" (click)="fullscreen = !fullscreen"
+      <button mat-icon-button class="tb-mat-32"
+              (click)="fullscreen = !fullscreen"
               matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
               matTooltipPosition="above">
         <mat-icon class="material-icons">{{ fullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>

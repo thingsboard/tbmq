@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@import 'constants';
+
 :host {
   form:first-child {
     min-width: 600px;
     min-height: 560px;
     max-height: 100%;
+
+    @media #{$mat-lt-lg} {
+      min-height: 500px;
+    }
   }
 
   .slider {

@@ -13,18 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.config;
+package org.thingsboard.mqtt.broker.service.mqtt.validation;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-@Configuration
-@ConfigurationProperties(prefix = "mqtt.rate-limits")
-@Data
-public class RateLimitsConfiguration {
+public interface PublishMsgValidationService {
 
-    private boolean enabled;
-    private String clientConfig;
+    boolean validatePubMsg(ClientSessionCtx ctx, String clientId, PublishMsg publishMsg);
+
+    boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg);
 
 }

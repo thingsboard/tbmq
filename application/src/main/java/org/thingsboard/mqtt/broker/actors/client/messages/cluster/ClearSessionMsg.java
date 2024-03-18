@@ -27,6 +27,7 @@ import java.util.UUID;
 @Slf4j
 @Getter
 public class ClearSessionMsg extends CallbackMsg implements SessionClusterManagementMsg {
+
     private final UUID sessionId;
 
     public ClearSessionMsg(ClientCallback callback, UUID sessionId) {

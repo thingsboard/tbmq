@@ -116,6 +116,7 @@ message DisconnectClientCommandProto {
   int64 sessionIdMSB = 1;
   int64 sessionIdLSB = 2;
   bool newSessionCleanStart = 3;
+  optional string reasonType = 4;
 }
 
 message DevicePublishMsgProto {

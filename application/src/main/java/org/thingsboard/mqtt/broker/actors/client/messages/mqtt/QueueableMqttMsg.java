@@ -25,4 +25,7 @@ public abstract class QueueableMqttMsg extends SessionDependentMsg {
         super(sessionId);
     }
 
+    public void release() {
+    }
+
 }

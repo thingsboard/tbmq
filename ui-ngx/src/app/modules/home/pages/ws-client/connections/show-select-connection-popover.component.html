@@ -21,27 +21,18 @@
     <mat-icon class="material-icons">close</mat-icon>
   </button>
 </section>
-
-<ng-container *ngIf="loadConnection; else loadingConnections">
-  <div style="overflow: auto; height: 100%">
-    <div style="overflow: auto">
-      <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
-        <div *ngFor="let connection of (connections$ | async); trackBy: trackById">
-          <tb-connection (connectionUpdated)="updateData(true)" [connection]="connection"></tb-connection>
-        </div>
-      </section>
-    </div>
+<div style="overflow: auto; height: 100%">
+  <div style="overflow: auto">
+    <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
+      <div *ngFor="let connection of (connections$ | async); trackBy: trackById">
+        <tb-connection (connectionUpdated)="updateData(true)" [connection]="connection"></tb-connection>
+      </div>
+    </section>
   </div>
-  <section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
-    <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
-      <mat-icon class="material-icons">add</mat-icon>
-      {{ 'ws-client.connections.add-connection' | translate }}
-    </button>
-  </section>
-</ng-container>
-<ng-template #loadingConnections>
-  <div class="tb-no-data-available" style="margin: 20px; gap: 16px;">
-    <mat-spinner color="accent" diameter="65" strokeWidth="4"></mat-spinner>
-    <div class="tb-no-data-text" translate>ws-client.connections.loading-connections</div>
-  </div>
-</ng-template>
+</div>
+<section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
+  <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
+    <mat-icon class="material-icons">add</mat-icon>
+    {{ 'ws-client.connections.add-connection' | translate }}
+  </button>
+</section>

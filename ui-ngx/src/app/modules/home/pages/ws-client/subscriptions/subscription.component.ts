@@ -63,11 +63,11 @@ export class SubscriptionComponent implements OnInit {
   ngOnInit() {
   }
 
-  onCommentMouseEnter(): void {
+  onMouseEnter(): void {
     this.showActions = true;
   }
 
-  onCommentMouseLeave(): void {
+  onMouseLeave(): void {
     this.showActions = false;
   }
 
@@ -78,19 +78,28 @@ export class SubscriptionComponent implements OnInit {
         name: this.translate.instant('ws-client.subscriptions.copy-topic'),
         icon: 'mdi:content-copy',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.copyContent($event, entity)
+        onAction: ($event, entity) => this.copyContent($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       },
       {
         name: this.translate.instant('action.edit'),
-        icon: 'edit',
+        icon: 'mdi:pencil',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.edit($event, entity)
+        onAction: ($event, entity) => this.edit($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       },
       {
         name: this.translate.instant('action.delete'),
-        icon: 'delete',
+        icon: 'mdi:delete',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.delete($event, entity)
+        onAction: ($event, entity) => this.delete($event, entity),
+        style: {
+          color: 'rgba(0,0,0,0.54)'
+        }
       }
     );
     return actions;
@@ -116,18 +125,18 @@ export class SubscriptionComponent implements OnInit {
     ).subscribe((result) => {
       if (result) {
         this.webSocketSubscriptionService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
-          this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(webSocketSubscription);
+          this.mqttJsClientService.unsubscribeWebSocketSubscription(webSocketSubscription);
           this.updateData();
         });
       }
     });
   }
 
-  private edit($event: Event, prevWebSocketSubscription: WebSocketSubscription) {
+  private edit($event: Event, initWebSocketSubscription: WebSocketSubscription) {
     if ($event) {
       $event.stopPropagation();
     }
-    this.webSocketSubscriptionService.getWebSocketSubscriptionById(prevWebSocketSubscription.id).subscribe(
+    this.webSocketSubscriptionService.getWebSocketSubscriptionById(initWebSocketSubscription.id).subscribe(
       subscription =>
         this.dialog.open<SubscriptionDialogComponent, AddWsClientSubscriptionDialogData>(SubscriptionDialogComponent, {
           disableClose: true,
@@ -138,12 +147,12 @@ export class SubscriptionComponent implements OnInit {
             subscription
           }
         }).afterClosed()
-          .subscribe((webSocketSubscriptionData) => {
-            if (isDefinedAndNotNull(webSocketSubscriptionData)) {
-              this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionData).subscribe(
+          .subscribe((webSocketSubscriptionDialogData) => {
+            if (isDefinedAndNotNull(webSocketSubscriptionDialogData)) {
+              this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionDialogData).subscribe(
                 (currentWebSocketSubscription) => {
-                  this.mqttJsClientService.unsubscribeForTopicActiveMqttJsClient(prevWebSocketSubscription, currentWebSocketSubscription);
-                  this.mqttJsClientService.subscribeForTopicActiveMqttJsClient(currentWebSocketSubscription);
+                  this.mqttJsClientService.unsubscribeWebSocketSubscription(initWebSocketSubscription, currentWebSocketSubscription);
+                  this.mqttJsClientService.subscribeWebSocketSubscription(currentWebSocketSubscription);
                   this.updateData();
                 }
               );

@@ -18,12 +18,19 @@ package org.thingsboard.mqtt.broker.service.processing.downlink.basic;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.DisconnectReason;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -33,6 +40,8 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
     private final ClientSessionCtxService clientSessionCtxService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientLogger clientLogger;
+    private final RateLimitService rateLimitService;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     @Override
     public void process(String clientId, PublishMsgProto msg) {
@@ -43,7 +52,11 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             }
             return;
         }
-        publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg);
+        if (rateLimitService.checkOutgoingLimits(clientId, msg)) {
+            publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg);
+        } else {
+            disconnectOnRateLimits(clientId, clientSessionCtx.getSessionId());
+        }
         clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to basic client");
     }
 
@@ -56,8 +69,16 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
             }
             return;
         }
-        publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg, subscription);
+        if (rateLimitService.checkOutgoingLimits(subscription.getClientId(), msg)) {
+            publishMsgDeliveryService.sendPublishMsgProtoToClient(clientSessionCtx, msg, subscription);
+        } else {
+            disconnectOnRateLimits(subscription.getClientId(), clientSessionCtx.getSessionId());
+        }
         clientLogger.logEvent(subscription.getClientId(), this.getClass(), "Delivered msg to basic client");
+    }
+
+    private void disconnectOnRateLimits(String clientId, UUID sessionId) {
+        clientMqttActorManager.disconnect(clientId, new MqttDisconnectMsg(sessionId, new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS)));
     }
 
 }

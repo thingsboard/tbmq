@@ -25,8 +25,11 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
-import org.thingsboard.mqtt.broker.config.RateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
+import javax.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,24 +39,56 @@ import java.util.concurrent.ConcurrentMap;
 @RequiredArgsConstructor
 public class RateLimitServiceImpl implements RateLimitService {
 
-    private final RateLimitsConfiguration rateLimitsConfiguration;
+    private final IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
+    private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
     private final ClientSessionService clientSessionService;
+
     @Getter
-    private final ConcurrentMap<String, TbRateLimits> clientLimits = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, TbRateLimits> incomingPublishClientLimits;
+    @Getter
+    private ConcurrentMap<String, TbRateLimits> outgoingPublishClientLimits;
 
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
 
+    @PostConstruct
+    public void init() {
+        if (incomingRateLimitsConfiguration.isEnabled()) {
+            incomingPublishClientLimits = new ConcurrentHashMap<>();
+        }
+        if (outgoingRateLimitsConfiguration.isEnabled()) {
+            outgoingPublishClientLimits = new ConcurrentHashMap<>();
+        }
+    }
+
     @Override
-    public boolean checkLimits(String clientId, UUID sessionId, MqttMessage msg) {
-        if (!rateLimitsConfiguration.isEnabled()) {
+    public boolean checkIncomingLimits(String clientId, UUID sessionId, MqttMessage msg) {
+        if (!incomingRateLimitsConfiguration.isEnabled()) {
             return true;
         }
-        TbRateLimits rateLimits = clientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(rateLimitsConfiguration.getClientConfig()));
+        TbRateLimits rateLimits = incomingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(incomingRateLimitsConfiguration.getClientConfig()));
         if (!rateLimits.tryConsume()) {
             if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Client level rate limit detected: {}", clientId, sessionId, msg);
+                log.trace("[{}][{}] Client level incoming PUBLISH rate limit detected: {}", clientId, sessionId, msg);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean checkOutgoingLimits(String clientId, QueueProtos.PublishMsgProto msg) {
+        if (!outgoingRateLimitsConfiguration.isEnabled()) {
+            return true;
+        }
+        if (msg.getQos() != 0) {
+            return true;
+        }
+        TbRateLimits rateLimits = outgoingPublishClientLimits.computeIfAbsent(clientId, id -> new TbRateLimits(outgoingRateLimitsConfiguration.getClientConfig()));
+        if (!rateLimits.tryConsume()) {
+            if (log.isTraceEnabled()) {
+                log.trace("[{}] Client level outgoing PUBLISH rate limit detected: {}", clientId, msg);
             }
             return false;
         }
@@ -63,7 +98,12 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Override
     public void remove(String clientId) {
         if (clientId != null) {
-            clientLimits.remove(clientId);
+            if (incomingPublishClientLimits != null) {
+                incomingPublishClientLimits.remove(clientId);
+            }
+            if (outgoingPublishClientLimits != null) {
+                outgoingPublishClientLimits.remove(clientId);
+            }
         }
     }
 

@@ -33,16 +33,17 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   isConnected: boolean;
-  isDisabled: boolean;
   isPasswordRequired: boolean;
   isPasswordVisible: boolean;
   password: string;
   errorMessage: string;
   actionLabel: string = 'ws-client.connections.connect';
+  reconnecting: boolean;
 
   private connection: WebSocketConnection;
   private status: ConnectionStatus;
   private destroy$ = new Subject<void>();
+  private timeout;
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
@@ -65,6 +66,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.mqttJsClientService.connection$.subscribe(
       entity => {
         if (entity) {
+          this.reconnecting = false;
           this.connection = entity;
           this.isPasswordRequired = entity.configuration.passwordRequired;
         }
@@ -88,35 +90,36 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     if ($event) {
       $event.stopPropagation();
     }
-    const trigger = element;
-    if (this.popoverService.hasPopover(trigger)) {
-      this.popoverService.hidePopover(trigger);
-    } else {
-      const showNotificationPopover = this.popoverService.displayPopover(trigger, this.renderer,
-        this.viewContainerRef, ShowConnectionLogsPopoverComponent, 'bottom', true, null,
-        {
-          onClose: () => {
-            showNotificationPopover.hide();
+    this.timeout = setTimeout(() => {
+      const trigger = element;
+      if (this.popoverService.hasPopover(trigger)) {
+        this.popoverService.hidePopover(trigger);
+      } else {
+        const showNotificationPopover = this.popoverService.displayPopover(trigger, this.renderer,
+          this.viewContainerRef, ShowConnectionLogsPopoverComponent, 'bottom', true, null,
+          {
+            onClose: () => {
+              showNotificationPopover.hide();
+            },
+            connectionId: this.connection?.id
           },
-          connectionId: this.connection?.id
-        },
-        {maxHeight: '90vh', height: '324px', padding: '10px'},
-        {width: '500px', minWidth: '100%', maxWidth: '100%'},
-        {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
-      showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
-    }
+          {maxHeight: '90vh', height: '324px', padding: '10px'},
+          {width: '500px', minWidth: '100%', maxWidth: '100%'},
+          {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
+        showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
+      }
+    }, 200);
+  }
+
+  clearTimeout() {
+    clearTimeout(this.timeout);
   }
 
   private updateLabels(status: ConnectionStatus, error: string) {
     this.status = status;
-    this.isDisabled = status === ConnectionStatus.CONNECTED || status === ConnectionStatus.RECONNECTING;
-    if (status === ConnectionStatus.CONNECTED) {
-      this.isConnected = true;
-      this.actionLabel = 'ws-client.connections.disconnect';
-    } else {
-      this.isConnected = false;
-      this.actionLabel = 'ws-client.connections.connect';
-    }
+    this.isConnected = status === ConnectionStatus.CONNECTED;
+    this.actionLabel = this.isConnected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect';
+    this.reconnecting = status === ConnectionStatus.RECONNECTING;
     if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
       this.errorMessage = error?.length ? (': ' + error) : null;
     } else {
@@ -125,7 +128,6 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   connect() {
-    // this.status = ConnectionStatus.CONNECTING;
     const password = this.isPasswordRequired ? this.password : null;
     this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(
       connection => {
@@ -135,11 +137,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.mqttJsClientService.disconnectActiveConnectedClient();
-  }
-
-  displayCancelButton(): boolean {
-    return this.isDisabled && (this.status === ConnectionStatus.RECONNECTING || this.status === ConnectionStatus.CONNECTING); // TODO check reconnecting cases
+    this.mqttJsClientService.disconnectSelectedClient();
   }
 
   getStatus() {

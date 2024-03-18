@@ -25,12 +25,12 @@
         <div class="status" [ngStyle]="setStyle()"></div>
         <span class="label">{{ connection.name }}</span>
       </section>
-      <div fxFlex fxLayout="row" fxLayoutAlign="end">
+      <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
         <div *ngFor="let actionDescriptor of hiddenActions"
              class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
              matTooltipPosition="above"
              matTooltip="{{ actionDescriptor.name }}">
-          <button mat-icon-button class="tb-mat-32"
+          <button mat-icon-button class="tb-mat-24"
                   *ngIf="actionDescriptor.isEnabled(connection)"
                   [disabled]="!actionDescriptor.isEnabled(connection)"
                   (click)="actionDescriptor.onAction($event, connection)">
