@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
+import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -48,9 +49,18 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
     }
 
     @Override
-    public void disconnectSession(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        QueueProtos.DisconnectClientCommandProto disconnectCommand =
-                ProtoConverter.createDisconnectClientCommandProto(sessionId, newSessionCleanStart);
+    public void disconnectOnSessionConflict(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
+        QueueProtos.DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_CONFLICTING_SESSIONS);
+        send(serviceId, clientId, sessionId, disconnectCommand);
+    }
+
+    @Override
+    public void disconnectSessionOnAdminAction(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
+        QueueProtos.DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_ADMINISTRATIVE_ACTION);
+        send(serviceId, clientId, sessionId, disconnectCommand);
+    }
+
+    private void send(String serviceId, String clientId, UUID sessionId, QueueProtos.DisconnectClientCommandProto disconnectCommand) {
         String topic = helper.getServiceTopic(serviceId);
         clientDisconnectCommandProducer.send(topic, null, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
@@ -65,6 +75,10 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
                 log.warn("[{}] Failed to send command for session {}.", clientId, sessionId, t);
             }
         });
+    }
+
+    private QueueProtos.DisconnectClientCommandProto getDisconnectCommand(UUID sessionId, boolean newSessionCleanStart, DisconnectReasonType reasonType) {
+        return ProtoConverter.createDisconnectClientCommandProto(sessionId, newSessionCleanStart, reasonType.name());
     }
 
     @PreDestroy

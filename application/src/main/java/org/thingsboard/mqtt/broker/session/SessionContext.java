@@ -18,5 +18,7 @@ package org.thingsboard.mqtt.broker.session;
 import java.util.UUID;
 
 public interface SessionContext {
+
     UUID getSessionId();
+
 }

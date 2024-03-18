@@ -108,8 +108,11 @@ public class DisconnectServiceImpl implements DisconnectService {
         return -1;
     }
 
-    // only for mqtt 5 clients disconnect packet can be sent from server, when client did not send DISCONNECT and connection was successful
+    // only for mqtt 5 clients disconnect packet can be sent from server, when client did not send DISCONNECT or did not close the channel and connection was successful
     private boolean needSendDisconnectToClient(ClientSessionCtx sessionCtx, DisconnectReason reason) {
+        if (DisconnectReasonType.ON_CHANNEL_CLOSED == reason.getType()) {
+            return false;
+        }
         return MqttVersion.MQTT_5 == sessionCtx.getMqttVersion() && DisconnectReasonType.ON_DISCONNECT_MSG != reason.getType()
                 && !BrokerConstants.FAILED_TO_CONNECT_CLIENT_MSG.equals(reason.getMessage());
     }
