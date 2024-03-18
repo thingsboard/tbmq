@@ -24,8 +24,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.UUID;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -47,7 +45,7 @@ public class MqttPubCompHandlerTest {
 
     @Test
     public void testProcessPersistent() {
-        ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
+        ClientSessionCtx ctx = new ClientSessionCtx();
         ctx.setSessionInfo(SessionInfo.builder().sessionExpiryInterval(1).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(msgPersistenceManager, times(1)).processPubComp(ctx, 1);
@@ -56,7 +54,7 @@ public class MqttPubCompHandlerTest {
 
     @Test
     public void testProcess() {
-        ClientSessionCtx ctx = new ClientSessionCtx(UUID.randomUUID(), null, 1);
+        ClientSessionCtx ctx = new ClientSessionCtx();
         ctx.setSessionInfo(SessionInfo.builder().cleanStart(true).sessionExpiryInterval(0).build());
         mqttPubCompHandler.process(ctx, 1);
         verify(retransmissionService, times(1)).onPubCompReceived(ctx, 1);

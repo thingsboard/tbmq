@@ -160,7 +160,7 @@ public class ActorProcessorImplTest {
     }
 
     private ClientSessionCtx getClientSessionCtx() {
-        return new ClientSessionCtx(UUID.randomUUID(), null, 0);
+        return new ClientSessionCtx();
     }
 
     private void updateSessionState(SessionState state) {
