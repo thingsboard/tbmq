@@ -20,10 +20,15 @@ import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
   ConnectionStatus,
   ConnectionStatusLog,
-  DataSizeUnitType, DisconnectReasonCodes, MessageCounters, MessageFilterConfig, MessageFilterDefaultConfig,
+  DataSizeUnitType,
+  DisconnectReasonCodes,
+  MessageCounters,
+  MessageFilterConfig,
+  MessageFilterDefaultConfig,
   transformObjectToProps,
   transformPropsToObject,
-  WebSocketConnection, WebSocketConnectionDto,
+  WebSocketConnection,
+  WebSocketConnectionDto,
   WebSocketSubscription,
   WebSocketTimeUnit,
   WsTableMessage
@@ -34,6 +39,8 @@ import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNo
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
+import { ClientSessionService } from '@core/http/client-session.service';
+import { ConnectionState } from '@shared/models/session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -70,7 +77,8 @@ export class MqttJsClientService {
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfig;
 
-  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService) {
+  constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
+              private clientSessionService: ClientSessionService) {
   }
 
   public onConnectionsUpdated(selectFirst: boolean = true) {
@@ -78,7 +86,19 @@ export class MqttJsClientService {
   }
 
   public connectClient(connection: WebSocketConnection, password: string = null) {
-    this.addMqttClient(connection, password);
+    const connectionWithSameClientId = this.mqttClientConnectionMap.get(connection.configuration.clientId);
+    this.clientSessionService.getDetailedClientSessionInfo(connection.configuration.clientId, {ignoreErrors: true}).subscribe(
+      (session) => {
+        if (session?.connectionState === ConnectionState.CONNECTED && connection.id !== connectionWithSameClientId.id) {
+          this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, 'Client with such ID is already connected');
+        } else {
+          this.addMqttClient(connection, password);
+        }
+      },
+      () => {
+        this.addMqttClient(connection, password);
+      }
+    );
   }
 
   public disconnectSelectedClient() {
