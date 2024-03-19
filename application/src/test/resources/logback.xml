@@ -25,7 +25,7 @@
 
     <logger name="com.zaxxer.hikari" level="INFO"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="console"/>
     </root>
 

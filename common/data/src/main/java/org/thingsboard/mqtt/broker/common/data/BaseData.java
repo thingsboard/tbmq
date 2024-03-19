@@ -15,17 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
-
 import lombok.Getter;
 import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.id.IdBased;
 
+import java.io.Serial;
 import java.util.UUID;
 
+@Getter
+@Setter
 public abstract class BaseData extends IdBased {
 
-    @Getter
-    @Setter
+    @Serial
+    private static final long serialVersionUID = 3948809716795694300L;
+
     protected long createdTime;
     
     public BaseData() {

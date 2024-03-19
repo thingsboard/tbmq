@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.disconnect;
+package org.thingsboard.mqtt.broker.config;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
 
-/**
- * should only be called from ClientSessionActor
- */
-public interface DisconnectService {
+@Configuration
+@ConfigurationProperties(prefix = "mqtt.rate-limits.outgoing-publish")
+@Data
+public class OutgoingRateLimitsConfiguration {
 
-    void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg);
+    private boolean enabled;
+    private String clientConfig;
 
 }

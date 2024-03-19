@@ -109,7 +109,7 @@ public final class MqttReasonCodeResolver {
             case ON_DISCONNECT_MSG -> MqttReasonCodes.Disconnect.NORMAL_DISCONNECT;
             case ON_DISCONNECT_AND_WILL_MSG -> MqttReasonCodes.Disconnect.DISCONNECT_WITH_WILL_MESSAGE;
             case ON_CONFLICTING_SESSIONS -> MqttReasonCodes.Disconnect.SESSION_TAKEN_OVER;
-            case ON_CHANNEL_CLOSED -> MqttReasonCodes.Disconnect.ADMINISTRATIVE_ACTION;
+            case ON_CHANNEL_CLOSED -> MqttReasonCodes.Disconnect.IMPLEMENTATION_SPECIFIC_ERROR;
             case ON_RATE_LIMITS -> MqttReasonCodes.Disconnect.MESSAGE_RATE_TOO_HIGH;
             case ON_KEEP_ALIVE -> MqttReasonCodes.Disconnect.KEEP_ALIVE_TIMEOUT;
             case ON_MALFORMED_PACKET -> MqttReasonCodes.Disconnect.MALFORMED_PACKET;
@@ -119,6 +119,7 @@ public final class MqttReasonCodeResolver {
             case ON_SUBSCRIPTION_ID_NOT_SUPPORTED -> MqttReasonCodes.Disconnect.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED;
             case ON_PACKET_TOO_LARGE -> MqttReasonCodes.Disconnect.PACKET_TOO_LARGE;
             case ON_RECEIVE_MAXIMUM_EXCEEDED -> MqttReasonCodes.Disconnect.RECEIVE_MAXIMUM_EXCEEDED;
+            case ON_ADMINISTRATIVE_ACTION -> MqttReasonCodes.Disconnect.ADMINISTRATIVE_ACTION;
             default -> MqttReasonCodes.Disconnect.UNSPECIFIED_ERROR;
         };
     }

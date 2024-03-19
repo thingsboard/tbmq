@@ -26,6 +26,7 @@ import java.util.UUID;
 
 @Service
 public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory {
+
     @Override
     public QueueProtos.ClientSessionEventProto createConnectionRequestEventProto(SessionInfo sessionInfo) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
@@ -63,4 +64,5 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
                 .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.toString())
                 .build();
     }
+
 }

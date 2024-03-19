@@ -68,13 +68,11 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private String clientId;
     private InetSocketAddress address;
 
-    public MqttSessionHandler(ClientMqttActorManager clientMqttActorManager, ClientLogger clientLogger,
-                              RateLimitService rateLimitService, SslHandler sslHandler,
-                              String initializerName, int maxInFlightMessages) {
-        this.clientMqttActorManager = clientMqttActorManager;
-        this.clientLogger = clientLogger;
-        this.rateLimitService = rateLimitService;
-        this.clientSessionCtx = new ClientSessionCtx(sessionId, sslHandler, initializerName, maxInFlightMessages);
+    public MqttSessionHandler(MqttHandlerCtx mqttHandlerCtx, SslHandler sslHandler, String initializerName) {
+        this.clientMqttActorManager = mqttHandlerCtx.getActorManager();
+        this.clientLogger = mqttHandlerCtx.getClientLogger();
+        this.rateLimitService = mqttHandlerCtx.getRateLimitService();
+        this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
     @Override
@@ -172,7 +170,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private boolean checkLimits(MqttMessage msg) {
-        return rateLimitService.checkLimits(clientId, sessionId, msg);
+        return rateLimitService.checkIncomingLimits(clientId, sessionId, msg);
     }
 
     private void initSession(MqttConnectMessage connectMessage) {

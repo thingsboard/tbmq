@@ -276,11 +276,14 @@ public class ProtoConverter {
                 .build() : null;
     }
 
-    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId, boolean newSessionCleanStart) {
+    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId,
+                                                                                              boolean newSessionCleanStart,
+                                                                                              String reasonType) {
         return QueueProtos.DisconnectClientCommandProto.newBuilder()
                 .setSessionIdMSB(sessionId.getMostSignificantBits())
                 .setSessionIdLSB(sessionId.getLeastSignificantBits())
                 .setNewSessionCleanStart(newSessionCleanStart)
+                .setReasonType(reasonType)
                 .build();
     }
 

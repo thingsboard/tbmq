@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
@@ -42,13 +43,14 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class ClientSessionCtx implements SessionContext {
 
+    private final MqttHandlerCtx mqttHandlerCtx;
     private final UUID sessionId;
     private final SslHandler sslHandler;
     private final String initializerName;
     private final PubResponseProcessingCtx pubResponseProcessingCtx;
+    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes;
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
-    private final ConcurrentMap<Integer, MqttPendingPublish> pendingPublishes = new ConcurrentHashMap<>();
 
     @Setter
     private volatile SessionInfo sessionInfo;
@@ -69,18 +71,27 @@ public class ClientSessionCtx implements SessionContext {
     private ChannelHandlerContext channel;
 
     public ClientSessionCtx() {
-        this(UUID.randomUUID(), null, BrokerConstants.TCP, BrokerConstants.MAX_IN_FLIGHT_MESSAGES);
+        this(null, UUID.randomUUID(), null, BrokerConstants.TCP);
     }
 
-    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, int maxInFlightMessages) {
-        this(sessionId, sslHandler, BrokerConstants.TCP, maxInFlightMessages);
-    }
-
-    public ClientSessionCtx(UUID sessionId, SslHandler sslHandler, String initializerName, int maxInFlightMessages) {
+    public ClientSessionCtx(MqttHandlerCtx mqttHandlerCtx, UUID sessionId, SslHandler sslHandler, String initializerName) {
+        this.mqttHandlerCtx = mqttHandlerCtx;
         this.sessionId = sessionId;
         this.sslHandler = sslHandler;
         this.initializerName = initializerName;
-        this.pubResponseProcessingCtx = new PubResponseProcessingCtx(maxInFlightMessages);
+        this.pubResponseProcessingCtx = new PubResponseProcessingCtx(getMaxAwaitingQueueSize(mqttHandlerCtx));
+        this.pendingPublishes = initPendingPublishes(mqttHandlerCtx);
+    }
+
+    private int getMaxAwaitingQueueSize(MqttHandlerCtx mqttHandlerCtx) {
+        return mqttHandlerCtx == null ? BrokerConstants.MAX_IN_FLIGHT_MESSAGES : mqttHandlerCtx.getMaxInFlightMsgs();
+    }
+
+    private ConcurrentMap<Integer, MqttPendingPublish> initPendingPublishes(MqttHandlerCtx mqttHandlerCtx) {
+        if (mqttHandlerCtx == null) {
+            return null;
+        }
+        return mqttHandlerCtx.isRetransmissionEnabled() ? new ConcurrentHashMap<>() : null;
     }
 
     public String getClientId() {
@@ -89,9 +100,7 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public void initPublishedInFlightCtx(FlowControlService flowControlService, ClientSessionCtx sessionCtx, int receiveMaxValue, int delayedQueueMaxSize) {
-        if (MqttVersion.MQTT_5 == this.mqttVersion) {
-            publishedInFlightCtx = new PublishedInFlightCtxImpl(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
-        }
+        publishedInFlightCtx = new PublishedInFlightCtxImpl(flowControlService, sessionCtx, receiveMaxValue, delayedQueueMaxSize);
     }
 
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {
@@ -113,7 +122,9 @@ public class ClientSessionCtx implements SessionContext {
         }
         this.channel.flush();
         this.channel.close();
-        pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-        pendingPublishes.clear();
+        if (this.pendingPublishes != null) {
+            this.pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+            this.pendingPublishes.clear();
+        }
     }
 }

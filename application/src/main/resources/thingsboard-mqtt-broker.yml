@@ -648,7 +648,8 @@ mqtt:
   # Max number of PUBLISH messages not yet responded
   max-in-flight-msgs: "${MQTT_MAX_IN_FLIGHT_MSGS:1000}"
   flow-control:
-    # Enable/disable flow control MQTT 5 feature for server. If disabled, the server will not control the number of messages sent to subscribers by "Receive Maximum"
+    # Enable/disable flow control MQTT 5 feature for server. If disabled, the server will not control the number of messages sent to subscribers by "Receive Maximum".
+    # This feature works for MQTT 3.x clients as well when enabled. "Receive Maximum" for MQTT 3.x clients can be set using `MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX` parameter
     enabled: "${MQTT_FLOW_CONTROL_ENABLED:true}"
     # Timeout to wait in case there is nothing to process regarding the flow control feature. The separate thread is responsible for sending delayed messages to subscribers.
     # If no clients are affected by flow control restrictions, there is no need to continuously try to find and send such messages
@@ -658,6 +659,8 @@ mqtt:
     ttl: "${MQTT_FLOW_CONTROL_TTL:600}"
     # Max allowed queue length for delayed messages - publishing messages from broker to client when in-flight window is full
     delayed-queue-max-size: "${MQTT_FLOW_CONTROL_DELAYED_QUEUE_MAX_SIZE:1000}"
+    # Receive maximum value for MQTT 3.x clients
+    mqtt3x-receive-max: "${MQTT_FLOW_CONTROL_MQTT_3X_RECEIVE_MAX:65535}"
   retransmission:
     # Enable/disable MQTT msg retransmission
     enabled: "${MQTT_RETRANSMISSION_ENABLED:false}"
@@ -750,10 +753,18 @@ mqtt:
             # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
-    # Enable/disable publish rate limits per client
-    enabled: "${MQTT_RATE_LIMITS_ENABLED:false}"
-    # Limit the maximum publish messages per client on each server for specified time intervals in seconds. Comma separated list of limit:seconds pairs
-    client-config: "${MQTT_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+    incoming-publish:
+      # Enable/disable publish rate limits per client for incoming messages to the broker from publishers
+      enabled: "${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of publish messages per publisher for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 10 messages per second or 300 messages per minute
+      client-config: "${MQTT_INCOMING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+    outgoing-publish:
+      # Enable/disable publish rate limits per client for outgoing messages from the broker to subscribers. Used only for non-persistent subscribers with QoS = 0 ("AT_MOST_ONCE")
+      enabled: "${MQTT_OUTGOING_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of publish messages per subscriber for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 10 messages per second or 300 messages per minute
+      client-config: "${MQTT_OUTGOING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
   # Limit the total number of sessions (connected + disconnected) stored on the broker, not individually for each server (node) if it is a cluster, but as a collective limit.
   # For example, when set to 1000 either the single broker node or cluster of 2 or X nodes can store 1000 sessions in total. It is a soft limit meaning a bit more than 1000 sessions can be stored.
   # A setting of 0 means the limitation is disabled

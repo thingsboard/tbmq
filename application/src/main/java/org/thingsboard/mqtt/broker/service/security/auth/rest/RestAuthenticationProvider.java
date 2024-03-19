@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 
-
 @Component
 @RequiredArgsConstructor
 @Slf4j
