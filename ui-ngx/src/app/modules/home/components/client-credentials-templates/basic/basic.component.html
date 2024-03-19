@@ -21,7 +21,7 @@
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client.client-id</mat-label>
-      <input matInput formControlName="clientId" name="client-id">
+      <input matInput formControlName="clientId">
       <tb-copy-button [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
                       [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
