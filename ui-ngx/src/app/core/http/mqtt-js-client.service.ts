@@ -89,7 +89,7 @@ export class MqttJsClientService {
     const connectionWithSameClientId = this.mqttClientConnectionMap.get(connection.configuration.clientId);
     this.clientSessionService.getDetailedClientSessionInfo(connection.configuration.clientId, {ignoreErrors: true}).subscribe(
       (session) => {
-        if (session?.connectionState === ConnectionState.CONNECTED && connection.id !== connectionWithSameClientId.id) {
+        if (session?.connectionState === ConnectionState.CONNECTED && connection.id !== connectionWithSameClientId?.id) {
           this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, 'Client with such ID is already connected');
         } else {
           this.addMqttClient(connection, password);
