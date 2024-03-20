@@ -33,7 +33,7 @@
 
   .toolbar-buttons {
     position: absolute;
-    top: 10px;
+    top: 4px;
     right: 10px;
     z-index: 1;
   }
@@ -42,7 +42,6 @@
 .tb-json-object-toolbar {
   position: relative;
   text-align: end;
-  margin-bottom: 8px;
   padding-right: 8px;
   button.mat-mdc-button-base, button.mat-mdc-button-base.tb-mat-32 {
     align-items: center;
@@ -64,11 +63,14 @@
     border-radius: 4px;
     background: #F3F3F3;
   }
+  .fullscreen-btn {
+    border-radius: 16px;
+    background: #F3F3F3;
+  }
 }
 
 .tb-json-object-panel {
   height: 100%;
-  //margin-left: 15px;
   border: 1px solid #c0c0c0;
 
   #tb-json-input {

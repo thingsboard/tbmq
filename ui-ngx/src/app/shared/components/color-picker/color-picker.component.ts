@@ -30,7 +30,7 @@ export enum ColorType {
   cmyk = 'cmyk'
 }
 
-const colorPresetsHex =
+export const colorPresetsHex =
   ['#435B63', '#F44336', '#E89623', '#F5DD00', '#8BC34A', '#4CAF50', '#009688', '#048AD3', '#673AB7', '#9C27B0', '#E91E63',
    '#A1ADB1', '#F9A19B', '#FFD190', '#FFF59D', '#C5E1A4', '#A5D7A7', '#80CBC3', '#81C4E9', '#B39CDB', '#CD93D7', '#F48FB1'];
 

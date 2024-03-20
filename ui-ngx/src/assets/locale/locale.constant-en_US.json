@@ -844,7 +844,7 @@
       "maximum-packet-size-hint": "Maximum Packet Size the Client is willing to accept",
       "maximum-packet-size-max": "Max value is 256 MB.",
       "topic-alias": "Topic Alias",
-      "topic-alias-hint": "Value is used to identify the Topic instead of using the Topic Name",
+      "topic-alias-hint": "Value is used to identify the Topic instead of using the Topic Name. Disabled if Topic Alias Max is 0.",
       "topic-alias-error": "Topic Alias must be less than the Topic Alias Maximum",
       "topic-alias-maximum": "Topic Alias Maximum",
       "topic-alias-maximum-hint": "The highest value that the Client will accept as a Topic Alias sent by the Server ",

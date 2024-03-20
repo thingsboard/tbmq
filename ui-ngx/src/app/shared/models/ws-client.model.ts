@@ -18,6 +18,7 @@ import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
 import { randomAlphanumeric } from '@core/utils';
+import { colorPresetsHex } from '@shared/components/color-picker/color-picker.component';
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -292,7 +293,10 @@ export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
 export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
 export const clientCredentialsNameRandom = (number = randomAlphanumeric(8)) => 'WebSocket Credentials ' + number;
 export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
-export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
+export const colorRandom = () => {
+  const randomIndex = Math.floor(Math.random() * colorPresetsHex.length);
+  return colorPresetsHex[randomIndex];
+}
 
 export const MessageFilterDefaultConfig: MessageFilterConfig = {
   type: 'all',

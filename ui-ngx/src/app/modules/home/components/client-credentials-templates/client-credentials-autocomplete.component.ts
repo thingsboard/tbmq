@@ -163,7 +163,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   writeValue(credentialsId: string): void {
     this.searchText = '';
     this.dirty = true;
-    this.updateView(credentialsId);
+    this.updateView(credentialsId, true);
   }
 
   onFocus() {
@@ -184,7 +184,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     }
   }
 
-  updateView(credentialsId: string) {
+  updateView(credentialsId: string, useDefaultCredentials = false) {
     if (credentialsId) {
       this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
         (credentials) => {
@@ -193,7 +193,19 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
         }
       );
     } else {
-      this.propagateChange(null);
+      if (useDefaultCredentials) {
+        this.clientCredentialsService.getClientsCredentials(new PageLink(1, 0, 'TBMQ WebSockets MQTT Credentials'), {ignoreLoading: true, ignoreErrors: true}).subscribe(
+          pageData => {
+            const defaultClientCredentials = pageData.data?.length ? pageData.data[0] : null;
+            if (defaultClientCredentials) {
+              this.selectCredentialsFormGroup.get('clientCredentials').patchValue(defaultClientCredentials, {emitEvent: true});
+              this.propagateChange(defaultClientCredentials);
+            }
+          }
+        );
+      } else {
+        this.propagateChange(null);
+      }
     }
   }
 

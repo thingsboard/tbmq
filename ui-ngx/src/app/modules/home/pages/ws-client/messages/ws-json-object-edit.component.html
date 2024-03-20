@@ -29,7 +29,7 @@
       <button type="button" mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="minifyJSON()">
         {{'js-func.mini' | translate }}
       </button>
-      <button mat-icon-button class="tb-mat-32"
+      <button mat-icon-button class="tb-mat-32 fullscreen-btn"
               (click)="fullscreen = !fullscreen"
               matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
               matTooltipPosition="above">

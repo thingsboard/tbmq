@@ -18,6 +18,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { emptyPageData, PageData } from '@shared/models/page/page-data';
 import {
+  clientUserNameRandom,
   ConnectionStatus,
   ConnectionStatusLog,
   DataSizeUnitType,
@@ -269,7 +270,7 @@ export class MqttJsClientService {
   private addMqttClient(connection: WebSocketConnection, password: string) {
     const options: IClientOptions = {
       clientId: connection.configuration.clientId,
-      username: connection.configuration.username,
+      username: connection.configuration.username || clientUserNameRandom(),
       password,
       protocolVersion: connection.configuration.mqttVersion,
       clean: connection.configuration.cleanStart,
