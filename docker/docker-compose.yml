@@ -46,6 +46,7 @@ services:
     ports:
       - "1883"
       - "8083"
+      - "8084"
     logging:
       driver: "json-file"
       options:
@@ -69,6 +70,7 @@ services:
     ports:
       - "1883"
       - "8083"
+      - "8084"
     logging:
       driver: "json-file"
       options:
@@ -97,12 +99,14 @@ services:
       - "8083:8083"
       - "443:443"
       - "1883:1883"
+      - "8084:8084"
     cap_add:
       - NET_ADMIN
     environment:
       HTTP_PORT: 8083
       HTTPS_PORT: 443
       MQTT_PORT: 1883
+      MQTT_WS_PORT: 8084
       FORCE_HTTPS_REDIRECT: "false"
     links:
       - tbmq1
