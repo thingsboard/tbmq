@@ -67,6 +67,9 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         if (password.length() <= 5) {
             throw new DataValidationException("Password should be longer than 5 characters!");
         }
+        if (org.springframework.util.StringUtils.containsWhitespace(password)) {
+            throw new DataValidationException("Password should not contain whitespaces!");
+        }
     }
 
     @Override

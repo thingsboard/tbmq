@@ -128,5 +128,5 @@ public class BrokerConstants {
 
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
     public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
-    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#FF5733";
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
 }
