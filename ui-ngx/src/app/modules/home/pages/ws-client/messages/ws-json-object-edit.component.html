@@ -23,10 +23,10 @@
                        'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>
     <span fxFlex></span>
     <section class="toolbar-buttons">
-      <button type="button" mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="beautifyJSON()">
+      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="beautifyJSON()">
         {{'js-func.tidy' | translate }}
       </button>
-      <button type="button" mat-button *ngIf="!readonly && !disabled" class="tidy" (click)="minifyJSON()">
+      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="minifyJSON()">
         {{'js-func.mini' | translate }}
       </button>
       <button mat-icon-button class="tb-mat-32 fullscreen-btn"

@@ -32,7 +32,7 @@ export enum CredentialsType {
 }
 
 export const ANY_CHARACTERS = '.*';
-export const wsSystemCredentials = 'TBMQ WebSockets MQTT Credentials';
+export const wsSystemCredentialsName = 'TBMQ WebSockets MQTT Credentials';
 
 export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [

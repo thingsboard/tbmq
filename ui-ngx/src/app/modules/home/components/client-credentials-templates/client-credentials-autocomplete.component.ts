@@ -27,7 +27,7 @@ import { MatAutocomplete } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
 import { SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
+import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
 
@@ -194,12 +194,12 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
       );
     } else {
       if (useDefaultCredentials) {
-        this.clientCredentialsService.getClientsCredentials(new PageLink(1, 0, 'TBMQ WebSockets MQTT Credentials'), {ignoreLoading: true, ignoreErrors: true}).subscribe(
+        this.clientCredentialsService.getClientsCredentials(new PageLink(1, 0, wsSystemCredentialsName), {ignoreLoading: true, ignoreErrors: true}).subscribe(
           pageData => {
-            const defaultClientCredentials = pageData.data?.length ? pageData.data[0] : null;
-            if (defaultClientCredentials) {
-              this.selectCredentialsFormGroup.get('clientCredentials').patchValue(defaultClientCredentials, {emitEvent: true});
-              this.propagateChange(defaultClientCredentials);
+            const wsSystemCredentials = pageData.data.length ? pageData.data[0] : null;
+            if (wsSystemCredentials) {
+              this.selectCredentialsFormGroup.get('clientCredentials').patchValue(wsSystemCredentials, {emitEvent: true});
+              this.propagateChange(wsSystemCredentials);
             }
           }
         );

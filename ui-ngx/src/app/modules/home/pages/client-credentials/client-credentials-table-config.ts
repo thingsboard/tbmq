@@ -35,7 +35,8 @@ import {
   ClientCredentialsQuery,
   CredentialsType,
   credentialsTypeTranslationMap,
-  credentialsWarningTranslations, wsSystemCredentials
+  credentialsWarningTranslations,
+  wsSystemCredentialsName
 } from '@shared/models/credentials.model';
 import { map } from 'rxjs/operators';
 import { selectUserDetails } from '@core/auth/auth.selectors';
@@ -77,8 +78,8 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     this.addDialogStyle = {width: 'fit-content'};
     this.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
     this.onEntityAction = action => this.onAction(action);
-    this.deleteEnabled = (entity) => entity?.name !== wsSystemCredentials;
-    this.entitySelectionEnabled = (entity) => entity?.name !== wsSystemCredentials;
+    this.deleteEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
+    this.entitySelectionEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
 
     this.entityComponent = ClientCredentialsComponent;
     this.headerComponent = ClientCredentialsTableHeaderComponent;

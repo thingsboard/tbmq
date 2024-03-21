@@ -93,8 +93,11 @@
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.credentials-name</mat-label>
                 <input matInput formControlName="credentialsName">
-                <button mat-icon-button matSuffix (click)="regenerate('name')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('name')">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
@@ -106,8 +109,11 @@
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('clientId')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('clientId')">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
@@ -119,8 +125,11 @@
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('username')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('username')" >
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
@@ -168,8 +177,12 @@
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('clientId')" [disabled]="connectionFormGroup?.get('clientId')?.disabled">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('clientId')"
+                        [disabled]="connectionFormGroup?.get('clientId')?.disabled">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>

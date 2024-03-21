@@ -905,7 +905,7 @@
       "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",
       "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",
       "subscriptions": "Subscriptions",
-      "topic-filter": "Topic filter",
+      "topic-filter": "Topic Filter",
       "topic-filter-required": "Topic filter is required.",
       "subscription": "Subscription",
       "subscription-details": "Subscription details",
