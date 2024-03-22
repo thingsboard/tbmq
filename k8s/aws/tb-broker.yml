@@ -154,3 +154,5 @@ spec:
       name: mqtt
     - port: 8883
       name: mqtts
+    - port: 8084
+      name: mqtt-ws

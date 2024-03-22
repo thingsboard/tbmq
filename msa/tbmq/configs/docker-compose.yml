@@ -51,6 +51,7 @@ services:
     ports:
       - "8083:8083"
       - "1883:1883"
+      - "8084:8084"
     environment:
       TB_SERVICE_ID: tbmq
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker

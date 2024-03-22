@@ -35,6 +35,9 @@ spec:
     - port: 1883
       targetPort: 1883
       name: mqtt
+    - port: 8084
+      targetPort: 8084
+      name: mqtt-ws
     # This way NLB acts as transparent load balancer and forwards all traffic to port 8883 without decryption.
     - port: 8883
       targetPort: 8883
