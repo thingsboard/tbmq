@@ -289,6 +289,8 @@ export function transformObjectToProps(input: {[key: string]: number|string|Arra
   return { props };
 }
 
+export const defaultPublishTopic = 'sensors/temperature';
+export const defaultSubscriptionTopicFilter = 'sensors/#';
 export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
 export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
 export const clientCredentialsNameRandom = (number = randomAlphanumeric(8)) => 'WebSocket Credentials ' + number;
@@ -297,9 +299,23 @@ export const colorRandom = () => {
   const randomIndex = Math.floor(Math.random() * colorPresetsHex.length);
   return colorPresetsHex[randomIndex];
 }
+export const countNonNullProps = (obj: any): number => {
+  let count = 0;
+  for (let key in obj) {
+    if (obj[key] !== null && obj[key] !== '') {
+      count++;
+    }
+  }
+  return count;
+}
 
-export const MessageFilterDefaultConfig: MessageFilterConfig = {
+export const MessageFilterDefaultConfigAll: MessageFilterConfig = {
   type: 'all',
+  topic: null,
+  qosList: null,
+  retainList: null
+};
+export const MessageFilterDefaultConfig: MessageFilterConfig = {
   topic: null,
   qosList: null,
   retainList: null

@@ -69,6 +69,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           this.reconnecting = false;
           this.connection = entity;
           this.isPasswordRequired = entity.configuration.passwordRequired;
+          this.resetPassword();
         }
       }
     );
@@ -120,11 +121,21 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     this.isConnected = status === ConnectionStatus.CONNECTED;
     this.actionLabel = this.isConnected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect';
     this.reconnecting = status === ConnectionStatus.RECONNECTING;
-    if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
-      this.errorMessage = error?.length ? (': ' + error) : null;
-    } else {
-      this.errorMessage = null;
+    this.errorMessage = this.getErrorMessage(status, error);
+    if (status === ConnectionStatus.CONNECTED) {
+      this.resetPassword();
     }
+  }
+
+  private getErrorMessage(status: ConnectionStatus, error: string): string {
+    if (status === ConnectionStatus.CONNECTION_FAILED || status === ConnectionStatus.DISCONNECTED)  {
+      return error?.length ? (': ' + error) : null;
+    }
+    return null;
+  }
+
+  private resetPassword() {
+    this.password = null;
   }
 
   connect() {

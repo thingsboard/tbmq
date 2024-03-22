@@ -23,7 +23,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { colorRandom, RhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
+import { colorRandom, defaultSubscriptionTopicFilter, RhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 
@@ -87,7 +87,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   private buildForm(): void {
     const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
-      topicFilter: [this.entity ? this.entity.configuration.topicFilter : 'sensors/#', [Validators.required]],
+      topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required]],
       qos: [this.entity ? this.entity.configuration.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
       color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({

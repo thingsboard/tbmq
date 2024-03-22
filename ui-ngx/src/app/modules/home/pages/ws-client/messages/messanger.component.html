@@ -28,6 +28,7 @@
   <section fxLayout="row" fxLayoutGap="8px">
     <tb-message-filter-config [ngModel]="filterConfig"
                               (ngModelChange)="filterChanged($event)"
+                              [connectionChanged]="connection"
                               propagatedFilter="false">
     </tb-message-filter-config>
     <button mat-stroked-button color="primary"
@@ -76,7 +77,7 @@
             [disabled]="mqttVersion !== 5"
             (click)="messagePropertiesDialog()"
             aria-label="Show message meta data">
-      <span>{{ 'ws-client.connections.properties' | translate }}{{ publishMsgPropsChanged ? '*' : '' }}</span>
+      <span>{{ 'ws-client.connections.properties' | translate }}</span>
     </button>
   </section>
   <section class="tb-message-input-container">
@@ -91,7 +92,7 @@
     <button mat-icon-button color="primary" class="send-message-btn" style="width: 40px; height: 40px; padding: 8px;"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !isDefinedTopicAlias) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
+            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !isAllowedTopicAlias) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
       <mat-icon>send</mat-icon>
     </button>
   </section>

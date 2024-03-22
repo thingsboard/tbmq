@@ -25,7 +25,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
   ConnectionStatus,
+  defaultPublishTopic,
   MessageFilterConfig,
+  MessageFilterDefaultConfig,
   PublishMessageProperties,
   WebSocketConnection,
   WsMessagesTypeFilters,
@@ -57,10 +59,9 @@ export class MessangerComponent implements OnInit {
   jsonFormatSelected = true;
   isPayloadValid = true;
   mqttVersion = 5;
-  isDefinedTopicAlias = false;
+  isAllowedTopicAlias = false;
 
   publishMsgProps: PublishMessageProperties = null;
-  publishMsgPropsChanged: boolean;
   isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
 
   constructor(protected store: Store<AppState>,
@@ -73,7 +74,7 @@ export class MessangerComponent implements OnInit {
   ngOnInit() {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
-      topic: ['sensors/temperature', [this.topicValidator]],
+      topic: [defaultPublishTopic, [this.topicValidator]],
       qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
@@ -93,8 +94,16 @@ export class MessangerComponent implements OnInit {
     this.mqttJsClientService.connection$.subscribe(
       connection => {
         if (connection) {
+          this.resetFilterConfig();
           this.connection = connection;
           this.mqttVersion = connection.configuration.mqttVersion;
+          this.publishMsgProps = null;
+          this.isAllowedTopicAlias = !!connection.configuration.topicAliasMax;
+          if (!this.messangerFormGroup?.get('topic')?.value?.length && !this.isAllowedTopicAlias) {
+            this.messangerFormGroup.patchValue({
+              topic: defaultPublishTopic
+            });
+          }
         }
       }
     );
@@ -112,11 +121,7 @@ export class MessangerComponent implements OnInit {
       }));
     })
 
-    this.mqttJsClientService.filterMessages({
-      topic: null,
-      qosList: null,
-      retainList: null
-    });
+    this.resetFilterConfig();
 
     this.messangerFormGroup.get('payloadFormat').valueChanges.subscribe(value => {
       this.jsonFormatSelected = value === ValueType.JSON;
@@ -126,7 +131,7 @@ export class MessangerComponent implements OnInit {
     });
 
     this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
-      this.isDefinedTopicAlias = isDefinedAndNotNull(value?.topicAlias);
+      this.isAllowedTopicAlias = isDefinedAndNotNull(value?.topicAlias);
     })
   }
 
@@ -150,7 +155,7 @@ export class MessangerComponent implements OnInit {
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
       // @ts-ignore
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
-      if (isDefinedAndNotNull(propertiesForm?.topicAlias)) options.properties.topicAlias = propertiesForm.topicAlias;
+      if (isDefinedAndNotNull(propertiesForm?.topicAlias) && this.isAllowedTopicAlias) options.properties.topicAlias = propertiesForm.topicAlias;
       if (isDefinedAndNotNull(propertiesForm?.userProperties) && propertiesForm?.userProperties?.props?.length) options.properties.userProperties = propertiesForm.userProperties;
       if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
       if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
@@ -179,7 +184,6 @@ export class MessangerComponent implements OnInit {
       .subscribe((properties) => {
         if (isDefinedAndNotNull(properties)) {
           this.publishMsgProps = properties;
-          this.publishMsgPropsChanged = properties.changed;
           this.messangerFormGroup.patchValue({
             properties: properties
           });
@@ -207,5 +211,9 @@ export class MessangerComponent implements OnInit {
     const invalidChars = /[+#]/;
     const isValid = !invalidChars.test(control.value);
     return isValid ? null : { 'invalidTopic': true };
+  }
+
+  private resetFilterConfig() {
+    this.filterChanged(MessageFilterDefaultConfig);
   }
 }

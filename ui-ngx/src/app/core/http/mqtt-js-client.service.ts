@@ -25,7 +25,7 @@ import {
   DisconnectReasonCodes,
   MessageCounters,
   MessageFilterConfig,
-  MessageFilterDefaultConfig,
+  MessageFilterDefaultConfigAll,
   transformObjectToProps,
   transformPropsToObject,
   WebSocketConnection,
@@ -76,7 +76,7 @@ export class MqttJsClientService {
   private publishMsgStartTs = null;
   private publishMsgTimeout = null;
 
-  private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfig;
+  private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfigAll;
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
               private clientSessionService: ClientSessionService) {
@@ -113,7 +113,7 @@ export class MqttJsClientService {
 
   public disconnectClient(connection: WebSocketConnectionDto) {
     const mqttClient = this.connectionMqttClientMap.get(connection.id);
-    if (mqttClient?.connected) {
+    if (isDefinedAndNotNull(mqttClient)) {
       this.setDisconnectedStatusEndClient(connection, mqttClient);
     }
   }
@@ -207,15 +207,6 @@ export class MqttJsClientService {
     const connectionStatus = this.connectionStatusMap.get(this.getSelectedConnectionId());
     this.connectionStatusSubject$.next(connectionStatus);
     this.updateMessages();
-  }
-
-  public disconnectAllClients() {
-    for (let mqttClient of this.connectionMqttClientMap.values()) {
-      if (mqttClient?.connected) {
-        const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
-        this.setDisconnectedStatusEndClient(connection, mqttClient);
-      }
-    }
   }
 
   public getMessages(pageLink: PageLink): Observable<PageData<WsTableMessage>> {
@@ -548,7 +539,9 @@ export class MqttJsClientService {
   }
 
   private endMqttClient(mqttClient: MqttClient) {
-    mqttClient.end();
+    if (mqttClient) {
+      mqttClient.end();
+    }
   }
 
   private getSelectedConnectionId(): string {
