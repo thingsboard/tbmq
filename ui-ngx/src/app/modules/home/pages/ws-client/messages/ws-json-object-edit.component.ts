@@ -205,11 +205,15 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   }
 
   public validate(c: UntypedFormControl) {
-    return (this.objectValid) ? null : {
-      jsonParseError: {
-        valid: false,
-      },
-    };
+    if (!this.jsonFormatSelected) {
+      return null;
+    } else {
+      return (this.objectValid) ? null : {
+        jsonParseError: {
+          valid: false,
+        },
+      };
+    }
   }
 
   validateOnSubmit(): void {
