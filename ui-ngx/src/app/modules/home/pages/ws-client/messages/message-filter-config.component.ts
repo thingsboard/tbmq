@@ -269,7 +269,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
       if (this.buttonMode) {
         const filterTextParts: string[] = [];
         if (this.filterConfig?.topic?.length) {
-          filterTextParts.push(`${this.translate.instant('retained-message.topic')}: ${this.filterConfig?.topic}`);
+          filterTextParts.push(`${this.filterConfig?.topic}`);
         }
         if (this.filterConfig?.qosList?.length) {
           filterTextParts.push(`${this.translate.instant('mqtt-client-session.qos')}: ${this.filterConfig.qosList.join(', ')}`);
@@ -280,7 +280,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
         if (!filterTextParts.length) {
           this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
         } else {
-          this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title') + `: ${filterTextParts.join(', ')}`;
+          this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title') + `: ${filterTextParts.join('; ')}`;
         }
       }
     }
