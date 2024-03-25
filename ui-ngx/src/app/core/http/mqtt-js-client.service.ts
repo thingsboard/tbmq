@@ -54,6 +54,7 @@ export class MqttJsClientService {
   private connectionStatusSubject$ = new BehaviorSubject<ConnectionStatusLog>({status: ConnectionStatus.DISCONNECTED, details: null});
   private messagesSubject$ = new BehaviorSubject<WsTableMessage[]>(this.messagesList);
   private messageCounterSubject$ = new BehaviorSubject<MessageCounters>({all: 0, received: 0, published: 0});
+  private clientConnectingSubject$ = new Subject<void>();
   private logsUpdatedSubject$ = new Subject<void>();
 
   public connection$ = this.connectionSubject$.asObservable();
@@ -61,6 +62,7 @@ export class MqttJsClientService {
   public connectionStatus$ = this.connectionStatusSubject$.asObservable();
   public messages$ = this.messagesSubject$.asObservable();
   public messageCounter = this.messageCounterSubject$.asObservable();
+  public clientConnecting = this.clientConnectingSubject$.asObservable();
   public logsUpdated = this.logsUpdatedSubject$.asObservable();
 
   public connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
@@ -86,7 +88,10 @@ export class MqttJsClientService {
     this.connectionsSubject$.next(selectFirst);
   }
 
-  public connectClient(connection: WebSocketConnection, password: string = null) {
+  public connectClient(connection: WebSocketConnection, password: string = null, notifyClientConnecting: boolean = true) {
+    if (notifyClientConnecting) {
+      this.notifyClientConnecting();
+    }
     const connectionWithSameClientId = this.mqttClientConnectionMap.get(connection.configuration.clientId);
     this.clientSessionService.getDetailedClientSessionInfo(connection.configuration.clientId, {ignoreErrors: true}).subscribe(
       (session) => {
@@ -102,6 +107,10 @@ export class MqttJsClientService {
     );
   }
 
+  public notifyClientConnecting() {
+    this.clientConnectingSubject$.next();
+  }
+
   public disconnectSelectedClient() {
     const mqttClient = this.getSelectedMqttJsClient();
     if (mqttClient) {
@@ -114,7 +123,7 @@ export class MqttJsClientService {
   public disconnectClient(connection: WebSocketConnectionDto) {
     const mqttClient = this.connectionMqttClientMap.get(connection.id);
     if (isDefinedAndNotNull(mqttClient)) {
-      this.setDisconnectedStatusEndClient(connection, mqttClient);
+      this.endMqttClient(mqttClient);
     }
   }
 
@@ -304,11 +313,6 @@ export class MqttJsClientService {
     }
     const mqttClient: MqttClient = mqtt.connect(connection.configuration.url, options);
     this.manageMqttClientCallbacks(mqttClient, connection);
-  }
-
-  private setDisconnectedStatusEndClient(connection: WebSocketConnection | WebSocketConnectionDto, mqttClient: MqttClient) {
-    this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
-    this.endMqttClient(mqttClient);
   }
 
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {

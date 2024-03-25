@@ -15,8 +15,6 @@
 ///
 
 import { Component, OnDestroy, OnInit, Renderer2, ViewContainerRef } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -24,6 +22,7 @@ import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection }
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { isDefinedAndNotNull } from '@core/utils';
 
 @Component({
   selector: 'tb-connection-controller',
@@ -39,14 +38,14 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   errorMessage: string;
   actionLabel: string = 'ws-client.connections.connect';
   reconnecting: boolean;
+  connecting: boolean;
 
   private connection: WebSocketConnection;
   private status: ConnectionStatus;
   private destroy$ = new Subject<void>();
   private timeout;
 
-  constructor(protected store: Store<AppState>,
-              private mqttJsClientService: MqttJsClientService,
+  constructor(private mqttJsClientService: MqttJsClientService,
               private webSocketConnectionService: WebSocketConnectionService,
               public fb: UntypedFormBuilder,
               private popoverService: TbPopoverService,
@@ -71,6 +70,12 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           this.isPasswordRequired = entity.configuration.passwordRequired;
           this.resetPassword();
         }
+      }
+    );
+
+    this.mqttJsClientService.clientConnecting.subscribe(
+      () => {
+        this.connecting = true;
       }
     );
   }
@@ -118,6 +123,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   private updateLabels(status: ConnectionStatus, error: string) {
     this.status = status;
+    if (isDefinedAndNotNull(status) && status !== ConnectionStatus.RECONNECTING && this.isConnected) {
+      this.connecting = false;
+    }
     this.isConnected = status === ConnectionStatus.CONNECTED;
     this.actionLabel = this.isConnected ? 'ws-client.connections.disconnect' : 'ws-client.connections.connect';
     this.reconnecting = status === ConnectionStatus.RECONNECTING;

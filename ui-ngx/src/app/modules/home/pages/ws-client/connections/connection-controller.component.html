@@ -50,7 +50,7 @@
     </button>
     <button mat-raised-button (click)="onClick()"
             cdkFocusInitial
-            [disabled]="(isPasswordRequired && !password?.length) || reconnecting"
+            [disabled]="(isPasswordRequired && !password?.length) || reconnecting || connecting"
             [color]="!isConnected ? 'primary' : 'warn'">
       <span translate>{{ actionLabel }}</span>
     </button>
