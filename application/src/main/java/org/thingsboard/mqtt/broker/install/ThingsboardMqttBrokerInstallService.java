@@ -59,7 +59,7 @@ public class ThingsboardMqttBrokerInstallService {
                         log.info("Upgrading TBMQ from version 1.2.0 to 1.2.1 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("1.2.0");
                     case "1.2.1":
-                        log.info("Upgrading TBMQ from version 1.2.1 to 1.2.2 ...");
+                        log.info("Upgrading TBMQ from version 1.2.1 to 1.3.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("1.2.1");
 
                         systemDataLoaderService.createWebSocketMqttClientCredentials();
