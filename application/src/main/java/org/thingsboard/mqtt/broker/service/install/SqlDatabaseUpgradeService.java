@@ -107,7 +107,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
                     log.info("Updating schema ...");
                     if (isOldSchema(conn, 1002001)) {
-                        runSchemaUpdateScript(conn, "1.2.2");
+                        runSchemaUpdateScript(conn, "1.3.0");
                         try {
                             conn.createStatement().execute("ALTER TABLE device_publish_msg ADD COLUMN response_topic varchar(255);");
                         } catch (Exception ignored) {
@@ -117,7 +117,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                         } catch (Exception ignored) {
                         }
                         try {
-                            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1002002;");
+                            conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = 1003000;");
                         } catch (Exception ignored) {
                         }
                     }
