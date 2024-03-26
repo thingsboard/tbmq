@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.server.AbstractMqttHandlerProvider;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
@@ -42,8 +43,9 @@ public class MqttWssHandlerProvider extends AbstractMqttHandlerProvider {
     }
 
     @Autowired(required = false)
+    @Lazy
     @Qualifier("mqttWssCredentials")
-    private SslCredentialsConfig mqttSslCredentialsConfig;
+    private SslCredentialsConfig mqttWssCredentialsConfig;
 
     @Override
     protected String getSslProtocol() {
@@ -52,7 +54,7 @@ public class MqttWssHandlerProvider extends AbstractMqttHandlerProvider {
 
     @Override
     protected SslCredentials getSslCredentials() {
-        return this.mqttSslCredentialsConfig.getCredentials();
+        return this.mqttWssCredentialsConfig.getCredentials();
     }
 
 }
