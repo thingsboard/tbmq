@@ -268,14 +268,14 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   private updateButtonDisplayValue() {
       if (this.buttonMode) {
         const filterTextParts: string[] = [];
-        if (this.filterConfig?.topic?.length) {
-          filterTextParts.push(`${this.filterConfig?.topic}`);
-        }
         if (this.filterConfig?.qosList?.length) {
-          filterTextParts.push(`${this.translate.instant('mqtt-client-session.qos')}: ${this.filterConfig.qosList.join(', ')}`);
+          filterTextParts.push(`${this.filterConfig.qosList.join(', ')}`);
         }
         if (this.filterConfig?.retainList?.length) {
-          filterTextParts.push(`${this.translate.instant('ws-client.last-will.retain')}: ${this.filterConfig.retainList.join(', ')}`);
+          filterTextParts.push(`${this.filterConfig.retainList.join(', ')}`);
+        }
+        if (this.filterConfig?.topic?.length) {
+          filterTextParts.push(`${this.filterConfig?.topic}`);
         }
         if (!filterTextParts.length) {
           this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');

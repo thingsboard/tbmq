@@ -22,14 +22,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     justify-content: flex-start;
-    max-width: 300px;
+    max-width: 400px;
 
-    @media #{$mat-lt-lg} {
-      max-width: 80px;
-    }
-
-    @media #{$mat-lg} {
-      max-width: 150px;
+    @media #{$mat-lt-xl} {
+      max-width: 200px;
     }
   }
 }

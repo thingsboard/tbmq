@@ -123,7 +123,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   private updateLabels(status: ConnectionStatus, error: string) {
     this.status = status;
-    if (isDefinedAndNotNull(status) && status !== ConnectionStatus.RECONNECTING && this.isConnected) {
+    if (isDefinedAndNotNull(status) && status !== ConnectionStatus.RECONNECTING) {
       this.connecting = false;
     }
     this.isConnected = status === ConnectionStatus.CONNECTED;
