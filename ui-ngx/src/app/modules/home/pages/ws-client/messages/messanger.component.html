@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<section class="tb-ws-client-title-toolbar tb-ws-client-padding">
+<section class="tb-ws-client-title-toolbar" style="padding: 8px 16px 8px 16px;">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" style="margin-right: 8px" translate>ws-client.connections.messages</span>
     <tb-toggle-select appearance="stroked"
@@ -92,7 +92,7 @@
     <button mat-icon-button color="primary" class="send-message-btn" style="width: 40px; height: 40px; padding: 8px;"
             (click)="publishMessage()"
             [matTooltip]="'ws-client.messages.publish-message' | translate"
-            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !isAllowedTopicAlias) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
+            [disabled]="(!messangerFormGroup.get('topic')?.value?.length && !applyTopicAlias) || !isConnected || !isPayloadValid || messangerFormGroup?.invalid">
       <mat-icon>send</mat-icon>
     </button>
   </section>

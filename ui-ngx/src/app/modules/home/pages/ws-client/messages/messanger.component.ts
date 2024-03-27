@@ -59,7 +59,7 @@ export class MessangerComponent implements OnInit {
   jsonFormatSelected = true;
   isPayloadValid = true;
   mqttVersion = 5;
-  isAllowedTopicAlias = false;
+  applyTopicAlias = false;
 
   publishMsgProps: PublishMessageProperties = null;
   isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
@@ -94,16 +94,10 @@ export class MessangerComponent implements OnInit {
     this.mqttJsClientService.connection$.subscribe(
       connection => {
         if (connection) {
-          this.resetFilterConfig();
           this.connection = connection;
           this.mqttVersion = connection.configuration.mqttVersion;
-          this.publishMsgProps = null;
-          this.isAllowedTopicAlias = !!connection.configuration.topicAliasMax;
-          if (!this.messangerFormGroup?.get('topic')?.value?.length && !this.isAllowedTopicAlias) {
-            this.messangerFormGroup.patchValue({
-              topic: defaultPublishTopic
-            });
-          }
+          this.resetFilterConfig();
+          this.resetMessangerProps();
         }
       }
     );
@@ -129,10 +123,6 @@ export class MessangerComponent implements OnInit {
         this.isPayloadValid = true;
       }
     });
-
-    this.messangerFormGroup.get('properties').valueChanges.subscribe(value => {
-      this.isAllowedTopicAlias = isDefinedAndNotNull(value?.topicAlias);
-    })
   }
 
   publishMessage(): void {
@@ -155,7 +145,7 @@ export class MessangerComponent implements OnInit {
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
       // @ts-ignore
       if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
-      if (isDefinedAndNotNull(propertiesForm?.topicAlias) && this.isAllowedTopicAlias) options.properties.topicAlias = propertiesForm.topicAlias;
+      if (isDefinedAndNotNull(propertiesForm?.topicAlias) && this.applyTopicAlias) options.properties.topicAlias = propertiesForm.topicAlias;
       if (isDefinedAndNotNull(propertiesForm?.userProperties) && propertiesForm?.userProperties?.props?.length) options.properties.userProperties = propertiesForm.userProperties;
       if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
       if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
@@ -184,6 +174,7 @@ export class MessangerComponent implements OnInit {
       .subscribe((properties) => {
         if (isDefinedAndNotNull(properties)) {
           this.publishMsgProps = properties;
+          this.applyTopicAlias = !!properties.topicAlias;
           this.messangerFormGroup.patchValue({
             properties: properties
           });
@@ -215,5 +206,15 @@ export class MessangerComponent implements OnInit {
 
   private resetFilterConfig() {
     this.filterChanged(MessageFilterDefaultConfig);
+  }
+
+  private resetMessangerProps() {
+    this.publishMsgProps = null;
+    this.applyTopicAlias = false;
+    if (!this.messangerFormGroup?.get('topic')?.value?.length) {
+      this.messangerFormGroup.patchValue({
+        topic: defaultPublishTopic
+      });
+    }
   }
 }
