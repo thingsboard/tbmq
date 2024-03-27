@@ -75,6 +75,8 @@ spec:
               name: mqtts
             - containerPort: 8084
               name: mqtt-ws
+            - containerPort: 8085
+              name: mqtt-wss
           env:
             - name: TB_SERVICE_ID
               valueFrom:
@@ -144,3 +146,5 @@ spec:
       name: mqtts
     - port: 8084
       name: mqtt-ws
+    - port: 8085
+      name: mqtt-wss
