@@ -29,7 +29,7 @@ metadata:
     # Don't forget to replace YOUR_MQTTS_CERTIFICATE_ARN with the correct value
     service.beta.kubernetes.io/aws-load-balancer-ssl-cert: YOUR_MQTTS_CERTIFICATE_ARN
     service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "tcp"
-    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "mqtts"
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: "mqtts,mqtt-wss"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -46,3 +46,7 @@ spec:
     - port: 8883
       targetPort: 1883
       name: mqtts
+    # This way NLB acts as an TLS termination point and forwards decrypted traffic to 8084 port of the TBMQ.
+    - port: 8085
+      targetPort: 8084
+      name: mqtt-wss

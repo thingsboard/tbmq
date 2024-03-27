@@ -25,6 +25,7 @@ import org.springframework.boot.web.server.SslStoreProvider;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentialsConfig;
@@ -42,6 +43,7 @@ public class SslCredentialsWebServerCustomizer implements WebServerFactoryCustom
     }
 
     @Autowired
+    @Lazy
     @Qualifier("httpServerSslCredentials")
     private SslCredentialsConfig httpServerSslCredentialsConfig;
 

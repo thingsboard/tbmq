@@ -36,3 +36,6 @@ spec:
     - port: 8883
       targetPort: 8883
       name: mqtts
+    - port: 8085
+      targetPort: 8085
+      name: mqtt-wss
