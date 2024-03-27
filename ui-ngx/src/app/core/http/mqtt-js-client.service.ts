@@ -312,14 +312,13 @@ export class MqttJsClientService {
       }
     }
     const mqttClient: MqttClient = mqtt.connect(connection.configuration.url, options);
-    this.manageMqttClientCallbacks(mqttClient, connection);
+    this.subscribeForWebSocketSubscriptions(mqttClient, connection);
   }
 
   private manageMqttClientCallbacks(mqttClient: MqttClient, connection: WebSocketConnection) {
     this.connectionMqttClientMap.set(connection.id, mqttClient);
     this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
     mqttClient.on('connect', (packet: IConnackPacket) => {
-      this.subscribeForWebSocketSubscriptions(mqttClient, connection);
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTED);
       // console.log(`Client connected!`, packet, mqttClient);
     });
@@ -482,6 +481,7 @@ export class MqttJsClientService {
         }
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, subscriptions);
         this.subscribeMqttClient(mqttClient, topicObject);
+        this.manageMqttClientCallbacks(mqttClient, connection);
       }
     );
   }
