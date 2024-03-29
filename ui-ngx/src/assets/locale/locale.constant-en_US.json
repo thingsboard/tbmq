@@ -856,6 +856,8 @@
       "request-response-information-hint": "The Client uses this value to request the Server to return Response Information in the CONNACK",
       "request-problem-information": "Request Problem Information",
       "request-problem-information-hint": "The Client uses this value to indicate whether the Reason String or User Properties are sent in the case of failures",
+      "reject-unauthorized": "Verify server certificate chain",
+      "reject-unauthorized-hint": "If true, client verifies the server certificate chain and host name",
       "user-properties": "User Properties",
       "url": "URL",
       "url-required": "URL is required",

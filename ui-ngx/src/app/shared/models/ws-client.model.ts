@@ -92,6 +92,7 @@ export interface WebSocketConnectionConfiguration {
   // requestProblemInfo?: boolean;
   lastWillMsg?: LastWillMsg;
   userProperties?: any;
+  rejectUnauthorized?: boolean;
 }
 
 export interface LastWillMsg {

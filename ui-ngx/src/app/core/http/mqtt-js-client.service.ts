@@ -111,18 +111,15 @@ export class MqttJsClientService {
     this.clientConnectingSubject$.next();
   }
 
-  public disconnectSelectedClient() {
-    const mqttClient = this.getSelectedMqttJsClient();
-    if (mqttClient) {
-      const connection = this.mqttClientConnectionMap.get(mqttClient.options.clientId);
-      this.updateConnectionStatusLog(connection, ConnectionStatus.DISCONNECTED);
-      this.endMqttClient(mqttClient);
-    }
-  }
-
-  public disconnectClient(connection: WebSocketConnectionDto) {
-    const mqttClient = this.connectionMqttClientMap.get(connection.id);
+  public disconnectClient(connection: WebSocketConnectionDto = null) {
+    const mqttClient = isDefinedAndNotNull(connection)
+      ? this.connectionMqttClientMap.get(connection.id)
+      : this.getSelectedMqttJsClient();
+    const clientConnection = isDefinedAndNotNull(connection)
+      ? connection
+      : this.mqttClientConnectionMap.get(mqttClient?.options?.clientId);
     if (isDefinedAndNotNull(mqttClient)) {
+      this.updateConnectionStatusLog(clientConnection, ConnectionStatus.DISCONNECTED);
       this.endMqttClient(mqttClient);
     }
   }
@@ -273,13 +270,13 @@ export class MqttJsClientService {
       username: connection.configuration.username || clientUserNameRandom(),
       password,
       protocolVersion: connection.configuration.mqttVersion,
+      protocolId: connection.configuration.mqttVersion === 3 ? 'MQIsdp' : 'MQTT',
       clean: connection.configuration.cleanStart,
       keepalive: convertTimeUnits(connection.configuration.keepAlive, connection.configuration.keepAliveUnit, WebSocketTimeUnit.SECONDS),
       connectTimeout: convertTimeUnits(connection.configuration.connectTimeout, connection.configuration.connectTimeoutUnit, WebSocketTimeUnit.MILLISECONDS),
       reconnectPeriod: convertTimeUnits(connection.configuration.reconnectPeriod, connection.configuration.reconnectPeriodUnit, WebSocketTimeUnit.MILLISECONDS),
-      // rejectUnauthorized: false
+      rejectUnauthorized: connection.configuration.rejectUnauthorized
     };
-    options.protocolId = options.protocolVersion === 3 ? 'MQIsdp' : 'MQTT';
     if (connection.configuration.mqttVersion === 5) {
       options.properties = {
         sessionExpiryInterval: connection.configuration.sessionExpiryInterval,

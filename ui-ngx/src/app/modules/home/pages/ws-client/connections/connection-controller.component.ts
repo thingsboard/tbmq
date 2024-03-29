@@ -156,7 +156,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   disconnect() {
-    this.mqttJsClientService.disconnectSelectedClient();
+    this.mqttJsClientService.disconnectClient();
   }
 
   getStatus() {

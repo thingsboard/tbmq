@@ -28,10 +28,11 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject } from '@core/utils';
-import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import { CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
+  AboveSecWebSocketTimeUnit,
   clientCredentialsNameRandom,
   clientIdRandom,
   clientUserNameRandom,
@@ -42,7 +43,6 @@ import {
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
   WebSocketConnectionConfiguration,
-  AboveSecWebSocketTimeUnit,
   WebSocketTimeUnit,
   WsAddressProtocolType,
   WsAddressProtocolTypeValueMap,
@@ -103,6 +103,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   stepperLabelPosition: Observable<'bottom' | 'end'>;
   selectedIndex = 0;
   showNext = true;
+  addressProtocol = WsAddressProtocolType.WS;
 
   private urlConfig = {
     [WsAddressProtocolType.WS]: {
@@ -167,6 +168,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     this.connectionFormGroup = this.fb.group({
       name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required]],
       url: [entity ? entity.configuration.url : this.generateUrl(WsAddressProtocolType.WS), [Validators.required]],
+      rejectUnauthorized: [entity ? entity.configuration.rejectUnauthorized : true, []],
       credentialsName: [{
         value: clientCredentialsNameRandom(),
         disabled: true
@@ -204,7 +206,13 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         }
         this.connectionFormGroup.get('password').updateValueAndValidity();
       }
-    )
+    );
+    if (entity.configuration.url.includes('wss://')) {
+      this.addressProtocol = WsAddressProtocolType.WSS;
+      console.log('wss')
+    } else {
+      console.log('ws')
+    }
   }
 
   private setConnectionAdvancedFormGroup() {
@@ -260,7 +268,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   onAddressProtocolChange(type: WsAddressProtocolType) {
+    this.addressProtocol = type;
     this.connectionFormGroup.get('url').patchValue(this.generateUrl(type));
+    if (type === WsAddressProtocolType.WS) {
+      this.connectionFormGroup.get('rejectUnauthorized').patchValue(true);
+    }
   }
 
   private generateUrl(type: WsAddressProtocolType) {
@@ -394,6 +406,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       entity.userId = getCurrentAuthUser(this.store).userId;
     }
     config.url = formValues.url;
+    config.rejectUnauthorized = formValues.rejectUnauthorized;
     config.clientCredentialsId = isDefinedAndNotNull(formValues.clientCredentials) ? formValues.clientCredentials.id : null;
     config.clientId = formValues.clientId || this.connection?.configuration?.clientId || clientIdRandom();
     config.username = formValues.username;
@@ -511,4 +524,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       }
     }
   }
+
+  protected readonly WsAddressProtocolType = WsAddressProtocolType;
 }

@@ -47,7 +47,7 @@
         <section fxLayout="column" fxLayoutGap="8px">
           <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
                             (valueChange)="onAddressProtocolChange($event)"
-                            [value]="wsAddressProtocolType.WS"
+                            [value]="addressProtocol"
                             name="addressProtocol"
                             useSelectOnMdLg="true"
                             appearance="fill">
@@ -58,13 +58,23 @@
               {{ wsAddressProtocolType.WSS }}
             </tb-toggle-option>
           </tb-toggle-header>
-          <mat-form-field class="mat-block">
+          <mat-form-field class="mat-block" subscriptSizing="fixed" style="margin-bottom: 0">
             <mat-label translate>ws-client.connections.url</mat-label>
             <input matInput formControlName="url">
             <mat-error *ngIf="connectionFormGroup.get('url').hasError('required')">
               {{ 'ws-client.connections.url-required' | translate }}
             </mat-error>
           </mat-form-field>
+          <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" style="padding: 0 0 12px 0"
+                   *ngIf="addressProtocol === WsAddressProtocolType.WSS">
+            <mat-slide-toggle formControlName="rejectUnauthorized">
+              <span translate>ws-client.connections.reject-unauthorized</span>
+            </mat-slide-toggle>
+            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                      [matTooltip]="'ws-client.connections.reject-unauthorized-hint' | translate"
+                      matTooltipPosition="right">
+              info</mat-icon>
+          </section>
         </section>
 
         <section fxLayout="column">
