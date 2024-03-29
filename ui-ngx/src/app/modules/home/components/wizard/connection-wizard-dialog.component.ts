@@ -207,11 +207,8 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.connectionFormGroup.get('password').updateValueAndValidity();
       }
     );
-    if (entity.configuration.url.includes('wss://')) {
+    if (entity?.configuration?.url?.includes('wss://')) {
       this.addressProtocol = WsAddressProtocolType.WSS;
-      console.log('wss')
-    } else {
-      console.log('ws')
     }
   }
 
