@@ -29,6 +29,8 @@ public class WebSocketConnectionConfiguration {
     @NoXss
     private String url;
 
+    private boolean rejectUnauthorized;
+
     private UUID clientCredentialsId;
     @NoXss
     private String clientId;
