@@ -27,7 +27,7 @@ import {
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
   AboveSecWebSocketTimeUnit,
-  countNonNullProps
+  isDefinedProps
 } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 
@@ -104,7 +104,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   onSave() {
     const properties = this.formGroup.getRawValue();
-    properties.changed = countNonNullProps(properties) > 1;
+    properties.changed = isDefinedProps(properties);
     this.dialogRef.close(properties);
   }
 

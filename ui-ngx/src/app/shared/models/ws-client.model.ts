@@ -300,14 +300,14 @@ export const colorRandom = () => {
   const randomIndex = Math.floor(Math.random() * colorPresetsHex.length);
   return colorPresetsHex[randomIndex];
 }
-export const countNonNullProps = (obj: any): number => {
+export const isDefinedProps = (obj: any): boolean => {
   let count = 0;
   for (let key in obj) {
-    if (obj[key] !== null && obj[key] !== '') {
+    if (obj[key] !== null && obj[key] !== '' && key !== 'messageExpiryIntervalUnit') {
       count++;
     }
   }
-  return count;
+  return count > 0;
 }
 
 export const MessageFilterDefaultConfigAll: MessageFilterConfig = {
