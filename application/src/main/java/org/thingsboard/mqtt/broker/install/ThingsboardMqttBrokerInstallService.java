@@ -64,6 +64,9 @@ public class ThingsboardMqttBrokerInstallService {
 
                         systemDataLoaderService.createWebSocketMqttClientCredentials();
                         systemDataLoaderService.createDefaultWebSocketConnections();
+                    case "1.3.0":
+                        log.info("Upgrading TBMQ from version 1.3.0 to 1.3.1 ...");
+                        databaseEntitiesUpgradeService.upgradeDatabase("1.3.0");
                         break;
                     default:
                         throw new RuntimeException("Unable to upgrade TBMQ, unsupported fromVersion: " + upgradeFromVersion);
