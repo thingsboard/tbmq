@@ -25,8 +25,10 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Iterator;
+import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -51,16 +53,17 @@ public class KeystoreSslCredentials extends AbstractSslCredentials {
             keyStore.load(tsFileInputStream, StringUtils.isEmpty(this.storePassword) ? new char[0] : this.storePassword.toCharArray());
         }
         Enumeration<String> aliases = keyStore.aliases();
+        List<Certificate> certificates = new ArrayList<>();
+        while (aliases.hasMoreElements()) {
+            Certificate[] certificatesArray = keyStore.getCertificateChain(aliases.nextElement());
+            if (certificatesArray != null) {
+                certificates.addAll(Arrays.asList(certificatesArray));
+            }
+        }
         int idx = 0;
-        for (Iterator<String> it = aliases.asIterator(); it.hasNext(); ) {
-            Certificate[] certificates = keyStore.getCertificateChain(it.next());
-            if (certificates == null) {
-                continue;
-            }
-            for (Certificate certificate : certificates) {
-                keyStore.setCertificateEntry("root-" + idx, certificate);
-                idx++;
-            }
+        for (Certificate certificate : certificates) {
+            keyStore.setCertificateEntry("root-" + idx, certificate);
+            idx++;
         }
         return keyStore;
     }
