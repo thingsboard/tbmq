@@ -37,4 +37,6 @@ public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
     PageData<MqttClientCredentials> findAllV2(ClientCredentialsQuery query);
 
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
+
+    List<MqttClientCredentials> findByCredentialsType(ClientCredentialsType type);
 }

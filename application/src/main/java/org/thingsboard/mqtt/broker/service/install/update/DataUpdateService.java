@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.cache;
+package org.thingsboard.mqtt.broker.service.install.update;
 
-public class CacheConstants {
+public interface DataUpdateService {
 
-    public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
-    public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
-    public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
-    public static final String SSL_REGEX_BASED_CREDENTIALS_CACHE = "sslRegexBasedCredentials";
+    void updateData(String fromVersion) throws Exception;
 
-    public static final String COMMA = ",";
-    public static final String COLON = ":";
 }

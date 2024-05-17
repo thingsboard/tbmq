@@ -36,7 +36,6 @@
         <main.dir>${basedir}/../..</main.dir>
         <blackBoxTests.skip>true</blackBoxTests.skip>
         <zeroturnaround.version>1.10</zeroturnaround.version>
-        <jackson.version>2.12.0</jackson.version>
     </properties>
 
     <dependencies>

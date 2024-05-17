@@ -20,12 +20,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PubSubAuthorizationRules {
+public class PubSubAuthorizationRules implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 3397996560278384778L;
 
     @NoXss
     private List<String> pubAuthRulePatterns;

@@ -1,0 +1,9 @@
+{
+  "id": "54af8b47-2c8a-4b6e-8e76-920f3cb6d918",
+  "createdTime": 1706022903745,
+  "credentialsId": "ssl|EXAMPLE CA 2023 GGG TTT",
+  "name": "ssl EXAMPLE Server CA 2023 GGG TTT",
+  "clientType": "DEVICE",
+  "credentialsType": "SSL",
+  "credentialsValue": "{ \"certCnPattern\": \"EXAMPLE Server CA 2023 G\", \"certCnIsRegex\": false, \"authRulesMapping\": { \"^(xyz|XYZ)([a-z]{2}|[A-Z]{2})-1d{3}(abc|ABC)d{2}.int.example.net$\": { \"pubAuthRulePatterns\": [ \"^xyz/abc/newterminal/up/(w{12}|w{12}-w{12})$\" ], \"subAuthRulePatterns\": [ \"^xyz/abc/newterminal/down/(w{12}|w{12}-w{12})$\" ] }, \"iot-gateway-r.example\": { \"pubAuthRulePatterns\": [ \".*\" ], \"subAuthRulePatterns\": [ \".*\" ] } } }"
+}
