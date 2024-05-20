@@ -49,7 +49,7 @@ public class DefaultDataUpdateServiceTest {
     }
 
     @Test
-    public void test() throws IOException {
+    public void convertSslMqttClientCredentialsForVersion131FirstRun() throws IOException {
         JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_in.json");
         JsonNode expected = readFromResource("update/131/ssl_mqtt_creds_out.json");
 
@@ -66,7 +66,7 @@ public class DefaultDataUpdateServiceTest {
     }
 
     @Test
-    public void test1() throws IOException {
+    public void convertSslMqttClientCredentialsForVersion131SecondRun() throws IOException {
         JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_out.json");
 
         String credentialsValue = service.convertSslMqttClientCredentialsForVersion131(spec.get("credentialsValue").asText());

@@ -42,7 +42,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -94,12 +93,10 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             return null;
         }
 
-
         SslCredentialsCacheValue sslCredentialsCacheValue = getSslRegexBasedCredentials();
         if (sslCredentialsCacheValue == null) {
             return null;
         }
-
 
         for (X509Certificate certificate : certificates) {
             checkCertValidity(clientId, certificate);
@@ -114,29 +111,21 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
                 log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
             }
 
-
-            if (sslCredentialsCacheValue.getCredentials().isEmpty()) {
-                // need continue the default search
-            } else {
+            if (!sslCredentialsCacheValue.getCredentials().isEmpty()) {
                 for (var creds : sslCredentialsCacheValue.getCredentials()) {
-                    String certCommonNameRegex = creds.getSslMqttCredentials().getCertCnPattern();
-                    Pattern pattern = Pattern.compile(certCommonNameRegex);
-                    Matcher commonNameMatcher = pattern.matcher(commonName);
-                    boolean result = commonNameMatcher.find();
-                    if (result) {
+                    Pattern pattern = Pattern.compile(creds.getSslMqttCredentials().getCertCnPattern());
+                    boolean found = pattern.matcher(commonName).find();
+                    if (found) {
                         return creds;
                     }
                 }
             }
 
-
             String sslCredentialsId = ProtocolUtil.sslCredentialsId(commonName);
             List<MqttClientCredentials> matchingCredentials = clientCredentialsService.findMatchingCredentials(Collections.singletonList(sslCredentialsId));
             if (!matchingCredentials.isEmpty()) {
                 MqttClientCredentials mqttClientCredentials = matchingCredentials.get(0);
-
                 SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-
                 return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials);
             }
         }
@@ -144,11 +133,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     private SslCredentialsCacheValue getSslRegexBasedCredentials() {
-
-        Cache cache = cacheManager.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
-        String s = cache.get(ClientCredentialsType.SSL, String.class);
-        SslCredentialsCacheValue sslCredentialsCacheValue = JacksonUtil.fromString(s, SslCredentialsCacheValue.class);
-
+        SslCredentialsCacheValue sslCredentialsCacheValue = getFromSslRegexCache();
         if (sslCredentialsCacheValue == null) {
             log.debug("sslRegexBasedCredentials cache is empty");
             List<MqttClientCredentials> sslCredentials = clientCredentialsService.findByCredentialsType(ClientCredentialsType.SSL);
@@ -156,17 +141,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
                 log.debug("SSL credentials are not found in DB");
                 return null;
             } else {
-                List<ClientTypeSslMqttCredentials> clientTypeSslMqttCredentialsList = new ArrayList<>();
-                for (MqttClientCredentials sslCredential : sslCredentials) {
-                    SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslCredential.getCredentialsValue(), SslMqttCredentials.class);
-                    if (sslMqttCredentials != null && sslMqttCredentials.isCertCnIsRegex()) {
-                        clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(), sslMqttCredentials));
-                    }
-                }
-                sslCredentialsCacheValue = new SslCredentialsCacheValue(clientTypeSslMqttCredentialsList);
-
-                cache.put(ClientCredentialsType.SSL, JacksonUtil.toString(sslCredentialsCacheValue));
-
+                sslCredentialsCacheValue = prepareSslRegexCredentialsWithValuesFromDb(sslCredentials);
+                putInSslRegexCache(sslCredentialsCacheValue);
                 return sslCredentialsCacheValue;
             }
         } else {
@@ -199,6 +175,30 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             log.error("Failed to get client's certificate common name", e);
             throw new AuthenticationException("Failed to get client's certificate common name.", e);
         }
+    }
 
+    private SslCredentialsCacheValue prepareSslRegexCredentialsWithValuesFromDb(List<MqttClientCredentials> sslCredentials) {
+        List<ClientTypeSslMqttCredentials> clientTypeSslMqttCredentialsList = new ArrayList<>();
+        for (MqttClientCredentials sslCredential : sslCredentials) {
+            SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslCredential.getCredentialsValue(), SslMqttCredentials.class);
+            if (sslMqttCredentials != null && sslMqttCredentials.isCertCnIsRegex()) {
+                clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(), sslMqttCredentials));
+            }
+        }
+        return new SslCredentialsCacheValue(clientTypeSslMqttCredentialsList);
+    }
+
+    private SslCredentialsCacheValue getFromSslRegexCache() {
+        Cache cache = getSslRegexCredentialsCache();
+        return JacksonUtil.fromString(cache.get(ClientCredentialsType.SSL, String.class), SslCredentialsCacheValue.class);
+    }
+
+    private void putInSslRegexCache(SslCredentialsCacheValue sslCredentialsCacheValue) {
+        Cache cache = getSslRegexCredentialsCache();
+        cache.put(ClientCredentialsType.SSL, JacksonUtil.toString(sslCredentialsCacheValue));
+    }
+
+    private Cache getSslRegexCredentialsCache() {
+        return cacheManager.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
     }
 }
