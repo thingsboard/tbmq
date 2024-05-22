@@ -73,29 +73,30 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     @Override
     public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
-        String dummyClientId = persistDummyClientSubscriptions();
+        log.debug("Starting subscriptions initLoad");
+        long startTime = System.nanoTime();
+        long totalMessageCount = 0L;
 
-        clientSubscriptionsConsumer.subscribe();
+        String dummyClientId = persistDummyClientSubscriptions();
+        clientSubscriptionsConsumer.assignOrSubscribe();
 
         List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages;
         boolean encounteredDummyClient = false;
         Map<String, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
         do {
             try {
-                // TODO: think how to migrate data inside of the Kafka (in case of any changes to the protocol)
                 messages = clientSubscriptionsConsumer.poll(pollDuration);
+                int packSize = messages.size();
+                log.debug("Read {} subscription messages from single poll", packSize);
+                totalMessageCount += packSize;
                 for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                     String clientId = msg.getKey();
-                    // TODO: replace with events (instead of storing the whole state) - but need to think about the logic when and how to make snapshots (so that we don't need to store all event log)
-                    //          also think about order of messages (sub A -> unsub A is different than unsub A -> sub A)
                     Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
                         encounteredDummyClient = true;
                     } else if (clientSubscriptions.isEmpty()) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        if (log.isDebugEnabled()) {
-                            log.debug("[{}] Encountered empty ClientSubscriptions.", clientId);
-                        }
+                        log.trace("[{}] Encountered empty ClientSubscriptions.", clientId);
                         allSubscriptions.remove(clientId);
                     } else {
                         allSubscriptions.put(clientId, clientSubscriptions);
@@ -112,6 +113,11 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
         initializing = false;
 
+        if (log.isDebugEnabled()) {
+            long endTime = System.nanoTime();
+            log.debug("Finished subscriptions initLoad for {} messages within time: {} nanos", totalMessageCount, endTime - startTime);
+        }
+
         return allSubscriptions;
     }
 
@@ -120,7 +126,6 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         if (initializing) {
             throw new RuntimeException("Cannot start listening before initialization is finished.");
         }
-        // TODO: add concurrent consumers for multiple partitions (in the same consumer-group as InitLoader)
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {

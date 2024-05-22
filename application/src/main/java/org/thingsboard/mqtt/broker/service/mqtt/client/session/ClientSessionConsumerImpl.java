@@ -72,26 +72,27 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     @Override
     public Map<String, ClientSessionInfo> initLoad() throws QueuePersistenceException {
-        log.info("Loading client sessions.");
+        log.debug("Starting client sessions initLoad");
+        long startTime = System.nanoTime();
+        long totalMessageCount = 0L;
 
         String dummySessionClientId = persistDummySession();
-
-        clientSessionConsumer.subscribe();
+        clientSessionConsumer.assignOrSubscribe();
 
         List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages;
         boolean encounteredDummySession = false;
         Map<String, ClientSessionInfo> allClientSessions = new HashMap<>();
         do {
             try {
-                // TODO: think how to migrate data inside of the Kafka (in case of any changes to the protocol)
                 messages = clientSessionConsumer.poll(pollDuration);
+                int packSize = messages.size();
+                log.debug("Read {} client session messages from single poll", packSize);
+                totalMessageCount += packSize;
                 for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
                     String clientId = msg.getKey();
                     if (isClientSessionInfoProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        if (log.isDebugEnabled()) {
-                            log.debug("[{}] Encountered empty ClientSessionInfo.", clientId);
-                        }
+                        log.trace("[{}] Encountered empty ClientSessionInfo.", clientId);
                         allClientSessions.remove(clientId);
                     } else {
                         ClientSessionInfo clientSession = ProtoConverter.convertToClientSessionInfo(msg.getValue());
@@ -113,21 +114,22 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
         initializing = false;
 
+        if (log.isDebugEnabled()) {
+            long endTime = System.nanoTime();
+            log.debug("Finished client session messages initLoad for {} messages within time: {} nanos", totalMessageCount, endTime - startTime);
+        }
+
         return allClientSessions;
     }
 
     @Override
     public void listen(ClientSessionChangesCallback callback) {
-        // TODO: if 'serviceId' of session == 'currentServiceId' -> it's OK, else we need to ensure that all events from other services are consumed (we can publish blank msg for that client)
-        //          need to have 'versionId' to check if ClientSession is updated based on the correct value
         if (initializing) {
             throw new RuntimeException("Cannot start listening before initialization is finished.");
         }
-        // TODO: add concurrent consumers for multiple partitions
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    // TODO: test what happens if we got disconnected and connected again (will we read all msgs from beginning?)
                     List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages = clientSessionConsumer.poll(pollDuration);
                     if (messages.isEmpty()) {
                         continue;

@@ -19,6 +19,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,6 +74,21 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
             subscribed = true;
         } finally {
             consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public void assignOrSubscribe() {
+        int partitions = 1;
+        String configuredPartitions = getTopicConfigs().get(QueueConstants.PARTITIONS);
+        if (configuredPartitions != null) {
+            partitions = Integer.parseInt(configuredPartitions);
+        }
+        log.debug("Found {} partitions for {} topic", partitions, getTopic());
+        if (partitions == 1) {
+            assignPartition(0);
+        } else {
+            subscribe();
         }
     }
 
