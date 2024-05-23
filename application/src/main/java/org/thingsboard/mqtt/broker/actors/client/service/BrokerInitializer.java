@@ -62,12 +62,12 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class BrokerInitializer {
 
-    private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final ClientSessionConsumer clientSessionConsumer;
+    private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final RetainedMsgConsumer retainedMsgConsumer;
 
-    private final ClientSubscriptionService clientSubscriptionService;
     private final ClientSessionService clientSessionService;
+    private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgListenerService;
 
     private final ActorSystemContext actorSystemContext;
@@ -76,10 +76,10 @@ public class BrokerInitializer {
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
 
-    private final DisconnectClientCommandConsumer disconnectClientCommandConsumer;
     private final ClientSessionEventConsumer clientSessionEventConsumer;
-    private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
+    private final DisconnectClientCommandConsumer disconnectClientCommandConsumer;
+    private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
 
@@ -121,10 +121,10 @@ public class BrokerInitializer {
     }
 
     private void startConsuming() {
-        disconnectClientCommandConsumer.startConsuming();
         clientSessionEventConsumer.startConsuming();
-        deviceMsgQueueConsumer.startConsuming();
         publishMsgConsumerService.startConsuming();
+        disconnectClientCommandConsumer.startConsuming();
+        deviceMsgQueueConsumer.startConsuming();
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
     }
@@ -220,8 +220,7 @@ public class BrokerInitializer {
     }
 
     private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {
-        return serviceInfoProvider.getServiceId()
-                .equals(clientSessionInfo.getServiceId());
+        return serviceInfoProvider.getServiceId().equals(clientSessionInfo.getServiceId());
     }
 
     private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
