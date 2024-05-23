@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -129,6 +130,15 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         sendEvent(
                 sessionInfo.getClientInfo().getClientId(),
                 eventFactory.createTryClearSessionRequestEventProto(sessionInfo),
+                false,
+                null);
+    }
+
+    @Override
+    public void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo) {
+        sendEvent(
+                clientSessionInfo.getClientId(),
+                eventFactory.createTryClearSessionRequestEventProto(clientSessionInfo),
                 false,
                 null);
     }

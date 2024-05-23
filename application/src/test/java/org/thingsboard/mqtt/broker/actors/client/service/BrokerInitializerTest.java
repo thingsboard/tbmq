@@ -29,7 +29,6 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
@@ -128,10 +127,10 @@ public class BrokerInitializerTest {
 
     @Test
     public void testIsNotPersistent() {
-        SessionInfo clientSessionInfo1 = getSessionInfo(false, 0);
-        SessionInfo clientSessionInfo2 = getSessionInfo(false, 10);
-        SessionInfo clientSessionInfo3 = getSessionInfo(true, 0);
-        SessionInfo clientSessionInfo4 = getSessionInfo(true, 10);
+        ClientSessionInfo clientSessionInfo1 = getSessionInfo(false, 0);
+        ClientSessionInfo clientSessionInfo2 = getSessionInfo(false, 10);
+        ClientSessionInfo clientSessionInfo3 = getSessionInfo(true, 0);
+        ClientSessionInfo clientSessionInfo4 = getSessionInfo(true, 10);
 
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo1));
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo2));
@@ -139,8 +138,8 @@ public class BrokerInitializerTest {
         Assert.assertFalse(brokerInitializer.isCleanSession(clientSessionInfo4));
     }
 
-    private SessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
-        return SessionInfo.builder()
+    private ClientSessionInfo getSessionInfo(boolean cleanStart, int sessionExpiryInterval) {
+        return ClientSessionInfo.builder()
                 .cleanStart(cleanStart)
                 .sessionExpiryInterval(sessionExpiryInterval)
                 .build();
