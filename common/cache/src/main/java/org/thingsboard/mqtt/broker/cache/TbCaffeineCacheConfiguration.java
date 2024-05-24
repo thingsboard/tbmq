@@ -75,6 +75,7 @@ public class TbCaffeineCacheConfiguration {
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());
+            caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForSessionsLimitCache()));
             manager.setCaches(caches);
         }
 
@@ -112,12 +113,13 @@ public class TbCaffeineCacheConfiguration {
     }
 
     private CaffeineCache buildCache(String name, CacheSpecs cacheSpec) {
-        final Caffeine<Object, Object> caffeineBuilder
-                = Caffeine.newBuilder()
+        final Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
                 .weigher(collectionSafeWeigher())
                 .maximumWeight(cacheSpec.getMaxSize())
-                .expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES)
                 .ticker(ticker());
+        if (cacheSpec.getTimeToLiveInMinutes() != -1) {
+            caffeineBuilder.expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES);
+        }
         if (cacheStatsEnabled) {
             caffeineBuilder.recordStats();
         }
@@ -137,4 +139,12 @@ public class TbCaffeineCacheConfiguration {
             return 1;
         };
     }
+
+    private CacheSpecs getCacheSpecsForSessionsLimitCache() {
+        CacheSpecs cacheSpec = new CacheSpecs();
+        cacheSpec.setMaxSize(1);
+        cacheSpec.setTimeToLiveInMinutes(-1);
+        return cacheSpec;
+    }
+
 }

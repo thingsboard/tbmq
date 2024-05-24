@@ -42,6 +42,7 @@ public class RateLimitServiceImpl implements RateLimitService {
     private final IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
     private final ClientSessionService clientSessionService;
+    private final RateLimitCacheService rateLimitCacheService;
 
     @Getter
     private ConcurrentMap<String, TbRateLimits> incomingPublishClientLimits;
@@ -112,14 +113,19 @@ public class RateLimitServiceImpl implements RateLimitService {
         if (sessionsLimit <= 0) {
             return true;
         }
-        int clientSessionsCount = clientSessionService.getClientSessionsCount();
-        if (clientSessionsCount >= sessionsLimit) {
-            if (log.isTraceEnabled()) {
-                log.trace("Client sessions count limit detected! Allowed: [{}], current count: [{}]", sessionsLimit, clientSessionsCount);
-            }
-            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
-            return clientSessionInfo != null;
+        long newSessionCount = rateLimitCacheService.incrementSessionCount();
+
+        ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
+        if (clientSessionInfo != null) {
+            rateLimitCacheService.decrementSessionCount();
+            return true;
         }
+
+        if (newSessionCount > sessionsLimit) {
+            rateLimitCacheService.decrementSessionCount();
+            return false;
+        }
+
         return true;
     }
 

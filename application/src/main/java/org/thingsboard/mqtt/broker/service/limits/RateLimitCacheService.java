@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.integration;
+package org.thingsboard.mqtt.broker.service.limits;
 
-import org.junit.extensions.cpsuite.ClasspathSuite;
-import org.junit.runner.RunWith;
+public interface RateLimitCacheService {
 
-@RunWith(ClasspathSuite.class)
-@ClasspathSuite.ClassnameFilters({
-        "org.thingsboard.mqtt.broker.service.integration.*TestCasessss",
-})
-public class IntegrationTestSuite {
+    long incrementSessionCount();
+
+    void decrementSessionCount();
 
 }

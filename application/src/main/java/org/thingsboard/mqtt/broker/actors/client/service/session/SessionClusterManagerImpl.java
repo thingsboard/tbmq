@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -78,6 +79,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationRemovedEventService applicationRemovedEventService;
     private final ApplicationTopicService applicationTopicService;
+    private final RateLimitCacheService rateLimitCacheService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
     private ExecutorService eventResponseSenderExecutor;
@@ -103,14 +105,11 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
         // It is possible that for some time sessions can be connected with the same clientId to different Nodes
         String clientId = sessionInfo.getClientInfo().getClientId();
+        log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionInfo.getSessionId());
 
         if (isRequestTimedOut(requestInfo.getRequestTime())) {
             log.warn("[{}][{}] Connection request timed out.", clientId, requestInfo.getRequestId());
             return;
-        }
-
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Processing connection request, sessionId - {}", clientId, sessionInfo.getSessionId());
         }
 
         ClientSession currentClientSession = getClientSessionForClient(clientId);
@@ -223,6 +222,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     if (log.isDebugEnabled()) {
                         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
                     }
+                    rateLimitCacheService.decrementSessionCount();
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                 }
