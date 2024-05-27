@@ -13,15 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.cache;
+package org.thingsboard.mqtt.broker.dao.client.credentials;
 
-public class CacheConstants {
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 
-    public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
-    public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
-    public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
-    public static final String SSL_REGEX_BASED_CREDENTIALS_CACHE = "sslRegexBasedCredentials";
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.List;
 
-    public static final String COMMA = ",";
-    public static final String COLON = ":";
+@Data
+@NoArgsConstructor(force = true)
+@AllArgsConstructor
+public class SslCredentialsCacheValue implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -7840863281456273450L;
+
+    private final List<ClientTypeSslMqttCredentials> credentials;
+
 }

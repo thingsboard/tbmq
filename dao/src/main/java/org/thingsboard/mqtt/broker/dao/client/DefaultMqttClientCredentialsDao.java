@@ -112,4 +112,13 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
         }
         return mqttClientCredentialsRepository.existsByCredentialsType(credentialsType);
     }
+
+    @Override
+    public List<MqttClientCredentials> findByCredentialsType(ClientCredentialsType type) {
+        log.trace("Trying to find credentials by type {}", type);
+        List<MqttClientCredentialsEntity> mqttClientCredentialsEntities = mqttClientCredentialsRepository.findByCredentialsType(type);
+        return mqttClientCredentialsEntities.stream()
+                .map(DaoUtil::getData)
+                .collect(Collectors.toList());
+    }
 }

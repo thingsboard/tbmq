@@ -54,13 +54,16 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   entity: ClientCredentials;
 
   credentialsMqttFormGroup: UntypedFormGroup;
+  certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
+  certificateCnLabel = 'mqtt-client-credentials.certificate-common-name';
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder) {
     this.credentialsMqttFormGroup = this.fb.group({
-      certCommonName: [null, [Validators.required]],
+      certCnPattern: [null, [Validators.required]],
+      certCnIsRegex: [false],
       authRulesMapping: [null]
     });
   }
@@ -71,6 +74,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     ).subscribe((value) => {
       this.updateView(value);
     });
+    this.credentialsMqttFormGroup.get('certCnIsRegex').valueChanges.subscribe(value => this.updateCertificateCnView(value));
   }
 
   ngOnDestroy(): void {
@@ -110,6 +114,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
 
   updateView(value: SslMqttCredentials) {
     const formValue = JSON.stringify(value);
+    this.updateCertificateCnView(value?.certCnIsRegex);
     this.propagateChange(formValue);
   }
 
@@ -117,6 +122,16 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     if (this.entity?.credentialsValue) {
       const credentialsValue = JSON.parse(this.entity.credentialsValue);
       return credentialsValue[key] || ' ';
+    }
+  }
+
+  private updateCertificateCnView(value: boolean = false) {
+    if (value) {
+      this.certificateCnLabel = 'mqtt-client-credentials.certificate-common-name-regex-label';
+      this.certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name-regex';
+    } else {
+      this.certificateCnLabel = 'mqtt-client-credentials.certificate-common-name';
+      this.certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
     }
   }
 }

@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
@@ -24,8 +24,8 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 @Slf4j
-@Getter
-@RequiredArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class SessionInitMsg extends AbstractTimedMsg implements TbActorMsg {
 
     private final ClientSessionCtx clientSessionCtx;

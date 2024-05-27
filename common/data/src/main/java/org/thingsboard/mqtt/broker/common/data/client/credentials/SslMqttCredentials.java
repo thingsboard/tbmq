@@ -20,19 +20,31 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SslMqttCredentials {
+public class SslMqttCredentials implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 9061083999189901313L;
 
     @NoXss
-    private String certCommonName;
+    private String certCnPattern;
+    private boolean certCnIsRegex;
     private Map<String, PubSubAuthorizationRules> authRulesMapping;
 
+    public SslMqttCredentials(String certCnPattern, Map<String, PubSubAuthorizationRules> authRulesMapping) {
+        this.certCnPattern = certCnPattern;
+        this.certCnIsRegex = false;
+        this.authRulesMapping = authRulesMapping;
+    }
+
     public static SslMqttCredentials newInstance(String certCommonName, String key, List<String> authRules) {
-        return new SslMqttCredentials(certCommonName, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
+        return new SslMqttCredentials(certCommonName, false, Map.of(key, PubSubAuthorizationRules.newInstance(authRules)));
     }
 }
