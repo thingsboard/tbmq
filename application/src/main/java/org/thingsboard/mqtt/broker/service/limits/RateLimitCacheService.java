@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 public interface RateLimitCacheService {
 
+    void initSessionCount(int count);
+
     long incrementSessionCount();
 
     void decrementSessionCount();

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -37,11 +38,21 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     private Cache<String, Long> clientSessionsLimitCache;
 
     @Value("${mqtt.sessions-limit:0}")
+    @Setter
     private int sessionsLimit;
 
     @PostConstruct
     public void init() {
         clientSessionsLimitCache = (Cache<String, Long>) cacheManager.getCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE).getNativeCache();
+    }
+
+    @Override
+    public void initSessionCount(int count) {
+        if (sessionsLimit <= 0) {
+            return;
+        }
+        log.debug("Initializing session count");
+        clientSessionsLimitCache.asMap().putIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, (long) count);
     }
 
     @Override

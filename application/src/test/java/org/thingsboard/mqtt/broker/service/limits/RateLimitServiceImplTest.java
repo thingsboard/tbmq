@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.limits;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -69,7 +68,7 @@ public class RateLimitServiceImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(incomingRateLimitsConfiguration, outgoingRateLimitsConfiguration, clientSessionService);
+        Mockito.reset(incomingRateLimitsConfiguration, outgoingRateLimitsConfiguration, clientSessionService, rateLimitCacheService);
     }
 
     @Test
@@ -158,7 +157,6 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
-    @Ignore
     public void givenNoSessionsLimit_whenCheckSessionsLimit_thenSuccess() {
         rateLimitService.setSessionsLimit(0);
 
@@ -167,30 +165,27 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
-    @Ignore
     public void givenSessionsLimitReached_whenCheckSessionsLimit_thenFailure() {
         rateLimitService.setSessionsLimit(1);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertFalse(result);
     }
 
     @Test
-    @Ignore
     public void givenSessionsLimitNotReached_whenCheckSessionsLimit_thenSuccess() {
         rateLimitService.setSessionsLimit(5);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertTrue(result);
     }
 
     @Test
-    @Ignore
     public void givenSessionsLimitReached_whenCheckSessionsLimitForExistingClient_thenSuccess() {
         rateLimitService.setSessionsLimit(1);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
         when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(ClientSessionInfo.builder().build());
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
