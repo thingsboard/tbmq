@@ -52,10 +52,10 @@ public class RateLimitCaffeineCacheServiceImplTest {
         // Mock the cache manager to return the Caffeine cache
         when(cacheManager.getCache(any())).thenReturn(mockCache);
 
+        rateLimitCaffeineCacheService.setSessionsLimit(5);
+
         // Initialize the service
         rateLimitCaffeineCacheService.init();
-
-        rateLimitCaffeineCacheService.setSessionsLimit(5);
     }
 
     @Test
