@@ -55,9 +55,10 @@ public class TbCaffeineCacheConfiguration {
 
     @Value("${cache.stats.enabled:true}")
     private boolean cacheStatsEnabled;
-
     @Value("${cache.stats.intervalSec:60}")
     private long cacheStatsInterval;
+    @Value("${mqtt.sessions-limit:0}")
+    private int sessionsLimit;
 
     private ScheduledExecutorService scheduler = null;
 
@@ -75,7 +76,9 @@ public class TbCaffeineCacheConfiguration {
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());
-            caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForSessionsLimitCache()));
+            if (sessionsLimit > 0) {
+                caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForSessionsLimitCache()));
+            }
             manager.setCaches(caches);
         }
 

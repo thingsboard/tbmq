@@ -43,6 +43,9 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
 
     @PostConstruct
     public void init() {
+        if (sessionsLimit <= 0) {
+            return;
+        }
         clientSessionsLimitCache = (Cache<String, Long>) cacheManager.getCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE).getNativeCache();
     }
 

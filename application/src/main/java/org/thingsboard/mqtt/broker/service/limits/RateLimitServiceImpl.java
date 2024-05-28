@@ -122,6 +122,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         }
 
         if (newSessionCount > sessionsLimit) {
+            log.trace("Client sessions count limit detected! Allowed: {} sessions", sessionsLimit);
             rateLimitCacheService.decrementSessionCount();
             return false;
         }
