@@ -50,4 +50,7 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
                                                 @Param("clientCredentialsTypes") List<ClientCredentialsType> clientCredentialsTypes,
                                                 @Param("textSearch") String textSearch,
                                                 Pageable pageable);
+
+    List<MqttClientCredentialsEntity> findByCredentialsType(ClientCredentialsType credentialsType);
+
 }

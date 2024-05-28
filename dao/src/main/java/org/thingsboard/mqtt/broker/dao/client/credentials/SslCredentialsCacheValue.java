@@ -13,31 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.client.credentials;
+package org.thingsboard.mqtt.broker.dao.client.credentials;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @AllArgsConstructor
-public class PubSubAuthorizationRules implements Serializable {
+public class SslCredentialsCacheValue implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 3397996560278384778L;
+    private static final long serialVersionUID = -7840863281456273450L;
 
-    @NoXss
-    private List<String> pubAuthRulePatterns;
-    @NoXss
-    private List<String> subAuthRulePatterns;
+    private final List<ClientTypeSslMqttCredentials> credentials;
 
-    public static PubSubAuthorizationRules newInstance(List<String> authRules) {
-        return new PubSubAuthorizationRules(authRules, authRules);
-    }
 }

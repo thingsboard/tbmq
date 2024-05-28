@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.dao.util.protocol;
 
 public class ProtocolUtil {
+
     private static final String USERNAME_CREDENTIALS_ID_PREFIX = "username";
     private static final String CLIENT_ID_CREDENTIALS_ID_PREFIX = "client_id";
     private static final String MIXED_CREDENTIALS_ID_PREFIX = "mixed";
@@ -34,10 +35,8 @@ public class ProtocolUtil {
         return MIXED_CREDENTIALS_ID_PREFIX + SEPARATOR + username + SEPARATOR + clientId;
     }
 
-
     public static String sslCredentialsId(String commonName) {
         return SSL_CREDENTIALS_ID_PREFIX + SEPARATOR + commonName;
     }
-
 
 }

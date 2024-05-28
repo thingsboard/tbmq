@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.messages;
+package org.thingsboard.mqtt.broker.service.install.update;
 
-import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
+public interface DataUpdateService {
 
-public abstract class AbstractTimedMsg implements TimedMsg {
+    void updateData(String fromVersion) throws Exception;
 
-    private final long createdTimeNanos = System.nanoTime();
-
-    @Override
-    public long getMsgCreatedTimeNanos() {
-        return createdTimeNanos;
-    }
 }
