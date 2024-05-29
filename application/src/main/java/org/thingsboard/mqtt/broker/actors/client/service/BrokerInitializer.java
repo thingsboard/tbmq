@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -71,6 +72,7 @@ public class BrokerInitializer {
 
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final RateLimitCacheService rateLimitCacheService;
 
     private final ClientSessionEventConsumer clientSessionEventConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
@@ -104,6 +106,7 @@ public class BrokerInitializer {
     Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
         Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
         log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
+        rateLimitCacheService.initSessionCount(allClientSessions.size());
 
         Map<String, ClientSessionInfo> currentNodeSessions = filterAndDisconnectCurrentNodeSessions(allClientSessions);
         allClientSessions.putAll(currentNodeSessions);

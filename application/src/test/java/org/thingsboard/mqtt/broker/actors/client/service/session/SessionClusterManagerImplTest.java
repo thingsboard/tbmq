@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventService;
@@ -77,6 +78,8 @@ public class SessionClusterManagerImplTest {
     ApplicationRemovedEventService applicationRemovedEventService;
     @MockBean
     ApplicationTopicService applicationTopicService;
+    @MockBean
+    RateLimitCacheService rateLimitCacheService;
 
     @SpyBean
     SessionClusterManagerImpl sessionClusterManager;

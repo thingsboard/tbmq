@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -54,15 +55,15 @@ import static org.mockito.Mockito.doReturn;
 public class BrokerInitializerTest {
 
     @MockBean
-    ClientSubscriptionConsumer clientSubscriptionConsumer;
-    @MockBean
     ClientSessionConsumer clientSessionConsumer;
+    @MockBean
+    ClientSubscriptionConsumer clientSubscriptionConsumer;
     @MockBean
     RetainedMsgConsumer retainedMsgConsumer;
     @MockBean
-    ClientSubscriptionService clientSubscriptionService;
-    @MockBean
     ClientSessionService clientSessionService;
+    @MockBean
+    ClientSubscriptionService clientSubscriptionService;
     @MockBean
     RetainedMsgListenerService retainedMsgListenerService;
     @MockBean
@@ -74,13 +75,15 @@ public class BrokerInitializerTest {
     @MockBean
     ServiceInfoProvider serviceInfoProvider;
     @MockBean
-    DisconnectClientCommandConsumer disconnectClientCommandConsumer;
+    RateLimitCacheService rateLimitCacheService;
     @MockBean
     ClientSessionEventConsumer clientSessionEventConsumer;
     @MockBean
-    DeviceMsgQueueConsumer deviceMsgQueueConsumer;
-    @MockBean
     PublishMsgConsumerService publishMsgConsumerService;
+    @MockBean
+    DisconnectClientCommandConsumer disconnectClientCommandConsumer;
+    @MockBean
+    DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     @MockBean
     BasicDownLinkConsumer basicDownLinkConsumer;
     @MockBean

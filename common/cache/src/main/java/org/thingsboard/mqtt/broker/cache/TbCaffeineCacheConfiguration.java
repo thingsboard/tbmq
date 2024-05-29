@@ -55,9 +55,10 @@ public class TbCaffeineCacheConfiguration {
 
     @Value("${cache.stats.enabled:true}")
     private boolean cacheStatsEnabled;
-
     @Value("${cache.stats.intervalSec:60}")
     private long cacheStatsInterval;
+    @Value("${mqtt.sessions-limit:0}")
+    private int sessionsLimit;
 
     private ScheduledExecutorService scheduler = null;
 
@@ -75,6 +76,9 @@ public class TbCaffeineCacheConfiguration {
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());
+            if (sessionsLimit > 0) {
+                caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForSessionsLimitCache()));
+            }
             manager.setCaches(caches);
         }
 
@@ -112,12 +116,13 @@ public class TbCaffeineCacheConfiguration {
     }
 
     private CaffeineCache buildCache(String name, CacheSpecs cacheSpec) {
-        final Caffeine<Object, Object> caffeineBuilder
-                = Caffeine.newBuilder()
+        final Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
                 .weigher(collectionSafeWeigher())
                 .maximumWeight(cacheSpec.getMaxSize())
-                .expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES)
                 .ticker(ticker());
+        if (cacheSpec.getTimeToLiveInMinutes() != -1) {
+            caffeineBuilder.expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES);
+        }
         if (cacheStatsEnabled) {
             caffeineBuilder.recordStats();
         }
@@ -137,4 +142,12 @@ public class TbCaffeineCacheConfiguration {
             return 1;
         };
     }
+
+    private CacheSpecs getCacheSpecsForSessionsLimitCache() {
+        CacheSpecs cacheSpec = new CacheSpecs();
+        cacheSpec.setMaxSize(1);
+        cacheSpec.setTimeToLiveInMinutes(-1);
+        return cacheSpec;
+    }
+
 }
