@@ -52,4 +52,12 @@ public class SessionInfo {
     public int safeGetSessionExpiryInterval() {
         return sessionExpiryInterval == -1 ? 0 : sessionExpiryInterval;
     }
+
+    public String getClientId() {
+        return clientInfo.getClientId();
+    }
+
+    public ClientType getClientType() {
+        return clientInfo.getType();
+    }
 }

@@ -36,17 +36,23 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     private final CacheManager cacheManager;
 
     private Cache<String, Long> clientSessionsLimitCache;
+    private Cache<String, Long> applicationClientsLimitCache;
 
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
+    @Value("${mqtt.application-clients-limit:0}")
+    @Setter
+    private int applicationClientsLimit;
 
     @PostConstruct
     public void init() {
-        if (sessionsLimit <= 0) {
-            return;
+        if (sessionsLimit > 0) {
+            clientSessionsLimitCache = getNativeCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE);
         }
-        clientSessionsLimitCache = (Cache<String, Long>) cacheManager.getCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE).getNativeCache();
+        if (applicationClientsLimit > 0) {
+            applicationClientsLimitCache = getNativeCache(CacheConstants.APP_CLIENTS_LIMIT_CACHE);
+        }
     }
 
     @Override
@@ -54,14 +60,29 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
         if (sessionsLimit <= 0) {
             return;
         }
-        log.debug("Initializing session count");
-        clientSessionsLimitCache.asMap().putIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, (long) count);
+        log.info("Initializing client session limit cache with count {}", count);
+        initCacheWithCount(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, count);
+    }
+
+    @Override
+    public void initApplicationClientsCount(int count) {
+        if (applicationClientsLimit <= 0) {
+            return;
+        }
+        log.info("Initializing application clients limit cache with count {}", count);
+        initCacheWithCount(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, count);
     }
 
     @Override
     public long incrementSessionCount() {
         log.debug("Incrementing session count");
-        return clientSessionsLimitCache.asMap().compute(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, (k, v) -> (v == null ? 1L : v + 1));
+        return increment(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+    }
+
+    @Override
+    public long incrementApplicationClientsCount() {
+        log.debug("Incrementing Application clients count");
+        return increment(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
     @Override
@@ -70,7 +91,32 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
             return;
         }
         log.debug("Decrementing session count");
-        clientSessionsLimitCache.asMap().computeIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, (k, v) -> v > 0 ? v - 1 : 0);
+        decrement(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
     }
 
+    @Override
+    public void decrementApplicationClientsCount() {
+        if (applicationClientsLimit <= 0) {
+            return;
+        }
+        log.debug("Decrementing Application clients count");
+        decrement(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+    }
+
+
+    private Cache<String, Long> getNativeCache(String name) {
+        return (Cache<String, Long>) cacheManager.getCache(name).getNativeCache();
+    }
+
+    private void initCacheWithCount(Cache<String, Long> cache, String key, int count) {
+        cache.asMap().putIfAbsent(key, (long) count);
+    }
+
+    private Long increment(Cache<String, Long> cache, String key) {
+        return cache.asMap().compute(key, (k, v) -> (v == null ? 1L : v + 1));
+    }
+
+    private void decrement(Cache<String, Long> cache, String key) {
+        cache.asMap().computeIfPresent(key, (k, v) -> v > 0 ? v - 1 : 0);
+    }
 }

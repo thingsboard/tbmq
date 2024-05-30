@@ -61,4 +61,12 @@ public class ClientSessionInfo {
     public boolean isDisconnected() {
         return !connected;
     }
+
+    public boolean isAppClient() {
+        return ClientType.APPLICATION.equals(type);
+    }
+
+    public boolean isPersistentAppClient() {
+        return isAppClient() && isPersistent();
+    }
 }

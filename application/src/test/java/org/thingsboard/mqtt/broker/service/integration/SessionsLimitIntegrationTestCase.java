@@ -66,6 +66,25 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
         client1.disconnect();
     }
 
+    @Test
+    public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClientWithSameClientId_thenAllowConnection() throws Throwable {
+        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue(client1.isConnected());
+
+        ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
+        Assert.assertNotNull(clientSessionInfo1);
+        Assert.assertTrue(clientSessionInfo1.isConnected());
+
+        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
+        ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
+        Assert.assertNotNull(clientSessionInfo2);
+
+        client2.disconnect();
+        client1.disconnect();
+    }
+
     private MqttClientConfig getConfig(String clientId) {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(clientId);

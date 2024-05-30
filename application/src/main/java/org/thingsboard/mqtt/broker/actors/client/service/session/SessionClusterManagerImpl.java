@@ -154,6 +154,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
         boolean applicationRemoved = isApplicationRemoved(previousSessionInfo, clientInfo);
         if (applicationRemoved) {
+            rateLimitCacheService.decrementApplicationClientsCount();
             clearPersistedMessages(clientInfo);
             applicationRemovedEventService.sendApplicationRemovedEvent(clientInfo.getClientId());
         }
@@ -223,6 +224,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
                     }
                     rateLimitCacheService.decrementSessionCount();
+                    if (ClientType.APPLICATION.equals(clientSession.getClientType())) {
+                        rateLimitCacheService.decrementApplicationClientsCount();
+                    }
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                 }

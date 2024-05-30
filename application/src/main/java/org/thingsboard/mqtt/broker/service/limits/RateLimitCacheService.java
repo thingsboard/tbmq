@@ -19,8 +19,14 @@ public interface RateLimitCacheService {
 
     void initSessionCount(int count);
 
+    void initApplicationClientsCount(int count);
+
     long incrementSessionCount();
 
+    long incrementApplicationClientsCount();
+
     void decrementSessionCount();
+
+    void decrementApplicationClientsCount();
 
 }

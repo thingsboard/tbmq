@@ -21,6 +21,7 @@ import com.github.benmanes.caffeine.cache.Ticker;
 import com.github.benmanes.caffeine.cache.Weigher;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import lombok.Data;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -59,6 +60,9 @@ public class TbCaffeineCacheConfiguration {
     private long cacheStatsInterval;
     @Value("${mqtt.sessions-limit:0}")
     private int sessionsLimit;
+    @Value("${mqtt.application-clients-limit:0}")
+    @Setter
+    private int applicationClientsLimit;
 
     private ScheduledExecutorService scheduler = null;
 
@@ -77,7 +81,10 @@ public class TbCaffeineCacheConfiguration {
                                     entry.getValue()))
                             .collect(Collectors.toList());
             if (sessionsLimit > 0) {
-                caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForSessionsLimitCache()));
+                caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForLimitCache()));
+            }
+            if (applicationClientsLimit > 0) {
+                caches.add(buildCache(CacheConstants.APP_CLIENTS_LIMIT_CACHE, getCacheSpecsForLimitCache()));
             }
             manager.setCaches(caches);
         }
@@ -143,7 +150,7 @@ public class TbCaffeineCacheConfiguration {
         };
     }
 
-    private CacheSpecs getCacheSpecsForSessionsLimitCache() {
+    private CacheSpecs getCacheSpecsForLimitCache() {
         CacheSpecs cacheSpec = new CacheSpecs();
         cacheSpec.setMaxSize(1);
         cacheSpec.setTimeToLiveInMinutes(-1);
