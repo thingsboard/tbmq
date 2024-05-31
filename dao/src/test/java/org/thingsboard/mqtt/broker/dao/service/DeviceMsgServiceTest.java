@@ -37,9 +37,9 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
     @Autowired
     private DeviceMsgService deviceMsgService;
 
-    private static final String TEST_CLIENT_ID = "testClientId";
-    private static final byte[] TEST_PAYLOAD = "testPayload".getBytes();
-    private static final List<DevicePublishMsg> TEST_MESSAGES = Arrays.asList(
+    private final String TEST_CLIENT_ID = "testClientId";
+    private final byte[] TEST_PAYLOAD = "testPayload".getBytes();
+    private final List<DevicePublishMsg> TEST_MESSAGES = Arrays.asList(
             newDevicePublishMsg(0L),
             newDevicePublishMsg(1L),
             newDevicePublishMsg(2L),
@@ -47,7 +47,7 @@ public class DeviceMsgServiceTest extends AbstractServiceTest {
             newDevicePublishMsg(4L)
     );
 
-    private static DevicePublishMsg newDevicePublishMsg(long serialNumber) {
+    private DevicePublishMsg newDevicePublishMsg(long serialNumber) {
         return new DevicePublishMsg(TEST_CLIENT_ID, UUID.randomUUID().toString(), serialNumber, 0L, 0, 0,
                 PersistedPacketType.PUBLISH, TEST_PAYLOAD, new MqttProperties(), false);
     }

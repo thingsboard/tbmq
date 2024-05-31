@@ -32,8 +32,8 @@ import java.util.Set;
 @DaoSqlTest
 public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTest {
 
-    static final String CLIENT_ID1 = "clientId1";
-    static final String CLIENT_ID2 = "clientId2";
+    private final String CLIENT_ID1 = "clientId1";
+    private final String CLIENT_ID2 = "clientId2";
 
     @Autowired
     private DevicePacketIdAndSerialNumberService packetIdAndSerialNumberService;
