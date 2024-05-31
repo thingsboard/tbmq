@@ -131,7 +131,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     void notifyClientDisconnected(ClientActorStateInfo actorState, int sessionExpiryInterval) {
         if (log.isTraceEnabled()) {
-            log.trace("Executing notifyClientDisconnected");
+            log.trace("[{}] Executing notifyClientDisconnected", actorState.getClientId());
         }
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {

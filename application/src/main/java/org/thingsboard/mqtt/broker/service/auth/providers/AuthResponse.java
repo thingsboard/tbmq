@@ -27,7 +27,9 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 public class AuthResponse {
+
     private final boolean success;
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
+
 }

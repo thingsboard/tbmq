@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import java.util.UUID;
 
 public interface SessionClusterManager {
+
     void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo);
 
     void processSessionDisconnected(String clientId, SessionDisconnectedMsg msg);

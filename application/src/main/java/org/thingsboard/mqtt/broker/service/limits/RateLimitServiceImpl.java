@@ -35,8 +35,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -119,13 +117,13 @@ public class RateLimitServiceImpl implements RateLimitService {
         if (sessionsLimit <= 0) {
             return true;
         }
-        long newSessionCount = rateLimitCacheService.incrementSessionCount();
 
         ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
         if (clientSessionInfo != null) {
-            rateLimitCacheService.decrementSessionCount();
             return true;
         }
+
+        long newSessionCount = rateLimitCacheService.incrementSessionCount();
 
         if (newSessionCount > sessionsLimit) {
             log.trace("Client sessions count limit detected! Allowed: {} sessions", sessionsLimit);
@@ -141,14 +139,14 @@ public class RateLimitServiceImpl implements RateLimitService {
         if (applicationClientsLimit <= 0) {
             return true;
         }
-        if (APPLICATION == sessionInfo.getClientType() && sessionInfo.isPersistent()) {
-            long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
+        if (sessionInfo.isPersistentAppClient()) {
 
             ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(sessionInfo.getClientId());
-            if (clientSessionInfo != null) {
-                rateLimitCacheService.decrementApplicationClientsCount();
+            if (clientSessionInfo != null && clientSessionInfo.isPersistentAppClient()) {
                 return true;
             }
+
+            long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
 
             if (newAppClientsCount > applicationClientsLimit) {
                 log.trace("Application clients count limit detected! Allowed: {} App clients", applicationClientsLimit);

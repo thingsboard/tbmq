@@ -37,6 +37,10 @@ public class SessionInfo {
     private final ClientInfo clientInfo;
     private final ConnectionInfo connectionInfo;
 
+    public static SessionInfo withClientType(ClientType clientType) {
+        return SessionInfo.builder().clientInfo(ClientInfo.builder().type(clientType).build()).build();
+    }
+
     public boolean isPersistent() {
         return safeGetSessionExpiryInterval() > 0 || isNotCleanSession();
     }
@@ -59,5 +63,13 @@ public class SessionInfo {
 
     public ClientType getClientType() {
         return clientInfo.getType();
+    }
+
+    public boolean isPersistentAppClient() {
+        return isAppClient() && isPersistent();
+    }
+
+    public boolean isAppClient() {
+        return ClientType.APPLICATION.equals(clientInfo.getType());
     }
 }
