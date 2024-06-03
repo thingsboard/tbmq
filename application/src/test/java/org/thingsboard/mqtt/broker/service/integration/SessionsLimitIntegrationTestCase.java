@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -54,9 +55,10 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
-        ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_1");
-        Assert.assertNotNull(clientSessionInfo1);
-        Assert.assertTrue(clientSessionInfo1.isConnected());
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_1");
+            return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
+        });
 
         MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
@@ -72,9 +74,10 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
-        ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
-        Assert.assertNotNull(clientSessionInfo1);
-        Assert.assertTrue(clientSessionInfo1.isConnected());
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
+            return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
+        });
 
         MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);

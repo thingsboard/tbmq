@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.common.MqttException;
 import org.junit.After;
@@ -37,6 +38,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
+
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -79,9 +82,10 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
         persistedClient.connect(getOptions(false, APP_CLIENTS_LIMIT_USER_NAME));
         persistedClient.disconnect();
 
-        ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimit1");
-        Assert.assertNotNull(clientSessionInfo);
-        Assert.assertEquals(ClientType.APPLICATION, clientSessionInfo.getType());
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimit1");
+            return clientSessionInfo != null && ClientType.APPLICATION == clientSessionInfo.getType();
+        });
 
         try {
             MqttClient anotherPersistedClient = new MqttClient(SERVER_URI + mqttPort, "appClientLimit2");
@@ -97,9 +101,10 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
         persistedClient = new MqttClient(SERVER_URI + mqttPort, "appClientLimitSameClient");
         persistedClient.connect(getOptions(false, APP_CLIENTS_LIMIT_USER_NAME));
 
-        ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimitSameClient");
-        Assert.assertNotNull(clientSessionInfo);
-        Assert.assertEquals(ClientType.APPLICATION, clientSessionInfo.getType());
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimitSameClient");
+            return clientSessionInfo != null && ClientType.APPLICATION == clientSessionInfo.getType();
+        });
 
         MqttClient anotherPersistedClient = new MqttClient(SERVER_URI + mqttPort, "appClientLimitSameClient");
         anotherPersistedClient.connect(getOptions(false, APP_CLIENTS_LIMIT_USER_NAME));
