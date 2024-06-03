@@ -1,18 +1,3 @@
-/**
- * Copyright © 2016-2024 The Thingsboard Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.thingsboard.mqtt.broker.service.limits;
 
 import org.junit.After;
@@ -26,7 +11,10 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
@@ -192,4 +180,54 @@ public class RateLimitServiceImplTest {
         Assert.assertTrue(result);
     }
 
+    @Test
+    public void givenNoApplicationClientsLimit_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(0);
+
+        SessionInfo sessionInfo = SessionInfo.builder().build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitAndNotPersistentAppClient_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(1);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).build()).cleanStart(true).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitReached_whenCheckApplicationClientsLimit_thenFailure() {
+        rateLimitService.setApplicationClientsLimit(1);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitNotReached_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(5);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitReached_whenCheckApplicationClientsLimitForExistingClient_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(1);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        ClientSessionInfo clientSessionInfo = ClientSessionInfo.builder().type(ClientType.APPLICATION).cleanStart(false).build();
+        when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(clientSessionInfo);
+
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
 }
