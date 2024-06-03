@@ -47,6 +47,7 @@ public class RateLimitRedisCacheServiceImplTest {
         MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         rateLimitRedisCacheService.setSessionsLimit(5);
+        rateLimitRedisCacheService.setApplicationClientsLimit(5);
     }
 
     @Test
@@ -93,6 +94,54 @@ public class RateLimitRedisCacheServiceImplTest {
         rateLimitRedisCacheService.setSessionsLimit(0);
 
         rateLimitRedisCacheService.decrementSessionCount();
+
+        verify(valueOperations, never()).decrement(anyString());
+    }
+
+    @Test
+    public void testInitApplicationClientsCount() {
+        int count = 5;
+        when(valueOperations.setIfAbsent(anyString(), anyString())).thenReturn(true);
+
+        rateLimitRedisCacheService.initApplicationClientsCount(count);
+
+        verify(valueOperations, times(1)).setIfAbsent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, Integer.toString(count));
+    }
+
+    @Test
+    public void testInitApplicationClientsCountWhenClientsLimitIsZero() {
+        rateLimitRedisCacheService.setApplicationClientsLimit(0);
+        int count = 5;
+
+        rateLimitRedisCacheService.initApplicationClientsCount(count);
+
+        verify(valueOperations, never()).setIfAbsent(anyString(), anyString());
+    }
+
+    @Test
+    public void testIncrementApplicationClientsCount() {
+        when(valueOperations.increment(anyString())).thenReturn(6L);
+
+        long newCount = rateLimitRedisCacheService.incrementApplicationClientsCount();
+
+        assertEquals(6L, newCount);
+        verify(valueOperations, times(1)).increment(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount() {
+        rateLimitRedisCacheService.setApplicationClientsLimit(5);
+
+        rateLimitRedisCacheService.decrementApplicationClientsCount();
+
+        verify(valueOperations, times(1)).decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCountWhenClientsLimitIsZero() {
+        rateLimitRedisCacheService.setApplicationClientsLimit(0);
+
+        rateLimitRedisCacheService.decrementApplicationClientsCount();
 
         verify(valueOperations, never()).decrement(anyString());
     }
