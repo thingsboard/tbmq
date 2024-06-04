@@ -53,6 +53,7 @@ public class RateLimitCaffeineCacheServiceImplTest {
         when(cacheManager.getCache(any())).thenReturn(mockCache);
 
         rateLimitCaffeineCacheService.setSessionsLimit(5);
+        rateLimitCaffeineCacheService.setApplicationClientsLimit(5);
 
         // Initialize the service
         rateLimitCaffeineCacheService.init();
@@ -102,4 +103,47 @@ public class RateLimitCaffeineCacheServiceImplTest {
         assertEquals(Long.valueOf(0), actualCount);
     }
 
+    @Test
+    public void testInitApplicationClientsCount() {
+        int count = 5;
+        rateLimitCaffeineCacheService.initApplicationClientsCount(count);
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+    }
+
+    @Test
+    public void testIncrementApplicationClientsCount() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
+        long newCount = rateLimitCaffeineCacheService.incrementApplicationClientsCount();
+
+        assertEquals(6L, newCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(4), actualCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount_ZeroValue() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 0L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(0), actualCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount_NegativeValue() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, -1L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(0), actualCount);
+    }
 }

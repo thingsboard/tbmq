@@ -21,13 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
-/**
- * should not be null since not used in pipeline / transaction.
- */
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @RequiredArgsConstructor
@@ -39,24 +35,42 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
+    @Value("${mqtt.application-clients-limit:0}")
+    @Setter
+    private int applicationClientsLimit;
 
     @Override
     public void initSessionCount(int count) {
         if (sessionsLimit <= 0) {
             return;
         }
-        ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
-        boolean initialized = valueOps.setIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
+        boolean initialized = initCacheWithCount(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, count);
         if (initialized) {
-            log.info("Session count initialized to {}", count);
+            log.info("Client session limit cache is initialized with count {}", count);
+        }
+    }
+
+    @Override
+    public void initApplicationClientsCount(int count) {
+        if (applicationClientsLimit <= 0) {
+            return;
+        }
+        boolean initialized = initCacheWithCount(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, count);
+        if (initialized) {
+            log.info("Application clients limit cache is initialized with count {}", count);
         }
     }
 
     @Override
     public long incrementSessionCount() {
         log.debug("Incrementing session count");
-        ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
-        return valueOps.increment(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        return increment(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+    }
+
+    @Override
+    public long incrementApplicationClientsCount() {
+        log.debug("Incrementing Application clients count");
+        return increment(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
     @Override
@@ -65,8 +79,29 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
             return;
         }
         log.debug("Decrementing session count");
-        ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
-        valueOps.decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+    }
+
+    @Override
+    public void decrementApplicationClientsCount() {
+        if (applicationClientsLimit <= 0) {
+            return;
+        }
+        log.debug("Decrementing Application clients count");
+        decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+    }
+
+
+    private Boolean initCacheWithCount(String key, int count) {
+        return redisTemplate.opsForValue().setIfAbsent(key, Integer.toString(count));
+    }
+
+    private Long increment(String key) {
+        return redisTemplate.opsForValue().increment(key);
+    }
+
+    private void decrement(String key) {
+        redisTemplate.opsForValue().decrement(key);
     }
 
 }

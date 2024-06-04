@@ -23,7 +23,9 @@ import java.util.UUID;
 @Getter
 @RequiredArgsConstructor
 public class ConnectionRequestInfo {
+
     private final UUID requestId;
     private final long requestTime;
     private final String responseTopic;
+
 }

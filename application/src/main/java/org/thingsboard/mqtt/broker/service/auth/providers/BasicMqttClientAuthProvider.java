@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -76,7 +75,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticated with username {}", authContext.getClientId(), authContext.getUsername());
+            log.trace("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
         }
         BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(credentials);

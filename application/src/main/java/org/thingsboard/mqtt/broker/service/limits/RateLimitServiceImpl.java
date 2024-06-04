@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
@@ -52,6 +53,9 @@ public class RateLimitServiceImpl implements RateLimitService {
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
+    @Value("${mqtt.application-clients-limit:0}")
+    @Setter
+    private int applicationClientsLimit;
 
     @PostConstruct
     public void init() {
@@ -113,13 +117,13 @@ public class RateLimitServiceImpl implements RateLimitService {
         if (sessionsLimit <= 0) {
             return true;
         }
-        long newSessionCount = rateLimitCacheService.incrementSessionCount();
 
         ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(clientId);
         if (clientSessionInfo != null) {
-            rateLimitCacheService.decrementSessionCount();
             return true;
         }
+
+        long newSessionCount = rateLimitCacheService.incrementSessionCount();
 
         if (newSessionCount > sessionsLimit) {
             log.trace("Client sessions count limit detected! Allowed: {} sessions", sessionsLimit);
@@ -127,6 +131,30 @@ public class RateLimitServiceImpl implements RateLimitService {
             return false;
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean checkApplicationClientsLimit(SessionInfo sessionInfo) {
+        if (applicationClientsLimit <= 0) {
+            return true;
+        }
+        if (sessionInfo.isPersistentAppClient()) {
+
+            ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo(sessionInfo.getClientId());
+            if (clientSessionInfo != null && clientSessionInfo.isPersistentAppClient()) {
+                return true;
+            }
+
+            long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
+
+            if (newAppClientsCount > applicationClientsLimit) {
+                log.trace("Application clients count limit detected! Allowed: {} App clients", applicationClientsLimit);
+                rateLimitCacheService.decrementApplicationClientsCount();
+                return false;
+            }
+
+        }
         return true;
     }
 

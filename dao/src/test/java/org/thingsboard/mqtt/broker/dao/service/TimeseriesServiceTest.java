@@ -17,9 +17,7 @@ package org.thingsboard.mqtt.broker.dao.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
@@ -49,12 +47,12 @@ import static org.junit.Assert.assertNotNull;
 @DaoSqlTest
 public class TimeseriesServiceTest extends AbstractServiceTest {
 
-    private static final int MAX_TIMEOUT = 30;
+    private final int MAX_TIMEOUT = 30;
 
-    private static final String LONG_KEY = "incomingMsgs";
+    private final String LONG_KEY = "incomingMsgs";
 
-    private static final long TS = 42L;
-    private static final String DESC_ORDER = "DESC";
+    private final long TS = 42L;
+    private final String DESC_ORDER = "DESC";
 
     KvEntry longKvEntry = new LongDataEntry(LONG_KEY, Long.MAX_VALUE);
 
@@ -376,7 +374,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         tsService.save(entityId, toTsEntry(ts, longKvEntry)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
     }
 
-    private static TsKvEntry toTsEntry(long ts, KvEntry entry) {
+    private TsKvEntry toTsEntry(long ts, KvEntry entry) {
         return new BasicTsKvEntry(ts, entry);
     }
 }
