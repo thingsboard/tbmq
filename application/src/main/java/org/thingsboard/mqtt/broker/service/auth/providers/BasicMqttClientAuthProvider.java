@@ -72,6 +72,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         MqttClientCredentials basicCredentials = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
         if (basicCredentials == null) {
+            log.error("Failed to authenticate client with Basic credentials matching clientId: [{}] username: [{}]", authContext.getClientId(), authContext.getUsername());
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {
