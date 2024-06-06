@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.subscription;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 @Getter
 @AllArgsConstructor
 @EqualsAndHashCode
+@ToString
 public class Subscription {
 
     private final String topicFilter;
