@@ -77,7 +77,7 @@
         <jaxb.version>2.3.1</jaxb.version>
         <jjwt.version>0.7.0</jjwt.version>
         <bouncycastle.version>1.69</bouncycastle.version>
-        <bucket4j.version>4.1.1</bucket4j.version>
+        <bucket4j.version>8.10.1</bucket4j.version>
         <springfox-swagger.version>3.0.4</springfox-swagger.version>
         <swagger-annotations.version>1.6.3</swagger-annotations.version>
         <micrometer.version>1.9.0</micrometer.version>
@@ -1069,7 +1069,7 @@
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.vladimir-bukhtoyarov</groupId>
+                <groupId>com.bucket4j</groupId>
                 <artifactId>bucket4j-core</artifactId>
                 <version>${bucket4j.version}</version>
             </dependency>
