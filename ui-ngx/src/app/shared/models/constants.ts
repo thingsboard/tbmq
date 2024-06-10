@@ -66,7 +66,7 @@ export const HelpLinks = {
     clientCredentials: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/',
     sessions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/sessions',
     sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
-    connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/web-socket-client',
+    connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/websocket-client',
   }
 };
 
