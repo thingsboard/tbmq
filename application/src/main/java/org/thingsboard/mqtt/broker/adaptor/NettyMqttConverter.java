@@ -82,13 +82,13 @@ public class NettyMqttConverter {
 
     public static String getTopicName(String topicName) {
         return isSharedTopic(topicName) ?
-                topicName.substring(topicName.indexOf("/", BrokerConstants.SHARE_NAME_IDX) + 1) : topicName;
+                topicName.substring(topicName.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX) + 1) : topicName;
     }
 
     public static String getShareName(String topicName) {
         try {
             return isSharedTopic(topicName) ?
-                    topicName.substring(BrokerConstants.SHARE_NAME_IDX, topicName.indexOf("/", BrokerConstants.SHARE_NAME_IDX)) : null;
+                    topicName.substring(BrokerConstants.SHARE_NAME_IDX, topicName.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX)) : null;
         } catch (IndexOutOfBoundsException e) {
             log.error("[{}] Could not extract 'shareName' from shared subscription", topicName, e);
             throw new RuntimeException("Could not extract 'shareName' from shared subscription", e);

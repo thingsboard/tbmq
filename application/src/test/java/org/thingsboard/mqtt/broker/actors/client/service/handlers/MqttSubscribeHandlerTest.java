@@ -162,8 +162,13 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test(expected = DataValidationException.class)
-    public void givenTopicSubscription_whenValidateSharedSubscriptionWithWildcardShareName_thenFailure() {
+    public void givenTopicSubscription_whenValidateSharedSubscriptionWithMultiLvlWildcardShareName_thenFailure() {
         mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "#"));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenTopicSubscription_whenValidateSharedSubscriptionWithSingleLvlWildcardShareName_thenFailure() {
+        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "abc+"));
     }
 
     @Test

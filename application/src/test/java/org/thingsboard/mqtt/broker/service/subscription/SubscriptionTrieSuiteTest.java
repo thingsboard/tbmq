@@ -51,6 +51,44 @@ public class SubscriptionTrieSuiteTest {
     }
 
     @Test
+    public void testSaveSameSessionDifferentTopics() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/temperature").size());
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/temperature").size());
+        subscriptionTrie.put("home/livingroom/humidity", "sensor1");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/humidity").size());
+    }
+
+    @Test
+    public void testSaveDifferentSessionsSameTopic() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/temperature").size());
+        subscriptionTrie.put("home/+/temperature", "sensor2");
+        Assert.assertEquals(2, subscriptionTrie.get("home/livingroom/temperature").size());
+    }
+
+    @Test
+    public void testSaveMultipleSessionsDifferentTopics() {
+        subscriptionTrie.put("home/livingroom/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/humidity", "sensor2");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/temperature").size());
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/humidity").size());
+        subscriptionTrie.put("home/livingroom/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/humidity", "sensor2");
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/temperature").size());
+        Assert.assertEquals(1, subscriptionTrie.get("home/livingroom/humidity").size());
+    }
+
+    @Test
+    public void testSaveSessionWithWildcards() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/temperature", "sensor2");
+        Assert.assertEquals(2, subscriptionTrie.get("home/livingroom/temperature").size());
+        Assert.assertEquals(1, subscriptionTrie.get("home/kitchen/temperature").size());
+    }
+
+    @Test
     public void testSaveSameSession() {
         subscriptionTrie.put("1/2", "test");
         Assert.assertEquals(1, subscriptionTrie.get("1/2").size());
@@ -64,6 +102,24 @@ public class SubscriptionTrieSuiteTest {
         subscriptionTrie.delete("1/2", s -> s.equals("test"));
         List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/2");
         Assert.assertEquals(Collections.emptyList(), result);
+    }
+
+    @Test
+    public void testDeleteNonExistingSubscription() {
+        subscriptionTrie.put("1/2", "test");
+        subscriptionTrie.delete("1/3", s -> s.equals("test"));
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/2");
+        Assert.assertEquals(1, result.size());
+    }
+
+    @Test
+    public void testDeleteMultipleSubscriptions() {
+        subscriptionTrie.put("1/2", "test1");
+        subscriptionTrie.put("1/2", "test2");
+        subscriptionTrie.delete("1/2", s -> s.equals("test1"));
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("1/2");
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("test2", result.get(0).getValue());
     }
 
     @Test
@@ -190,4 +246,226 @@ public class SubscriptionTrieSuiteTest {
 
         Assert.assertEquals(0, nodesCounter.get());
     }
+
+    @Test
+    public void testSingleLevelWildcardSubscription() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/temperature", "sensor2");
+        subscriptionTrie.put("home/bedroom/temperature", "sensor3");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("home/livingroom/temperature");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("sensor1", "home/+/temperature"),
+                        new ValueWithTopicFilter<>("sensor2", "home/livingroom/temperature")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testMultiLevelWildcardSubscription() {
+        subscriptionTrie.put("home/#", "sensor1");
+        subscriptionTrie.put("home/livingroom/temperature", "sensor2");
+        subscriptionTrie.put("home/livingroom/humidity", "sensor3");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("home/livingroom/temperature");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("sensor1", "home/#"),
+                        new ValueWithTopicFilter<>("sensor2", "home/livingroom/temperature")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testCombinedWildcardsSubscription() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        subscriptionTrie.put("home/#", "sensor2");
+        subscriptionTrie.put("home/livingroom/temperature", "sensor3");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("home/livingroom/temperature");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("sensor1", "home/+/temperature"),
+                        new ValueWithTopicFilter<>("sensor2", "home/#"),
+                        new ValueWithTopicFilter<>("sensor3", "home/livingroom/temperature")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testWildcardsAndRegularSubscriptions() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/temperature", "sensor2");
+        subscriptionTrie.put("home/#", "sensor3");
+        subscriptionTrie.put("home/livingroom/#", "sensor4");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("home/livingroom/temperature");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("sensor1", "home/+/temperature"),
+                        new ValueWithTopicFilter<>("sensor2", "home/livingroom/temperature"),
+                        new ValueWithTopicFilter<>("sensor3", "home/#"),
+                        new ValueWithTopicFilter<>("sensor4", "home/livingroom/#")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testSubscriptionWithDifferentLevels() {
+        subscriptionTrie.put("home/+/temperature", "sensor1");
+        subscriptionTrie.put("home/livingroom/#", "sensor2");
+        subscriptionTrie.put("home/+/+", "sensor3");
+        subscriptionTrie.put("home/#", "sensor4");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("home/livingroom/temperature");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("sensor1", "home/+/temperature"),
+                        new ValueWithTopicFilter<>("sensor2", "home/livingroom/#"),
+                        new ValueWithTopicFilter<>("sensor3", "home/+/+"),
+                        new ValueWithTopicFilter<>("sensor4", "home/#")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testSubscriptionWithFirstSlashAndSingleLvlWildcard() {
+        subscriptionTrie.put("+/+", "subscription1");
+        subscriptionTrie.put("/+", "subscription2");
+        subscriptionTrie.put("+", "subscription3");
+        subscriptionTrie.put("/#", "subscription4");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("/finance");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "+/+"),
+                        new ValueWithTopicFilter<>("subscription2", "/+"),
+                        new ValueWithTopicFilter<>("subscription4", "/#")
+                ),
+                new HashSet<>(result));
+
+        Assert.assertEquals(4, subscriptionCounter.get());
+
+        subscriptionTrie.delete("+/+", s -> true);
+        subscriptionTrie.delete("/+", s -> true);
+        subscriptionTrie.delete("+", s -> true);
+        subscriptionTrie.delete("/#", s -> true);
+
+        Assert.assertEquals(0, subscriptionCounter.get());
+    }
+
+    @Test
+    public void testSubscriptionWithTopicFilterThatStartsWithSlash() {
+        subscriptionTrie.put("/one/two/three/", "subscription1");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("/one/two/three/");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "/one/two/three/")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testWildcardSubscriptionsWithNoLastLvlInTopicName() {
+        subscriptionTrie.put("sport/tennis/player1/#", "subscription1");
+        subscriptionTrie.put("sport/tennis/player1/+", "subscription2");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("sport/tennis/player1");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "sport/tennis/player1/#")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testWildcardSubscriptionsWithSingleLvlInTopicName() {
+        subscriptionTrie.put("sport/#", "subscription1");
+        subscriptionTrie.put("sport/+", "subscription2");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("sport");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "sport/#")
+                ),
+                new HashSet<>(result));
+    }
+
+    @Test
+    public void testWildcardSubscriptionsWithEmptyLastLvlInTopicName() {
+        subscriptionTrie.put("sport/#", "subscription1");
+        subscriptionTrie.put("sport/+", "subscription2");
+        subscriptionTrie.put("sport/+/+", "subscription3");
+        subscriptionTrie.put("sport/football/+", "subscription4");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("sport/football/");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "sport/#"),
+                        new ValueWithTopicFilter<>("subscription3", "sport/+/+"),
+                        new ValueWithTopicFilter<>("subscription4", "sport/football/+")
+                ),
+                new HashSet<>(result));
+
+        Assert.assertEquals(4, subscriptionCounter.get());
+
+        subscriptionTrie.delete("sport/+/+", s -> true);
+
+        Assert.assertEquals(3, subscriptionCounter.get());
+    }
+
+    @Test
+    public void testSubscriptionsWithEmptyLevelInTheMiddle() {
+        subscriptionTrie.put("sport/football//match", "subscription1");
+        subscriptionTrie.put("sport/football/+/match", "subscription2");
+        subscriptionTrie.put("sport/football/#", "subscription3");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("sport/football//match");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "sport/football//match"),
+                        new ValueWithTopicFilter<>("subscription2", "sport/football/+/match"),
+                        new ValueWithTopicFilter<>("subscription3", "sport/football/#")
+                ),
+                new HashSet<>(result));
+
+        Assert.assertEquals(3, subscriptionCounter.get());
+
+        subscriptionTrie.delete("sport/football//match", s -> true);
+        subscriptionTrie.delete("sport/football/+/match", s -> true);
+        subscriptionTrie.delete("sport/football/#", s -> true);
+
+        Assert.assertEquals(0, subscriptionCounter.get());
+    }
+
+    @Test
+    public void testSubscriptionsWithEmptyLevelAtTheBeginning() {
+        subscriptionTrie.put("//sport/football/match", "subscription1");
+        subscriptionTrie.put("/+/sport/football/match", "subscription2");
+        subscriptionTrie.put("+/+/sport/football/match", "subscription3");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("//sport/football/match");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "//sport/football/match"),
+                        new ValueWithTopicFilter<>("subscription2", "/+/sport/football/match"),
+                        new ValueWithTopicFilter<>("subscription3", "+/+/sport/football/match")
+                ),
+                new HashSet<>(result));
+
+        Assert.assertEquals(3, subscriptionCounter.get());
+
+        subscriptionTrie.delete("//sport/football/match", s -> true);
+        subscriptionTrie.delete("/+/sport/football/match", s -> true);
+        subscriptionTrie.delete("+/+/sport/football/match", s -> true);
+
+        Assert.assertEquals(0, subscriptionCounter.get());
+    }
+
+    @Test
+    public void testSubscriptionsWithEmptyLevelAtTheEnd() {
+        subscriptionTrie.put("football/match//", "subscription1");
+        subscriptionTrie.put("football/match/+/", "subscription2");
+        subscriptionTrie.put("football/match/+/+", "subscription3");
+        subscriptionTrie.put("football/match/#", "subscription4");
+        subscriptionTrie.put("football/match/+//", "subscription5");
+        List<ValueWithTopicFilter<String>> result = subscriptionTrie.get("football/match//");
+        Assert.assertEquals(Set.of(
+                        new ValueWithTopicFilter<>("subscription1", "football/match//"),
+                        new ValueWithTopicFilter<>("subscription2", "football/match/+/"),
+                        new ValueWithTopicFilter<>("subscription3", "football/match/+/+"),
+                        new ValueWithTopicFilter<>("subscription4", "football/match/#")
+                ),
+                new HashSet<>(result));
+
+        Assert.assertEquals(5, subscriptionCounter.get());
+
+        subscriptionTrie.delete("football/match//", s -> true);
+        subscriptionTrie.delete("football/match/+/", s -> true);
+        subscriptionTrie.delete("football/match/+/+", s -> true);
+        subscriptionTrie.delete("football/match/#", s -> true);
+        subscriptionTrie.delete("football/match/+//", s -> true);
+
+        Assert.assertEquals(0, subscriptionCounter.get());
+    }
+
+
 }

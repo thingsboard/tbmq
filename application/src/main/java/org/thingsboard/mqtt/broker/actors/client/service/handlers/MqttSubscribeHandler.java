@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
@@ -350,9 +351,13 @@ public class MqttSubscribeHandler {
         if (shareName != null && shareName.isEmpty()) {
             throw new DataValidationException("Shared subscription 'shareName' must be at least one character long");
         }
-        if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
+        if (!StringUtils.isEmpty(shareName) && shareNameContainsWildcards(shareName)) {
             throw new DataValidationException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
+    }
+
+    private boolean shareNameContainsWildcards(String shareName) {
+        return shareName.contains(BrokerConstants.SINGLE_LEVEL_WILDCARD) || shareName.contains(BrokerConstants.MULTI_LEVEL_WILDCARD);
     }
 
     boolean isSharedSubscriptionWithNoLocal(TopicSubscription subscription) {
