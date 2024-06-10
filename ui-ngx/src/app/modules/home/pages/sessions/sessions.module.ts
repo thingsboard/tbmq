@@ -24,12 +24,16 @@ import { SessionsRoutingModule } from "@home/pages/sessions/sessions-routing.mod
 import { SubscriptionsComponent } from "@home/components/session-subscriptions/subscriptions.component";
 import { SessionTableHeaderComponent } from "@home/pages/sessions/session-table-header.component";
 import { SessionFilterConfigComponent } from "@home/pages/sessions/session-filter-config.component";
+import { SubscriptionOptionsComponent } from '@home/components/session-subscriptions/subscription-options.component';
+import { ShowSubscriptionOptionsPopoverComponent } from '@home/components/session-subscriptions/show-subscription-options-popover.component';
 
 @NgModule({
   declarations: [
     SessionsTableComponent,
     SessionsDetailsDialogComponent,
     SubscriptionsComponent,
+    SubscriptionOptionsComponent,
+    ShowSubscriptionOptionsPopoverComponent,
     SessionTableHeaderComponent,
     SessionFilterConfigComponent
   ],
