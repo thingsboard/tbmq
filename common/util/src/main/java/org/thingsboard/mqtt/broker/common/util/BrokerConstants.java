@@ -60,7 +60,10 @@ public class BrokerConstants {
 
     public static final int DEFAULT_RECEIVE_MAXIMUM = 65535;
 
+    public static final String NULL_CHAR_STR = "\u0000";
+
     public static final char TOPIC_DELIMITER = '/';
+    public static final String TOPIC_DELIMITER_STR = "/";
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
     public static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";

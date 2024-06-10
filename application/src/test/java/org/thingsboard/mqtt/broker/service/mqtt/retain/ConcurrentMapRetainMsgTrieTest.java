@@ -74,6 +74,14 @@ public class ConcurrentMapRetainMsgTrieTest {
     }
 
     @Test
+    public void testDeleteNonExistingTopic() {
+        retainMsgTrie.put("1/2", "test");
+        retainMsgTrie.delete("1/3");
+        List<String> result = retainMsgTrie.get("1/2");
+        Assert.assertEquals(1, result.size());
+    }
+
+    @Test
     public void testSize() {
         retainMsgTrie.put("1/1", "test1");
         retainMsgTrie.put("1/2", "test2");
@@ -220,4 +228,186 @@ public class ConcurrentMapRetainMsgTrieTest {
 
         Assert.assertEquals(0, nodesCounter.get());
     }
+
+    @Test
+    public void testRetainMsgWithLeadingSlash() {
+        retainMsgTrie.put("/sport/tennis", "msg1");
+        List<String> result = retainMsgTrie.get("/sport/tennis");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithTrailingSlash() {
+        retainMsgTrie.put("sport/tennis/", "msg1");
+        List<String> result = retainMsgTrie.get("sport/tennis/");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithLeadingAndTrailingSlash() {
+        retainMsgTrie.put("/sport/tennis/", "msg1");
+        List<String> result = retainMsgTrie.get("/sport/tennis/");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithWhitespaces() {
+        retainMsgTrie.put(" sport / tennis ", "msg1");
+        List<String> result = retainMsgTrie.get(" sport / tennis ");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithMixedLeadingTrailingWhitespaces() {
+        retainMsgTrie.put(" /sport/tennis/ ", "msg1");
+        List<String> result = retainMsgTrie.get(" /sport/tennis/ ");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithMultipleConsecutiveSlashes() {
+        retainMsgTrie.put("sport//tennis///player", "msg1");
+        List<String> result = retainMsgTrie.get("sport//tennis///player");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithSpecialCharacters() {
+        retainMsgTrie.put("sport/tennis/@#$%", "msg1");
+        List<String> result = retainMsgTrie.get("sport/tennis/@#$%");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithUnicodeCharacters() {
+        retainMsgTrie.put("sport/tennis/🔥", "msg1");
+        List<String> result = retainMsgTrie.get("sport/tennis/🔥");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithSpacesBetweenSlashes() {
+        retainMsgTrie.put("sport/ /tennis", "msg1");
+        List<String> result = retainMsgTrie.get("sport/ /tennis");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithMixedCaseSensitivity() {
+        retainMsgTrie.put("Sport/Tennis", "msg1");
+        List<String> result = retainMsgTrie.get("Sport/Tennis");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+    }
+
+    @Test
+    public void testRetainMsgWithWildcards() {
+        retainMsgTrie.put("/finance", "msg1");
+
+        List<String> result = retainMsgTrie.get("+/+");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("/+");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("/#");
+        Assert.assertEquals(Set.of("msg1"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("+");
+        Assert.assertEquals(Set.of(), new HashSet<>(result));
+
+        retainMsgTrie.delete("/finance");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
+    @Test
+    public void testRetainMsgWithLeadingAndTrailingSlashWithDeletion() {
+        retainMsgTrie.put("/one/two/three/", "msg");
+
+        List<String> result = retainMsgTrie.get("/one/two/three/");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        retainMsgTrie.delete("/one/two/three/");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
+    @Test
+    public void testRetainMsgWithAdditionalLvlOfWildcards() {
+        retainMsgTrie.put("sport/tennis/player1", "msg");
+
+        List<String> result = retainMsgTrie.get("sport/tennis/player1/#");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("sport/tennis/player1/+");
+        Assert.assertEquals(Set.of(), new HashSet<>(result));
+
+        retainMsgTrie.delete("sport/tennis/player1");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
+    @Test
+    public void testRetainMsgSpecialCaseUsingWildcardsWithTrailingSlash() {
+        retainMsgTrie.put("sport/football/", "msg");
+
+        List<String> result = retainMsgTrie.get("sport/#");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("sport/+/+");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("sport/football/+");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("sport/+");
+        Assert.assertEquals(Set.of(), new HashSet<>(result));
+
+        retainMsgTrie.delete("sport/football/");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
+    @Test
+    public void testRetainMsgSpecialCaseUsingWildcardsWithTrailingSlashes() {
+        retainMsgTrie.put("football/match//", "msg");
+
+        List<String> result = retainMsgTrie.get("football/match//");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("football/match/+/+");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("football/match/+/");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("football/match/#");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("football/match/+//");
+        Assert.assertEquals(Set.of(), new HashSet<>(result));
+
+        retainMsgTrie.delete("football/match//");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
+    @Test
+    public void testRetainMsgSpecialCaseUsingWildcardsWithLeadingSlash() {
+        retainMsgTrie.put("//sport/football/match", "msg");
+
+        List<String> result = retainMsgTrie.get("//sport/football/match");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("/+/sport/football/match");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        result = retainMsgTrie.get("+/+/sport/football/match");
+        Assert.assertEquals(Set.of("msg"), new HashSet<>(result));
+
+        retainMsgTrie.delete("//sport/football/match");
+
+        Assert.assertEquals(0, retainMsgTrie.size());
+    }
+
 }

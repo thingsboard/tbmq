@@ -67,17 +67,23 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         }
         List<ValueWithTopicFilter<T>> result = new ArrayList<>();
         Stack<TopicPosition<T>> topicPositions = new Stack<>();
-        topicPositions.add(new TopicPosition<>(BrokerConstants.EMPTY_STR, 0, root));
+        topicPositions.add(new TopicPosition<>(BrokerConstants.NULL_CHAR_STR, 0, root));
 
         while (!topicPositions.isEmpty()) {
             TopicPosition<T> topicPosition = topicPositions.pop();
-            if (topicPosition.prevDelimiterIndex >= topic.length()) {
+            if (topicPosition.segmentStartIndex > topic.length()) {
                 result.addAll(wrapValuesWithTopicFilter(topicPosition.prevTopicFilter, topicPosition.node.values));
+
+                Node<T> multiLevelWildcardSubs = topicPosition.node.children.get(BrokerConstants.MULTI_LEVEL_WILDCARD);
+                if (multiLevelWildcardSubs != null) {
+                    String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, BrokerConstants.MULTI_LEVEL_WILDCARD);
+                    result.addAll(wrapValuesWithTopicFilter(currentTopicFilter, multiLevelWildcardSubs.values));
+                }
                 continue;
             }
             ConcurrentMap<String, Node<T>> childNodes = topicPosition.node.children;
-            String segment = getSegment(topic, topicPosition.prevDelimiterIndex);
-            int nextDelimiterIndex = topicPosition.prevDelimiterIndex + segment.length() + 1;
+            String segment = getSegment(topic, topicPosition.segmentStartIndex);
+            int nextSegmentStartIndex = getNextSegmentStartIndex(topicPosition.segmentStartIndex, segment);
 
             if (notStartingWith$(topic, topicPosition)) {
                 Node<T> multiLevelWildcardSubs = childNodes.get(BrokerConstants.MULTI_LEVEL_WILDCARD);
@@ -88,21 +94,21 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
                 Node<T> singleLevelWildcardSubs = childNodes.get(BrokerConstants.SINGLE_LEVEL_WILDCARD);
                 if (singleLevelWildcardSubs != null) {
                     String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, BrokerConstants.SINGLE_LEVEL_WILDCARD);
-                    topicPositions.add(new TopicPosition<>(currentTopicFilter, nextDelimiterIndex, singleLevelWildcardSubs));
+                    topicPositions.add(new TopicPosition<>(currentTopicFilter, nextSegmentStartIndex, singleLevelWildcardSubs));
                 }
             }
 
             Node<T> segmentNode = childNodes.get(segment);
             if (segmentNode != null) {
                 String currentTopicFilter = appendSegment(topicPosition.prevTopicFilter, segment);
-                topicPositions.add(new TopicPosition<>(currentTopicFilter, nextDelimiterIndex, segmentNode));
+                topicPositions.add(new TopicPosition<>(currentTopicFilter, nextSegmentStartIndex, segmentNode));
             }
         }
         return result;
     }
 
     private boolean notStartingWith$(String topic, TopicPosition<T> topicPosition) {
-        return topicPosition.prevDelimiterIndex != 0 || topic.charAt(0) != '$';
+        return topicPosition.segmentStartIndex != 0 || topic.charAt(0) != '$';
     }
 
     private List<ValueWithTopicFilter<T>> wrapValuesWithTopicFilter(String topicFilter, Collection<T> values) {
@@ -129,16 +135,16 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         }
     }
 
-    private void put(Node<T> x, String key, T val, int prevDelimiterIndex) {
-        if (prevDelimiterIndex >= key.length()) {
+    private void put(Node<T> x, String key, T val, int segmentStartIndex) {
+        if (segmentStartIndex > key.length()) {
             addOrReplace(x.values, val);
         } else {
-            String segment = getSegment(key, prevDelimiterIndex);
+            String segment = getSegment(key, segmentStartIndex);
             Node<T> nextNode = x.children.computeIfAbsent(segment, s -> {
                 nodesCount.incrementAndGet();
                 return new Node<>();
             });
-            put(nextNode, key, val, prevDelimiterIndex + segment.length() + 1);
+            put(nextNode, key, val, getNextSegmentStartIndex(segmentStartIndex, segment));
         }
     }
 
@@ -159,7 +165,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         if (topicFilter == null || deletionFilter == null) {
             throw new IllegalArgumentException("Topic filter or deletionFilter cannot be null");
         }
-        Node<T> x = getNode(root, topicFilter, 0);
+        Node<T> x = getDeleteNode(root, topicFilter, 0);
         if (x != null) {
             Set<T> valuesToDelete = x.values.stream().filter(deletionFilter).collect(Collectors.toSet());
             if (valuesToDelete.isEmpty()) {
@@ -230,25 +236,34 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
         return isNodeEmpty;
     }
 
-    private Node<T> getNode(Node<T> x, String key, int prevDelimiterIndex) {
-        if (x == null) return null;
-        if (prevDelimiterIndex >= key.length()) {
+    private Node<T> getDeleteNode(Node<T> x, String key, int segmentStartIndex) {
+        if (x == null) {
+            return null;
+        }
+        if (segmentStartIndex > key.length()) {
             return x;
         }
-        String segment = getSegment(key, prevDelimiterIndex);
-        return getNode(x.children.get(segment), key, prevDelimiterIndex + segment.length() + 1);
+        String segment = getSegment(key, segmentStartIndex);
+        return getDeleteNode(x.children.get(segment), key, getNextSegmentStartIndex(segmentStartIndex, segment));
     }
 
-    private String getSegment(String key, int prevDelimiterIndex) {
-        int nextDelimitedIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITER, prevDelimiterIndex);
+    private int getNextSegmentStartIndex(int segmentStartIndex, String segment) {
+        return segmentStartIndex + segment.length() + 1;
+    }
 
-        return nextDelimitedIndex == -1 ?
-                key.substring(prevDelimiterIndex)
-                : key.substring(prevDelimiterIndex, nextDelimitedIndex);
+    private String getSegment(String key, int segmentStartIndex) {
+        int nextDelimiterIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITER, segmentStartIndex);
+
+        return nextDelimiterIndex == -1 ?
+                key.substring(segmentStartIndex)
+                : key.substring(segmentStartIndex, nextDelimiterIndex);
     }
 
     private String appendSegment(String topicFilter, String segment) {
-        return topicFilter.isEmpty() ? segment : topicFilter + BrokerConstants.TOPIC_DELIMITER + segment;
+        if (topicFilter.equals(BrokerConstants.NULL_CHAR_STR)) {
+            return segment;
+        }
+        return topicFilter + BrokerConstants.TOPIC_DELIMITER + segment;
     }
 
     private static class Node<T> {
@@ -276,7 +291,7 @@ public class ConcurrentMapSubscriptionTrie<T> implements SubscriptionTrie<T> {
     @AllArgsConstructor
     private static class TopicPosition<T> {
         private final String prevTopicFilter;
-        private final int prevDelimiterIndex;
+        private final int segmentStartIndex;
         private final Node<T> node;
     }
 
