@@ -32,7 +32,7 @@ public class TbRateLimits {
         for (String limitSrc : limitsConfiguration.split(",")) {
             long capacity = Long.parseLong(limitSrc.split(":")[0]);
             long duration = Long.parseLong(limitSrc.split(":")[1]);
-            builder.addLimit(Bandwidth.simple(capacity, Duration.ofSeconds(duration)));
+            builder.addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, Duration.ofSeconds(duration)).build());
             initialized = true;
         }
         if (initialized) {
