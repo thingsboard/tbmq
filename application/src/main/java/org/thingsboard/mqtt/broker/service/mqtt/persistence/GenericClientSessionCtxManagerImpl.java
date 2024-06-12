@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence;
 
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
@@ -28,7 +29,6 @@ import org.thingsboard.mqtt.broker.session.AwaitingPubRelPacketsCtx;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

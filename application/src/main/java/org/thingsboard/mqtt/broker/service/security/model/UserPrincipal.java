@@ -18,10 +18,15 @@ package org.thingsboard.mqtt.broker.service.security.model;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @RequiredArgsConstructor
+@Getter
 public class UserPrincipal implements Serializable {
-    @Getter
+
+    @Serial
+    private static final long serialVersionUID = 7801510682173214198L;
+
     private final String userName;
 }

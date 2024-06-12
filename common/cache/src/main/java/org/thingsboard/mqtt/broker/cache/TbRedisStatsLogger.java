@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +29,6 @@ import org.springframework.data.redis.cache.RedisCache;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +82,6 @@ public class TbRedisStatsLogger {
         }
     }
 
-    @Nonnegative
     public double hitRate(CacheStatistics stats) {
         long requestCount = stats.getGets();
         return (requestCount == 0) ? 1.0 : (double) stats.getHits() / requestCount;

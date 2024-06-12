@@ -136,7 +136,7 @@ public abstract class TBRedisCacheConfiguration {
         poolConfig.setTestOnBorrow(testOnBorrow);
         poolConfig.setTestOnReturn(testOnReturn);
         poolConfig.setTestWhileIdle(testWhileIdle);
-        poolConfig.setSoftMinEvictableIdleTime(Duration.ofMillis(minEvictableMs));
+        poolConfig.setSoftMinEvictableIdleDuration(Duration.ofMillis(minEvictableMs));
         poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(evictionRunsMs));
         poolConfig.setMaxWait(Duration.ofMillis(maxWaitMills));
         poolConfig.setNumTestsPerEvictionRun(numberTestsPerEvictionRun);

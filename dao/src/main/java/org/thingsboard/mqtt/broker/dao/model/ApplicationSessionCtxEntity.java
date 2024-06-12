@@ -17,28 +17,27 @@ package org.thingsboard.mqtt.broker.dao.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
 import org.thingsboard.mqtt.broker.common.data.ApplicationMsgInfo;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSessionCtx;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @EqualsAndHashCode
 @Entity
-@TypeDef(name = "json", typeClass = JsonStringType.class)
 @Table(name = ModelConstants.APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME)
 public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx> {
+
     @Id
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;
@@ -46,10 +45,10 @@ public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_LAST_UPDATED_PROPERTY)
     private long lastUpdatedTime;
 
-    @Type(type = "json")
+    @Convert(converter = JsonConverter.class)
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY)
     private JsonNode publishMsgInfos;
-    @Type(type = "json")
+    @Convert(converter = JsonConverter.class)
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY)
     private JsonNode pubRelMsgInfos;
 

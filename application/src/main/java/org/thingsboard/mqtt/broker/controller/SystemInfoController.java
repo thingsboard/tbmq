@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
@@ -27,8 +28,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import springfox.documentation.annotations.ApiIgnore;
-
-import javax.annotation.PostConstruct;
 
 @ApiIgnore
 @RestController

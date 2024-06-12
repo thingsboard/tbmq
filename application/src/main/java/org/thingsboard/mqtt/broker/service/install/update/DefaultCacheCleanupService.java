@@ -57,7 +57,7 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
         if (redisTemplate.isPresent()) {
             log.info("Flushing all caches");
             redisTemplate.get().execute((RedisCallback<Object>) connection -> {
-                connection.flushAll();
+                connection.serverCommands().flushAll();
                 return null;
             });
             return;

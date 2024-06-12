@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.security.system;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -29,8 +30,6 @@ import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.util.MiscUtils;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Service
 public class DefaultSystemSecurityService implements SystemSecurityService {

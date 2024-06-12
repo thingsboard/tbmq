@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.pqc.legacy.math.linearalgebra.ByteUtils;
 
 @Slf4j
 public class EncryptionUtil {
@@ -55,8 +55,7 @@ public class EncryptionUtil {
         md.update(dataBytes, 0, dataBytes.length);
         byte[] hashedBytes = new byte[256 / 8];
         md.doFinal(hashedBytes, 0);
-        String sha3Hash = ByteUtils.toHexString(hashedBytes);
-        return sha3Hash;
+        return ByteUtils.toHexString(hashedBytes);
     }
 
     public static String getSha3Hash(String delim, String... tokens) {

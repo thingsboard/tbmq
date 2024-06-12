@@ -19,9 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Header;
-import io.jsonwebtoken.Jwt;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.Jws;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.Matcher;
@@ -52,6 +50,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.config.SecurityConfiguration;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.RefreshTokenRequest;
 import org.thingsboard.mqtt.broker.service.security.auth.rest.LoginRequest;
+import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,6 +94,8 @@ public abstract class AbstractWebTest extends AbstractPubSubIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
+    @Autowired
+    private JwtTokenFactory jwtTokenFactory;
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -184,13 +185,8 @@ public abstract class AbstractWebTest extends AbstractPubSubIntegrationTest {
     }
 
     protected void validateJwtToken(String token, String username) {
-        Assert.assertNotNull(token);
-        Assert.assertFalse(token.isEmpty());
-        int i = token.lastIndexOf('.');
-        Assert.assertTrue(i > 0);
-        String withoutSignature = token.substring(0, i + 1);
-        Jwt<Header, Claims> jwsClaims = Jwts.parser().parseClaimsJwt(withoutSignature);
-        Claims claims = jwsClaims.getBody();
+        Jws<Claims> jwsClaims = jwtTokenFactory.parseTokenClaims(token);
+        Claims claims = jwsClaims.getPayload();
         String subject = claims.getSubject();
         Assert.assertEquals(username, subject);
     }

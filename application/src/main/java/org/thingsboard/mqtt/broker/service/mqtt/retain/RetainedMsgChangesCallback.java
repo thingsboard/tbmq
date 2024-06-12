@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 @FunctionalInterface
 public interface RetainedMsgChangesCallback {
