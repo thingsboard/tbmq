@@ -574,9 +574,6 @@ spring:
       # The standard Hibernate property values are none, validate, update, create-drop.
       # Spring Boot chooses a default value for you based on whether it thinks your database is embedded (default create-drop) or not (default none)
       ddl-auto: "${SPRING_JPA_HIBERNATE_DDL_AUTO:none}"
-    # The name of the database platform to be used by the JPA provider.
-    # This property is used to set the underlying SQL dialect that should be used when interacting with the database
-    database-platform: "${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}"
   datasource:
     # Database driver for Spring JPA
     driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"

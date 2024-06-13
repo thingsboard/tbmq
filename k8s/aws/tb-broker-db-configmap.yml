@@ -22,7 +22,6 @@ metadata:
   labels:
     name: tb-broker-db-config
 data:
-  SPRING_JPA_DATABASE_PLATFORM: "org.hibernate.dialect.PostgreSQLDialect"
   SPRING_DRIVER_CLASS_NAME: "org.postgresql.Driver"
   SPRING_DATASOURCE_URL: "jdbc:postgresql://RDS_URL_HERE:5432/thingsboard_mqtt_broker"
   SPRING_DATASOURCE_USERNAME: "YOUR_RDS_POSTGRES_USER"
