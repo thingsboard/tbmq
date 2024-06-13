@@ -623,7 +623,7 @@ security:
     # User JWT Token issuer
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
     # User JWT Token sign key
-    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
+    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:Qk1xUnloZ0VQTlF1VlNJQXZ4cWhiNWt1cVd1ZzQ5cWpENUhMSHlaYmZIM0JrZ2pPTVlhQ3N1Z0ZMUnd0SDBieg==}"
   basic:
     # Enable/Disable basic security options
     enabled: "${SECURITY_BASIC_ENABLED:false}"
