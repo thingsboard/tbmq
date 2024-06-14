@@ -21,7 +21,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -375,7 +374,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         Assert.assertNull(webSocketConnectionByName);
     }
 
-    @Test(expected = EmptyResultDataAccessException.class)
+    @Test
     public void givenNoWebSocketConnection_whenDelete_thenNothingRemoved() {
         webSocketConnectionService.deleteWebSocketConnection(UUID.randomUUID());
     }
