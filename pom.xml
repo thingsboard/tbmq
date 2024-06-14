@@ -77,8 +77,7 @@
         <jjwt.version>0.12.5</jjwt.version>
         <bouncycastle.version>1.78</bouncycastle.version>
         <bucket4j.version>8.10.1</bucket4j.version>
-        <springfox-swagger.version>3.0.4</springfox-swagger.version>
-        <springdoc-swagger.version>2.1.0</springdoc-swagger.version>
+        <springdoc-swagger.version>2.4.0TB</springdoc-swagger.version>
         <swagger-annotations.version>2.2.21</swagger-annotations.version>
         <micrometer.version>1.12.5</micrometer.version>
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
@@ -1021,8 +1020,13 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard</groupId>
-                <artifactId>springfox-boot-starter</artifactId>
-                <version>${springfox-swagger.version}</version>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>

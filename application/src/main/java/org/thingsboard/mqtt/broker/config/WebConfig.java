@@ -36,4 +36,10 @@ public class WebConfig {
         String baseUrl = MiscUtils.constructBaseUrl(request);
         response.sendRedirect(baseUrl + "/swagger-ui/");
     }
+
+    @RequestMapping("/swagger-ui/")
+    public String redirectSwaggerIndex() throws IOException {
+        return "forward:/swagger-ui/index.html";
+    }
+
 }

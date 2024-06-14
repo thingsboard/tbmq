@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
-import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.actors.TbActorId;
 import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -32,10 +30,10 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 
-import java.util.Collection;
 import java.util.List;
 
 @RestController
@@ -46,18 +44,6 @@ public class AppController extends BaseController {
     private final TbActorSystem tbActorSystem;
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
     private final BrokerHomePageConfig brokerHomePageConfig;
-
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @ApiOperation(value = "Get all running actors", hidden = true)
-    @RequestMapping(value = "/active-actors", method = RequestMethod.GET)
-    @ResponseBody
-    public Collection<TbActorId> getAllActorIds() throws ThingsboardException {
-        try {
-            return tbActorSystem.getAllActorIds();
-        } catch (Exception e) {
-            throw handleException(e);
-        }
-    }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/remove-topics", method = RequestMethod.DELETE)
