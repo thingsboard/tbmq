@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,8 +51,6 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;

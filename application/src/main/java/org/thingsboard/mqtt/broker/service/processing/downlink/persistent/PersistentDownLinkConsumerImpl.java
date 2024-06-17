@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink.persistent;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,8 +34,6 @@ import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQu
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkPublisherHelper;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

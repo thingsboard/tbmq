@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
@@ -52,7 +53,6 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSet
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
-import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;

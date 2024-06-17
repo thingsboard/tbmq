@@ -574,9 +574,6 @@ spring:
       # The standard Hibernate property values are none, validate, update, create-drop.
       # Spring Boot chooses a default value for you based on whether it thinks your database is embedded (default create-drop) or not (default none)
       ddl-auto: "${SPRING_JPA_HIBERNATE_DDL_AUTO:none}"
-    # The name of the database platform to be used by the JPA provider.
-    # This property is used to set the underlying SQL dialect that should be used when interacting with the database
-    database-platform: "${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}"
   datasource:
     # Database driver for Spring JPA
     driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"
@@ -626,7 +623,7 @@ security:
     # User JWT Token issuer
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
     # User JWT Token sign key
-    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
+    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:Qk1xUnloZ0VQTlF1VlNJQXZ4cWhiNWt1cVd1ZzQ5cWpENUhMSHlaYmZIM0JrZ2pPTVlhQ3N1Z0ZMUnd0SDBieg==}"
   basic:
     # Enable/Disable basic security options
     enabled: "${SECURITY_BASIC_ENABLED:false}"
@@ -917,7 +914,7 @@ spring.mvc.cors:
   mappings:
     # Intercept path
     "[/api/**]":
-      # Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled
+      # Comma-separated list of origins to allow. '*' allows all origins. When not set, CORS support is disabled
       allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
       # Comma-separated list of methods to allow. '*' allows all methods
       allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
@@ -928,10 +925,17 @@ spring.mvc.cors:
       # Set whether credentials are supported. When not set, credentials are not supported
       allow-credentials: "${MVC_CORS_API_ALLOW_CREDENTIALS:true}"
 
-# Swagger parameters
+# Spring doc common parameters
+springdoc:
+  # If false swagger API docs will be unavailable
+  api-docs.enabled: "${SWAGGER_ENABLED:true}"
+  # Swagger default produces media-type
+  default-produces-media-type: "${SWAGGER_DEFAULT_PRODUCES_MEDIA_TYPE:application/json}"
+
+# Swagger common parameters
 swagger:
   # General swagger match pattern of swagger UI links
-  api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
+  api_path: "${SWAGGER_API_PATH:/api/**}"
   # General swagger match pattern path of swagger UI links
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
   # Non-security API path match pattern of swagger UI links
@@ -942,7 +946,7 @@ swagger:
   description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
     # The contact name on the API doc UI page
-    name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
+    name: "${SWAGGER_CONTACT_NAME:ThingsBoard team}"
     # The contact URL on the API doc UI page
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
     # The contact email on the API doc UI page

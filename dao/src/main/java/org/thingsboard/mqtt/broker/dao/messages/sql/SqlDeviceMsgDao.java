@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.dao.messages.sql;
 
 import com.google.common.util.concurrent.ListenableFuture;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,8 +35,6 @@ import org.thingsboard.mqtt.broker.dao.sql.TbSqlBlockingQueuePool;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueue;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueueParams;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import com.google.common.collect.Maps;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,7 +59,6 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;

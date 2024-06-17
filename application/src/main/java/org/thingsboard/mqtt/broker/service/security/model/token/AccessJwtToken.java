@@ -15,24 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.security.model.token;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.jsonwebtoken.Claims;
-
 public final class AccessJwtToken implements JwtToken {
-    private final String rawToken;
-    @JsonIgnore
-    private final transient Claims claims;
 
-    AccessJwtToken(final String token, Claims claims) {
+    private final String rawToken;
+
+    AccessJwtToken(final String token) {
         this.rawToken = token;
-        this.claims = claims;
     }
 
     public String getToken() {
         return this.rawToken;
     }
 
-    public Claims getClaims() {
-        return claims;
-    }
 }

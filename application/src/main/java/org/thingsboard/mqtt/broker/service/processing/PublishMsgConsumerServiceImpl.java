@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,8 +30,6 @@ import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
