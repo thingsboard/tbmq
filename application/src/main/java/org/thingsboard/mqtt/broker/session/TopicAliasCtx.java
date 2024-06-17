@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
@@ -24,7 +25,6 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import javax.annotation.Nullable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 

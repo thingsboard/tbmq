@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,6 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 
 @Component

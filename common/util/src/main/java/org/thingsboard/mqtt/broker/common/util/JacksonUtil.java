@@ -81,7 +81,9 @@ public class JacksonUtil {
     }
 
     public static <T> T clone(T value) {
-        return fromString(toString(value), (Class<T>) value.getClass());
+        @SuppressWarnings("unchecked")
+        Class<T> valueClass = (Class<T>) value.getClass();
+        return fromString(toString(value), valueClass);
     }
 
     public static <T> JsonNode valueToTree(T value) {

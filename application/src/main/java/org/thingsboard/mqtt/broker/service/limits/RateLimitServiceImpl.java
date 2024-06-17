@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -30,7 +31,6 @@ import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-import javax.annotation.PostConstruct;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -48,7 +49,6 @@ import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

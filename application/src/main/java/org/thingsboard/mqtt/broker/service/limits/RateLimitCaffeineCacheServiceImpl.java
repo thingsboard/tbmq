@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +25,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
-
-import javax.annotation.PostConstruct;
 
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "caffeine")

@@ -15,20 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 
 @Data
 @EqualsAndHashCode
 @Entity
 @Table(name = ModelConstants.DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME)
 public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
+
     @Id
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;
@@ -42,7 +42,8 @@ public class DeviceSessionCtxEntity implements ToData<DeviceSessionCtx> {
     @Column(name = ModelConstants.DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY)
     private Integer lastPacketId;
 
-    public DeviceSessionCtxEntity() {}
+    public DeviceSessionCtxEntity() {
+    }
 
     public DeviceSessionCtxEntity(DeviceSessionCtx deviceSessionCtx) {
         this.clientId = deviceSessionCtx.getClientId();

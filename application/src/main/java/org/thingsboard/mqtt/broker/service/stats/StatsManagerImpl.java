@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +46,6 @@ import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.stats.timer.TimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

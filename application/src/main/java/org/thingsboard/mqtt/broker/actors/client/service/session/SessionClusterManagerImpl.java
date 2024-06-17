@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,8 +52,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;

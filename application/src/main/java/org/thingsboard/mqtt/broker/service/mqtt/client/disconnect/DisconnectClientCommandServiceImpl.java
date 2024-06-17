@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +30,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.UUID;
 
 @Slf4j

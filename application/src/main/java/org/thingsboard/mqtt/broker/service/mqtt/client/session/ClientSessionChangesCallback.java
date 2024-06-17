@@ -15,9 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import jakarta.annotation.Nullable;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 
-import javax.annotation.Nullable;
 
 @FunctionalInterface
 public interface ClientSessionChangesCallback {

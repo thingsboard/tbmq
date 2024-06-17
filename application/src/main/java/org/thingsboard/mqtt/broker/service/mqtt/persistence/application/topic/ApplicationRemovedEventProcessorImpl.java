@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,7 +27,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationRemovedEventQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 
-import javax.annotation.PreDestroy;
 import java.util.List;
 
 @Slf4j

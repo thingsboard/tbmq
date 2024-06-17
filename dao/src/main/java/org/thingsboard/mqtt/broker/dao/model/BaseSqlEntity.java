@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
 import java.util.UUID;
 
 @Data

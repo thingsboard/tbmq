@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.model.sqlts;
+package org.thingsboard.mqtt.broker.dao.util.mapping;
 
-import jakarta.persistence.Transient;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
-import java.io.Serial;
-import java.io.Serializable;
+@Converter
+public class JsonConverter implements AttributeConverter<JsonNode, String> {
 
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class TsKvCompositeKey implements Serializable {
+    @Override
+    public String convertToDatabaseColumn(JsonNode jsonNode) {
+        return JacksonUtil.toString(jsonNode);
+    }
 
-    @Serial
-    @Transient
-    private static final long serialVersionUID = -6526088307431953373L;
-
-    private String entityId;
-    private int key;
-    private long ts;
+    @Override
+    public JsonNode convertToEntityAttribute(String s) {
+        return JacksonUtil.toJsonNode(s);
+    }
 }

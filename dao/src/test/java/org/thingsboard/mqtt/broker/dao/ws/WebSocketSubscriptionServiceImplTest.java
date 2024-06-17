@@ -21,7 +21,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
@@ -184,7 +183,7 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
         Assert.assertFalse(webSocketSubscriptionById.isPresent());
     }
 
-    @Test(expected = EmptyResultDataAccessException.class)
+    @Test
     public void givenNoWebSocketSubscription_whenDelete_thenNothingRemoved() {
         webSocketSubscriptionService.deleteWebSocketSubscription(UUID.randomUUID());
     }

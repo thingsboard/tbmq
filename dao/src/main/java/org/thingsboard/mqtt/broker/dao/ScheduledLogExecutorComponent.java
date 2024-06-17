@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;

@@ -22,6 +22,8 @@ import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +68,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;

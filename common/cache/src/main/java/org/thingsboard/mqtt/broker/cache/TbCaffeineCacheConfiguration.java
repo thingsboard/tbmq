@@ -20,6 +20,8 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.github.benmanes.caffeine.cache.Weigher;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +36,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;

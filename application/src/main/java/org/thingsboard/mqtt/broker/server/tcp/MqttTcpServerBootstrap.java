@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.server.tcp;
 
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +27,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.server.AbstractMqttChannelInitializer;
 import org.thingsboard.mqtt.broker.server.AbstractMqttServerBootstrap;
-
-import javax.annotation.PreDestroy;
 
 @Service
 @RequiredArgsConstructor
