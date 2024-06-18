@@ -99,6 +99,9 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
+    public static final String COMMA = ",";
+    public static final String COLON = ":";
+
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
