@@ -133,7 +133,7 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
         cache.asMap().computeIfPresent(key, (k, v) -> v > 0 ? v - 1 : 0);
     }
 
-    private LocalBucket getLocalBucket(BucketConfiguration bucketConfiguration) {
+    LocalBucket getLocalBucket(BucketConfiguration bucketConfiguration) {
         if (bucketConfiguration != null) {
             LocalBucketBuilder builder = Bucket.builder();
             for (var bandwidth : bucketConfiguration.getBandwidths()) {

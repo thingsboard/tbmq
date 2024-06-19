@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.BucketProxy;
+import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -24,8 +28,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
+import java.time.Duration;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -38,6 +46,12 @@ public class RateLimitRedisCacheServiceImplTest {
 
     @Mock
     private ValueOperations<String, Object> valueOperations;
+
+    @Mock
+    private JedisBasedProxyManager<String> jedisBasedProxyManager;
+
+    @Mock
+    private BucketProxy bucketProxy;
 
     @InjectMocks
     private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
@@ -144,5 +158,27 @@ public class RateLimitRedisCacheServiceImplTest {
         rateLimitRedisCacheService.decrementApplicationClientsCount();
 
         verify(valueOperations, never()).decrement(anyString());
+    }
+
+    @Test
+    public void testTryConsume() {
+        // Set up bucket proxy
+        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
+        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
+        when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
+        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, bucketConfig);
+
+        when(bucketProxy.tryConsume(1)).thenReturn(true);
+
+        boolean result = rateLimitRedisCacheService.tryConsume();
+
+        assertTrue(result);
+        verify(bucketProxy, times(1)).tryConsume(1);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTryConsumeWithNullBucketProxy() {
+        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null);
+        serviceWithoutBucketProxy.tryConsume();
     }
 }
