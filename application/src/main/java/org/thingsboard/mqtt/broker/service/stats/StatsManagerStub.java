@@ -122,6 +122,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public AtomicLong registerActiveSslSessionsStats() {
+        return new AtomicLong(0);
+    }
+
+    @Override
     public void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap) {
     }
 
