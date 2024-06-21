@@ -271,10 +271,20 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public void registerActiveSessionsStats(Map<?, ?> sessionsMap) {
         if (log.isTraceEnabled()) {
-            log.trace("Registering SessionsStats.");
+            log.trace("Registering ActiveSessionsStats.");
         }
         statsFactory.createGauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap, Map::size);
         gauges.add(new Gauge(StatsType.CONNECTED_SESSIONS.getPrintName(), sessionsMap::size));
+    }
+
+    @Override
+    public AtomicLong registerActiveSslSessionsStats() {
+        if (log.isTraceEnabled()) {
+            log.trace("Creating ActiveSslSessionsStats.");
+        }
+        AtomicLong sizeGauge = statsFactory.createGauge(StatsType.CONNECTED_SSL_SESSIONS.getPrintName(), new AtomicLong(0));
+        gauges.add(new Gauge(StatsType.CONNECTED_SSL_SESSIONS.getPrintName(), sizeGauge::get));
+        return sizeGauge;
     }
 
     @Override

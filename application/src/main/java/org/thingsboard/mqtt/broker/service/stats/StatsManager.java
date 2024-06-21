@@ -66,6 +66,8 @@ public interface StatsManager {
 
     void registerActiveSessionsStats(Map<?, ?> sessionsMap);
 
+    AtomicLong registerActiveSslSessionsStats();
+
     void registerAllClientSessionsStats(Map<?, ?> clientSessionsMap);
 
     void registerClientSubscriptionsStats(Map<?, ?> clientSubscriptionsMap);
