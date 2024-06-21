@@ -163,7 +163,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         }
     }
 
-    private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
+    PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
                                                                               String clientId) {
         PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
                 new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1)));
