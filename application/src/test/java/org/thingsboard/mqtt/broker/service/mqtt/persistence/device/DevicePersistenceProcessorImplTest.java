@@ -24,7 +24,10 @@ import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -84,6 +87,13 @@ public class DevicePersistenceProcessorImplTest {
     }
 
     @Test
+    public void processPubRecNoPubRelDeliveryTest() {
+        devicePersistenceProcessor.processPubRecNoPubRelDelivery(clientId, 1);
+
+        verify(deviceActorManager, times(1)).notifyPacketReceivedNoDelivery(eq(clientId), eq(1));
+    }
+
+    @Test
     public void processPubCompTest() {
         devicePersistenceProcessor.processPubComp(clientId, 1);
 
@@ -100,10 +110,17 @@ public class DevicePersistenceProcessorImplTest {
     }
 
     @Test
-    public void stopProcessingPersistedMessagesTest() {
-        Cache cache = mock(Cache.class);
-        when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
+    public void startProcessingSharedSubscriptionsTest() {
+        ClientSessionCtx clientSessionCtx = mock(ClientSessionCtx.class);
+        Set<TopicSharedSubscription> subscriptions = Set.of(new TopicSharedSubscription("tf", "sn"));
 
+        devicePersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
+
+        verify(deviceActorManager, times(1)).notifySubscribeToSharedSubscriptions(eq(clientSessionCtx), eq(subscriptions));
+    }
+
+    @Test
+    public void stopProcessingPersistedMessagesTest() {
         devicePersistenceProcessor.stopProcessingPersistedMessages(clientId);
 
         verify(deviceActorManager, times(1)).notifyClientDisconnected(eq(clientId));

@@ -762,6 +762,12 @@ mqtt:
       # Limit the maximum count of publish messages per subscriber for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
       # Example: 10 messages per second or 300 messages per minute
       client-config: "${MQTT_OUTGOING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+    device-persisted-messages:
+      # Enable/disable Device clients persisted messages rate limits for the broker (per whole cluster)
+      enabled: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of Device clients persisted messages for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 100 messages per second or 1000 messages per minute
+      config: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_CONFIG:100:1,1000:60}"
   # Limit the total number of sessions (connected + disconnected) stored on the broker, not individually for each server (node) if it is a cluster, but as a collective limit.
   # For example, when set to 1000 either the single broker node or cluster of 2 or X nodes can store 1000 sessions in total. It is a soft limit meaning a bit more than 1000 sessions can be stored.
   # A setting of 0 means the limitation is disabled

@@ -48,7 +48,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(clientId);
         if (clientSessionCtx == null) {
             if (log.isTraceEnabled()) {
-                log.trace("[{}] No client session on the node.", clientId);
+                log.trace("[{}] No client session on the node while processing basic downlink.", clientId);
             }
             return;
         }
@@ -65,7 +65,7 @@ public class BasicDownLinkProcessorImpl implements BasicDownLinkProcessor {
         ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(subscription.getClientId());
         if (clientSessionCtx == null) {
             if (log.isTraceEnabled()) {
-                log.trace("[{}] No client session on the node.", subscription.getClientId());
+                log.trace("[{}] No client session on the node while processing basic downlink with subscription {}", subscription.getClientId(), subscription);
             }
             return;
         }

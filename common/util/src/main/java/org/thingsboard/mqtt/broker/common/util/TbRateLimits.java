@@ -29,9 +29,13 @@ public class TbRateLimits {
     public TbRateLimits(String limitsConfiguration) {
         LocalBucketBuilder builder = Bucket.builder();
         boolean initialized = false;
-        for (String limitSrc : limitsConfiguration.split(",")) {
-            long capacity = Long.parseLong(limitSrc.split(":")[0]);
-            long duration = Long.parseLong(limitSrc.split(":")[1]);
+        for (String limitSrc : limitsConfiguration.split(BrokerConstants.COMMA)) {
+            String[] parts = limitSrc.split(BrokerConstants.COLON);
+            if (parts.length != 2) {
+                throw new IllegalArgumentException("Invalid limit format: " + limitSrc);
+            }
+            long capacity = Long.parseLong(parts[0]);
+            long duration = Long.parseLong(parts[1]);
             builder.addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, Duration.ofSeconds(duration)).build());
             initialized = true;
         }

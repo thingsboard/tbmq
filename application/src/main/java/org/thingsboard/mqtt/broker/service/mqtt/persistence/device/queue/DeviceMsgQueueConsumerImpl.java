@@ -79,7 +79,6 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    // TODO: corner case: if Kafka rebalances partitions while node is processing - multiple nodes can persist same msg multiple times
                     List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;

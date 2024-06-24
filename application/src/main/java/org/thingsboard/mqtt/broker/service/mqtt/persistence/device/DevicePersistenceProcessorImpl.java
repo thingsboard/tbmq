@@ -80,15 +80,14 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
         deviceActorManager.notifyClientDisconnected(clientId);
-        evictCache(clientId);
     }
 
     private void evictCache(String clientId) {
-        Cache cache = getCache();
+        Cache cache = getPacketIdAndSerialNumberCache();
         cache.evict(clientId);
     }
 
-    private Cache getCache() {
+    private Cache getPacketIdAndSerialNumberCache() {
         return cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
     }
 }

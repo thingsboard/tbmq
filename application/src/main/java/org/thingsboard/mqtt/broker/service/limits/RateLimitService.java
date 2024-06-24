@@ -39,4 +39,6 @@ public interface RateLimitService {
 
     boolean checkApplicationClientsLimit(SessionInfo sessionInfo);
 
+    boolean checkDevicePersistedMsgsLimit();
+
 }

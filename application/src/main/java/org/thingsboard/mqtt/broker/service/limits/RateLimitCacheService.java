@@ -29,4 +29,5 @@ public interface RateLimitCacheService {
 
     void decrementApplicationClientsCount();
 
+    boolean tryConsume();
 }

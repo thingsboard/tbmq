@@ -15,9 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-import lombok.RequiredArgsConstructor;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.distributed.BucketProxy;
+import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,11 +29,11 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
-@RequiredArgsConstructor
 @Slf4j
 public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final BucketProxy bucketProxy;
 
     @Value("${mqtt.sessions-limit:0}")
     @Setter
@@ -38,6 +41,14 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     @Value("${mqtt.application-clients-limit:0}")
     @Setter
     private int applicationClientsLimit;
+
+    public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
+                                          JedisBasedProxyManager<String> jedisBasedProxyManager,
+                                          @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration) {
+        this.redisTemplate = redisTemplate;
+        this.bucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
+                jedisBasedProxyManager.getProxy(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE, () -> devicePersistedMsgsBucketConfiguration);
+    }
 
     @Override
     public void initSessionCount(int count) {
@@ -91,6 +102,13 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
+    /**
+     * This method is used when device persisted messages rate limits are enabled, so bucketProxy can not be null here
+     */
+    @Override
+    public boolean tryConsume() {
+        return bucketProxy.tryConsume(1);
+    }
 
     private Boolean initCacheWithCount(String key, int count) {
         return redisTemplate.opsForValue().setIfAbsent(key, Integer.toString(count));

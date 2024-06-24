@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
+import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -42,6 +43,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     private final IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
+    private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     private final ClientSessionService clientSessionService;
     private final RateLimitCacheService rateLimitCacheService;
 
@@ -154,6 +156,20 @@ public class RateLimitServiceImpl implements RateLimitService {
                 return false;
             }
 
+        }
+        return true;
+    }
+
+    @Override
+    public boolean checkDevicePersistedMsgsLimit() {
+        if (!devicePersistedMsgsRateLimitsConfiguration.isEnabled()) {
+            return true;
+        }
+        if (!rateLimitCacheService.tryConsume()) {
+            if (log.isTraceEnabled()) {
+                log.trace("Device persisted messages rate limit detected!");
+            }
+            return false;
         }
         return true;
     }

@@ -16,10 +16,14 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 import com.github.benmanes.caffeine.cache.Cache;
+import io.github.bucket4j.Bucket;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.local.LocalBucket;
+import io.github.bucket4j.local.LocalBucketBuilder;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -28,11 +32,11 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "caffeine")
-@RequiredArgsConstructor
 @Slf4j
 public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService {
 
     private final CacheManager cacheManager;
+    private final LocalBucket bucket;
 
     private Cache<String, Long> clientSessionsLimitCache;
     private Cache<String, Long> applicationClientsLimitCache;
@@ -43,6 +47,12 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     @Value("${mqtt.application-clients-limit:0}")
     @Setter
     private int applicationClientsLimit;
+
+    public RateLimitCaffeineCacheServiceImpl(CacheManager cacheManager,
+                                             @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration) {
+        this.cacheManager = cacheManager;
+        this.bucket = getLocalBucket(devicePersistedMsgsBucketConfiguration);
+    }
 
     @PostConstruct
     public void init() {
@@ -102,6 +112,10 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
         decrement(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
     }
 
+    @Override
+    public boolean tryConsume() {
+        return bucket.tryConsume(1);
+    }
 
     private Cache<String, Long> getNativeCache(String name) {
         return (Cache<String, Long>) cacheManager.getCache(name).getNativeCache();
@@ -117,5 +131,16 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
 
     private void decrement(Cache<String, Long> cache, String key) {
         cache.asMap().computeIfPresent(key, (k, v) -> v > 0 ? v - 1 : 0);
+    }
+
+    LocalBucket getLocalBucket(BucketConfiguration bucketConfiguration) {
+        if (bucketConfiguration != null) {
+            LocalBucketBuilder builder = Bucket.builder();
+            for (var bandwidth : bucketConfiguration.getBandwidths()) {
+                builder.addLimit(bandwidth);
+            }
+            return builder.build();
+        }
+        return null;
     }
 }
