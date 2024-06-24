@@ -83,8 +83,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         if (deviceSubscriptions != null) {
             for (Subscription deviceSubscription : deviceSubscriptions) {
-                if (!rateLimitService.checkDevicePersistedMsgsLimit()) {
-                    callbackWrapper.onSuccess();
+                if (rateLimitsDetected(callbackWrapper)) {
                     continue;
                 }
                 String clientId = getClientIdFromSubscription(deviceSubscription);
@@ -114,6 +113,14 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
+    }
+
+    private boolean rateLimitsDetected(PublishMsgCallback callbackWrapper) {
+        if (!rateLimitService.checkDevicePersistedMsgsLimit()) {
+            callbackWrapper.onSuccess();
+            return true;
+        }
+        return false;
     }
 
     private void sendApplicationMsg(Subscription applicationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
