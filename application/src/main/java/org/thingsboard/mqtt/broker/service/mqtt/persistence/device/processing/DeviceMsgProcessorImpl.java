@@ -39,8 +39,6 @@ import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -163,14 +161,9 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
         }
     }
 
-    PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers,
-                                                                              String clientId) {
-        PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id ->
-                new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1)));
-        AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
-        packetIdAtomic.incrementAndGet();
-        packetIdAtomic.compareAndSet(0xffff, 1);
-        return new PacketIdAndSerialNumberDto(packetIdAtomic.get(), packetIdAndSerialNumber.getSerialNumber().incrementAndGet());
+    PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(Map<String, PacketIdAndSerialNumber> lastPacketIdAndSerialNumbers, String clientId) {
+        PacketIdAndSerialNumber packetIdAndSerialNumber = lastPacketIdAndSerialNumbers.computeIfAbsent(clientId, id -> PacketIdAndSerialNumber.initialInstance());
+        return PacketIdAndSerialNumberDto.incrementAndGet(packetIdAndSerialNumber);
     }
 
     private List<DevicePublishMsg> toDevicePublishMsgs(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {

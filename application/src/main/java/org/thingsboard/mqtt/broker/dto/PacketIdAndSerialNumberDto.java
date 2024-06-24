@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dto;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
 
 @Getter
 @RequiredArgsConstructor
@@ -25,4 +26,11 @@ public class PacketIdAndSerialNumberDto {
     private final int packetId;
     private final long serialNumber;
 
+    public static PacketIdAndSerialNumberDto incrementAndGet(PacketIdAndSerialNumber packetIdAndSerialNumber) {
+        boolean reachedLimit = packetIdAndSerialNumber.compareAndSetPacketId();
+        if (reachedLimit) {
+            return new PacketIdAndSerialNumberDto(1, packetIdAndSerialNumber.incrementAndGetSerialNumber());
+        }
+        return new PacketIdAndSerialNumberDto(packetIdAndSerialNumber.incrementAndGetPacketId(), packetIdAndSerialNumber.incrementAndGetSerialNumber());
+    }
 }

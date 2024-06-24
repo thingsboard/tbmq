@@ -72,7 +72,7 @@ public class MsgIdSequenceTest {
     }
 
     @Test
-    public void test() {
+    public void testFullSequence() {
         for (int i = 0; i < 0xffff; i++) {
             int msgId = msgIdSequence.nextMsgId();
             assertEquals(i + 1, msgId);

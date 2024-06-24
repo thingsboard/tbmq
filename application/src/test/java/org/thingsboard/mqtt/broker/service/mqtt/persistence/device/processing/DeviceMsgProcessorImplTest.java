@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -31,14 +30,12 @@ import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 public class DeviceMsgProcessorImplTest {
@@ -65,39 +62,61 @@ public class DeviceMsgProcessorImplTest {
 
     @Before
     public void setUp() {
-        mockMap = Mockito.mock(Map.class);
+        mockMap = new HashMap<>(Map.of("client1", PacketIdAndSerialNumber.initialInstance()));
     }
 
     @Test
     public void testGetAndIncrementPacketIdAndSerialNumber_NewClient() {
-        when(mockMap.computeIfAbsent(anyString(), any())).thenAnswer(invocation ->
-                new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1)));
-
         PacketIdAndSerialNumberDto result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
 
         assertEquals(1, result.getPacketId());
         assertEquals(0, result.getSerialNumber());
+
+        result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
+
+        assertEquals(2, result.getPacketId());
+        assertEquals(1, result.getSerialNumber());
+
+        result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
+
+        assertEquals(3, result.getPacketId());
+        assertEquals(2, result.getSerialNumber());
     }
 
     @Test
     public void testGetAndIncrementPacketIdAndSerialNumber_ExistingClient() {
-        PacketIdAndSerialNumber existingPacketIdAndSerialNumber = new PacketIdAndSerialNumber(new AtomicInteger(5), new AtomicLong(10));
-        when(mockMap.computeIfAbsent(anyString(), any())).thenReturn(existingPacketIdAndSerialNumber);
+        PacketIdAndSerialNumber existingPacketIdAndSerialNumber = new PacketIdAndSerialNumber(new AtomicInteger(50), new AtomicLong(60));
+        mockMap = new HashMap<>(Map.of("client1", existingPacketIdAndSerialNumber));
 
         PacketIdAndSerialNumberDto result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
 
-        assertEquals(6, result.getPacketId());
-        assertEquals(11, result.getSerialNumber());
+        assertEquals(51, result.getPacketId());
+        assertEquals(61, result.getSerialNumber());
+
+        result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
+
+        assertEquals(52, result.getPacketId());
+        assertEquals(62, result.getSerialNumber());
     }
 
     @Test
     public void testGetAndIncrementPacketIdAndSerialNumber_WrapAround() {
-        PacketIdAndSerialNumber existingPacketIdAndSerialNumber = new PacketIdAndSerialNumber(new AtomicInteger(0xffff), new AtomicLong(10));
-        when(mockMap.computeIfAbsent(anyString(), any())).thenReturn(existingPacketIdAndSerialNumber);
+        PacketIdAndSerialNumber existingPacketIdAndSerialNumber = new PacketIdAndSerialNumber(new AtomicInteger(0xfffe), new AtomicLong(10));
+        mockMap = new HashMap<>(Map.of("client1", existingPacketIdAndSerialNumber));
 
         PacketIdAndSerialNumberDto result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
 
-//        assertEquals(1, result.getPacketId());
+        assertEquals(0xffff, result.getPacketId());
         assertEquals(11, result.getSerialNumber());
+
+        result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
+
+        assertEquals(1, result.getPacketId());
+        assertEquals(12, result.getSerialNumber());
+
+        result = deviceMsgProcessor.getAndIncrementPacketIdAndSerialNumber(mockMap, "client1");
+
+        assertEquals(2, result.getPacketId());
+        assertEquals(13, result.getSerialNumber());
     }
 }
