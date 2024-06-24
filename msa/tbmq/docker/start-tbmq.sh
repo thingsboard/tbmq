@@ -31,7 +31,7 @@ if [ -f ${firstlaunch} ]; then
 
     exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication \
                         -Dlogging.config=${CONF_FOLDER}/logback.xml \
-                        org.springframework.boot.loader.PropertiesLauncher
+                        org.springframework.boot.loader.launch.PropertiesLauncher
 else
     echo "ERROR: TBMQ is not installed"
 fi
