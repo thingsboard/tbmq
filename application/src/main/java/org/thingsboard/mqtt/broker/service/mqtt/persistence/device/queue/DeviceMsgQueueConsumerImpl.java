@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgProcessor;
 import org.thingsboard.mqtt.broker.service.stats.DeviceProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -48,7 +47,6 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DeviceMsgProcessor deviceMsgProcessor;
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final RateLimitService rateLimitService;
 
     @Value("${queue.device-persisted-msg.consumers-count}")
     private int consumersCount;

@@ -27,10 +27,12 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -67,6 +69,7 @@ public class MsgPersistenceManagerImplTest {
     DeviceMsgQueuePublisher deviceMsgQueuePublisher;
     DevicePersistenceProcessor devicePersistenceProcessor;
     ClientLogger clientLogger;
+    RateLimitService rateLimitService;
     MsgPersistenceManagerImpl msgPersistenceManager;
 
     @Before
@@ -77,10 +80,11 @@ public class MsgPersistenceManagerImplTest {
         deviceMsgQueuePublisher = mock(DeviceMsgQueuePublisher.class);
         devicePersistenceProcessor = mock(DevicePersistenceProcessor.class);
         clientLogger = mock(ClientLogger.class);
+        rateLimitService = mock(RateLimitService.class);
 
         msgPersistenceManager = spy(new MsgPersistenceManagerImpl(
                 genericClientSessionCtxManager, applicationMsgQueuePublisher, applicationPersistenceProcessor,
-                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger));
+                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger, rateLimitService));
 
         ctx = mock(ClientSessionCtx.class);
 
@@ -93,6 +97,8 @@ public class MsgPersistenceManagerImplTest {
 
     @Test
     public void testProcessPublish() {
+        when(rateLimitService.checkDevicePersistedMsgsLimit()).thenReturn(true);
+
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
@@ -134,7 +140,8 @@ public class MsgPersistenceManagerImplTest {
                 null
         );
 
-        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);
+        PublishMsgCallback callback = mock(PublishMsgCallback.class);
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, callback);
 
         verify(deviceMsgQueuePublisher, times(0)).sendMsg(
                 any(), any(), any());

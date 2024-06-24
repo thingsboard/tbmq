@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -60,6 +61,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DeviceMsgQueuePublisher deviceMsgQueuePublisher;
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
+    private final RateLimitService rateLimitService;
 
     @Override
     public void processPublish(PublishMsgWithId publishMsgWithId, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
@@ -71,6 +73,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics);
         if (callbackCount == 0) {
+            callback.onSuccess();
             return;
         }
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
@@ -80,6 +83,10 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         if (deviceSubscriptions != null) {
             for (Subscription deviceSubscription : deviceSubscriptions) {
+                if (!rateLimitService.checkDevicePersistedMsgsLimit()) {
+                    callbackWrapper.onSuccess();
+                    continue;
+                }
                 String clientId = getClientIdFromSubscription(deviceSubscription);
                 PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgProto);
                 deviceMsgQueuePublisher.sendMsg(
