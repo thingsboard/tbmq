@@ -41,4 +41,6 @@ public interface RateLimitService {
 
     boolean checkDevicePersistedMsgsLimit();
 
+    boolean checkTotalMsgsLimit();
+
 }

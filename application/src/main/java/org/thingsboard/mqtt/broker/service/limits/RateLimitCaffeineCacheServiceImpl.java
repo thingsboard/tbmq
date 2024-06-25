@@ -36,7 +36,8 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService {
 
     private final CacheManager cacheManager;
-    private final LocalBucket bucket;
+    private final LocalBucket devicePersistedMsgsBucket;
+    private final LocalBucket totalMsgsBucket;
 
     private Cache<String, Long> clientSessionsLimitCache;
     private Cache<String, Long> applicationClientsLimitCache;
@@ -49,9 +50,11 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     private int applicationClientsLimit;
 
     public RateLimitCaffeineCacheServiceImpl(CacheManager cacheManager,
-                                             @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration) {
+                                             @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
+                                             @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration) {
         this.cacheManager = cacheManager;
-        this.bucket = getLocalBucket(devicePersistedMsgsBucketConfiguration);
+        this.devicePersistedMsgsBucket = getLocalBucket(devicePersistedMsgsBucketConfiguration);
+        this.totalMsgsBucket = getLocalBucket(totalMsgsBucketConfiguration);
     }
 
     @PostConstruct
@@ -113,8 +116,13 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     }
 
     @Override
-    public boolean tryConsume() {
-        return bucket.tryConsume(1);
+    public boolean tryConsumeDevicePersistedMsg() {
+        return devicePersistedMsgsBucket.tryConsume(1);
+    }
+
+    @Override
+    public boolean tryConsumeTotalMsg() {
+        return totalMsgsBucket.tryConsume(1);
     }
 
     private Cache<String, Long> getNativeCache(String name) {
