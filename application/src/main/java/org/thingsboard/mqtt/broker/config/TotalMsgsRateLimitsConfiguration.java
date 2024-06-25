@@ -24,21 +24,21 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "mqtt.rate-limits.device-persisted-messages")
+@ConfigurationProperties(prefix = "mqtt.rate-limits.total")
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class DevicePersistedMsgsRateLimitsConfiguration extends AbstractMsgsRateLimitsConfiguration {
+public class TotalMsgsRateLimitsConfiguration extends AbstractMsgsRateLimitsConfiguration {
 
     @Bean
-    @Conditional(OnDevicePersistedMsgsRateLimitsEnabledCondition.class)
-    public BucketConfiguration devicePersistedMsgsBucketConfiguration() {
+    @Conditional(OnTotalMsgsRateLimitsEnabledCondition.class)
+    public BucketConfiguration totalMsgsBucketConfiguration() {
         return getBucketConfiguration();
     }
 
-    private static class OnDevicePersistedMsgsRateLimitsEnabledCondition extends OnEnabledCondition {
+    private static class OnTotalMsgsRateLimitsEnabledCondition extends OnEnabledCondition {
         @Override
         protected String getEnabledProperty() {
-            return "mqtt.rate-limits.device-persisted-messages.enabled";
+            return "mqtt.rate-limits.total.enabled";
         }
     }
 }
