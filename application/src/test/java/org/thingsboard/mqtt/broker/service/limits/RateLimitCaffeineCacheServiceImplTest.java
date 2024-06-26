@@ -158,24 +158,46 @@ public class RateLimitCaffeineCacheServiceImplTest {
     }
 
     @Test
-    public void testTryConsume() {
+    public void testTryConsumeDevicePersistedMsg() {
         // Mocking bucket configuration
         Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
 
-        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, bucketConfig);
+        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, bucketConfig, null);
 
         // Assuming the bucket has 10 tokens initially
         for (int i = 0; i < 10; i++) {
-            assertTrue(rateLimitCaffeineCacheService.tryConsume());
+            assertTrue(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
         }
-        assertFalse(rateLimitCaffeineCacheService.tryConsume());
+        assertFalse(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
     }
 
     @Test
-    public void testTryConsume_NoBucketConfig() {
-        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null);
-        Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsume);
+    public void testTryConsumeTotalMsg() {
+        // Mocking bucket configuration
+        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
+        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
+
+        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, bucketConfig);
+
+        // Assuming the bucket has 10 tokens initially
+        for (int i = 0; i < 10; i++) {
+            assertTrue(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+        }
+        assertFalse(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+    }
+
+    @Test
+    public void testTryConsume_NoDevicePersistedMsgsBucketConfig() {
+        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeDevicePersistedMsg);
+        assertTrue(exception.getMessage().contains("is null"));
+    }
+
+    @Test
+    public void testTryConsume_NoTotalMsgsBucketConfig() {
+        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeTotalMsg);
         assertTrue(exception.getMessage().contains("is null"));
     }
 

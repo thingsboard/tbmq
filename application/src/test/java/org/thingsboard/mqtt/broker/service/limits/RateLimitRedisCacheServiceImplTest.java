@@ -161,24 +161,46 @@ public class RateLimitRedisCacheServiceImplTest {
     }
 
     @Test
-    public void testTryConsume() {
+    public void testTryConsumeDevicePersistedMsg() {
         // Set up bucket proxy
         Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
         when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
-        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, bucketConfig);
+        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, bucketConfig, null);
 
         when(bucketProxy.tryConsume(1)).thenReturn(true);
 
-        boolean result = rateLimitRedisCacheService.tryConsume();
+        boolean result = rateLimitRedisCacheService.tryConsumeDevicePersistedMsg();
+
+        assertTrue(result);
+        verify(bucketProxy, times(1)).tryConsume(1);
+    }
+
+    @Test
+    public void testTryConsumeTotalMsg() {
+        // Set up bucket proxy
+        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
+        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
+        when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
+        rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, bucketConfig);
+
+        when(bucketProxy.tryConsume(1)).thenReturn(true);
+
+        boolean result = rateLimitRedisCacheService.tryConsumeTotalMsg();
 
         assertTrue(result);
         verify(bucketProxy, times(1)).tryConsume(1);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testTryConsumeWithNullBucketProxy() {
-        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null);
-        serviceWithoutBucketProxy.tryConsume();
+    public void testTryConsumeWithNullDevicePersistedMsgsBucketProxy() {
+        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null);
+        serviceWithoutBucketProxy.tryConsumeDevicePersistedMsg();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTryConsumeWithNullTotalMsgsBucketProxy() {
+        RateLimitRedisCacheServiceImpl serviceWithoutBucketProxy = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, null);
+        serviceWithoutBucketProxy.tryConsumeTotalMsg();
     }
 }

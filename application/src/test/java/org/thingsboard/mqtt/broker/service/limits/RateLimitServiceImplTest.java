@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
@@ -54,6 +55,8 @@ public class RateLimitServiceImplTest {
     @MockBean
     DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     @MockBean
+    TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
+    @MockBean
     ClientSessionService clientSessionService;
     @MockBean
     RateLimitCacheService rateLimitCacheService;
@@ -66,6 +69,7 @@ public class RateLimitServiceImplTest {
         when(incomingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
         rateLimitService.init();
 
@@ -261,7 +265,7 @@ public class RateLimitServiceImplTest {
     @Test
     public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
         when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsume()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(true);
 
         boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
         Assert.assertTrue(result);
@@ -270,9 +274,35 @@ public class RateLimitServiceImplTest {
     @Test
     public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
         when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
-        when(rateLimitCacheService.tryConsume()).thenReturn(false);
+        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(false);
 
         boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsDisabled_whenCheckTotalMsgsLimit_thenSuccess() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(true);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(false);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
         Assert.assertFalse(result);
     }
 }

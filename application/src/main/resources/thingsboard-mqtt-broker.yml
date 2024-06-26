@@ -750,6 +750,12 @@ mqtt:
             # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
+    total:
+      # Enable/disable total incoming and outgoing messages rate limits for the broker (per whole cluster)
+      enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of total incoming and outgoing messages for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 1000 messages per second or 50000 messages per minute
+      config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
     incoming-publish:
       # Enable/disable publish rate limits per client for incoming messages to the broker from publishers
       enabled: "${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"

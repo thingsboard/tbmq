@@ -24,6 +24,7 @@ public class CacheConstants {
     public static final String CLIENT_SESSIONS_LIMIT_CACHE = "clientSessionsLimit";
     public static final String APP_CLIENTS_LIMIT_CACHE = "appClientsLimit";
     public static final String DEVICE_PERSISTED_MSGS_LIMIT_CACHE = "devicePersistedMsgsLimit";
+    public static final String TOTAL_MSGS_LIMIT_CACHE = "totalMsgsLimit";
 
     public static final String COUNT_SUFFIX = "::count";
     public static final String CLIENT_SESSIONS_LIMIT_CACHE_KEY = CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE + COUNT_SUFFIX;

@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -87,6 +88,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final RateLimitService rateLimitService;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -238,6 +240,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         if (clientSubscriptionsSize == 0) {
             return null;
         }
+        clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
 
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
             Set<TopicSharedSubscription> topicSharedSubscriptions = null;
@@ -261,6 +264,19 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                     null
             );
         }
+    }
+
+    List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
+        if (rateLimitService.isTotalMsgsLimitEnabled()) {
+            List<ValueWithTopicFilter<ClientSubscription>> afterRateLimits = new ArrayList<>(clientSubscriptions.size());
+            for (var clientSubscription : clientSubscriptions) {
+                if (rateLimitService.checkTotalMsgsLimit()) {
+                    afterRateLimits.add(clientSubscription);
+                }
+            }
+            return afterRateLimits;
+        }
+        return clientSubscriptions;
     }
 
     private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,

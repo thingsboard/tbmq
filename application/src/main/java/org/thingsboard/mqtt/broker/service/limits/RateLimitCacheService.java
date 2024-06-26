@@ -29,5 +29,8 @@ public interface RateLimitCacheService {
 
     void decrementApplicationClientsCount();
 
-    boolean tryConsume();
+    boolean tryConsumeDevicePersistedMsg();
+
+    boolean tryConsumeTotalMsg();
+
 }

@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
 import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
@@ -43,6 +44,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     private final IncomingRateLimitsConfiguration incomingRateLimitsConfiguration;
     private final OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
+    private final TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
     private final DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
     private final ClientSessionService clientSessionService;
     private final RateLimitCacheService rateLimitCacheService;
@@ -165,7 +167,7 @@ public class RateLimitServiceImpl implements RateLimitService {
         if (!devicePersistedMsgsRateLimitsConfiguration.isEnabled()) {
             return true;
         }
-        if (!rateLimitCacheService.tryConsume()) {
+        if (!rateLimitCacheService.tryConsumeDevicePersistedMsg()) {
             if (log.isTraceEnabled()) {
                 log.trace("Device persisted messages rate limit detected!");
             }
@@ -174,4 +176,22 @@ public class RateLimitServiceImpl implements RateLimitService {
         return true;
     }
 
+    @Override
+    public boolean checkTotalMsgsLimit() {
+        if (!isTotalMsgsLimitEnabled()) {
+            return true;
+        }
+        if (!rateLimitCacheService.tryConsumeTotalMsg()) {
+            if (log.isTraceEnabled()) {
+                log.trace("Total incoming and outgoing messages rate limit detected!");
+            }
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isTotalMsgsLimitEnabled() {
+        return totalMsgsRateLimitsConfiguration.isEnabled();
+    }
 }

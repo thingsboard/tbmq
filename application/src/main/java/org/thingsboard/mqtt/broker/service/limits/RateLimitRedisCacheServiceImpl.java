@@ -33,7 +33,8 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final BucketProxy bucketProxy;
+    private final BucketProxy devicePersistedMsgsBucketProxy;
+    private final BucketProxy totalMsgsBucketProxy;
 
     @Value("${mqtt.sessions-limit:0}")
     @Setter
@@ -44,10 +45,13 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
                                           JedisBasedProxyManager<String> jedisBasedProxyManager,
-                                          @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration) {
+                                          @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
+                                          @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration) {
         this.redisTemplate = redisTemplate;
-        this.bucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
+        this.devicePersistedMsgsBucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
                 jedisBasedProxyManager.getProxy(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE, () -> devicePersistedMsgsBucketConfiguration);
+        this.totalMsgsBucketProxy = totalMsgsBucketConfiguration == null ? null :
+                jedisBasedProxyManager.getProxy(CacheConstants.TOTAL_MSGS_LIMIT_CACHE, () -> totalMsgsBucketConfiguration);
     }
 
     @Override
@@ -106,8 +110,16 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
      * This method is used when device persisted messages rate limits are enabled, so bucketProxy can not be null here
      */
     @Override
-    public boolean tryConsume() {
-        return bucketProxy.tryConsume(1);
+    public boolean tryConsumeDevicePersistedMsg() {
+        return devicePersistedMsgsBucketProxy.tryConsume(1);
+    }
+
+    /**
+     * This method is used when total messages rate limits are enabled, so bucketProxy can not be null here
+     */
+    @Override
+    public boolean tryConsumeTotalMsg() {
+        return totalMsgsBucketProxy.tryConsume(1);
     }
 
     private Boolean initCacheWithCount(String key, int count) {

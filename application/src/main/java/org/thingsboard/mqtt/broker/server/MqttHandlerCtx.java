@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 @Component
@@ -29,6 +30,7 @@ public class MqttHandlerCtx {
     private final ClientMqttActorManager actorManager;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final MqttMessageGenerator mqttMessageGenerator;
 
     @Value("${mqtt.max-in-flight-msgs:1000}")
     private int maxInFlightMsgs;
