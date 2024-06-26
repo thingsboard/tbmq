@@ -204,7 +204,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             ClientSession clientSession = getClientSessionForClient(clientId);
             if (clientSession == null) {
                 Set<TopicSubscription> clientSubscriptions = getClientSubscriptionsForClient(clientId);
-                log.warn("[{}] Trying to clear non-existent session, session subscriptions - {}", clientId, clientSubscriptions);
+                log.debug("[{}] Trying to clear non-existent session, session subscriptions - {}", clientId, clientSubscriptions);
                 if (!CollectionUtils.isEmpty(clientSubscriptions)) {
                     clearClientSubscriptions(clientId);
                 }
