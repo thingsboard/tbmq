@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
@@ -85,6 +86,8 @@ public class MsgDispatcherServiceImplTest {
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockBean
     ServiceInfoProvider serviceInfoProvider;
+    @MockBean
+    RateLimitService rateLimitService;
     @SpyBean
     MsgDispatcherServiceImpl msgDispatcherService;
 
@@ -93,6 +96,52 @@ public class MsgDispatcherServiceImplTest {
     @Before
     public void setUp() {
         clientSessionInfo = mock(ClientSessionInfo.class);
+
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
+    }
+
+    @Test
+    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitDisabled() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
+
+        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+                newValueWithTopicFilter("c1", 0, "t1"),
+                newValueWithTopicFilter("c2", 1, "t2"),
+                newValueWithTopicFilter("c3", 2, "t3")
+        );
+        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+
+        assertEquals(list, result);
+    }
+
+    @Test
+    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitReached() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.checkTotalMsgsLimit()).thenReturn(false);
+
+        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+                newValueWithTopicFilter("c1", 0, "t1"),
+                newValueWithTopicFilter("c2", 1, "t2"),
+                newValueWithTopicFilter("c3", 2, "t3")
+        );
+        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+
+        assertEquals(List.of(), result);
+    }
+
+    @Test
+    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.checkTotalMsgsLimit()).thenReturn(true);
+
+        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+                newValueWithTopicFilter("c1", 0, "t1"),
+                newValueWithTopicFilter("c2", 1, "t2"),
+                newValueWithTopicFilter("c3", 2, "t3")
+        );
+        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+
+        assertEquals(list, result);
     }
 
     @Test

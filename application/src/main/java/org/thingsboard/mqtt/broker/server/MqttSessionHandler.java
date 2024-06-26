@@ -159,7 +159,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void processPublish(MqttMessage msg) {
-        if (checkLimits(msg)) {
+        if (!rateLimitService.checkTotalMsgsLimit()) {
+            return;
+        }
+        if (checkDeviceLimits(msg)) {
             clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
         } else {
             if (log.isDebugEnabled()) {
@@ -169,7 +172,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
     }
 
-    private boolean checkLimits(MqttMessage msg) {
+    private boolean checkDeviceLimits(MqttMessage msg) {
         return rateLimitService.checkIncomingLimits(clientId, sessionId, msg);
     }
 

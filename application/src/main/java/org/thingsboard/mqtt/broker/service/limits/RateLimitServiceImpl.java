@@ -178,7 +178,7 @@ public class RateLimitServiceImpl implements RateLimitService {
 
     @Override
     public boolean checkTotalMsgsLimit() {
-        if (!totalMsgsRateLimitsConfiguration.isEnabled()) {
+        if (!isTotalMsgsLimitEnabled()) {
             return true;
         }
         if (!rateLimitCacheService.tryConsumeTotalMsg()) {
@@ -188,5 +188,10 @@ public class RateLimitServiceImpl implements RateLimitService {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean isTotalMsgsLimitEnabled() {
+        return totalMsgsRateLimitsConfiguration.isEnabled();
     }
 }

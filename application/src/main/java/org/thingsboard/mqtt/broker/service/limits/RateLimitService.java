@@ -43,4 +43,6 @@ public interface RateLimitService {
 
     boolean checkTotalMsgsLimit();
 
+    boolean isTotalMsgsLimitEnabled();
+
 }
