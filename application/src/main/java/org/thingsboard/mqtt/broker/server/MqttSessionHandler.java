@@ -23,6 +23,8 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -42,6 +44,7 @@ import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -61,6 +64,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -72,6 +76,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.clientMqttActorManager = mqttHandlerCtx.getActorManager();
         this.clientLogger = mqttHandlerCtx.getClientLogger();
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
+        this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -160,19 +165,34 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
     private void processPublish(MqttMessage msg) {
         if (!rateLimitService.checkTotalMsgsLimit()) {
+            processMsgOnRateLimits((MqttPublishMessage) msg, "Total rate limits detected");
             return;
         }
-        if (checkDeviceLimits(msg)) {
+        if (checkClientLimits(msg)) {
             clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Disconnecting client on rate limits detection!", clientId, sessionId);
-            }
-            disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, "Rate limits detected"));
+            processMsgOnRateLimits((MqttPublishMessage) msg, "Client incoming messages rate limits detected");
         }
     }
 
-    private boolean checkDeviceLimits(MqttMessage msg) {
+    private void processMsgOnRateLimits(MqttPublishMessage msg, String message) {
+        if (MqttVersion.MQTT_5.equals(clientSessionCtx.getMqttVersion())) {
+            replyWithAck(msg);
+        } else {
+            disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, message));
+        }
+    }
+
+    private void replyWithAck(MqttPublishMessage msg) {
+        int packetId = msg.variableHeader().packetId();
+        if (MqttQoS.AT_LEAST_ONCE.equals(msg.fixedHeader().qosLevel())) {
+            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId, MqttReasonCodes.PubAck.QUOTA_EXCEEDED));
+        } else if (MqttQoS.EXACTLY_ONCE.equals(msg.fixedHeader().qosLevel())) {
+            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId, MqttReasonCodes.PubRec.QUOTA_EXCEEDED));
+        }
+    }
+
+    private boolean checkClientLimits(MqttMessage msg) {
         return rateLimitService.checkIncomingLimits(clientId, sessionId, msg);
     }
 
