@@ -15,12 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.config;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
+
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -57,15 +66,22 @@ public class BrokerHomePageConfig {
     private int wssMaxPayloadSize;
 
     public final MqttClientCredentialsService mqttClientCredentialsService;
+    public final AdminSettingsService adminSettingsService;
 
     public HomePageConfigDto getConfig() {
+        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY);
+        Map<String, ConnectivityInfo> connectivityInfoMap = null;
+        if (connectivityAdminSettings != null) {
+            connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
+            });
+        }
         return HomePageConfigDto.builder()
                 .basicAuthEnabled(isBasicAuthEnabled())
                 .x509AuthEnabled(isX509AuthEnabled())
-                .tcpPort(getTcpPort())
-                .tlsPort(getTlsPort())
-                .wsPort(getWsPort())
-                .wssPort(getWssPort())
+                .tcpPort(getTcpPort(connectivityInfoMap))
+                .tlsPort(getTlsPort(connectivityInfoMap))
+                .wsPort(getWsPort(connectivityInfoMap))
+                .wssPort(getWssPort(connectivityInfoMap))
                 .tcpListenerEnabled(isTcpListenerEnabled())
                 .tlsListenerEnabled(isTlsListenerEnabled())
                 .wsListenerEnabled(isWsListenerEnabled())
@@ -79,7 +95,11 @@ public class BrokerHomePageConfig {
                 .build();
     }
 
-    private int getTcpPort() {
+    private int getTcpPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
+        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.MQTT_CONNECTIVITY);
+        if (port != -1) {
+            return port;
+        }
         String tcpPortStr = System.getenv("LISTENER_TCP_BIND_PORT");
         if (tcpPortStr != null) {
             return Integer.parseInt(tcpPortStr);
@@ -88,7 +108,11 @@ public class BrokerHomePageConfig {
         }
     }
 
-    private int getTlsPort() {
+    private int getTlsPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
+        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.MQTTS_CONNECTIVITY);
+        if (port != -1) {
+            return port;
+        }
         String tlsPortStr = System.getenv("LISTENER_SSL_BIND_PORT");
         if (tlsPortStr != null) {
             return Integer.parseInt(tlsPortStr);
@@ -151,7 +175,11 @@ public class BrokerHomePageConfig {
         }
     }
 
-    private int getWsPort() {
+    private int getWsPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
+        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.WS_CONNECTIVITY);
+        if (port != -1) {
+            return port;
+        }
         String wsPortStr = System.getenv("LISTENER_WS_BIND_PORT");
         if (wsPortStr != null) {
             return Integer.parseInt(wsPortStr);
@@ -160,7 +188,11 @@ public class BrokerHomePageConfig {
         }
     }
 
-    private int getWssPort() {
+    private int getWssPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
+        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.WSS_CONNECTIVITY);
+        if (port != -1) {
+            return port;
+        }
         String wssPortStr = System.getenv("LISTENER_WSS_BIND_PORT");
         if (wssPortStr != null) {
             return Integer.parseInt(wssPortStr);
@@ -211,5 +243,15 @@ public class BrokerHomePageConfig {
 
     private boolean existsX509Credentials() {
         return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.SSL);
+    }
+
+    private int getPortFromConnectivitySettings(Map<String, ConnectivityInfo> connectivityInfoMap, String key) {
+        if (connectivityInfoMap != null) {
+            ConnectivityInfo connectivityInfo = connectivityInfoMap.get(key);
+            if (connectivityInfo != null && connectivityInfo.isEnabled() && StringUtils.isNotEmpty(connectivityInfo.getPort())) {
+                return Integer.parseInt(connectivityInfo.getPort());
+            }
+        }
+        return -1;
     }
 }
