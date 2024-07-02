@@ -454,7 +454,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         if (consumerGroupId == null) {
             throw new IllegalArgumentException("Consumer group ID cannot be null");
         }
-        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().anyMatch(consumerGroupId::startsWith);
+        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().map(prefix -> kafkaPrefix + prefix).anyMatch(consumerGroupId::startsWith);
     }
 
     @PreDestroy
