@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 import java.util.concurrent.ExecutorService;
@@ -43,6 +43,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private final ClientLogger clientLogger;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final ApplicationClientHelperService appClientHelperService;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -77,7 +78,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     @Override
     public void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
-        String clientQueueTopic = MqttApplicationClientUtil.getAppTopic(clientId, validateClientId);
+        String clientQueueTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
@@ -126,7 +127,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
                         });
                     }
                 },
-                MqttApplicationClientUtil.getSharedAppTopic(sharedTopic, validateSharedTopicFilter));
+                appClientHelperService.getSharedAppTopic(sharedTopic, validateSharedTopicFilter));
     }
 
     @PreDestroy

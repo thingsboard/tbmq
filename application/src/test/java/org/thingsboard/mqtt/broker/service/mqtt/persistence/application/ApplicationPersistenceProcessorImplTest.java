@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -76,6 +77,8 @@ public class ApplicationPersistenceProcessorImplTest {
     ClientLogger clientLogger;
     @MockBean
     ApplicationTopicService applicationTopicService;
+    @MockBean
+    ApplicationClientHelperService appClientHelperService;
 
     @SpyBean
     ApplicationPersistenceProcessorImpl applicationPersistenceProcessor;

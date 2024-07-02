@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.queue.kafka.settings;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "queue.kafka.msg-all")
-public class PublishMsgKafkaSettings {
-
-    private String topic;
-    private String topicProperties;
-    private String additionalProducerConfig;
-    private String additionalConsumerConfig;
+public abstract class AbstractQueueFactory {
 
     @Value("${queue.kafka.kafka-prefix:}")
-    private String kafkaPrefix;
+    protected String kafkaPrefix;
 
-    public String getKafkaTopic() {
-        return kafkaPrefix + topic;
-    }
 }

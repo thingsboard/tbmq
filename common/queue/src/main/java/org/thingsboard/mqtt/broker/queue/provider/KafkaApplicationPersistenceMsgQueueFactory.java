@@ -41,7 +41,7 @@ import java.util.Properties;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPersistenceMsgQueueFactory {
+public class KafkaApplicationPersistenceMsgQueueFactory extends AbstractQueueFactory implements ApplicationPersistenceMsgQueueFactory {
 
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "latest");
 
@@ -82,7 +82,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
     private TbKafkaProducerTemplate<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String additionalProducerConfig, String clientIdPrefix, String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(additionalProducerConfig));
-        producerBuilder.clientId(clientIdPrefix + serviceId);
+        producerBuilder.clientId(kafkaPrefix + clientIdPrefix + serviceId);
         producerBuilder.createTopicIfNotExists(false);
         producerBuilder.statsManager(producerStatsManager);
         return producerBuilder.build();
@@ -116,7 +116,7 @@ public class KafkaApplicationPersistenceMsgQueueFactory implements ApplicationPe
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(props);
         consumerBuilder.topic(topic);
-        consumerBuilder.clientId(clientId);
+        consumerBuilder.clientId(kafkaPrefix + clientId);
         consumerBuilder.groupId(consumerGroupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));

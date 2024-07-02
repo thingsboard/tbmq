@@ -34,17 +34,20 @@ import java.util.List;
 public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedEventProcessor {
 
     private static final int MAX_EMPTY_EVENTS = 5;
-    private volatile boolean stopped = false;
-
-    @Value("${queue.application-removed-event.poll-interval}")
-    private long pollDuration;
 
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> consumer;
     private final ClientSessionEventService clientSessionEventService;
 
-    public ApplicationRemovedEventProcessorImpl(ClientSessionEventService clientSessionEventService, ApplicationRemovedEventQueueFactory applicationRemovedEventQueueFactory, ServiceInfoProvider serviceInfoProvider) {
+    @Value("${queue.application-removed-event.poll-interval}")
+    private long pollDuration;
+
+    private volatile boolean stopped = false;
+
+    public ApplicationRemovedEventProcessorImpl(ClientSessionEventService clientSessionEventService,
+                                                ApplicationRemovedEventQueueFactory applicationRemovedEventQueueFactory,
+                                                ServiceInfoProvider serviceInfoProvider) {
         this.consumer = applicationRemovedEventQueueFactory.createEventConsumer(serviceInfoProvider.getServiceId());
-        consumer.subscribe();
+        this.consumer.subscribe();
         this.clientSessionEventService = clientSessionEventService;
     }
 
@@ -59,9 +62,7 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
 
     @Override
     public void processEvents() {
-        if (log.isDebugEnabled()) {
-            log.debug("Start processing APPLICATION removed events.");
-        }
+        log.debug("Start processing APPLICATION removed events.");
         int currentEmptyEvents = 0;
         while (!stopped) {
             List<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> msgs = consumer.poll(pollDuration);
@@ -74,16 +75,12 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
             }
             currentEmptyEvents = 0;
             for (TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto> msg : msgs) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Requesting topic removal", msg.getValue().getClientId());
-                }
+                log.debug("[{}] Requesting topic removal", msg.getValue().getClientId());
                 clientSessionEventService.requestApplicationTopicRemoved(msg.getValue().getClientId());
             }
             consumer.commitSync();
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Finished processing APPLICATION removed events.");
-        }
+        log.debug("Finished processing APPLICATION removed events.");
     }
 
     @PreDestroy

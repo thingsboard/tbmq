@@ -40,7 +40,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClientCommandQueueFactory {
+public class KafkaDisconnectClientCommandQueueFactory extends AbstractQueueFactory implements DisconnectClientCommandQueueFactory {
 
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
@@ -64,7 +64,7 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer(String serviceId) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(disconnectClientCommandSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("disconnect-client-command-producer-" + serviceId);
+        producerBuilder.clientId(kafkaPrefix + "disconnect-client-command-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -77,8 +77,8 @@ public class KafkaDisconnectClientCommandQueueFactory implements DisconnectClien
         consumerBuilder.properties(consumerSettings.toProps(topic, disconnectClientCommandSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("disconnect-client-command-consumer-" + serviceId);
-        consumerBuilder.groupId("disconnect-client-command-consumer-group-" + serviceId);
+        consumerBuilder.clientId(kafkaPrefix + "disconnect-client-command-consumer-" + serviceId);
+        consumerBuilder.groupId(kafkaPrefix + "disconnect-client-command-consumer-group-" + serviceId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

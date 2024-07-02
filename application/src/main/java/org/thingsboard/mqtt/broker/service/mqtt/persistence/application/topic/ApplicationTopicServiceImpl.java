@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueueFactory;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 
 import java.util.Collections;
 import java.util.Map;
@@ -37,6 +37,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
     private final TbQueueAdmin queueAdmin;
     private final ApplicationPersistenceMsgQueueFactory applicationPersistenceMsgQueueFactory;
+    private final ApplicationClientHelperService appClientHelperService;
 
     @Value("${queue.application-persisted-msg.client-id-validation:true}")
     private boolean validateClientId;
@@ -48,7 +49,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
         if (log.isDebugEnabled()) {
             log.debug("[{}] Creating APPLICATION topic", clientId);
         }
-        String clientTopic = MqttApplicationClientUtil.getAppTopic(clientId, validateClientId);
+        String clientTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         queueAdmin.createTopic(clientTopic, applicationPersistenceMsgQueueFactory.getTopicConfigs());
         return clientTopic;
     }
@@ -60,7 +61,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
             log.debug("[{}] Creating shared APPLICATION topic", topic);
         }
 
-        final var topicToCreate = MqttApplicationClientUtil.getSharedAppTopic(topic, validateSharedTopicFilter);
+        final var topicToCreate = appClientHelperService.getSharedAppTopic(topic, validateSharedTopicFilter);
 
         Map<String, String> topicConfigs = applicationPersistenceMsgQueueFactory.getSharedTopicConfigs();
         topicConfigs.put(QueueConstants.PARTITIONS, String.valueOf(subscription.getPartitions()));
@@ -72,9 +73,9 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
         if (log.isDebugEnabled()) {
             log.debug("[{}] Deleting APPLICATION topic", clientId);
         }
-        String clientTopic = MqttApplicationClientUtil.getAppTopic(clientId, validateClientId);
+        String clientTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         queueAdmin.deleteTopic(clientTopic, callback);
-        String consumerGroup = MqttApplicationClientUtil.getAppConsumerGroup(clientId);
+        String consumerGroup = appClientHelperService.getAppConsumerGroup(clientId);
         queueAdmin.deleteConsumerGroups(Collections.singleton(consumerGroup));
     }
 
@@ -85,7 +86,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
             log.debug("[{}] Deleting shared APPLICATION topic", topic);
         }
 
-        final var topicToDelete = MqttApplicationClientUtil.getSharedAppTopic(topic, validateSharedTopicFilter);
+        final var topicToDelete = appClientHelperService.getSharedAppTopic(topic, validateSharedTopicFilter);
 
         BasicCallback callback = CallbackUtil.createCallback(
                 () -> log.info("[{}] Deleted Kafka topic successfully", topicToDelete),

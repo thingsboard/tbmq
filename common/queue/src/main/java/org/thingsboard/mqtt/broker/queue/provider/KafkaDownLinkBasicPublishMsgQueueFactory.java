@@ -41,7 +41,7 @@ import java.util.Map;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPublishMsgQueueFactory {
+public class KafkaDownLinkBasicPublishMsgQueueFactory extends AbstractQueueFactory implements DownLinkBasicPublishMsgQueueFactory {
 
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
@@ -65,7 +65,7 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createProducer(String id) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(basicDownLinkPublishMsgKafkaSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("basic-downlink-msg-producer-" + id);
+        producerBuilder.clientId(kafkaPrefix + "basic-downlink-msg-producer-" + id);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -78,8 +78,8 @@ public class KafkaDownLinkBasicPublishMsgQueueFactory implements DownLinkBasicPu
         consumerBuilder.properties(consumerSettings.toProps(topic, basicDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("basic-downlink-msg-consumer-" + consumerId);
-        consumerBuilder.groupId(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX + groupId);
+        consumerBuilder.clientId(kafkaPrefix + "basic-downlink-msg-consumer-" + consumerId);
+        consumerBuilder.groupId(kafkaPrefix + BrokerConstants.BASIC_DOWNLINK_CG_PREFIX + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientPublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
