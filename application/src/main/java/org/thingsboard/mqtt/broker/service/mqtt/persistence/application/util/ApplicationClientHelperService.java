@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 
-public interface ApplicationRemovedEventProcessor {
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
-    void processEvents();
+public interface ApplicationClientHelperService {
 
+    String getAppTopic(String clientId, boolean validateClientId);
+
+    String getAppConsumerGroup(String clientId);
+
+    String getSharedAppTopic(String topicFilter, boolean validateTopicFilter);
+
+    String getSharedAppConsumerGroup(TopicSharedSubscription subscription, String sharedAppTopic);
 }

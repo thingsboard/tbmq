@@ -56,7 +56,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processi
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPubRelMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.PersistedPublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.MqttApplicationClientUtil;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util.ApplicationClientHelperService;
 import org.thingsboard.mqtt.broker.service.stats.ApplicationProcessorStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -105,6 +105,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientLogger clientLogger;
     private final ApplicationTopicService applicationTopicService;
+    private final ApplicationClientHelperService appClientHelperService;
     private final boolean isTraceEnabled = log.isTraceEnabled();
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
@@ -435,8 +436,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> initSharedConsumer(String clientId, TopicSharedSubscription subscription) {
-        String sharedAppTopic = MqttApplicationClientUtil.getSharedAppTopic(subscription.getTopicFilter(), validateSharedTopicFilter);
-        String sharedAppConsumerGroup = MqttApplicationClientUtil.getSharedAppConsumerGroup(subscription, sharedAppTopic);
+        String sharedAppTopic = appClientHelperService.getSharedAppTopic(subscription.getTopicFilter(), validateSharedTopicFilter);
+        String sharedAppConsumerGroup = appClientHelperService.getSharedAppConsumerGroup(subscription, sharedAppTopic);
         String sharedConsumerId = getSharedConsumerId(clientId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = applicationPersistenceMsgQueueFactory
                 .createConsumerForSharedTopic(
@@ -627,7 +628,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @Override
     public void clearPersistedMsgs(String clientId) {
         clientLogger.logEvent(clientId, this.getClass(), "Clearing persisted messages");
-        String applicationConsumerGroup = MqttApplicationClientUtil.getAppConsumerGroup(clientId);
+        String applicationConsumerGroup = appClientHelperService.getAppConsumerGroup(clientId);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Clearing consumer group {} for application.", clientId, applicationConsumerGroup);
         }
@@ -661,7 +662,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         return applicationPersistenceMsgQueueFactory
                 .createConsumer(
                         clientTopic,
-                        MqttApplicationClientUtil.getAppConsumerGroup(clientId),
+                        appClientHelperService.getAppConsumerGroup(clientId),
                         getConsumerId(clientId));
     }
 

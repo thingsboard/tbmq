@@ -489,6 +489,8 @@ queue:
       additional-consumer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-producer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_PRODUCER_CONFIG:}"
+    # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
+    kafka-prefix: "${TB_KAFKA_PREFIX:}"
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
       tbmq.msg.app.test_client:
