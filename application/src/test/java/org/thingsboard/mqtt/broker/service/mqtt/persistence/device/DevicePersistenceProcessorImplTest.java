@@ -20,8 +20,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -42,7 +42,7 @@ public class DevicePersistenceProcessorImplTest {
     DeviceMsgService deviceMsgService;
     DeviceSessionCtxService deviceSessionCtxService;
     DeviceActorManager deviceActorManager;
-    CacheManager cacheManager;
+    CacheNameResolver cacheNameResolver;
     DevicePersistenceProcessorImpl devicePersistenceProcessor;
 
     String clientId;
@@ -52,9 +52,9 @@ public class DevicePersistenceProcessorImplTest {
         deviceMsgService = mock(DeviceMsgService.class);
         deviceSessionCtxService = mock(DeviceSessionCtxService.class);
         deviceActorManager = mock(DeviceActorManager.class);
-        cacheManager = mock(CacheManager.class);
+        cacheNameResolver = mock(CacheNameResolver.class);
         devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(
-                deviceMsgService, deviceSessionCtxService, deviceActorManager, cacheManager));
+                deviceMsgService, deviceSessionCtxService, deviceActorManager, cacheNameResolver));
 
         clientId = "clientId";
     }
@@ -62,13 +62,13 @@ public class DevicePersistenceProcessorImplTest {
     @Test
     public void clearPersistedMsgsTest() {
         Cache cache = mock(Cache.class);
-        when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
+        when(cacheNameResolver.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
 
         devicePersistenceProcessor.clearPersistedMsgs(clientId);
 
         verify(deviceMsgService, times(1)).removePersistedMessages(eq(clientId));
         verify(deviceSessionCtxService, times(1)).removeDeviceSessionContext(eq(clientId));
-        verify(cacheManager, times(1)).getCache(eq(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE));
+        verify(cacheNameResolver, times(1)).getCache(eq(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE));
         verify(cache, times(1)).evict(eq(clientId));
     }
 
