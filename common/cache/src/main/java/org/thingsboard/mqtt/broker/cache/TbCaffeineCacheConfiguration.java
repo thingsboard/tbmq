@@ -71,12 +71,12 @@ public class TbCaffeineCacheConfiguration {
     @Bean
     public CacheManager cacheManager() {
         if (log.isTraceEnabled()) {
-            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), configuration.getSpecs());
+            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), configuration.getCacheSpecs());
         }
         SimpleCacheManager manager = new SimpleCacheManager();
-        if (configuration.getSpecs() != null) {
+        if (configuration.getCacheSpecs() != null) {
             caches =
-                    configuration.getSpecs().entrySet().stream()
+                    configuration.getCacheSpecs().entrySet().stream()
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());

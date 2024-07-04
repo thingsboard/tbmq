@@ -808,6 +808,8 @@ cache:
     enabled: "${CACHE_STATS_ENABLED:true}"
     # Cache stats logging interval in seconds
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
+  # The common prefix for all cache keys. Defaults to empty string meaning no prefix is added
+  cache-prefix: "${CACHE_PREFIX:}"
   specs:
     packetIdAndSerialNumber:
       # Cache TTL in minutes

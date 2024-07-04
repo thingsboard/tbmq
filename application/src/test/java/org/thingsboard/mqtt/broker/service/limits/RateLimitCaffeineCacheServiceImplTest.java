@@ -28,6 +28,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.time.Duration;
 
@@ -57,7 +58,7 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         // Create a Caffeine cache
         caffeineCache = Caffeine.newBuilder().build();
-        mockCache = new CaffeineCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, caffeineCache);
+        mockCache = new CaffeineCache(BrokerConstants.EMPTY_STR, caffeineCache);
 
         // Mock the cache manager to return the Caffeine cache
         when(cacheManager.getCache(any())).thenReturn(mockCache);
@@ -65,6 +66,7 @@ public class RateLimitCaffeineCacheServiceImplTest {
         rateLimitCaffeineCacheService.setSessionsLimit(5);
         rateLimitCaffeineCacheService.setApplicationClientsLimit(5);
 
+        rateLimitCaffeineCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
         // Initialize the service
         rateLimitCaffeineCacheService.init();
     }
