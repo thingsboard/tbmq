@@ -17,24 +17,21 @@ package org.thingsboard.mqtt.broker.cache;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.stereotype.Component;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
-@Configuration
-@ConfigurationProperties(prefix = "cache")
+@Component
 @Data
-public class CacheSpecsMap {
+public class CacheNameResolver {
 
-    private Map<String, CacheSpecs> specs;
+    private final CacheManager cacheManager;
 
     @Value("${cache.cache-prefix:}")
     private String cachePrefix;
 
-    public Map<String, CacheSpecs> getCacheSpecs() {
-        return specs.entrySet().stream()
-                .collect(Collectors.toMap(entry -> cachePrefix + entry.getKey(), Map.Entry::getValue));
+    public Cache getCache(String cacheName) {
+        return cacheManager.getCache(cachePrefix + cacheName);
     }
+
 }

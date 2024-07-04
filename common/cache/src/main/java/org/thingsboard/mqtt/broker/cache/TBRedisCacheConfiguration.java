@@ -117,7 +117,7 @@ public abstract class TBRedisCacheConfiguration {
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         if (cacheSpecsMap != null) {
-            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getSpecs().entrySet()) {
+            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getCacheSpecs().entrySet()) {
                 cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
             }
         }

@@ -20,9 +20,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
@@ -51,7 +51,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
-    private final CacheManager cacheManager;
+    private final CacheNameResolver cacheNameResolver;
 
     @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
     private boolean skipValidityCheckForClientCert;
@@ -199,6 +199,6 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     private Cache getSslRegexCredentialsCache() {
-        return cacheManager.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+        return cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
     }
 }

@@ -13,28 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.cache;
+package org.thingsboard.mqtt.broker.service.limits;
 
-import lombok.Data;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
-import java.util.stream.Collectors;
-
-@Configuration
-@ConfigurationProperties(prefix = "cache")
-@Data
-public class CacheSpecsMap {
-
-    private Map<String, CacheSpecs> specs;
+@Setter
+public abstract class AbstractRateLimitCacheService {
 
     @Value("${cache.cache-prefix:}")
-    private String cachePrefix;
+    protected String cachePrefix;
 
-    public Map<String, CacheSpecs> getCacheSpecs() {
-        return specs.entrySet().stream()
-                .collect(Collectors.toMap(entry -> cachePrefix + entry.getKey(), Map.Entry::getValue));
-    }
 }

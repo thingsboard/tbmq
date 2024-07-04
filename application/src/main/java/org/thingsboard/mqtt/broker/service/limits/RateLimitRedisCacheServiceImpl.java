@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.limits;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
+import jakarta.annotation.PostConstruct;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +31,12 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @Slf4j
-public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
+public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheService implements RateLimitCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final BucketProxy devicePersistedMsgsBucketProxy;
-    private final BucketProxy totalMsgsBucketProxy;
+    private final JedisBasedProxyManager<String> jedisBasedProxyManager;
+    private final BucketConfiguration devicePersistedMsgsBucketConfiguration;
+    private final BucketConfiguration totalMsgsBucketConfiguration;
 
     @Value("${mqtt.sessions-limit:0}")
     @Setter
@@ -43,15 +45,37 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     @Setter
     private int applicationClientsLimit;
 
+    private BucketProxy devicePersistedMsgsBucketProxy;
+    private BucketProxy totalMsgsBucketProxy;
+    private String clientSessionsLimitCacheKey;
+    private String appClientsLimitCacheKey;
+
     public RateLimitRedisCacheServiceImpl(RedisTemplate<String, Object> redisTemplate,
                                           JedisBasedProxyManager<String> jedisBasedProxyManager,
                                           @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
                                           @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration) {
         this.redisTemplate = redisTemplate;
+        this.jedisBasedProxyManager = jedisBasedProxyManager;
+        this.devicePersistedMsgsBucketConfiguration = devicePersistedMsgsBucketConfiguration;
+        this.totalMsgsBucketConfiguration = totalMsgsBucketConfiguration;
+    }
+
+    @PostConstruct
+    public void init() {
+        var devicePersistedMsgsLimitCacheKey = cachePrefix + CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE;
+        var totalMsgsLimitCacheKey = cachePrefix + CacheConstants.TOTAL_MSGS_LIMIT_CACHE;
+
         this.devicePersistedMsgsBucketProxy = devicePersistedMsgsBucketConfiguration == null ? null :
-                jedisBasedProxyManager.getProxy(CacheConstants.DEVICE_PERSISTED_MSGS_LIMIT_CACHE, () -> devicePersistedMsgsBucketConfiguration);
+                jedisBasedProxyManager.getProxy(devicePersistedMsgsLimitCacheKey, () -> devicePersistedMsgsBucketConfiguration);
         this.totalMsgsBucketProxy = totalMsgsBucketConfiguration == null ? null :
-                jedisBasedProxyManager.getProxy(CacheConstants.TOTAL_MSGS_LIMIT_CACHE, () -> totalMsgsBucketConfiguration);
+                jedisBasedProxyManager.getProxy(totalMsgsLimitCacheKey, () -> totalMsgsBucketConfiguration);
+
+        if (sessionsLimit > 0) {
+            clientSessionsLimitCacheKey = cachePrefix + CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY;
+        }
+        if (applicationClientsLimit > 0) {
+            appClientsLimitCacheKey = cachePrefix + CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY;
+        }
     }
 
     @Override
@@ -59,7 +83,7 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         if (sessionsLimit <= 0) {
             return;
         }
-        boolean initialized = initCacheWithCount(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, count);
+        boolean initialized = initCacheWithCount(clientSessionsLimitCacheKey, count);
         if (initialized) {
             log.info("Client session limit cache is initialized with count {}", count);
         }
@@ -70,7 +94,7 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
         if (applicationClientsLimit <= 0) {
             return;
         }
-        boolean initialized = initCacheWithCount(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, count);
+        boolean initialized = initCacheWithCount(appClientsLimitCacheKey, count);
         if (initialized) {
             log.info("Application clients limit cache is initialized with count {}", count);
         }
@@ -79,13 +103,13 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     @Override
     public long incrementSessionCount() {
         log.debug("Incrementing session count");
-        return increment(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        return increment(clientSessionsLimitCacheKey);
     }
 
     @Override
     public long incrementApplicationClientsCount() {
         log.debug("Incrementing Application clients count");
-        return increment(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        return increment(appClientsLimitCacheKey);
     }
 
     @Override
@@ -94,7 +118,7 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
             return;
         }
         log.debug("Decrementing session count");
-        decrement(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        decrement(clientSessionsLimitCacheKey);
     }
 
     @Override
@@ -103,7 +127,7 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
             return;
         }
         log.debug("Decrementing Application clients count");
-        decrement(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        decrement(appClientsLimitCacheKey);
     }
 
     /**
