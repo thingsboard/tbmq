@@ -74,6 +74,7 @@
   "admin": {
     "admins": "Admins",
     "authentication": "Authentication",
+    "allow-whitespace": "Allow whitespace",
     "connection-settings": "Connection settings",
     "general": "General",
     "general-settings": "General Settings",
@@ -151,6 +152,9 @@
     "minimum-digits-range": "Minimum number of digits can't be negative",
     "minimum-special-characters": "Minimum number of special characters",
     "minimum-special-characters-range": "Minimum number of special characters can't be negative",
+    "maximum-password-length": "Maximum password length",
+    "maximum-password-length-min": "Maximum password length should be at least 6",
+    "maximum-password-length-less-min": "Maximum password length should be greater than minimum length",
     "password-expiration-period-days": "Password expiration period in days",
     "password-expiration-period-days-range": "Password expiration period in days can't be negative",
     "password-reuse-frequency-days": "Password reuse frequency in days",
@@ -161,7 +165,25 @@
     "user-lockout-notification-email": "In case user account lockout, send notification to email",
     "domain-name": "Domain name",
     "domain-name-unique": "Domain name and protocol need to unique.",
-    "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io"
+    "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io",
+    "force-reset-password-if-no-valid": "Force to reset password if not valid",
+    "force-reset-password-if-no-valid-hint": "Please be careful when enabling this feature: it will require users with not valid password to reset their password via email.",
+      "settings": {
+      "connectivity": "Connectivity",
+      "connectivity-settings": "Connectivity settings",
+      "connectivity-hint": "If host or port fields are empty, default protocol value will be used.",
+      "default-host-port": "Default port and host configurations",
+      "default-host-port-description": "These settings allow you to define default host and port parameters for various protocols utilized throughout the TBMQ system.",
+      "mqtt": "MQTT",
+      "mqtts": "MQTTs",
+      "ws": "WS",
+      "wss": "WSS",
+      "ws-client-settings": "WebSocket client settings",
+      "host": "Host",
+      "port": "Port",
+      "port-pattern": "Port must be a positive integer.",
+      "port-range": "Port should be in a range from 1 to 65535."
+    }
   },
   "confirm-on-exit": {
     "message": "You have unsaved changes. Are you sure you want to leave this page?",
@@ -679,7 +701,8 @@
     "upgrade-instructions": "Upgrade instructions",
     "contact-us": "Contact us",
     "available": "Available",
-    "current": "Current"
+    "current": "Current",
+    "no-updates": "No updates"
   },
   "config": {
     "key": "Key",
@@ -783,6 +806,7 @@
     "pub": "Publish",
     "sub": "Subscribe",
     "options": "Options",
+    "show-logs": "Log MQTT client activity",
     "messages": {
       "retained": "Retain",
       "publish-message": "Publish message",
@@ -864,6 +888,7 @@
       "user-properties": "User Properties",
       "url": "URL",
       "url-required": "URL is required",
+      "url-warning": "Your client's host uses HTTPS, but you have selected WS instead of WSS. This could lead to issues with the client's ability to establish a connection.",
       "session-expiry-interval": "Session Expiry Interval",
       "session-expiry-interval-max": "Max value is 2,147,483,647 seconds.",
       "password-warning": "The password is required for the selected Client Credentials.",
