@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+// @ts-nocheck
+
 import { AfterViewInit, Component } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
@@ -22,7 +24,6 @@ import { EntityTableConfig } from '@home/models/entity/entities-table-config.mod
 import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
-import { AddEntityDialogComponent } from '@home/components/entity/add-entity-dialog.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
@@ -40,6 +41,8 @@ import {
 } from "@home/components/wizard/client-credentials-wizard-dialog.component";
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
+import { SettingsService } from '@core/http/settings.service';
+import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
 
 @Component({
   selector: 'tb-getting-started',
@@ -63,6 +66,7 @@ export class GettingStartedComponent implements AfterViewInit {
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
+              private settingsService: SettingsService,
               private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
               private store: Store<AppState>,
@@ -80,12 +84,22 @@ export class GettingStartedComponent implements AfterViewInit {
           this.steps.subscribe((res) => {
             this.stepsData = res;
           });
-          // @ts-ignore
-          window.mqttPort = tcpPort;
+          window.tbmqSettings = {};
+          window.tbmqSettings.mqttPort = tcpPort;
+          window.tbmqSettings.mqttHost = undefined;
+          this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
+            (settings) => {
+              if (settings?.jsonValue?.mqtt?.enabled) {
+                window.tbmqSettings.mqttPort = settings.jsonValue.mqtt.port;
+                window.tbmqSettings.mqttHost = settings.jsonValue.mqtt.host;
+              }
+            },
+            () => {}
+          );
           this.configParams = {} as BrokerConfig;
           this.configParams[ConfigParams.basicAuthEnabled] = basicAuthEnabled;
           this.configParams[ConfigParams.tcpPort] = tcpPort;
-          this.configParams[ConfigParams.basicAuthEnabled]  ? this.init('client-app') : this.init('enable-basic-auth');
+          this.configParams[ConfigParams.basicAuthEnabled] ? this.init('client-app') : this.init('enable-basic-auth');
           return data;
         }
       )).subscribe();

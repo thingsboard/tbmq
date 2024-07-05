@@ -17,13 +17,17 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
+import { MailServerComponent } from '@home/pages/settings/mail-server.component';
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
+import { GeneralSettingsComponent } from '@home/pages/settings/general-settings.component';
+import { RouterTabsComponent } from '@home/components/router-tabs.component';
+import { SecuritySettingsComponent } from '@home/pages/settings/security-settings.component';
 
 const routes: Routes = [
   {
     path: 'settings',
+    component: RouterTabsComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
       breadcrumb: {
@@ -38,8 +42,21 @@ const routes: Routes = [
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {
-            SYS_ADMIN: '/settings/outgoing-mail'
+            SYS_ADMIN: '/settings/ws'
           }
+        }
+      },
+      {
+        path: 'ws',
+        component: GeneralSettingsComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          breadcrumb: {
+            label: 'admin.general',
+            icon: 'settings'
+          }
+        },
+        resolve: {
         }
       },
       {
@@ -48,10 +65,20 @@ const routes: Routes = [
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'admin.outgoing-mail-settings',
           breadcrumb: {
             label: 'admin.outgoing-mail',
             icon: 'mdi:email'
+          }
+        }
+      },
+      {
+        path: 'security',
+        component: SecuritySettingsComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          breadcrumb: {
+            label: 'home.security',
+            icon: 'security'
           }
         }
       }
@@ -62,5 +89,5 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forChild(routes)], exports: [RouterModule]
 })
-export class MailServerRoutingModule {
+export class SettingsRoutingModule {
 }

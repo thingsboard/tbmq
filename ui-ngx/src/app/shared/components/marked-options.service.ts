@@ -208,9 +208,10 @@ function processCode(code: string): CodeContext {
   };
   if (context.code.endsWith(copyCodeBlock)) {
     if (code.includes('{:hostname}')) {
-      context.code = context.code.replace('{:hostname}', window.location.hostname);
       // @ts-ignore
-      context.code = context.code.replace('{:port}', window.mqttPort);
+      context.code = context.code.replace('{:hostname}', window.tbmqSettings?.mqttHost || window.location.hostname);
+      // @ts-ignore
+      context.code = context.code.replace('{:port}', window.tbmqSettings?.mqttPort);
     }
     context.code = context.code.substring(0, context.code.length - copyCodeBlock.length);
     context.copyCode = true;

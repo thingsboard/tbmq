@@ -14,25 +14,23 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, HostBinding, Input } from '@angular/core';
+import { TooltipPosition } from '@angular/material/tooltip';
 
-import { MailServerRoutingModule } from './mail-server-routing.module';
-import { SharedModule } from '@app/shared/shared.module';
-import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
-import { HomeComponentsModule } from '@modules/home/components/home-components.module';
-
-@NgModule({
-  declarations:
-    [
-      MailServerComponent
-    ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    MailServerRoutingModule
-  ]
+@Component({
+  selector: '[tb-hint-tooltip-icon]',
+  templateUrl: './hint-tooltip-icon.component.html',
+  styleUrls: ['./hint-tooltip-icon.component.scss']
 })
-export class MailServerModule {
+export class HintTooltipIconComponent {
+
+  @HostBinding('class.tb-hint-tooltip')
+  @Input('tb-hint-tooltip-icon') tooltipText: string;
+
+  @Input()
+  tooltipPosition: TooltipPosition = 'right';
+
+  @Input()
+  hintIcon = 'info';
+
 }

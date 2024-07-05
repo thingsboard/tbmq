@@ -15,8 +15,11 @@
 ///
 
 export const smtpPortPattern: RegExp = /^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$/;
+export const connectivitySettingsKey = 'connectivity';
+export const websocketSettingsKey = 'websocket';
+export const securitySettingsKey = 'security';
 
-export interface UserSettings<T> {
+export interface AdminSettings<T> {
   key: string;
   jsonValue: T;
 }
@@ -40,3 +43,17 @@ export interface MailServerSettings {
   proxyUser: string;
   proxyPassword: string;
 }
+
+export interface WebsocketlSettings {
+  isLoggingEnabled: boolean;
+}
+
+export type ConnectivityProtocol = 'mqtt' | 'mqtts' | 'ws' | 'wss';
+
+export interface ConnectivityInfo {
+  enabled: boolean;
+  host: string;
+  port: number;
+}
+
+export type ConnectivitySettings = Record<ConnectivityProtocol, ConnectivityInfo>;

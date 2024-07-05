@@ -167,17 +167,31 @@ export class MenuService {
       {
         id: 'system_settings',
         name: 'admin.system-settings',
-        type: 'toggle',
+        type: 'link',
         path: '/settings',
         icon: 'settings',
         pages: [
           {
-            id: 'outgoing_mail',
+            id: 'ws_settings',
+            name: 'admin.general',
+            type: 'link',
+            path: '/settings/ws',
+            icon: 'settings'
+          },
+          {
+            id: 'outgoing_mail_settings',
             name: 'admin.outgoing-mail',
             type: 'link',
             path: '/settings/outgoing-mail',
             icon: 'mdi:email'
-          }
+          },
+          /*{
+            id: 'security_settings',
+            name: 'home.security',
+            type: 'link',
+            path: '/settings/security',
+            icon: 'security'
+          }*/
         ]
       }
     );
