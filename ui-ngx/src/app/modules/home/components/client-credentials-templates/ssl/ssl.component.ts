@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -28,6 +28,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ClientCredentials, SslMqttCredentials } from "@shared/models/credentials.model";
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-mqtt-credentials-ssl',
@@ -46,6 +47,9 @@ import { ClientCredentials, SslMqttCredentials } from "@shared/models/credential
   styleUrls: []
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
+
+  @ViewChild('copyBtn')
+  copyBtn: CopyButtonComponent;
 
   @Input()
   disabled: boolean;
@@ -123,6 +127,10 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
       const credentialsValue = JSON.parse(this.entity.credentialsValue);
       return credentialsValue[key] || ' ';
     }
+  }
+
+  onClickTbCopyButton(value: string) {
+    this.copyBtn.copy(value);
   }
 
   private updateCertificateCnView(value: boolean = false) {
