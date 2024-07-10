@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
@@ -54,6 +55,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     private final SubmitStrategyFactory submitStrategyFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+    private final RateLimitService rateLimitService;
 
     private volatile boolean stopped = false;
     private ExecutorService consumersExecutor;
@@ -95,13 +97,18 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                         continue;
                     }
 
+                    List<TbProtoQueueMsg<PublishMsgProto>> msgsAfterRateLimits = applyRateLimits(consumer, msgs);
+                    if (msgsAfterRateLimits == null) {
+                        continue;
+                    }
+
                     AckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     SubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
                     long packId = counter.incrementAndGet();
                     if (packId == MAX_VALUE) {
                         counter.set(0);
                     }
-                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgs, packId);
+                    var pendingMsgMap = toPendingPubMsgWithIdMap(msgsAfterRateLimits, packId);
                     submitStrategy.init(pendingMsgMap);
 
                     long packProcessingStart = System.nanoTime();
@@ -130,7 +137,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                             submitStrategy.update(decision.getReprocessMap());
                         }
                     }
-                    stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
+                    stats.logPackProcessingTime(msgsAfterRateLimits.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
@@ -146,6 +153,20 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
             }
             log.info("[{}] Publish Msg Consumer stopped.", consumerId);
         });
+    }
+
+    private List<TbProtoQueueMsg<PublishMsgProto>> applyRateLimits(TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer,
+                                                                   List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
+        if (rateLimitService.isTotalMsgsLimitEnabled()) {
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(msgs.size());
+            if (availableTokens == 0) {
+                log.debug("No available tokens left for total msgs bucket during consumer polling. Skipping {} messages", msgs.size());
+                consumer.commitSync();
+                return null;
+            }
+            return msgs.subList(0, availableTokens);
+        }
+        return msgs;
     }
 
     private Map<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
