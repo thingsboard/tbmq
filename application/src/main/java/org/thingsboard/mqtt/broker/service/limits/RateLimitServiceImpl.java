@@ -177,6 +177,16 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
+    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(limit);
+    }
+
+    @Override
+    public boolean isDevicePersistedMsgsLimitEnabled() {
+        return devicePersistedMsgsRateLimitsConfiguration.isEnabled();
+    }
+
+    @Override
     public boolean checkTotalMsgsLimit() {
         if (!isTotalMsgsLimitEnabled()) {
             return true;
@@ -188,6 +198,11 @@ public class RateLimitServiceImpl implements RateLimitService {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
+        return rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(limit);
     }
 
     @Override

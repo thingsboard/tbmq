@@ -126,8 +126,18 @@ public class RateLimitCaffeineCacheServiceImpl extends AbstractRateLimitCacheSer
     }
 
     @Override
+    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
+        return devicePersistedMsgsBucket.tryConsumeAsMuchAsPossible(limit);
+    }
+
+    @Override
     public boolean tryConsumeTotalMsg() {
         return totalMsgsBucket.tryConsume(1);
+    }
+
+    @Override
+    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
+        return totalMsgsBucket.tryConsumeAsMuchAsPossible(limit);
     }
 
     private Cache<String, Long> getNativeCache(String name) {

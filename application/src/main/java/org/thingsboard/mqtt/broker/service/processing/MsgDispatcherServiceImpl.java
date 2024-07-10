@@ -241,6 +241,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return null;
         }
         clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
+        if (clientSubscriptions.isEmpty()) {
+            return null;
+        }
 
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
             Set<TopicSharedSubscription> topicSharedSubscriptions = null;
@@ -268,11 +271,14 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
         if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            List<ValueWithTopicFilter<ClientSubscription>> afterRateLimits = new ArrayList<>(clientSubscriptions.size());
-            for (var clientSubscription : clientSubscriptions) {
-                if (rateLimitService.checkTotalMsgsLimit()) {
-                    afterRateLimits.add(clientSubscription);
-                }
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
+            if (availableTokens == 0) {
+                log.debug("No available tokens left for total msgs bucket");
+                return Collections.emptyList();
+            }
+            List<ValueWithTopicFilter<ClientSubscription>> afterRateLimits = new ArrayList<>(availableTokens);
+            for (int i = 0; i < availableTokens; i++) {
+                afterRateLimits.add(clientSubscriptions.get(i));
             }
             return afterRateLimits;
         }

@@ -47,8 +47,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -97,7 +99,7 @@ public class MsgPersistenceManagerImplTest {
 
     @Test
     public void testProcessPublish() {
-        when(rateLimitService.checkDevicePersistedMsgsLimit()).thenReturn(true);
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
 
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
@@ -108,7 +110,7 @@ public class MsgPersistenceManagerImplTest {
                 ),
                 List.of(
                         createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
-                        createSubscription("topic4", 0, "appClientId4", ClientType.APPLICATION)
+                        createSubscription("topic4", 2, "appClientId4", ClientType.APPLICATION)
                 ),
                 Collections.emptySet()
         );
@@ -128,6 +130,69 @@ public class MsgPersistenceManagerImplTest {
 
         String lastApplicationClientId = applicationMsgQueuePublisherCaptor.getValue();
         assertEquals("appClientId4", lastApplicationClientId);
+    }
+
+    @Test
+    public void given1TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcess1SendAndOtherCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(1L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, times(1)).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, times(2)).onSuccess();
+    }
+
+    @Test
+    public void given0TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessNoSendsAndAllCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(0L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, never()).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, times(3)).onSuccess();
+    }
+
+    @Test
+    public void givenAllTokensAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessAllSendsAndNoCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(3L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, times(3)).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, never()).onSuccess();
     }
 
     @Test
@@ -243,6 +308,17 @@ public class MsgPersistenceManagerImplTest {
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.processPubRec(ctx, 1);
         verify(devicePersistenceProcessor, times(1)).processPubRec(any(), eq(1));
+    }
+
+    @Test
+    public void processPubRecNoPubRelDelivery() {
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        msgPersistenceManager.processPubRecNoPubRelDelivery(ctx, 1);
+        verify(applicationPersistenceProcessor, times(1)).processPubRecNoPubRelDelivery(any(), eq(1));
+
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        msgPersistenceManager.processPubRecNoPubRelDelivery(ctx, 1);
+        verify(devicePersistenceProcessor, times(1)).processPubRecNoPubRelDelivery(any(), eq(1));
     }
 
     @Test

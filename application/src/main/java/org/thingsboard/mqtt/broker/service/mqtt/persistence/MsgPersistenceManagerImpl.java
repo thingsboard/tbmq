@@ -82,16 +82,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (deviceSubscriptions != null) {
-            for (Subscription deviceSubscription : deviceSubscriptions) {
-                if (rateLimitsDetected(callbackWrapper)) {
-                    continue;
+            if (rateLimitService.isDevicePersistedMsgsLimitEnabled()) {
+                processDeviceSubscriptionsWithRateLimits(deviceSubscriptions, publishMsgWithId, callbackWrapper);
+            } else {
+                for (Subscription deviceSubscription : deviceSubscriptions) {
+                    sendDeviceMsg(deviceSubscription, publishMsgWithId, callbackWrapper);
                 }
-                String clientId = getClientIdFromSubscription(deviceSubscription);
-                PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgProto);
-                deviceMsgQueuePublisher.sendMsg(
-                        clientId,
-                        new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
-                        callbackWrapper);
             }
         }
         if (applicationSubscriptions != null) {
@@ -115,12 +111,26 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
     }
 
-    private boolean rateLimitsDetected(PublishMsgCallback callbackWrapper) {
-        if (!rateLimitService.checkDevicePersistedMsgsLimit()) {
-            callbackWrapper.onSuccess();
-            return true;
+    void processDeviceSubscriptionsWithRateLimits(List<Subscription> deviceSubscriptions,
+                                                  PublishMsgWithId publishMsgWithId,
+                                                  PublishMsgCallback callbackWrapper) {
+        int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(deviceSubscriptions.size());
+        for (int i = 0; i < deviceSubscriptions.size(); i++) {
+            if (i < availableTokens) {
+                sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+            } else {
+                callbackWrapper.onSuccess();
+            }
         }
-        return false;
+    }
+
+    private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        String clientId = getClientIdFromSubscription(deviceSubscription);
+        PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgWithId.getPublishMsgProto());
+        deviceMsgQueuePublisher.sendMsg(
+                clientId,
+                new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
+                callbackWrapper);
     }
 
     private void sendApplicationMsg(Subscription applicationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {

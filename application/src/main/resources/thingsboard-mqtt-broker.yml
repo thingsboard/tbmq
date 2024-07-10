@@ -752,6 +752,12 @@ mqtt:
             # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
+    # The number of parallel threads dedicated to processing total rate limit checks for incoming messages
+    threads-count: "${MQTT_RATE_LIMITS_THREADS_COUNT:1}"
+    # The number of messages to process in each batch when checking total rate limits for incoming messages
+    batch-size: "${MQTT_RATE_LIMITS_BATCH_SIZE:50}"
+    # The period, in milliseconds, to wait before processing a batch of messages for total rate limits for incoming messages
+    period-ms: "${MQTT_RATE_LIMITS_PERIOD_MS:50}"
     total:
       # Enable/disable total incoming and outgoing messages rate limits for the broker (per whole cluster)
       enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"

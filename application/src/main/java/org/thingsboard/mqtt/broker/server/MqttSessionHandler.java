@@ -38,11 +38,13 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -65,6 +67,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final RateLimitBatchProcessor rateLimitBatchProcessor;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -77,6 +80,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.clientLogger = mqttHandlerCtx.getClientLogger();
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
         this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
+        this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -164,30 +168,36 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void processPublish(MqttMessage msg) {
-        if (!rateLimitService.checkTotalMsgsLimit()) {
-            processMsgOnRateLimits((MqttPublishMessage) msg, "Total rate limits detected");
-            return;
-        }
         if (checkClientLimits(msg)) {
-            clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
+            MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg);
+            if (rateLimitService.isTotalMsgsLimitEnabled()) {
+                rateLimitBatchProcessor.addMessage(mqttPublishMsg,
+                        mqttMsg -> clientMqttActorManager.processMqttMsg(clientId, mqttMsg),
+                        mqttMsg -> {
+                            processMsgOnRateLimits(mqttMsg.getPublishMsg().getPacketId(), mqttMsg.getPublishMsg().getQosLevel(), "Total rate limits detected");
+                            mqttMsg.release();
+                        });
+                return;
+            }
+            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
         } else {
-            processMsgOnRateLimits((MqttPublishMessage) msg, "Client incoming messages rate limits detected");
+            MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) msg;
+            processMsgOnRateLimits(mqttPublishMessage.variableHeader().packetId(), mqttPublishMessage.fixedHeader().qosLevel().value(), "Client incoming messages rate limits detected");
         }
     }
 
-    private void processMsgOnRateLimits(MqttPublishMessage msg, String message) {
+    private void processMsgOnRateLimits(int packetId, int qos, String message) {
         if (MqttVersion.MQTT_5.equals(clientSessionCtx.getMqttVersion())) {
-            replyWithAck(msg);
+            replyWithAck(packetId, qos);
         } else {
             disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, message));
         }
     }
 
-    private void replyWithAck(MqttPublishMessage msg) {
-        int packetId = msg.variableHeader().packetId();
-        if (MqttQoS.AT_LEAST_ONCE.equals(msg.fixedHeader().qosLevel())) {
+    private void replyWithAck(int packetId, int qos) {
+        if (MqttQoS.AT_LEAST_ONCE.value() == qos) {
             clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId, MqttReasonCodes.PubAck.QUOTA_EXCEEDED));
-        } else if (MqttQoS.EXACTLY_ONCE.equals(msg.fixedHeader().qosLevel())) {
+        } else if (MqttQoS.EXACTLY_ONCE.value() == qos) {
             clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId, MqttReasonCodes.PubRec.QUOTA_EXCEEDED));
         }
     }
