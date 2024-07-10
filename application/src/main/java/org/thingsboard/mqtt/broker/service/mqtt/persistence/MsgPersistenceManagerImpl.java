@@ -198,7 +198,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
 
-        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
+        ClientType clientType = clientSessionCtx.getClientType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
@@ -213,7 +213,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
-        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
+        ClientType clientType = clientSessionCtx.getClientType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
         } else if (clientType == DEVICE) {

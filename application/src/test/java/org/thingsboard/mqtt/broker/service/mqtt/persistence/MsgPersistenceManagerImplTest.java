@@ -89,12 +89,8 @@ public class MsgPersistenceManagerImplTest {
                 deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger, rateLimitService));
 
         ctx = mock(ClientSessionCtx.class);
-
         sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-
         clientInfo = mock(ClientInfo.class);
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
     }
 
     @Test
@@ -230,11 +226,11 @@ public class MsgPersistenceManagerImplTest {
         ClientActorStateInfo actorState = mock(ClientActorStateInfo.class);
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
 
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
         verify(applicationPersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(actorState));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
         verify(devicePersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(ctx));
         verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
@@ -247,11 +243,11 @@ public class MsgPersistenceManagerImplTest {
     public void testStartProcessingSharedSubscriptions() {
         Set<TopicSharedSubscription> subscriptions = Set.of(new TopicSharedSubscription("#", "g1"));
 
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
         verify(applicationPersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
         verify(devicePersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
     }
