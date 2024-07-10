@@ -15,26 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-public interface RateLimitCacheService {
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 
-    void initSessionCount(int count);
+import java.util.function.Consumer;
 
-    void initApplicationClientsCount(int count);
+public interface RateLimitBatchProcessor {
 
-    long incrementSessionCount();
-
-    long incrementApplicationClientsCount();
-
-    void decrementSessionCount();
-
-    void decrementApplicationClientsCount();
-
-    boolean tryConsumeDevicePersistedMsg();
-
-    long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit);
-
-    boolean tryConsumeTotalMsg();
-
-    long tryConsumeAsMuchAsPossibleTotalMsgs(long limit);
+    void addMessage(MqttPublishMsg message, Consumer<MqttPublishMsg> onSuccess, Consumer<MqttPublishMsg> onRateLimits);
 
 }

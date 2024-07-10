@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.util;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ThingsBoardExecutors {
 
@@ -62,5 +63,12 @@ public class ThingsBoardExecutors {
 
     public static ExecutorService initCachedExecutorService(String serviceName) {
         return Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName(serviceName));
+    }
+
+    public static ScheduledExecutorService initScheduledExecutorService(int threadsCount, String serviceName) {
+        if (threadsCount <= 1) {
+            return Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName(serviceName));
+        }
+        return Executors.newScheduledThreadPool(threadsCount, ThingsBoardThreadFactory.forName(serviceName));
     }
 }

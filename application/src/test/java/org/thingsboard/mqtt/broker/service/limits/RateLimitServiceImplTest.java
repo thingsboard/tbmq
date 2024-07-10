@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
@@ -281,6 +282,14 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
+    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleDevicePersistedMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(eq(10L))).thenReturn(10L);
+
+        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(10L);
+        assertEquals(10L, tokens);
+    }
+
+    @Test
     public void givenTotalMsgsRateLimitsDisabled_whenCheckTotalMsgsLimit_thenSuccess() {
         when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
 
@@ -304,5 +313,13 @@ public class RateLimitServiceImplTest {
 
         boolean result = rateLimitService.checkTotalMsgsLimit();
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleTotalMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(10L))).thenReturn(10L);
+
+        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(10L);
+        assertEquals(10L, tokens);
     }
 }
