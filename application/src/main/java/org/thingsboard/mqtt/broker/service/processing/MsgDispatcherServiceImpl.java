@@ -238,6 +238,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         int clientSubscriptionsSize = clientSubscriptions.size();
         if (clientSubscriptionsSize == 0) {
+            log.trace("Found 0 subscriptions for [{}] msg", publishMsgProto);
             return null;
         }
         clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
@@ -275,6 +276,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             if (availableTokens == 0) {
                 log.debug("No available tokens left for total msgs bucket");
                 return Collections.emptyList();
+            }
+            if (log.isDebugEnabled() && availableTokens < clientSubscriptions.size()) {
+                log.debug("Hitting total messages rate limits on subscriptions processing. Skipping {} messages", clientSubscriptions.size() - availableTokens);
             }
             return clientSubscriptions.subList(0, availableTokens);
         }

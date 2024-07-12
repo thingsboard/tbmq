@@ -164,6 +164,9 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
                 consumer.commitSync();
                 return null;
             }
+            if (log.isDebugEnabled() && availableTokens < msgs.size()) {
+                log.debug("Hitting total messages rate limits on consumer polling. Skipping {} messages", msgs.size() - availableTokens);
+            }
             return msgs.subList(0, availableTokens);
         }
         return msgs;

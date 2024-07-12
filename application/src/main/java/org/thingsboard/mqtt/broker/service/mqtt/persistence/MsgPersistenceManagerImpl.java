@@ -119,6 +119,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             if (i < availableTokens) {
                 sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
             } else {
+                log.trace("Hitting device persisted messages rate limits!");
                 callbackWrapper.onSuccess();
             }
         }

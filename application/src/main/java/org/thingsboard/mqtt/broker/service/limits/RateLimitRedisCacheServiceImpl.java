@@ -94,6 +94,7 @@ public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheServic
         if (sessionsLimit <= 0) {
             return;
         }
+        log.debug("Set session limit cache to {}", count);
         redisTemplate.opsForValue().set(clientSessionsLimitCacheKey, Integer.toString(count));
     }
 

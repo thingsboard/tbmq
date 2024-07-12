@@ -86,6 +86,7 @@ public class RateLimitCaffeineCacheServiceImpl extends AbstractRateLimitCacheSer
         if (sessionsLimit <= 0) {
             return;
         }
+        log.debug("Set session limit cache to {}", count);
         clientSessionsLimitCache.asMap().put(clientSessionsLimitCacheKey, (long) count);
     }
 

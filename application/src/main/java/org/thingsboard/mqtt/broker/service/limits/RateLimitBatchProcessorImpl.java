@@ -78,6 +78,10 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
             return;
         }
 
+        if (log.isTraceEnabled()) {
+            log.trace("Processing rate-limit batch of messages: {}", messageCount.get());
+        }
+
         int tokensToConsume = messageCount.get();
         int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensToConsume);
         int messagesToProcess = Math.min(availableTokens, tokensToConsume);
@@ -93,6 +97,7 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
             while (!messageQueue.isEmpty()) {
                 MessageWrapper message = poll();
                 if (message != null) {
+                    log.trace("Hitting total messages rate limits on incoming side!");
                     skipMessage(message);
                 }
             }
