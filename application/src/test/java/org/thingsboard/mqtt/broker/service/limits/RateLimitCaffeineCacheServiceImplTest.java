@@ -78,6 +78,27 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
         assertEquals(Long.valueOf(count), actualCount);
+
+        int newCount = 10;
+        rateLimitCaffeineCacheService.initSessionCount(newCount);
+
+        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+    }
+
+    @Test
+    public void testSetSessionCount() {
+        int count = 10;
+        rateLimitCaffeineCacheService.setSessionCount(count);
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+
+        int newCount = 15;
+        rateLimitCaffeineCacheService.setSessionCount(newCount);
+
+        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(newCount), actualCount);
     }
 
     @Test
