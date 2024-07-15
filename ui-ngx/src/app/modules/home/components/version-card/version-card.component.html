@@ -21,10 +21,10 @@
     <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">
-    <ng-container *ngIf="updatesAvailable; else noUpdatesAvailable">
-      <ng-container *ngTemplateOutlet="updatesAvailable"></ng-container>
+    <ng-container *ngIf="updatesAvailable; else noUpdatesAvailableTemplate">
+      <ng-container *ngTemplateOutlet="updatesAvailableTemplate"></ng-container>
     </ng-container>
-    <ng-template #updatesAvailable>
+    <ng-template #updatesAvailableTemplate>
       <div class="version-container">
         <section fxLayout="column" fxLayoutGap="10px">
           <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
@@ -50,8 +50,18 @@
         </div>
       </div>
     </ng-template>
-    <ng-template #noUpdatesAvailable>
-      <span class="tb-title-no-updates" translate>version.no-updates</span>
+    <ng-template #noUpdatesAvailableTemplate>
+      <div class="version-container">
+        <section fxLayout="column" fxLayoutGap="10px">
+          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
+          </section>
+          <section fxFlex fxLayout="row" fxLayoutAlign="space-between flex-end">
+            <span>{{ currentReleaseVersion }}</span>
+            <span class="tb-title-no-updates" translate>version.no-updates</span>
+          </section>
+        </section>
+      </div>
     </ng-template>
   </section>
 </div>
