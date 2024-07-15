@@ -42,12 +42,12 @@ const routes: Routes = [
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {
-            SYS_ADMIN: '/settings/ws'
+            SYS_ADMIN: '/settings/general'
           }
         }
       },
       {
-        path: 'ws',
+        path: 'general',
         component: GeneralSettingsComponent,
         data: {
           auth: [Authority.SYS_ADMIN],

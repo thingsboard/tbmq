@@ -87,8 +87,7 @@ export class MenuService {
         name: 'ws-client.ws-client',
         type: 'link',
         path: '/ws-client',
-        icon: 'mdi:chat',
-        isNew: true
+        icon: 'mdi:chat'
       },
       {
         id: 'retained_messages',
@@ -175,7 +174,7 @@ export class MenuService {
             id: 'ws_settings',
             name: 'admin.general',
             type: 'link',
-            path: '/settings/ws',
+            path: '/settings/general',
             icon: 'settings'
           },
           {
