@@ -15,23 +15,20 @@
 ///
 
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { MenuService } from '@core/services/menu.service';
-import { MenuSection } from '@core/services/menu.models';
+import { Router } from '@angular/router';
 
 @Component({
-  selector: 'tb-side-menu',
-  templateUrl: './side-menu.component.html',
-  styleUrls: ['./side-menu.component.scss'],
+  selector: 'tb-getting-started-link',
+  templateUrl: './getting-started-menu-link.component.html',
+  styleUrls: ['./getting-started-menu-link.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SideMenuComponent {
+export class GettingStartedMenuLinkComponent {
 
-  menuSections$ = this.menuService.menuSections();
-
-  constructor(private menuService: MenuService) {
+  constructor(private router: Router) {
   }
 
-  trackByMenuSection(index: number, section: MenuSection){
-    return section.id;
+  navigate() {
+    this.router.navigate(['getting-started']);
   }
 }

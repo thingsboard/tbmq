@@ -171,6 +171,7 @@
       "settings": {
       "connectivity": "Connectivity",
       "connectivity-settings": "Connectivity settings",
+      "connectivity-settings-hint": "Connectivity settings values will be utilized across TBMQ to replace default host/port values on pages: WebSocket Client (add/edit connection), Client Credentials (check connectivity), Home (getting started).",
       "connectivity-hint": "If host or port fields are empty, default protocol value will be used.",
       "default-host-port": "Default port and host configurations",
       "default-host-port-description": "These settings allow you to define default host and port parameters for various protocols utilized throughout the TBMQ system.",
@@ -702,7 +703,7 @@
     "contact-us": "Contact us",
     "available": "Available",
     "current": "Current",
-    "no-updates": "No updates"
+    "no-updates": "Version is up to date."
   },
   "config": {
     "key": "Key",
@@ -775,7 +776,19 @@
     "add-dev-credentials": "Add Device Credentials",
     "add-app-credentials": "Add Application Credentials",
     "credentials-added": "Credentials added successfully",
-    "open-sessions": "Session Details"
+    "open-sessions": "Session Details",
+    "guide": {
+      "getting-started-guides": "Developer's MQTT guides",
+      "javascript-title": "Javascript",
+      "javascript-subtitle": "MQTT.js",
+      "python-title": "Python",
+      "python-subtitle": "Paho Python",
+      "arduino-title": "Arduino",
+      "arduino-subtitle": "Getting started guide Arduino",
+      "ws-client-subtitle": "WebSocket Client link",
+      "mosquitto-title": "Mosquitto",
+      "mosquitto-subtitle": "Mosquitto guide"
+    }
   },
   "value": {
     "type": "Value type",
@@ -807,6 +820,7 @@
     "sub": "Subscribe",
     "options": "Options",
     "show-logs": "Log MQTT client activity",
+    "show-logs-hint": "If enabled, MQTT client logs for events (such as connect, reconnect, message, error, etc.) will be displayed in your browser console.",
     "messages": {
       "retained": "Retain",
       "publish-message": "Publish message",

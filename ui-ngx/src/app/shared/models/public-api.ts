@@ -26,3 +26,4 @@ export * from './time/time.models';
 export * from './kafka.model';
 export * from './chart.model';
 export * from './home-page.model';
+export * from './getting-started.model';

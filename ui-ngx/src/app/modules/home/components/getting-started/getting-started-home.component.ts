@@ -46,8 +46,8 @@ import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/se
 
 @Component({
   selector: 'tb-getting-started',
-  templateUrl: './getting-started.component.html',
-  styleUrls: ['./getting-started.component.scss'],
+  templateUrl: './getting-started-home.component.html',
+  styleUrls: ['./getting-started-home.component.scss'],
   providers: [
     {
       provide: STEPPER_GLOBAL_OPTIONS,
@@ -55,7 +55,7 @@ import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/se
     }
   ]
 })
-export class GettingStartedComponent implements AfterViewInit {
+export class GettingStartedHomeComponent implements AfterViewInit {
 
   cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);
