@@ -14,27 +14,43 @@
 /// limitations under the License.
 ///
 
-import { inject, NgModule } from '@angular/core';
-import { ResolveFn, RouterModule, Routes } from '@angular/router';
-import { ProfileComponent } from './profile.component';
+import { Injectable, NgModule } from '@angular/core';
+import { Resolve, RouterModule, Routes } from '@angular/router';
+
+import { SecurityComponent } from './security.component';
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
 import { User } from '@shared/models/user.model';
-import { AuthService } from '@core/http/auth.service';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { UserService } from '@core/http/user.service';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { Observable } from 'rxjs';
 
-export const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).getUser();
+@Injectable()
+export class UserProfileResolver implements Resolve<User> {
 
-export const profileRoutes: Routes = [
+  constructor(private store: Store<AppState>,
+              private userService: UserService) {
+  }
+
+  resolve(): Observable<User> {
+    const userId = getCurrentAuthUser(this.store).userId;
+    return this.userService.getUser(userId);
+  }
+}
+
+export const securityRoutes: Routes = [
   {
-    path: 'profile',
-    component: ProfileComponent,
+    path: 'security',
+    component: SecurityComponent,
     canDeactivate: [ConfirmOnExitGuard],
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'profile.profile',
+      title: 'security.security',
       breadcrumb: {
-        label: 'profile.profile',
-        icon: 'account_circle'
+        label: 'security.security',
+        icon: 'lock'
       }
     },
     resolve: {
@@ -45,14 +61,16 @@ export const profileRoutes: Routes = [
 
 const routes: Routes = [
   {
-    path: 'profile',
-    redirectTo: 'account/profile'
+    path: 'security',
+    redirectTo: '/account/security'
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    UserProfileResolver
+  ]
 })
-export class ProfileRoutingModule {
-}
+export class SecurityRoutingModule { }

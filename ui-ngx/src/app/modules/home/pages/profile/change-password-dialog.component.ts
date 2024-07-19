@@ -25,8 +25,6 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { AuthService } from '@core/http/auth.service';
 import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
-import { ActionAuthLoadUser } from '@app/core/auth/auth.actions';
-import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'tb-change-password-dialog',
@@ -43,7 +41,6 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
               private authService: AuthService,
               public dialogRef: MatDialogRef<ChangePasswordDialogComponent>,
               private zone: NgZone,
-              private snackBar: MatSnackBar,
               @Inject(MAT_DIALOG_DATA) public data: any,
               public fb: UntypedFormBuilder) {
     super(store, router, dialogRef);

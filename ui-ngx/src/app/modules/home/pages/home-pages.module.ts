@@ -31,6 +31,8 @@ import {
 } from "@home/pages/shared-subscription-groups/shared-subscription-groups.module";
 import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
 import { GettingStartedModule } from '@home/pages/getting-started/getting-started.module';
+import { SecurityModule } from "@home/pages/security/security.module";
+import { AccountModule } from "@home/pages/account/account.module";
 
 @NgModule({
   exports: [
@@ -46,7 +48,9 @@ import { GettingStartedModule } from '@home/pages/getting-started/getting-starte
     MonitoringModule,
     KafkaManagementModule,
     WsClientModule,
-    GettingStartedModule
+    GettingStartedModule,
+    AccountModule,
+    SecurityModule
   ]
 })
 export class HomePagesModule {

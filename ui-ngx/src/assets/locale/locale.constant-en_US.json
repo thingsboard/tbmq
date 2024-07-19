@@ -10,6 +10,10 @@
     "permission-denied": "Permission Denied",
     "permission-denied-text": "You don't have permission to perform this operation!"
   },
+  "account": {
+    "account": "Account",
+    "notification-settings": "Notification settings"
+  },
   "action": {
     "activate": "Activate",
     "suspend": "Suspend",
@@ -977,5 +981,85 @@
         "return-type-mismatch": "Function must return value of '{{type}}' type!",
         "tidy": "Tidy",
         "mini": "Mini"
+    },
+  "security": {
+    "security": "Security",
+    "general-settings": "General security settings",
+    "access-token": "Access token",
+    "access-token-required": "Access token is required",
+    "clientId": "Client ID",
+    "clientId-required": "Client ID is required",
+    "username": "Username",
+    "username-required": "Username is required",
+    "ca-cert": "CA certificate",
+    "2fa": {
+        "2fa": "Two-factor authentication",
+        "2fa-description": "Two-factor authentication protects your account from unauthorized access. All you have to do is enter a security code when you log in.",
+        "authenticate-with": "You can authenticate with:",
+        "disable-2fa-provider-text": "Disabling {{name}} will make your account less secure",
+        "disable-2fa-provider-title": "Are you sure you want to disable {{name}}?",
+        "get-new-code": "Get new code",
+        "main-2fa-method": "Use as main two-factor authentication method",
+        "dialog": {
+            "activation-step-description-email": "The next time you login in, you will be prompted to enter the security code that will be sent to your email address.",
+            "activation-step-description-sms": "The next time you login in, you will be prompted to enter the security code that will be sent to the phone number.",
+            "activation-step-description-totp": "The next time you login in, you will need to provide a two-factor authentication code.",
+            "activation-step-label": "Activation",
+            "backup-code-description": "Print out the codes so you have them handy when you need to use them to log in to your account. You can use each backup code once.",
+            "backup-code-warn": "Once you leave this page, these codes cannot be shown again. Store them safely using the options below.",
+            "download-txt": "Download (txt)",
+            "email-step-description": "Enter an email to use as your authenticator.",
+            "email-step-label": "Email",
+            "enable-email-title": "Enable email authenticator",
+            "enable-sms-title": "Enable SMS authenticator",
+            "enable-totp-title": "Enable authenticator app",
+            "enter-verification-code": "Enter the 6-digit code here",
+            "get-backup-code-title": "Get backup code",
+            "next": "Next",
+            "scan-qr-code": "Scan this QR code with your verification app",
+            "send-code": "Send code",
+            "sms-step-description": "Enter a phone number to use as your authenticator.",
+            "sms-step-label": "Phone Number",
+            "success": "Success!",
+            "totp-step-description-install": "You can install apps like Google Authenticator, Authy, or Duo.",
+            "totp-step-description-open": "Open the authenticator app on your mobile phone.",
+            "totp-step-label": "Get app",
+            "verification-code": "6-digit code",
+            "verification-code-invalid": "Invalid verification code format",
+            "verification-code-incorrect": "Verification code is incorrect",
+            "verification-code-many-request": "Too many requests check verification code",
+            "verification-step-description": "Enter a 6-digit code we just sent to {{address}}",
+            "verification-step-label": "Verification"
+        },
+        "provider": {
+            "email": "Email",
+            "email-description": "Use a security code sent to your email address to authenticate.",
+            "email-hint": "Authentication codes are sent via email to {{ info }}",
+            "sms": "SMS",
+            "sms-description": "Use your phone to authenticate. We'll send you a security code via SMS message when you log in.",
+            "sms-hint": "Authentication codes are sent by text message to {{ info }}",
+            "totp": "Authenticator app",
+            "totp-description": "Use apps like Google Authenticator, Authy, or Duo on your phone to authenticate. It will generate a security code for logging in.",
+            "totp-hint": "Authenticator app is set up for your account",
+            "backup_code": "Backup code",
+            "backup-code-description": "These printable one-time passcodes allow you to sign in when away from your phone, like when you’re traveling.",
+            "backup-code-hint": "{{ info }} single-use codes are active at this time"
+        }
+    },
+    "password-requirement": {
+        "at-least": "At least:",
+        "character": "{ count, plural, =1 {1 character} other {# characters} }",
+        "digit": "{ count, plural, =1 {1 digit} other {# digits} }",
+        "incorrect-password-try-again": "Incorrect password. Try again",
+        "lowercase-letter": "{ count, plural, =1 {1 lowercase letter} other {# lowercase letters} }",
+        "new-passwords-not-match": "New password didn't match",
+        "password-should-not-contain-spaces": "Your password should not contain spaces",
+        "password-not-meet-requirements": "Password didn't meet requirements",
+        "password-requirements": "Password requirements",
+        "password-should-difference": "New password should be different from current",
+        "special-character": "{ count, plural, =1 {1 special character} other {# special characters} }",
+        "uppercase-letter": "{ count, plural, =1 {1 uppercase letter} other {# uppercase letters} }",
+        "at-most": "At most:"
     }
+  }
 }

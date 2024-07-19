@@ -19,7 +19,7 @@ import { HttpClient } from '@angular/common/http';
 
 import { Observable } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
-import { AdminSettings } from '@shared/models/settings.models';
+import { AdminSettings, SecuritySettings } from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
@@ -38,4 +38,13 @@ export class SettingsService {
     return this.http.post<AdminSettings<T>>('/api/admin/settings', adminSettings, defaultHttpOptionsFromConfig(config));
   }
 
+  public getSecuritySettings(config?: RequestConfig): Observable<SecuritySettings> {
+    return this.http.get<SecuritySettings>(`/api/admin/securitySettings`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public saveSecuritySettings(securitySettings: SecuritySettings,
+                              config?: RequestConfig): Observable<SecuritySettings> {
+    return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings,
+      defaultHttpOptionsFromConfig(config));
+  }
 }

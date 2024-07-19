@@ -20,9 +20,8 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { AdminSettings, ConnectivitySettings, securitySettingsKey } from '@shared/models/settings.models';
+import { SecuritySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
-import { isUndefined } from '@core/utils';
 
 @Component({
   selector: 'tb-security-settings',
@@ -33,7 +32,7 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   securitySettingsForm: UntypedFormGroup;
 
-  private securitySettings: AdminSettings<ConnectivitySettings>;
+  private securitySettings: SecuritySettings;
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
@@ -41,8 +40,8 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildSecuritySettingsForm();
-    this.settingsService.getGeneralSettings<ConnectivitySettings>(securitySettingsKey)
-      .subscribe(settings => this.processSecuritySettings(settings));
+    this.settingsService.getSecuritySettings().subscribe(
+      securitySettings => this.processSecuritySettings(securitySettings));
   }
 
   ngOnDestroy() {
@@ -70,28 +69,19 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   }
 
   saveSecuritySettings() {
-    if (isUndefined(this.securitySettings)) {
-      this.securitySettings = {
-        key: securitySettingsKey,
-        jsonValue: this.securitySettingsForm.value
-      };
-    }
-    this.securitySettings.jsonValue = {
-      ...this.securitySettings.jsonValue,
-      ...this.securitySettingsForm.value
-    };
-
-    this.settingsService.saveAdminSettings(this.securitySettings)
-      .subscribe(settings => this.processSecuritySettings(settings));
+    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
+    this.settingsService.saveSecuritySettings(this.securitySettings).subscribe(
+      securitySettings => this.processSecuritySettings(securitySettings)
+    );
   }
 
   discardSettings(): void {
-    this.securitySettingsForm.reset(this.securitySettings.jsonValue);
+    this.securitySettingsForm.reset(this.securitySettings);
   }
 
-  private processSecuritySettings(settings: AdminSettings<ConnectivitySettings>): void {
+  private processSecuritySettings(settings: SecuritySettings): void {
     this.securitySettings = settings;
-    this.securitySettingsForm.reset(this.securitySettings.jsonValue);
+    this.securitySettingsForm.reset(this.securitySettings);
   }
 
   private maxPasswordValidation(): ValidatorFn {

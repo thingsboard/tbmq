@@ -14,39 +14,38 @@
 /// limitations under the License.
 ///
 
-import { inject, NgModule } from '@angular/core';
-import { ResolveFn, RouterModule, Routes } from '@angular/router';
-import { ProfileComponent } from './profile.component';
-import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { RouterTabsComponent } from '@home/components/router-tabs.component';
 import { Authority } from '@shared/models/authority.enum';
-import { User } from '@shared/models/user.model';
-import { AuthService } from '@core/http/auth.service';
-
-export const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).getUser();
-
-export const profileRoutes: Routes = [
-  {
-    path: 'profile',
-    component: ProfileComponent,
-    canDeactivate: [ConfirmOnExitGuard],
-    data: {
-      auth: [Authority.SYS_ADMIN],
-      title: 'profile.profile',
-      breadcrumb: {
-        label: 'profile.profile',
-        icon: 'account_circle'
-      }
-    },
-    resolve: {
-      user: UserProfileResolver
-    }
-  }
-];
+import { securityRoutes } from '@home/pages/security/security-routing.module';
+import { profileRoutes } from '@home/pages/profile/profile-routing.module';
 
 const routes: Routes = [
   {
-    path: 'profile',
-    redirectTo: 'account/profile'
+    path: 'account',
+    component: RouterTabsComponent,
+    data: {
+      auth: [Authority.SYS_ADMIN],
+      showMainLoadingBar: false,
+      breadcrumb: {
+        label: 'account.account',
+        icon: 'account_circle'
+      },
+      useChildrenRoutesForTabs: true,
+    },
+    children: [
+      {
+        path: '',
+        children: [],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          redirectTo: '/account/profile',
+        }
+      },
+      ...profileRoutes,
+      ...securityRoutes
+    ]
   }
 ];
 
@@ -54,5 +53,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class ProfileRoutingModule {
-}
+export class AccountRoutingModule { }
