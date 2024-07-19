@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.dao.user;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.common.data.StringUtils.generateSafeToken;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
@@ -55,8 +55,6 @@ public class UserServiceImpl implements UserService {
 
     private static final int DEFAULT_TOKEN_LENGTH = 30;
     public static final String INCORRECT_USER_ID = "Incorrect userId ";
-
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${security.user_login_case_sensitive:true}")
     private boolean userLoginCaseSensitive;
@@ -99,7 +97,7 @@ public class UserServiceImpl implements UserService {
         if (user.getId() == null) {
             UserCredentials userCredentials = new UserCredentials();
             userCredentials.setEnabled(false);
-            userCredentials.setActivateToken(StringUtils.randomAlphanumeric(DEFAULT_TOKEN_LENGTH));
+            userCredentials.setActivateToken(generateSafeToken(DEFAULT_TOKEN_LENGTH));
             userCredentials.setUserId(savedUser.getId());
             saveUserCredentialsAndPasswordHistory(userCredentials);
         }
@@ -183,7 +181,17 @@ public class UserServiceImpl implements UserService {
         if (!userCredentials.isEnabled()) {
             throw new DisabledException(String.format("User credentials not enabled [%s]", email));
         }
-        userCredentials.setResetToken(StringUtils.randomAlphanumeric(DEFAULT_TOKEN_LENGTH));
+        userCredentials.setResetToken(generateSafeToken(DEFAULT_TOKEN_LENGTH));
+        return saveUserCredentials(userCredentials);
+    }
+
+    @Override
+    public UserCredentials requestExpiredPasswordReset(UUID userCredentialsId) {
+        UserCredentials userCredentials = userCredentialsDao.findById(userCredentialsId);
+        if (!userCredentials.isEnabled()) {
+            throw new IncorrectParameterException("Unable to reset password for inactive user");
+        }
+        userCredentials.setResetToken(generateSafeToken(DEFAULT_TOKEN_LENGTH));
         return saveUserCredentials(userCredentials);
     }
 
@@ -217,19 +225,23 @@ public class UserServiceImpl implements UserService {
     private void updatePasswordHistory(User user, UserCredentials userCredentials) {
         JsonNode additionalInfo = user.getAdditionalInfo();
         if (!(additionalInfo instanceof ObjectNode)) {
-            additionalInfo = objectMapper.createObjectNode();
+            additionalInfo = JacksonUtil.newObjectNode();
         }
+        Map<String, String> userPasswordHistoryMap = null;
+        JsonNode userPasswordHistoryJson;
         if (additionalInfo.has(USER_PASSWORD_HISTORY)) {
-            JsonNode userPasswordHistoryJson = additionalInfo.get(USER_PASSWORD_HISTORY);
-            Map<String, String> userPasswordHistoryMap = objectMapper.convertValue(userPasswordHistoryJson, new TypeReference<>() {
+            userPasswordHistoryJson = additionalInfo.get(USER_PASSWORD_HISTORY);
+            userPasswordHistoryMap = JacksonUtil.convertValue(userPasswordHistoryJson, new TypeReference<>() {
             });
+        }
+        if (userPasswordHistoryMap != null) {
             userPasswordHistoryMap.put(Long.toString(System.currentTimeMillis()), userCredentials.getPassword());
-            userPasswordHistoryJson = objectMapper.valueToTree(userPasswordHistoryMap);
+            userPasswordHistoryJson = JacksonUtil.valueToTree(userPasswordHistoryMap);
             ((ObjectNode) additionalInfo).replace(USER_PASSWORD_HISTORY, userPasswordHistoryJson);
         } else {
-            Map<String, String> userPasswordHistoryMap = new HashMap<>();
+            userPasswordHistoryMap = new HashMap<>();
             userPasswordHistoryMap.put(Long.toString(System.currentTimeMillis()), userCredentials.getPassword());
-            JsonNode userPasswordHistoryJson = objectMapper.valueToTree(userPasswordHistoryMap);
+            userPasswordHistoryJson = JacksonUtil.valueToTree(userPasswordHistoryMap);
             ((ObjectNode) additionalInfo).set(USER_PASSWORD_HISTORY, userPasswordHistoryJson);
         }
         user.setAdditionalInfo(additionalInfo);

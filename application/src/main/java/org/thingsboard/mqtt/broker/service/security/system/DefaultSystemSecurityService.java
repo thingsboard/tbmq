@@ -15,8 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.service.security.system;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
+import org.passay.CharacterRule;
+import org.passay.EnglishCharacterData;
+import org.passay.LengthRule;
+import org.passay.PasswordData;
+import org.passay.PasswordValidator;
+import org.passay.Rule;
+import org.passay.RuleResult;
+import org.passay.WhitespaceRule;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -25,11 +35,22 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
+import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
 import org.thingsboard.mqtt.broker.util.MiscUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class DefaultSystemSecurityService implements SystemSecurityService {
@@ -45,6 +66,41 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
     }
 
     @Override
+    public SecuritySettings getSecuritySettings() {
+        SecuritySettings securitySettings;
+        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey("securitySettings");
+        if (adminSettings != null) {
+            try {
+                securitySettings = JacksonUtil.convertValue(adminSettings.getJsonValue(), SecuritySettings.class);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to load security settings!", e);
+            }
+        } else {
+            securitySettings = new SecuritySettings();
+            securitySettings.setPasswordPolicy(new UserPasswordPolicy());
+            securitySettings.getPasswordPolicy().setMinimumLength(6);
+            securitySettings.getPasswordPolicy().setMaximumLength(72);
+        }
+        return securitySettings;
+    }
+
+    @Override
+    public SecuritySettings saveSecuritySettings(SecuritySettings securitySettings) {
+        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey("securitySettings");
+        if (adminSettings == null) {
+            adminSettings = new AdminSettings();
+            adminSettings.setKey("securitySettings");
+        }
+        adminSettings.setJsonValue(JacksonUtil.valueToTree(securitySettings));
+        AdminSettings savedAdminSettings = adminSettingsService.saveAdminSettings(adminSettings);
+        try {
+            return JacksonUtil.convertValue(savedAdminSettings.getJsonValue(), SecuritySettings.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load security settings!", e);
+        }
+    }
+
+    @Override
     public void validateUserCredentials(UserCredentials userCredentials, String username, String password) throws AuthenticationException {
         if (!encoder.matches(password, userCredentials.getPassword())) {
             throw new BadCredentialsException("Authentication Failed. Username or Password not valid.");
@@ -55,19 +111,72 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         }
 
         userService.onUserLoginSuccessful(userCredentials.getUserId());
+
+        SecuritySettings securitySettings = getSecuritySettings();
+        if (isPositiveInteger(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays())) {
+            if ((userCredentials.getCreatedTime()
+                    + TimeUnit.DAYS.toMillis(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays()))
+                    < System.currentTimeMillis()) {
+                userCredentials = userService.requestExpiredPasswordReset(userCredentials.getId());
+                throw new UserPasswordExpiredException("User password expired!", userCredentials.getResetToken());
+            }
+        }
     }
 
     @Override
-    public void validatePassword(String password) throws DataValidationException {
-        // TODO: 17.11.22 improve password validation
-        if (StringUtils.isEmpty(password)) {
-            throw new DataValidationException("Password can not be empty!");
+    public void validatePassword(String password, UserCredentials userCredentials) throws DataValidationException {
+        SecuritySettings securitySettings = getSecuritySettings();
+        UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
+
+        validatePasswordByPolicy(password, passwordPolicy);
+
+        if (userCredentials != null && isPositiveInteger(passwordPolicy.getPasswordReuseFrequencyDays())) {
+            long passwordReuseFrequencyTs = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(passwordPolicy.getPasswordReuseFrequencyDays());
+            User user = userService.findUserById(userCredentials.getUserId());
+            JsonNode additionalInfo = user.getAdditionalInfo();
+            if (additionalInfo instanceof ObjectNode && additionalInfo.has(UserServiceImpl.USER_PASSWORD_HISTORY)) {
+                JsonNode userPasswordHistoryJson = additionalInfo.get(UserServiceImpl.USER_PASSWORD_HISTORY);
+                Map<String, String> userPasswordHistoryMap = JacksonUtil.convertValue(userPasswordHistoryJson, new TypeReference<>() {
+                });
+                for (Map.Entry<String, String> entry : userPasswordHistoryMap.entrySet()) {
+                    if (encoder.matches(password, entry.getValue()) && Long.parseLong(entry.getKey()) > passwordReuseFrequencyTs) {
+                        throw new DataValidationException("Password was already used for the last " + passwordPolicy.getPasswordReuseFrequencyDays() + " days");
+                    }
+                }
+            }
         }
-        if (password.length() <= 5) {
-            throw new DataValidationException("Password should be longer than 5 characters!");
+    }
+
+    @Override
+    public void validatePasswordByPolicy(String password, UserPasswordPolicy passwordPolicy) {
+        List<Rule> passwordRules = new ArrayList<>();
+
+        Integer maximumLength = passwordPolicy.getMaximumLength();
+        Integer minLengthBound = passwordPolicy.getMinimumLength();
+        int maxLengthBound = (maximumLength != null && maximumLength > passwordPolicy.getMinimumLength()) ? maximumLength : Integer.MAX_VALUE;
+
+        passwordRules.add(new LengthRule(minLengthBound, maxLengthBound));
+        if (isPositiveInteger(passwordPolicy.getMinimumUppercaseLetters())) {
+            passwordRules.add(new CharacterRule(EnglishCharacterData.UpperCase, passwordPolicy.getMinimumUppercaseLetters()));
         }
-        if (org.springframework.util.StringUtils.containsWhitespace(password)) {
-            throw new DataValidationException("Password should not contain whitespaces!");
+        if (isPositiveInteger(passwordPolicy.getMinimumLowercaseLetters())) {
+            passwordRules.add(new CharacterRule(EnglishCharacterData.LowerCase, passwordPolicy.getMinimumLowercaseLetters()));
+        }
+        if (isPositiveInteger(passwordPolicy.getMinimumDigits())) {
+            passwordRules.add(new CharacterRule(EnglishCharacterData.Digit, passwordPolicy.getMinimumDigits()));
+        }
+        if (isPositiveInteger(passwordPolicy.getMinimumSpecialCharacters())) {
+            passwordRules.add(new CharacterRule(EnglishCharacterData.Special, passwordPolicy.getMinimumSpecialCharacters()));
+        }
+        if (passwordPolicy.getAllowWhitespaces() != null && !passwordPolicy.getAllowWhitespaces()) {
+            passwordRules.add(new WhitespaceRule());
+        }
+        PasswordValidator validator = new PasswordValidator(passwordRules);
+        PasswordData passwordData = new PasswordData(password);
+        RuleResult result = validator.validate(passwordData);
+        if (!result.isValid()) {
+            String message = String.join("\n", validator.getMessages(result));
+            throw new DataValidationException(message);
         }
     }
 
@@ -78,14 +187,18 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
 
         JsonNode prohibitDifferentUrl = generalSettings.getJsonValue().get("prohibitDifferentUrl");
 
-        if (prohibitDifferentUrl != null && prohibitDifferentUrl.asBoolean()) {
+        if ((prohibitDifferentUrl != null && prohibitDifferentUrl.asBoolean()) || httpServletRequest == null) {
             baseUrl = generalSettings.getJsonValue().get("baseUrl").asText();
         }
 
-        if (StringUtils.isEmpty(baseUrl)) {
+        if (StringUtils.isEmpty(baseUrl) && httpServletRequest != null) {
             baseUrl = MiscUtils.constructBaseUrl(httpServletRequest);
         }
 
         return baseUrl;
+    }
+
+    private static boolean isPositiveInteger(Integer val) {
+        return val != null && val > 0;
     }
 }
