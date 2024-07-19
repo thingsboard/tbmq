@@ -1,79 +1,109 @@
-### Javascript
-This guide contains ready-to-use example how to use the **Paho MQTT Python Client** library with TBMQ. You will be able to connect MQTT client, subscribe to a topic, publish a message.
+### Paho MQTT Python Client
+This guide contains ready-to-use example how to use the **Paho MQTT Python Client** library with TBMQ to connect MQTT client, subscribe to a topic, publish a message.
 
 ##### Prerequisites
 In order to use this project make sure you have installed:
-* [python](https://github.com/eclipse/paho.mqtt.python) 
-* [paho-mqtt](https://github.com/eclipse/paho.mqtt.python).
+* [python3](https://www.python.org/downloads)
+* [paho-mqtt](https://github.com/eclipse/paho.mqtt.python)
 
-This guide was developed by using Python v3.10.12.
-
-You can check your python with this command:
+This guide was developed by using Python v3.10.12. You can check your python with this command:
 ```bash
 python3 --version{:copy-code}
 ```
 
-The paho-mqtt latest stable version can be installed with the following command:
+The Paho Python library is developed by the Eclipse Paho project and can be used in Python applications to implement MQTT clients.
+The Paho MQTT Python client provides functions to connect to an MQTT broker, publish messages, subscribe to topics, and receive messages. It offers a fully asynchronous mode of operation and supports SSL/TLS for secure communication.
+
+The **paho-mqtt** 1.X stable version can be installed with the following command:
 ```bash
-pip install paho-mqtt{:copy-code}
+pip3 install "paho-mqtt<2.0.0"{:copy-code}
 ```
 
 ##### Connect paho-mqtt to the TBMQ
-The code snippet below provides a demonstration on how to:
-* Connect to a TBMQ broker using pre-configured client credentials "TBMQ WebSockets MQTT Credentials"
-* Subscribe for a topic
-* Publish a message
-* Handle received messages
-* Terminate session
-* Handle MQTT client events
+The script below sets up a Paho MQTT client to connect to the TBMQ broker, handles MQTT operations such as connecting, publishing, subscribing, and disconnecting.
 
-You can paste this code into a new python file in your project, e.g. 'tbmq-python-demo.py':
+The script defines several callback functions to be executed on different MQTT events such as on_connect, on_publish, on_subscribe, on_message, on_error, on_disconnect.
+
+
+You can paste this code into a new python file in your project, e.g. 'tbmq-python.py':
 
 ```bash
-const mqtt = require('mqtt');
+import paho.mqtt.client as pahoMqtt
+from paho import mqtt
 
-const url = 'ws://localhost:8084/mqtt'; // default TBMQ ws port 8084
-const options = {
- clean: true, // Clean session
- clientId: 'tbmq_websockets_client_id',
- username: 'tbmq_websockets_username',
- password: null
-};
-const client = mqtt.connect(url, options); // create a client
+host = "localhost"
+port = 11883
 
-const topic = 'tbmq/demo';
-const message = 'Hello World';
+topic = "tbmq/demo"
+qos = 1
+retain = True
 
-client.on('connect', function () { // connect client
- console.log('Client connected!');
- client.subscribe(topic, function (error) { // subscribe to a topic
-   if (!error) {
-     client.publish(topic, message); // publish a message
-   }
- });
-});
+username = "tbmq_websockets_username1"
+clientId = "tbmq_websockets_client_id"
 
-client.on('message', (topic, message) => { // handle received messages
- console.log(`Received Message: ${message.toString()} \nTopic: '${topic}'`);
- client.end(); // end client session
-});
+payload = "Hello, world!"
+clean_session = True
+password = None
+userdata = {"data": 123}
+protocol = pahoMqtt.MQTTv311 # or MQTTv5, or MQTTv31
 
-client.on('disconnect', () => { console.log('Disconnecting...'); });
-client.on('error', (error) => { console.log('Error: ', error?.message); }); // handle errors
-client.on('packetreceive', (packet) => { console.log('Packet receive...', packet); }); // handle received packet
-client.on('packetsend', (packet) => { console.log('Packet send...', packet); }); // handle sent packet
+# This is the callback function that is called when the client is connected with the MQTT server.
+def on_connect(client, userdata, flags, rc, properties=None):
+    if (rc == 0):
+        print("Client connected!")
+        # Once the client is connected, it subscribes to a topic and sends a publish message on that topic.
+        client.subscribe(topic, qos=qos)
+        client.publish(topic, payload=payload, qos=qos, retain=retain)
+    else:
+        print("Client not connected, reason code:", rc)
 
-client.publish('tbmq/demo', 'Hello World',{qos: 1}); // publish a message
+# This is the callback function that is called when the publish request has been processed by the MQTT server.
+def on_publish(client, userdata, mid, properties=None):
+    print("Data published with message ID " + str(mid))
+
+# This is the callback function that is called when the subscribe request has been processed by the MQTT server.
+def on_subscribe(client, userdata, mid, granted_qos, properties=None):
+    print("Subscribed with message ID " + str(mid) + " granted QoS " + str(granted_qos))
+
+# This is the callback function that is called when a message is received after subscribing to a topic.
+def on_message(client, userdata, msg):
+    print('Received Message: ' + str(msg.payload) + ' on topic ' + msg.topic)
+
+# This is the callback function that is called when there is any error during MQTT operations.
+def on_error(client, userdata, err):
+    print("Error occurred " + str(err))
+
+# This is the callback function that is called when the client is disconnected from the MQTT server.
+def on_disconnect(client, userdata, rc):
+    print("Disconnected with return code " + str(rc))
+
+# Instantiate a new MQTT client, set the username and password.
+client = pahoMqtt.Client(clientId, clean_session, userdata, protocol)
+client.username_pw_set(username, password)
+
+# Set the callback functions for various MQTT events.
+client.on_connect = on_connect
+client.on_subscribe = on_subscribe
+client.on_message = on_message
+client.on_publish = on_publish
+client.on_error = on_error
+client.on_disconnect = on_disconnect
+
+# Establish a connection to the MQTT server.
+client.connect(host, port)
+
+# Start a forever loop to process the MQTT events.
+client.loop_forever()
+
 {:copy-code}
 ```
 
-To run this javascript application you may use node:
+To run this python application you may use python3:
 
 ```bash
-node tbmq-javascript-demo.js
+python3 tbmq-python.py
 {:copy-code}
 ```
 
 #### Next steps
-Additional in-depth information about MQTT.js, including its extensive features and usage examples,
-can be found on its official [GitHub page](https://github.com/mqttjs/MQTT.js).
+
