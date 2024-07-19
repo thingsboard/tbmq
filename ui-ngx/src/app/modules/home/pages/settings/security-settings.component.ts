@@ -62,8 +62,8 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
           minimumSpecialCharacters: [null, Validators.min(0)],
           passwordExpirationPeriodDays: [null, Validators.min(0)],
           passwordReuseFrequencyDays: [null, Validators.min(0)],
-          allowWhitespaces: [true],
-          forceUserToResetPasswordIfNotValid: [false]
+          allowWhitespaces: [null],
+          forceUserToResetPasswordIfNotValid: [null]
         }
       )
     });
@@ -76,7 +76,11 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
         jsonValue: this.securitySettingsForm.value
       };
     }
-    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
+    this.securitySettings.jsonValue = {
+      ...this.securitySettings.jsonValue,
+      ...this.securitySettingsForm.value
+    };
+
     this.settingsService.saveAdminSettings(this.securitySettings)
       .subscribe(settings => this.processSecuritySettings(settings));
   }

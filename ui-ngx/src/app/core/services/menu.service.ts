@@ -184,13 +184,13 @@ export class MenuService {
             path: '/settings/outgoing-mail',
             icon: 'mdi:email'
           },
-          /*{
+          {
             id: 'security_settings',
             name: 'home.security',
             type: 'link',
             path: '/settings/security',
             icon: 'security'
-          }*/
+          }
         ]
       }
     );
