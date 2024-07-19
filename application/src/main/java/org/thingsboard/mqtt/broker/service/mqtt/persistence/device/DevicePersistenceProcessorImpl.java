@@ -18,9 +18,9 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -36,7 +36,7 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     private final DeviceMsgService deviceMsgService;
     private final DeviceSessionCtxService deviceSessionCtxService;
     private final DeviceActorManager deviceActorManager;
-    private final CacheManager cacheManager;
+    private final CacheNameResolver cacheNameResolver;
 
     @Override
     public void clearPersistedMsgs(String clientId) {
@@ -88,6 +88,6 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     private Cache getPacketIdAndSerialNumberCache() {
-        return cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
+        return cacheNameResolver.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
     }
 }

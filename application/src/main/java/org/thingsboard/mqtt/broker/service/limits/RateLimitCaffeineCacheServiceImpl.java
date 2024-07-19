@@ -33,7 +33,7 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 @Service
 @ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "caffeine")
 @Slf4j
-public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService {
+public class RateLimitCaffeineCacheServiceImpl extends AbstractRateLimitCacheService implements RateLimitCacheService {
 
     private final CacheManager cacheManager;
     private final LocalBucket devicePersistedMsgsBucket;
@@ -49,6 +49,9 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     @Setter
     private int applicationClientsLimit;
 
+    private String clientSessionsLimitCacheKey;
+    private String appClientsLimitCacheKey;
+
     public RateLimitCaffeineCacheServiceImpl(CacheManager cacheManager,
                                              @Autowired(required = false) BucketConfiguration devicePersistedMsgsBucketConfiguration,
                                              @Autowired(required = false) BucketConfiguration totalMsgsBucketConfiguration) {
@@ -61,9 +64,11 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     public void init() {
         if (sessionsLimit > 0) {
             clientSessionsLimitCache = getNativeCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE);
+            clientSessionsLimitCacheKey = cachePrefix + CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY;
         }
         if (applicationClientsLimit > 0) {
             applicationClientsLimitCache = getNativeCache(CacheConstants.APP_CLIENTS_LIMIT_CACHE);
+            appClientsLimitCacheKey = cachePrefix + CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY;
         }
     }
 
@@ -73,7 +78,16 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
             return;
         }
         log.info("Initializing client session limit cache with count {}", count);
-        initCacheWithCount(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, count);
+        initCacheWithCount(clientSessionsLimitCache, clientSessionsLimitCacheKey, count);
+    }
+
+    @Override
+    public void setSessionCount(int count) {
+        if (sessionsLimit <= 0) {
+            return;
+        }
+        log.debug("Set session limit cache to {}", count);
+        clientSessionsLimitCache.asMap().put(clientSessionsLimitCacheKey, (long) count);
     }
 
     @Override
@@ -82,19 +96,19 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
             return;
         }
         log.info("Initializing application clients limit cache with count {}", count);
-        initCacheWithCount(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, count);
+        initCacheWithCount(applicationClientsLimitCache, appClientsLimitCacheKey, count);
     }
 
     @Override
     public long incrementSessionCount() {
         log.debug("Incrementing session count");
-        return increment(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        return increment(clientSessionsLimitCache, clientSessionsLimitCacheKey);
     }
 
     @Override
     public long incrementApplicationClientsCount() {
         log.debug("Incrementing Application clients count");
-        return increment(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        return increment(applicationClientsLimitCache, appClientsLimitCacheKey);
     }
 
     @Override
@@ -103,7 +117,7 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
             return;
         }
         log.debug("Decrementing session count");
-        decrement(clientSessionsLimitCache, CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        decrement(clientSessionsLimitCache, clientSessionsLimitCacheKey);
     }
 
     @Override
@@ -112,7 +126,7 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
             return;
         }
         log.debug("Decrementing Application clients count");
-        decrement(applicationClientsLimitCache, CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        decrement(applicationClientsLimitCache, appClientsLimitCacheKey);
     }
 
     @Override
@@ -121,8 +135,18 @@ public class RateLimitCaffeineCacheServiceImpl implements RateLimitCacheService 
     }
 
     @Override
+    public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
+        return devicePersistedMsgsBucket.tryConsumeAsMuchAsPossible(limit);
+    }
+
+    @Override
     public boolean tryConsumeTotalMsg() {
         return totalMsgsBucket.tryConsume(1);
+    }
+
+    @Override
+    public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
+        return totalMsgsBucket.tryConsumeAsMuchAsPossible(limit);
     }
 
     private Cache<String, Long> getNativeCache(String name) {

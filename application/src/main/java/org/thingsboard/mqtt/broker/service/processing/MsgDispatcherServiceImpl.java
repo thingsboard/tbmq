@@ -238,9 +238,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         int clientSubscriptionsSize = clientSubscriptions.size();
         if (clientSubscriptionsSize == 0) {
+            log.trace("Found 0 subscriptions for [{}] msg", publishMsgProto);
             return null;
         }
         clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
+        if (clientSubscriptions.isEmpty()) {
+            return null;
+        }
 
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
             Set<TopicSharedSubscription> topicSharedSubscriptions = null;
@@ -267,14 +271,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
-        if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            List<ValueWithTopicFilter<ClientSubscription>> afterRateLimits = new ArrayList<>(clientSubscriptions.size());
-            for (var clientSubscription : clientSubscriptions) {
-                if (rateLimitService.checkTotalMsgsLimit()) {
-                    afterRateLimits.add(clientSubscription);
-                }
+        if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
+            if (availableTokens == 0) {
+                log.debug("No available tokens left for total msgs bucket");
+                return Collections.emptyList();
             }
-            return afterRateLimits;
+            if (log.isDebugEnabled() && availableTokens < clientSubscriptions.size()) {
+                log.debug("Hitting total messages rate limits on subscriptions processing. Skipping {} messages", clientSubscriptions.size() - availableTokens);
+            }
+            return clientSubscriptions.subList(0, availableTokens);
         }
         return clientSubscriptions;
     }

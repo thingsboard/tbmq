@@ -27,6 +27,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.time.Duration;
 
@@ -62,6 +63,12 @@ public class RateLimitRedisCacheServiceImplTest {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         rateLimitRedisCacheService.setSessionsLimit(5);
         rateLimitRedisCacheService.setApplicationClientsLimit(5);
+        setCachePrefixAndInit();
+    }
+
+    private void setCachePrefixAndInit() {
+        rateLimitRedisCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
+        rateLimitRedisCacheService.init();
     }
 
     @Test
@@ -72,6 +79,14 @@ public class RateLimitRedisCacheServiceImplTest {
         rateLimitRedisCacheService.initSessionCount(count);
 
         verify(valueOperations, times(1)).setIfAbsent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
+    }
+
+    @Test
+    public void testSetSessionCount() {
+        int count = 5;
+        rateLimitRedisCacheService.setSessionCount(count);
+
+        verify(valueOperations, times(1)).set(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
     }
 
     @Test
@@ -167,6 +182,7 @@ public class RateLimitRedisCacheServiceImplTest {
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
         when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
         rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, bucketConfig, null);
+        setCachePrefixAndInit();
 
         when(bucketProxy.tryConsume(1)).thenReturn(true);
 
@@ -183,6 +199,7 @@ public class RateLimitRedisCacheServiceImplTest {
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
         when(jedisBasedProxyManager.getProxy(anyString(), any())).thenReturn(bucketProxy);
         rateLimitRedisCacheService = new RateLimitRedisCacheServiceImpl(redisTemplate, jedisBasedProxyManager, null, bucketConfig);
+        setCachePrefixAndInit();
 
         when(bucketProxy.tryConsume(1)).thenReturn(true);
 

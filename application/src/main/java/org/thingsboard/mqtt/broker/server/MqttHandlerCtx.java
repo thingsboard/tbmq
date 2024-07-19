@@ -16,9 +16,11 @@
 package org.thingsboard.mqtt.broker.server;
 
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -31,9 +33,23 @@ public class MqttHandlerCtx {
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final RateLimitBatchProcessor rateLimitBatchProcessor;
 
     @Value("${mqtt.max-in-flight-msgs:1000}")
     private int maxInFlightMsgs;
     @Value("${mqtt.retransmission.enabled:false}")
     private boolean retransmissionEnabled;
+
+    @Autowired
+    public MqttHandlerCtx(ClientMqttActorManager actorManager,
+                          ClientLogger clientLogger,
+                          RateLimitService rateLimitService,
+                          MqttMessageGenerator mqttMessageGenerator,
+                          @Autowired(required = false) RateLimitBatchProcessor rateLimitBatchProcessor) {
+        this.actorManager = actorManager;
+        this.clientLogger = clientLogger;
+        this.rateLimitService = rateLimitService;
+        this.mqttMessageGenerator = mqttMessageGenerator;
+        this.rateLimitBatchProcessor = rateLimitBatchProcessor;
+    }
 }

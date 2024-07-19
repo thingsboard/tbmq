@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -117,7 +118,7 @@ public class MsgDispatcherServiceImplTest {
     @Test
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitReached() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.checkTotalMsgsLimit()).thenReturn(false);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(0L);
 
         List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -130,9 +131,9 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
+    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotUsed() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
-        when(rateLimitService.checkTotalMsgsLimit()).thenReturn(true);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(3L);
 
         List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
@@ -142,6 +143,27 @@ public class MsgDispatcherServiceImplTest {
         List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(list, result);
+    }
+
+    @Test
+    public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitEnabledAndLimitNotReached() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(5L))).thenReturn(2L);
+
+        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+                newValueWithTopicFilter("c1", 0, "t1"),
+                newValueWithTopicFilter("c2", 1, "t2"),
+                newValueWithTopicFilter("c3", 2, "t3"),
+                newValueWithTopicFilter("c4", 0, "t4"),
+                newValueWithTopicFilter("c5", 1, "t5")
+        );
+        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+
+        assertEquals(2, result.size());
+        assertEquals("t1", result.get(0).getTopicFilter());
+        assertEquals("c1", result.get(0).getValue().getClientId());
+        assertEquals("t2", result.get(1).getTopicFilter());
+        assertEquals("c2", result.get(1).getValue().getClientId());
     }
 
     @Test
