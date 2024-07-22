@@ -14,17 +14,26 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, NgZone, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, NgZone, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import {
+  AbstractControl, FormGroupDirective,
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { AuthService } from '@core/http/auth.service';
 import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
+import { UserPasswordPolicy } from "@shared/models/settings.models";
+import { isEqual } from "@core/utils";
 
 @Component({
   selector: 'tb-change-password-dialog',
@@ -34,6 +43,7 @@ import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswordDialogComponent> implements OnInit {
 
   changePassword: UntypedFormGroup;
+  passwordPolicy: UserPasswordPolicy;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -41,6 +51,7 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
               private authService: AuthService,
               public dialogRef: MatDialogRef<ChangePasswordDialogComponent>,
               private zone: NgZone,
+              private cd: ChangeDetectorRef,
               @Inject(MAT_DIALOG_DATA) public data: any,
               public fb: UntypedFormBuilder) {
     super(store, router, dialogRef);
@@ -51,26 +62,41 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
     if (this.data?.changeDefaultPassword) {
       this.changePassword.patchValue({ currentPassword: DEFAULT_PASSWORD });
     }
+    this.loadPasswordPolicy();
   }
 
   buildChangePasswordForm() {
     this.changePassword = this.fb.group({
       currentPassword: [''],
-      newPassword: [''],
-      newPassword2: ['']
+      newPassword: ['', Validators.required],
+      newPassword2: ['', this.samePasswordValidation(false, 'newPassword')]
     });
   }
 
-  onChangePassword(): void {
-    if (this.changePassword.get('newPassword').value !== this.changePassword.get('newPassword2').value) {
-      this.store.dispatch(new ActionNotificationShow({ message: this.translate.instant('login.passwords-mismatch-error'),
-        type: 'error' }));
-    } else {
-      this.authService.changePassword(
-        this.changePassword.get('currentPassword').value,
-        this.changePassword.get('newPassword').value).subscribe(() => {
+  onChangePassword(form: FormGroupDirective): void {
+    if (this.changePassword.valid) {
+      this.authService.changePassword(this.changePassword.get('currentPassword').value,
+        this.changePassword.get('newPassword').value, {ignoreErrors: true}).subscribe(() => {
+          this.discardChanges(form);
           this.dialogRef.close(true);
-      });
+        },
+        (error) => {
+          if (error.status === 400 && error.error.message === 'Current password doesn\'t match!') {
+            this.changePassword.get('currentPassword').setErrors({differencePassword: true});
+          } else if (error.status === 400 && error.error.message.startsWith('Password must')) {
+            this.loadPasswordPolicy();
+          } else if (error.status === 400 && error.error.message.startsWith('Password was already used')) {
+            this.changePassword.get('newPassword').setErrors({alreadyUsed: error.error.message});
+          } else {
+            this.store.dispatch(new ActionNotificationShow({
+              message: error.error.message,
+              type: 'error',
+              target: 'changePassword'
+            }));
+          }
+        });
+    } else {
+      this.changePassword.markAllAsTouched();
     }
   }
 
@@ -80,5 +106,81 @@ export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswor
     this.zone.run(() => {
       this.router.navigateByUrl(url);
     });
+  }
+
+  discardChanges(form: FormGroupDirective, event?: MouseEvent) {
+    if (event) {
+      event.stopPropagation();
+    }
+    form.resetForm({
+      currentPassword: '',
+      newPassword: '',
+      newPassword2: ''
+    });
+  }
+
+  private loadPasswordPolicy() {
+    this.authService.getUserPasswordPolicy().subscribe(policy => {
+      this.passwordPolicy = policy;
+      this.changePassword.get('newPassword').setValidators([
+        this.passwordStrengthValidator(),
+        this.samePasswordValidation(true, 'currentPassword'),
+        Validators.required
+      ]);
+      this.changePassword.get('newPassword').updateValueAndValidity({emitEvent: false});
+    });
+  }
+
+  private passwordStrengthValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value: string = control.value;
+      const errors: any = {};
+
+      if (this.passwordPolicy.minimumUppercaseLetters > 0 &&
+        !new RegExp(`(?:.*?[A-Z]){${this.passwordPolicy.minimumUppercaseLetters}}`).test(value)) {
+        errors.notUpperCase = true;
+      }
+
+      if (this.passwordPolicy.minimumLowercaseLetters > 0 &&
+        !new RegExp(`(?:.*?[a-z]){${this.passwordPolicy.minimumLowercaseLetters}}`).test(value)) {
+        errors.notLowerCase = true;
+      }
+
+      if (this.passwordPolicy.minimumDigits > 0
+        && !new RegExp(`(?:.*?\\d){${this.passwordPolicy.minimumDigits}}`).test(value)) {
+        errors.notNumeric = true;
+      }
+
+      if (this.passwordPolicy.minimumSpecialCharacters > 0 &&
+        !new RegExp(`(?:.*?[\\W_]){${this.passwordPolicy.minimumSpecialCharacters}}`).test(value)) {
+        errors.notSpecial = true;
+      }
+
+      if (!this.passwordPolicy.allowWhitespaces && /\s/.test(value)) {
+        errors.hasWhitespaces = true;
+      }
+
+      if (this.passwordPolicy.minimumLength > 0 && value.length < this.passwordPolicy.minimumLength) {
+        errors.minLength = true;
+      }
+
+      if (!value.length || this.passwordPolicy.maximumLength > 0 && value.length > this.passwordPolicy.maximumLength) {
+        errors.maxLength = true;
+      }
+
+      return isEqual(errors, {}) ? null : errors;
+    };
+  }
+
+  private samePasswordValidation(isSame: boolean, key: string): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value: string = control.value;
+      const keyValue = control.parent?.value[key];
+
+      if (isSame) {
+        return value === keyValue ? {samePassword: true} : null;
+      }
+      return value !== keyValue ? {differencePassword: true} : null;
+    };
   }
 }

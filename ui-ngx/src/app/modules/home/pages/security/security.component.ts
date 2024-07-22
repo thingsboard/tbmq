@@ -28,13 +28,10 @@ import {
   ValidatorFn,
   Validators
 } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DatePipe } from '@angular/common';
-import { ClipboardService } from 'ngx-clipboard';
 import { Subject } from 'rxjs';
 import { isEqual } from '@core/utils';
 import { AuthService } from '@core/http/auth.service';
