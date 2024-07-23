@@ -70,6 +70,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             log.error("Failed to authenticate client with SSL credentials! No SSL credentials were found!");
             return new AuthResponse(false, null, null);
         }
+        putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
         if (log.isTraceEnabled()) {
             log.trace("[{}] Successfully authenticated with SSL credentials as {}", authContext.getClientId(), clientTypeSslMqttCredentials.getType());
         }
@@ -126,7 +127,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             if (!matchingCredentials.isEmpty()) {
                 MqttClientCredentials mqttClientCredentials = matchingCredentials.get(0);
                 SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(mqttClientCredentials.getCredentialsValue(), SslMqttCredentials.class);
-                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials);
+                return new ClientTypeSslMqttCredentials(mqttClientCredentials.getClientType(), sslMqttCredentials, mqttClientCredentials.getName());
             }
         }
         return null;
@@ -182,7 +183,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         for (MqttClientCredentials sslCredential : sslCredentials) {
             SslMqttCredentials sslMqttCredentials = JacksonUtil.fromString(sslCredential.getCredentialsValue(), SslMqttCredentials.class);
             if (sslMqttCredentials != null && sslMqttCredentials.isCertCnIsRegex()) {
-                clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(), sslMqttCredentials));
+                clientTypeSslMqttCredentialsList.add(new ClientTypeSslMqttCredentials(sslCredential.getClientType(), sslMqttCredentials, sslCredential.getName()));
             }
         }
         return new SslCredentialsCacheValue(clientTypeSslMqttCredentialsList);
@@ -200,5 +201,13 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private Cache getSslRegexCredentialsCache() {
         return cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+    }
+
+    private void putIntoClientSessionCredsCache(AuthContext authContext, ClientTypeSslMqttCredentials credentials) {
+        getClientSessionCredentialsCache().put(authContext.getClientId(), credentials.getName());
+    }
+
+    private Cache getClientSessionCredentialsCache() {
+        return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
     }
 }

@@ -183,6 +183,17 @@ public class MqttClientCredentialsController extends BaseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/mqtt/client/credentials", params = {"name"}, method = RequestMethod.GET)
+    @ResponseBody
+    public MqttClientCredentials getClientCredentialsByName(@RequestParam String name) throws ThingsboardException {
+        try {
+            return checkNotNull(mqttClientCredentialsService.findCredentialsByName(name));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
     private String encodePasswordIfNotEmpty(String password) {
         return StringUtils.isEmpty(password) ? null : passwordEncoder.encode(password);
     }

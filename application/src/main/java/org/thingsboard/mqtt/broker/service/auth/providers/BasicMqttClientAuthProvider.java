@@ -75,6 +75,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
             log.error("Failed to authenticate client with Basic credentials matching clientId: [{}] username: [{}]", authContext.getClientId(), authContext.getUsername());
             return new AuthResponse(false, null, null);
         }
+        putIntoClientSessionCredsCache(authContext, basicCredentials);
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
         }
@@ -134,6 +135,14 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private Cache getBasicCredsPwCache() {
         return cacheNameResolver.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
+    }
+
+    private void putIntoClientSessionCredsCache(AuthContext authContext, MqttClientCredentials basicCredentials) {
+        getClientSessionCredentialsCache().put(authContext.getClientId(), basicCredentials.getName());
+    }
+
+    private Cache getClientSessionCredentialsCache() {
+        return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
     }
 
     private String toHashString(String rawPassword) {

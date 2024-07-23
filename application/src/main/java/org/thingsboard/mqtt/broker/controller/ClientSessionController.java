@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
@@ -48,6 +50,7 @@ public class ClientSessionController extends BaseController {
 
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
+    private final CacheNameResolver cacheNameResolver;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/client-session/remove", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
@@ -159,6 +162,17 @@ public class ClientSessionController extends BaseController {
     public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
         try {
             return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/client-session/credentials", params = {"clientId"}, method = RequestMethod.GET)
+    @ResponseBody
+    public String getClientSessionCredentials(@RequestParam String clientId) throws ThingsboardException {
+        try {
+            return checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE).get(clientId, String.class));
         } catch (Exception e) {
             throw handleException(e);
         }
