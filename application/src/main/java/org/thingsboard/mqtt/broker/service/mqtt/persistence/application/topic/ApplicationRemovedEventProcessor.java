@@ -16,5 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
 public interface ApplicationRemovedEventProcessor {
+
     void processEvents();
+
 }

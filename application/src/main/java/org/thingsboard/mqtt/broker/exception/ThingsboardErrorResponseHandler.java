@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.exception;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,8 +34,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.service.security.exception.JwtExpiredTokenException;
 import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordExpiredException;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
@@ -126,12 +126,11 @@ public class ThingsboardErrorResponseHandler implements AccessDeniedHandler {
             mapper.writeValue(response.getWriter(), ThingsboardErrorResponse.of("User account is locked due to security policy", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
         } else if (authenticationException instanceof JwtExpiredTokenException) {
             mapper.writeValue(response.getWriter(), ThingsboardErrorResponse.of("Token has expired", ThingsboardErrorCode.JWT_TOKEN_EXPIRED, HttpStatus.UNAUTHORIZED));
-        } else if (authenticationException instanceof UserPasswordExpiredException) {
-            UserPasswordExpiredException expiredException = (UserPasswordExpiredException) authenticationException;
+        } else if (authenticationException instanceof UserPasswordExpiredException expiredException) {
             String resetToken = expiredException.getResetToken();
             mapper.writeValue(response.getWriter(), ThingsboardCredentialsExpiredResponse.of(expiredException.getMessage(), resetToken));
         } else {
-            mapper.writeValue(response.getWriter(), ThingsboardErrorResponse.of("Authentication failed", ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
+            mapper.writeValue(response.getWriter(), ThingsboardErrorResponse.of("Authentication failed: " + authenticationException.getMessage(), ThingsboardErrorCode.AUTHENTICATION, HttpStatus.UNAUTHORIZED));
         }
     }
 

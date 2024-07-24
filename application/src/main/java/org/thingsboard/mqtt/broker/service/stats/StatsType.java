@@ -23,6 +23,7 @@ public enum StatsType {
     RETAIN_MSG_TRIE_SIZE("retainMsgTrieSize"),
     LAST_WILL_CLIENTS("lastWillClients"),
     CONNECTED_SESSIONS("connectedSessions"),
+    CONNECTED_SSL_SESSIONS("connectedSslSessions"),
     ALL_CLIENT_SESSIONS("allClientSessions"),
     CLIENT_SUBSCRIPTIONS("clientSubscriptions"),
     RETAINED_MESSAGES("retainedMessages"),

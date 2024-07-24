@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -60,6 +61,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DeviceMsgQueuePublisher deviceMsgQueuePublisher;
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
+    private final RateLimitService rateLimitService;
 
     @Override
     public void processPublish(PublishMsgWithId publishMsgWithId, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
@@ -71,6 +73,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
         int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics);
         if (callbackCount == 0) {
+            callback.onSuccess();
             return;
         }
         PublishMsgCallback callbackWrapper = new MultiplePublishMsgCallbackWrapper(callbackCount, callback);
@@ -79,13 +82,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         clientLogger.logEvent(senderClientId, this.getClass(), "Before msg persistence");
 
         if (deviceSubscriptions != null) {
-            for (Subscription deviceSubscription : deviceSubscriptions) {
-                String clientId = getClientIdFromSubscription(deviceSubscription);
-                PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgProto);
-                deviceMsgQueuePublisher.sendMsg(
-                        clientId,
-                        new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
-                        callbackWrapper);
+            if (rateLimitService.isDevicePersistedMsgsLimitEnabled()) {
+                processDeviceSubscriptionsWithRateLimits(deviceSubscriptions, publishMsgWithId, callbackWrapper);
+            } else {
+                for (Subscription deviceSubscription : deviceSubscriptions) {
+                    sendDeviceMsg(deviceSubscription, publishMsgWithId, callbackWrapper);
+                }
             }
         }
         if (applicationSubscriptions != null) {
@@ -107,6 +109,29 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         }
 
         clientLogger.logEvent(senderClientId, this.getClass(), "After msg persistence");
+    }
+
+    void processDeviceSubscriptionsWithRateLimits(List<Subscription> deviceSubscriptions,
+                                                  PublishMsgWithId publishMsgWithId,
+                                                  PublishMsgCallback callbackWrapper) {
+        int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(deviceSubscriptions.size());
+        for (int i = 0; i < deviceSubscriptions.size(); i++) {
+            if (i < availableTokens) {
+                sendDeviceMsg(deviceSubscriptions.get(i), publishMsgWithId, callbackWrapper);
+            } else {
+                log.trace("Hitting device persisted messages rate limits!");
+                callbackWrapper.onSuccess();
+            }
+        }
+    }
+
+    private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        String clientId = getClientIdFromSubscription(deviceSubscription);
+        PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgWithId.getPublishMsgProto());
+        deviceMsgQueuePublisher.sendMsg(
+                clientId,
+                new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
+                callbackWrapper);
     }
 
     private void sendApplicationMsg(Subscription applicationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
@@ -174,7 +199,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
         genericClientSessionCtxManager.resendPersistedPubRelMessages(clientSessionCtx);
 
-        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
+        ClientType clientType = clientSessionCtx.getClientType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
@@ -189,7 +214,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
-        ClientType clientType = clientSessionCtx.getSessionInfo().getClientInfo().getType();
+        ClientType clientType = clientSessionCtx.getClientType();
         if (clientType == APPLICATION) {
             applicationPersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
         } else if (clientType == DEVICE) {

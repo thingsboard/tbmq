@@ -112,7 +112,7 @@ public class SessionClusterManagerImplTest {
     public void givenSameSessionId_whenProcessConnectionRequest_thenDoNotUpdateClientSession() {
         SessionInfo sessionInfo = getSessionInfo("clientId");
 
-        doReturn(new ClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processConnectionRequest(sessionInfo, getConnectionRequestInfo());
 
@@ -124,7 +124,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2");
 
-        doReturn(new ClientSession(true, sessionInfoOld)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfoOld)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
@@ -139,7 +139,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.APPLICATION));
+                SessionInfo.withClientType(ClientType.APPLICATION));
 
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
@@ -152,7 +152,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.APPLICATION));
+                SessionInfo.withClientType(ClientType.APPLICATION));
 
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
         verify(applicationRemovedEventService, times(1)).sendApplicationRemovedEvent(any());
@@ -164,7 +164,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1", ClientType.DEVICE, true);
 
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
-                new SessionClusterManagerImpl.PreviousSessionInfo(ClientType.DEVICE));
+                SessionInfo.withClientType(ClientType.DEVICE));
 
         verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
     }
@@ -174,7 +174,7 @@ public class SessionClusterManagerImplTest {
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2", ClientType.DEVICE, false);
 
-        doReturn(new ClientSession(true, sessionInfoOld)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfoOld)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
@@ -195,7 +195,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenDeviceClientType_whenProcessRemoveApplicationTopicRequest_thenOk() {
         SessionInfo sessionInfo = getSessionInfo("clientId", ClientType.DEVICE, false);
-        doReturn(new ClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processRemoveApplicationTopicRequest("clientId", new ClientCallback() {
             @Override
@@ -212,7 +212,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenApplicationClientType_whenProcessRemoveApplicationTopicRequest_thenOk() {
         SessionInfo sessionInfo = getSessionInfo("clientId", ClientType.APPLICATION, false);
-        doReturn(new ClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processRemoveApplicationTopicRequest("clientId", new ClientCallback() {
             @Override
@@ -229,7 +229,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenSession_whenProcessClearSession_thenDoNothing() {
         SessionInfo sessionInfo = getSessionInfo("clientId");
-        doReturn(new ClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processClearSession("clientId", UUID.randomUUID());
 
@@ -247,13 +247,41 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenDisconnectedSession_whenProcessClearSession_thenVerify() {
         SessionInfo sessionInfo = getSessionInfo("clientId");
-        doReturn(new ClientSession(false, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSession(false, sessionInfo)).when(clientSessionService).getClientSession(any());
 
         sessionClusterManager.processClearSession("clientId", sessionInfo.getSessionId());
 
         verify(clientSessionService, times(1)).clearClientSession(any(), any());
         verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, times(1)).clearPersistedMessages(any());
+    }
+
+    @Test
+    public void givenClientSession_whenProcessMarkSessionDisconnected_thenOk() {
+        SessionInfo sessionInfo = getSessionInfo("test", ClientType.APPLICATION, false);
+        ClientSession clientSessionConnected = getClientSession(true, sessionInfo);
+
+        ClientSession clientSessionDisconnected = sessionClusterManager.markSessionDisconnected(clientSessionConnected, -1);
+
+        Assert.assertFalse(clientSessionDisconnected.isConnected());
+        Assert.assertEquals("test", clientSessionDisconnected.getSessionInfo().getClientId());
+        Assert.assertEquals(ClientType.APPLICATION, clientSessionDisconnected.getSessionInfo().getClientType());
+        Assert.assertFalse(clientSessionDisconnected.getSessionInfo().isCleanStart());
+        Assert.assertEquals(0, clientSessionDisconnected.getSessionInfo().getSessionExpiryInterval());
+    }
+
+    @Test
+    public void givenClientSessionAndNewSessionsExpiryInterval_whenProcessMarkSessionDisconnected_thenOk() {
+        SessionInfo sessionInfo = getSessionInfo("test", ClientType.APPLICATION, false);
+        ClientSession clientSessionConnected = getClientSession(true, sessionInfo);
+
+        ClientSession clientSessionDisconnected = sessionClusterManager.markSessionDisconnected(clientSessionConnected, 100);
+
+        Assert.assertFalse(clientSessionDisconnected.isConnected());
+        Assert.assertEquals("test", clientSessionDisconnected.getSessionInfo().getClientId());
+        Assert.assertEquals(ClientType.APPLICATION, clientSessionDisconnected.getSessionInfo().getClientType());
+        Assert.assertFalse(clientSessionDisconnected.getSessionInfo().isCleanStart());
+        Assert.assertEquals(100, clientSessionDisconnected.getSessionInfo().getSessionExpiryInterval());
     }
 
     private SessionInfo getSessionInfo(String clientId) {
@@ -269,4 +297,9 @@ public class SessionClusterManagerImplTest {
     private ConnectionRequestInfo getConnectionRequestInfo() {
         return new ConnectionRequestInfo(UUID.randomUUID(), System.currentTimeMillis(), "responseTopic");
     }
+
+    private ClientSession getClientSession(boolean connected, SessionInfo sessionInfo) {
+        return new ClientSession(connected, sessionInfo);
+    }
+
 }

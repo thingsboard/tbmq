@@ -17,6 +17,9 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.local.LocalBucket;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -25,8 +28,16 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+
+import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
@@ -47,13 +58,15 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         // Create a Caffeine cache
         caffeineCache = Caffeine.newBuilder().build();
-        mockCache = new CaffeineCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, caffeineCache);
+        mockCache = new CaffeineCache(BrokerConstants.EMPTY_STR, caffeineCache);
 
         // Mock the cache manager to return the Caffeine cache
         when(cacheManager.getCache(any())).thenReturn(mockCache);
 
         rateLimitCaffeineCacheService.setSessionsLimit(5);
+        rateLimitCaffeineCacheService.setApplicationClientsLimit(5);
 
+        rateLimitCaffeineCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
         // Initialize the service
         rateLimitCaffeineCacheService.init();
     }
@@ -65,6 +78,27 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
         assertEquals(Long.valueOf(count), actualCount);
+
+        int newCount = 10;
+        rateLimitCaffeineCacheService.initSessionCount(newCount);
+
+        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+    }
+
+    @Test
+    public void testSetSessionCount() {
+        int count = 10;
+        rateLimitCaffeineCacheService.setSessionCount(count);
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+
+        int newCount = 15;
+        rateLimitCaffeineCacheService.setSessionCount(newCount);
+
+        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(newCount), actualCount);
     }
 
     @Test
@@ -100,6 +134,118 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
         assertEquals(Long.valueOf(0), actualCount);
+    }
+
+    @Test
+    public void testInitApplicationClientsCount() {
+        int count = 5;
+        rateLimitCaffeineCacheService.initApplicationClientsCount(count);
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(count), actualCount);
+    }
+
+    @Test
+    public void testIncrementApplicationClientsCount() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
+        long newCount = rateLimitCaffeineCacheService.incrementApplicationClientsCount();
+
+        assertEquals(6L, newCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(4), actualCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount_ZeroValue() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 0L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(0), actualCount);
+    }
+
+    @Test
+    public void testDecrementApplicationClientsCount_NegativeValue() {
+        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, -1L);
+        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+
+        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
+        assertEquals(Long.valueOf(0), actualCount);
+    }
+
+    @Test
+    public void testTryConsumeDevicePersistedMsg() {
+        // Mocking bucket configuration
+        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
+        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
+
+        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, bucketConfig, null);
+
+        // Assuming the bucket has 10 tokens initially
+        for (int i = 0; i < 10; i++) {
+            assertTrue(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
+        }
+        assertFalse(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
+    }
+
+    @Test
+    public void testTryConsumeTotalMsg() {
+        // Mocking bucket configuration
+        Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
+        BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
+
+        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, bucketConfig);
+
+        // Assuming the bucket has 10 tokens initially
+        for (int i = 0; i < 10; i++) {
+            assertTrue(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+        }
+        assertFalse(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+    }
+
+    @Test
+    public void testTryConsume_NoDevicePersistedMsgsBucketConfig() {
+        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeDevicePersistedMsg);
+        assertTrue(exception.getMessage().contains("is null"));
+    }
+
+    @Test
+    public void testTryConsume_NoTotalMsgsBucketConfig() {
+        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeTotalMsg);
+        assertTrue(exception.getMessage().contains("is null"));
+    }
+
+    @Test
+    public void testGetLocalBucket_NullConfiguration() {
+        LocalBucket result = rateLimitCaffeineCacheService.getLocalBucket(null);
+        assertNull(result, "Expected null when bucketConfiguration is null");
+    }
+
+    @Test
+    public void testGetLocalBucket_WithBandwidths() {
+        BucketConfiguration configuration = BucketConfiguration
+                .builder()
+                .addLimit(Bandwidth
+                        .builder()
+                        .capacity(1)
+                        .refillGreedy(10, Duration.ofMinutes(1))
+                        .build())
+                .build();
+
+        LocalBucket result = rateLimitCaffeineCacheService.getLocalBucket(configuration);
+
+        assertNotNull(result, "Expected non-null LocalBucket");
+
+        assertEquals(configuration, result.getConfiguration());
     }
 
 }

@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 @Getter
 @AllArgsConstructor
 public class AuthContext {
+
     private final String clientId;
     private final String username;
     private final byte[] passwordBytes;

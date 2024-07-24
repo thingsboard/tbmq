@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HistoricalDataTotalKafkaSettings;
 
@@ -25,8 +26,11 @@ public class HistoricalStatsTotalHelperImpl implements HistoricalStatsTotalHelpe
 
     private final HistoricalDataTotalKafkaSettings historicalDataTotalKafkaSettings;
 
+    @Value("${queue.kafka.kafka-prefix:}")
+    private String kafkaPrefix;
+
     @Override
     public String getTopic() {
-        return historicalDataTotalKafkaSettings.getTopic();
+        return kafkaPrefix + historicalDataTotalKafkaSettings.getTopic();
     }
 }

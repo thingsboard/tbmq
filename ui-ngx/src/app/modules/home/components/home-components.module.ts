@@ -27,6 +27,7 @@ import {
   ClientCredentialsAutocompleteComponent
 } from '@home/components/client-credentials-templates/client-credentials-autocomplete.component';
 import { UserPropertiesComponent } from '@home/components/client-credentials-templates/user-properties.component';
+import { RouterTabsComponent } from '@home/components/router-tabs.component';
 
 @NgModule({
   declarations:
@@ -37,7 +38,8 @@ import { UserPropertiesComponent } from '@home/components/client-credentials-tem
       EntityDetailsPanelComponent,
       EventContentDialogComponent,
       ClientCredentialsAutocompleteComponent,
-      UserPropertiesComponent
+      UserPropertiesComponent,
+      RouterTabsComponent
     ],
   imports: [
     CommonModule,
@@ -50,7 +52,8 @@ import { UserPropertiesComponent } from '@home/components/client-credentials-tem
     DetailsPanelComponent,
     EntityDetailsPanelComponent,
     ClientCredentialsAutocompleteComponent,
-    UserPropertiesComponent
+    UserPropertiesComponent,
+    RouterTabsComponent
   ]
 })
 export class HomeComponentsModule {

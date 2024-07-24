@@ -89,6 +89,12 @@
         color: rgba(0,0,0,0.54);
       }
     }
+
+    .tb-title-no-updates {
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.38);
+    }
   }
 
   @media #{$mat-lt-xl} {

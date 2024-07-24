@@ -10,6 +10,10 @@
     "permission-denied": "Permission Denied",
     "permission-denied-text": "You don't have permission to perform this operation!"
   },
+  "account": {
+    "account": "Account",
+    "notification-settings": "Notification settings"
+  },
   "action": {
     "activate": "Activate",
     "suspend": "Suspend",
@@ -74,6 +78,7 @@
   "admin": {
     "admins": "Admins",
     "authentication": "Authentication",
+    "allow-whitespace": "Allow whitespace",
     "connection-settings": "Connection settings",
     "general": "General",
     "general-settings": "General Settings",
@@ -151,6 +156,9 @@
     "minimum-digits-range": "Minimum number of digits can't be negative",
     "minimum-special-characters": "Minimum number of special characters",
     "minimum-special-characters-range": "Minimum number of special characters can't be negative",
+    "maximum-password-length": "Maximum password length",
+    "maximum-password-length-min": "Maximum password length should be at least 6",
+    "maximum-password-length-less-min": "Maximum password length should be greater than minimum length",
     "password-expiration-period-days": "Password expiration period in days",
     "password-expiration-period-days-range": "Password expiration period in days can't be negative",
     "password-reuse-frequency-days": "Password reuse frequency in days",
@@ -161,7 +169,26 @@
     "user-lockout-notification-email": "In case user account lockout, send notification to email",
     "domain-name": "Domain name",
     "domain-name-unique": "Domain name and protocol need to unique.",
-    "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io"
+    "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io",
+    "force-reset-password-if-no-valid": "Force to reset password if not valid",
+    "force-reset-password-if-no-valid-hint": "Please be careful when enabling this feature: it will require users with not valid password to reset their password via email.",
+      "settings": {
+      "connectivity": "Connectivity",
+      "connectivity-settings": "Connectivity settings",
+      "connectivity-settings-hint": "Connectivity settings values will be utilized across TBMQ to replace default host/port values on pages: WebSocket Client (add/edit connection), Client Credentials (check connectivity), Home (getting started).",
+      "connectivity-hint": "If host or port fields are empty, default protocol value will be used.",
+      "default-host-port": "Default port and host configurations",
+      "default-host-port-description": "These settings allow you to define default host and port parameters for various protocols utilized throughout the TBMQ system.",
+      "mqtt": "MQTT",
+      "mqtts": "MQTTs",
+      "ws": "WS",
+      "wss": "WSS",
+      "ws-client-settings": "WebSocket client settings",
+      "host": "Host",
+      "port": "Port",
+      "port-pattern": "Port must be a positive integer.",
+      "port-range": "Port should be in a range from 1 to 65535."
+    }
   },
   "confirm-on-exit": {
     "message": "You have unsaved changes. Are you sure you want to leave this page?",
@@ -679,7 +706,8 @@
     "upgrade-instructions": "Upgrade instructions",
     "contact-us": "Contact us",
     "available": "Available",
-    "current": "Current"
+    "current": "Current",
+    "no-updates": "Version is up to date."
   },
   "config": {
     "key": "Key",
@@ -752,7 +780,19 @@
     "add-dev-credentials": "Add Device Credentials",
     "add-app-credentials": "Add Application Credentials",
     "credentials-added": "Credentials added successfully",
-    "open-sessions": "Session Details"
+    "open-sessions": "Session Details",
+    "guide": {
+      "getting-started-guides": "Developer's MQTT guides",
+      "javascript-title": "Javascript",
+      "javascript-subtitle": "MQTT.js",
+      "python-title": "Python",
+      "python-subtitle": "Paho Python",
+      "arduino-title": "Arduino",
+      "arduino-subtitle": "Getting started guide Arduino",
+      "ws-client-subtitle": "WebSocket Client link",
+      "mosquitto-title": "Mosquitto",
+      "mosquitto-subtitle": "Mosquitto guide"
+    }
   },
   "value": {
     "type": "Value type",
@@ -783,6 +823,8 @@
     "pub": "Publish",
     "sub": "Subscribe",
     "options": "Options",
+    "show-logs": "Log MQTT client activity",
+    "show-logs-hint": "If enabled, MQTT client logs for events (such as connect, reconnect, message, error, etc.) will be displayed in your browser console.",
     "messages": {
       "retained": "Retain",
       "publish-message": "Publish message",
@@ -864,6 +906,7 @@
       "user-properties": "User Properties",
       "url": "URL",
       "url-required": "URL is required",
+      "url-warning": "Your client's host uses HTTPS, but you have selected WS instead of WSS. This could lead to issues with the client's ability to establish a connection.",
       "session-expiry-interval": "Session Expiry Interval",
       "session-expiry-interval-max": "Max value is 2,147,483,647 seconds.",
       "password-warning": "The password is required for the selected Client Credentials.",
@@ -938,5 +981,85 @@
         "return-type-mismatch": "Function must return value of '{{type}}' type!",
         "tidy": "Tidy",
         "mini": "Mini"
+    },
+  "security": {
+    "security": "Security",
+    "general-settings": "General security settings",
+    "access-token": "Access token",
+    "access-token-required": "Access token is required",
+    "clientId": "Client ID",
+    "clientId-required": "Client ID is required",
+    "username": "Username",
+    "username-required": "Username is required",
+    "ca-cert": "CA certificate",
+    "2fa": {
+        "2fa": "Two-factor authentication",
+        "2fa-description": "Two-factor authentication protects your account from unauthorized access. All you have to do is enter a security code when you log in.",
+        "authenticate-with": "You can authenticate with:",
+        "disable-2fa-provider-text": "Disabling {{name}} will make your account less secure",
+        "disable-2fa-provider-title": "Are you sure you want to disable {{name}}?",
+        "get-new-code": "Get new code",
+        "main-2fa-method": "Use as main two-factor authentication method",
+        "dialog": {
+            "activation-step-description-email": "The next time you login in, you will be prompted to enter the security code that will be sent to your email address.",
+            "activation-step-description-sms": "The next time you login in, you will be prompted to enter the security code that will be sent to the phone number.",
+            "activation-step-description-totp": "The next time you login in, you will need to provide a two-factor authentication code.",
+            "activation-step-label": "Activation",
+            "backup-code-description": "Print out the codes so you have them handy when you need to use them to log in to your account. You can use each backup code once.",
+            "backup-code-warn": "Once you leave this page, these codes cannot be shown again. Store them safely using the options below.",
+            "download-txt": "Download (txt)",
+            "email-step-description": "Enter an email to use as your authenticator.",
+            "email-step-label": "Email",
+            "enable-email-title": "Enable email authenticator",
+            "enable-sms-title": "Enable SMS authenticator",
+            "enable-totp-title": "Enable authenticator app",
+            "enter-verification-code": "Enter the 6-digit code here",
+            "get-backup-code-title": "Get backup code",
+            "next": "Next",
+            "scan-qr-code": "Scan this QR code with your verification app",
+            "send-code": "Send code",
+            "sms-step-description": "Enter a phone number to use as your authenticator.",
+            "sms-step-label": "Phone Number",
+            "success": "Success!",
+            "totp-step-description-install": "You can install apps like Google Authenticator, Authy, or Duo.",
+            "totp-step-description-open": "Open the authenticator app on your mobile phone.",
+            "totp-step-label": "Get app",
+            "verification-code": "6-digit code",
+            "verification-code-invalid": "Invalid verification code format",
+            "verification-code-incorrect": "Verification code is incorrect",
+            "verification-code-many-request": "Too many requests check verification code",
+            "verification-step-description": "Enter a 6-digit code we just sent to {{address}}",
+            "verification-step-label": "Verification"
+        },
+        "provider": {
+            "email": "Email",
+            "email-description": "Use a security code sent to your email address to authenticate.",
+            "email-hint": "Authentication codes are sent via email to {{ info }}",
+            "sms": "SMS",
+            "sms-description": "Use your phone to authenticate. We'll send you a security code via SMS message when you log in.",
+            "sms-hint": "Authentication codes are sent by text message to {{ info }}",
+            "totp": "Authenticator app",
+            "totp-description": "Use apps like Google Authenticator, Authy, or Duo on your phone to authenticate. It will generate a security code for logging in.",
+            "totp-hint": "Authenticator app is set up for your account",
+            "backup_code": "Backup code",
+            "backup-code-description": "These printable one-time passcodes allow you to sign in when away from your phone, like when you’re traveling.",
+            "backup-code-hint": "{{ info }} single-use codes are active at this time"
+        }
+    },
+    "password-requirement": {
+        "at-least": "At least:",
+        "character": "{ count, plural, =1 {1 character} other {# characters} }",
+        "digit": "{ count, plural, =1 {1 digit} other {# digits} }",
+        "incorrect-password-try-again": "Incorrect password. Try again",
+        "lowercase-letter": "{ count, plural, =1 {1 lowercase letter} other {# lowercase letters} }",
+        "new-passwords-not-match": "New password didn't match",
+        "password-should-not-contain-spaces": "Your password should not contain spaces",
+        "password-not-meet-requirements": "Password didn't meet requirements",
+        "password-requirements": "Password requirements",
+        "password-should-difference": "New password should be different from current",
+        "special-character": "{ count, plural, =1 {1 special character} other {# special characters} }",
+        "uppercase-letter": "{ count, plural, =1 {1 uppercase letter} other {# uppercase letters} }",
+        "at-most": "At most:"
     }
+  }
 }

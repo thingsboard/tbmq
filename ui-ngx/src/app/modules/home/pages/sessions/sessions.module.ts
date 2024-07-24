@@ -37,10 +37,10 @@ import { ShowSubscriptionOptionsPopoverComponent } from '@home/components/sessio
     SessionTableHeaderComponent,
     SessionFilterConfigComponent
   ],
-    exports: [
-        SessionsDetailsDialogComponent,
-        SubscriptionsComponent
-    ],
+  exports: [
+      SessionsDetailsDialogComponent,
+      SubscriptionsComponent
+  ],
   imports: [
     CommonModule,
     SharedModule,

@@ -23,6 +23,8 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -36,12 +38,15 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
+import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -61,6 +66,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final MqttMessageGenerator mqttMessageGenerator;
+    private final RateLimitBatchProcessor rateLimitBatchProcessor;
     private final ClientSessionCtx clientSessionCtx;
     @Getter
     private final UUID sessionId = UUID.randomUUID();
@@ -72,6 +79,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         this.clientMqttActorManager = mqttHandlerCtx.getActorManager();
         this.clientLogger = mqttHandlerCtx.getClientLogger();
         this.rateLimitService = mqttHandlerCtx.getRateLimitService();
+        this.mqttMessageGenerator = mqttHandlerCtx.getMqttMessageGenerator();
+        this.rateLimitBatchProcessor = mqttHandlerCtx.getRateLimitBatchProcessor();
         this.clientSessionCtx = new ClientSessionCtx(mqttHandlerCtx, sessionId, sslHandler, initializerName);
     }
 
@@ -159,17 +168,41 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void processPublish(MqttMessage msg) {
-        if (checkLimits(msg)) {
-            clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg));
-        } else {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}][{}] Disconnecting client on rate limits detection!", clientId, sessionId);
+        if (checkClientLimits(msg)) {
+            MqttPublishMsg mqttPublishMsg = NettyMqttConverter.createMqttPublishMsg(sessionId, (MqttPublishMessage) msg);
+            if (rateLimitService.isTotalMsgsLimitEnabled()) {
+                rateLimitBatchProcessor.addMessage(mqttPublishMsg,
+                        mqttMsg -> clientMqttActorManager.processMqttMsg(clientId, mqttMsg),
+                        mqttMsg -> {
+                            processMsgOnRateLimits(mqttMsg.getPublishMsg().getPacketId(), mqttMsg.getPublishMsg().getQosLevel(), "Total rate limits detected");
+                            mqttMsg.release();
+                        });
+                return;
             }
-            disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, "Rate limits detected"));
+            clientMqttActorManager.processMqttMsg(clientId, mqttPublishMsg);
+        } else {
+            MqttPublishMessage mqttPublishMessage = (MqttPublishMessage) msg;
+            processMsgOnRateLimits(mqttPublishMessage.variableHeader().packetId(), mqttPublishMessage.fixedHeader().qosLevel().value(), "Client incoming messages rate limits detected");
         }
     }
 
-    private boolean checkLimits(MqttMessage msg) {
+    private void processMsgOnRateLimits(int packetId, int qos, String message) {
+        if (MqttVersion.MQTT_5.equals(clientSessionCtx.getMqttVersion())) {
+            replyWithAck(packetId, qos);
+        } else {
+            disconnect(new DisconnectReason(DisconnectReasonType.ON_RATE_LIMITS, message));
+        }
+    }
+
+    private void replyWithAck(int packetId, int qos) {
+        if (MqttQoS.AT_LEAST_ONCE.value() == qos) {
+            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(packetId, MqttReasonCodes.PubAck.QUOTA_EXCEEDED));
+        } else if (MqttQoS.EXACTLY_ONCE.value() == qos) {
+            clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId, MqttReasonCodes.PubRec.QUOTA_EXCEEDED));
+        }
+    }
+
+    private boolean checkClientLimits(MqttMessage msg) {
         return rateLimitService.checkIncomingLimits(clientId, sessionId, msg);
     }
 

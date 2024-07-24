@@ -20,8 +20,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 
@@ -32,19 +32,19 @@ import java.util.Set;
 @DaoSqlTest
 public class DevicePacketIdAndSerialNumberServiceTest extends AbstractServiceTest {
 
-    static final String CLIENT_ID1 = "clientId1";
-    static final String CLIENT_ID2 = "clientId2";
+    private final String CLIENT_ID1 = "clientId1";
+    private final String CLIENT_ID2 = "clientId2";
 
     @Autowired
     private DevicePacketIdAndSerialNumberService packetIdAndSerialNumberService;
     @Autowired
-    private CacheManager cacheManager;
+    private CacheNameResolver cacheNameResolver;
 
     Cache cache;
 
     @Before
     public void setUp() {
-        cache = cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
+        cache = cacheNameResolver.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
     }
 
     @Test

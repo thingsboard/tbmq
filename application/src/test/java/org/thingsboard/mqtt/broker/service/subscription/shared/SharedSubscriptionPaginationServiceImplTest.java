@@ -109,6 +109,35 @@ public class SharedSubscriptionPaginationServiceImplTest {
     }
 
     @Test
+    public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithTextSearchAndWithNullClient_thenReturnExpectedResult() {
+        Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
+                new TopicSharedSubscription("another/topic/filter", "g1"), new SharedSubscriptions(
+                        Set.of(
+                                new Subscription("another/topic/filter", getClientSessionInfo("c1"), "g1"),
+                                new Subscription("another/topic/filter", getClientSessionInfo("c2"), "g1")
+                        ),
+                        Set.of()
+                )
+        );
+        when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(null);
+
+        PageLink pageLink = new PageLink(100, 0);
+        PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
+
+        assertEquals(1, pageData.getData().size());
+        assertEquals(1, pageData.getTotalPages());
+        assertEquals(1, pageData.getTotalElements());
+        assertFalse(pageData.hasNext());
+
+        SharedSubscriptionDto sharedSubscriptionDto = pageData.getData().get(0);
+        assertEquals("g1", sharedSubscriptionDto.getShareName());
+        assertEquals("another/topic/filter", sharedSubscriptionDto.getTopicFilter());
+        assertEquals(1, sharedSubscriptionDto.getClients().size());
+    }
+
+    @Test
     public void givenSharedSubscriptions_whenExecuteGetSharedSubscriptionsWithAbsentTextSearch_thenReturnExpectedResult() {
         Map<TopicSharedSubscription, SharedSubscriptions> map = Map.of(
                 new TopicSharedSubscription("test/topic/filter", "s1"), new SharedSubscriptions(

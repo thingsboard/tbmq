@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,12 +34,11 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
+public class KafkaPublishMsgQueueFactory extends AbstractQueueFactory implements PublishMsgQueueFactory {
 
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
@@ -62,8 +62,8 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(publishMsgSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("msg-all-producer");
-        producerBuilder.defaultTopic(publishMsgSettings.getTopic());
+        producerBuilder.clientId(kafkaPrefix + "msg-all-producer");
+        producerBuilder.defaultTopic(publishMsgSettings.getKafkaTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -73,11 +73,11 @@ public class KafkaPublishMsgQueueFactory implements PublishMsgQueueFactory {
     @Override
     public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
-        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getTopic(), publishMsgSettings.getAdditionalConsumerConfig()));
-        consumerBuilder.topic(publishMsgSettings.getTopic());
+        consumerBuilder.properties(consumerSettings.toProps(publishMsgSettings.getKafkaTopic(), publishMsgSettings.getAdditionalConsumerConfig()));
+        consumerBuilder.topic(publishMsgSettings.getKafkaTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("msg-all-consumer-" + id);
-        consumerBuilder.groupId("msg-all-consumer-group");
+        consumerBuilder.clientId(kafkaPrefix + "msg-all-consumer-" + id);
+        consumerBuilder.groupId(kafkaPrefix + "msg-all-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

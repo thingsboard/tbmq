@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.dao.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
 import lombok.extern.slf4j.Slf4j;
 import org.owasp.validator.html.AntiSamy;
 import org.owasp.validator.html.Policy;
@@ -23,8 +25,6 @@ import org.owasp.validator.html.PolicyException;
 import org.owasp.validator.html.ScanException;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
 import java.util.Optional;
 
 @Slf4j

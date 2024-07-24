@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -100,6 +101,7 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
         return allSubscriptions
                 .stream()
                 .map(this::getClientSessionState)
+                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -117,6 +119,9 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
 
     private ClientSessionState getClientSessionState(Subscription subscription) {
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(subscription.getClientId());
+        if (clientSessionInfo == null) {
+            return null;
+        }
         return new ClientSessionState(clientSessionInfo.getClientId(), clientSessionInfo.getType(), clientSessionInfo.isConnected());
     }
 

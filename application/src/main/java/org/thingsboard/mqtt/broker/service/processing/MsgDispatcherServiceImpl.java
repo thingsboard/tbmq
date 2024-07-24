@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import com.google.common.collect.Maps;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,7 @@ import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -58,7 +60,6 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -87,6 +88,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final RateLimitService rateLimitService;
 
     private MessagesStats producerStats;
     private PublishMsgProcessingTimerStats publishMsgProcessingTimerStats;
@@ -236,6 +238,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
         int clientSubscriptionsSize = clientSubscriptions.size();
         if (clientSubscriptionsSize == 0) {
+            log.trace("Found 0 subscriptions for [{}] msg", publishMsgProto);
+            return null;
+        }
+        clientSubscriptions = applyTotalMsgsRateLimits(clientSubscriptions);
+        if (clientSubscriptions.isEmpty()) {
             return null;
         }
 
@@ -261,6 +268,21 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                     null
             );
         }
+    }
+
+    List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
+        if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
+            if (availableTokens == 0) {
+                log.debug("No available tokens left for total msgs bucket");
+                return Collections.emptyList();
+            }
+            if (log.isDebugEnabled() && availableTokens < clientSubscriptions.size()) {
+                log.debug("Hitting total messages rate limits on subscriptions processing. Skipping {} messages", clientSubscriptions.size() - availableTokens);
+            }
+            return clientSubscriptions.subList(0, availableTokens);
+        }
+        return clientSubscriptions;
     }
 
     private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,

@@ -16,6 +16,13 @@
 package org.thingsboard.mqtt.broker.dao.model.sql;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -25,14 +32,6 @@ import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
 
 @Data
 @EqualsAndHashCode

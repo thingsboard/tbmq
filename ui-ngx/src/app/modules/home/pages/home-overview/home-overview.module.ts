@@ -26,7 +26,7 @@ import { CardConfigComponent } from '@home/components/card-config/card-config.co
 import { KafkaBrokersHomeTableComponent } from '@home/components/kafka-tables/kafka-brokers-home-table.component';
 import { HomeCardsSessionsCredentialsComponent } from '@home/components/home-cards-sessions-credentials/home-cards-sessions-credentials.component';
 import { KafkaTablesTabGroupComponent } from '@home/components/kafka-tables/kafka-tables-tab-group.component';
-import { GettingStartedComponent } from '@home/components/getting-started/getting-started.component';
+import { GettingStartedHomeComponent } from '@home/components/getting-started/getting-started-home.component';
 import { EntitiesTableHomeComponent } from '@home/components/entity/entities-table-home.component';
 import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-credentials/home-cards-table.component';
 
@@ -41,7 +41,7 @@ import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-cr
     CardConfigComponent,
     KafkaBrokersHomeTableComponent,
     KafkaTablesTabGroupComponent,
-    GettingStartedComponent,
+    GettingStartedHomeComponent,
     EntitiesTableHomeComponent
   ],
   imports: [

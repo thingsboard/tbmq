@@ -117,8 +117,13 @@ public class BrokerInitializer {
 
     private Map<String, ClientSessionInfo> filterAndDisconnectCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
         Map<String, ClientSessionInfo> currentNodeSessions = Maps.newHashMapWithExpectedSize(allClientSessions.size());
+        int applicationClientsCount = 0;
         for (Map.Entry<String, ClientSessionInfo> entry : allClientSessions.entrySet()) {
             ClientSessionInfo clientSessionInfo = entry.getValue();
+
+            if (clientSessionInfo.isPersistentAppClient()) {
+                applicationClientsCount++;
+            }
 
             if (sessionWasOnThisNode(clientSessionInfo)) {
                 if (isCleanSession(clientSessionInfo)) {
@@ -128,6 +133,7 @@ public class BrokerInitializer {
                 currentNodeSessions.put(entry.getKey(), disconnectedClientSession);
             }
         }
+        rateLimitCacheService.initApplicationClientsCount(applicationClientsCount);
         log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
         return currentNodeSessions;
     }

@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,13 +52,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -68,8 +65,6 @@ import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCa
 @Service
 @RequiredArgsConstructor
 public class SessionClusterManagerImpl implements SessionClusterManager {
-
-    private final ScheduledExecutorService timeoutExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
@@ -94,12 +89,6 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         this.eventResponseProducer = clientSessionEventQueueFactory.createEventResponseProducer(serviceInfoProvider.getServiceId());
         this.eventResponseSenderExecutor = Executors.newFixedThreadPool(eventResponseSenderThreads);
     }
-
-    // TODO: it's possible that we get not-relevant data since consumer didn't get message yet, this can happen if node just got control over this clientId. Solutions:
-    //          - force wait till the end of the topic using dummy session
-    //          - gain more control over reassigning partitions + do some sync logic on reassign
-    //          - remake logic to ensure that the 'leader' for client has all information (look at Raft algorithm)
-    //          - save with 'version' field and if ClientSession listener encounters version conflict - merge two values or do smth else (at least log that smth is wrong)
 
     @Override
     public void processConnectionRequest(SessionInfo sessionInfo, ConnectionRequestInfo requestInfo) {
@@ -128,14 +117,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             }
         }
 
-        PreviousSessionInfo previousSessionInfo = getPreviousSessionInfo(currentClientSession);
-        updateClientSession(sessionInfo, requestInfo, previousSessionInfo);
+        SessionInfo currentSessionInfo = getCurrentSessionInfo(currentClientSession);
+        updateClientSession(sessionInfo, requestInfo, currentSessionInfo);
     }
 
     void updateClientSession(SessionInfo sessionInfo, ConnectionRequestInfo connectionRequestInfo,
-                             PreviousSessionInfo previousSessionInfo) {
+                             SessionInfo currentSessionInfo) {
         ClientInfo clientInfo = sessionInfo.getClientInfo();
-        boolean sessionPresent = previousSessionInfo != null;
+        boolean sessionPresent = currentSessionInfo != null;
         if (log.isTraceEnabled()) {
             log.trace("[{}] Updating client session.", clientInfo.getClientId());
         }
@@ -143,17 +132,26 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
         AtomicInteger finishedOperations = new AtomicInteger(0);
 
-        boolean needClearPreviousSession = sessionPresent && sessionInfo.isCleanStart();
-        if (needClearPreviousSession) {
+        boolean decrementedAppClientsCount = false;
+
+        boolean needClearCurrentSession = sessionPresent && sessionInfo.isCleanStart();
+        if (needClearCurrentSession) {
             if (log.isTraceEnabled()) {
-                log.trace("[{}][{}] Clearing prev persisted session.", clientInfo.getType(), clientInfo.getClientId());
+                log.trace("[{}][{}] Clearing current persisted session.", clientInfo.getType(), clientInfo.getClientId());
+            }
+            if (currentSessionInfo.isPersistentAppClient()) {
+                rateLimitCacheService.decrementApplicationClientsCount();
+                decrementedAppClientsCount = true;
             }
             clearSubscriptionsAndSendResponseIfReady(clientInfo, connectionRequestInfo, finishedOperations, wasErrorProcessed);
             clearPersistedMessages(clientInfo);
         }
 
-        boolean applicationRemoved = isApplicationRemoved(previousSessionInfo, clientInfo);
+        boolean applicationRemoved = isApplicationRemoved(currentSessionInfo, clientInfo);
         if (applicationRemoved) {
+            if (!decrementedAppClientsCount && currentSessionInfo.isPersistentAppClient()) {
+                rateLimitCacheService.decrementApplicationClientsCount();
+            }
             clearPersistedMessages(clientInfo);
             applicationRemovedEventService.sendApplicationRemovedEvent(clientInfo.getClientId());
         }
@@ -161,12 +159,12 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         ClientSession clientSession = prepareClientSession(sessionInfo);
         clientSessionService.saveClientSession(clientInfo.getClientId(), clientSession, createCallback(
                 () -> {
-                    if (!needClearPreviousSession || finishedOperations.incrementAndGet() >= 2) {
+                    if (!needClearCurrentSession || finishedOperations.incrementAndGet() >= 2) {
                         sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, true, sessionPresent);
                     }
                 },
                 t -> {
-                    if (!needClearPreviousSession || !wasErrorProcessed.getAndSet(true)) {
+                    if (!needClearCurrentSession || !wasErrorProcessed.getAndSet(true)) {
                         sendEventResponse(clientInfo.getClientId(), connectionRequestInfo, false, sessionPresent);
                     }
                 }));
@@ -206,7 +204,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             ClientSession clientSession = getClientSessionForClient(clientId);
             if (clientSession == null) {
                 Set<TopicSubscription> clientSubscriptions = getClientSubscriptionsForClient(clientId);
-                log.warn("[{}] Trying to clear non-existent session, session subscriptions - {}", clientId, clientSubscriptions);
+                log.debug("[{}] Trying to clear non-existent session, session subscriptions - {}", clientId, clientSubscriptions);
                 if (!CollectionUtils.isEmpty(clientSubscriptions)) {
                     clearClientSubscriptions(clientId);
                 }
@@ -223,6 +221,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                         log.debug("[{}][{}] Clearing client session.", clientId, currentSessionId);
                     }
                     rateLimitCacheService.decrementSessionCount();
+                    if (clientSession.getSessionInfo().isPersistentAppClient()) {
+                        rateLimitCacheService.decrementApplicationClientsCount();
+                    }
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                 }
@@ -269,23 +270,22 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return true;
     }
 
-    private ClientSession markSessionDisconnected(ClientSession clientSession, int sessionExpiryInterval) {
+    ClientSession markSessionDisconnected(ClientSession clientSession, int sessionExpiryInterval) {
         ConnectionInfo connectionInfo = clientSession.getSessionInfo().getConnectionInfo().toBuilder()
                 .disconnectedAt(System.currentTimeMillis())
                 .build();
-        SessionInfo sessionInfo = clientSession.getSessionInfo().toBuilder()
-                .connectionInfo(connectionInfo)
-                .build();
-        sessionInfo = sessionExpiryInterval == -1 ? sessionInfo :
-                sessionInfo.toBuilder().sessionExpiryInterval(sessionExpiryInterval).build();
+        SessionInfo.SessionInfoBuilder sessionInfoBuilder = clientSession.getSessionInfo().toBuilder()
+                .connectionInfo(connectionInfo);
+        SessionInfo sessionInfo = sessionExpiryInterval == -1 ? sessionInfoBuilder.build() :
+                sessionInfoBuilder.sessionExpiryInterval(sessionExpiryInterval).build();
         return clientSession.toBuilder()
                 .connected(false)
                 .sessionInfo(sessionInfo)
                 .build();
     }
 
-    private boolean isApplicationRemoved(PreviousSessionInfo previousSessionInfo, ClientInfo clientInfo) {
-        return previousSessionInfo != null && previousSessionInfo.getClientType() == ClientType.APPLICATION
+    private boolean isApplicationRemoved(SessionInfo currentSessionInfo, ClientInfo clientInfo) {
+        return currentSessionInfo != null && currentSessionInfo.getClientType() == ClientType.APPLICATION
                 && clientInfo.getType() == ClientType.DEVICE;
     }
 
@@ -403,12 +403,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         return currentlyConnectedSession == null ? null : getSessionIdFromClientSession(currentlyConnectedSession);
     }
 
-    private PreviousSessionInfo getPreviousSessionInfo(ClientSession currentlyConnectedSession) {
-        return currentlyConnectedSession == null ? null : createPreviousSessionInfo(currentlyConnectedSession);
-    }
-
-    private PreviousSessionInfo createPreviousSessionInfo(ClientSession currentlyConnectedSession) {
-        return new PreviousSessionInfo(currentlyConnectedSession.getSessionInfo().getClientInfo().getType());
+    private SessionInfo getCurrentSessionInfo(ClientSession currentClientSession) {
+        return currentClientSession == null ? null : currentClientSession.getSessionInfo();
     }
 
     private UUID getSessionIdFromClientSession(ClientSession clientSession) {
@@ -420,15 +416,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (eventResponseProducer != null) {
             eventResponseProducer.stop();
         }
-        timeoutExecutor.shutdownNow();
         if (eventResponseSenderExecutor != null) {
             eventResponseSenderExecutor.shutdownNow();
         }
-    }
-
-    @Data
-    @AllArgsConstructor
-    static final class PreviousSessionInfo {
-        private final ClientType clientType;
     }
 }

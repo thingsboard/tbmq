@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,6 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Properties;
 
@@ -45,7 +45,7 @@ import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptionsQueueFactory {
+public class KafkaClientSubscriptionsQueueFactory extends AbstractQueueFactory implements ClientSubscriptionsQueueFactory {
 
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
 
@@ -76,8 +76,8 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSubscriptionsSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("client-subscriptions-producer");
-        producerBuilder.defaultTopic(clientSubscriptionsSettings.getTopic());
+        producerBuilder.clientId(kafkaPrefix + "client-subscriptions-producer");
+        producerBuilder.defaultTopic(clientSubscriptionsSettings.getKafkaTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -88,14 +88,14 @@ public class KafkaClientSubscriptionsQueueFactory implements ClientSubscriptions
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getTopic(), clientSubscriptionsSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(clientSubscriptionsSettings.getKafkaTopic(), clientSubscriptionsSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ClientSubscriptionsQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
-        consumerBuilder.topic(clientSubscriptionsSettings.getTopic());
+        consumerBuilder.topic(clientSubscriptionsSettings.getKafkaTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("client-subscriptions-consumer-" + consumerId);
-        consumerBuilder.groupId(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX + groupId);
+        consumerBuilder.clientId(kafkaPrefix + "client-subscriptions-consumer-" + consumerId);
+        consumerBuilder.groupId(kafkaPrefix + BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSubscriptionsProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);

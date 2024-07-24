@@ -106,6 +106,9 @@ public class ClientActor extends ContextAwareActor {
                     log.debug("[{}][{}] Received {} for another sessionId - {}.",
                             state.getClientId(), state.getCurrentSessionId(), msg.getMsgType(), ((SessionDependentMsg) msg).getSessionId());
                 }
+                if (msg instanceof QueueableMqttMsg) {
+                    ((QueueableMqttMsg) msg).release();
+                }
                 return true;
             }
 

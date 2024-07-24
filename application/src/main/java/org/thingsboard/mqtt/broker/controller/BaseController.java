@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -46,9 +47,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionClea
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -74,6 +75,8 @@ public abstract class BaseController {
     protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
     @Autowired
     protected ClientSessionCleanUpService clientSessionCleanUpService;
+    @Autowired
+    protected SystemSecurityService systemSecurityService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter

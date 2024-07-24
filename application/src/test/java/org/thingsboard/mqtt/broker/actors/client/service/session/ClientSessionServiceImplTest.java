@@ -43,10 +43,10 @@ import static org.mockito.Mockito.spy;
 @RunWith(MockitoJUnitRunner.class)
 public class ClientSessionServiceImplTest {
 
-    private static final String TEST_SERVICE_ID = "testServiceId";
-    private static final String DEFAULT_CLIENT_ID = "test";
-    private static final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;
-    private static final ClientSession DEFAULT_CLIENT_SESSION = ClientSession.builder()
+    private final String TEST_SERVICE_ID = "testServiceId";
+    private final String DEFAULT_CLIENT_ID = "test";
+    private final ClientType DEFAULT_CLIENT_TYPE = ClientType.DEVICE;
+    private final ClientSession DEFAULT_CLIENT_SESSION = ClientSession.builder()
             .connected(true)
             .sessionInfo(SessionInfo.builder()
                     .sessionId(UUID.randomUUID())

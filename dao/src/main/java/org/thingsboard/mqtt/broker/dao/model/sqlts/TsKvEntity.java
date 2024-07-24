@@ -15,12 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao.model.sqlts;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import javax.persistence.Entity;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
 
 @EqualsAndHashCode(callSuper = true)
 @Data

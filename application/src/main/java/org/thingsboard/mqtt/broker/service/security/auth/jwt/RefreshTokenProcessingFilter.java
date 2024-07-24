@@ -16,6 +16,10 @@
 package org.thingsboard.mqtt.broker.service.security.auth.jwt;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
@@ -30,10 +34,6 @@ import org.thingsboard.mqtt.broker.service.security.auth.RefreshAuthenticationTo
 import org.thingsboard.mqtt.broker.service.security.exception.AuthMethodNotSupportedException;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Slf4j

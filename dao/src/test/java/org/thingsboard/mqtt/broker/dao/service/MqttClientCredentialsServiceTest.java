@@ -23,8 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
@@ -55,7 +55,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    private CacheManager cacheManager;
+    private CacheNameResolver cacheNameResolver;
 
     Cache mqttClientCredentialsCache;
     Cache basicCredentialsPasswordCache;
@@ -63,9 +63,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Before
     public void setUp() {
-        mqttClientCredentialsCache = cacheManager.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
-        basicCredentialsPasswordCache = cacheManager.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
-        sslRegexBasedCredentialsCache = cacheManager.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
+        mqttClientCredentialsCache = cacheNameResolver.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+        basicCredentialsPasswordCache = cacheNameResolver.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
+        sslRegexBasedCredentialsCache = cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
     }
 
     @After

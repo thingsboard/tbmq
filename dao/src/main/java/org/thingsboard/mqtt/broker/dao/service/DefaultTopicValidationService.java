@@ -19,6 +19,7 @@ import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 
@@ -83,7 +84,7 @@ public class DefaultTopicValidationService implements TopicValidationService {
         if (topic.isEmpty()) {
             throw new DataValidationException("Topic Names and Topic Filters must be at least one character long.");
         }
-        if (topic.contains("\u0000")) {
+        if (topic.contains(BrokerConstants.NULL_CHAR_STR)) {
             throw new DataValidationException("Topic Names and Topic Filters must not include the null character (Unicod U+0000).");
         }
         if (topic.length() > MAX_SIZE_BYTES) {
