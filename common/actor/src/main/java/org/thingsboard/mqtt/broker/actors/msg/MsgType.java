@@ -16,23 +16,16 @@
 package org.thingsboard.mqtt.broker.actors.msg;
 
 public enum MsgType {
+
     // Device Msg Types
     DEVICE_CONNECTED_EVENT_MSG,
-
     SHARED_SUBSCRIPTION_EVENT_MSG,
-
     DEVICE_DISCONNECTED_EVENT_MSG,
-
     PACKET_ACKNOWLEDGED_EVENT_MSG,
-
     PACKET_RECEIVED_EVENT_MSG,
-
     PACKET_RECEIVED_NO_DELIVERY_EVENT_MSG,
-
     PACKET_COMPLETED_EVENT_MSG,
-
     INCOMING_PUBLISH_MSG,
-
     STOP_DEVICE_ACTOR_COMMAND_MSG,
 
     // Client Session MQTT Msg Types
@@ -63,9 +56,11 @@ public enum MsgType {
     CONNECTION_REQUEST_MSG,
     REMOVE_APPLICATION_TOPIC_REQUEST_MSG,
 
+    // Admin subscribe and unsubscribe Msg Types
     SUBSCRIBE_COMMAND_MSG,
     UNSUBSCRIBE_COMMAND_MSG,
 
+    // Subscription update Inter-Cluster Msg Type
     SUBSCRIPTION_CHANGED_EVENT_MSG,
     ;
 }
