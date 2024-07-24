@@ -142,8 +142,11 @@ export class ConnectionComponent implements OnInit {
   }
 
   private connectAndSelect(connection: WebSocketConnection) {
+    this.mqttJsClientService.notifyClientConnecting();
     this.mqttJsClientService.disconnectClient(connection);
-    this.mqttJsClientService.connectClient(connection, connection?.configuration?.password);
-    this.mqttJsClientService.selectConnection(connection);
+    setTimeout(() => {
+      this.mqttJsClientService.connectClient(connection, connection?.configuration?.password, false);
+      this.mqttJsClientService.selectConnection(connection);
+    }, 500);
   }
 }

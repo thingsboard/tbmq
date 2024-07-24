@@ -20,10 +20,10 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
+  Input, OnChanges,
   OnDestroy,
   OnInit,
-  Optional,
+  Optional, SimpleChanges,
   TemplateRef,
   ViewChild,
   ViewContainerRef
@@ -42,7 +42,7 @@ import {
   WsQoSTypes
 } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
-import { MessageFilterConfig } from '@shared/models/ws-client.model';
+import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } from '@shared/models/ws-client.model';
 
 export const MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('MessageFilterConfigData');
 
@@ -65,7 +65,7 @@ export interface MessageFilterConfigData {
     }
   ]
 })
-export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
+export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 
   @ViewChild('messageFilterPanel')
   filterPanel: TemplateRef<any>;
@@ -80,18 +80,17 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   @Input()
   propagatedFilter = true;
 
-  initialFilterConfig: MessageFilterConfig = {
-    topic: null,
-    qosList: null,
-    retainList: null
-  };
+  @Input()
+  connectionChanged: WebSocketConnection;
+
+  initialFilterConfig: MessageFilterConfig = MessageFilterDefaultConfig;
 
   qosOptions = WsQoSTypes;
   retainedOptions = [true, false];
 
   panelMode = false;
 
-  buttonDisplayValue = this.translate.instant('ws-client.messages.filter');
+  buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
 
   filterConfigForm: UntypedFormGroup;
 
@@ -146,6 +145,17 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   ngOnDestroy(): void {
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'connectionChanged' && change.currentValue) {
+          this.onChangeConnection();
+        }
+      }
+    }
   }
 
   registerOnChange(fn: any): void {
@@ -258,20 +268,27 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   private updateButtonDisplayValue() {
       if (this.buttonMode) {
         const filterTextParts: string[] = [];
-        if (this.filterConfig?.topic?.length) {
-          filterTextParts.push(`${this.translate.instant('retained-message.topic')}: ${this.filterConfig?.topic}`);
-        }
         if (this.filterConfig?.qosList?.length) {
-          filterTextParts.push(`${this.translate.instant('mqtt-client-session.qos')}: ${this.filterConfig.qosList.join(', ')}`);
+          filterTextParts.push(`${this.filterConfig.qosList.join(', ')}`);
         }
         if (this.filterConfig?.retainList?.length) {
-          filterTextParts.push(`${this.translate.instant('ws-client.last-will.retain')}: ${this.filterConfig.retainList.join(', ')}`);
+          filterTextParts.push(`${this.filterConfig.retainList.join(', ')}`);
+        }
+        if (this.filterConfig?.topic?.length) {
+          filterTextParts.push(`${this.filterConfig?.topic}`);
         }
         if (!filterTextParts.length) {
-          this.buttonDisplayValue = '';
+          this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
         } else {
-          this.buttonDisplayValue = `${filterTextParts.join('; ')}`;
+          this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title') + `: ${filterTextParts.join('; ')}`;
         }
       }
     }
+
+  private onChangeConnection() {
+    this.updateConfigForm(this.initialFilterConfig);
+    this.filterConfigForm.markAsPristine();
+    this.filterConfig = MessageFilterDefaultConfig;
+    this.updateButtonDisplayValue();
+  }
 }

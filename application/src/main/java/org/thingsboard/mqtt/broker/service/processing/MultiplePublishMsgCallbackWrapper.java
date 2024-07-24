@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MultiplePublishMsgCallbackWrapper implements PublishMsgCallback {
+
     private final AtomicInteger callbackCount;
     private final PublishMsgCallback callback;
 

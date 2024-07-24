@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.stats;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -32,8 +35,6 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettin
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,12 +50,16 @@ import java.util.concurrent.TimeUnit;
 @Component
 @RequiredArgsConstructor
 public class TbKafkaConsumerStatsService {
+
     private final Set<String> monitoredGroups = ConcurrentHashMap.newKeySet();
 
     private final TbKafkaAdminSettings adminSettings;
     private final StatsConsumerKafkaSettings statsConsumerSettings;
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaConsumerStatisticConfig statsConfig;
+
+    @Value("${queue.kafka.kafka-prefix:}")
+    private String kafkaPrefix;
 
     private AdminClient adminClient;
     private Consumer<String, byte[]> consumer;
@@ -69,8 +74,8 @@ public class TbKafkaConsumerStatsService {
         this.statsPrintScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("kafka-consumer-stats"));
 
         Properties consumerProps = consumerSettings.toProps("stats_dummy", statsConsumerSettings.getConsumerProperties());
-        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "consumer-stats-loader-client");
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "consumer-stats-loader-client-group");
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "consumer-stats-loader-client");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "consumer-stats-loader-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         this.consumer = new KafkaConsumer<>(consumerProps);

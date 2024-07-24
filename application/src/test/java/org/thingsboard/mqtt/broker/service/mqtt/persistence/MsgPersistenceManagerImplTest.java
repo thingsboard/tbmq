@@ -27,10 +27,12 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -45,8 +47,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -67,6 +71,7 @@ public class MsgPersistenceManagerImplTest {
     DeviceMsgQueuePublisher deviceMsgQueuePublisher;
     DevicePersistenceProcessor devicePersistenceProcessor;
     ClientLogger clientLogger;
+    RateLimitService rateLimitService;
     MsgPersistenceManagerImpl msgPersistenceManager;
 
     @Before
@@ -77,22 +82,21 @@ public class MsgPersistenceManagerImplTest {
         deviceMsgQueuePublisher = mock(DeviceMsgQueuePublisher.class);
         devicePersistenceProcessor = mock(DevicePersistenceProcessor.class);
         clientLogger = mock(ClientLogger.class);
+        rateLimitService = mock(RateLimitService.class);
 
         msgPersistenceManager = spy(new MsgPersistenceManagerImpl(
                 genericClientSessionCtxManager, applicationMsgQueuePublisher, applicationPersistenceProcessor,
-                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger));
+                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger, rateLimitService));
 
         ctx = mock(ClientSessionCtx.class);
-
         sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-
         clientInfo = mock(ClientInfo.class);
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
     }
 
     @Test
     public void testProcessPublish() {
+        when(rateLimitService.isDevicePersistedMsgsLimitEnabled()).thenReturn(false);
+
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
@@ -102,7 +106,7 @@ public class MsgPersistenceManagerImplTest {
                 ),
                 List.of(
                         createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
-                        createSubscription("topic4", 0, "appClientId4", ClientType.APPLICATION)
+                        createSubscription("topic4", 2, "appClientId4", ClientType.APPLICATION)
                 ),
                 Collections.emptySet()
         );
@@ -125,6 +129,69 @@ public class MsgPersistenceManagerImplTest {
     }
 
     @Test
+    public void given1TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcess1SendAndOtherCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(1L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, times(1)).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, times(2)).onSuccess();
+    }
+
+    @Test
+    public void given0TokenAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessNoSendsAndAllCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(0L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, never()).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, times(3)).onSuccess();
+    }
+
+    @Test
+    public void givenAllTokensAvailable_whenProcessDeviceSubscriptionsWithRateLimits_thenProcessAllSendsAndNoCallbacks() {
+        PublishMsgCallback callbackWrapper = mock(PublishMsgCallback.class);
+
+        List<Subscription> subscriptions = List.of(
+                createSubscription("tf1", 1, "client1", ClientType.DEVICE),
+                createSubscription("tf2", 2, "client2", ClientType.DEVICE),
+                createSubscription("tf3", 1, "client3", ClientType.DEVICE)
+        );
+        PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
+        PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
+
+        when(rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(anyLong())).thenReturn(3L);
+
+        msgPersistenceManager.processDeviceSubscriptionsWithRateLimits(subscriptions, publishMsgWithId, callbackWrapper);
+
+        verify(deviceMsgQueuePublisher, times(3)).sendMsg(
+                any(), any(), any());
+        verify(callbackWrapper, never()).onSuccess();
+    }
+
+    @Test
     public void testProcessPublishWhenNoSubscriptions() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
@@ -134,7 +201,8 @@ public class MsgPersistenceManagerImplTest {
                 null
         );
 
-        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);
+        PublishMsgCallback callback = mock(PublishMsgCallback.class);
+        msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, callback);
 
         verify(deviceMsgQueuePublisher, times(0)).sendMsg(
                 any(), any(), any());
@@ -158,11 +226,11 @@ public class MsgPersistenceManagerImplTest {
         ClientActorStateInfo actorState = mock(ClientActorStateInfo.class);
         when(actorState.getCurrentSessionCtx()).thenReturn(ctx);
 
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
         verify(applicationPersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(actorState));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.startProcessingPersistedMessages(actorState, false);
         verify(devicePersistenceProcessor, times(1)).startProcessingPersistedMessages(eq(ctx));
         verify(devicePersistenceProcessor, times(1)).clearPersistedMsgs(any());
@@ -175,11 +243,11 @@ public class MsgPersistenceManagerImplTest {
     public void testStartProcessingSharedSubscriptions() {
         Set<TopicSharedSubscription> subscriptions = Set.of(new TopicSharedSubscription("#", "g1"));
 
-        when(clientInfo.getType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
         verify(applicationPersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
 
-        when(clientInfo.getType()).thenReturn(ClientType.DEVICE);
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.startProcessingSharedSubscriptions(ctx, subscriptions);
         verify(devicePersistenceProcessor, times(1)).startProcessingSharedSubscriptions(eq(ctx), eq(subscriptions));
     }
@@ -236,6 +304,17 @@ public class MsgPersistenceManagerImplTest {
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
         msgPersistenceManager.processPubRec(ctx, 1);
         verify(devicePersistenceProcessor, times(1)).processPubRec(any(), eq(1));
+    }
+
+    @Test
+    public void processPubRecNoPubRelDelivery() {
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        msgPersistenceManager.processPubRecNoPubRelDelivery(ctx, 1);
+        verify(applicationPersistenceProcessor, times(1)).processPubRecNoPubRelDelivery(any(), eq(1));
+
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        msgPersistenceManager.processPubRecNoPubRelDelivery(ctx, 1);
+        verify(devicePersistenceProcessor, times(1)).processPubRecNoPubRelDelivery(any(), eq(1));
     }
 
     @Test

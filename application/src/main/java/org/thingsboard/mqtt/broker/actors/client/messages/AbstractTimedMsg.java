@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.messages;
 import org.thingsboard.mqtt.broker.actors.shared.TimedMsg;
 
 public abstract class AbstractTimedMsg implements TimedMsg {
+
     private final long createdTimeNanos = System.nanoTime();
 
     @Override

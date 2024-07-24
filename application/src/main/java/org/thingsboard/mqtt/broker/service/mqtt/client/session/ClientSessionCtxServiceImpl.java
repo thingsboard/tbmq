@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,10 +23,10 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Slf4j
@@ -37,9 +38,12 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
     private final StatsManager statsManager;
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
+    private AtomicLong sslSessionCounter;
+
     @PostConstruct
     public void init() {
         statsManager.registerActiveSessionsStats(clientContextMap);
+        sslSessionCounter = statsManager.registerActiveSslSessionsStats();
     }
 
     @Override
@@ -49,6 +53,9 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
             log.trace("Executing registerSession: {}. Current size: {}", clientId, clientContextMap.size());
         }
         clientContextMap.put(clientId, clientSessionCtx);
+        if (clientSessionCtx.getSslHandler() != null) {
+            sslSessionCounter.incrementAndGet();
+        }
     }
 
     @Override
@@ -56,7 +63,10 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
         if (isTraceEnabled) {
             log.trace("Executing unregisterSession: {}. Current size: {}", clientId, clientContextMap.size());
         }
-        clientContextMap.remove(clientId);
+        ClientSessionCtx remove = clientContextMap.remove(clientId);
+        if (remove != null && remove.getSslHandler() != null) {
+            sslSessionCounter.decrementAndGet();
+        }
     }
 
     @Override

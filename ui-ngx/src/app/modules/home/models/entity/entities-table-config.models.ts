@@ -53,9 +53,7 @@ export type CopyCellContent<T extends BaseData> = (entity: T, key: string, lengt
 
 export enum CellActionDescriptorType { 'DEFAULT', 'COPY_BUTTON'}
 
-type AnyOrBaseData = any | BaseData;
-
-export interface CellActionDescriptor<T extends AnyOrBaseData> {
+export interface CellActionDescriptor<T extends BaseData> {
   name: string;
   nameFunction?: (entity: T) => string;
   icon?: string;
@@ -63,7 +61,6 @@ export interface CellActionDescriptor<T extends AnyOrBaseData> {
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
   type?: CellActionDescriptorType;
-  showOnHover?: boolean;
 }
 
 export interface GroupActionDescriptor<T extends BaseData> {
@@ -170,7 +167,6 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultTimewindowInterval = historyInterval(DAY);
   entityType: EntityType = null;
   tableTitle = '';
-  noDataLabel: string = null;
   selectionEnabled = true;
   defaultCursor = false;
   searchEnabled = true;
@@ -190,8 +186,6 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   defaultPageSize = 10;
   columns: Array<EntityColumn<L>> = [];
   cellActionDescriptors: Array<CellActionDescriptor<L>> = [];
-  cellMoreActionDescriptors: Array<CellActionDescriptor<L>> = [];
-  cellHiddenActionDescriptors: Array<CellActionDescriptor<L>> = [];
   groupActionDescriptors: Array<GroupActionDescriptor<L>> = [];
   headerActionDescriptors: Array<HeaderActionDescriptor> = [];
   addActionDescriptors: Array<HeaderActionDescriptor> = [];

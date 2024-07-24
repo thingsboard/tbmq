@@ -20,16 +20,19 @@
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-ssl' | translate }}"></div>
     <mat-form-field class="mat-block">
-      <mat-label translate>mqtt-client-credentials.certificate-common-name</mat-label>
-      <input required matInput formControlName="certCommonName">
-      <tb-copy-button [fxShow]="credentialsMqttFormGroup?.get('certCommonName').value?.length" matSuffix
-                      [copyText]="credentialsMqttFormGroup?.get('certCommonName').value">
+      <mat-label>{{ certificateCnLabel | translate }}</mat-label>
+      <input required matInput formControlName="certCnPattern">
+      <tb-copy-button [fxShow]="credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
+                      [copyText]="credentialsMqttFormGroup?.get('certCnPattern').value">
       </tb-copy-button>
-      <mat-error *ngIf="credentialsMqttFormGroup.get('certCommonName').hasError('required')">
+      <mat-error *ngIf="credentialsMqttFormGroup.get('certCnPattern').hasError('required')">
         {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
       </mat-error>
     </mat-form-field>
-    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-ssl-cert-common-name' | translate }}"></div>
+    <div class="tb-hint" [innerHTML]="certificateCnHint | translate"></div>
+    <mat-slide-toggle formControlName="certCnIsRegex" style="padding: 8px 0 16px 8px">
+      {{ 'mqtt-client-credentials.certificate-common-name-regex' | translate }}
+    </mat-slide-toggle>
   </fieldset>
   <tb-auth-rules [entity]="entity" formControlName="authRulesMapping"></tb-auth-rules>
 </section>

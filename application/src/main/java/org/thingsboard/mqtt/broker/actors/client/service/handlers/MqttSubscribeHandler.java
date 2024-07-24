@@ -30,10 +30,12 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -71,6 +73,7 @@ public class MqttSubscribeHandler {
     private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
     private final MsgPersistenceManager msgPersistenceManager;
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    private final RateLimitService rateLimitService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
@@ -184,7 +187,26 @@ public class MqttSubscribeHandler {
                                          List<TopicSubscription> newSubscriptions,
                                          Set<TopicSubscription> currentSubscriptions) {
         Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
+        retainedMsgSet = applyRateLimits(retainedMsgSet);
         retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+    }
+
+    Set<RetainedMsg> applyRateLimits(Set<RetainedMsg> retainedMsgSet) {
+        if (rateLimitService.isTotalMsgsLimitEnabled()) {
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgSet.size());
+            if (availableTokens == 0) {
+                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgSet.size());
+                return Collections.emptySet();
+            }
+            if (availableTokens == retainedMsgSet.size()) {
+                return retainedMsgSet;
+            }
+            if (log.isDebugEnabled() && availableTokens < retainedMsgSet.size()) {
+                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgSet.size() - availableTokens);
+            }
+            return retainedMsgSet.stream().limit(availableTokens).collect(Collectors.toSet());
+        }
+        return retainedMsgSet;
     }
 
     Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
@@ -323,9 +345,13 @@ public class MqttSubscribeHandler {
         if (shareName != null && shareName.isEmpty()) {
             throw new DataValidationException("Shared subscription 'shareName' must be at least one character long");
         }
-        if (!StringUtils.isEmpty(shareName) && (shareName.contains("+") || shareName.contains("#"))) {
+        if (!StringUtils.isEmpty(shareName) && shareNameContainsWildcards(shareName)) {
             throw new DataValidationException("Shared subscription 'shareName' can not contain single lvl (+) or multi lvl (#) wildcards");
         }
+    }
+
+    private boolean shareNameContainsWildcards(String shareName) {
+        return shareName.contains(BrokerConstants.SINGLE_LEVEL_WILDCARD) || shareName.contains(BrokerConstants.MULTI_LEVEL_WILDCARD);
     }
 
     boolean isSharedSubscriptionWithNoLocal(TopicSubscription subscription) {

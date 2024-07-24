@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.flow.control;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +25,6 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

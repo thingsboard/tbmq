@@ -52,4 +52,28 @@ public class SessionInfo {
     public int safeGetSessionExpiryInterval() {
         return sessionExpiryInterval == -1 ? 0 : sessionExpiryInterval;
     }
+
+    public String getClientId() {
+        return clientInfo.getClientId();
+    }
+
+    public ClientType getClientType() {
+        return clientInfo.getType();
+    }
+
+    public boolean isPersistentAppClient() {
+        return isAppClient() && isPersistent();
+    }
+
+    public boolean isAppClient() {
+        return ClientType.APPLICATION.equals(clientInfo.getType());
+    }
+
+    /**
+     * For tests purposes
+     */
+    public static SessionInfo withClientType(ClientType clientType) {
+        return SessionInfo.builder().clientInfo(ClientInfo.builder().type(clientType).build()).build();
+    }
+
 }

@@ -37,6 +37,7 @@ import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import io.netty.handler.codec.mqtt.MqttSubAckPayload;
 import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubAckPayload;
+import jakarta.annotation.PostConstruct;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,6 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeUtil;
 
-import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;

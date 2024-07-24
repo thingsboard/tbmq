@@ -21,11 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -42,7 +42,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -50,18 +49,18 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
-    private final CacheManager cacheManager;
+    private final CacheNameResolver cacheNameResolver;
     private BCryptPasswordEncoder passwordEncoder;
     private HashFunction hashFunction;
 
     @Autowired
     public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
                                        MqttClientCredentialsService clientCredentialsService,
-                                       CacheManager cacheManager,
+                                       CacheNameResolver cacheNameResolver,
                                        @Lazy BCryptPasswordEncoder passwordEncoder) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
-        this.cacheManager = cacheManager;
+        this.cacheNameResolver = cacheNameResolver;
         this.passwordEncoder = passwordEncoder;
         this.hashFunction = Hashing.sha256();
     }
@@ -73,10 +72,11 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         MqttClientCredentials basicCredentials = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
         if (basicCredentials == null) {
+            log.error("Failed to authenticate client with Basic credentials matching clientId: [{}] username: [{}]", authContext.getClientId(), authContext.getUsername());
             return new AuthResponse(false, null, null);
         }
         if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticated with username {}", authContext.getClientId(), authContext.getUsername());
+            log.trace("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
         }
         BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(credentials);
@@ -91,7 +91,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         String password = passwordBytesToString(passwordBytes);
         if (password != null) {
-            MqttClientCredentials credentialsFromCache = getCache().get(toHashString(password), MqttClientCredentials.class);
+            MqttClientCredentials credentialsFromCache = getBasicCredsPwCache().get(toHashString(password), MqttClientCredentials.class);
             if (credentialsFromCache != null && matchingCredentialsList.contains(credentialsFromCache)) {
                 return credentialsFromCache;
             }
@@ -101,7 +101,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
             BasicMqttCredentials basicMqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(credentials, BasicMqttCredentials.class);
             if (isMatchingPassword(password, basicMqttCredentials)) {
                 if (password != null && basicMqttCredentials.getPassword() != null) {
-                    getCache().put(toHashString(password), credentials);
+                    getBasicCredsPwCache().put(toHashString(password), credentials);
                 }
                 return credentials;
             }
@@ -132,8 +132,8 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         return passwordBytes != null ? new String(passwordBytes, StandardCharsets.UTF_8) : null;
     }
 
-    private Cache getCache() {
-        return cacheManager.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
+    private Cache getBasicCredsPwCache() {
+        return cacheNameResolver.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
     }
 
     private String toHashString(String rawPassword) {

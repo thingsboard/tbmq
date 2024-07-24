@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.queue.kafka;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -50,6 +51,7 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final TbQueueAdmin admin;
     private final KafkaConsumer<String, byte[]> consumer;
     private final TbKafkaDecoder<T> decoder;
+    @Getter
     private final Map<String, String> topicConfigs;
 
     private final TbKafkaConsumerStatsService statsService;
@@ -59,9 +61,8 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     private final long closeTimeoutMs;
     private final boolean createTopicIfNotExists;
 
-
-    /*
-        Not thread-safe
+    /**
+     * Not thread-safe
      */
 
     @Builder

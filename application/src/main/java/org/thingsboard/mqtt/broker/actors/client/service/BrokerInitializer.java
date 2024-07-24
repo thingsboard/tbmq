@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -32,10 +33,10 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -48,26 +49,22 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
-import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class BrokerInitializer {
 
-    private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final ClientSessionConsumer clientSessionConsumer;
+    private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final RetainedMsgConsumer retainedMsgConsumer;
 
-    private final ClientSubscriptionService clientSubscriptionService;
     private final ClientSessionService clientSessionService;
+    private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgListenerService;
 
     private final ActorSystemContext actorSystemContext;
@@ -75,11 +72,12 @@ public class BrokerInitializer {
 
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final RateLimitCacheService rateLimitCacheService;
 
-    private final DisconnectClientCommandConsumer disconnectClientCommandConsumer;
     private final ClientSessionEventConsumer clientSessionEventConsumer;
-    private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final PublishMsgConsumerService publishMsgConsumerService;
+    private final DisconnectClientCommandConsumer disconnectClientCommandConsumer;
+    private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
 
@@ -89,13 +87,9 @@ public class BrokerInitializer {
         log.info("Initializing Client Sessions and Subscriptions.");
         try {
             Map<String, ClientSessionInfo> allClientSessions = initClientSessions();
-
             initClientSubscriptions(allClientSessions);
 
-            clearNonPersistentClientsOnCurrentNode(allClientSessions);
-
             clientSessionService.startListening(clientSessionConsumer);
-
             startSubscriptionListening();
 
             initRetainedMessages();
@@ -109,22 +103,52 @@ public class BrokerInitializer {
         }
     }
 
+    Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
+        Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
+        log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
+        rateLimitCacheService.initSessionCount(allClientSessions.size());
+
+        Map<String, ClientSessionInfo> currentNodeSessions = filterAndDisconnectCurrentNodeSessions(allClientSessions);
+        allClientSessions.putAll(currentNodeSessions);
+
+        clientSessionService.init(allClientSessions);
+        return allClientSessions;
+    }
+
+    private Map<String, ClientSessionInfo> filterAndDisconnectCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
+        Map<String, ClientSessionInfo> currentNodeSessions = Maps.newHashMapWithExpectedSize(allClientSessions.size());
+        int applicationClientsCount = 0;
+        for (Map.Entry<String, ClientSessionInfo> entry : allClientSessions.entrySet()) {
+            ClientSessionInfo clientSessionInfo = entry.getValue();
+
+            if (clientSessionInfo.isPersistentAppClient()) {
+                applicationClientsCount++;
+            }
+
+            if (sessionWasOnThisNode(clientSessionInfo)) {
+                if (isCleanSession(clientSessionInfo)) {
+                    clientSessionEventService.requestClientSessionCleanup(clientSessionInfo);
+                }
+                ClientSessionInfo disconnectedClientSession = markDisconnected(clientSessionInfo);
+                currentNodeSessions.put(entry.getKey(), disconnectedClientSession);
+            }
+        }
+        rateLimitCacheService.initApplicationClientsCount(applicationClientsCount);
+        log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
+        return currentNodeSessions;
+    }
+
     private void initRetainedMessages() throws QueuePersistenceException {
         Map<String, RetainedMsg> allRetainedMessages = retainedMsgConsumer.initLoad();
         log.info("Loaded {} stored retained messages from Kafka.", allRetainedMessages.size());
         retainedMsgListenerService.init(allRetainedMessages);
     }
 
-    private void clearNonPersistentClientsOnCurrentNode(Map<String, ClientSessionInfo> allClientSessions) {
-        Map<String, ClientSessionInfo> currentNodeSessions = filterSessions(allClientSessions);
-        clearNonPersistentClients(currentNodeSessions);
-    }
-
     private void startConsuming() {
-        disconnectClientCommandConsumer.startConsuming();
         clientSessionEventConsumer.startConsuming();
-        deviceMsgQueueConsumer.startConsuming();
         publishMsgConsumerService.startConsuming();
+        disconnectClientCommandConsumer.startConsuming();
+        deviceMsgQueueConsumer.startConsuming();
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
     }
@@ -147,36 +171,6 @@ public class BrokerInitializer {
                 allClientSubscriptions.remove(clientId);
             }
         }
-    }
-
-    Map<String, ClientSessionInfo> initClientSessions() throws QueuePersistenceException {
-        Map<String, ClientSessionInfo> allClientSessions = clientSessionConsumer.initLoad();
-        log.info("Loaded {} stored client sessions from Kafka.", allClientSessions.size());
-
-        Map<String, ClientSessionInfo> currentNodeSessions = filterSessionsAndDisconnect(allClientSessions);
-        log.info("{} client sessions were on {} node.", currentNodeSessions.size(), serviceInfoProvider.getServiceId());
-
-        allClientSessions.putAll(currentNodeSessions);
-
-        clientSessionService.init(allClientSessions);
-
-        return allClientSessions;
-    }
-
-    private Map<String, ClientSessionInfo> filterSessions(Map<String, ClientSessionInfo> allClientSessions) {
-        return filterCurrentNodeSessions(allClientSessions)
-                .collect(Collectors.toMap(this::getClientId, Function.identity()));
-    }
-
-    private Map<String, ClientSessionInfo> filterSessionsAndDisconnect(Map<String, ClientSessionInfo> allClientSessions) {
-        return filterCurrentNodeSessions(allClientSessions)
-                .map(this::markDisconnected)
-                .collect(Collectors.toMap(this::getClientId, Function.identity()));
-    }
-
-    private Stream<ClientSessionInfo> filterCurrentNodeSessions(Map<String, ClientSessionInfo> allClientSessions) {
-        return allClientSessions.values().stream()
-                .filter(this::sessionWasOnThisNode);
     }
 
     private void startSubscriptionListening() {
@@ -208,27 +202,15 @@ public class BrokerInitializer {
         return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
     }
 
-    void clearNonPersistentClients(Map<String, ClientSessionInfo> currentNodeSessions) {
-        currentNodeSessions.values().stream()
-                .map(ClientSessionInfoFactory::clientSessionInfoToSessionInfo)
-                .filter(this::isCleanSession)
-                .forEach(clientSessionEventService::requestSessionCleanup);
-    }
-
-    boolean isCleanSession(SessionInfo sessionInfo) {
-        return sessionInfo.isCleanSession();
+    boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo.isCleanSession();
     }
 
     private boolean sessionWasOnThisNode(ClientSessionInfo clientSessionInfo) {
-        return serviceInfoProvider.getServiceId()
-                .equals(clientSessionInfo.getServiceId());
+        return serviceInfoProvider.getServiceId().equals(clientSessionInfo.getServiceId());
     }
 
     private ClientSessionInfo markDisconnected(ClientSessionInfo clientSessionInfo) {
         return clientSessionInfo.toBuilder().connected(false).build();
-    }
-
-    private String getClientId(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo.getClientId();
     }
 }

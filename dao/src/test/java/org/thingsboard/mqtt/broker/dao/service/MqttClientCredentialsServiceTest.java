@@ -23,8 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
@@ -55,13 +55,17 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Autowired
     private MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    private CacheManager cacheManager;
+    private CacheNameResolver cacheNameResolver;
 
-    Cache cache;
+    Cache mqttClientCredentialsCache;
+    Cache basicCredentialsPasswordCache;
+    Cache sslRegexBasedCredentialsCache;
 
     @Before
     public void setUp() {
-        cache = cacheManager.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+        mqttClientCredentialsCache = cacheNameResolver.getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+        basicCredentialsPasswordCache = cacheNameResolver.getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE);
+        sslRegexBasedCredentialsCache = cacheNameResolver.getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE);
     }
 
     @After
@@ -73,7 +77,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     }
 
     private void checkCacheNonNullAndEvict(String credentialsId) {
-        Objects.requireNonNull(cache, "Cache manager is null").evict(credentialsId);
+        Objects.requireNonNull(mqttClientCredentialsCache, "Cache manager is null").evict(credentialsId);
     }
 
     @Test
@@ -88,12 +92,12 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         List<MqttClientCredentials> credentials = mqttClientCredentialsService.findMatchingCredentials(List.of(credentialsId));
         Assert.assertNotNull(credentials);
         Assert.assertFalse(credentials.isEmpty());
-        MqttClientCredentials clientCredentials = cache.get(credentialsId, MqttClientCredentials.class);
+        MqttClientCredentials clientCredentials = mqttClientCredentialsCache.get(credentialsId, MqttClientCredentials.class);
         Assert.assertNotNull(clientCredentials);
         Assert.assertEquals(clientCredentials, credentials.get(0));
 
         mqttClientCredentialsService.deleteCredentials(credentials.get(0).getId());
-        Assert.assertNull(cache.get(credentialsId, MqttClientCredentials.class));
+        Assert.assertNull(mqttClientCredentialsCache.get(credentialsId, MqttClientCredentials.class));
     }
 
     @Test
@@ -108,12 +112,12 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         List<MqttClientCredentials> credentials = mqttClientCredentialsService.findMatchingCredentials(List.of(credentialsId));
         Assert.assertNotNull(credentials);
         Assert.assertFalse(credentials.isEmpty());
-        Assert.assertNotNull(cache.get(credentialsId, MqttClientCredentials.class));
+        Assert.assertNotNull(mqttClientCredentialsCache.get(credentialsId, MqttClientCredentials.class));
 
         MqttClientCredentials clientCredentials = credentials.get(0);
         clientCredentials.setName("newName");
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(clientCredentials);
-        Assert.assertNull(cache.get(credentialsId, MqttClientCredentials.class));
+        Assert.assertNull(mqttClientCredentialsCache.get(credentialsId, MqttClientCredentials.class));
 
         mqttClientCredentialsService.deleteCredentials(savedCredentials.getId());
     }
@@ -135,11 +139,11 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         List<MqttClientCredentials> credentials = mqttClientCredentialsService.findMatchingCredentials(List.of(credentialsId1));
         Assert.assertNotNull(credentials);
         Assert.assertFalse(credentials.isEmpty());
-        Assert.assertNotNull(cache.get(credentialsId1, MqttClientCredentials.class));
-        Assert.assertNull(cache.get(credentialsId2, MqttClientCredentials.class));
+        Assert.assertNotNull(mqttClientCredentialsCache.get(credentialsId1, MqttClientCredentials.class));
+        Assert.assertNull(mqttClientCredentialsCache.get(credentialsId2, MqttClientCredentials.class));
 
         credentials = mqttClientCredentialsService.findMatchingCredentials(List.of(credentialsId1, credentialsId2));
-        Assert.assertNotNull(cache.get(credentialsId2, MqttClientCredentials.class));
+        Assert.assertNotNull(mqttClientCredentialsCache.get(credentialsId2, MqttClientCredentials.class));
 
         mqttClientCredentialsService.deleteCredentials(credentials.get(0).getId());
         mqttClientCredentialsService.deleteCredentials(credentials.get(1).getId());
@@ -380,6 +384,167 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         findByQueryAndVerifyResult(null, List.of(ClientCredentialsType.SSL), 5);
 
         findByQueryAndVerifyResult(List.of(ClientType.APPLICATION), List.of(), 6);
+    }
+
+    @Test
+    public void givenCachedBasicCredentials_whenSaveOtherCredentials_thenCachedDataPresent() throws JsonProcessingException {
+        String cacheKey = RandomStringUtils.randomAlphabetic(10);
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+
+        Assert.assertEquals(savedCredentials, basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedBasicCredentials_whenUpdateSslCredentials_thenCachedDataPresent() throws JsonProcessingException {
+        String cacheKey = RandomStringUtils.randomAlphabetic(10);
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        sslCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentialsService.saveCredentials(sslCredentials);
+        Assert.assertEquals(savedCredentials, basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedBasicCredentials_whenUpdateBasicCredentials_thenCachedDataRemoved() throws JsonProcessingException {
+        String cacheKey = RandomStringUtils.randomAlphabetic(10);
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        MqttClientCredentials basicCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        basicCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentialsService.saveCredentials(basicCredentials);
+
+        Assert.assertNull(basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        savedCredentials.setClientType(ClientType.APPLICATION);
+        mqttClientCredentialsService.saveCredentials(savedCredentials);
+
+        Assert.assertNull(basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedBasicCredentials_whenDeleteSslCredentials_thenCachedDataPresent() throws JsonProcessingException {
+        String cacheKey = RandomStringUtils.randomAlphabetic(10);
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+
+        mqttClientCredentialsService.deleteCredentials(sslCredentials.getId());
+        Assert.assertEquals(savedCredentials, basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedBasicCredentials_whenDeleteBasicCredentials_thenCachedDataRemoved() throws JsonProcessingException {
+        String cacheKey = RandomStringUtils.randomAlphabetic(10);
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        MqttClientCredentials basicCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        mqttClientCredentialsService.deleteCredentials(basicCredentials.getId());
+
+        Assert.assertNull(basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+
+        basicCredentialsPasswordCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.deleteCredentials(savedCredentials.getId());
+
+        Assert.assertNull(basicCredentialsPasswordCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    /**
+     * For tests of sslRegexBasedCredentialsCache simply MqttClientCredentials value is used for caching
+     */
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenSaveBasicCredentials_thenCacheDataPresent() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        Assert.assertEquals(savedCredentials, sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenSaveSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+
+        Assert.assertNull(sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenDeleteBasicCredentials_thenCacheDataPresent() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        MqttClientCredentials basicCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        mqttClientCredentialsService.deleteCredentials(basicCredentials.getId());
+        Assert.assertEquals(savedCredentials, sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenDeleteSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.deleteCredentials(savedCredentials.getId());
+
+        Assert.assertNull(sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenDeleteDifferentSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+
+        MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        mqttClientCredentialsService.deleteCredentials(sslCredentials.getId());
+
+        Assert.assertNull(sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenUpdateDifferentSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+
+        MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        sslCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentialsService.saveCredentials(sslCredentials);
+
+        Assert.assertNull(sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
+    }
+
+    @Test
+    public void givenCachedSslRegexCredentials_whenUpdateSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
+        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+
+        sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
+
+        savedCredentials.setClientType(ClientType.APPLICATION);
+        mqttClientCredentialsService.saveCredentials(savedCredentials);
+
+        Assert.assertNull(sslRegexBasedCredentialsCache.get(cacheKey, MqttClientCredentials.class));
     }
 
     private void findByQueryAndVerifyResult(List<ClientType> clientTypes, List<ClientCredentialsType> clientCredentialsTypes, int expected) {

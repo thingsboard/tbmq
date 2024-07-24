@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +36,6 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import javax.annotation.PreDestroy;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -73,9 +73,12 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     @Override
     public Map<String, RetainedMsg> initLoad() throws QueuePersistenceException {
-        String dummyTopic = persistDummyRetainedMsg();
+        log.debug("Starting retained messages initLoad");
+        long startTime = System.nanoTime();
+        long totalMessageCount = 0L;
 
-        retainedMsgConsumer.subscribe();
+        String dummyTopic = persistDummyRetainedMsg();
+        retainedMsgConsumer.assignOrSubscribe();
 
         List<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> messages;
         boolean encounteredDummyTopic = false;
@@ -83,13 +86,14 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         do {
             try {
                 messages = retainedMsgConsumer.poll(pollDuration);
+                int packSize = messages.size();
+                log.debug("Read {} retained messages from single poll", packSize);
+                totalMessageCount += packSize;
                 for (TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg : messages) {
                     String topic = msg.getKey();
                     if (isRetainedMsgProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        if (log.isDebugEnabled()) {
-                            log.debug("[{}] Encountered empty RetainedMsg.", topic);
-                        }
+                        log.trace("[{}] Encountered empty RetainedMsg.", topic);
                         allRetainedMsgs.remove(topic);
                     } else {
                         RetainedMsg retainedMsg = convertToRetainedMsg(msg);
@@ -110,6 +114,11 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         clearDummyRetainedMsg(dummyTopic);
 
         initializing = false;
+
+        if (log.isDebugEnabled()) {
+            long endTime = System.nanoTime();
+            log.debug("Finished retained messages initLoad for {} messages within time: {} nanos", totalMessageCount, endTime - startTime);
+        }
 
         return allRetainedMsgs;
     }

@@ -15,15 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
 import lombok.Data;
 import org.hibernate.annotations.Generated;
-import org.hibernate.annotations.GenerationTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
 
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.KEY_COLUMN;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.KEY_ID_COLUMN;
@@ -39,7 +37,7 @@ public final class TsKvDictionary {
     private String key;
 
     @Column(name = KEY_ID_COLUMN, unique = true, columnDefinition = "int")
-    @Generated(GenerationTime.INSERT)
+    @Generated()
     private int keyId;
 
 }

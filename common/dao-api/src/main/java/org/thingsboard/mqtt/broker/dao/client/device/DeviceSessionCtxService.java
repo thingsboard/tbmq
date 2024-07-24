@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.device;
 
-
 import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
 
 import java.util.Collection;
 
 public interface DeviceSessionCtxService {
+
     void saveDeviceSessionContexts(Collection<DeviceSessionCtx> deviceSessionContexts);
 
     Collection<DeviceSessionCtx> findAllContexts(Collection<String> clientIds);

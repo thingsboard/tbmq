@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.sqlts;
 import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,6 @@ import org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary.TsKvDictionary;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary.TsKvDictionaryCompositeKey;
 import org.thingsboard.mqtt.broker.dao.sqlts.dictionary.TsKvDictionaryRepository;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

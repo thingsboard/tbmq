@@ -15,10 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.ssl.config;
 
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-
-import javax.annotation.PostConstruct;
 
 @Slf4j
 @Data

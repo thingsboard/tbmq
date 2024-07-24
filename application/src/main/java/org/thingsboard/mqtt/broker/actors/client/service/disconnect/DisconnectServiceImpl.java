@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -57,6 +58,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final AuthorizationRuleService authorizationRuleService;
     private final FlowControlService flowControlService;
+    private final RateLimitCacheService rateLimitCacheService;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -129,7 +131,7 @@ public class DisconnectServiceImpl implements DisconnectService {
 
     void notifyClientDisconnected(ClientActorStateInfo actorState, int sessionExpiryInterval) {
         if (log.isTraceEnabled()) {
-            log.trace("Executing notifyClientDisconnected");
+            log.trace("[{}] Executing notifyClientDisconnected", actorState.getClientId());
         }
         ClientSessionCtx sessionCtx = actorState.getCurrentSessionCtx();
         try {
@@ -159,6 +161,10 @@ public class DisconnectServiceImpl implements DisconnectService {
 
         if (sessionCtx.getSessionInfo().isPersistent()) {
             processPersistenceDisconnect(sessionCtx, clientInfo, sessionId);
+        } else {
+            if (!DisconnectReasonType.ON_CONFLICTING_SESSIONS.equals(disconnectReasonType)) {
+                rateLimitCacheService.decrementSessionCount();
+            }
         }
 
         clientSessionCtxService.unregisterSession(clientInfo.getClientId());

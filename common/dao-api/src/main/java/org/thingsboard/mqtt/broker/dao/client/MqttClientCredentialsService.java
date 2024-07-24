@@ -48,4 +48,6 @@ public interface MqttClientCredentialsService {
     ClientCredentialsInfoDto getClientCredentialsInfo();
 
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
+
+    List<MqttClientCredentials> findByCredentialsType(ClientCredentialsType credentialsType);
 }

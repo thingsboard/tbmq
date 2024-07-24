@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.data.ws;
 
+import jakarta.validation.Valid;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
-import javax.validation.Valid;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +28,8 @@ public class WebSocketConnectionConfiguration {
 
     @NoXss
     private String url;
+
+    private boolean rejectUnauthorized;
 
     private UUID clientCredentialsId;
     @NoXss

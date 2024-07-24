@@ -27,7 +27,7 @@ import { MatAutocomplete } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
 import { SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { ClientCredentials, CredentialsType } from '@shared/models/credentials.model';
+import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
 
@@ -163,7 +163,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   writeValue(credentialsId: string): void {
     this.searchText = '';
     this.dirty = true;
-    this.updateView(credentialsId);
+    this.updateView(credentialsId, true);
   }
 
   onFocus() {
@@ -184,7 +184,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     }
   }
 
-  updateView(credentialsId: string) {
+  updateView(credentialsId: string, useDefaultCredentials = false) {
     if (credentialsId) {
       this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
         (credentials) => {
@@ -193,7 +193,19 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
         }
       );
     } else {
-      this.propagateChange(null);
+      if (useDefaultCredentials) {
+        this.clientCredentialsService.getClientsCredentials(new PageLink(1, 0, wsSystemCredentialsName), {ignoreLoading: true, ignoreErrors: true}).subscribe(
+          pageData => {
+            const wsSystemCredentials = pageData.data.length ? pageData.data[0] : null;
+            if (wsSystemCredentials) {
+              this.selectCredentialsFormGroup.get('clientCredentials').patchValue(wsSystemCredentials, {emitEvent: true});
+              this.propagateChange(wsSystemCredentials);
+            }
+          }
+        );
+      } else {
+        this.propagateChange(null);
+      }
     }
   }
 

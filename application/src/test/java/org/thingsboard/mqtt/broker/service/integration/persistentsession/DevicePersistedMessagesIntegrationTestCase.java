@@ -24,12 +24,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
 import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
@@ -52,13 +52,13 @@ public class DevicePersistedMessagesIntegrationTestCase extends AbstractPubSubIn
     @Autowired
     private DevicePersistenceProcessor devicePersistenceProcessor;
     @Autowired
-    private CacheManager cacheManager;
+    private CacheNameResolver cacheNameResolver;
 
     Cache packetIdSerialNumbCache;
 
     @Before
     public void init() {
-        packetIdSerialNumbCache = cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
+        packetIdSerialNumbCache = cacheNameResolver.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
     }
 
     @After

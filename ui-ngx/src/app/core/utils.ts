@@ -353,6 +353,8 @@ export const isArraysEqualIgnoreUndefined = (a: any[], b: any[]): boolean => {
   }
 };
 
+export const isEmptyArray = (value: any) => Array.isArray(value) && value.length === 0;
+
 export function mergeDeep<T>(target: T, ...sources: T[]): T {
   return _.merge(target, ...sources);
 }

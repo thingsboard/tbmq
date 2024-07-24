@@ -92,39 +92,42 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
                 }
                 continue;
             }
-            if (topicPosition.prevDelimiterIndex >= topicFilter.length()) {
+            if (topicPosition.segmentStartIndex > topicFilter.length()) {
                 if (value != null) {
                     result.add(value);
                 }
                 continue;
             }
-            String segment = getSegment(topicFilter, topicPosition.prevDelimiterIndex);
-            int nextDelimiterIndex = topicPosition.prevDelimiterIndex + segment.length() + 1;
+            String segment = getSegment(topicFilter, topicPosition.segmentStartIndex);
+            int nextSegmentStartIndex = getNextSegmentStartIndex(topicPosition.segmentStartIndex, segment);
             if (segment.equals(BrokerConstants.MULTI_LEVEL_WILDCARD)) {
                 childNodes.values().stream()
-                        .filter(childNode -> notStartingWith$(topicPosition.prevDelimiterIndex == 0, childNode))
+                        .filter(childNode -> notStartingWith$(topicPosition, childNode))
                         .forEach(childNode -> topicPositions.add(new TopicPosition<>(0, childNode, true)));
+                if (value != null) {
+                    result.add(value);
+                }
             } else if (segment.equals(BrokerConstants.SINGLE_LEVEL_WILDCARD)) {
                 childNodes.values().stream()
-                        .filter(childNode -> notStartingWith$(topicPosition.prevDelimiterIndex == 0, childNode))
-                        .forEach(childNode -> topicPositions.add(new TopicPosition<>(nextDelimiterIndex, childNode, false)));
+                        .filter(childNode -> notStartingWith$(topicPosition, childNode))
+                        .forEach(childNode -> topicPositions.add(new TopicPosition<>(nextSegmentStartIndex, childNode, false)));
             } else {
                 Node<T> segmentNode = childNodes.get(segment);
                 if (segmentNode != null) {
-                    topicPositions.add(new TopicPosition<>(nextDelimiterIndex, segmentNode, false));
+                    topicPositions.add(new TopicPosition<>(nextSegmentStartIndex, segmentNode, false));
                 }
             }
         }
         return result;
     }
 
-    private boolean notStartingWith$(boolean isFirstSegment, Node<T> childNode) {
-        return !isFirstSegment || childNode.key.charAt(0) != '$';
+    private boolean notStartingWith$(TopicPosition<T> topicPosition, Node<T> childNode) {
+        return topicPosition.segmentStartIndex != 0 || childNode.key.isEmpty() || childNode.key.charAt(0) != '$';
     }
 
     @AllArgsConstructor
     private static class TopicPosition<T> {
-        private final int prevDelimiterIndex;
+        private final int segmentStartIndex;
         private final Node<T> node;
         private final boolean isMultiLevelWildcard;
     }
@@ -143,19 +146,19 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
         }
     }
 
-    private void put(Node<T> x, String topic, T val, int prevDelimiterIndex) {
-        if (prevDelimiterIndex >= topic.length()) {
+    private void put(Node<T> x, String topic, T val, int segmentStartIndex) {
+        if (segmentStartIndex > topic.length()) {
             T prevValue = x.value.getAndSet(val);
             if (prevValue == null) {
                 size.getAndIncrement();
             }
         } else {
-            String segment = getSegment(topic, prevDelimiterIndex);
+            String segment = getSegment(topic, segmentStartIndex);
             Node<T> nextNode = x.children.computeIfAbsent(segment, s -> {
                 nodesCount.incrementAndGet();
                 return new Node<>(segment);
             });
-            put(nextNode, topic, val, prevDelimiterIndex + segment.length() + 1);
+            put(nextNode, topic, val, getNextSegmentStartIndex(segmentStartIndex, segment));
         }
     }
 
@@ -165,7 +168,7 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
         if (topic == null) {
             throw new IllegalArgumentException("Topic cannot be null");
         }
-        Node<T> x = getNode(root, topic, 0);
+        Node<T> x = getDeleteNode(root, topic, 0);
         if (x != null) {
             T prevValue = x.value.getAndSet(null);
             if (prevValue != null) {
@@ -174,13 +177,19 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
         }
     }
 
-    private Node<T> getNode(Node<T> x, String topic, int prevDelimiterIndex) {
-        if (x == null) return null;
-        if (prevDelimiterIndex >= topic.length()) {
+    private Node<T> getDeleteNode(Node<T> x, String topic, int segmentStartIndex) {
+        if (x == null) {
+            return null;
+        }
+        if (segmentStartIndex > topic.length()) {
             return x;
         }
-        String segment = getSegment(topic, prevDelimiterIndex);
-        return getNode(x.children.get(segment), topic, prevDelimiterIndex + segment.length() + 1);
+        String segment = getSegment(topic, segmentStartIndex);
+        return getDeleteNode(x.children.get(segment), topic, getNextSegmentStartIndex(segmentStartIndex, segment));
+    }
+
+    private int getNextSegmentStartIndex(int segmentStartIndex, String segment) {
+        return segmentStartIndex + segment.length() + 1;
     }
 
     @Override
@@ -240,11 +249,11 @@ public class ConcurrentMapRetainMsgTrie<T> implements RetainMsgTrie<T> {
         }
     }
 
-    private String getSegment(String key, int prevDelimiterIndex) {
-        int nextDelimitedIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITER, prevDelimiterIndex);
+    private String getSegment(String key, int segmentStartIndex) {
+        int nextDelimiterIndex = key.indexOf(BrokerConstants.TOPIC_DELIMITER, segmentStartIndex);
 
-        return nextDelimitedIndex == -1 ?
-                key.substring(prevDelimiterIndex)
-                : key.substring(prevDelimiterIndex, nextDelimitedIndex);
+        return nextDelimiterIndex == -1 ?
+                key.substring(segmentStartIndex)
+                : key.substring(segmentStartIndex, nextDelimiterIndex);
     }
 }

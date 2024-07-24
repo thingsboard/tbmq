@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -54,6 +55,14 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     public QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
+                .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
+                .build();
+    }
+
+    @Override
+    public QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
+        return QueueProtos.ClientSessionEventProto.newBuilder()
+                .setSessionInfo(ProtoConverter.convertToSessionInfoProto(clientSessionInfo))
                 .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
                 .build();
     }

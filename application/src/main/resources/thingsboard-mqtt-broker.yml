@@ -489,6 +489,8 @@ queue:
       additional-consumer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.sys.historical.data` topic
       additional-producer-config: "${TB_KAFKA_HISTORICAL_DATA_TOTAL_ADDITIONAL_PRODUCER_CONFIG:}"
+    # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
+    kafka-prefix: "${TB_KAFKA_PREFIX:}"
     # Custom consumer configuration per Kafka topic
     consumer-properties-per-topic:
       tbmq.msg.app.test_client:
@@ -574,9 +576,6 @@ spring:
       # The standard Hibernate property values are none, validate, update, create-drop.
       # Spring Boot chooses a default value for you based on whether it thinks your database is embedded (default create-drop) or not (default none)
       ddl-auto: "${SPRING_JPA_HIBERNATE_DDL_AUTO:none}"
-    # The name of the database platform to be used by the JPA provider.
-    # This property is used to set the underlying SQL dialect that should be used when interacting with the database
-    database-platform: "${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}"
   datasource:
     # Database driver for Spring JPA
     driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"
@@ -626,7 +625,7 @@ security:
     # User JWT Token issuer
     tokenIssuer: "${JWT_TOKEN_ISSUER:thingsboard.io}"
     # User JWT Token sign key
-    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:thingsboardDefaultSigningKey}"
+    tokenSigningKey: "${JWT_TOKEN_SIGNING_KEY:Qk1xUnloZ0VQTlF1VlNJQXZ4cWhiNWt1cVd1ZzQ5cWpENUhMSHlaYmZIM0JrZ2pPTVlhQ3N1Z0ZMUnd0SDBieg==}"
   basic:
     # Enable/Disable basic security options
     enabled: "${SECURITY_BASIC_ENABLED:false}"
@@ -753,6 +752,18 @@ mqtt:
             # Max timeout for packet deletes queue polling. Value set in milliseconds
             max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
+    # The number of parallel threads dedicated to processing total rate limit checks for incoming messages
+    threads-count: "${MQTT_RATE_LIMITS_THREADS_COUNT:1}"
+    # The number of messages to process in each batch when checking total rate limits for incoming messages
+    batch-size: "${MQTT_RATE_LIMITS_BATCH_SIZE:50}"
+    # The period, in milliseconds, to wait before processing a batch of messages for total rate limits for incoming messages
+    period-ms: "${MQTT_RATE_LIMITS_PERIOD_MS:50}"
+    total:
+      # Enable/disable total incoming and outgoing messages rate limits for the broker (per whole cluster)
+      enabled: "${MQTT_TOTAL_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of total incoming and outgoing messages for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 1000 messages per second or 50000 messages per minute
+      config: "${MQTT_TOTAL_RATE_LIMITS_CONFIG:1000:1,50000:60}"
     incoming-publish:
       # Enable/disable publish rate limits per client for incoming messages to the broker from publishers
       enabled: "${MQTT_INCOMING_RATE_LIMITS_ENABLED:false}"
@@ -765,10 +776,22 @@ mqtt:
       # Limit the maximum count of publish messages per subscriber for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
       # Example: 10 messages per second or 300 messages per minute
       client-config: "${MQTT_OUTGOING_RATE_LIMITS_CLIENT_CONFIG:10:1,300:60}"
+    device-persisted-messages:
+      # Enable/disable Device clients persisted messages rate limits for the broker (per whole cluster)
+      enabled: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_ENABLED:false}"
+      # Limit the maximum count of Device clients persisted messages for specified time intervals in seconds. Comma separated list of limit:seconds pairs.
+      # Example: 100 messages per second or 1000 messages per minute
+      config: "${MQTT_DEVICE_PERSISTED_MSGS_RATE_LIMITS_CONFIG:100:1,1000:60}"
   # Limit the total number of sessions (connected + disconnected) stored on the broker, not individually for each server (node) if it is a cluster, but as a collective limit.
   # For example, when set to 1000 either the single broker node or cluster of 2 or X nodes can store 1000 sessions in total. It is a soft limit meaning a bit more than 1000 sessions can be stored.
   # A setting of 0 means the limitation is disabled
   sessions-limit: "${MQTT_SESSIONS_LIMIT:0}"
+  # Enable/disable sessions limit value correction in the cache
+  sessions-limit-correction: "${MQTT_SESSIONS_LIMIT_CORRECTION:false}"
+  # Period in milliseconds to execute the job to correct the value of sessions limit in the cache. Defaults to 3 hours
+  sessions-limit-correction-period-ms: "${MQTT_SESSIONS_LIMIT_CORRECTION_PERIOD_MS:10800000}"
+  # Limit the total number of Application persistent clients. A setting of 0 means the limitation is disabled
+  application-clients-limit: "${MQTT_APPLICATION_CLIENTS_LIMIT:0}"
   handler:
     # Number of threads in thread pool for processing all publish messages callbacks after sending them to Kafka
     all_msg_callback_threads: "${MQTT_HANDLER_ALL_MSG_CALLBACK_THREADS:2}"
@@ -795,6 +818,8 @@ cache:
     enabled: "${CACHE_STATS_ENABLED:true}"
     # Cache stats logging interval in seconds
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
+  # The common prefix for all cache keys. Defaults to empty string meaning no prefix is added
+  cache-prefix: "${CACHE_PREFIX:}"
   specs:
     packetIdAndSerialNumber:
       # Cache TTL in minutes
@@ -811,6 +836,12 @@ cache:
       timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}"
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
       maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}"
+    sslRegexBasedCredentials:
+      # Cache TTL in minutes
+      timeToLiveInMinutes: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_TTL:1440}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine.
+      # Defaults to 1, as the cache is designed to store only a single key at any given time. Increasing the size is unnecessary for this use case
+      maxSize: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_MAX_SIZE:1}"
 
 # Redis configuration parameters
 redis:
@@ -909,7 +940,7 @@ spring.mvc.cors:
   mappings:
     # Intercept path
     "[/api/**]":
-      # Comma-separated list of origins to allow. '*' allows all origins. When not set,CORS support is disabled
+      # Comma-separated list of origins to allow. '*' allows all origins. When not set, CORS support is disabled
       allowed-origin-patterns: "${MVC_CORS_API_ALLOWED_ORIGIN_PATTERNS:*}"
       # Comma-separated list of methods to allow. '*' allows all methods
       allowed-methods: "${MVC_CORS_API_ALLOWED_METHODS:*}"
@@ -920,10 +951,17 @@ spring.mvc.cors:
       # Set whether credentials are supported. When not set, credentials are not supported
       allow-credentials: "${MVC_CORS_API_ALLOW_CREDENTIALS:true}"
 
-# Swagger parameters
+# Spring doc common parameters
+springdoc:
+  # If false swagger API docs will be unavailable
+  api-docs.enabled: "${SWAGGER_ENABLED:true}"
+  # Swagger default produces media-type
+  default-produces-media-type: "${SWAGGER_DEFAULT_PRODUCES_MEDIA_TYPE:application/json}"
+
+# Swagger common parameters
 swagger:
   # General swagger match pattern of swagger UI links
-  api_path_regex: "${SWAGGER_API_PATH_REGEX:/api/.*}"
+  api_path: "${SWAGGER_API_PATH:/api/**}"
   # General swagger match pattern path of swagger UI links
   security_path_regex: "${SWAGGER_SECURITY_PATH_REGEX:/api/.*}"
   # Non-security API path match pattern of swagger UI links
@@ -934,7 +972,7 @@ swagger:
   description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
     # The contact name on the API doc UI page
-    name: "${SWAGGER_CONTACT_NAME:Thingsboard team}"
+    name: "${SWAGGER_CONTACT_NAME:ThingsBoard team}"
     # The contact URL on the API doc UI page
     url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
     # The contact email on the API doc UI page

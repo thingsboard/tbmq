@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.security.auth.jwt.extractor;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.config.SecurityConfiguration;
 
-import javax.servlet.http.HttpServletRequest;
-
 @Component
 public class JwtHeaderTokenExtractor implements TokenExtractor {
+
     public static final String HEADER_PREFIX = "Bearer ";
 
     @Override

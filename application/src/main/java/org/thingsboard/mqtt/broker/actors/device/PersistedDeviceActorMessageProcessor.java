@@ -61,8 +61,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Getter
@@ -176,22 +174,15 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     private PacketIdAndSerialNumber getLastPacketIdAndSerialNumber() {
         try {
-            return serialNumberService.getLastPacketIdAndSerialNumber(Set.of(clientId)).getOrDefault(clientId, newPacketIdAndSerialNumber());
+            return serialNumberService.getLastPacketIdAndSerialNumber(Set.of(clientId)).getOrDefault(clientId, PacketIdAndSerialNumber.initialInstance());
         } catch (Exception e) {
             log.warn("[{}] Cannot get last packetId and serialNumbers", clientId, e);
-            return newPacketIdAndSerialNumber();
+            return PacketIdAndSerialNumber.initialInstance();
         }
     }
 
-    private PacketIdAndSerialNumber newPacketIdAndSerialNumber() {
-        return new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1));
-    }
-
-    private PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(PacketIdAndSerialNumber packetIdAndSerialNumber) {
-        AtomicInteger packetIdAtomic = packetIdAndSerialNumber.getPacketId();
-        packetIdAtomic.incrementAndGet();
-        packetIdAtomic.compareAndSet(0xffff, 1);
-        return new PacketIdAndSerialNumberDto(packetIdAtomic.get(), packetIdAndSerialNumber.getSerialNumber().incrementAndGet());
+    PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(PacketIdAndSerialNumber packetIdAndSerialNumber) {
+        return PacketIdAndSerialNumberDto.incrementAndGet(packetIdAndSerialNumber);
     }
 
     void deliverPersistedMsg(DevicePublishMsg persistedMessage) {

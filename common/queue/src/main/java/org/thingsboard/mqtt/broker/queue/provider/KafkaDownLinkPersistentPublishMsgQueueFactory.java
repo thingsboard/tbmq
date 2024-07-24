@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,13 +36,12 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPersistentPublishMsgQueueFactory {
+public class KafkaDownLinkPersistentPublishMsgQueueFactory extends AbstractQueueFactory implements DownLinkPersistentPublishMsgQueueFactory {
 
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaProducerSettings producerSettings;
@@ -65,7 +65,7 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> createProducer(String id) {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(persistentDownLinkPublishMsgKafkaSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("persisted-downlink-msg-producer-" + id);
+        producerBuilder.clientId(kafkaPrefix + "persisted-downlink-msg-producer-" + id);
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -78,8 +78,8 @@ public class KafkaDownLinkPersistentPublishMsgQueueFactory implements DownLinkPe
         consumerBuilder.properties(consumerSettings.toProps(topic, persistentDownLinkPublishMsgKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("persisted-downlink-msg-consumer-" + consumerId);
-        consumerBuilder.groupId(BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX + groupId);
+        consumerBuilder.clientId(kafkaPrefix + "persisted-downlink-msg-consumer-" + consumerId);
+        consumerBuilder.groupId(kafkaPrefix + BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DevicePublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

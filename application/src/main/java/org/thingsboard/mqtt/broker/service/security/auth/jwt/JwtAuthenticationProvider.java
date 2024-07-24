@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
 
 @Component
-@SuppressWarnings("unchecked")
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     private final JwtTokenFactory tokenFactory;

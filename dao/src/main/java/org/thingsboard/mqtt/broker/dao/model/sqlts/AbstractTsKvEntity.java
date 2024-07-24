@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.model.sqlts;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Transient;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.DoubleDataEntry;
@@ -22,11 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
-
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.MappedSuperclass;
-import javax.persistence.Transient;
 
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.ENTITY_ID_COLUMN;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.KEY_COLUMN;

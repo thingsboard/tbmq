@@ -37,7 +37,7 @@
       <mat-icon>check</mat-icon>
     </ng-template>
     <mat-step [stepControl]="connectionFormGroup">
-      <form [formGroup]="connectionFormGroup" #conFormGroup="ngForm" autocomplete="off">
+      <form [formGroup]="connectionFormGroup" #conFormGroup="ngForm">
         <ng-template matStepLabel>{{ 'ws-client.connections.connection-details' | translate}}</ng-template>
         <mat-form-field class="mat-block">
           <mat-label translate>ws-client.connections.name</mat-label>
@@ -45,10 +45,9 @@
         </mat-form-field>
 
         <section fxLayout="column" fxLayoutGap="8px">
-          <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
-                            fxHide
+          <tb-toggle-header [style]="{width: '400px', alignSelf: 'center'}"
                             (valueChange)="onAddressProtocolChange($event)"
-                            [value]="wsAddressProtocolType.WS"
+                            [value]="addressProtocol"
                             name="addressProtocol"
                             useSelectOnMdLg="true"
                             appearance="fill">
@@ -59,13 +58,23 @@
               {{ wsAddressProtocolType.WSS }}
             </tb-toggle-option>
           </tb-toggle-header>
-          <mat-form-field class="mat-block">
+          <mat-form-field class="mat-block" subscriptSizing="fixed" style="margin-bottom: 0">
             <mat-label translate>ws-client.connections.url</mat-label>
             <input matInput formControlName="url">
             <mat-error *ngIf="connectionFormGroup.get('url').hasError('required')">
               {{ 'ws-client.connections.url-required' | translate }}
             </mat-error>
           </mat-form-field>
+          <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" style="padding: 0 0 12px 0"
+                   *ngIf="addressProtocol === WsAddressProtocolType.WSS">
+            <mat-slide-toggle formControlName="rejectUnauthorized">
+              <span translate>ws-client.connections.reject-unauthorized</span>
+            </mat-slide-toggle>
+            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                      [matTooltip]="'ws-client.connections.reject-unauthorized-hint' | translate"
+                      matTooltipPosition="right">
+              info</mat-icon>
+          </section>
         </section>
 
         <section fxLayout="column">
@@ -93,34 +102,43 @@
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.credentials-name</mat-label>
                 <input matInput formControlName="credentialsName">
-                <button mat-icon-button matSuffix (click)="regenerate('name')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('name')">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId" name="client-id-auto">
+                <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('clientId')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('clientId')">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput formControlName="username" name="user-name-auto">
+                <input matInput formControlName="username">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('username')">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('username')" >
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
@@ -130,7 +148,7 @@
             <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.CUSTOM">
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId" name="client-id-custom">
+                <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
@@ -138,7 +156,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput name="user-name-custom" formControlName="username">
+                <input matInput formControlName="username">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
@@ -146,7 +164,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.password</mat-label>
-                <input matInput name="new-password" autocomplete="off" formControlName="password" type="password">
+                <input matInput autocomplete="new-password" formControlName="password" type="password">
                 <tb-toggle-password matSuffix></tb-toggle-password>
               </mat-form-field>
             </ng-template>
@@ -163,20 +181,24 @@
               </section>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.client-id</mat-label>
-                <input matInput formControlName="clientId" name="client-id-existing">
+                <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
                                 [copyText]="connectionFormGroup.get('clientId')?.value">
                 </tb-copy-button>
-                <button mat-icon-button matSuffix (click)="regenerate('clientId')" [disabled]="connectionFormGroup?.get('clientId')?.disabled">
-                  <mat-icon [matTooltip]="'action.regenerate' | translate">
+                <button mat-icon-button matSuffix
+                        [matTooltip]="'action.regenerate' | translate"
+                        matTooltipPosition="above"
+                        (click)="regenerate('clientId')"
+                        [disabled]="connectionFormGroup?.get('clientId')?.disabled">
+                  <mat-icon>
                     repeat
                   </mat-icon>
                 </button>
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>ws-client.connections.username</mat-label>
-                <input matInput formControlName="username" name="un-existing">
+                <input matInput formControlName="username">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('username')?.value?.length"
                                 [copyText]="connectionFormGroup.get('username')?.value">
@@ -184,7 +206,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block" [fxShow]="passwordRequired">
                 <mat-label translate>ws-client.connections.password</mat-label>
-                <input matInput name="new-password" autocomplete="off" formControlName="password" type="password">
+                <input matInput autocomplete="new-password" formControlName="password" type="password">
                 <tb-toggle-password matSuffix></tb-toggle-password>
                 <button matSuffix mat-icon-button type="button" [matTooltip]="'ws-client.connections.password-warning' | translate">
                   <mat-icon style="color: #ff9a00">warning</mat-icon>

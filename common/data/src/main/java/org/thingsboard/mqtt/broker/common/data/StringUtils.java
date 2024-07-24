@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.common.data;
 import com.google.common.base.Splitter;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.util.Objects;
+
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 public class StringUtils {
@@ -136,7 +138,7 @@ public class StringUtils {
     }
 
     public static String defaultString(String s, String defaultValue) {
-        return org.apache.commons.lang3.StringUtils.defaultString(s, defaultValue);
+        return Objects.toString(s, defaultValue);
     }
 
     public static boolean isNumeric(String str) {

@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

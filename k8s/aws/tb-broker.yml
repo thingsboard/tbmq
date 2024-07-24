@@ -63,7 +63,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:1.2.1
+          image: thingsboard/tbmq-node:1.3.0
           ports:
             - containerPort: 8083
               name: http
@@ -75,6 +75,8 @@ spec:
               name: mqtts
             - containerPort: 8084
               name: mqtt-ws
+            - containerPort: 8085
+              name: mqtt-wss
           env:
             - name: TB_SERVICE_ID
               valueFrom:
@@ -154,3 +156,7 @@ spec:
       name: mqtt
     - port: 8883
       name: mqtts
+    - port: 8084
+      name: mqtt-ws
+    - port: 8085
+      name: mqtt-wss

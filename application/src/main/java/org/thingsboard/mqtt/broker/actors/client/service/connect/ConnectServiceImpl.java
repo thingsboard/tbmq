@@ -22,6 +22,8 @@ import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttVersion;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +68,6 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -128,16 +128,18 @@ public class ConnectServiceImpl implements ConnectService {
             log.trace("[{}][{}][{}] Processing connect msg.", sessionCtx.getAddress(), clientId, sessionId);
         }
 
-        boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg);
+        int sessionExpiryInterval = getSessionExpiryInterval(msg);
+        SessionInfo sessionInfo = getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
+                sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getAddress());
+
+        boolean proceedWithConnection = shouldProceedWithConnection(actorState, msg, sessionInfo);
         if (!proceedWithConnection) {
             return;
         }
 
-        int sessionExpiryInterval = getSessionExpiryInterval(msg);
-        sessionCtx.setSessionInfo(
-                getSessionInfo(msg, sessionId, clientId, sessionCtx.getClientType(),
-                        sessionExpiryInterval, actorState.getCurrentSessionCtx().getAddress().getAddress().getAddress())
-        );
+        // SessionInfo should be set for ctx only after validating the connection by shouldProceedWithConnection method
+        // to process disconnection correctly
+        sessionCtx.setSessionInfo(sessionInfo);
 
         if (flowControlEnabled) {
             int receiveMaxValue = getReceiveMaxValue(msg, sessionCtx);
@@ -274,13 +276,14 @@ public class ConnectServiceImpl implements ConnectService {
                 sessionExpiryInterval);
     }
 
-    boolean shouldProceedWithConnection(ClientActorStateInfo actorState, MqttConnectMsg msg) {
+    boolean shouldProceedWithConnection(ClientActorStateInfo actorState, MqttConnectMsg msg, SessionInfo sessionInfo) {
         ClientSessionCtx ctx = actorState.getCurrentSessionCtx();
         String clientId = actorState.getClientId();
         try {
             validateClientId(ctx, msg);
             validateSessionsRateLimit(ctx, clientId);
             validateLastWillMessage(ctx, clientId, msg);
+            validateApplicationClientsLimit(ctx, sessionInfo);
         } catch (ConnectionValidationException e) {
             log.warn("[{}] Connection validation failed: {}", ctx.getSessionId(), e.getMessage());
             createAndSendConnAckMsg(e.getMqttConnectReturnCode(), ctx);
@@ -319,6 +322,13 @@ public class ConnectServiceImpl implements ConnectService {
                         "publish to the topic",
                         MqttReasonCodeResolver.connectionRefusedNotAuthorized(ctx));
             }
+        }
+    }
+
+    private void validateApplicationClientsLimit(ClientSessionCtx ctx, SessionInfo sessionInfo) throws ConnectionValidationException {
+        if (!rateLimitService.checkApplicationClientsLimit(sessionInfo)) {
+            throw new ConnectionValidationException("Application clients limit exceeded",
+                    MqttReasonCodeResolver.connectionRefusedQuotaExceeded(ctx));
         }
     }
 

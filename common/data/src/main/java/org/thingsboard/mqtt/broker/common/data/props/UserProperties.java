@@ -17,13 +17,13 @@ package org.thingsboard.mqtt.broker.common.data.props;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.netty.handler.codec.mqtt.MqttProperties;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
-import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 

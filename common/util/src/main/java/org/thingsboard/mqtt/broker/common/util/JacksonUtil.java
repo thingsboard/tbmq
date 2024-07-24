@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 public class JacksonUtil {
 
@@ -80,10 +81,28 @@ public class JacksonUtil {
     }
 
     public static <T> T clone(T value) {
-        return fromString(toString(value), (Class<T>) value.getClass());
+        @SuppressWarnings("unchecked")
+        Class<T> valueClass = (Class<T>) value.getClass();
+        return fromString(toString(value), valueClass);
     }
 
     public static <T> JsonNode valueToTree(T value) {
         return OBJECT_MAPPER.valueToTree(value);
+    }
+
+    public static <T> byte[] writeValueAsBytes(T value) {
+        try {
+            return OBJECT_MAPPER.writeValueAsBytes(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("The given Json object value cannot be transformed to a String: " + value, e);
+        }
+    }
+
+    public static <T> T fromBytes(byte[] bytes, Class<T> clazz) {
+        try {
+            return bytes != null ? OBJECT_MAPPER.readValue(bytes, clazz) : null;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("The given string value cannot be transformed to Json object: " + Arrays.toString(bytes), e);
+        }
     }
 }

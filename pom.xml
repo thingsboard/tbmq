@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.thingsboard.mqtt-broker</groupId>
     <artifactId>mqtt-broker</artifactId>
-    <version>1.2.2-SNAPSHOT</version>
+    <version>1.3.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>TBMQ</name>
@@ -36,56 +36,55 @@
         <pkg.implementationTitle>${project.name}</pkg.implementationTitle>
         <pkg.unixLogFolder>/var/log/${pkg.name}</pkg.unixLogFolder>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
-        <spring-boot.version>2.7.10</spring-boot.version>
-        <spring.version>5.3.26</spring.version>
-        <spring-security.version>5.7.7</spring-security.version>
-        <jupiter.version>5.7.2
-        </jupiter.version> <!-- keep the same version as spring-boot-starter-test depend on jupiter-->
-        <slf4j.version>1.7.32</slf4j.version>
-        <gson.version>2.9.0</gson.version>
-        <logback.version>1.2.10</logback.version>
-        <mockito.version>1.9.5</mockito.version>
-        <metrics.version>4.0.5</metrics.version>
-        <guava.version>31.1-jre</guava.version>
-        <curator.version>4.2.0</curator.version>
-        <protobuf.version>3.21.9</protobuf.version>
-        <grpc.version>1.42.1</grpc.version>
-        <lombok.version>1.18.26</lombok.version>
-        <netty.version>4.1.107.Final</netty.version>
-        <os-maven-plugin.version>1.7.0</os-maven-plugin.version>
-        <dbunit.version>2.7.2</dbunit.version>
+        <spring-boot.version>3.2.4</spring-boot.version>
+        <spring.version>6.1.6</spring.version>
+        <spring-security.version>6.2.4</spring-security.version>
+        <jupiter.version>5.10.2</jupiter.version> <!-- keep the same version as spring-boot-starter-test depend on jupiter-->
+        <slf4j.version>2.0.13</slf4j.version>
+        <logback.version>1.5.5</logback.version>
+        <gson.version>2.10.1</gson.version>
+        <mockito.version>5.12.0</mockito.version>
+        <metrics.version>4.2.25</metrics.version>
+        <guava.version>33.1.0-jre</guava.version>
+        <curator.version>5.6.0</curator.version>
+        <protobuf.version>3.25.3</protobuf.version>
+        <grpc.version>1.63.0</grpc.version>
+        <lombok.version>1.18.32</lombok.version>
+        <netty.version>4.1.109.Final</netty.version>
+        <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
+        <dbunit.version>2.7.3</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
-        <postgresql.driver.version>42.5.5</postgresql.driver.version>
-        <kafka.version>3.5.1</kafka.version>
-        <testcontainers.version>1.18.3</testcontainers.version>
+        <postgresql.driver.version>42.7.3</postgresql.driver.version>
+        <kafka.version>3.7.0</kafka.version>
+        <testcontainers.version>1.19.7</testcontainers.version>
         <winsw.version>2.0.1</winsw.version>
-        <surefire.version>3.0.0-M9</surefire.version>
-        <jar-plugin.version>3.3.0</jar-plugin.version>
-        <freemarker.version>2.3.30</freemarker.version>
-        <mail.version>1.6.2</mail.version>
-        <javax.validation-api.version>2.0.1.Final</javax.validation-api.version>
-        <snakeyaml.version>1.28</snakeyaml.version>
-        <javax-annotation.version>1.3.2</javax-annotation.version>
+        <surefire.version>3.2.5</surefire.version>
+        <jar-plugin.version>3.4.0</jar-plugin.version>
+        <freemarker.version>2.3.32</freemarker.version>
+        <mail.version>2.0.1</mail.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <jakarta-annotation.version>3.0.0</jakarta-annotation.version>
+        <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <paho-client.version>1.2.5</paho-client.version>
         <thingsboard.version>3.5.0</thingsboard.version>
-        <concurrentunit.version>0.4.0</concurrentunit.version>
+        <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
-        <commons-lang3.version>3.4</commons-lang3.version>
-        <jackson.version>2.13.4.2</jackson.version>
-        <awaitility.version>4.1.0</awaitility.version>
-        <caffeine.version>2.6.1</caffeine.version>
-        <jaxb.version>2.3.1</jaxb.version>
-        <jjwt.version>0.7.0</jjwt.version>
-        <bouncycastle.version>1.69</bouncycastle.version>
-        <bucket4j.version>4.1.1</bucket4j.version>
-        <springfox-swagger.version>3.0.4</springfox-swagger.version>
-        <swagger-annotations.version>1.6.3</swagger-annotations.version>
-        <micrometer.version>1.9.0</micrometer.version>
-        <hibernate-validator.version>6.0.20.Final</hibernate-validator.version>
-        <javax.el.version>3.0.0</javax.el.version>
-        <antisamy.version>1.7.2</antisamy.version>
-        <spring-data-redis.version>2.7.10</spring-data-redis.version>
-        <jedis.version>3.8.0</jedis.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <jackson.version>2.17.0</jackson.version>
+        <awaitility.version>4.2.1</awaitility.version>
+        <caffeine.version>3.1.8</caffeine.version>
+        <jaxb.version>4.0.2</jaxb.version>
+        <jjwt.version>0.12.5</jjwt.version>
+        <bouncycastle.version>1.78</bouncycastle.version>
+        <bucket4j.version>8.13.0</bucket4j.version>
+        <springdoc-swagger.version>2.4.0TB</springdoc-swagger.version>
+        <swagger-annotations.version>2.2.21</swagger-annotations.version>
+        <micrometer.version>1.12.5</micrometer.version>
+        <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
+        <jakarta.el.version>4.0.2</jakarta.el.version>
+        <antisamy.version>1.7.5</antisamy.version>
+        <spring-data-redis.version>3.2.5</spring-data-redis.version>
+        <jedis.version>5.1.2</jedis.version>
     </properties>
 
     <modules>
@@ -124,6 +123,7 @@
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-resources-plugin</artifactId>
+                            <version>3.2.0</version>
                             <executions>
                                 <execution>
                                     <id>copy-conf</id>
@@ -522,7 +522,7 @@
             <extension>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
-                <version>1.5.0.Final</version>
+                <version>${os-maven-plugin.version}</version>
             </extension>
         </extensions>
         <pluginManagement>
@@ -530,9 +530,22 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.8.1</version>
+                    <version>3.11.0</version>
                     <configuration>
                         <release>17</release>
+                        <compilerArgs>
+                            <arg>-Xlint:deprecation</arg>
+                            <arg>-Xlint:removal</arg>
+                            <arg>-Xlint:unchecked</arg>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${lombok.version}</version>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -543,7 +556,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>2.2.1</version>
+                    <version>3.2.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -584,6 +597,12 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire.version}</version>
+                    <configuration>
+                        <argLine>
+                            -XX:+UseStringDeduplication -XX:MaxGCPauseMillis=20
+                            --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        </argLine>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -727,7 +746,10 @@
                             <exclude>src/main/scripts/windows/**</exclude>
                             <exclude>**/*.proto.js</exclude>
                             <exclude>ui/**</exclude>
-                            <exclude>src/browserslist</exclude>
+                            <exclude>**/.browserslistrc</exclude>
+                            <exclude>**/yarn.lock</exclude>
+                            <exclude>**/.yarnrc</exclude>
+                            <exclude>**/.angular/**</exclude>
                             <exclude>**/*.raw</exclude>
                             <exclude>**/apache/cassandra/io/**</exclude>
                         </excludes>
@@ -769,11 +791,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>org.thingsboard.mqtt-broker</groupId>
-                <artifactId>data</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.thingsboard.mqtt-broker.common</groupId>
                 <artifactId>actor</artifactId>
@@ -822,9 +839,14 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>${javax-annotation.version}</version>
+                <groupId>jakarta.validation</groupId>
+                <artifactId>jakarta.validation-api</artifactId>
+                <version>${jakarta.validation-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>${jakarta-annotation.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -856,6 +878,12 @@
                 <artifactId>spring-boot-starter-test</artifactId>
                 <version>${spring-boot.version}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.vaadin.external.google</groupId>
+                        <artifactId>android-json</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -863,8 +891,8 @@
                 <version>${spring-boot.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${jaxb.version}</version>
             </dependency>
             <dependency>
@@ -998,8 +1026,13 @@
             </dependency>
             <dependency>
                 <groupId>org.thingsboard</groupId>
-                <artifactId>springfox-boot-starter</artifactId>
-                <version>${springfox-swagger.version}</version>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-swagger.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger-annotations.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
@@ -1015,7 +1048,7 @@
             </dependency>
             <dependency>
                 <groupId>com.sun.mail</groupId>
-                <artifactId>javax.mail</artifactId>
+                <artifactId>jakarta.mail</artifactId>
                 <version>${mail.version}</version>
             </dependency>
             <dependency>
@@ -1060,23 +1093,28 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.vladimir-bukhtoyarov</groupId>
-                <artifactId>bucket4j-core</artifactId>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-core</artifactId>
                 <version>${bucket4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>javax.validation</groupId>
-                <artifactId>validation-api</artifactId>
-                <version>${javax.validation-api.version}</version>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-jedis</artifactId>
+                <version>${bucket4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-redis-common</artifactId>
+                <version>${bucket4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.yaml</groupId>
@@ -1152,7 +1190,7 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
-                <artifactId>mockito-all</artifactId>
+                <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -1177,8 +1215,8 @@
             </dependency>
             <dependency>
                 <groupId>org.glassfish</groupId>
-                <artifactId>javax.el</artifactId>
-                <version>${javax.el.version}</version>
+                <artifactId>jakarta.el</artifactId>
+                <version>${jakarta.el.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.owasp.antisamy</groupId>
@@ -1188,6 +1226,10 @@
                     <exclusion>
                         <groupId>org.slf4j</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>com.github.spotbugs</groupId>

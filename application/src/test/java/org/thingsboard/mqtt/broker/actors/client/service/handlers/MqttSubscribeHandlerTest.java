@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubsc
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
@@ -62,6 +63,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -95,6 +97,8 @@ public class MqttSubscribeHandlerTest {
     MsgPersistenceManager msgPersistenceManager;
     @MockBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
+    @MockBean
+    RateLimitService rateLimitService;
     @SpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 
@@ -164,8 +168,13 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test(expected = DataValidationException.class)
-    public void givenTopicSubscription_whenValidateSharedSubscriptionWithWildcardShareName_thenFailure() {
+    public void givenTopicSubscription_whenValidateSharedSubscriptionWithMultiLvlWildcardShareName_thenFailure() {
         mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "#"));
+    }
+
+    @Test(expected = DataValidationException.class)
+    public void givenTopicSubscription_whenValidateSharedSubscriptionWithSingleLvlWildcardShareName_thenFailure() {
+        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "abc+"));
     }
 
     @Test
@@ -547,6 +556,68 @@ public class MqttSubscribeHandlerTest {
         assertEquals(5, result.size());
     }
 
+    @Test
+    public void givenEmptyRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnEmptyResult() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
+
+        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of());
+
+        assertTrue(retainedMsgs.isEmpty());
+    }
+
+    @Test
+    public void givenRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnAllMsgs() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
+
+        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+                newRetainedMsg("msg1", 1),
+                newRetainedMsg("msg2", 2)
+        ));
+
+        assertEquals(2, retainedMsgs.size());
+    }
+
+    @Test
+    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsWithNoTokensLeft_thenReturnEmptyResult() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(0L);
+
+        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+                newRetainedMsg("msg1", 1),
+                newRetainedMsg("msg2", 2)
+        ));
+
+        assertTrue(retainedMsgs.isEmpty());
+    }
+
+    @Test
+    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimits_thenReturnExpectedResult() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(2L);
+
+        Set<RetainedMsg> retainedMsgSet = Set.of(
+                newRetainedMsg("msg1", 1), newRetainedMsg("msg2", 2)
+        );
+        Set<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(retainedMsgSet);
+
+        assertEquals(2, result.size());
+        assertTrue(result.containsAll(retainedMsgSet));
+    }
+
+    @Test
+    public void givenRetainedMsgSetAndTotalMsgsLimitEnabled_whenApplyRateLimitsAndPartlyTokensAvailable_thenReturnExpectedResult() {
+        when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
+        when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(1L);
+
+        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+                newRetainedMsg("msg1", 1),
+                newRetainedMsg("msg2", 2),
+                newRetainedMsg("msg3", 0)
+        ));
+
+        assertEquals(1, retainedMsgs.size());
+    }
+
     private List<TopicSubscription> getTopicSubscriptions() {
         return List.of(
                 getTopicSubscription("topic1", 0),
@@ -570,5 +641,9 @@ public class MqttSubscribeHandlerTest {
 
     private RetainedMsg newRetainedMsg(String payload, int qos, long ts) {
         return new RetainedMsg("#", payload.getBytes(StandardCharsets.UTF_8), qos, MqttProperties.NO_PROPERTIES, ts);
+    }
+
+    private RetainedMsg newRetainedMsg(String payload, int qos) {
+        return new RetainedMsg("#", payload.getBytes(StandardCharsets.UTF_8), qos, MqttProperties.NO_PROPERTIES, System.currentTimeMillis());
     }
 }

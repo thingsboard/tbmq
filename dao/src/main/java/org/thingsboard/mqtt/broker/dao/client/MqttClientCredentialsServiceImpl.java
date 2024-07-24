@@ -20,10 +20,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
@@ -60,7 +60,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink
 public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsService {
 
     private final MqttClientCredentialsDao mqttClientCredentialsDao;
-    private final CacheManager cacheManager;
+    private final CacheNameResolver cacheNameResolver;
 
     @Override
     public MqttClientCredentials saveCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -82,7 +82,8 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         try {
             MqttClientCredentials currentCredentials = getCurrentCredentialsById(mqttClientCredentials.getId());
             MqttClientCredentials savedMqttClientCredentials = mqttClientCredentialsDao.save(mqttClientCredentials);
-            evictCache(currentCredentials);
+
+            evictCache(mqttClientCredentials, currentCredentials);
             return savedMqttClientCredentials;
         } catch (Exception t) {
             ConstraintViolationException e = DbExceptionUtil.extractConstraintViolationException(t).orElse(null);
@@ -112,10 +113,11 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             log.trace("Executing deleteCredentials [{}]", id);
         }
         MqttClientCredentials clientCredentials = mqttClientCredentialsDao.findById(id);
-        mqttClientCredentialsDao.removeById(id);
-        if (clientCredentials != null) {
-            evictCache(clientCredentials);
+        if (clientCredentials == null) {
+            return;
         }
+        mqttClientCredentialsDao.removeById(id);
+        evictCache(clientCredentials, clientCredentials);
     }
 
     @Override
@@ -217,6 +219,12 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         return mqttClientCredentialsDao.existsByCredentialsType(credentialsType);
     }
 
+    @Override
+    public List<MqttClientCredentials> findByCredentialsType(ClientCredentialsType type) {
+        log.trace("Executing findByCredentialsType [{}]", type);
+        return mqttClientCredentialsDao.findByCredentialsType(type);
+    }
+
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
@@ -239,8 +247,16 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         SslMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, SslMqttCredentials.class);
-        if (StringUtils.isEmpty(mqttCredentials.getCertCommonName())) {
-            throw new DataValidationException("Certificate common name should be specified!");
+        if (StringUtils.isEmpty(mqttCredentials.getCertCnPattern())) {
+            throw new DataValidationException("Certificate common name pattern should be specified!");
+        }
+        if (mqttCredentials.isCertCnIsRegex()) {
+            String certCnPattern = mqttCredentials.getCertCnPattern();
+            try {
+                Pattern.compile(certCnPattern);
+            } catch (PatternSyntaxException e) {
+                throw new DataValidationException("Certificate common name pattern [" + certCnPattern + "] must be a valid regex");
+            }
         }
         if (CollectionUtils.isEmpty(mqttCredentials.getAuthRulesMapping())) {
             throw new DataValidationException("Authorization rules mapping should be specified!");
@@ -257,7 +273,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             compileAuthRules(authRules);
         });
 
-        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCommonName());
+        String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
         mqttClientCredentials.setCredentialsId(credentialsId);
     }
 
@@ -288,16 +304,32 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         return id != null ? getCredentialsById(id).orElse(null) : null;
     }
 
-    private void evictCache(MqttClientCredentials clientCredentials) {
-        Cache cache = getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE);
+    private void evictCache(MqttClientCredentials newCredentials, MqttClientCredentials currentCredentials) {
+        evictMqttClientCredentialsCache(currentCredentials);
+        invalidateBasicCredentialsPasswordCache(currentCredentials);
+        invalidateSslRegexBasedCredentialsCache(newCredentials, currentCredentials);
+    }
+
+    private void evictMqttClientCredentialsCache(MqttClientCredentials clientCredentials) {
         if (clientCredentials != null) {
-            cache.evictIfPresent(clientCredentials.getCredentialsId());
+            getCache(CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE).evictIfPresent(clientCredentials.getCredentialsId());
         }
-        getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE).invalidate();
+    }
+
+    private void invalidateBasicCredentialsPasswordCache(MqttClientCredentials clientCredentials) {
+        if (clientCredentials != null && ClientCredentialsType.MQTT_BASIC == clientCredentials.getCredentialsType()) {
+            getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE).invalidate();
+        }
+    }
+
+    private void invalidateSslRegexBasedCredentialsCache(MqttClientCredentials newCredentials, MqttClientCredentials currentCredentials) {
+        if (isSslType(newCredentials) || (currentCredentials != null && isSslType(currentCredentials))) {
+            getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE).evictIfPresent(ClientCredentialsType.SSL);
+        }
     }
 
     private Cache getCache(String cacheName) {
-        return cacheManager.getCache(cacheName);
+        return cacheNameResolver.getCache(cacheName);
     }
 
     private final DataValidator<MqttClientCredentials> credentialsValidator =
@@ -340,4 +372,8 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     }
                 }
             };
+
+    private boolean isSslType(MqttClientCredentials clientCredentials) {
+        return ClientCredentialsType.SSL == clientCredentials.getCredentialsType();
+    }
 }

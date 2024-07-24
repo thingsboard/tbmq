@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,7 +37,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 
-import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;

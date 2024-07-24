@@ -16,24 +16,21 @@
 package org.thingsboard.mqtt.broker.dao.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JsonStringType;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Table;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@TypeDef(name = "json", typeClass = JsonStringType.class)
 @Table(name = ModelConstants.USER_COLUMN_FAMILY_NAME)
 public class UserEntity extends BaseSqlEntity<User> implements SearchTextEntity<User> {
 
@@ -53,7 +50,7 @@ public class UserEntity extends BaseSqlEntity<User> implements SearchTextEntity<
     @Column(name = ModelConstants.USER_LAST_NAME_PROPERTY)
     private String lastName;
 
-    @Type(type = "json")
+    @Convert(converter = JsonConverter.class)
     @Column(name = ModelConstants.USER_ADDITIONAL_INFO_PROPERTY)
     private JsonNode additionalInfo;
 

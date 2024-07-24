@@ -193,7 +193,7 @@ public class ConnectServiceImplTest {
     @Test
     public void givenPersistentClientWithoutClientId_whenCheckIfProceedConnection_thenConnectionRefused() {
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_IDENTIFIER_REJECTED);
@@ -206,7 +206,21 @@ public class ConnectServiceImplTest {
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenApplicationClientsLimit_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(rateLimitService.checkApplicationClientsLimit(sessionInfo)).thenReturn(false);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
@@ -221,7 +235,7 @@ public class ConnectServiceImplTest {
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_SERVER_UNAVAILABLE);
@@ -236,7 +250,7 @@ public class ConnectServiceImplTest {
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED);
@@ -248,7 +262,7 @@ public class ConnectServiceImplTest {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_CLIENT_IDENTIFIER_NOT_VALID);
@@ -262,7 +276,22 @@ public class ConnectServiceImplTest {
         when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(false);
 
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
+        Assert.assertFalse(result);
+
+        verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
+        verify(clientMqttActorManager, times(1)).disconnect(any(), any());
+    }
+
+    @Test
+    public void givenApplicationClientsLimitMqtt5_whenCheckIfProceedConnection_thenConnectionRefused() {
+        when(rateLimitService.checkSessionsLimit("testClient")).thenReturn(true);
+        when(actorState.getClientId()).thenReturn("testClient");
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
+        when(rateLimitService.checkApplicationClientsLimit(sessionInfo)).thenReturn(false);
+
+        MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient");
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_QUOTA_EXCEEDED);
@@ -278,7 +307,7 @@ public class ConnectServiceImplTest {
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_TOPIC_NAME_INVALID);
@@ -294,7 +323,7 @@ public class ConnectServiceImplTest {
 
         PublishMsg lastWillMsg = PublishMsg.builder().build();
         MqttConnectMsg connectMsg = getMqttConnectMsg(UUID.randomUUID(), "testClient", lastWillMsg);
-        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg);
+        boolean result = connectService.shouldProceedWithConnection(actorState, connectMsg, sessionInfo);
         Assert.assertFalse(result);
 
         verify(mqttMessageGenerator, times(1)).createMqttConnAckMsg(CONNECTION_REFUSED_NOT_AUTHORIZED_5);

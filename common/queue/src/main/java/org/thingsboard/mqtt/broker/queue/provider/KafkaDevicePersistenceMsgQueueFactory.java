@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +35,13 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Properties;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceMsgQueueFactory {
+public class KafkaDevicePersistenceMsgQueueFactory extends AbstractQueueFactory implements DevicePersistenceMsgQueueFactory {
 
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
 
@@ -68,8 +68,8 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(devicePersistenceMsgSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("device-persisted-msg-producer");
-        producerBuilder.defaultTopic(devicePersistenceMsgSettings.getTopic());
+        producerBuilder.clientId(kafkaPrefix + "device-persisted-msg-producer");
+        producerBuilder.defaultTopic(devicePersistenceMsgSettings.getKafkaTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -80,14 +80,14 @@ public class KafkaDevicePersistenceMsgQueueFactory implements DevicePersistenceM
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(devicePersistenceMsgSettings.getTopic(), devicePersistenceMsgSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(devicePersistenceMsgSettings.getKafkaTopic(), devicePersistenceMsgSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("DeviceMsgQueue-" + id, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
-        consumerBuilder.topic(devicePersistenceMsgSettings.getTopic());
+        consumerBuilder.topic(devicePersistenceMsgSettings.getKafkaTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("device-persisted-msg-consumer-" + id);
-        consumerBuilder.groupId("device-persisted-msg-consumer-group");
+        consumerBuilder.clientId(kafkaPrefix + "device-persisted-msg-consumer-" + id);
+        consumerBuilder.groupId(kafkaPrefix + "device-persisted-msg-consumer-group");
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.PublishMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.autoCommit(false);

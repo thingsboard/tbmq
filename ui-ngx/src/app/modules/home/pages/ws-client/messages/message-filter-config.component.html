@@ -20,12 +20,10 @@
 </ng-container>
 <ng-template #componentMode>
   <ng-container *ngIf="buttonMode; else sessionFilter">
-    <button color="primary"
-            matTooltip="{{buttonDisplayValue}}"
-            matTooltipPosition="above"
-            mat-stroked-button
+    <button color="primary" mat-stroked-button
             (click)="toggleFilterPanel($event)">
       <mat-icon>filter_list</mat-icon>
+      <span class="filter-text">{{buttonDisplayValue}}</span>
     </button>
   </ng-container>
 </ng-template>

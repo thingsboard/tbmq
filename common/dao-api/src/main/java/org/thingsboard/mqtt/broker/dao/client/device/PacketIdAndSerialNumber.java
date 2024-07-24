@@ -40,4 +40,20 @@ public class PacketIdAndSerialNumber implements Serializable {
                 new AtomicInteger(packetId),
                 new AtomicLong(serialNumber));
     }
+
+    public static PacketIdAndSerialNumber initialInstance() {
+        return new PacketIdAndSerialNumber(new AtomicInteger(0), new AtomicLong(-1));
+    }
+
+    public int incrementAndGetPacketId() {
+        return this.packetId.incrementAndGet();
+    }
+
+    public boolean compareAndSetPacketId() {
+        return this.packetId.compareAndSet(0xffff, 1);
+    }
+
+    public long incrementAndGetSerialNumber() {
+        return this.serialNumber.incrementAndGet();
+    }
 }

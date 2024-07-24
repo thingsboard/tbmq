@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -46,7 +47,6 @@ import org.thingsboard.mqtt.broker.service.security.model.token.JwtToken;
 import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 

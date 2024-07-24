@@ -17,8 +17,8 @@ package org.thingsboard.mqtt.broker.util;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import jakarta.servlet.http.HttpServletRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 

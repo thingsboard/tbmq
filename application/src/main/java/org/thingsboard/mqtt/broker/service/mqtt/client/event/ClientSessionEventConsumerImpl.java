@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +32,6 @@ import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory
 import org.thingsboard.mqtt.broker.service.stats.ClientSessionEventConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

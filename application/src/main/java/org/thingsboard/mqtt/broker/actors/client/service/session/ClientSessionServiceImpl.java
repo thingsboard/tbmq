@@ -38,8 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-/*
-    Not thread-safe for the same clientId
+/**
+ * Not thread-safe for the same clientId
  */
 @Slf4j
 @Service

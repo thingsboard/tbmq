@@ -15,17 +15,25 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 public class JsonConverter {
 
     private static final Gson GSON = new Gson();
-    private static final JsonParser JSON_PARSER = new JsonParser();
     private static final String CAN_T_PARSE_VALUE = "Can't parse value: ";
 
     private static void convertToTelemetry(JsonElement jsonElement, long systemTs, Map<Long, List<KvEntry>> result) {
@@ -98,7 +106,7 @@ public class JsonConverter {
     }
 
     public static JsonElement parse(String json) {
-        return JSON_PARSER.parse(json);
+        return JsonParser.parseString(json);
     }
 
     public static <T> T parse(String json, Class<T> clazz) {

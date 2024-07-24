@@ -26,8 +26,10 @@ import {
   PublishMessageProperties,
   TimeUnitTypeTranslationMap,
   WebSocketConnection,
-  AboveSecWebSocketTimeUnit
+  AboveSecWebSocketTimeUnit,
+  isDefinedProps
 } from '@shared/models/ws-client.model';
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 
 export interface PropertiesDialogComponentData {
   props: PublishMessageProperties;
@@ -55,7 +57,8 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
               protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: any,
-              public dialogRef: MatDialogRef<null>) {
+              public dialogRef: MatDialogRef<null>,
+              private mqttJsClientService: MqttJsClientService) {
     super(store, router, dialogRef);
   }
 
@@ -63,6 +66,14 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
     this.props = this.data.props;
     this.connection = this.data.connection;
     this.buildForms();
+
+    this.mqttJsClientService.connection$.subscribe(
+      connection => {
+        if (connection) {
+          this.connection = connection;
+        }
+      }
+    );
   }
 
   ngAfterContentChecked(): void {
@@ -93,7 +104,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   onSave() {
     const properties = this.formGroup.getRawValue();
-    properties.changed = this.countNonNull(properties) > 1;
+    properties.changed = isDefinedProps(properties);
     this.dialogRef.close(properties);
   }
 
@@ -116,16 +127,6 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
       }
       return null;
     };
-  }
-
-  private countNonNull(obj: any): number {
-    let count = 0;
-    for (let key in obj) {
-      if (obj[key] !== null && obj[key] !== '') {
-        count++;
-      }
-    }
-    return count;
   }
 }
 

@@ -61,7 +61,10 @@ public class BrokerConstants {
 
     public static final int DEFAULT_RECEIVE_MAXIMUM = 65535;
 
+    public static final String NULL_CHAR_STR = "\u0000";
+
     public static final char TOPIC_DELIMITER = '/';
+    public static final String TOPIC_DELIMITER_STR = "/";
     public static final String MULTI_LEVEL_WILDCARD = "#";
     public static final String SINGLE_LEVEL_WILDCARD = "+";
     public static final String SHARED_SUBSCRIPTION_PREFIX = "$share/";
@@ -97,6 +100,9 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
+    public static final String COMMA = ",";
+    public static final String COLON = ":";
+
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
@@ -129,7 +135,7 @@ public class BrokerConstants {
 
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
     public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
-    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#FF5733";
+    public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
 
     public static final String SYSTEM_DUMMY_CLIENT_ID_PREFIX = "tbmq_system_dummy_client_id_";
     public static final String SYSTEM_DUMMY_TOPIC_FILTER = "tbmq_system_dummy_topic_filter";

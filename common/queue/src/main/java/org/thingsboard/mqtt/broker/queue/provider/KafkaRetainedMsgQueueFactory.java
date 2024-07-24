@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +36,6 @@ import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
 import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Properties;
 
@@ -45,7 +45,7 @@ import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.COMPACT
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class KafkaRetainedMsgQueueFactory implements RetainedMsgQueueFactory {
+public class KafkaRetainedMsgQueueFactory extends AbstractQueueFactory implements RetainedMsgQueueFactory {
 
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
     private final TbKafkaConsumerSettings consumerSettings;
@@ -75,8 +75,8 @@ public class KafkaRetainedMsgQueueFactory implements RetainedMsgQueueFactory {
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createProducer() {
         TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(retainedMsgKafkaSettings.getAdditionalProducerConfig()));
-        producerBuilder.clientId("retained-msg-producer");
-        producerBuilder.defaultTopic(retainedMsgKafkaSettings.getTopic());
+        producerBuilder.clientId(kafkaPrefix + "retained-msg-producer");
+        producerBuilder.defaultTopic(retainedMsgKafkaSettings.getKafkaTopic());
         producerBuilder.topicConfigs(topicConfigs);
         producerBuilder.admin(queueAdmin);
         producerBuilder.statsManager(producerStatsManager);
@@ -87,14 +87,14 @@ public class KafkaRetainedMsgQueueFactory implements RetainedMsgQueueFactory {
     public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createConsumer(String consumerId, String groupId) {
         TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
-        Properties props = consumerSettings.toProps(retainedMsgKafkaSettings.getTopic(), retainedMsgKafkaSettings.getAdditionalConsumerConfig());
+        Properties props = consumerSettings.toProps(retainedMsgKafkaSettings.getKafkaTopic(), retainedMsgKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("RetainedMsgQueue-" + consumerId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
 
-        consumerBuilder.topic(retainedMsgKafkaSettings.getTopic());
+        consumerBuilder.topic(retainedMsgKafkaSettings.getKafkaTopic());
         consumerBuilder.topicConfigs(topicConfigs);
-        consumerBuilder.clientId("retained-msg-consumer-" + consumerId);
-        consumerBuilder.groupId(BrokerConstants.RETAINED_MSG_CG_PREFIX + groupId);
+        consumerBuilder.clientId(kafkaPrefix + "retained-msg-consumer-" + consumerId);
+        consumerBuilder.groupId(kafkaPrefix + BrokerConstants.RETAINED_MSG_CG_PREFIX + groupId);
         consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.RetainedMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);

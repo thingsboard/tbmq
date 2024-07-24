@@ -15,18 +15,24 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import java.util.Map;
 import java.util.Optional;
 
 public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends TbQueueConsumer<T> {
+
     void commit(int partition, long offset);
 
     void assignPartition(int partition);
 
     void assignAllPartitions();
 
+    void assignOrSubscribe();
+
     void seekToTheBeginning();
 
     long getEndOffset(String topic, int partition);
 
     Optional<Long> getCommittedOffset(String topic, int partition);
+
+    Map<String, String> getTopicConfigs();
 }

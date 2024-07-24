@@ -20,7 +20,10 @@ import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.github.benmanes.caffeine.cache.Ticker;
 import com.github.benmanes.caffeine.cache.Weigher;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -33,8 +36,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -55,9 +56,13 @@ public class TbCaffeineCacheConfiguration {
 
     @Value("${cache.stats.enabled:true}")
     private boolean cacheStatsEnabled;
-
     @Value("${cache.stats.intervalSec:60}")
     private long cacheStatsInterval;
+    @Value("${mqtt.sessions-limit:0}")
+    private int sessionsLimit;
+    @Value("${mqtt.application-clients-limit:0}")
+    @Setter
+    private int applicationClientsLimit;
 
     private ScheduledExecutorService scheduler = null;
 
@@ -66,15 +71,21 @@ public class TbCaffeineCacheConfiguration {
     @Bean
     public CacheManager cacheManager() {
         if (log.isTraceEnabled()) {
-            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), configuration.getSpecs());
+            log.trace("Initializing cache: {} specs {}", Arrays.toString(RemovalCause.values()), configuration.getCacheSpecs());
         }
         SimpleCacheManager manager = new SimpleCacheManager();
-        if (configuration.getSpecs() != null) {
+        if (configuration.getCacheSpecs() != null) {
             caches =
-                    configuration.getSpecs().entrySet().stream()
+                    configuration.getCacheSpecs().entrySet().stream()
                             .map(entry -> buildCache(entry.getKey(),
                                     entry.getValue()))
                             .collect(Collectors.toList());
+            if (sessionsLimit > 0) {
+                caches.add(buildCache(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE, getCacheSpecsForLimitCache()));
+            }
+            if (applicationClientsLimit > 0) {
+                caches.add(buildCache(CacheConstants.APP_CLIENTS_LIMIT_CACHE, getCacheSpecsForLimitCache()));
+            }
             manager.setCaches(caches);
         }
 
@@ -112,12 +123,13 @@ public class TbCaffeineCacheConfiguration {
     }
 
     private CaffeineCache buildCache(String name, CacheSpecs cacheSpec) {
-        final Caffeine<Object, Object> caffeineBuilder
-                = Caffeine.newBuilder()
+        final Caffeine<Object, Object> caffeineBuilder = Caffeine.newBuilder()
                 .weigher(collectionSafeWeigher())
                 .maximumWeight(cacheSpec.getMaxSize())
-                .expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES)
                 .ticker(ticker());
+        if (cacheSpec.getTimeToLiveInMinutes() != -1) {
+            caffeineBuilder.expireAfterWrite(cacheSpec.getTimeToLiveInMinutes(), TimeUnit.MINUTES);
+        }
         if (cacheStatsEnabled) {
             caffeineBuilder.recordStats();
         }
@@ -137,4 +149,12 @@ public class TbCaffeineCacheConfiguration {
             return 1;
         };
     }
+
+    private CacheSpecs getCacheSpecsForLimitCache() {
+        CacheSpecs cacheSpec = new CacheSpecs();
+        cacheSpec.setMaxSize(1);
+        cacheSpec.setTimeToLiveInMinutes(-1);
+        return cacheSpec;
+    }
+
 }

@@ -29,7 +29,12 @@ import { ContentType, MediaBreakpoints } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { PublishMessageProperties, WsClientMessageTypeTranslationMap, WsTableMessage } from '@shared/models/ws-client.model';
+import {
+  isDefinedProps,
+  PublishMessageProperties,
+  WsClientMessageTypeTranslationMap,
+  WsTableMessage
+} from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import {
   WsMessageContentDialogComponentDialogData,
@@ -78,11 +83,11 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
       new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
-      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', this.colWidth(), entity => entity.topic,
+      new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic,
         undefined, undefined, undefined, (entity) => entity.topic),
-      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos.toString(),
+      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50px', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
-      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50%',
+      new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50px',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
       new EntityTableColumn<WsTableMessage>('payload', 'retained-message.payload', this.colWidth(), (entity) => {
@@ -115,7 +120,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
       {
         name: this.translate.instant('ws-client.connections.properties'),
         icon: 'mdi:information-outline',
-        isEnabled: (entity) => isDefinedAndNotNull(entity.properties),
+        isEnabled: (entity) => isDefinedProps(entity.properties),
         onAction: ($event, entity) => this.showPayloadProperties($event, entity.properties)
       }
     );

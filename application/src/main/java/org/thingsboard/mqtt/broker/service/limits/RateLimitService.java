@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.limits;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
@@ -35,5 +36,19 @@ public interface RateLimitService {
     void remove(String clientId);
 
     boolean checkSessionsLimit(String clientId);
+
+    boolean checkApplicationClientsLimit(SessionInfo sessionInfo);
+
+    boolean checkDevicePersistedMsgsLimit();
+
+    long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit);
+
+    boolean isDevicePersistedMsgsLimitEnabled();
+
+    boolean checkTotalMsgsLimit();
+
+    long tryConsumeAsMuchAsPossibleTotalMsgs(long limit);
+
+    boolean isTotalMsgsLimitEnabled();
 
 }

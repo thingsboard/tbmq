@@ -17,24 +17,25 @@ package org.thingsboard.mqtt.broker.dao.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLJsonPGObjectJsonbType;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.util.mapping.JsonBinaryType;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import java.util.UUID;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@TypeDef(name = "jsonb", typeClass = JsonBinaryType.class)
+
 @Table(name = ModelConstants.WEBSOCKET_CONNECTION_COLUMN_FAMILY_NAME)
 public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection> implements SearchTextEntity<WebSocketConnection> {
 
@@ -44,7 +45,8 @@ public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection
     @Column(name = ModelConstants.WEBSOCKET_CONNECTION_USER_ID_PROPERTY, columnDefinition = "uuid")
     private UUID userId;
 
-    @Type(type = "jsonb")
+    @Convert(converter = JsonConverter.class)
+    @JdbcType(PostgreSQLJsonPGObjectJsonbType.class)
     @Column(name = ModelConstants.WEBSOCKET_CONNECTION_CONFIGURATION_PROPERTY, columnDefinition = "jsonb")
     private JsonNode configuration;
 

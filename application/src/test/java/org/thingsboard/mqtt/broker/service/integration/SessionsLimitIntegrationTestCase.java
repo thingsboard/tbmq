@@ -17,7 +17,10 @@ package org.thingsboard.mqtt.broker.service.integration;
 
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +34,10 @@ import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.util.concurrent.TimeUnit;
 
@@ -39,14 +45,31 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = SessionsLimitIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
+        "security.mqtt.basic.enabled=true",
         "mqtt.sessions-limit=1"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
+    private final String USER_NAME = "sessionsLimitUn";
+
+    @Autowired
+    private MqttClientCredentialsService credentialsService;
     @Autowired
     public ClientSessionService clientSessionService;
+
+    private MqttClientCredentials credentials;
+
+    @Before
+    public void init() {
+        credentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, USER_NAME));
+    }
+
+    @After
+    public void clear() throws Exception {
+        credentialsService.deleteCredentials(credentials.getId());
+    }
 
     @Test
     public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClient_thenRefuseNewConnection() throws Throwable {
@@ -54,9 +77,10 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
-        ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_1");
-        Assert.assertNotNull(clientSessionInfo1);
-        Assert.assertTrue(clientSessionInfo1.isConnected());
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_1");
+            return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
+        });
 
         MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
@@ -66,9 +90,30 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
         client1.disconnect();
     }
 
+    @Test
+    public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClientWithSameClientId_thenAllowConnection() throws Throwable {
+        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
+        Assert.assertTrue(client1.isConnected());
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionInfo clientSessionInfo1 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
+            return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
+        });
+
+        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
+        ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
+        Assert.assertNotNull(clientSessionInfo2);
+
+        client2.disconnect();
+        client1.disconnect();
+    }
+
     private MqttClientConfig getConfig(String clientId) {
         MqttClientConfig config = new MqttClientConfig();
         config.setClientId(clientId);
+        config.setUsername(USER_NAME);
         config.setCleanSession(true);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setReconnect(false);

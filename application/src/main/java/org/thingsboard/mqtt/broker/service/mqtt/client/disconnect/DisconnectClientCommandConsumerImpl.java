@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +31,6 @@ import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
-import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;

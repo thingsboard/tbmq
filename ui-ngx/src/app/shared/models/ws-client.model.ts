@@ -18,6 +18,7 @@ import { BaseData } from '@shared/models/base-data';
 import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
 import { randomAlphanumeric } from '@core/utils';
+import { colorPresetsHex } from '@shared/components/color-picker/color-picker.component';
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -91,6 +92,7 @@ export interface WebSocketConnectionConfiguration {
   // requestProblemInfo?: boolean;
   lastWillMsg?: LastWillMsg;
   userProperties?: any;
+  rejectUnauthorized?: boolean;
 }
 
 export interface LastWillMsg {
@@ -288,14 +290,33 @@ export function transformObjectToProps(input: {[key: string]: number|string|Arra
   return { props };
 }
 
+export const defaultPublishTopic = 'sensors/temperature';
+export const defaultSubscriptionTopicFilter = 'sensors/#';
 export const clientIdRandom = () => 'tbmq_' + randomAlphanumeric(8);
 export const clientUserNameRandom = () => 'tbmq_un_' + randomAlphanumeric(8);
 export const clientCredentialsNameRandom = (number = randomAlphanumeric(8)) => 'WebSocket Credentials ' + number;
 export const connectionName = (number = 0) => 'WebSocket Connection ' + number;
-export const colorRandom = () => '#' + Math.floor(Math.random()*16777215).toString(16);
+export const colorRandom = () => {
+  const randomIndex = Math.floor(Math.random() * colorPresetsHex.length);
+  return colorPresetsHex[randomIndex];
+}
+export const isDefinedProps = (obj: any): boolean => {
+  let count = 0;
+  for (let key in obj) {
+    if (obj[key] !== null && obj[key] !== '' && key !== 'messageExpiryIntervalUnit') {
+      count++;
+    }
+  }
+  return count > 0;
+}
 
-export const MessageFilterDefaultConfig: MessageFilterConfig = {
+export const MessageFilterDefaultConfigAll: MessageFilterConfig = {
   type: 'all',
+  topic: null,
+  qosList: null,
+  retainList: null
+};
+export const MessageFilterDefaultConfig: MessageFilterConfig = {
   topic: null,
   qosList: null,
   retainList: null

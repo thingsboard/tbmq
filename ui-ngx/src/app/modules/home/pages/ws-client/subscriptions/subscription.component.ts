@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -28,6 +28,10 @@ import {
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClipboardService } from 'ngx-clipboard';
+import { MatMenuTrigger } from '@angular/material/menu';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 @Component({
   selector: 'tb-subscription',
@@ -48,6 +52,8 @@ export class SubscriptionComponent implements OnInit {
   @Output()
   subscriptionUpdated = new EventEmitter<void>();
 
+  @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger;
+
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
 
@@ -56,6 +62,7 @@ export class SubscriptionComponent implements OnInit {
               private clipboardService: ClipboardService,
               private dialog: MatDialog,
               private dialogService: DialogService,
+              private store: Store<AppState>,
               private translate: TranslateService) {
 
   }
@@ -110,6 +117,15 @@ export class SubscriptionComponent implements OnInit {
       $event.stopPropagation();
     }
     this.clipboardService.copy(webSocketSubscription.configuration.topicFilter);
+    this.store.dispatch(new ActionNotificationShow(
+      {
+        message: this.translate.instant('action.on-copied'),
+        type: 'success',
+        duration: 1000,
+        verticalPosition: 'top',
+        horizontalPosition: 'left'
+      })
+    );
   }
 
   private delete($event: Event, webSocketSubscription: WebSocketSubscription) {
@@ -124,6 +140,7 @@ export class SubscriptionComponent implements OnInit {
       true
     ).subscribe((result) => {
       if (result) {
+        this.closeMenu();
         this.webSocketSubscriptionService.deleteWebSocketSubscription(webSocketSubscription.id).subscribe(() => {
           this.mqttJsClientService.unsubscribeWebSocketSubscription(webSocketSubscription);
           this.updateData();
@@ -149,6 +166,7 @@ export class SubscriptionComponent implements OnInit {
         }).afterClosed()
           .subscribe((webSocketSubscriptionDialogData) => {
             if (isDefinedAndNotNull(webSocketSubscriptionDialogData)) {
+              this.closeMenu();
               this.webSocketSubscriptionService.saveWebSocketSubscription(webSocketSubscriptionDialogData).subscribe(
                 (currentWebSocketSubscription) => {
                   this.mqttJsClientService.unsubscribeWebSocketSubscription(initWebSocketSubscription, currentWebSocketSubscription);
@@ -163,6 +181,10 @@ export class SubscriptionComponent implements OnInit {
 
   private updateData() {
     this.subscriptionUpdated.emit();
+  }
+
+  private closeMenu() {
+    this.trigger.closeMenu();
   }
 
 }

@@ -26,15 +26,21 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
+import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.TbRateLimits;
+import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
+import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
@@ -48,7 +54,13 @@ public class RateLimitServiceImplTest {
     @MockBean
     OutgoingRateLimitsConfiguration outgoingRateLimitsConfiguration;
     @MockBean
+    DevicePersistedMsgsRateLimitsConfiguration devicePersistedMsgsRateLimitsConfiguration;
+    @MockBean
+    TotalMsgsRateLimitsConfiguration totalMsgsRateLimitsConfiguration;
+    @MockBean
     ClientSessionService clientSessionService;
+    @MockBean
+    RateLimitCacheService rateLimitCacheService;
 
     @SpyBean
     RateLimitServiceImpl rateLimitService;
@@ -57,6 +69,8 @@ public class RateLimitServiceImplTest {
     public void setUp() throws Exception {
         when(incomingRateLimitsConfiguration.isEnabled()).thenReturn(true);
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
         rateLimitService.init();
 
@@ -66,7 +80,7 @@ public class RateLimitServiceImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(incomingRateLimitsConfiguration, outgoingRateLimitsConfiguration, clientSessionService);
+        Mockito.reset(incomingRateLimitsConfiguration, outgoingRateLimitsConfiguration, clientSessionService, rateLimitCacheService);
     }
 
     @Test
@@ -165,7 +179,7 @@ public class RateLimitServiceImplTest {
     @Test
     public void givenSessionsLimitReached_whenCheckSessionsLimit_thenFailure() {
         rateLimitService.setSessionsLimit(1);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertFalse(result);
@@ -174,7 +188,7 @@ public class RateLimitServiceImplTest {
     @Test
     public void givenSessionsLimitNotReached_whenCheckSessionsLimit_thenSuccess() {
         rateLimitService.setSessionsLimit(5);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertTrue(result);
@@ -183,11 +197,129 @@ public class RateLimitServiceImplTest {
     @Test
     public void givenSessionsLimitReached_whenCheckSessionsLimitForExistingClient_thenSuccess() {
         rateLimitService.setSessionsLimit(1);
-        when(clientSessionService.getClientSessionsCount()).thenReturn(1);
+        when(rateLimitCacheService.incrementSessionCount()).thenReturn(2L);
         when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(ClientSessionInfo.builder().build());
 
         boolean result = rateLimitService.checkSessionsLimit(CLIENT_ID);
         Assert.assertTrue(result);
     }
 
+    @Test
+    public void givenNoApplicationClientsLimit_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(0);
+
+        SessionInfo sessionInfo = SessionInfo.builder().build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitAndNotPersistentAppClient_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(1);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).build()).cleanStart(true).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitReached_whenCheckApplicationClientsLimit_thenFailure() {
+        rateLimitService.setApplicationClientsLimit(1);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitNotReached_whenCheckApplicationClientsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(5);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitReached_whenCheckApplicationClientsLimitForExistingClient_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(1);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        SessionInfo sessionInfo = SessionInfo.builder().clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).clientId(CLIENT_ID).build()).cleanStart(false).build();
+        ClientSessionInfo clientSessionInfo = ClientSessionInfo.builder().type(ClientType.APPLICATION).cleanStart(false).build();
+        when(clientSessionService.getClientSessionInfo(CLIENT_ID)).thenReturn(clientSessionInfo);
+
+        boolean result = rateLimitService.checkApplicationClientsLimit(sessionInfo);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenDevicePersistedMsgsRateLimitsDisabled_whenCheckDevicePersistedMsgsLimit_thenSuccess() {
+        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
+
+        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
+        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(true);
+
+        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenDevicePersistedMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
+        when(devicePersistedMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeDevicePersistedMsg()).thenReturn(false);
+
+        boolean result = rateLimitService.checkDevicePersistedMsgsLimit();
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleDevicePersistedMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(eq(10L))).thenReturn(10L);
+
+        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleDevicePersistedMsgs(10L);
+        assertEquals(10L, tokens);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsDisabled_whenCheckTotalMsgsLimit_thenSuccess() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(false);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitNotReached_thenSuccess() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(true);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenTotalMsgsRateLimitsEnabled_whenRateLimitReached_thenFailure() {
+        when(totalMsgsRateLimitsConfiguration.isEnabled()).thenReturn(true);
+        when(rateLimitCacheService.tryConsumeTotalMsg()).thenReturn(false);
+
+        boolean result = rateLimitService.checkTotalMsgsLimit();
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenTokensAvailable_whenTryConsumeAsMuchAsPossibleTotalMsgs_thenSuccess() {
+        when(rateLimitCacheService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(10L))).thenReturn(10L);
+
+        long tokens = rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(10L);
+        assertEquals(10L, tokens);
+    }
 }

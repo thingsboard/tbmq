@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,9 +25,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 
 @Slf4j
 @Service

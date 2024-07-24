@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
@@ -29,6 +30,8 @@ public interface ClientSessionEventFactory {
                                                                      int sessionExpiryInterval);
 
     QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo);
+
+    QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo);
 
     QueueProtos.ClientSessionEventProto createApplicationTopicRemoveRequestProto(String clientId);
 }

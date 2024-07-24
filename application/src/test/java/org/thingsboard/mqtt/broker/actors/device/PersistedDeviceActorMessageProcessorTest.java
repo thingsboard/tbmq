@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumb
 import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.dto.PacketIdAndSerialNumberDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -467,4 +468,66 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(deviceMsgService, times(1)).tryRemovePersistedMessage(eq(SS_TEST_KEY), eq(200));
     }
 
+    @Test
+    public void givenInitialPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
+        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.initialInstance();
+
+        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(1, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(0, packetIdAndSerialNumberDto.getSerialNumber());
+
+        packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(2, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(1, packetIdAndSerialNumberDto.getSerialNumber());
+    }
+
+    @Test
+    public void givenPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
+        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.newInstance(10, 20);
+
+        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(11, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(21, packetIdAndSerialNumberDto.getSerialNumber());
+
+        packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(12, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(22, packetIdAndSerialNumberDto.getSerialNumber());
+    }
+
+    @Test
+    public void givenFullPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
+        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.newInstance(0xfffd, 50);
+
+        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(0xfffe, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(51, packetIdAndSerialNumberDto.getSerialNumber());
+
+        packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(0xffff, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(52, packetIdAndSerialNumberDto.getSerialNumber());
+
+        packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(1, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(53, packetIdAndSerialNumberDto.getSerialNumber());
+
+        packetIdAndSerialNumberDto =
+                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
+
+        assertEquals(2, packetIdAndSerialNumberDto.getPacketId());
+        assertEquals(54, packetIdAndSerialNumberDto.getSerialNumber());
+    }
 }

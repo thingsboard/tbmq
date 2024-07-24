@@ -18,6 +18,13 @@ package org.thingsboard.mqtt.broker.service.integration;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.mqttv5.client.IMqttToken;
+import org.eclipse.paho.mqttv5.client.MqttCallback;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.MqttDisconnectResponse;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -31,7 +38,9 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -63,6 +72,61 @@ public class RateLimitsIntegrationTestCase extends AbstractPubSubIntegrationTest
         }
 
         assertFalse(pubClient.isConnected());
+        pubClient.close();
+    }
+
+    @Test
+    public void givenMqtt5Publisher_whenRateLimitsDetected_thenReceiveCorrectResponse() throws Throwable {
+        org.eclipse.paho.mqttv5.client.MqttClient pubClient =
+                new org.eclipse.paho.mqttv5.client.MqttClient(SERVER_URI + mqttPort, "test_rate_limits_5");
+        pubClient.setCallback(new MqttCallback() {
+            @Override
+            public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
+
+            }
+
+            @Override
+            public void mqttErrorOccurred(MqttException e) {
+
+            }
+
+            @Override
+            public void messageArrived(String s, MqttMessage mqttMessage) throws Exception {
+
+            }
+
+            @Override
+            public void deliveryComplete(IMqttToken iMqttToken) {
+                int[] reasonCodes = iMqttToken.getReasonCodes();
+                assertEquals(1, reasonCodes.length);
+                assertTrue(reasonCodes[0] == 151 || reasonCodes[0] == 0);
+            }
+
+            @Override
+            public void connectComplete(boolean b, String s) {
+
+            }
+
+            @Override
+            public void authPacketArrived(int i, MqttProperties mqttProperties) {
+
+            }
+        });
+
+        MqttConnectionOptions options = new MqttConnectionOptions();
+        pubClient.connect(options);
+
+        for (int i = 0; i < 500; i++) {
+            try {
+                pubClient.publish("test/rate/limits", ("data_" + i).getBytes(), 1, false);
+            } catch (Exception e) {
+                log.error("Failed to publish msg", e);
+                break;
+            }
+        }
+
+        assertTrue(pubClient.isConnected());
+        pubClient.disconnect();
         pubClient.close();
     }
 

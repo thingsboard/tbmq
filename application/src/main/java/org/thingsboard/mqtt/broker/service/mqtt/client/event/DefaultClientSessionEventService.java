@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.event;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -38,8 +41,6 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -129,6 +130,15 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         sendEvent(
                 sessionInfo.getClientInfo().getClientId(),
                 eventFactory.createTryClearSessionRequestEventProto(sessionInfo),
+                false,
+                null);
+    }
+
+    @Override
+    public void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo) {
+        sendEvent(
+                clientSessionInfo.getClientId(),
+                eventFactory.createTryClearSessionRequestEventProto(clientSessionInfo),
                 false,
                 null);
     }
