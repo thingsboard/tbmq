@@ -150,6 +150,12 @@
                                 [copyText]="entity?.clientIpAdr">
                 </tb-copy-button>
               </mat-form-field>
+              <section fxLayout="row" fxLayoutAlign="start center" style="height: 56px">
+                <span class="cursor-pointer" *ngIf="!clientCredentials" (click)="getClientCredentials()" translate>
+                  mqtt-client-credentials.client-credentials
+                </span>
+                <span>{{clientCredentials}}</span>
+              </section>
             </div>
           </div>
         </fieldset>

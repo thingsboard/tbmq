@@ -51,6 +51,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   showAppClientShouldBePersistentWarning: boolean;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
+  clientCredentials: string = '';
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -118,6 +119,10 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   isConnected(): boolean {
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
+  }
+
+  getClientCredentials() {
+    this.clientCredentials = '';
   }
 
   private onSave(): void {
