@@ -54,10 +54,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
-    // TODO: sync subscriptions (and probably ClientSession)
-    //      - store events for each action in separate topic + sometimes make snapshots (apply events on 'value' sequentially)
-    //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
-
     @Override
     public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
         this.clientSubscriptionsMap = new ConcurrentHashMap<>(clientTopicSubscriptions);
@@ -76,11 +72,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted topic subscriptions", clientId);
-                    }
-                },
+                () -> log.trace("[{}] Persisted topic subscriptions", clientId),
                 t -> log.warn("[{}] Failed to persist topic subscriptions", clientId, t));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }
@@ -117,11 +109,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted unsubscribed topics", clientId);
-                    }
-                },
+                () -> log.trace("[{}] Persisted unsubscribed topics", clientId),
                 t -> log.warn("[{}] Failed to persist unsubscribed topics", clientId, t));
         unsubscribeAndPersist(clientId, topicFilters, callback);
     }
@@ -161,7 +149,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {
         return topicFilters.stream()
-                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicName(tf) : tf)
+                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicFilter(tf) : tf)
                 .collect(Collectors.toList());
     }
 
@@ -213,9 +201,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return clientSubscriptions
                 .stream()
                 .filter(TopicSubscription::isSharedSubscription)
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
-                .keySet();
+                .map(this::topicSubscriptionToTopicSharedSubscription)
+                .collect(Collectors.toSet());
     }
 
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
@@ -230,10 +217,10 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private void unsubscribeSharedSubscription(TopicSubscription topicSubscription) {
-        sharedSubscriptionProcessor.unsubscribe(getSharedSubscriptionTopicFilter(topicSubscription));
+        sharedSubscriptionProcessor.unsubscribe(topicSubscriptionToTopicSharedSubscription(topicSubscription));
     }
 
-    private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
+    private TopicSharedSubscription topicSubscriptionToTopicSharedSubscription(TopicSubscription topicSubscription) {
+        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName(), topicSubscription.getQos());
     }
 }

@@ -74,7 +74,7 @@ public class NettyMqttConverter {
                 .stream()
                 .map(mqttTopicSubscription ->
                         new TopicSubscription(
-                                getTopicName(mqttTopicSubscription.topicFilter()),
+                                getTopicFilter(mqttTopicSubscription.topicFilter()),
                                 mqttTopicSubscription.qualityOfService().value(),
                                 getShareName(mqttTopicSubscription.topicFilter()),
                                 SubscriptionOptions.newInstance(mqttTopicSubscription.option()),
@@ -83,17 +83,17 @@ public class NettyMqttConverter {
         return new MqttSubscribeMsg(sessionId, messageId, topicSubscriptions, properties);
     }
 
-    public static String getTopicName(String topicName) {
-        return isSharedTopic(topicName) ?
-                topicName.substring(topicName.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX) + 1) : topicName;
+    public static String getTopicFilter(String topicFilter) {
+        return isSharedTopic(topicFilter) ?
+                topicFilter.substring(topicFilter.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX) + 1) : topicFilter;
     }
 
-    public static String getShareName(String topicName) {
+    public static String getShareName(String topicFilter) {
         try {
-            return isSharedTopic(topicName) ?
-                    topicName.substring(BrokerConstants.SHARE_NAME_IDX, topicName.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX)) : null;
+            return isSharedTopic(topicFilter) ?
+                    topicFilter.substring(BrokerConstants.SHARE_NAME_IDX, topicFilter.indexOf(BrokerConstants.TOPIC_DELIMITER_STR, BrokerConstants.SHARE_NAME_IDX)) : null;
         } catch (IndexOutOfBoundsException e) {
-            log.error("[{}] Could not extract 'shareName' from shared subscription", topicName, e);
+            log.error("[{}] Could not extract 'shareName' from shared subscription", topicFilter, e);
             throw new RuntimeException("Could not extract 'shareName' from shared subscription", e);
         }
     }

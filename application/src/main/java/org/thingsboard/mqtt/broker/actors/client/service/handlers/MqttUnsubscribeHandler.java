@@ -79,7 +79,7 @@ public class MqttUnsubscribeHandler {
                 .stream()
                 .filter(NettyMqttConverter::isSharedTopic)
                 .map(topic -> new TopicSharedSubscription(
-                        NettyMqttConverter.getTopicName(topic),
+                        NettyMqttConverter.getTopicFilter(topic),
                         NettyMqttConverter.getShareName(topic)))
                 .collect(Collectors.toSet());
     }
