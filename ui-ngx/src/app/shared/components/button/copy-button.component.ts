@@ -69,8 +69,12 @@ export class CopyButtonComponent {
               private cd: ChangeDetectorRef) {
   }
 
-  copy($event: Event): void {
-    $event.stopPropagation();
+  copy($event: Event | string): void {
+    if (typeof $event === 'object') {
+      $event.stopPropagation();
+    } else if ($event?.length) {
+      this.copyText = $event;
+    }
     if (this.timer) {
       clearTimeout(this.timer);
     }

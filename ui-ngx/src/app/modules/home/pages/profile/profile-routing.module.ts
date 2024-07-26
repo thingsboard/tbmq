@@ -24,7 +24,7 @@ import { AuthService } from '@core/http/auth.service';
 
 export const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).getUser();
 
-const routes: Routes = [
+export const profileRoutes: Routes = [
   {
     path: 'profile',
     component: ProfileComponent,
@@ -40,6 +40,13 @@ const routes: Routes = [
     resolve: {
       user: UserProfileResolver
     }
+  }
+];
+
+const routes: Routes = [
+  {
+    path: 'profile',
+    redirectTo: 'account/profile'
   }
 ];
 

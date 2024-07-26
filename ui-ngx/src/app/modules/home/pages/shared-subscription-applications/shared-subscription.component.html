@@ -48,7 +48,9 @@
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>shared-subscription.topic-filter</mat-label>
         <input matInput formControlName="topicFilter" required>
-        <tb-copy-button [fxShow]="entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+        <tb-copy-button #copyBtn
+                        (click)="onClickTbCopyButton(entityForm.get('topicFilter')?.value)"
+                        [fxShow]="entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
                         [copyText]="entityForm.get('topicFilter').value">
         </tb-copy-button>
         <mat-error *ngIf="entityForm.get('topicFilter').hasError('required')">

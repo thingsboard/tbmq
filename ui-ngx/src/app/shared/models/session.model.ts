@@ -25,6 +25,7 @@ import {
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
+import { SubscriptionOptions } from '@shared/models/ws-client.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -50,7 +51,7 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export interface TopicSubscription {
+export interface TopicSubscription extends SubscriptionOptions {
   topic: string;
   qos: WsMqttQoSType;
   shareName: string;

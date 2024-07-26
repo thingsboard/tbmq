@@ -122,6 +122,7 @@ import { HelpMarkdownComponent } from '@shared/components/help-markdown.componen
 import { TbComponentOutletDirective } from '@shared/components/directives/component-outlet.directive';
 import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
 import { HelpPageComponent } from '@shared/components/help-page.component';
+import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -214,7 +215,8 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TbPopoverComponent,
     TbComponentOutletDirective,
     ColorPickerComponent,
-    HelpPageComponent
+    HelpPageComponent,
+    HintTooltipIconComponent
   ],
   imports: [
     CommonModule,
@@ -374,7 +376,9 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TbComponentOutletDirective,
     ColorPickerComponent,
     ColorPickerModule,
-    HelpPageComponent
+    HelpPageComponent,
+    RouterModule,
+    HintTooltipIconComponent
   ]
 })
 export class SharedModule { }

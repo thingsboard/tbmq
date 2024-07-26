@@ -135,4 +135,11 @@ public class BrokerConstants {
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
     public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
+
+    public static final String MQTT_CONNECTIVITY = "mqtt";
+    public static final String MQTTS_CONNECTIVITY = "mqtts";
+    public static final String WS_CONNECTIVITY = "ws";
+    public static final String WSS_CONNECTIVITY = "wss";
+
+    public static final String CONNECTIVITY_KEY = "connectivity";
 }

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { MenuSection } from '@core/services/menu.models';
 
@@ -24,7 +24,7 @@ import { MenuSection } from '@core/services/menu.models';
   styleUrls: ['./side-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SideMenuComponent implements OnInit {
+export class SideMenuComponent {
 
   menuSections$ = this.menuService.menuSections();
 
@@ -34,8 +34,4 @@ export class SideMenuComponent implements OnInit {
   trackByMenuSection(index: number, section: MenuSection){
     return section.id;
   }
-
-  ngOnInit() {
-  }
-
 }
