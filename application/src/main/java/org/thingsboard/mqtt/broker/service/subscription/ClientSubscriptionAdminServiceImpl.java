@@ -28,9 +28,8 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
-import org.thingsboard.mqtt.broker.util.CollectionsUtil;
+import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -50,48 +49,47 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         if (clientSession == null) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
-        Set<TopicSubscription> oldSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
-        oldSubscriptions = filterOutSharedSubscriptions(oldSubscriptions);
+        Set<TopicSubscription> currentSubscriptions = filterOutSharedSubscriptions(clientSubscriptionCache.getClientSubscriptions(clientId));
 
         Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Updating subscriptions, old topic-subscriptions - {}, new topic-subscriptions - {}",
-                    clientId, oldSubscriptions, newSubscriptions);
+                    clientId, currentSubscriptions, newSubscriptions);
         }
 
-        Set<String> unsubscribeTopics = prepareTopicsForUnsubscribe(newSubscriptions, oldSubscriptions);
-        if (!CollectionUtils.isEmpty(unsubscribeTopics)) {
-            clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
-        }
-
-        Set<TopicSubscription> subscribeTopicSubscriptions = prepareTopicsForSubscribe(newSubscriptions, oldSubscriptions);
-        if (!CollectionUtils.isEmpty(subscribeTopicSubscriptions)) {
-            clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(subscribeTopicSubscriptions));
-        }
+        TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentSubscriptions, newSubscriptions);
+        processUnsubscribe(clientId, subscriptionsUpdate);
+        processSubscribe(clientId, subscriptionsUpdate);
     }
 
-    private Set<TopicSubscription> prepareTopicsForSubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
-        return CollectionsUtil.getAddedValues(newSubscriptions, oldSubscriptions, getComparator());
+    private void processUnsubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+        Set<TopicSubscription> removedSubscriptions = subscriptionsUpdate.getToUnsubscribe();
+        if (CollectionUtils.isEmpty(removedSubscriptions)) {
+            return;
+        }
+        Set<String> unsubscribeTopics = TopicSubscriptionsUtil.getUnsubscribeTopics(removedSubscriptions);
+        clientMqttActorManager.unsubscribe(clientId, new UnsubscribeCommandMsg(unsubscribeTopics));
     }
 
-    private Set<String> prepareTopicsForUnsubscribe(Set<TopicSubscription> newSubscriptions, Set<TopicSubscription> oldSubscriptions) {
-        return CollectionsUtil.getRemovedValues(newSubscriptions, oldSubscriptions, getComparator())
-                .stream()
-                .map(TopicSubscription::getTopicFilter)
-                .collect(Collectors.toSet());
+    private void processSubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+        Set<TopicSubscription> addedSubscriptions = subscriptionsUpdate.getToSubscribe();
+        if (CollectionUtils.isEmpty(addedSubscriptions)) {
+            return;
+        }
+        clientMqttActorManager.subscribe(clientId, new SubscribeCommandMsg(addedSubscriptions));
     }
 
     private Set<TopicSubscription> collectNewSubscriptions(List<SubscriptionInfoDto> subscriptions) {
         return subscriptions.stream()
-                .map(subscriptionInfoDto -> new TopicSubscription(subscriptionInfoDto.getTopicFilter(), subscriptionInfoDto.getQos().value()))
+                .map(SubscriptionInfoDto::toTopicSubscription)
                 .collect(Collectors.toSet());
     }
 
     private Set<TopicSubscription> filterOutSharedSubscriptions(Set<TopicSubscription> subscriptions) {
-        return subscriptions.stream().filter(subscription -> subscription.getShareName() == null).collect(Collectors.toSet());
+        return subscriptions
+                .stream()
+                .filter(TopicSubscription::isCommonSubscription)
+                .collect(Collectors.toSet());
     }
 
-    private Comparator<TopicSubscription> getComparator() {
-        return Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos);
-    }
 }

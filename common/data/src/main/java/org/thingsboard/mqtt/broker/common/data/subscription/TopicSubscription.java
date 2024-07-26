@@ -66,4 +66,9 @@ public class TopicSubscription {
     public boolean isSharedSubscription() {
         return shareName != null;
     }
+
+    public boolean isCommonSubscription() {
+        return !isSharedSubscription();
+    }
+
 }

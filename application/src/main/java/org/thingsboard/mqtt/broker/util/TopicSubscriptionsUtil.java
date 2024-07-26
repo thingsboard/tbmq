@@ -18,38 +18,11 @@ package org.thingsboard.mqtt.broker.util;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.BinaryOperator;
+import java.util.stream.Collectors;
 
-public class CollectionsUtil {
-
-    public static <T> Set<T> getAddedValues(Collection<T> newValues, Collection<T> oldValues, Comparator<? super T> comparator) {
-        return getValues(newValues, oldValues, comparator, (newValuesTreeSet, oldValuesTreeSet) -> {
-            newValuesTreeSet.removeAll(oldValuesTreeSet);
-            return newValuesTreeSet;
-        });
-    }
-
-    public static <T> Set<T> getRemovedValues(Collection<T> newValues, Collection<T> oldValues, Comparator<? super T> comparator) {
-        return getValues(newValues, oldValues, comparator, (newValuesTreeSet, oldValuesTreeSet) -> {
-            oldValuesTreeSet.removeAll(newValuesTreeSet);
-            return oldValuesTreeSet;
-        });
-    }
-
-    private static <T> Set<T> getValues(Collection<T> newValues, Collection<T> oldValues, Comparator<? super T> comparator,
-                                        BinaryOperator<TreeSet<T>> binaryOperator) {
-        TreeSet<T> newValuesTreeSet = new TreeSet<>(comparator);
-        newValuesTreeSet.addAll(newValues);
-        TreeSet<T> oldValuesTreeSet = new TreeSet<>(comparator);
-        oldValuesTreeSet.addAll(oldValues);
-
-        return binaryOperator.apply(newValuesTreeSet, oldValuesTreeSet);
-    }
+public class TopicSubscriptionsUtil {
 
     public static SubscriptionsUpdate getSubscriptionsUpdate(Set<TopicSubscription> currentSubscriptions, Set<TopicSubscription> newSubscriptions) {
         Set<TopicSubscription> toUnsubscribe = new HashSet<>(currentSubscriptions);
@@ -58,6 +31,12 @@ public class CollectionsUtil {
         toUnsubscribe.removeAll(newSubscriptions);
 
         return new SubscriptionsUpdate(toSubscribe, toUnsubscribe);
+    }
+
+    public static Set<String> getUnsubscribeTopics(Set<TopicSubscription> removedSubscriptions) {
+        return removedSubscriptions.stream()
+                .map(TopicSubscription::getTopicFilter)
+                .collect(Collectors.toSet());
     }
 
     @Data

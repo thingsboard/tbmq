@@ -21,10 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.util.CollectionsUtil;
+import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -48,21 +47,21 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
             return;
         }
 
-        CollectionsUtil.SubscriptionsUpdate subscriptionsUpdate = CollectionsUtil.getSubscriptionsUpdate(currentTopicSubscriptions, newTopicSubscriptions);
+        TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentTopicSubscriptions, newTopicSubscriptions);
         processUnsubscribe(clientId, subscriptionsUpdate);
         processSubscribe(clientId, subscriptionsUpdate);
     }
 
-    private void processUnsubscribe(String clientId, CollectionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    private void processUnsubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> removedSubscriptions = subscriptionsUpdate.getToUnsubscribe();
         if (CollectionUtils.isEmpty(removedSubscriptions)) {
             return;
         }
-        Set<String> unsubscribeTopics = getUnsubscribeTopics(removedSubscriptions);
+        Set<String> unsubscribeTopics = TopicSubscriptionsUtil.getUnsubscribeTopics(removedSubscriptions);
         clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
     }
 
-    private void processSubscribe(String clientId, CollectionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+    private void processSubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
         Set<TopicSubscription> addedSubscriptions = subscriptionsUpdate.getToSubscribe();
         if (CollectionUtils.isEmpty(addedSubscriptions)) {
             return;
@@ -70,9 +69,4 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
         clientSubscriptionService.subscribeInternally(clientId, addedSubscriptions);
     }
 
-    private Set<String> getUnsubscribeTopics(Set<TopicSubscription> removedSubscriptions) {
-        return removedSubscriptions.stream()
-                .map(TopicSubscription::getTopicFilter)
-                .collect(Collectors.toSet());
-    }
 }
