@@ -122,7 +122,14 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   getClientCredentials() {
-    this.clientCredentials = '';
+    this.clientSessionService.getClientSessionCredentials(this.entity.clientId)
+      .subscribe(
+        credentails => {
+          this.clientCredentials = credentails
+        },
+        error => {
+          this.clientCredentials = 'Not found'
+        });
   }
 
   private onSave(): void {

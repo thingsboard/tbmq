@@ -57,4 +57,8 @@ export class ClientSessionService {
   public getClientSessionsStats(config?: RequestConfig): Observable<ClientSessionStatsInfo> {
     return this.http.get<ClientSessionStatsInfo>(`/api/client-session/info`, defaultHttpOptionsFromConfig(config));
   }
+
+  public getClientSessionCredentials(clientId: string, config?: RequestConfig): Observable<string> {
+    return this.http.get<string>(`/api/client-session/credentials?clientId=${clientId}`);
+  }
 }
