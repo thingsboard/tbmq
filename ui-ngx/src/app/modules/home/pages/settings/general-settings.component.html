@@ -87,13 +87,19 @@
                   {{ 'admin.settings.' + protocol | translate }}
                 </mat-slide-toggle>
                 <div class="tb-form-row column-xs no-border no-padding tb-standard-fields">
-                  <mat-form-field fxFlex>
+                  <mat-form-field fxFlex hideRequiredMarker>
                     <mat-label translate>admin.settings.host</mat-label>
                     <input matInput formControlName="host"/>
+                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.host').hasError('required')">
+                      {{ 'admin.settings.host-required' | translate }}
+                    </mat-error>
                   </mat-form-field>
-                  <mat-form-field fxFlex>
+                  <mat-form-field fxFlex hideRequiredMarker>
                     <mat-label translate>admin.settings.port</mat-label>
                     <input matInput type="number" min="0" max="65535" formControlName="port"/>
+                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.port').hasError('required')">
+                      {{ 'admin.settings.port-required' | translate }}
+                    </mat-error>
                     <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.port').hasError('pattern')">
                       {{ 'admin.settings.port-pattern' | translate }}
                     </mat-error>

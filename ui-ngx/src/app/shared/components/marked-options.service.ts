@@ -211,7 +211,7 @@ function processCode(code: string): CodeContext {
       // @ts-ignore
       context.code = context.code.replace('{:hostname}', window.tbmqSettings?.mqttHost || window.location.hostname);
       // @ts-ignore
-      context.code = context.code.replace('{:port}', window.tbmqSettings?.mqttPort);
+      context.code = context.code.replace('{:port}', window.tbmqSettings?.mqttPort || 1883);
     }
     context.code = context.code.substring(0, context.code.length - copyCodeBlock.length);
     context.copyCode = true;
