@@ -172,7 +172,7 @@
     "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io",
     "force-reset-password-if-no-valid": "Force to reset password if not valid",
     "force-reset-password-if-no-valid-hint": "Please be careful when enabling this feature: it will require users with not valid password to reset their password via email.",
-      "settings": {
+    "settings": {
       "connectivity": "Connectivity",
       "connectivity-settings": "Connectivity settings",
       "connectivity-settings-hint": "Connectivity settings values will be utilized across TBMQ to replace default host/port values on pages: WebSocket Client (add/edit connection), Client Credentials (check connectivity), Home (getting started).",
@@ -185,9 +185,11 @@
       "wss": "WSS",
       "ws-client-settings": "WebSocket client settings",
       "host": "Host",
+      "host-required": "Host is required.",
       "port": "Port",
       "port-pattern": "Port must be a positive integer.",
-      "port-range": "Port should be in a range from 1 to 65535."
+      "port-range": "Port should be in a range from 1 to 65535.",
+      "port-required": "Port is required."
     }
   },
   "confirm-on-exit": {
@@ -522,7 +524,8 @@
     "qos-exactly-once": "2 - Exactly once",
     "should-be-persistent": "Application client should be persistent",
     "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
-    "filter-title": "Filter"
+    "filter-title": "Filter",
+    "additional-info": "Show session additional info"
   },
   "shared-subscription": {
     "add": "Add Application Shared Subscription",
