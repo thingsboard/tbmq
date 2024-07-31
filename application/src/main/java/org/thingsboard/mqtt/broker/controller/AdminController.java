@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
@@ -177,6 +178,20 @@ public class AdminController extends BaseController {
         } catch (Exception e) {
             throw handleException(e);
         }
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/securitySettings", method = RequestMethod.POST)
+    @ResponseBody
+    public SecuritySettings saveSecuritySettings(@RequestBody SecuritySettings securitySettings) throws ThingsboardException {
+        return checkNotNull(systemSecurityService.saveSecuritySettings(securitySettings));
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/securitySettings", method = RequestMethod.GET)
+    @ResponseBody
+    public SecuritySettings getSecuritySettings() throws ThingsboardException {
+        return checkNotNull(systemSecurityService.getSecuritySettings());
     }
 
     private List<WebSocketConnectionDto> getWebSocketConnections(UUID userId) {

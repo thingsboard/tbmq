@@ -18,7 +18,7 @@ import { NgModule } from '@angular/core';
 
 import { ClientCredentialsModule } from '@home/pages/client-credentials/client-credentials.module';
 import { ProfileModule } from './profile/profile.module';
-import { MailServerModule } from '@home/pages/mail-server/mail-server.module';
+import { SettingsModule } from '@home/pages/settings/settings.module';
 import { SessionsModule } from '@home/pages/sessions/sessions.module';
 import { UsersModule } from '@home/pages/users/users.module';
 import { SharedSubscriptionsModule } from '@home/pages/shared-subscription-applications/shared-subscriptions.module';
@@ -30,10 +30,13 @@ import {
   SharedSubscriptionGroupsModule
 } from "@home/pages/shared-subscription-groups/shared-subscription-groups.module";
 import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
+import { GettingStartedModule } from '@home/pages/getting-started/getting-started.module';
+import { SecurityModule } from "@home/pages/security/security.module";
+import { AccountModule } from "@home/pages/account/account.module";
 
 @NgModule({
   exports: [
-    MailServerModule,
+    SettingsModule,
     ProfileModule,
     ClientCredentialsModule,
     SessionsModule,
@@ -44,7 +47,10 @@ import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
     RetainedMessagesModule,
     MonitoringModule,
     KafkaManagementModule,
-    WsClientModule
+    WsClientModule,
+    GettingStartedModule,
+    AccountModule,
+    SecurityModule
   ]
 })
 export class HomePagesModule {

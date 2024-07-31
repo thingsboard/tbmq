@@ -16,20 +16,23 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
-import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
-import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { RouterTabsComponent } from '@home/components/router-tabs.component';
 import { Authority } from '@shared/models/authority.enum';
+import { securityRoutes } from '@home/pages/security/security-routing.module';
+import { profileRoutes } from '@home/pages/profile/profile-routing.module';
 
 const routes: Routes = [
   {
-    path: 'settings',
+    path: 'account',
+    component: RouterTabsComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
+      showMainLoadingBar: false,
       breadcrumb: {
-        label: 'admin.system-settings',
-        icon: 'settings'
-      }
+        label: 'account.account',
+        icon: 'account_circle'
+      },
+      useChildrenRoutesForTabs: true,
     },
     children: [
       {
@@ -37,30 +40,17 @@ const routes: Routes = [
         children: [],
         data: {
           auth: [Authority.SYS_ADMIN],
-          redirectTo: {
-            SYS_ADMIN: '/settings/outgoing-mail'
-          }
+          redirectTo: '/account/profile',
         }
       },
-      {
-        path: 'outgoing-mail',
-        component: MailServerComponent,
-        canDeactivate: [ConfirmOnExitGuard],
-        data: {
-          auth: [Authority.SYS_ADMIN],
-          title: 'admin.outgoing-mail-settings',
-          breadcrumb: {
-            label: 'admin.outgoing-mail',
-            icon: 'mdi:email'
-          }
-        }
-      }
+      ...profileRoutes,
+      ...securityRoutes
     ]
   }
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)], exports: [RouterModule]
+  imports: [RouterModule.forChild(routes)],
+  exports: [RouterModule]
 })
-export class MailServerRoutingModule {
-}
+export class AccountRoutingModule { }

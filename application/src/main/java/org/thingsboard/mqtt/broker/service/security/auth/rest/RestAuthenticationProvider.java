@@ -28,7 +28,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.service.security.exception.UserPasswordNotValidException;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
@@ -53,6 +57,18 @@ public class RestAuthenticationProvider implements AuthenticationProvider {
         UserPrincipal userPrincipal =  (UserPrincipal) principal;
         String username = userPrincipal.getUserName();
         String password = (String) authentication.getCredentials();
+
+        SecuritySettings securitySettings = systemSecurityService.getSecuritySettings();
+        UserPasswordPolicy passwordPolicy = securitySettings.getPasswordPolicy();
+        if (Boolean.TRUE.equals(passwordPolicy.getForceUserToResetPasswordIfNotValid())) {
+            try {
+                systemSecurityService.validatePasswordByPolicy(password, passwordPolicy);
+            } catch (DataValidationException e) {
+                log.error("The entered password violates our policies. If this is your real password, please reset it.");
+                throw new UserPasswordNotValidException("The entered password violates our policies. If this is your real password, please reset it.");
+            }
+        }
+
         return authenticateByUsernameAndPassword(username, password);
     }
 

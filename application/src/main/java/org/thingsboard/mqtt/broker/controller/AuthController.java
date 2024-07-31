@@ -35,6 +35,8 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -55,11 +57,11 @@ import java.net.URISyntaxException;
 @RequestMapping("/api")
 @Slf4j
 public class AuthController extends BaseController {
+
     private final BCryptPasswordEncoder passwordEncoder;
     private final JwtTokenFactory tokenFactory;
     private final SystemSecurityService systemSecurityService;
     private final MailService mailService;
-
 
     @PreAuthorize("isAuthenticated()")
     @RequestMapping(value = "/auth/user", method = RequestMethod.GET)
@@ -82,7 +84,7 @@ public class AuthController extends BaseController {
             UserCredentials userCredentials = userService.findUserCredentialsByUserId(securityUser.getId());
 
             validatePassword(passwordEncoder, changePasswordRequest, userCredentials.getPassword());
-            systemSecurityService.validatePassword(changePasswordRequest.getNewPassword());
+            systemSecurityService.validatePassword(changePasswordRequest.getNewPassword(), userCredentials);
 
             userCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
             userService.replaceUserCredentials(userCredentials);
@@ -124,7 +126,7 @@ public class AuthController extends BaseController {
             String password = resetPasswordRequest.getPassword();
             UserCredentials userCredentials = userService.findUserCredentialsByResetToken(resetToken);
             if (userCredentials != null) {
-                systemSecurityService.validatePassword(password);
+                systemSecurityService.validatePassword(password, userCredentials);
                 if (passwordEncoder.matches(password, userCredentials.getPassword())) {
                     throw new ThingsboardException("New password should be different from existing!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
                 }
@@ -138,7 +140,11 @@ public class AuthController extends BaseController {
                 String baseUrl = systemSecurityService.getBaseUrl(request);
                 String loginUrl = String.format("%s/login", baseUrl);
                 String email = user.getEmail();
-                mailService.sendPasswordWasResetEmail(loginUrl, email);
+                try {
+                    mailService.sendPasswordWasResetEmail(loginUrl, email);
+                } catch (Exception e) {
+                    log.error("[{}][{}] Failed to send password reset email", loginUrl, email, e);
+                }
                 JwtToken accessToken = tokenFactory.createAccessJwtToken(securityUser);
                 JwtToken refreshToken = tokenFactory.createRefreshToken(securityUser);
 
@@ -172,4 +178,13 @@ public class AuthController extends BaseController {
         }
         return new ResponseEntity<>(headers, responseStatus);
     }
+
+    @RequestMapping(value = "/noauth/userPasswordPolicy", method = RequestMethod.GET)
+    @ResponseBody
+    public UserPasswordPolicy getUserPasswordPolicy() throws ThingsboardException {
+        SecuritySettings securitySettings =
+                checkNotNull(systemSecurityService.getSecuritySettings());
+        return securitySettings.getPasswordPolicy();
+    }
+
 }

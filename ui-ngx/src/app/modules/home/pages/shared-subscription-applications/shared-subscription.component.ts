@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { SharedSubscription } from "@shared/models/shared-subscription.model";
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-shared-subscriptions',
@@ -28,6 +29,9 @@ import { SharedSubscription } from "@shared/models/shared-subscription.model";
   styleUrls: ['./shared-subscription.component.scss']
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
+
+  @ViewChild('copyBtn')
+  copyBtn: CopyButtonComponent;
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: SharedSubscription,
@@ -54,5 +58,9 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
     this.entityForm.patchValue({topicFilter: entity.topicFilter} );
     this.entityForm.get('partitions').disable();
     this.entityForm.get('topicFilter').disable();
+  }
+
+  onClickTbCopyButton(value: string) {
+    this.copyBtn.copy(value);
   }
 }
