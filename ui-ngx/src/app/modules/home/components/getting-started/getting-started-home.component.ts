@@ -92,6 +92,9 @@ export class GettingStartedHomeComponent implements AfterViewInit {
               if (settings?.jsonValue?.mqtt?.enabled) {
                 window.tbmqSettings.mqttPort = settings.jsonValue.mqtt.port;
                 window.tbmqSettings.mqttHost = settings.jsonValue.mqtt.host;
+              } else {
+                window.tbmqSettings.mqttPort = undefined;
+                window.tbmqSettings.mqttHost = undefined;
               }
             },
             () => {}

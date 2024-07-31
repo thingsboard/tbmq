@@ -75,8 +75,8 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private buildConnectivityInfoForm(): UntypedFormGroup {
     const formGroup = this.fb.group({
       enabled: [false, []],
-      host: [{value: '', disabled: true}],
-      port: [{value: null, disabled: true}, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*')]]
+      host: [{value: '', disabled: true}, [Validators.required]],
+      port: [{value: null, disabled: true}, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]]
     });
     formGroup.get('enabled').valueChanges.pipe(
       takeUntil(this.destroy$)
