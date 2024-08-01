@@ -38,7 +38,7 @@ topic = "tbmq/demo"
 qos = 1
 retain = True
 
-username = "tbmq_websockets_username1"
+username = "tbmq_websockets_username"
 clientId = "tbmq_websockets_client_id"
 
 payload = "Hello, world!"

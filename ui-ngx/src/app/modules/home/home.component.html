@@ -39,9 +39,6 @@
         <button mat-icon-button id="main" fxHide.gt-sm (click)="sidenav.toggle()">
           <mat-icon class="material-icons">menu</mat-icon>
         </button>
-<!--        <button mat-icon-button (click)="goBack()">
-          <mat-icon class="material-icons">arrow_back</mat-icon>
-        </button>-->
         <tb-breadcrumb fxFlex class="mat-toolbar-tools">
         </tb-breadcrumb>
         <button *ngIf="fullscreenEnabled" mat-icon-button fxHide.lt-md (click)="toggleFullscreen()">

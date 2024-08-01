@@ -35,82 +35,78 @@ Find and install the following libraries:
 - WIFI_PASSWORD - access point password
 
 ```bash
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 #include <PubSubClient.h>
 
-// WiFi settings
-const char *wifi_app = "WIFI_AP"; // Replace with your WiFi name
-const char *wifi_password = "WIFI_PASSWORD";  // Replace with your WiFi password
+constexpr char WIFI_SSID[] = "ThingsBoard_Guest";
+constexpr char WIFI_PASSWORD[] = "4Friends123!";
+constexpr uint32_t SERIAL_DEBUG_BAUD = 115200U;
 
-// MQTT Broker settings
-const int port = 8084; // MQTT port (TCP)
-const char *host = "localhost"; // EMQX broker endpoint
+constexpr char MQTT_HOST[] = "10.7.3.73"; // In case of working locally use you public IP address 
+const int MQTT_PORT = 11883;
 
-const char *topic = "emqx/esp8266";   // MQTT topic
-const char *username = "tbmq_websockets_username1"; // MQTT username for authentication
-const char *password = NULL; // MQTT password for authentication
+constexpr char TOPIC[] = "tbmq/demo";
+constexpr char MESSAGE[] = "Hello World";
 
-WiFiClient espClient;
-PubSubClient mqtt_client(espClient);
+constexpr char USERNAME[] = "tbmq_websockets_username1";
+constexpr char PASSWORD[] = "";
+String CLIENT_ID = "test";
 
-void connectToWiFi();
-
-void connectToMQTTBroker();
-
-void mqttCallback(char *topic, byte *payload, unsigned int length);
+WiFiClient wifiClient;
+PubSubClient client(wifiClient);
 
 void setup() {
-  Serial.begin(115200);
-  connectToWiFi();
-  mqtt_client.setServer(host, port);
-  mqtt_client.setCallback(mqttCallback);
-  connectToMQTTBroker();
+  // put your setup code here, to run once:
+  Serial.begin(SERIAL_DEBUG_BAUD);
+  initWiFi();
+  connectMqttBroker();
+  
 }
 
-void connectToWiFi() {
-  WiFi.begin(wifi_app, wifi_password);
-  Serial.print("Connecting to WiFi");
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-   }
-  Serial.println("\nConnected to the WiFi network");
-}
-
-void connectToMQTTBroker() {
-  while (!mqtt_client.connected()) {
-    String client_id = "esp8266-client-" + String(WiFi.macAddress());
-    Serial.printf("Connecting to MQTT Broker as %s.....\n", client_id.c_str());
-    if (mqtt_client.connect(client_id.c_str(), username, password)) {
-      Serial.println("Connected to MQTT broker");
-      mqtt_client.subscribe(topic);
-      // Publish message upon successful connection
-      mqtt_client.publish(topic, "Hi EMQX I'm ESP8266 ^^");
-     } else {
-      Serial.print("Failed to connect to MQTT broker, rc=");
-      Serial.print(mqtt_client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-     }
-   }
-}
-
-void mqttCallback(char *topic, byte *payload, unsigned int length) {
-  Serial.print("Message received on topic: ");
-  Serial.println(topic);
-  Serial.print("Message:");
-  for (unsigned int i = 0; i < length; i++) {
-    Serial.print((char) payload[i]);
-   }
-  Serial.println();
-  Serial.println("-----------------------");
+void callback(char *topic, byte *payload, unsigned int length) {
+    Serial.print("Received message: ");
+    for (int i = 0; i < length; i++) {
+        Serial.print((char) payload[i]);
+    }
+    Serial.println("\nTopic: ");
+    Serial.print(topic);
+    Serial.println();
 }
 
 void loop() {
-  if (!mqtt_client.connected()) {
-    connectToMQTTBroker();
-   }
-  mqtt_client.loop();
+    client.loop();
+}
+
+void initWiFi() {
+  Serial.println("Connecting to AP ...");
+  // Attempting to establish a connection to the given WiFi network
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) {
+    // Delay 500ms until a connection has been succesfully established
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("Connected to AP");
+}
+
+void connectMqttBroker() {
+  client.setServer(MQTT_HOST, MQTT_PORT);
+  client.setCallback(callback);
+  while (!client.connected()) {
+      if (client.connect(CLIENT_ID.c_str(), USERNAME, PASSWORD)) {
+          Serial.println("Client connected!");
+          pubSub();  
+      } else {
+          Serial.print("Client not connected, reason code: ");
+          Serial.print(client.state());
+          delay(3000);
+      }
+  }  
+}
+
+void pubSub() {
+  client.subscribe(TOPIC);
+  client.publish(TOPIC, MESSAGE);
 }
 
 {:copy-code}
