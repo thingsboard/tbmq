@@ -20,12 +20,15 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
@@ -75,6 +78,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ApplicationRemovedEventService applicationRemovedEventService;
     private final ApplicationTopicService applicationTopicService;
     private final RateLimitCacheService rateLimitCacheService;
+    private final CacheNameResolver cacheNameResolver;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
     private ExecutorService eventResponseSenderExecutor;
@@ -224,6 +228,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     if (clientSession.getSessionInfo().isPersistentAppClient()) {
                         rateLimitCacheService.decrementApplicationClientsCount();
                     }
+                    evictEntryFromClientSessionCredentialsCache(clientId);
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                 }
@@ -266,6 +271,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             saveClientSession(clientId, disconnectedClientSession);
             return false;
         }
+        evictEntryFromClientSessionCredentialsCache(clientId);
         clearSessionAndSubscriptions(clientId);
         return true;
     }
@@ -409,6 +415,18 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private UUID getSessionIdFromClientSession(ClientSession clientSession) {
         return clientSession.getSessionInfo().getSessionId();
+    }
+
+    private void evictEntryFromClientSessionCredentialsCache(String clientId) {
+        try {
+            getClientSessionCredentialsCache().evictIfPresent(clientId);
+        } catch (IllegalStateException e) {
+            log.debug("[{}] Could not evict entry from client session credentials cache for clientId", clientId, e);
+        }
+    }
+
+    private Cache getClientSessionCredentialsCache() {
+        return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
     }
 
     @PreDestroy

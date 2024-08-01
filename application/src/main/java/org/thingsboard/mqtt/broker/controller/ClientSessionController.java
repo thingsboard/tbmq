@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
@@ -30,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionCredentialsDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
@@ -48,6 +51,7 @@ public class ClientSessionController extends BaseController {
 
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
+    private final CacheNameResolver cacheNameResolver;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/client-session/remove", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
@@ -159,6 +163,18 @@ public class ClientSessionController extends BaseController {
     public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
         try {
             return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/client-session/credentials", params = {"clientId"}, method = RequestMethod.GET)
+    @ResponseBody
+    public ClientSessionCredentialsDto getClientSessionCredentials(@RequestParam String clientId) throws ThingsboardException {
+        try {
+            String credentialsName = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE).get(clientId, String.class));
+            return new ClientSessionCredentialsDto(credentialsName);
         } catch (Exception e) {
             throw handleException(e);
         }

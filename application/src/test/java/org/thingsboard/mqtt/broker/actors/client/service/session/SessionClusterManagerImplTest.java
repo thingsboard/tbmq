@@ -21,12 +21,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
@@ -48,11 +50,14 @@ import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = SessionClusterManagerImpl.class)
@@ -80,6 +85,8 @@ public class SessionClusterManagerImplTest {
     ApplicationTopicService applicationTopicService;
     @MockBean
     RateLimitCacheService rateLimitCacheService;
+    @MockBean
+    CacheNameResolver cacheNameResolver;
 
     @SpyBean
     SessionClusterManagerImpl sessionClusterManager;
@@ -121,6 +128,9 @@ public class SessionClusterManagerImplTest {
 
     @Test
     public void givenPresentNonPersistentSession_whenProcessConnectionRequest_thenVerify() {
+        Cache cache = mock(Cache.class);
+        when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
+
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2");
 
@@ -246,6 +256,9 @@ public class SessionClusterManagerImplTest {
 
     @Test
     public void givenDisconnectedSession_whenProcessClearSession_thenVerify() {
+        Cache cache = mock(Cache.class);
+        when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
+
         SessionInfo sessionInfo = getSessionInfo("clientId");
         doReturn(getClientSession(false, sessionInfo)).when(clientSessionService).getClientSession(any());
 

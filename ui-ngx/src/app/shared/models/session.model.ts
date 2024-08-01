@@ -25,6 +25,7 @@ import {
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
+import { SubscriptionOptions } from '@shared/models/ws-client.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -42,6 +43,8 @@ export interface DetailedClientSessionInfo extends BaseData {
   clientIpAdr: string;
   subscriptionsCount?: number;
   connected?: boolean;
+  credentials?: string;
+  mqttVersion?: number;
 }
 
 export interface ShortClientSessionInfo {
@@ -50,7 +53,7 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export interface TopicSubscription {
+export interface TopicSubscription extends SubscriptionOptions {
   topic: string;
   qos: WsMqttQoSType;
   shareName: string;
@@ -139,6 +142,10 @@ export interface SessionFilterConfig {
   subscriptions?: number;
   clientId?: string;
   openSession?: boolean;
+}
+
+export interface ClientSessionCredentials {
+  name: string;
 }
 
 export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {

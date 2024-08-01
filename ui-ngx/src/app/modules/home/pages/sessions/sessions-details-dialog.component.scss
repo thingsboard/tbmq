@@ -14,38 +14,54 @@
  * limitations under the License.
  */
 :host {
-  .dialog-toolbar {
-    padding: 8px 16px 0 16px;
-  }
-  .tb-warning {
-    background: rgb(255, 244, 229);
-    border-radius: 4px;
-    padding: 16px;
-    margin: 0;
-    color: rgb(102, 60, 0);
-  }
+  form {
+    .session-details-content {
+      padding-top: 16px;
 
-  ::ng-deep {
-    .mat-mdc-checkbox-disabled label {
-      color: rgba(0, 0, 0, 0.87);
-    }
-    mat-checkbox {
-      background: #f2f8f5;
-      padding: 12px 6px;
-      height: 56px;
-    }
-    .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
-      top: 28px;
-      color: rgba(0,0,0,1);
+      .tb-warning {
+        background: rgb(255, 244, 229);
+        border-radius: 4px;
+        padding: 16px;
+        margin: 0;
+        color: rgb(102, 60, 0);
+      }
+
+      span {
+        color: rgba(0,0,0,0.54);
+      }
     }
 
-    .mdc-text-field--disabled .mdc-text-field__input {
-      color: rgba(0, 0, 0, 0.54);
-    }
+    ::ng-deep {
+      .mat-mdc-checkbox-disabled label {
+        color: rgba(0, 0, 0, 0.87);
+      }
+      mat-checkbox {
+        background: #f2f8f5;
+        padding: 12px 6px;
+        height: 56px;
+      }
+      .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
+        top: 28px;
+        color: rgba(0,0,0,1);
+      }
 
-    .mat-mdc-form-field.mat-form-field-appearance-fill .mdc-text-field--filled,
-      .mat-mdc-form-field.mat-form-field-appearance-fill .mat-mdc-form-field-focus-overlay {
-      background-color: #f2f8f5;
+      .mdc-text-field--disabled .mdc-text-field__input {
+        color: rgba(0, 0, 0, 0.54);
+      }
+
+      .mat-mdc-form-field.mat-form-field-appearance-fill .mdc-text-field--filled,
+        .mat-mdc-form-field.mat-form-field-appearance-fill .mat-mdc-form-field-focus-overlay {
+        background-color: #f2f8f5;
+      }
+
+      .mat-mdc-tab-body-wrapper {
+        padding: 16px 16px 8px 16px;
+      }
+
+      .mat-mdc-tab-group {
+        width: 1000px;
+        height: 80vh;
+      }
     }
   }
 }

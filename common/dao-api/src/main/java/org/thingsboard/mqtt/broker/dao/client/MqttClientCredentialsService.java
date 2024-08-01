@@ -39,6 +39,8 @@ public interface MqttClientCredentialsService {
 
     MqttClientCredentials findSystemWebSocketCredentials();
 
+    MqttClientCredentials findCredentialsByName(String name);
+
     PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink);
 
     PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query);

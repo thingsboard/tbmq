@@ -16,29 +16,26 @@
 package org.thingsboard.mqtt.broker.common.data.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 import java.io.Serial;
+import java.io.Serializable;
 import java.util.UUID;
 
 @Data
-@Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class ShortMqttClientCredentials implements HasId {
+@NoArgsConstructor
+public class CredentialsIdAndNameDto implements Serializable {
 
     @Serial
-    private static final long serialVersionUID = 357665496738055767L;
+    private static final long serialVersionUID = 4166765541244277229L;
 
     private UUID id;
     private String name;
-    private ClientType clientType;
-    private ClientCredentialsType credentialsType;
-    private long createdTime;
 
+    public static CredentialsIdAndNameDto fromCredentials(MqttClientCredentials credentials) {
+        return new CredentialsIdAndNameDto(credentials.getId(), credentials.getName());
+    }
 }
