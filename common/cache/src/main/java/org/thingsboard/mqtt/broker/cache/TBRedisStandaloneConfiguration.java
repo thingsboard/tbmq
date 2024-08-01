@@ -21,6 +21,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.time.Duration;
 
@@ -58,6 +63,16 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration {
 
     @Value("${redis.password:}")
     private String password;
+
+    @Override
+    protected UnifiedJedis loadUnifiedJedis() {
+        if (useDefaultClientConfig) {
+            return new JedisPooled(new HostAndPort(host, port), DefaultJedisClientConfig.builder().database(db).password(password).build());
+        } else {
+            ConnectionPoolConfig poolConfig = usePoolConfig ? buildConnectionPoolConfig() : new ConnectionPoolConfig();
+            return new JedisPooled(poolConfig, host, port, (int) connectTimeout, (int) readTimeout, password, db, clientName);
+        }
+    }
 
     public JedisConnectionFactory loadFactory() {
         RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();

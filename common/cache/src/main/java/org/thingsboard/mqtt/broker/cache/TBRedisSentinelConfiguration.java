@@ -20,6 +20,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.JedisSentineled;
+import redis.clients.jedis.UnifiedJedis;
 
 @Configuration
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "sentinel")
@@ -46,6 +50,14 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration {
 
     @Value("${redis.password:}")
     private String password;
+
+    @Override
+    protected UnifiedJedis loadUnifiedJedis() {
+        DefaultJedisClientConfig masterClientConfig = DefaultJedisClientConfig.builder().database(database).password(password).build();
+        DefaultJedisClientConfig sentinelClientConfig = DefaultJedisClientConfig.builder().password(sentinelPassword).build();
+        ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
+        return new JedisSentineled(master, masterClientConfig, connectionPoolConfig, toHostAndPort(sentinels), sentinelClientConfig);
+    }
 
     public JedisConnectionFactory loadFactory() {
         RedisSentinelConfiguration redisSentinelConfiguration = new RedisSentinelConfiguration();

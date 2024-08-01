@@ -36,12 +36,13 @@ import {
 } from '@shared/models/ws-client.model';
 import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IDisconnectPacket, IPublishPacket, MqttClient } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber } from '@core/utils';
+import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber, isUndefined } from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
+import { WebsocketSettings } from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
@@ -79,6 +80,7 @@ export class MqttJsClientService {
   private publishMsgTimeout = null;
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfigAll;
+  private websocketSettings: WebsocketSettings;
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
               private clientSessionService: ClientSessionService) {
@@ -184,8 +186,6 @@ export class MqttJsClientService {
       type: 'published'
     };
 
-    this.addMessage(message, this.getSelectedConnectionId());
-
     if (isDefinedAndNotNull(options?.properties?.correlationData)) options.properties.correlationData = Buffer.from(options.properties.correlationData);
     if (isDefinedAndNotNull(options?.properties?.userProperties)) {
       // @ts-ignore
@@ -195,9 +195,13 @@ export class MqttJsClientService {
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
-    this.getSelectedMqttJsClient().publish(topic, payload, options, function (error) {
-      if (error) {
-        console.error(`Error ${error} on publish message ${payload.toString()} on topic ${topic} with options ${options}`)
+    const logUnknownPubErrorTimeout = setTimeout(function() {
+      console.log(`Unknown error on publish message with topic '${topic}' \n${JSON.stringify(options)}`);
+    }, 3000);
+    this.getSelectedMqttJsClient().publish(topic, payload, options, (error, packet) => {
+      if (!isUndefined(error)) {
+        clearTimeout(logUnknownPubErrorTimeout);
+        this.addMessage(message, this.getSelectedConnectionId());
       }
     });
   }
@@ -264,6 +268,10 @@ export class MqttJsClientService {
     return of(pageData);
   }
 
+  public setWebsocketSettings(settings: WebsocketSettings) {
+    this.websocketSettings = settings;
+  }
+
   private addMqttClient(connection: WebSocketConnection, password: string) {
     const options: IClientOptions = {
       clientId: connection.configuration.clientId,
@@ -317,7 +325,7 @@ export class MqttJsClientService {
     this.mqttClientConnectionMap.set(mqttClient.options.clientId, connection);
     mqttClient.on('connect', (packet: IConnackPacket) => {
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTED);
-      // console.log(`Client connected!`, packet, mqttClient);
+      this.logMqttClienEvent('connect', [packet, mqttClient]);
     });
     mqttClient.on('message', (topic: string, payload: Buffer, packet: IPublishPacket) => {
       const subscriptions = this.mqttClientIdSubscriptionsMap.get(mqttClient.options.clientId);
@@ -357,47 +365,53 @@ export class MqttJsClientService {
       }
       const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
       this.addMessage(message, connectionId);
-      // console.log(`Received Message: ${payload} On topic: ${topic}`, packet);
+      this.logMqttClienEvent('message', [packet, topic, payload, mqttClient]);
     });
     mqttClient.on('error', (error: Error | ErrorWithReasonCode) => {
       const reason = error.message.split(':')[1] || error.message;
       this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
       this.endMqttClient(mqttClient);
-      // console.log('Connection error: ', error);
+      this.logMqttClienEvent('error', [error, mqttClient]);
     });
     mqttClient.on('reconnect', () => {
       this.updateConnectionStatusLog(connection, ConnectionStatus.RECONNECTING);
-      // console.log('Reconnecting...', mqttClient);
+      this.logMqttClienEvent('reconnect', [mqttClient]);
     });
     mqttClient.on('end', () => {
       const connectionId = this.mqttClientConnectionMap.get(mqttClient.options.clientId)?.id;
       if (this.connectionMqttClientMap.has(connectionId)) {
         this.connectionMqttClientMap.delete(connectionId);
       }
-      // console.log('End...', mqttClient);
+      this.logMqttClienEvent('end', [mqttClient]);
     });
     mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
       if (packet.cmd == 'disconnect') {
         const reason = DisconnectReasonCodes[packet.reasonCode];
         this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
       }
-      // console.log('Packet Receive...', packet);
+      this.logMqttClienEvent('packetreceive', [packet, mqttClient]);
     });
-    /*mqttClient.on('packetsend', (packet: IConnackPacket) => {
-      console.log('Packet Send...', packet);
+    mqttClient.on('packetsend', (packet: IConnackPacket) => {
+      this.logMqttClienEvent('packetsend', [packet, mqttClient]);
     });
     mqttClient.on('close', () => {
-      console.log('Closing...', mqttClient);
+      this.logMqttClienEvent('close', [mqttClient]);
     });
     mqttClient.on('disconnect', () => {
-      console.log('Disconnecting...', mqttClient);
+      this.logMqttClienEvent('disconnect', [mqttClient]);
     });
     mqttClient.on('offline', () => {
-      console.log('Offline...', mqttClient);
+      this.logMqttClienEvent('offline', [mqttClient]);
     });
     mqttClient.on('outgoingEmpty', () => {
-      console.log('Ongoing empty');
-    });*/
+      this.logMqttClienEvent('outgoingEmpty', [mqttClient]);
+    });
+  }
+
+  private logMqttClienEvent(type: string, details?: any) {
+    if (this.websocketSettings?.isLoggingEnabled) {
+      console.log(`MQTT log on event '${type}'`, details?.length ? [...details] : null);
+    }
   }
 
   private findWildcardSubscription(subscriptions: WebSocketSubscription[], topic: string): WebSocketSubscription {

@@ -40,11 +40,16 @@ public class RedisCacheDefaultConfigurationTest {
 
     @Test
     public void verifyTransactionAwareCacheManagerProxy() {
-        assertThat(redisCacheConfiguration.getCacheSpecsMap().getSpecs()).as("specs").isNotNull();
-        redisCacheConfiguration.getCacheSpecsMap().getSpecs().forEach((name, cacheSpecs) -> assertThat(cacheSpecs).as("cache %s specs", name).isNotNull());
+        assertThat(redisCacheConfiguration.getCacheSpecsMap().getSpecs()).as("specs without prefix").isNotNull();
+        assertThat(redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs()).as("specs").isNotNull();
+        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
+            assertThat(name).as("cacheSpec name").isNotNull();
+            assertThat(name).as("cacheSpec name has prefix").startsWith(redisCacheConfiguration.getCacheSpecsMap().getCachePrefix());
+            assertThat(cacheSpecs).as("cache %s specs", name).isNotNull();
+        });
 
         SoftAssertions softly = new SoftAssertions();
-        redisCacheConfiguration.getCacheSpecsMap().getSpecs().forEach((name, cacheSpecs) -> {
+        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
             softly.assertThat(name).as("cache name").isNotEmpty();
             softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThan(0);
             softly.assertThat(cacheSpecs.getMaxSize()).as("cache %s max size", name).isGreaterThanOrEqualTo(0);

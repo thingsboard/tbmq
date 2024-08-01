@@ -21,7 +21,6 @@ import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { guid } from '@core/utils';
-// import { BroadcastService } from '@core/services/broadcast.service';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { UtilsService } from '@core/services/utils.service';
 
@@ -106,8 +105,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
         let labelFunction;
         let ignoreTranslate;
         if (breadcrumbConfig.labelFunction) {
-          labelFunction = () => this.activeComponentValue ?
-              breadcrumbConfig.labelFunction(route, this.translate, this.activeComponentValue, lastChild.data) : breadcrumbConfig.label;
+          labelFunction = () => breadcrumbConfig.labelFunction(route, this.translate, this.activeComponentValue, lastChild.data);
           ignoreTranslate = true;
         } else {
           label = breadcrumbConfig.label || 'home.home';

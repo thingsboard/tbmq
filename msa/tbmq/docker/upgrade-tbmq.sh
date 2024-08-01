@@ -38,7 +38,7 @@ java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.Thingsb
                 -Dinstall.upgrade=true \
                 -Dinstall.upgrade.from_version=${fromVersion} \
                 -Dlogging.config=/usr/share/thingsboard-mqtt-broker/bin/install/logback.xml \
-                org.springframework.boot.loader.PropertiesLauncher
+                org.springframework.boot.loader.launch.PropertiesLauncher
 
 echo "Saving upgrade version to file..."
 

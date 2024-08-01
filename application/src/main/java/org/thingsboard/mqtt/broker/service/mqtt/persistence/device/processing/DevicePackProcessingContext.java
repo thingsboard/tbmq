@@ -76,6 +76,7 @@ public class DevicePackProcessingContext {
         successMap.clear();
     }
 
+    // TODO: add tests
     private List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
         List<DevicePublishMsg> messages = pack.messages();
         AtomicInteger packetIdAtomic = new AtomicInteger(previousPacketId);

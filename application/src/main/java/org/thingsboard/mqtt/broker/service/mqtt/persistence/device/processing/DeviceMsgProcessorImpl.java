@@ -42,13 +42,13 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     public void persistClientDeviceMessages(ClientIdMessagesPack pack, DefaultClientIdPersistedMsgsCallback callback) {
         String clientId = pack.clientId();
         List<DevicePublishMsg> devicePublishMessages = pack.messages();
-        clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msg");
+        clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msgs");
         try {
             callback.onSuccess(deviceMsgService.saveAndReturnPreviousPacketId(clientId, devicePublishMessages, false));
         } catch (Exception e) {
             callback.onFailure(e);
         }
-        clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE msg");
+        clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE msgs");
     }
 
     @Override

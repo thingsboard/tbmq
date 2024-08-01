@@ -73,6 +73,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
+    @Value("${queue.kafka.kafka-prefix:}")
+    private String kafkaPrefix;
     @Value("${queue.kafka.client-session-event-response.topic-prefix}")
     private String clientSessionEventRespTopicPrefix;
 
@@ -95,8 +97,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     private Consumer<String, byte[]> createConsumer(TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         Properties consumerProps = consumerSettings.toProps("kafka_admin_home_page", homePageConsumerKafkaSettings.getConsumerProperties());
-        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, "home-page-client");
-        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, "home-page-client-group");
+        consumerProps.put(ConsumerConfig.CLIENT_ID_CONFIG, kafkaPrefix + "home-page-client");
+        consumerProps.put(ConsumerConfig.GROUP_ID_CONFIG, kafkaPrefix + "home-page-client-group");
         consumerProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer");
         consumerProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArrayDeserializer");
         return new KafkaConsumer<>(consumerProps);
@@ -231,7 +233,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         try {
             Map<String, KafkaTopic> kafkaTopicsMap = new HashMap<>();
 
-            Set<String> topics = client.listTopics().names().get();
+            Set<String> topics = client.listTopics().names().get().stream().filter(topic -> topic.startsWith(kafkaPrefix)).collect(Collectors.toSet());
             Map<String, TopicDescription> topicDescriptionsMap = client.describeTopics(topics).allTopicNames().get();
 
             for (Map.Entry<String, TopicDescription> topicDescriptionEntry : topicDescriptionsMap.entrySet()) {
@@ -304,8 +306,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             Set<String> topics = client.listTopics().names().get();
             return topics
                     .stream()
-                    .filter(topic -> topic.startsWith(clientSessionEventRespTopicPrefix))
-                    .map(topic -> topic.replace(clientSessionEventRespTopicPrefix + ".", ""))
+                    .filter(topic -> topic.startsWith(kafkaPrefix + clientSessionEventRespTopicPrefix))
+                    .map(topic -> topic.replace(kafkaPrefix + clientSessionEventRespTopicPrefix + ".", ""))
                     .collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
             log.warn("Failed to get broker names", e);
@@ -318,6 +320,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         try {
             List<KafkaConsumerGroup> kafkaConsumerGroups = client.listConsumerGroups().all().get()
                     .stream()
+                    .filter(consumerGroupListing -> consumerGroupListing.groupId().startsWith(kafkaPrefix))
                     .map(consumerGroupListing -> {
                         KafkaConsumerGroup kafkaConsumerGroup = new KafkaConsumerGroup();
                         kafkaConsumerGroup.setGroupId(consumerGroupListing.groupId());
@@ -451,7 +454,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         if (consumerGroupId == null) {
             throw new IllegalArgumentException("Consumer group ID cannot be null");
         }
-        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().anyMatch(consumerGroupId::startsWith);
+        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().map(prefix -> kafkaPrefix + prefix).anyMatch(consumerGroupId::startsWith);
     }
 
     @PreDestroy

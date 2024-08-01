@@ -15,7 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
+import io.github.bucket4j.distributed.serialization.Mapper;
+import io.github.bucket4j.redis.jedis.Bucket4jJedis;
+import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import lombok.Data;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -30,7 +34,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import redis.clients.jedis.ConnectionPoolConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.UnifiedJedis;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -38,6 +45,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableCaching
@@ -89,6 +98,15 @@ public abstract class TBRedisCacheConfiguration {
 
     protected abstract JedisConnectionFactory loadFactory();
 
+    protected abstract UnifiedJedis loadUnifiedJedis();
+
+    @Bean
+    public JedisBasedProxyManager<String> jedisBasedProxyManager() {
+        return Bucket4jJedis.casBasedBuilder(loadUnifiedJedis())
+                .keyMapper(Mapper.STRING)
+                .build();
+    }
+
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory cf) {
         DefaultFormattingConversionService redisConversionService = new DefaultFormattingConversionService();
@@ -97,7 +115,7 @@ public abstract class TBRedisCacheConfiguration {
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         if (cacheSpecsMap != null) {
-            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getSpecs().entrySet()) {
+            for (Map.Entry<String, CacheSpecs> entry : cacheSpecsMap.getCacheSpecs().entrySet()) {
                 cacheConfigurations.put(entry.getKey(), createRedisCacheConfigWithTtl(redisConversionService, entry.getValue().getTimeToLiveInMinutes()));
             }
         }
@@ -129,6 +147,17 @@ public abstract class TBRedisCacheConfiguration {
 
     protected JedisPoolConfig buildPoolConfig() {
         final JedisPoolConfig poolConfig = new JedisPoolConfig();
+        configurePool(poolConfig);
+        return poolConfig;
+    }
+
+    protected ConnectionPoolConfig buildConnectionPoolConfig() {
+        final ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
+        configurePool(poolConfig);
+        return poolConfig;
+    }
+
+    private void configurePool(GenericObjectPoolConfig<?> poolConfig) {
         poolConfig.setMaxTotal(maxTotal);
         poolConfig.setMaxIdle(maxIdle);
         poolConfig.setMinIdle(minIdle);
@@ -140,7 +169,6 @@ public abstract class TBRedisCacheConfiguration {
         poolConfig.setMaxWait(Duration.ofMillis(maxWaitMills));
         poolConfig.setNumTestsPerEvictionRun(numberTestsPerEvictionRun);
         poolConfig.setBlockWhenExhausted(blockWhenExhausted);
-        return poolConfig;
     }
 
     protected List<RedisNode> getNodes(String nodes) {
@@ -156,5 +184,16 @@ public abstract class TBRedisCacheConfiguration {
             }
         }
         return result;
+    }
+
+    protected Set<HostAndPort> toHostAndPort(String nodes) {
+        return getNodes(nodes)
+                .stream()
+                .map(this::getHostAndPort)
+                .collect(Collectors.toSet());
+    }
+
+    private HostAndPort getHostAndPort(RedisNode redisNode) {
+        return new HostAndPort(redisNode.getHost(), redisNode.getPort());
     }
 }

@@ -16,23 +16,18 @@
 
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import { MailServerRoutingModule } from './mail-server-routing.module';
-import { SharedModule } from '@app/shared/shared.module';
-import { MailServerComponent } from '@modules/home/pages/mail-server/mail-server.component';
-import { HomeComponentsModule } from '@modules/home/components/home-components.module';
+import { SecurityComponent } from './security.component';
+import { SharedModule } from '@shared/shared.module';
+import { SecurityRoutingModule } from './security-routing.module';
 
 @NgModule({
-  declarations:
-    [
-      MailServerComponent
-    ],
+  declarations: [
+    SecurityComponent
+  ],
   imports: [
     CommonModule,
     SharedModule,
-    HomeComponentsModule,
-    MailServerRoutingModule
+    SecurityRoutingModule
   ]
 })
-export class MailServerModule {
-}
+export class SecurityModule { }

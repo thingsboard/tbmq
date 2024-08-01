@@ -18,13 +18,21 @@ package org.thingsboard.mqtt.broker.service.security.system;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.AuthenticationException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 public interface SystemSecurityService {
 
+    SecuritySettings getSecuritySettings();
+
+    SecuritySettings saveSecuritySettings(SecuritySettings securitySettings);
+
+    void validatePasswordByPolicy(String password, UserPasswordPolicy passwordPolicy);
+
     void validateUserCredentials(UserCredentials userCredentials, String username, String password) throws AuthenticationException;
 
-    void validatePassword(String password) throws DataValidationException;
+    void validatePassword(String password, UserCredentials userCredentials) throws DataValidationException;
 
     String getBaseUrl(HttpServletRequest httpServletRequest);
 }

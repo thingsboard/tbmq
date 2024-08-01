@@ -14,25 +14,17 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { fromEvent, Observable, Subject } from 'rxjs';
-import { select, Store } from '@ngrx/store';
-import { debounceTime, distinctUntilChanged, map, skip, startWith, takeUntil, tap } from 'rxjs/operators';
+import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core';
+import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
-import { User } from '@shared/models/user.model';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
-import { selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
 import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
 import { MatSidenav } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
-import { instanceOfSearchableComponent, ISearchableComponent } from '@home/models/searchable-component.models';
 import { UntypedFormBuilder } from '@angular/forms';
-
-// @ts-ignore
-// const screenfull = _screenfull as _screenfull.Screenfull;
 
 @Component({
   selector: 'tb-home',
@@ -63,12 +55,6 @@ export class HomeComponent extends PageComponent implements OnInit {
   }
 
   ngOnInit() {
-    /*this.authUser$ = this.store.pipe(select(selectAuthUser));
-    this.userDetails$ = this.store.pipe(select(selectUserDetails));
-    this.userDetailsString = this.userDetails$.pipe(map((user: User) => {
-      return JSON.stringify(user);
-    }));*/
-
     const isGtSm = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']);
     this.sidenavMode = isGtSm ? 'side' : 'over';
     this.sidenavOpened = isGtSm;
@@ -102,10 +88,6 @@ export class HomeComponent extends PageComponent implements OnInit {
 
   isFullscreen() {
     return screenfull.isFullscreen;
-  }
-
-  goBack() {
-    this.window.history.back();
   }
 
   activeComponentChanged(activeComponent: any) {

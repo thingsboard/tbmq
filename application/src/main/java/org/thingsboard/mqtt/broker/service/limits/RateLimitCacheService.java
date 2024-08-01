@@ -19,6 +19,8 @@ public interface RateLimitCacheService {
 
     void initSessionCount(int count);
 
+    void setSessionCount(int count);
+
     void initApplicationClientsCount(int count);
 
     long incrementSessionCount();
@@ -28,5 +30,13 @@ public interface RateLimitCacheService {
     void decrementSessionCount();
 
     void decrementApplicationClientsCount();
+
+    boolean tryConsumeDevicePersistedMsg();
+
+    long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit);
+
+    boolean tryConsumeTotalMsg();
+
+    long tryConsumeAsMuchAsPossibleTotalMsgs(long limit);
 
 }

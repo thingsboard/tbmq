@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -41,7 +40,6 @@ import java.util.List;
 @RequestMapping("/api/app")
 public class AppController extends BaseController {
 
-    private final TbActorSystem tbActorSystem;
     private final ApplicationRemovedEventProcessor applicationRemovedEventProcessor;
     private final BrokerHomePageConfig brokerHomePageConfig;
 

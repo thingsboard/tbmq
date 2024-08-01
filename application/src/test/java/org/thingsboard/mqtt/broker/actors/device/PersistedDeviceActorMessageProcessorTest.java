@@ -398,4 +398,10 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(deviceMsgService).removePersistedMessage(eq(SS_TEST_KEY), eq(200));
     }
 
+    // TODO: add tests for updateMessagesBeforePublishAndReturnLastPacketId logic since tests
+    //  givenInitialPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
+    //  givenPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
+    //  givenFullPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
+    //  were removed.
+
 }

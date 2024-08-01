@@ -23,7 +23,10 @@ public class MsgIdSequence {
 
     public int nextMsgId() {
         synchronized (this.msgIdSeq) {
-            this.msgIdSeq.compareAndSet(0xffff, 1);
+            boolean reachedLimit = this.msgIdSeq.compareAndSet(0xffff, 1);
+            if (reachedLimit) {
+                return 0xffff;
+            }
             return this.msgIdSeq.getAndIncrement();
         }
     }

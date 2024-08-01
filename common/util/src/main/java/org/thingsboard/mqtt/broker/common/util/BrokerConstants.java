@@ -99,6 +99,9 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
+    public static final String COMMA = ",";
+    public static final String COLON = ":";
+
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
@@ -131,4 +134,11 @@ public class BrokerConstants {
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
     public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
+
+    public static final String MQTT_CONNECTIVITY = "mqtt";
+    public static final String MQTTS_CONNECTIVITY = "mqtts";
+    public static final String WS_CONNECTIVITY = "ws";
+    public static final String WSS_CONNECTIVITY = "wss";
+
+    public static final String CONNECTIVITY_KEY = "connectivity";
 }

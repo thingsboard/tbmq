@@ -20,7 +20,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -40,8 +43,7 @@ public class DevicePersistenceProcessorImplTest {
     public void setUp() {
         deviceMsgService = mock(DeviceMsgService.class);
         deviceActorManager = mock(DeviceActorManager.class);
-        devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(
-                deviceMsgService, deviceActorManager));
+        devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(deviceMsgService, deviceActorManager));
 
         clientId = "clientId";
     }
@@ -50,7 +52,6 @@ public class DevicePersistenceProcessorImplTest {
     public void clearPersistedMsgsTest() {
         devicePersistenceProcessor.clearPersistedMsgs(clientId);
         verify(deviceMsgService).removePersistedMessages(eq(clientId));
-
     }
 
     @Test
@@ -68,6 +69,13 @@ public class DevicePersistenceProcessorImplTest {
     }
 
     @Test
+    public void processPubRecNoPubRelDeliveryTest() {
+        devicePersistenceProcessor.processPubRecNoPubRelDelivery(clientId, 1);
+
+        verify(deviceActorManager).notifyPacketReceivedNoDelivery(eq(clientId), eq(1));
+    }
+
+    @Test
     public void processPubCompTest() {
         devicePersistenceProcessor.processPubComp(clientId, 1);
 
@@ -81,6 +89,16 @@ public class DevicePersistenceProcessorImplTest {
         devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
 
         verify(deviceActorManager).notifyClientConnected(eq(clientSessionCtx));
+    }
+
+    @Test
+    public void startProcessingSharedSubscriptionsTest() {
+        ClientSessionCtx clientSessionCtx = mock(ClientSessionCtx.class);
+        Set<TopicSharedSubscription> subscriptions = Set.of(new TopicSharedSubscription("tf", "sn"));
+
+        devicePersistenceProcessor.startProcessingSharedSubscriptions(clientSessionCtx, subscriptions);
+
+        verify(deviceActorManager).notifySubscribeToSharedSubscriptions(eq(clientSessionCtx), eq(subscriptions));
     }
 
     @Test

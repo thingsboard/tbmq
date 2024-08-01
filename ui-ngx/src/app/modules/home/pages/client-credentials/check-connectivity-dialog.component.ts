@@ -26,6 +26,8 @@ import { selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { ConfigParams } from '@shared/models/config.model';
 import { getOS } from '@core/utils';
+import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
+import { SettingsService } from '@core/http/settings.service';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;
@@ -92,7 +94,8 @@ export class CheckConnectivityDialogComponent extends
   constructor(protected store: Store<AppState>,
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) private data: CheckConnectivityDialogData,
-              public dialogRef: MatDialogRef<CheckConnectivityDialogComponent>) {
+              public dialogRef: MatDialogRef<CheckConnectivityDialogComponent>,
+              private settingsService: SettingsService) {
     super(store, router, dialogRef);
 
     if (this.data.afterAdd) {
@@ -156,15 +159,26 @@ export class CheckConnectivityDialogComponent extends
       .pipe(
         map((data) => {
           this.mqttPort = data ? data[ConfigParams.tcpPort] : '1883';
-          this.loadCommands();
+          this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
+            settings => {
+              if (settings && settings.jsonValue) {
+                this.loadCommands(settings.jsonValue);
+              }
+            },
+            () => this.loadCommands()
+          );
           return true;
           }
         ))
       .subscribe();
   }
 
-  private loadCommands() {
+  private loadCommands(data: ConnectivitySettings = null) {
     const config = this.setConfig(this.data.credentials);
+    if (data.mqtt?.enabled) {
+      config.hostname = data.mqtt.host.toString();
+      config.mqttPort = data.mqtt.port.toString();
+    }
     const commonCommands = this.setCommonCommands(config);
 
     const subCommands: string[] = [];

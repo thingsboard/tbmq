@@ -30,7 +30,7 @@ sudo -u "$run_user" -s /bin/sh -c "java -cp ${jarfile} $JAVA_OPTS -Dloader.main=
                     -Dinstall.data_dir=${installDir} \
                     -Dspring.jpa.hibernate.ddl-auto=none \
                     -Dinstall.upgrade=false \
-                    org.springframework.boot.loader.PropertiesLauncher"
+                    org.springframework.boot.loader.launch.PropertiesLauncher"
 
 if [ $? -ne 0 ]; then
     echo "TBMQ DB installation failed!"

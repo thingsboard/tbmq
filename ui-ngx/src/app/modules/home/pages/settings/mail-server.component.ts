@@ -18,9 +18,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { Router } from '@angular/router';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { UserSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
+import { AdminSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
 import { MailServerService } from '@core/http/mail-server.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
@@ -37,7 +36,7 @@ import { takeUntil } from 'rxjs/operators';
 export class MailServerComponent extends PageComponent implements OnInit, OnDestroy, HasConfirmForm {
 
   mailSettings: UntypedFormGroup;
-  adminSettings: UserSettings<MailServerSettings>;
+  adminSettings: AdminSettings<MailServerSettings>;
   smtpProtocols = ['smtp', 'smtps'];
   showChangePassword = false;
 
@@ -46,7 +45,6 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
-              private router: Router,
               private adminService: MailServerService,
               private translate: TranslateService,
               public fb: UntypedFormBuilder) {
@@ -78,7 +76,6 @@ export class MailServerComponent extends PageComponent implements OnInit, OnDest
   }
 
   ngOnDestroy() {
-    // this.destroy$.next();
     this.destroy$.complete();
     super.ngOnDestroy();
   }

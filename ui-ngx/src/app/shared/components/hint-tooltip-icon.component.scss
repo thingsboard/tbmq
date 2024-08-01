@@ -13,16 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dto;
+:host(.tb-hint-tooltip) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-@Getter
-@RequiredArgsConstructor
-public class PacketIdAndSerialNumberDto {
-
-    private final int packetId;
-    private final long serialNumber;
-
+:host {
+  .tb-hint-tooltip-icon {
+    color: #E0E0E0;
+    overflow: visible;
+    &:hover {
+      color: #9E9E9E;
+    }
+  }
 }

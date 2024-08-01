@@ -38,6 +38,7 @@ import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.com
 import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { ConfigService } from '@core/http/config.service';
+import { UserPasswordPolicy } from "@shared/models/settings.models";
 
 @Injectable({
   providedIn: 'root'
@@ -139,8 +140,8 @@ export class AuthService {
       ));
   }
 
-  public changePassword(currentPassword: string, newPassword: string) {
-    return this.http.post('/api/auth/changePassword', {currentPassword, newPassword}, defaultHttpOptions()).pipe(
+  public changePassword(currentPassword: string, newPassword: string, config?: RequestConfig) {
+    return this.http.post('/api/auth/changePassword', {currentPassword, newPassword}, defaultHttpOptionsFromConfig(config)).pipe(
       tap((loginResponse: LoginResponse) => {
           this.setUserFromJwtToken(loginResponse.token, loginResponse.refreshToken, false);
         }
@@ -301,17 +302,21 @@ export class AuthService {
             })
           ).subscribe(
             (user) => {
-              authPayload.userDetails = user;
-              let userLang;
-              authPayload.userDetails.additionalInfo.config = configValue;
-              if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
-                userLang = authPayload.userDetails.additionalInfo.lang;
+              if (user) {
+                authPayload.userDetails = user;
+                let userLang;
+                authPayload.userDetails.additionalInfo.config = configValue;
+                if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
+                  userLang = authPayload.userDetails.additionalInfo.lang;
+                } else {
+                  userLang = null;
+                }
+                this.notifyUserLang(userLang);
+                loadUserSubject.next(authPayload);
+                loadUserSubject.complete();
               } else {
-                userLang = null;
+                this.clearJwtToken();
               }
-              this.notifyUserLang(userLang);
-              loadUserSubject.next(authPayload);
-              loadUserSubject.complete();
             },
             (err) => {
               loadUserSubject.error(err);
@@ -500,6 +505,10 @@ export class AuthService {
 
   private clearJwtToken() {
     this.setUserFromJwtToken(null, null, true);
+  }
+
+  public getUserPasswordPolicy() {
+    return this.http.get<UserPasswordPolicy>(`/api/noauth/userPasswordPolicy`, defaultHttpOptions());
   }
 
 }

@@ -75,7 +75,8 @@
         <jaxb.version>4.0.2</jaxb.version>
         <jjwt.version>0.12.5</jjwt.version>
         <bouncycastle.version>1.78</bouncycastle.version>
-        <bucket4j.version>8.10.1</bucket4j.version>
+        <bucket4j.version>8.13.0</bucket4j.version>
+        <passay.version>1.6.4</passay.version>
         <springdoc-swagger.version>2.4.0TB</springdoc-swagger.version>
         <swagger-annotations.version>2.2.21</swagger-annotations.version>
         <micrometer.version>1.12.5</micrometer.version>
@@ -1036,6 +1037,11 @@
                 <version>${springdoc-swagger.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.passay</groupId>
+                <artifactId>passay</artifactId>
+                <version>${passay.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations-jakarta</artifactId>
                 <version>${swagger-annotations.version}</version>
@@ -1109,7 +1115,17 @@
             </dependency>
             <dependency>
                 <groupId>com.bucket4j</groupId>
-                <artifactId>bucket4j-core</artifactId>
+                <artifactId>bucket4j_jdk17-core</artifactId>
+                <version>${bucket4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-jedis</artifactId>
+                <version>${bucket4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bucket4j</groupId>
+                <artifactId>bucket4j_jdk17-redis-common</artifactId>
                 <version>${bucket4j.version}</version>
             </dependency>
             <dependency>
