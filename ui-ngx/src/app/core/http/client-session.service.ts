@@ -20,7 +20,12 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { ClientSessionStatsInfo, DetailedClientSessionInfo, SessionQuery } from '@shared/models/session.model';
+import {
+  ClientSessionCredentials,
+  ClientSessionStatsInfo,
+  DetailedClientSessionInfo,
+  SessionQuery
+} from '@shared/models/session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -58,7 +63,7 @@ export class ClientSessionService {
     return this.http.get<ClientSessionStatsInfo>(`/api/client-session/info`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getClientSessionCredentials(clientId: string, config?: RequestConfig): Observable<string> {
-    return this.http.get<string>(`/api/client-session/credentials?clientId=${clientId}`);
+  public getClientSessionCredentials(clientId: string, config?: RequestConfig): Observable<ClientSessionCredentials> {
+    return this.http.get<ClientSessionCredentials>(`/api/client-session/credentials?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 }

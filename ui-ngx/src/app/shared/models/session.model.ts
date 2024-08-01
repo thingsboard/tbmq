@@ -43,6 +43,8 @@ export interface DetailedClientSessionInfo extends BaseData {
   clientIpAdr: string;
   subscriptionsCount?: number;
   connected?: boolean;
+  credentials?: string;
+  mqttVersion?: number;
 }
 
 export interface ShortClientSessionInfo {
@@ -140,6 +142,10 @@ export interface SessionFilterConfig {
   subscriptions?: number;
   clientId?: string;
   openSession?: boolean;
+}
+
+export interface ClientSessionCredentials {
+  name: string;
 }
 
 export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {

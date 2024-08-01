@@ -96,7 +96,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: true}],
       subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
       cleanStart: [{value: entity ? entity.cleanStart : null, disabled: true}],
-      subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]
+      subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}],
+      credentials: [{value: null, disabled: true}],
+      mqttVersion: [{value: null, disabled: true}]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
       this.entity.subscriptions = value;
@@ -121,15 +123,18 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
   }
 
-  getClientCredentials() {
+  getAdditionalSessionInfo() {
     this.clientSessionService.getClientSessionCredentials(this.entity.clientId)
       .subscribe(
-        credentails => {
-          this.clientCredentials = credentails
+        credentials => {
+          this.entityForm.patchValue({credentials: credentials.name});
         },
         error => {
-          this.clientCredentials = 'Not found'
-        });
+          if (error.status === 404) {
+            this.entityForm.patchValue({credentials: '?'});
+          }
+        }
+      );
   }
 
   private onSave(): void {
