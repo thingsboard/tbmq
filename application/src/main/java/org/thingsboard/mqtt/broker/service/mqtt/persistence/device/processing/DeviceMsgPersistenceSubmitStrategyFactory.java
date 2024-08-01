@@ -15,7 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-public enum AckStrategyType {
-    SKIP_ALL,
-    RETRY_ALL;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+@Component
+@Slf4j
+public class DeviceMsgPersistenceSubmitStrategyFactory {
+
+    public DeviceSubmitStrategy newInstance(String consumerId) {
+        return new BurstSubmitStrategy(consumerId);
+    }
 }

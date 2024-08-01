@@ -19,27 +19,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DevicePersistenceProcessorImplTest {
 
     DeviceMsgService deviceMsgService;
-    DeviceSessionCtxService deviceSessionCtxService;
     DeviceActorManager deviceActorManager;
-    CacheManager cacheManager;
     DevicePersistenceProcessorImpl devicePersistenceProcessor;
 
     String clientId;
@@ -47,47 +39,39 @@ public class DevicePersistenceProcessorImplTest {
     @Before
     public void setUp() {
         deviceMsgService = mock(DeviceMsgService.class);
-        deviceSessionCtxService = mock(DeviceSessionCtxService.class);
         deviceActorManager = mock(DeviceActorManager.class);
-        cacheManager = mock(CacheManager.class);
         devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(
-                deviceMsgService, deviceSessionCtxService, deviceActorManager, cacheManager));
+                deviceMsgService, deviceActorManager));
 
         clientId = "clientId";
     }
 
     @Test
     public void clearPersistedMsgsTest() {
-        Cache cache = mock(Cache.class);
-        when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
-
         devicePersistenceProcessor.clearPersistedMsgs(clientId);
+        verify(deviceMsgService).removePersistedMessages(eq(clientId));
 
-        verify(deviceMsgService, times(1)).removePersistedMessages(eq(clientId));
-        verify(deviceSessionCtxService, times(1)).removeDeviceSessionContext(eq(clientId));
-        verify(cacheManager, times(1)).getCache(eq(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE));
-        verify(cache, times(1)).evict(eq(clientId));
     }
 
     @Test
     public void processPubAckTest() {
         devicePersistenceProcessor.processPubAck(clientId, 1);
 
-        verify(deviceActorManager, times(1)).notifyPacketAcknowledged(eq(clientId), eq(1));
+        verify(deviceActorManager).notifyPacketAcknowledged(eq(clientId), eq(1));
     }
 
     @Test
     public void processPubRecTest() {
         devicePersistenceProcessor.processPubRec(clientId, 1);
 
-        verify(deviceActorManager, times(1)).notifyPacketReceived(eq(clientId), eq(1));
+        verify(deviceActorManager).notifyPacketReceived(eq(clientId), eq(1));
     }
 
     @Test
     public void processPubCompTest() {
         devicePersistenceProcessor.processPubComp(clientId, 1);
 
-        verify(deviceActorManager, times(1)).notifyPacketCompleted(eq(clientId), eq(1));
+        verify(deviceActorManager).notifyPacketCompleted(eq(clientId), eq(1));
     }
 
     @Test
@@ -96,16 +80,13 @@ public class DevicePersistenceProcessorImplTest {
 
         devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
 
-        verify(deviceActorManager, times(1)).notifyClientConnected(eq(clientSessionCtx));
+        verify(deviceActorManager).notifyClientConnected(eq(clientSessionCtx));
     }
 
     @Test
     public void stopProcessingPersistedMessagesTest() {
-        Cache cache = mock(Cache.class);
-        when(cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE)).thenReturn(cache);
-
         devicePersistenceProcessor.stopProcessingPersistedMessages(clientId);
 
-        verify(deviceActorManager, times(1)).notifyClientDisconnected(eq(clientId));
+        verify(deviceActorManager).notifyClientDisconnected(eq(clientId));
     }
 }

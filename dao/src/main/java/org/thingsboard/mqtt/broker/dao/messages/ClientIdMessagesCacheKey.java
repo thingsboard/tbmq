@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.device;
+package org.thingsboard.mqtt.broker.dao.messages;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-import org.thingsboard.mqtt.broker.dao.model.DeviceSessionCtxEntity;
+import java.io.Serial;
+import java.io.Serializable;
 
-import java.util.Collection;
+public record ClientIdMessagesCacheKey(String clientId) implements Serializable {
 
-@Repository
-public interface DeviceSessionCtxRepository extends JpaRepository<DeviceSessionCtxEntity, String> {
+    @Serial
+    private static final long serialVersionUID = 65684921903757140L;
 
-    Collection<DeviceSessionCtxEntity> findAllByClientIdIn(Collection<String> clientIds);
-
-    Page<DeviceSessionCtxEntity> findAll(Pageable pageable);
+    @Override
+    public String toString() {
+        return "{" + clientId + "}_messages";
+    }
 
 }

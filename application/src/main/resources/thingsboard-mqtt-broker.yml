@@ -249,6 +249,8 @@ queue:
     threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:2}"
     # Interval in milliseconds to poll messages from 'tbmq.msg.persisted' topic
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
+    # Timeout in milliseconds for processing the pack of messages from 'tbmq.msg.persisted' topic
+    pack-processing-timeout: "${TB_DEVICE_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT:20000}"
     ack-strategy:
       # Queue processing strategy. Can be: SKIP_ALL, RETRY_ALL
       type: "${TB_DEVICE_PERSISTED_MSG_ACK_STRATEGY_TYPE:RETRY_ALL}"
@@ -727,28 +729,6 @@ mqtt:
         limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
         # TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
-        clean-up:
-          # Cron job to schedule clearing of outdated persisted DEVICE messages. Defaults to 'every day at 2 o'clock'
-          cron: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_CRON:0 0 2 * * *}"
-          # Timezone for the DEVICE messages clearing cron-job
-          zone: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_ZONE:UTC}"
-          # Max number of client sessions in one SELECT request
-          session-ctx-page-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_CLEAN_UP_SESSION_CTX_PAGE_SIZE:1000}"
-        sql:
-          update-packet-queue:
-            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_THREADS:3}"
-            # Batch size for processing packet updates
-            batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_BATCH_SIZE:100}"
-            # Max timeout for packet updates queue polling. Value set in milliseconds
-            max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_UPDATE_PACKET_QUEUE_MAX_DELAY:50}"
-          delete-packet-queue:
-            # Number of parallel threads that process queue. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
-            batch-threads: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_THREADS:3}"
-            # Batch size for processing packet deletes
-            batch-size: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_BATCH_SIZE:100}"
-            # Max timeout for packet deletes queue polling. Value set in milliseconds
-            max-delay: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_SQL_DELETE_PACKET_QUEUE_MAX_DELAY:50}"
   rate-limits:
     incoming-publish:
       # Enable/disable publish rate limits per client for incoming messages to the broker from publishers
@@ -780,40 +760,28 @@ mqtt:
   # Set it to topic to be used for request-response feature, e.g. "example/"
   response-info: "${MQTT_RESPONSE_INFO:}"
 
-# DB connectivity parameters
-db:
-  # The parameter to specify time interval in milliseconds to periodically check if the connection to the DB is still established
-  connection-check-rate-ms: "${DB_CONNECTION_CHECK_RATE_MS:10000}"
-
 # Cache parameters
 cache:
-  # Cache type: caffeine or redis
-  type: "${CACHE_TYPE:caffeine}"
   stats:
     # Enable/disable cache stats logging
     enabled: "${CACHE_STATS_ENABLED:true}"
     # Cache stats logging interval in seconds
     intervalSec: "${CACHE_STATS_INTERVAL_SEC:60}"
   specs:
-    packetIdAndSerialNumber:
-      # Cache TTL in minutes
-      timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
-      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
-      maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}"
     mqttClientCredentials:
       # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
-      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      # Cache max size.
       maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}"
     basicCredentialsPassword:
-      # Cache TTL in minutes. It is recommended to set this TTL as a small value to not store them for a long time (e.g. 1-5 minutes)
+      # Cache TTL in minutes. It is recommended to set this TTL as a small value to not store them for a long time (e.g., 1-5 minutes)
       timeToLiveInMinutes: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_TTL:1}"
-      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      # Cache max size.
       maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}"
     sslRegexBasedCredentials:
       # Cache TTL in minutes
       timeToLiveInMinutes: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_TTL:1440}"
-      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine.
+      # Cache max size.
       # Defaults to 1, as the cache is designed to store only a single key at any given time. Increasing the size is unnecessary for this use case
       maxSize: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_MAX_SIZE:1}"
 

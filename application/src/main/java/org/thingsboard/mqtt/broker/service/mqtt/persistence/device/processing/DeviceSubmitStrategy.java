@@ -13,10 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-public interface DeviceMsgCleanUpDao {
-    void cleanUpByTime(long ttl);
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-    void cleanUpBySize(int maxPersistedMessages);
+public interface DeviceSubmitStrategy {
+
+    void init(Map<String, ClientIdMessagesPack> clientIdToMessagesMap);
+
+    ConcurrentMap<String, ClientIdMessagesPack> getPendingMap();
+
+    void process(Consumer<ClientIdMessagesPack> clientIdMessagesPackConsumer);
+
+    void update(Map<String, ClientIdMessagesPack> reprocessMap);
 }

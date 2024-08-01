@@ -13,14 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import java.util.Map;
-import java.util.Set;
-
-public interface DevicePacketIdAndSerialNumberService {
-
-    Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Set<String> clientIds);
-
-    void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers);
+public enum DeviceAckStrategyType {
+    SKIP_ALL,
+    RETRY_ALL;
 }

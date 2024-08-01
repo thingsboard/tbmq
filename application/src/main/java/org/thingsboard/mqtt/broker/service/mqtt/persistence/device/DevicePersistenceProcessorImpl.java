@@ -17,11 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
-import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -34,17 +30,13 @@ import java.util.Set;
 public class DevicePersistenceProcessorImpl implements DevicePersistenceProcessor {
 
     private final DeviceMsgService deviceMsgService;
-    private final DeviceSessionCtxService deviceSessionCtxService;
     private final DeviceActorManager deviceActorManager;
-    private final CacheManager cacheManager;
 
     @Override
     public void clearPersistedMsgs(String clientId) {
         // TODO: think about marking messages as 'deleted' and clear them once a day
         // TODO: think about moving this code (could do async but delete only if msg.time < currentTime)
         deviceMsgService.removePersistedMessages(clientId);
-        deviceSessionCtxService.removeDeviceSessionContext(clientId);
-        evictCache(clientId);
     }
 
     @Override
@@ -80,15 +72,6 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     @Override
     public void stopProcessingPersistedMessages(String clientId) {
         deviceActorManager.notifyClientDisconnected(clientId);
-        evictCache(clientId);
     }
 
-    private void evictCache(String clientId) {
-        Cache cache = getCache();
-        cache.evict(clientId);
-    }
-
-    private Cache getCache() {
-        return cacheManager.getCache(CacheConstants.PACKET_ID_AND_SERIAL_NUMBER_CACHE);
-    }
 }

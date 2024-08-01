@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.cache;
 
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -41,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 
 @Configuration
-@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @EnableCaching
 @Data
 public abstract class TBRedisCacheConfiguration {
@@ -104,7 +102,8 @@ public abstract class TBRedisCacheConfiguration {
             }
         }
 
-        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration).withInitialCacheConfigurations(cacheConfigurations).transactionAware();
+        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration)
+                .withInitialCacheConfigurations(cacheConfigurations).transactionAware().disableCreateOnMissingCache();
         if (cacheStatsEnabled) {
             redisCacheManagerBuilder.enableStatistics();
         }

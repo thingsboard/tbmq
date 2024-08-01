@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-public interface DbConnectionChecker {
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
-    boolean isDbConnected();
+import java.util.List;
 
-    /**
-     * should be used for tests only
-     */
-    void setDbConnected(boolean value);
-
-}
+public record ClientIdMessagesPack(String clientId, List<DevicePublishMsg> messages) { }

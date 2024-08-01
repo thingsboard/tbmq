@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages.sql;
+package org.thingsboard.mqtt.broker.dao.messages;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import java.io.Serial;
+import java.io.Serializable;
 
-@Component
-@ConfigurationProperties(prefix = "mqtt.persistent-session.device.persisted-messages.sql.delete-packet-queue")
-@Data
-public class DeletePacketQueueConfiguration {
-    private int batchThreads;
-    private int batchSize;
-    private int maxDelay;
+public record ClientIdLastPacketIdCacheKey(String clientId) implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 6899529084577281154L;
+
+    @Override
+    public String toString() {
+        return "{" + clientId + "}_last_packet_id";
+    }
+
 }

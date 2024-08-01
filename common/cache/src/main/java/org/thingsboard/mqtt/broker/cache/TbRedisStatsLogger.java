@@ -20,7 +20,6 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
@@ -34,7 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 @Component
-@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @Slf4j
 @RequiredArgsConstructor
 public class TbRedisStatsLogger {
