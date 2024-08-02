@@ -398,10 +398,43 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(deviceMsgService).removePersistedMessage(eq(SS_TEST_KEY), eq(200));
     }
 
-    // TODO: add tests for updateMessagesBeforePublishAndReturnLastPacketId logic since tests
-    //  givenInitialPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
-    //  givenPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
-    //  givenFullPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult
-    //  were removed.
+    @Test
+    public void givenInitialPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = 0; // no last_packet_id in redis
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(0).build();
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(1, lastPacketId);
+        assertEquals(1, (int) msg.getPacketId());
+        assertEquals(0, (int) msg.getQos());
+    }
+
+    @Test
+    public void givenPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = 100;
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(1).build();
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(101, lastPacketId);
+        assertEquals(101, (int) msg.getPacketId());
+        assertEquals(1, (int) msg.getQos());
+    }
+
+    @Test
+    public void givenMaxPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = BrokerConstants.MAX_PACKET_ID;
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(1).build();
+
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(1, lastPacketId);
+        assertEquals(1, (int) msg.getPacketId());
+        assertEquals(1, (int) msg.getQos());
+    }
 
 }

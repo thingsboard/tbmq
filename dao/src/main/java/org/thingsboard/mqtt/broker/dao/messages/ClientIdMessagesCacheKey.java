@@ -15,17 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
+
 import java.io.Serial;
 import java.io.Serializable;
 
-public record ClientIdMessagesCacheKey(String clientId) implements Serializable {
+public record ClientIdMessagesCacheKey(String clientId, String cachePrefix) implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 65684921903757140L;
 
     @Override
     public String toString() {
-        return "{" + clientId + "}_messages";
+        String keyBase = "{" + clientId + "}_messages";
+        return StringUtils.isBlank(cachePrefix) ? keyBase : cachePrefix + keyBase;
     }
 
 }

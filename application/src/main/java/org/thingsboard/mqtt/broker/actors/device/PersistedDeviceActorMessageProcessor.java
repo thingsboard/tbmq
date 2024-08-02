@@ -55,6 +55,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
+
 @Slf4j
 @Getter
 class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProcessor {
@@ -148,12 +150,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     int updateMessagesBeforePublishAndReturnLastPacketId(int lastPacketId, TopicSharedSubscription topicSharedSubscription,
-                                                          List<DevicePublishMsg> persistedMessages) {
+                                                         List<DevicePublishMsg> persistedMessages) {
         AtomicInteger packetIdCounter = new AtomicInteger(lastPacketId);
         for (DevicePublishMsg devicePublishMessage : persistedMessages) {
-            packetIdCounter.incrementAndGet();
-            boolean reachedLimit = packetIdCounter.compareAndSet(0xffff, 1);
-            int currentPacketId = reachedLimit ? 0xffff : packetIdCounter.get();
+            if (packetIdCounter.get() == MAX_PACKET_ID) {
+                packetIdCounter.set(1);
+            } else {
+                packetIdCounter.incrementAndGet();
+            }
+            boolean reachedLimit = packetIdCounter.compareAndSet(MAX_PACKET_ID, 0);
+            int currentPacketId = reachedLimit ? MAX_PACKET_ID : packetIdCounter.get();
             sentPacketIdsFromSharedSubscription.put(currentPacketId,
                     newSharedSubscriptionPublishPacket(topicSharedSubscription.getKey(), devicePublishMessage.getPacketId()));
             devicePublishMessage.setPacketId(currentPacketId);

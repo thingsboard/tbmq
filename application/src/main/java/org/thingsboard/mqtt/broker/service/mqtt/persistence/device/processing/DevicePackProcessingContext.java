@@ -26,6 +26,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
+
 @Slf4j
 public class DevicePackProcessingContext {
 
@@ -76,14 +78,17 @@ public class DevicePackProcessingContext {
         successMap.clear();
     }
 
-    // TODO: add tests
-    private List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
+    List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
         List<DevicePublishMsg> messages = pack.messages();
         AtomicInteger packetIdAtomic = new AtomicInteger(previousPacketId);
         for (var msg : messages) {
-            packetIdAtomic.incrementAndGet();
-            boolean reachedLimit = packetIdAtomic.compareAndSet(0xffff, 1);
-            msg.setPacketId(reachedLimit ? 0xffff : packetIdAtomic.get());
+            if (packetIdAtomic.get() == MAX_PACKET_ID) {
+                packetIdAtomic.set(1);
+            } else {
+                packetIdAtomic.incrementAndGet();
+            }
+            boolean reachedLimit = packetIdAtomic.compareAndSet(MAX_PACKET_ID, 0);
+            msg.setPacketId(reachedLimit ? MAX_PACKET_ID : packetIdAtomic.get());
         }
         return messages;
     }

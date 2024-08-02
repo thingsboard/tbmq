@@ -164,6 +164,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     @Value("${mqtt.persistent-session.device.persisted-messages.limit}")
     private int messagesLimit;
 
+    @Value("${cache.cache-prefix:}")
+    protected String cachePrefix;
+
     private byte[] messagesLimitBytes;
 
     private final JedisConnectionFactory connectionFactory;
@@ -391,7 +394,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     private byte[] toMessagesCacheKey(String clientId) {
-        ClientIdMessagesCacheKey clientIdMessagesCacheKey = new ClientIdMessagesCacheKey(clientId);
+        ClientIdMessagesCacheKey clientIdMessagesCacheKey = new ClientIdMessagesCacheKey(clientId, cachePrefix);
         String stringValue = clientIdMessagesCacheKey.toString();
         byte[] rawKey;
         try {
@@ -406,7 +409,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     private byte[] toLastPacketIdKey(String clientId) {
-        ClientIdLastPacketIdCacheKey clientIdLastPacketIdCacheKey = new ClientIdLastPacketIdCacheKey(clientId);
+        ClientIdLastPacketIdCacheKey clientIdLastPacketIdCacheKey = new ClientIdLastPacketIdCacheKey(clientId, cachePrefix);
         String stringValue = clientIdLastPacketIdCacheKey.toString();
         byte[] rawKey;
         try {

@@ -33,17 +33,47 @@ public class AbstractRedisClusterContainer {
     @ClassRule
     public static Network network = Network.newNetwork();
     @ClassRule
-    public static GenericContainer redis1 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6371").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis1 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6371")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis2 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6372").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis2 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6372")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis3 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6373").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis3 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6373")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis4 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6374").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis4 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6374")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis5 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6375").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis5 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6375")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis6 = new GenericContainer("bitnami/redis-cluster:latest").withEnv("REDIS_PORT_NUMBER", "6376").withNetworkMode("host").withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding())).withEnv("ALLOW_EMPTY_PASSWORD", "yes").withEnv("REDIS_NODES", nodes);
+    public static GenericContainer redis6 = new GenericContainer("bitnami/redis-cluster:latest")
+            .withEnv("REDIS_PORT_NUMBER", "6376")
+            .withNetworkMode("host")
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withEnv("REDIS_NODES", nodes);
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
@@ -60,7 +90,7 @@ public class AbstractRedisClusterContainer {
 
             String clusterCreateCommand = "echo yes | redis-cli --cluster create " +
                     "127.0.0.1:6371 127.0.0.1:6372 127.0.0.1:6373 127.0.0.1:6374 127.0.0.1:6375 127.0.0.1:6376 " +
-                    "--cluster-replicas 1";
+                    "--cluster-replicas 1 -a password";
             log.warn("Command to init Redis Cluster: {}", clusterCreateCommand);
             var result = redis6.execInContainer("/bin/sh", "-c", clusterCreateCommand);
             log.warn("Init cluster result: {}", result);
@@ -68,7 +98,7 @@ public class AbstractRedisClusterContainer {
             Thread.sleep(TimeUnit.SECONDS.toMillis(5)); // otherwise cluster not always ready
 
             log.warn("Connect to nodes: {}", nodes);
-            System.setProperty("cache.type", "redis");
+            System.setProperty("redis.password", "password");
             System.setProperty("redis.connection.type", "cluster");
             System.setProperty("redis.cluster.nodes", nodes);
             System.setProperty("redis.cluster.useDefaultPoolConfig", "false");
@@ -82,7 +112,7 @@ public class AbstractRedisClusterContainer {
             redis4.stop();
             redis5.stop();
             redis6.stop();
-            List.of("cache.type", "redis.connection.type", "redis.cluster.nodes", "redis.cluster.useDefaultPoolConfig\"")
+            List.of("redis.connection.type", "redis.cluster.nodes", "redis.cluster.useDefaultPoolConfig")
                     .forEach(System.getProperties()::remove);
         }
     };
