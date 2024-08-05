@@ -29,7 +29,9 @@ public class AbstractRedisContainer {
     @ClassRule
     public static GenericContainer redis = new GenericContainer("redis:7.2")
             .withExposedPorts(6379)
-            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()));
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withCommand("redis-server", "--requirepass", "password");
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
@@ -39,6 +41,7 @@ public class AbstractRedisContainer {
             System.setProperty("redis.connection.type", "standalone");
             System.setProperty("redis.standalone.host", redis.getHost());
             System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.password", "password");
         }
 
         @Override

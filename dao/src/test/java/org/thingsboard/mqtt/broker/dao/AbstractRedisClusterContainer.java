@@ -90,9 +90,9 @@ public class AbstractRedisClusterContainer {
 
             String clusterCreateCommand = "echo yes | redis-cli --cluster create " +
                     "127.0.0.1:6371 127.0.0.1:6372 127.0.0.1:6373 127.0.0.1:6374 127.0.0.1:6375 127.0.0.1:6376 " +
-                    "--cluster-replicas 1 -a password";
+                    "--cluster-replicas 1";
             log.warn("Command to init Redis Cluster: {}", clusterCreateCommand);
-            var result = redis6.execInContainer("/bin/sh", "-c", clusterCreateCommand);
+            var result = redis6.execInContainer("/bin/sh", "-c", "export REDISCLI_AUTH=password && " + clusterCreateCommand);
             log.warn("Init cluster result: {}", result);
 
             Thread.sleep(TimeUnit.SECONDS.toMillis(5)); // otherwise cluster not always ready
