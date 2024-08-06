@@ -101,5 +101,5 @@ Client connected!
 Received message 'Hello world' on topic sensors/temperature
 ```
 
-#### Next steps
+#### See also
 The full documenation on Paho MQTT Python Client [API](https://eclipse.dev/paho/files/paho.mqtt.python/html/client.html).
