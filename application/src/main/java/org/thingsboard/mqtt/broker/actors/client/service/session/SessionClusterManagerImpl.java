@@ -229,6 +229,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                         rateLimitCacheService.decrementApplicationClientsCount();
                     }
                     evictEntryFromClientSessionCredentialsCache(clientId);
+                    evictEntryFromClientMqttVersionCache(clientId);
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
                 }
@@ -272,6 +273,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             return false;
         }
         evictEntryFromClientSessionCredentialsCache(clientId);
+        evictEntryFromClientMqttVersionCache(clientId);
         clearSessionAndSubscriptions(clientId);
         return true;
     }
@@ -425,8 +427,20 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         }
     }
 
+    private void evictEntryFromClientMqttVersionCache(String clientId) {
+        try {
+            getClientMqttVersionCache().evictIfPresent(clientId);
+        } catch (IllegalStateException e) {
+            log.debug("[{}] Could not evict entry from client mqtt version cache for clientId", clientId, e);
+        }
+    }
+
     private Cache getClientSessionCredentialsCache() {
         return cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE);
+    }
+
+    private Cache getClientMqttVersionCache() {
+        return cacheNameResolver.getCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE);
     }
 
     @PreDestroy

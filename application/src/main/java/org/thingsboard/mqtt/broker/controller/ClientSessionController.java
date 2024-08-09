@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.dto.ClientSessionCredentialsDto;
+import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
@@ -171,13 +171,10 @@ public class ClientSessionController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/client-session/credentials", params = {"clientId"}, method = RequestMethod.GET)
     @ResponseBody
-    public ClientSessionCredentialsDto getClientSessionCredentials(@RequestParam String clientId) throws ThingsboardException {
-        try {
-            String credentialsName = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE).get(clientId, String.class));
-            return new ClientSessionCredentialsDto(credentialsName);
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+    public ClientSessionAdvancedDto getClientSessionCredentials(@RequestParam String clientId) throws ThingsboardException {
+        String credentialsName = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE).get(clientId, String.class));
+        String mqttVersion = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE).get(clientId, String.class));
+        return new ClientSessionAdvancedDto(credentialsName, mqttVersion);
     }
 
 }

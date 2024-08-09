@@ -18,8 +18,9 @@ package org.thingsboard.mqtt.broker.dto;
 import lombok.Data;
 
 @Data
-public class ClientSessionCredentialsDto {
+public class ClientSessionAdvancedDto {
 
     private final String name;
+    private final String mqttVersion;
 
 }

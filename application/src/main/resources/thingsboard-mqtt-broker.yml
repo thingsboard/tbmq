@@ -847,6 +847,11 @@ cache:
       timeToLiveInMinutes: "${CACHE_SPECS_CLIENT_SESSION_CREDENTIALS_TTL:1440}"
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
       maxSize: "${CACHE_SPECS_CLIENT_SESSION_CREDENTIALS_MAX_SIZE:10000}"
+    clientMqttVersion:
+      # Cache TTL in minutes. Defaults to 1 day
+      timeToLiveInMinutes: "${CACHE_SPECS_CLIENT_MQTT_VERSION_TTL:1440}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_CLIENT_MQTT_VERSION_MAX_SIZE:10000}"
 
 # Redis configuration parameters
 redis:
