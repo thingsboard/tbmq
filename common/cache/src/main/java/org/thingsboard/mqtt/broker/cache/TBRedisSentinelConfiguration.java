@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.cache;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
@@ -27,7 +26,6 @@ import redis.clients.jedis.JedisSentineled;
 import redis.clients.jedis.UnifiedJedis;
 
 @Configuration
-@ConditionalOnMissingBean(TbCaffeineCacheConfiguration.class)
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "sentinel")
 public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration {
 

@@ -29,22 +29,27 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = CaffeineCacheDefaultConfigurationTest.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = RedisCacheDefaultConfigurationTest.class, loader = SpringBootContextLoader.class)
 @ComponentScan({"org.thingsboard.mqtt.broker.cache"})
 @EnableConfigurationProperties
 @Slf4j
-public class CaffeineCacheDefaultConfigurationTest {
+public class RedisCacheDefaultConfigurationTest {
 
     @Autowired
-    TbCaffeineCacheConfiguration caffeineCacheConfiguration;
+    TBRedisCacheConfiguration redisCacheConfiguration;
 
     @Test
     public void verifyTransactionAwareCacheManagerProxy() {
-        assertThat(caffeineCacheConfiguration.getConfiguration().getCacheSpecs()).as("specs").isNotNull();
-        caffeineCacheConfiguration.getConfiguration().getCacheSpecs().forEach((name, cacheSpecs) -> assertThat(cacheSpecs).as("cache %s specs", name).isNotNull());
+        assertThat(redisCacheConfiguration.getCacheSpecsMap().getSpecs()).as("specs without prefix").isNotNull();
+        assertThat(redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs()).as("specs").isNotNull();
+        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
+            assertThat(name).as("cacheSpec name").isNotNull();
+            assertThat(name).as("cacheSpec name has prefix").startsWith(redisCacheConfiguration.getCacheSpecsMap().getCachePrefix());
+            assertThat(cacheSpecs).as("cache %s specs", name).isNotNull();
+        });
 
         SoftAssertions softly = new SoftAssertions();
-        caffeineCacheConfiguration.getConfiguration().getCacheSpecs().forEach((name, cacheSpecs) -> {
+        redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
             softly.assertThat(name).as("cache name").isNotEmpty();
             softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThan(0);
             softly.assertThat(cacheSpecs.getMaxSize()).as("cache %s max size", name).isGreaterThanOrEqualTo(0);

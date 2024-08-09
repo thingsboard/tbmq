@@ -13,16 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.model.sql;
+package org.thingsboard.mqtt.broker.dao.messages;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -30,71 +23,37 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.model.ModelConstants;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
+
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @Data
 @EqualsAndHashCode
-@Entity
-@Table(name = ModelConstants.DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME)
-@IdClass(DevicePublishMsgCompositeKey.class)
 public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
 
-    @Id
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY)
     private String clientId;
-
-    @Id
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY)
-    private Long serialNumber;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TOPIC_PROPERTY)
     private String topic;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_TIME_PROPERTY)
     private Long time;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY)
     private Integer packetId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY)
     private PersistedPacketType packetType;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_QOS_PROPERTY)
     private Integer qos;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY, columnDefinition = "BINARY")
     private byte[] payload;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY)
     private String userProperties;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_RETAIN_PROPERTY)
     private boolean retain;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_EXPIRY_INTERVAL_PROPERTY)
     private Integer msgExpiryInterval;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_PAYLOAD_FORMAT_INDICATOR_PROPERTY)
     private Integer payloadFormatIndicator;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CONTENT_TYPE_PROPERTY)
     private String contentType;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTY)
     private String responseTopic;
-
-    @Column(name = ModelConstants.DEVICE_PUBLISH_MSG_CORRELATION_DATA_PROPERTY, columnDefinition = "BINARY")
     private byte[] correlationData;
 
     public DevicePublishMsgEntity() {
+
     }
 
-    public DevicePublishMsgEntity(DevicePublishMsg devicePublishMsg) {
+    public DevicePublishMsgEntity(DevicePublishMsg devicePublishMsg, int defaultTtl) {
         this.clientId = devicePublishMsg.getClientId();
         this.topic = devicePublishMsg.getTopic();
-        this.serialNumber = devicePublishMsg.getSerialNumber();
         this.time = devicePublishMsg.getTime();
         this.packetId = devicePublishMsg.getPacketId();
         this.packetType = devicePublishMsg.getPacketType();
@@ -102,16 +61,16 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.payload = devicePublishMsg.getPayload();
         this.userProperties = JacksonUtil.toString(UserProperties.newInstance(devicePublishMsg.getProperties()));
         this.retain = devicePublishMsg.isRetained();
-        this.msgExpiryInterval = getMsgExpiryInterval(devicePublishMsg);
+        this.msgExpiryInterval = getMsgExpiryInterval(devicePublishMsg, defaultTtl);
         this.payloadFormatIndicator = getPayloadFormatIndicator(devicePublishMsg);
         this.contentType = getContentType(devicePublishMsg);
         this.responseTopic = getResponseTopic(devicePublishMsg);
         this.correlationData = getCorrelationData(devicePublishMsg);
     }
 
-    private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg) {
+    private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg, int defaultTtl) {
         MqttProperties.IntegerProperty property = (MqttProperties.IntegerProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID);
-        return property == null ? null : property.value();
+        return property == null ? defaultTtl : property.value();
     }
 
     private Integer getPayloadFormatIndicator(DevicePublishMsg devicePublishMsg) {
@@ -132,6 +91,10 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     private byte[] getCorrelationData(DevicePublishMsg devicePublishMsg) {
         MqttProperties.BinaryProperty property = (MqttProperties.BinaryProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID);
         return property == null ? null : property.value();
+    }
+
+    public static DevicePublishMsg fromBytes(byte[] bytes) {
+        return Objects.requireNonNull(JacksonUtil.fromBytes(bytes, DevicePublishMsgEntity.class)).toData();
     }
 
     @Override
@@ -155,7 +118,6 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         return DevicePublishMsg.builder()
                 .clientId(clientId)
                 .topic(topic)
-                .serialNumber(serialNumber)
                 .time(time)
                 .qos(qos)
                 .payload(payload)

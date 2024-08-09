@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import java.util.Map;
-import java.util.Set;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
-public interface DevicePacketIdAndSerialNumberService {
+import java.util.List;
 
-    Map<String, PacketIdAndSerialNumber> getLastPacketIdAndSerialNumber(Set<String> clientIds);
-
-    void saveLastSerialNumbers(Map<String, PacketIdAndSerialNumber> clientsLastPacketIdAndSerialNumbers);
-}
+public record ClientIdMessagesPack(String clientId, List<DevicePublishMsg> messages) { }

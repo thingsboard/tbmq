@@ -15,7 +15,26 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-public record DeviceProcessingDecision(boolean commit, Map<String, ClientIdMessagesPack> reprocessMap) {
+@Slf4j
+@RequiredArgsConstructor
+public class DefaultClientIdPersistedMsgsCallback implements ClientIdPersistedMsgsCallback {
+
+    private final String clientId;
+    private final DevicePackProcessingContext ctx;
+
+    @Override
+    public void onSuccess(int previousPacketId) {
+        ctx.onSuccess(clientId, previousPacketId);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Failed to persist device publish messages due to: ", clientId, t);
+        }
+        ctx.onFailure(clientId);
+    }
 }

@@ -74,32 +74,6 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id)
 );
 
-CREATE TABLE IF NOT EXISTS device_publish_msg (
-    client_id varchar(255) NOT NULL,
-    serial_number bigint NOT NULL,
-    topic varchar NOT NULL,
-    time bigint NOT NULL,
-    packet_id int,
-    packet_type varchar(255),
-    qos int NOT NULL,
-    payload bytea NOT NULL,
-    user_properties varchar,
-    retain boolean,
-    msg_expiry_interval int,
-    payload_format_indicator int,
-    content_type varchar(255),
-    response_topic varchar(255),
-    correlation_data bytea,
-    CONSTRAINT device_publish_msg_pkey PRIMARY KEY (client_id, serial_number)
-);
-
-CREATE TABLE IF NOT EXISTS device_session_ctx (
-    client_id varchar(255) NOT NULL CONSTRAINT device_session_ctx_pkey PRIMARY KEY,
-    last_updated_time bigint NOT NULL,
-    last_serial_number bigint,
-    last_packet_id int
-);
-
 CREATE TABLE IF NOT EXISTS application_session_ctx (
     client_id varchar(255) NOT NULL CONSTRAINT application_session_ctx_pkey PRIMARY KEY,
     last_updated_time bigint NOT NULL,

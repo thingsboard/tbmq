@@ -97,6 +97,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         User anotherUser = saveUser("another@.gmail.com");
         WebSocketConnection anotherWebSocketConnection = getWebSocketConnection(wsConnectionName, anotherUser.getId());
         webSocketConnectionService.saveWebSocketConnection(anotherWebSocketConnection);
+        userService.deleteUser(anotherUser.getId());
     }
 
     @Test(expected = DataValidationException.class)

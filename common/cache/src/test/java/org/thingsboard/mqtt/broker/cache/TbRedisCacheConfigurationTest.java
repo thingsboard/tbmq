@@ -23,7 +23,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
-import org.springframework.cache.transaction.TransactionAwareCacheManagerProxy;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -31,32 +31,26 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CacheSpecsMap.class, TbCaffeineCacheConfiguration.class})
+@ContextConfiguration(classes = {CacheSpecsMap.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
-        "cache.type=caffeine",
-        "cache.specs.packetIdAndSerialNumber.timeToLiveInMinutes=1440",
-        "cache.specs.packetIdAndSerialNumber.maxSize=100",
+        "redis.connection.type=standalone",
         "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
         "cache.specs.mqttClientCredentials.maxSize=100"
 })
 @Slf4j
-public class TbCaffeineCacheConfigurationTest {
+public class TbRedisCacheConfigurationTest {
 
     @Autowired
     CacheManager cacheManager;
 
     @Test
-    public void verifyTransactionAwareCacheManagerProxy() {
-        assertThat(cacheManager).isInstanceOf(TransactionAwareCacheManagerProxy.class);
+    public void verifyRedisCacheManager() {
+        assertThat(cacheManager).isInstanceOf(RedisCacheManager.class);
     }
 
     @Test
     public void givenCacheConfig_whenCacheManagerReady_thenVerifyExistedCachesWithTransactionAwareCacheDecorator() {
-        Cache packetIdAndSerialNumberCache = cacheManager.getCache("packetIdAndSerialNumber");
-        assertThat(packetIdAndSerialNumberCache != null).isEqualTo(true);
-        assertThat(packetIdAndSerialNumberCache).isInstanceOf(TransactionAwareCacheDecorator.class);
-
         Cache mqttClientCredentialsCache = cacheManager.getCache("mqttClientCredentials");
         assertThat(mqttClientCredentialsCache != null).isEqualTo(true);
         assertThat(mqttClientCredentialsCache).isInstanceOf(TransactionAwareCacheDecorator.class);

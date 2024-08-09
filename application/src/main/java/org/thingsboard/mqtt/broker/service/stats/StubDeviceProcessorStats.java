@@ -16,9 +16,11 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingResult;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class StubDeviceProcessorStats implements DeviceProcessorStats {
     public static final StubDeviceProcessorStats STUB_DEVICE_PROCESSOR_STATS = new StubDeviceProcessorStats();
@@ -31,8 +33,15 @@ public class StubDeviceProcessorStats implements DeviceProcessorStats {
     }
 
     @Override
-    public void log(int msgsCount, boolean successful, boolean finalIterationForPack) {
+    public void log(int msgsCount, DevicePackProcessingResult result, boolean finalIterationForPack) {
+    }
 
+    @Override
+    public void logClientIdPackProcessingTime(long amount, TimeUnit unit) {
+    }
+
+    @Override
+    public void logClientIdPacksProcessingTime(int packSize, long amount, TimeUnit unit) {
     }
 
     @Override
@@ -41,7 +50,21 @@ public class StubDeviceProcessorStats implements DeviceProcessorStats {
     }
 
     @Override
-    public void reset() {
+    public double getAvgClientIdMsgPackProcessingTime() {
+        return 0;
+    }
 
+    @Override
+    public double getAvgPackProcessingTime() {
+        return 0;
+    }
+
+    @Override
+    public double getAvgPackSize() {
+        return 0;
+    }
+
+    @Override
+    public void reset() {
     }
 }

@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client.device;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import org.thingsboard.mqtt.broker.common.data.DeviceSessionCtx;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-import java.util.Collection;
+public interface DeviceSubmitStrategy {
 
-public interface DeviceSessionCtxService {
+    void init(Map<String, ClientIdMessagesPack> clientIdToMessagesMap);
 
-    void saveDeviceSessionContexts(Collection<DeviceSessionCtx> deviceSessionContexts);
+    ConcurrentMap<String, ClientIdMessagesPack> getPendingMap();
 
-    Collection<DeviceSessionCtx> findAllContexts(Collection<String> clientIds);
+    void process(Consumer<ClientIdMessagesPack> clientIdMessagesPackConsumer);
 
-    void removeDeviceSessionContext(String clientId);
+    void update(Map<String, ClientIdMessagesPack> reprocessMap);
 }

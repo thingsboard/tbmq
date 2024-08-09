@@ -16,5 +16,5 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
 public interface DeviceAckStrategy {
-    DeviceProcessingDecision analyze(DevicePackProcessingContext processingContext);
+    DeviceProcessingDecision analyze(DevicePackProcessingResult processingResult);
 }

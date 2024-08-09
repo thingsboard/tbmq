@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.messages.sql;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+public interface ClientIdPersistedMsgsCallback {
 
-@Component
-@ConfigurationProperties(prefix = "mqtt.persistent-session.device.persisted-messages.sql.delete-packet-queue")
-@Data
-public class DeletePacketQueueConfiguration {
-    private int batchThreads;
-    private int batchSize;
-    private int maxDelay;
+    void onSuccess(int previousPacketId);
+
+    void onFailure(Throwable t);
+
 }

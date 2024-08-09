@@ -13,25 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.model.sql;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import jakarta.persistence.Transient;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.io.Serial;
-import java.io.Serializable;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class DevicePublishMsgCompositeKey implements Serializable {
-
-    @Serial
-    @Transient
-    private static final long serialVersionUID = -205513485186605469L;
-
-    private String clientId;
-    private Long serialNumber;
+public enum DeviceAckStrategyType {
+    SKIP_ALL,
+    RETRY_ALL;
 }

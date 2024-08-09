@@ -20,11 +20,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.rules.ExternalResource;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,7 +40,9 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
@@ -48,6 +52,7 @@ import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+@Slf4j
 @ActiveProfiles("test")
 @Import(AbstractPubSubIntegrationTest.KafkaTestContainersConfiguration.class)
 @ComponentScan({"org.thingsboard.mqtt.broker"})
@@ -96,6 +101,32 @@ public abstract class AbstractPubSubIntegrationTest {
 
     @ClassRule
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+
+    @ClassRule
+    public static GenericContainer redis = new GenericContainer("redis:7.2")
+            .withExposedPorts(6379)
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withCommand("redis-server", "--requirepass", "password");
+
+    @ClassRule
+    public static ExternalResource resource = new ExternalResource() {
+        @Override
+        protected void before() throws Throwable {
+            redis.start();
+            System.setProperty("redis.connection.type", "standalone");
+            System.setProperty("redis.standalone.host", redis.getHost());
+            System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.password", "password");
+        }
+
+        @Override
+        protected void after() {
+            redis.stop();
+            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port")
+                    .forEach(System.getProperties()::remove);
+        }
+    };
 
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override

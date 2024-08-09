@@ -14,4 +14,4 @@
 -- limitations under the License.
 --
 
-CREATE INDEX IF NOT EXISTS idx_device_publish_msg_packet_id ON device_publish_msg(client_id, packet_id);
+--
