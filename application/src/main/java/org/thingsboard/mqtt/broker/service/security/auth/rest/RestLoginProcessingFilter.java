@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.security.auth.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.security.exception.AuthMethodNotSupportedException;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
 
@@ -42,34 +42,36 @@ public class RestLoginProcessingFilter extends AbstractAuthenticationProcessingF
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
 
-    private final ObjectMapper objectMapper;
 
     public RestLoginProcessingFilter(String defaultProcessUrl, AuthenticationSuccessHandler successHandler,
-                                     AuthenticationFailureHandler failureHandler, ObjectMapper mapper) {
+                                     AuthenticationFailureHandler failureHandler) {
         super(defaultProcessUrl);
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
-        this.objectMapper = mapper;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
         if (!HttpMethod.POST.name().equals(request.getMethod())) {
-            if(log.isDebugEnabled()) {
-                log.debug("Authentication method not supported. Request method: " + request.getMethod());
+            if (log.isDebugEnabled()) {
+                log.debug("Authentication method not supported. Request method: {}", request.getMethod());
             }
             throw new AuthMethodNotSupportedException("Authentication method not supported");
         }
 
         LoginRequest loginRequest;
         try {
-            loginRequest = objectMapper.readValue(request.getReader(), LoginRequest.class);
+            loginRequest = JacksonUtil.fromReader(request.getReader(), LoginRequest.class);
         } catch (Exception e) {
             throw new AuthenticationServiceException("Invalid login request payload");
         }
 
-        if (StringUtils.isBlank(loginRequest.getUsername()) || StringUtils.isBlank(loginRequest.getPassword())) {
+        if (loginRequest == null) {
+            throw new AuthenticationServiceException("Invalid login request");
+        }
+
+        if (StringUtils.isBlank(loginRequest.getUsername()) || StringUtils.isEmpty(loginRequest.getPassword())) {
             throw new AuthenticationServiceException("Username or Password not provided");
         }
 

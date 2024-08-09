@@ -15,7 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.util;
 
+import io.netty.buffer.ByteBuf;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -75,5 +77,13 @@ public class BytesUtil {
             log.warn("Failed to convert IP address [{}] to textual form", ipAddr);
             return "unknown";
         }
+    }
+
+    public static int getPacketSize(ByteBuf byteBuf, boolean isTlsConnection) {
+        return byteBuf.readableBytes() + BytesUtil.getPacketOverhead(isTlsConnection);
+    }
+
+    public static int getPacketOverhead(boolean isTlsConnection) {
+        return isTlsConnection ? BrokerConstants.TLS_PACKET_BYTES_OVERHEAD : BrokerConstants.TCP_PACKET_BYTES_OVERHEAD;
     }
 }

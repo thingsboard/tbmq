@@ -24,6 +24,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.thingsboard.mqtt.broker.server.traffic.DuplexTrafficHandler;
 
 @Slf4j
 @Getter
@@ -31,6 +32,8 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
     @Value("${mqtt.version-3-1.max-client-id-length}")
     private int maxClientIdLength;
+    @Value("${historical-data-report.enabled:true}")
+    private boolean historicalDataReportEnabled;
 
     private final MqttHandlerFactory handlerFactory;
 
@@ -47,6 +50,10 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
         }
 
         constructWsPipeline(ch);
+
+        if (historicalDataReportEnabled) {
+            pipeline.addLast(new DuplexTrafficHandler(handlerFactory.getTbMessageStatsReportClient(), sslHandler != null));
+        }
 
         pipeline.addLast("decoder", new MqttDecoder(getMaxPayloadSize(), getMaxClientIdLength()));
         pipeline.addLast("encoder", MqttEncoder.INSTANCE);
