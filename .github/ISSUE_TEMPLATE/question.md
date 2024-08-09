@@ -2,7 +2,7 @@
 name: Question
 about: Describe your questions in details
 title: "[Question] your title here"
-labels: question
+labels: Question
 assignees: dmytro-landiak
 
 ---
