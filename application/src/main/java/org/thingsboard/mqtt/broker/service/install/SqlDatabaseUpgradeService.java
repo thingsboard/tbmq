@@ -16,11 +16,14 @@
 package org.thingsboard.mqtt.broker.service.install;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +41,8 @@ import java.util.function.Consumer;
 @Slf4j
 public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService {
 
+    private static final String THINGSBOARD_WINDOWS_UPGRADE_DIR = "THINGSBOARD_WINDOWS_UPGRADE_DIR";
+    private static final String PATH_TO_USERS_PUBLIC_FOLDER = "C:\\Users\\Public";
     private static final String SCHEMA_UPDATE_SQL = "schema_update.sql";
 
     @Value("${spring.datasource.url}")
@@ -49,11 +54,17 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
     @Value("${spring.datasource.password}")
     private String dbPassword;
 
+    @Value("${mqtt.persistent-session.device.persisted-messages.limit}")
+    private int messagesLimit;
+
     @Autowired
     private InstallScripts installScripts;
 
+    @Autowired
+    private DeviceMsgService deviceMsgService;
+
     @Override
-    public void upgradeDatabase(String fromVersion) throws Exception {
+    public void upgradeDatabase(String fromVersion) {
         switch (fromVersion) {
             case "1.0.1":
                 updateSchema("1.0.0", 1000000, "1.1.0", 1001000, conn -> {
@@ -91,7 +102,38 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 });
                 break;
             case "1.3.0":
-                updateSchema("1.3.0", 1003000, "1.3.1", 1003001);
+                Path pathToTempFile = getTempFile("device_publish_msgs", ".csv");
+                updateSchema("1.3.0", 1003000, "1.3.1", 1003001, conn -> {
+                    try {
+                        log.info("Starting export of device publish messages to temp file: {} ...", pathToTempFile);
+                        conn.createStatement().execute("call export_device_publish_msgs(" + messagesLimit + ", '" + pathToTempFile + "')");
+                        log.info("Successfully exported device publish messages to temp file: {}", pathToTempFile);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to copy device publish messages to csv file: " + pathToTempFile + " due to: ", e);
+                    }
+                });
+                if (!pathToTempFile.toFile().exists()) {
+                    break;
+                }
+                boolean migrated = false;
+                try {
+                    log.info("Starting migration of device publish messages to Redis ...");
+                    deviceMsgService.importFromCsvFile(pathToTempFile);
+                    migrated = true;
+                    log.info("Successfully migrated device publish messages to Redis!");
+                } catch (Exception e) {
+                    log.error("Failed to import device publish messages from csv file: {}", pathToTempFile, e);
+                }
+                if (migrated) {
+                    try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
+                        log.info("Removing device publish messages from Postgres ...");
+                        conn.createStatement().execute("DROP TABLE IF EXISTS device_publish_msg;");
+                        conn.createStatement().execute("DROP TABLE IF EXISTS device_session_ctx;");
+                        log.info("Successfully removed device publish messages from Postgres!");
+                    } catch (Exception e) {
+                        log.warn("Failed to remove device publish messages from Postgres due to: ", e);
+                    }
+                }
                 break;
             default:
                 throw new RuntimeException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
@@ -145,7 +187,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
     }
 
     private boolean isOldSchema(Connection conn, long fromVersion) {
-        if (getEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
+        if (getBoolEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
             log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to true!");
             return true;
         }
@@ -168,12 +210,39 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
         return isOldSchema;
     }
 
-    private static boolean getEnv(String name, boolean defaultValue) {
+    private Path getTempFile(String fileName, String extension) {
+        try {
+            if (SystemUtils.IS_OS_WINDOWS) {
+                String pathStr = getStrEnv(THINGSBOARD_WINDOWS_UPGRADE_DIR, PATH_TO_USERS_PUBLIC_FOLDER);
+                Path pathToPublicFolder = Paths.get(pathStr);
+                return Files.createTempFile(pathToPublicFolder, fileName, extension).toAbsolutePath();
+            }
+            Path tempDirPath = Files.createTempDirectory(fileName);
+            File tempDirAsFile = tempDirPath.toFile();
+            boolean writable = tempDirAsFile.setWritable(true, false);
+            boolean readable = tempDirAsFile.setReadable(true, false);
+            boolean executable = tempDirAsFile.setExecutable(true, false);
+            boolean permissionsGranted = writable && readable && executable;
+            if (!permissionsGranted) {
+                throw new RuntimeException("Failed to grant write permissions for the: " + tempDirPath + " directory!");
+            }
+            return tempDirPath.resolve(fileName + extension).toAbsolutePath();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create temp file due to: ", e);
+        }
+    }
+
+    private static boolean getBoolEnv(String name, boolean defaultValue) {
         String env = System.getenv(name);
         if (env == null) {
             return defaultValue;
         }
         return Boolean.parseBoolean(env);
+    }
+
+    private static String getStrEnv(String name, String defaultValue) {
+        String env = System.getenv(name);
+        return env == null ? defaultValue : env;
     }
 
 }

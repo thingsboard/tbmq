@@ -18,17 +18,22 @@ package org.thingsboard.mqtt.broker.dao.messages;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.csv.CSVRecord;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 @Data
+@Slf4j
 @EqualsAndHashCode
 public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
 
@@ -95,6 +100,84 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
 
     public static DevicePublishMsg fromBytes(byte[] bytes) {
         return Objects.requireNonNull(JacksonUtil.fromBytes(bytes, DevicePublishMsgEntity.class)).toData();
+    }
+
+    @Deprecated(forRemoval = true, since = "1.3.1")
+    public static DevicePublishMsgEntity fromCsvRecord(CSVRecord record, int defaultTtl) throws DecoderException {
+        var entity = new DevicePublishMsgEntity();
+        // non-null fields
+        String clientId = record.get("client_id");
+        entity.setClientId(clientId);
+        entity.setTopic(record.get("topic"));
+        entity.setTime(Long.parseLong(record.get("time")));
+
+        entity.setPacketId(Integer.parseInt(record.get("packet_id")));
+        entity.setPacketType(PersistedPacketType.valueOf(record.get("packet_type")));
+
+        // non-null fields
+        entity.setQos(Integer.parseInt(record.get("qos")));
+        entity.setPayload(getPayload(record, clientId));
+
+        entity.setUserProperties(getUserProperties(record));
+        entity.setRetain(isRetain(record));
+        entity.setMsgExpiryInterval(getMsgExpiryInterval(record, defaultTtl));
+        entity.setPayloadFormatIndicator(getPayloadFormatIndicator(record));
+        entity.setContentType(getContentType(record));
+        entity.setResponseTopic(getResponseTopic(record));
+        entity.setCorrelationData(getCorrelationData(record, clientId));
+        return entity;
+    }
+
+    private static byte[] getPayload(CSVRecord record, String clientId) {
+        try {
+            return Hex.decodeHex(record.get("payload").substring(2)); // substring \x
+        } catch (DecoderException e) {
+            log.error("Failed to decode payload for clientId: {}", clientId, e);
+            return null;
+        }
+    }
+
+    private static String getUserProperties(CSVRecord record) {
+        String userProperties = record.get("user_properties");
+        return StringUtils.isNotBlank(userProperties) ? userProperties : null;
+    }
+
+    private static boolean isRetain(CSVRecord record) {
+        return "t".equalsIgnoreCase(record.get("retain"));
+    }
+
+    private static int getMsgExpiryInterval(CSVRecord record, int defaultTtl) {
+        String msgExpiryInterval = record.get("msg_expiry_interval");
+        return StringUtils.isNotBlank(msgExpiryInterval) ? Integer.parseInt(msgExpiryInterval) : defaultTtl;
+    }
+
+    private static Integer getPayloadFormatIndicator(CSVRecord record) {
+        String payloadFormatIndicator = record.get("payload_format_indicator");
+        return StringUtils.isNotBlank(payloadFormatIndicator) ? Integer.parseInt(payloadFormatIndicator) : null;
+    }
+
+    private static String getContentType(CSVRecord record) {
+        String contentType = record.get("content_type");
+        return StringUtils.isNotBlank(contentType) ? contentType : null;
+    }
+
+    private static String getResponseTopic(CSVRecord record) {
+        String responseTopic = record.get("response_topic");
+        return StringUtils.isNotBlank(responseTopic) ? responseTopic : null;
+    }
+
+    private static byte[] getCorrelationData(CSVRecord record, String clientId) {
+        String correlationData = record.get("correlation_data");
+        if (StringUtils.isBlank(correlationData)) {
+            log.debug("Correlation data is missing for clientId: {}", clientId);
+            return null;
+        }
+        try {
+            return Hex.decodeHex(correlationData.substring(2)); // substring \x
+        } catch (DecoderException e) {
+            log.error("Failed to parse correlation data for clientId: {}", clientId, e);
+            return null;
+        }
     }
 
     @Override
