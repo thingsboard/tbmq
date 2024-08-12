@@ -26,6 +26,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 
 import java.io.IOException;
 
@@ -39,6 +40,8 @@ public class DefaultDataUpdateServiceTest {
 
     @MockBean
     MqttClientCredentialsService mqttClientCredentialsService;
+    @MockBean
+    AdminSettingsService adminSettingsService;
 
     @SpyBean
     DefaultDataUpdateService service;

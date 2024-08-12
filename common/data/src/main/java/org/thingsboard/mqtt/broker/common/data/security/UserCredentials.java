@@ -20,25 +20,21 @@ import lombok.Getter;
 import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
 
+import java.io.Serial;
 import java.util.UUID;
 
+@Setter
+@Getter
 @EqualsAndHashCode(callSuper = true)
 public class UserCredentials extends BaseData {
 
-    @Getter
-    @Setter
+    @Serial
+    private static final long serialVersionUID = -3440717077888573927L;
+
     private UUID userId;
-    @Getter
-    @Setter
     private boolean enabled;
-    @Getter
-    @Setter
     private String password;
-    @Getter
-    @Setter
     private String activateToken;
-    @Getter
-    @Setter
     private String resetToken;
     
     public UserCredentials() {

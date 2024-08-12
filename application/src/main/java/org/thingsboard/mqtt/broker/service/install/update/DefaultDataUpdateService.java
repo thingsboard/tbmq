@@ -24,8 +24,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
+import org.thingsboard.mqtt.broker.service.install.data.ConnectivitySettings;
 
 import java.util.List;
 
@@ -38,6 +41,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     private static final int DEFAULT_PAGE_SIZE = 1024;
 
     private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final AdminSettingsService adminSettingsService;
 
     @Override
     public void updateData(String fromVersion) throws Exception {
@@ -45,6 +49,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
             case "1.3.0":
                 log.info("Updating data from version 1.3.0 to 1.3.1 ...");
                 updateSslMqttClientCredentials();
+                createConnectivitySettings();
                 break;
             default:
                 throw new RuntimeException("Unable to update data, unsupported fromVersion: " + fromVersion);
@@ -87,6 +92,14 @@ public class DefaultDataUpdateService implements DataUpdateService {
             log.info("Skipping client credentials transform with value {}", oldCredentialsValueStr);
         }
         return null;
+    }
+
+    private void createConnectivitySettings() {
+        if (adminSettingsService.findAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY) == null) {
+            log.info("Creating connectivity settings ...");
+            adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
+            log.info("Connectivity settings created!");
+        }
     }
 
 }

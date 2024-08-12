@@ -38,6 +38,8 @@ public interface UserService {
 
     UserCredentials requestPasswordReset(String email);
 
+    UserCredentials requestExpiredPasswordReset(UUID userCredentialsId);
+
     UserCredentials replaceUserCredentials(UserCredentials userCredentials);
 
     void deleteUser(UUID userId);

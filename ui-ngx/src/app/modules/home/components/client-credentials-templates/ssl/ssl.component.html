@@ -22,7 +22,9 @@
     <mat-form-field class="mat-block">
       <mat-label>{{ certificateCnLabel | translate }}</mat-label>
       <input required matInput formControlName="certCnPattern">
-      <tb-copy-button [fxShow]="credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
+      <tb-copy-button #copyBtn
+                      (click)="onClickTbCopyButton(credentialsMqttFormGroup.get('certCnPattern')?.value)"
+                      [fxShow]="credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
                       [copyText]="credentialsMqttFormGroup?.get('certCnPattern').value">
       </tb-copy-button>
       <mat-error *ngIf="credentialsMqttFormGroup.get('certCnPattern').hasError('required')">

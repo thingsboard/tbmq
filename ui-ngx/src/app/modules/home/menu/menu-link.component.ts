@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectionStrategy, Component, Input, OnInit} from '@angular/core';
-import {MenuSection} from '@core/services/menu.models';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { MenuSection } from '@core/services/menu.models';
 
 @Component({
   selector: 'tb-menu-link',
@@ -23,14 +23,11 @@ import {MenuSection} from '@core/services/menu.models';
   styleUrls: ['./menu-link.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class MenuLinkComponent implements OnInit {
+export class MenuLinkComponent {
 
   @Input() section: MenuSection;
 
   constructor() {
-  }
-
-  ngOnInit() {
   }
 
 }

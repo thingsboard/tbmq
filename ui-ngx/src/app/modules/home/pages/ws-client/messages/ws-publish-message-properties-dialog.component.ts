@@ -49,6 +49,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
 
   timeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
+  resetForm = false;
 
   private destroy$ = new Subject<void>();
 
@@ -102,10 +103,24 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
     this.destroy$.complete();
   }
 
-  onSave() {
+  save() {
     const properties = this.formGroup.getRawValue();
     properties.changed = isDefinedProps(properties);
     this.dialogRef.close(properties);
+  }
+
+  reset() {
+    this.formGroup.reset({
+      payloadFormatIndicator: null,
+      contentType: null,
+      messageExpiryInterval: null,
+      messageExpiryIntervalUnit: AboveSecWebSocketTimeUnit.SECONDS,
+      topicAlias: null,
+      correlationData: null,
+      responseTopic: null,
+      userProperties: null
+    });
+    this.resetForm = true;
   }
 
   calcMax(unitControl: string) {

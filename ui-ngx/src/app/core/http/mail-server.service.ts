@@ -18,7 +18,7 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { UserSettings, MailServerSettings, } from '@shared/models/settings.models';
+import { AdminSettings, MailServerSettings, } from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
@@ -30,16 +30,16 @@ export class MailServerService {
   ) {
   }
 
-  public getUserSettings<T>(key: string, config?: RequestConfig): Observable<UserSettings<T>> {
-    return this.http.get<UserSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig(config));
+  public getUserSettings<T>(key: string, config?: RequestConfig): Observable<AdminSettings<T>> {
+    return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public saveUserSettings<T>(adminSettings: UserSettings<T>,
-                             config?: RequestConfig): Observable<UserSettings<T>> {
-    return this.http.post<UserSettings<T>>('/api/admin/settings', adminSettings, defaultHttpOptionsFromConfig(config));
+  public saveUserSettings<T>(adminSettings: AdminSettings<T>,
+                             config?: RequestConfig): Observable<AdminSettings<T>> {
+    return this.http.post<AdminSettings<T>>('/api/admin/settings', adminSettings, defaultHttpOptionsFromConfig(config));
   }
 
-  public sendTestMail(adminSettings: UserSettings<MailServerSettings>,
+  public sendTestMail(adminSettings: AdminSettings<MailServerSettings>,
                       config?: RequestConfig): Observable<void> {
     return this.http.post<void>('/api/admin/settings/testMail', adminSettings, defaultHttpOptionsFromConfig(config));
   }

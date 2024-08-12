@@ -28,7 +28,7 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject } from '@core/utils';
-import { CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import { CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
@@ -45,7 +45,6 @@ import {
   WebSocketConnectionConfiguration,
   WebSocketTimeUnit,
   WsAddressProtocolType,
-  WsAddressProtocolTypeValueMap,
   WsCredentialsGeneratortTypeTranslationMap,
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
@@ -53,6 +52,8 @@ import { getCurrentAuthUser, selectUserDetails } from '@core/auth/auth.selectors
 import { ConfigParams } from '@shared/models/config.model';
 import { BasicClientCredentials } from '@home/pages/client-credentials/client-credentials.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
+import { SettingsService } from '@core/http/settings.service';
 
 export interface ConnectionDialogData {
   entity?: WebSocketConnection;
@@ -74,17 +75,12 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   userPropertiesFormGroup: UntypedFormGroup;
 
   credentialsType = CredentialsType;
-  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
-  credentialsTypes = Object.values(CredentialsType);
   credentialsGeneratorType = WsCredentialsGeneratorType.AUTO;
-  useExistingCredentials = false;
 
   clientType = ClientType;
   clientTypeTranslationMap = clientTypeTranslationMap;
-  clientTypes = Object.values(ClientType);
 
   wsAddressProtocolType = WsAddressProtocolType;
-  wsAddressProtocolTypeValueMap = WsAddressProtocolTypeValueMap;
   wsCredentialsGeneratorType = WsCredentialsGeneratorType;
   wsCredentialsGeneratortTypeTranslationMap = WsCredentialsGeneratortTypeTranslationMap;
 
@@ -104,18 +100,22 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   selectedIndex = 0;
   showNext = true;
   addressProtocol = WsAddressProtocolType.WS;
+  displayUrlWarning: boolean;
 
   private urlConfig = {
     [WsAddressProtocolType.WS]: {
       port: 8084,
-      protocol: 'ws://'
+      protocol: 'ws://',
+      host: window.location.hostname
     },
     [WsAddressProtocolType.WSS]: {
       port: 8085,
-      protocol: 'wss://'
+      protocol: 'wss://',
+      host: window.location.hostname
     }
   };
   private readonly urlPrefix: string = '/mqtt';
+  private webSocketSettings: ConnectivitySettings;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -123,6 +123,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private clientCredentialsService: ClientCredentialsService,
               private webSocketConnectionService: WebSocketConnectionService,
               private breakpointObserver: BreakpointObserver,
+              private settingsService: SettingsService,
               private fb: FormBuilder,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
     super(store, router, dialogRef);
@@ -154,6 +155,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.CUSTOM);
       }
     }
+    this.checkUrl();
   }
 
   private iniForms() {
@@ -161,13 +163,14 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     this.setConnectionAdvancedFormGroup();
     this.setLastWillFormGroup();
     this.setUserPropertiesFormGroup();
+    this.getWebSocketSettings();
   }
 
   private setConnectionFormGroup() {
     const entity: WebSocketConnection = this.connection;
     this.connectionFormGroup = this.fb.group({
       name: [entity ? entity.name : connectionName(this.data.connectionsTotal + 1), [Validators.required]],
-      url: [entity ? entity.configuration.url : this.generateUrl(WsAddressProtocolType.WS), [Validators.required]],
+      url: [entity ? entity.configuration.url : this.getUrl(this.addressProtocol, this.urlConfig[this.addressProtocol].host, this.urlConfig[this.addressProtocol].port), [Validators.required]],
       rejectUnauthorized: [entity ? entity.configuration.rejectUnauthorized : true, []],
       credentialsName: [{
         value: clientCredentialsNameRandom(),
@@ -207,6 +210,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.connectionFormGroup.get('password').updateValueAndValidity();
       }
     );
+    this.connectionFormGroup.get('url').valueChanges.subscribe(() => this.checkUrl());
     if (entity?.configuration?.url?.includes('wss://')) {
       this.addressProtocol = WsAddressProtocolType.WSS;
     }
@@ -266,14 +270,12 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
 
   onAddressProtocolChange(type: WsAddressProtocolType) {
     this.addressProtocol = type;
-    this.connectionFormGroup.get('url').patchValue(this.generateUrl(type));
+    const url = this.getUrl(type, this.urlConfig[type].host, this.urlConfig[type].port);
     if (type === WsAddressProtocolType.WS) {
       this.connectionFormGroup.get('rejectUnauthorized').patchValue(true);
     }
-  }
-
-  private generateUrl(type: WsAddressProtocolType) {
-    return `${this.urlConfig[WsAddressProtocolType[type]].protocol}${window.location.hostname}:${this.urlConfig[WsAddressProtocolType[type]].port}${this.urlPrefix}`;
+    this.setUrl(url);
+    this.checkUrl();
   }
 
   onCredentialsGeneratorChange(value: WsCredentialsGeneratorType) {
@@ -522,5 +524,39 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     }
   }
 
-  protected readonly WsAddressProtocolType = WsAddressProtocolType;
+  private getWebSocketSettings() {
+    this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
+      settings => {
+        if (settings?.jsonValue) {
+          // @ts-ignore
+          this.webSocketSettings = settings.jsonValue;
+          if (settings.jsonValue.ws?.enabled) {
+            this.urlConfig[WsAddressProtocolType.WS].host = this.webSocketSettings.ws.host;
+            this.urlConfig[WsAddressProtocolType.WS].port = this.webSocketSettings.ws.port;
+          }
+          if (settings.jsonValue.wss?.enabled) {
+            this.urlConfig[WsAddressProtocolType.WSS].host = this.webSocketSettings.wss.host;
+            this.urlConfig[WsAddressProtocolType.WSS].port = this.webSocketSettings.wss.port;
+          }
+          if (!this.connection) {
+            const url = this.getUrl(this.addressProtocol, this.urlConfig[this.addressProtocol].host, this.urlConfig[this.addressProtocol].port);
+            this.setUrl(url);
+          }
+        }
+      },
+      () => {}
+    );
+  }
+
+  private getUrl(type: WsAddressProtocolType, host: string, port: number | string): string {
+    return `${this.urlConfig[type].protocol}${host}:${port}${this.urlPrefix}`;
+  }
+
+  private setUrl(url: string) {
+    this.connectionFormGroup.get('url').patchValue(url);
+  }
+
+  private checkUrl() {
+    this.displayUrlWarning = this.addressProtocol !== WsAddressProtocolType.WSS && window.location.protocol.includes('https');
+  }
 }

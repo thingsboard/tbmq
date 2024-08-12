@@ -30,9 +30,9 @@
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.DefaultTbActorSystem" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.session.ClientMqttActorManagerImpl" level="INFO"/>
-    <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.ActorProcessorImpl" level="INFO"/>
+    <logger name="org.thingsboard.mqtt.broker.service.auth.providers.SslMqttClientAuthProvider" level="INFO"/>
 
     <logger name="org.apache.kafka" level="WARN"/>
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>

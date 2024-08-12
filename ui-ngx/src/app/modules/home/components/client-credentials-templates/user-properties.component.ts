@@ -28,6 +28,7 @@ import {
 import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketUserProperties } from '@shared/models/ws-client.model';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 export interface UserProperties {
   props: UserPropertiesObject[];
@@ -54,7 +55,7 @@ export interface UserPropertiesObject {
     }],
   styleUrls: ['./user-properties.component.scss']
 })
-export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit {
+export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {
 
   @Input()
   disabled: boolean;
@@ -64,6 +65,10 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
 
   @Input()
   entity: UserProperties;
+
+  @coerceBoolean()
+  @Input()
+  reset: boolean;
 
   userPropertiesFormGroup: UntypedFormGroup;
 
@@ -97,6 +102,18 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
         k: [null, []],
         v: [null, []]
       }));
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'reset' && change.currentValue) {
+          this.userPropertiesFormArray.clear();
+          this.userPropertiesFormArray.push({k: null, v: null});
+        }
+      }
     }
   }
 

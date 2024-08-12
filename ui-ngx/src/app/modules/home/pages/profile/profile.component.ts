@@ -16,7 +16,7 @@
 
 import { Component, OnInit } from '@angular/core';
 import { UserService } from '@core/http/user.service';
-import { AuthUser, User } from '@shared/models/user.model';
+import { User } from '@shared/models/user.model';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -26,11 +26,9 @@ import { ActionAuthUpdateUserDetails } from '@core/auth/auth.actions';
 import { environment as env } from '@env/environment';
 import { TranslateService } from '@ngx-translate/core';
 import { ActionSettingsChangeLanguage } from '@core/settings/settings.actions';
-import { ChangePasswordDialogComponent } from '@modules/home/pages/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute } from '@angular/router';
-import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 
 @Component({
   selector: 'tb-profile',
@@ -42,7 +40,6 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
   profile: UntypedFormGroup;
   user: User;
   languageList = env.supportedLangs;
-  private readonly authUser: AuthUser;
 
   constructor(protected store: Store<AppState>,
               private route: ActivatedRoute,
@@ -52,7 +49,6 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
               public dialogService: DialogService,
               public fb: UntypedFormBuilder) {
     super(store);
-    this.authUser = getCurrentAuthUser(this.store);
   }
 
   ngOnInit() {
@@ -92,13 +88,6 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
         this.store.dispatch(new ActionSettingsChangeLanguage({userLang: user.additionalInfo.lang}));
       }
     );
-  }
-
-  changePassword(): void {
-    this.dialog.open(ChangePasswordDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
-    });
   }
 
   userLoaded(user: User) {

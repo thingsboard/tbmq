@@ -21,29 +21,47 @@
     <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">
-    <div class="version-container">
-      <section fxLayout="column" fxLayoutGap="10px">
-        <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
-          <span class="tb-title-link">{{ 'version.current' | translate }}</span>
-        </section>
-        <span>{{ currentReleaseVersion }}</span>
-      </section>
-    </div>
-    <div class="version-container">
-      <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
+    <ng-container *ngIf="updatesAvailable; else noUpdatesAvailableTemplate">
+      <ng-container *ngTemplateOutlet="updatesAvailableTemplate"></ng-container>
+    </ng-container>
+    <ng-template #updatesAvailableTemplate>
+      <div class="version-container">
         <section fxLayout="column" fxLayoutGap="10px">
-          <section class="tb-title-link-container" (click)="gotoGithub(latestReleaseVersion)">
-            <span class="tb-title-link">{{ 'version.available' | translate }}</span>
+          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
           </section>
-          <span>{{ latestReleaseVersion }}</span>
+          <span>{{ currentReleaseVersion }}</span>
         </section>
-        <button [fxHide.lt-md]="true" mat-raised-button color="primary"
-                [disabled]="!updatesAvailable"
-                (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
-                matTooltip="{{'version.upgrade-instructions' | translate}}">
-          {{'version.upgrade' | translate}}
-        </button>
       </div>
-    </div>
+      <div class="version-container">
+        <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
+          <section fxLayout="column" fxLayoutGap="10px">
+            <section class="tb-title-link-container" (click)="gotoGithub(latestReleaseVersion)">
+              <span class="tb-title-link">{{ 'version.available' | translate }}</span>
+            </section>
+            <span>{{ latestReleaseVersion }}</span>
+          </section>
+          <button [fxHide.lt-md]="true" mat-raised-button color="primary"
+                  [disabled]="!updatesAvailable"
+                  (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
+                  matTooltip="{{'version.upgrade-instructions' | translate}}">
+            {{'version.upgrade' | translate}}
+          </button>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template #noUpdatesAvailableTemplate>
+      <div class="version-container">
+        <section fxLayout="column" fxLayoutGap="10px">
+          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
+          </section>
+          <section fxFlex fxLayout="row" fxLayoutAlign="space-between flex-end">
+            <span>{{ currentReleaseVersion }}</span>
+            <span class="tb-title-no-updates" translate>version.no-updates</span>
+          </section>
+        </section>
+      </div>
+    </ng-template>
   </section>
 </div>

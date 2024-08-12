@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionClea
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
 import java.util.List;
@@ -74,6 +75,8 @@ public abstract class BaseController {
     protected SharedSubscriptionPaginationService sharedSubscriptionPaginationService;
     @Autowired
     protected ClientSessionCleanUpService clientSessionCleanUpService;
+    @Autowired
+    protected SystemSecurityService systemSecurityService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter

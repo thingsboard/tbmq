@@ -34,10 +34,11 @@ public class BrokerConstants {
     public static final String DROPPED_MSGS = "droppedMsgs";
     public static final String SESSIONS = "sessions";
     public static final String SUBSCRIPTIONS = "subscriptions";
+    public static final String PROCESSED_BYTES = "processedBytes";
 
-    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS);
+    public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, PROCESSED_BYTES);
 
-    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS);
+    public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, PROCESSED_BYTES);
 
     public static final byte[] LOCAL_ADR;
 
@@ -48,6 +49,11 @@ public class BrokerConstants {
             throw new RuntimeException(e);
         }
     }
+
+    public static final int TCP_PACKET_BYTES_OVERHEAD = 66;
+    public static final int TLS_PACKET_BYTES_OVERHEAD = 95;
+    public static final int TLS_CONNECT_BYTES_OVERHEAD = 4078;
+    public static final int TLS_DISCONNECT_BYTES_OVERHEAD = 364;
 
     public static final int WS_MAX_CONTENT_LENGTH = 65536;
     public static final String WS_PATH = "/mqtt";
@@ -141,4 +147,11 @@ public class BrokerConstants {
     public static final String SYSTEM_DUMMY_TOPIC_FILTER = "tbmq_system_dummy_topic_filter";
 
     public static final byte[] DUMMY_PAYLOAD = "test".getBytes(StandardCharsets.UTF_8);
+
+    public static final String MQTT_CONNECTIVITY = "mqtt";
+    public static final String MQTTS_CONNECTIVITY = "mqtts";
+    public static final String WS_CONNECTIVITY = "ws";
+    public static final String WSS_CONNECTIVITY = "wss";
+
+    public static final String CONNECTIVITY_KEY = "connectivity";
 }

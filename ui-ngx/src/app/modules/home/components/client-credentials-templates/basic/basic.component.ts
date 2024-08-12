@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, OnDestroy, Output } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -36,6 +36,7 @@ import {
   ChangeBasicPasswordDialogData
 } from '@home/pages/client-credentials/change-basic-password-dialog.component';
 import { MatChipInputEvent } from '@angular/material/chips';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -54,6 +55,12 @@ import { MatChipInputEvent } from '@angular/material/chips';
   styleUrls: ['./basic.component.scss']
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
+
+  @ViewChild('copyClientIdBtn')
+  copyClientIdBtn: CopyButtonComponent;
+
+  @ViewChild('copyUsernameBtn')
+  copyUsernameBtn: CopyButtonComponent;
 
   @Input()
   disabled: boolean;
@@ -233,6 +240,14 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     if (this.entity?.credentialsValue) {
       const credentialsValue = JSON.parse(this.entity.credentialsValue);
       return credentialsValue[key] || ' ';
+    }
+  }
+
+  onClickTbCopyButton(value: string) {
+    if (value === 'clientId') {
+      this.copyClientIdBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+    } else if (value === 'userName') {
+      this.copyUsernameBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
     }
   }
 }

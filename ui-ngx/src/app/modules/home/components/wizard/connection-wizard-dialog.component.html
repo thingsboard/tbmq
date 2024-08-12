@@ -64,9 +64,14 @@
             <mat-error *ngIf="connectionFormGroup.get('url').hasError('required')">
               {{ 'ws-client.connections.url-required' | translate }}
             </mat-error>
+            <mat-icon matSuffix style="color: #ff9a00"
+                      [fxShow]="displayUrlWarning"
+                      [matTooltip]="'ws-client.connections.url-warning' | translate">
+              warning
+            </mat-icon>
           </mat-form-field>
           <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" style="padding: 0 0 12px 0"
-                   *ngIf="addressProtocol === WsAddressProtocolType.WSS">
+                   *ngIf="addressProtocol === wsAddressProtocolType.WSS">
             <mat-slide-toggle formControlName="rejectUnauthorized">
               <span translate>ws-client.connections.reject-unauthorized</span>
             </mat-slide-toggle>
