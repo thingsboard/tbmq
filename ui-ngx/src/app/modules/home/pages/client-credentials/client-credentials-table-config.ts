@@ -26,7 +26,6 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { Direction } from '@shared/models/page/sort-order';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap, clientTypeValueColor } from '@shared/models/client.model';
 import {
@@ -55,6 +54,10 @@ import {
   CheckConnectivityDialogComponent,
   CheckConnectivityDialogData
 } from '@home/pages/client-credentials/check-connectivity-dialog.component';
+import {
+  ChangeBasicPasswordDialogComponent,
+  ChangeBasicPasswordDialogData
+} from "@home/pages/client-credentials/change-basic-password-dialog.component";
 
 export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCredentials, TimePageLink> {
 
@@ -211,6 +214,9 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       case 'checkConnectivity':
         this.checkCredentials(action.event, action.entity);
         return true;
+      case 'changePassword':
+        this.changePassword(action.event, action.entity);
+        return true;
     }
     return false;
   }
@@ -248,5 +254,23 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
         }
       );
     }
+  }
+
+  changePassword($event: Event, credentials: ClientCredentials) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialog.open<ChangeBasicPasswordDialogComponent, ChangeBasicPasswordDialogData,
+      ClientCredentials>(ChangeBasicPasswordDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        credentialsId: credentials.id
+      }
+    }).afterClosed().subscribe((res: ClientCredentials) => {
+      if (res) {
+        this.updateData(true);
+      }
+    });
   }
 }
