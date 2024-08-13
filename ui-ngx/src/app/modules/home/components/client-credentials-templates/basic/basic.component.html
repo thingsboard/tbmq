@@ -58,13 +58,6 @@
                 ('mqtt-client-credentials.client-id-or-user-name-required' | translate) : ''">
       </tb-error>
     </div>
-    <button mat-stroked-button color="primary" style="margin-bottom: 20px"
-            *ngIf="entity?.id"
-            type="button"
-            [disabled]="disabled" (click)="changePassword()">
-      <mat-icon>lock</mat-icon>
-      {{'profile.change-password' | translate}}
-    </button>
   </fieldset>
   <mat-expansion-panel [expanded]="true">
     <mat-expansion-panel-header>

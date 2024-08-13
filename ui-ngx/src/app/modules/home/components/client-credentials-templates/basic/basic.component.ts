@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, EventEmitter, forwardRef, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import {
   ControlValueAccessor,
   FormBuilder,
@@ -31,10 +31,6 @@ import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ANY_CHARACTERS, AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { MatDialog } from '@angular/material/dialog';
-import {
-  ChangeBasicPasswordDialogComponent,
-  ChangeBasicPasswordDialogData
-} from '@home/pages/client-credentials/change-basic-password-dialog.component';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
@@ -67,9 +63,6 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   @Input()
   entity: ClientCredentials;
-
-  @Output()
-  changePasswordCloseDialog = new EventEmitter<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
@@ -153,21 +146,6 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   updateView(value: BasicCredentials) {
     const formValue = JSON.stringify(value);
     this.propagateChange(formValue);
-  }
-
-  changePassword(): void {
-    this.dialog.open<ChangeBasicPasswordDialogComponent, ChangeBasicPasswordDialogData,
-      ClientCredentials>(ChangeBasicPasswordDialogComponent, {
-      disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-      data: {
-        credentialsId: this.entity?.id
-      }
-    }).afterClosed().subscribe((res: ClientCredentials) => {
-      if (res) {
-        this.changePasswordCloseDialog.emit(res);
-      }
-    });
   }
 
   addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
