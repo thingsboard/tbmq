@@ -99,21 +99,22 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   saveGeneralSettings() {
+    let generalSettings: AdminSettings<WebsocketSettings> = JSON.parse(JSON.stringify(this.generalSettings));
     if (isUndefined(this.generalSettings)) {
-      this.generalSettings = {
+      generalSettings = {
         key: websocketSettingsKey,
         jsonValue: this.generalSettingsForm.value
       };
     }
-    this.generalSettings.jsonValue = {...this.generalSettings.jsonValue, ...this.generalSettingsForm.value};
-    this.settingsService.saveAdminSettings(this.generalSettings)
+    generalSettings.jsonValue = {...generalSettings.jsonValue, ...this.generalSettingsForm.value};
+    this.settingsService.saveAdminSettings(generalSettings)
       .subscribe(settings => this.processGeneralSettings(settings));
-
   }
 
   saveConnectivitySettings() {
-    this.connectivitySettings.jsonValue = {...this.connectivitySettings.jsonValue, ...this.connectivitySettingsForm.value};
-    this.settingsService.saveAdminSettings(this.connectivitySettings)
+    const connectivitySettings: AdminSettings<ConnectivitySettings> = JSON.parse(JSON.stringify(this.connectivitySettings));
+    connectivitySettings.jsonValue = {...connectivitySettings.jsonValue, ...this.connectivitySettingsForm.value};
+    this.settingsService.saveAdminSettings(connectivitySettings)
       .subscribe(settings => this.processConnectivitySettings(settings));
   }
 
