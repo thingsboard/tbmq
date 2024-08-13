@@ -49,7 +49,7 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         if (clientSession == null) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
-        Set<TopicSubscription> currentSubscriptions = filterOutSharedSubscriptions(clientSubscriptionCache.getClientSubscriptions(clientId));
+        Set<TopicSubscription> currentSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
 
         Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
         if (log.isDebugEnabled()) {
@@ -82,13 +82,6 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
     private Set<TopicSubscription> collectNewSubscriptions(List<SubscriptionInfoDto> subscriptions) {
         return subscriptions.stream()
                 .map(SubscriptionInfoDto::toTopicSubscription)
-                .collect(Collectors.toSet());
-    }
-
-    private Set<TopicSubscription> filterOutSharedSubscriptions(Set<TopicSubscription> subscriptions) {
-        return subscriptions
-                .stream()
-                .filter(TopicSubscription::isCommonSubscription)
                 .collect(Collectors.toSet());
     }
 

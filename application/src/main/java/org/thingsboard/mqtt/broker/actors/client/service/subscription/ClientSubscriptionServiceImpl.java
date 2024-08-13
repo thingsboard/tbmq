@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
@@ -98,11 +97,16 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
-        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
-
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        clientSubscriptions.removeIf(topicSubscriptions::contains);
+        clientSubscriptions.removeIf(sub -> {
+            boolean existSubs = topicSubscriptions.contains(sub);
+            if (existSubs && sub.isSharedSubscription()) {
+                sharedSubscriptionCacheService.remove(clientId, sub);
+            }
+            return existSubs;
+        });
         clientSubscriptions.addAll(topicSubscriptions);
+        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         return clientSubscriptions;
     }
 
@@ -170,11 +174,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         clearSubscriptions(clientId);
     }
 
-    @Override
-    public int getClientSubscriptionsCount() {
-        return clientSubscriptionsMap == null ? 0 : clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
-    }
-
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
@@ -188,6 +187,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                 .map(TopicSubscription::getTopicFilter)
                 .collect(Collectors.toList());
         subscriptionService.unsubscribe(clientId, unsubscribeTopics);
+    }
+
+    @Override
+    public int getClientSubscriptionsCount() {
+        return clientSubscriptionsMap == null ? 0 : clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
     }
 
     @Override
@@ -206,14 +210,10 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
-        if (isSharedSubscription(topicSubscription)) {
+        if (topicSubscription.isSharedSubscription()) {
             unsubscribeSharedSubscription(topicSubscription);
             sharedSubscriptionCacheService.remove(clientId, topicSubscription);
         }
-    }
-
-    private boolean isSharedSubscription(TopicSubscription topicSubscription) {
-        return !StringUtils.isEmpty(topicSubscription.getShareName());
     }
 
     private void unsubscribeSharedSubscription(TopicSubscription topicSubscription) {

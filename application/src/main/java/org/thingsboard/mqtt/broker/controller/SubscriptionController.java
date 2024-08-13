@@ -30,15 +30,12 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.ClientIdSubscriptionInfoDto;
-import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionQuery;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
@@ -61,19 +58,11 @@ public class SubscriptionController extends BaseController {
             clientIdSubscriptionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
                     topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter()));
 
-            List<SubscriptionInfoDto> subscriptions = filterOutSharedSubscriptions(clientIdSubscriptionInfoDto.getSubscriptions());
-            subscriptionAdminService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), subscriptions);
+            subscriptionAdminService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), clientIdSubscriptionInfoDto.getSubscriptions());
             return clientIdSubscriptionInfoDto;
         } catch (Exception e) {
             throw handleException(e);
         }
-    }
-
-    private List<SubscriptionInfoDto> filterOutSharedSubscriptions(List<SubscriptionInfoDto> subscriptions) {
-        return subscriptions
-                .stream()
-                .filter(SubscriptionInfoDto::isCommonSubscription)
-                .collect(Collectors.toList());
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")

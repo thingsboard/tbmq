@@ -22,8 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -43,8 +41,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCacheService {
-
-    // TODO: 01.11.23 improve data persistence - probably only clientId is needed in the map since later the current session state is fetched
 
     private final ClientSessionCache clientSessionCache;
     @Getter
@@ -74,14 +70,16 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         }
 
         for (TopicSubscription topicSubscription : sharedTopicSubscriptions) {
-            Subscription subscription = newSubscription(topicSubscription, clientSessionInfo);
+            Subscription subscription = newSubscription(clientId, topicSubscription);
 
             SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.computeIfAbsent(getKey(topicSubscription), tss -> SharedSubscriptions.newInstance());
-            if (ClientType.APPLICATION == clientSessionInfo.getType()) {
-                updateSharedSubscriptions(sharedSubscriptions.getApplicationSubscriptions(), clientId, topicSubscription, subscription);
-            } else {
-                updateSharedSubscriptions(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription, subscription);
-            }
+
+            Set<Subscription> subscriptions = getSubscriptionsByClientType(clientSessionInfo, sharedSubscriptions);
+            updateSharedSubscriptions(subscriptions, clientId, subscription);
+
+            // to handle client type change (Device -> Application or vice versa)
+            Set<Subscription> subscriptionsByClientTypeInverted = getSubscriptionsByClientTypeInverted(clientSessionInfo, sharedSubscriptions);
+            removeSubscription(subscriptionsByClientTypeInverted, clientId, subscription.getTopicFilter());
         }
         if (log.isTraceEnabled()) {
             log.trace("Shared subscriptions updated!");
@@ -91,18 +89,17 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     private List<TopicSubscription> filterSharedTopicSubscriptions(Collection<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
-                .filter(topicSubscription -> StringUtils.isNotEmpty(topicSubscription.getShareName()))
+                .filter(TopicSubscription::isSharedSubscription)
                 .collect(Collectors.toList());
     }
 
-    private void updateSharedSubscriptions(Set<Subscription> sharedSubscriptions, String clientId,
-                                           TopicSubscription topicSubscription, Subscription subscription) {
-        removeSubscription(sharedSubscriptions, clientId, topicSubscription);
+    private void updateSharedSubscriptions(Set<Subscription> sharedSubscriptions, String clientId, Subscription subscription) {
+        removeSubscription(sharedSubscriptions, clientId, subscription.getTopicFilter());
         sharedSubscriptions.add(subscription);
     }
 
-    private void removeSubscription(Set<Subscription> sharedSubscriptions, String clientId, TopicSubscription topicSubscription) {
-        sharedSubscriptions.removeIf(subs -> clientId.equals(subs.getClientSessionInfo().getClientId()) && topicSubscription.getTopicFilter().equals(subs.getTopicFilter()));
+    private void removeSubscription(Set<Subscription> sharedSubscriptions, String clientId, String topicFilter) {
+        sharedSubscriptions.removeIf(subs -> clientId.equals(subs.getClientSessionInfo().getClientId()) && topicFilter.equals(subs.getTopicFilter()));
     }
 
     @Override
@@ -116,15 +113,13 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             return;
         }
         var clientSessionInfo = findClientSessionInfo(clientId);
+        var topicFilter = topicSubscription.getTopicFilter();
         if (clientSessionInfo == null) {
-            removeSubscription(sharedSubscriptions.getApplicationSubscriptions(), clientId, topicSubscription);
-            removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription);
+            removeSubscription(sharedSubscriptions.getApplicationSubscriptions(), clientId, topicFilter);
+            removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicFilter);
         } else {
-            if (ClientType.APPLICATION == clientSessionInfo.getType()) {
-                removeSubscription(sharedSubscriptions.getApplicationSubscriptions(), clientId, topicSubscription);
-            } else {
-                removeSubscription(sharedSubscriptions.getDeviceSubscriptions(), clientId, topicSubscription);
-            }
+            Set<Subscription> subscriptions = getSubscriptionsByClientType(clientSessionInfo, sharedSubscriptions);
+            removeSubscription(subscriptions, clientId, topicFilter);
         }
         if (log.isTraceEnabled()) {
             log.trace("Shared subscription removed from set!");
@@ -223,11 +218,11 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
     }
 
-    private Subscription newSubscription(TopicSubscription topicSubscription, ClientSessionInfo clientSessionInfo) {
+    private Subscription newSubscription(String clientId, TopicSubscription topicSubscription) {
         return new Subscription(
                 topicSubscription.getTopicFilter(),
                 topicSubscription.getQos(),
-                clientSessionInfo,
+                ClientSessionInfo.builder().clientId(clientId).build(),
                 topicSubscription.getShareName(),
                 topicSubscription.getOptions()
         );
@@ -246,4 +241,13 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     private ClientSessionInfo findClientSessionInfo(String clientId) {
         return clientSessionCache.getClientSessionInfo(clientId);
     }
+
+    private Set<Subscription> getSubscriptionsByClientType(ClientSessionInfo clientSessionInfo, SharedSubscriptions sharedSubscriptions) {
+        return clientSessionInfo.isAppClient() ? sharedSubscriptions.getApplicationSubscriptions() : sharedSubscriptions.getDeviceSubscriptions();
+    }
+
+    private Set<Subscription> getSubscriptionsByClientTypeInverted(ClientSessionInfo clientSessionInfo, SharedSubscriptions sharedSubscriptions) {
+        return clientSessionInfo.isAppClient() ? sharedSubscriptions.getDeviceSubscriptions() : sharedSubscriptions.getApplicationSubscriptions();
+    }
+
 }
