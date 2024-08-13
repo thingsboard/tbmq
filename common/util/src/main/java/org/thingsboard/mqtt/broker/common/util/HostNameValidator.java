@@ -15,19 +15,28 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import com.google.common.net.InetAddresses;
+
 import java.util.regex.Pattern;
 
-public class DomainNameValidator {
+public class HostNameValidator {
 
+    private static final String LOCALHOST = "localhost";
     private static final String DOMAIN_NAME_REGEX =
-            "^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
+            "^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,}$";
     private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
-    public static boolean isValidDomainName(String domainName) {
-        if (domainName == null || domainName.isEmpty()) {
+    public static boolean isValidHostName(String hostname) {
+        if (hostname == null || hostname.isEmpty()) {
             return false;
         }
-        return DOMAIN_NAME_PATTERN.matcher(domainName).matches();
+        if (LOCALHOST.equalsIgnoreCase(hostname)) {
+            return true;
+        }
+        if (InetAddresses.isInetAddress(hostname)) {
+            return true;
+        }
+        return DOMAIN_NAME_PATTERN.matcher(hostname).matches();
     }
 
 }
