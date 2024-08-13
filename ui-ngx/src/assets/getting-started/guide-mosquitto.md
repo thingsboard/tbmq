@@ -1,37 +1,49 @@
 ### Mosquitto
 
+This guide contains example of using an open-source command-line MQTT client library [Eclipse Mosquitto](https://mosquitto.org/).
+The **mosquitto_pub** tool is used to publish messages to an MQTT topic, while the **mosquitto_sub** command is used to subscribe to 
+MQTT topics and receive messages.
+
 ##### Prerequisites
 
+The Mosquitto client library can be installed using the following command:
+
 ```bash
-install mosquitto{:copy-code}
+sudo apt-get install mosquitto-clients{:copy-code}
 ```
 
 ##### Subscribe
-To subscribe <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#application-client'>Application</a>
-client to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target="_blank">mosquitto_sub</a> MQTT client.
+To subscribe client to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target="_blank">mosquitto_sub</a> MQTT client.
 Please copy and paste the following code into a terminal tab:
 
 <br>
 
 ```bash
-mosquitto_sub -h {:hostname} -p {:port} -d -u tbmq_app -P tbmq_app -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
+mosquitto_sub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
 ```
 
 ##### Publish
 
-To publish a message from the <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type/#device-client'>Device</a>
-client to the topic `tbmq/demo/topic` open a new tab in the terminal and paste the following command:
+In order to publish a message on topic `tbmq/demo/topic`, open a new terminal tab and paste the following command:
 
 <br>
 
 ```bash
-mosquitto_pub -h {:hostname} -p {:port} -d -u tbmq_dev -P tbmq_dev -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
+mosquitto_pub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
 ```
 
-<br>
+Once you run this command, you should see the published message in the terminal tab of the subscribed client:
 
-Once you run this command, you should see the published message in the terminal tab of the subscribed client.
+```bash
+Client tbmq sending CONNECT
+Client tbmq received CONNACK (0)
+Client tbmq sending SUBSCRIBE (Mid: 1, Topic: tbmq/demo/+, QoS: 1, Options: 0x00)
+Client tbmq received SUBACK
+Subscribed (mid: 1): 1
+Client tbmq received PUBLISH (d0, q1, r0, m3, 'tbmq/demo/topic', ... (11 bytes))
+Client tbmq sending PUBACK (m3, rc0)
+tbmq/demo/topic Hello World
+```
 
-
-#### Next steps
+#### See also
 

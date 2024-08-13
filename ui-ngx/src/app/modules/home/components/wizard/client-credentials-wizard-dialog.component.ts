@@ -49,8 +49,6 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
 
   selectedIndex = 0;
 
-  credentialsOptionalStep = true;
-
   showNext = true;
 
   CredentialsType = CredentialsType;
@@ -190,9 +188,4 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
     this.selectedIndex = $event.selectedIndex;
     this.showNext = this.selectedIndex !== this.maxStepperIndex;
   }
-
-  onChangePasswordCloseDialog($event: ClientCredentials) {
-    // this.updateForm($event);
-  }
-
 }

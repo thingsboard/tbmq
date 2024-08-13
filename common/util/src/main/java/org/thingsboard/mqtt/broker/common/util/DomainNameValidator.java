@@ -13,12 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.historical.stats;
+package org.thingsboard.mqtt.broker.common.util;
 
+import java.util.regex.Pattern;
 
-public interface TbMessageStatsReportClient {
+public class DomainNameValidator {
 
-    void reportStats(String key);
+    private static final String DOMAIN_NAME_REGEX =
+            "^(?=.{1,253}$)(?:(?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,6}$";
+    private static final Pattern DOMAIN_NAME_PATTERN = Pattern.compile(DOMAIN_NAME_REGEX);
 
-    void reportTraffic(long bytes);
+    public static boolean isValidDomainName(String domainName) {
+        if (domainName == null || domainName.isEmpty()) {
+            return false;
+        }
+        return DOMAIN_NAME_PATTERN.matcher(domainName).matches();
+    }
+
 }

@@ -16,8 +16,11 @@
 package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 
 public interface MqttHandlerFactory {
 
     MqttSessionHandler create(SslHandler sslHandler, String initializerName);
+
+    TbMessageStatsReportClient getTbMessageStatsReportClient();
 }

@@ -42,7 +42,7 @@ import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
-import { WebsocketlSettings } from '@shared/models/settings.models';
+import { WebsocketSettings } from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
@@ -80,7 +80,7 @@ export class MqttJsClientService {
   private publishMsgTimeout = null;
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfigAll;
-  private websocketSettings: WebsocketlSettings;
+  private websocketSettings: WebsocketSettings;
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
               private clientSessionService: ClientSessionService) {
@@ -268,7 +268,7 @@ export class MqttJsClientService {
     return of(pageData);
   }
 
-  public setWebsocketSettings(settings: WebsocketlSettings) {
+  public setWebsocketSettings(settings: WebsocketSettings) {
     this.websocketSettings = settings;
   }
 

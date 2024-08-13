@@ -72,7 +72,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
         if (log.isTraceEnabled()) {
-            log.trace("[{}] Successfully authenticated with SSL credentials as {}", authContext.getClientId(), clientTypeSslMqttCredentials.getType());
+            String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
+            log.trace("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
+                    authContext.getClientId(), clientTypeSslMqttCredentials.getType(), protocol);
         }
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials.getSslMqttCredentials(), clientCommonName);

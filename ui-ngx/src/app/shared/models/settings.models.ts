@@ -43,7 +43,7 @@ export interface MailServerSettings {
   proxyPassword: string;
 }
 
-export interface WebsocketlSettings {
+export interface WebsocketSettings {
   isLoggingEnabled: boolean;
 }
 

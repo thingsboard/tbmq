@@ -302,17 +302,21 @@ export class AuthService {
             })
           ).subscribe(
             (user) => {
-              authPayload.userDetails = user;
-              let userLang;
-              authPayload.userDetails.additionalInfo.config = configValue;
-              if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
-                userLang = authPayload.userDetails.additionalInfo.lang;
+              if (user) {
+                authPayload.userDetails = user;
+                let userLang;
+                authPayload.userDetails.additionalInfo.config = configValue;
+                if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
+                  userLang = authPayload.userDetails.additionalInfo.lang;
+                } else {
+                  userLang = null;
+                }
+                this.notifyUserLang(userLang);
+                loadUserSubject.next(authPayload);
+                loadUserSubject.complete();
               } else {
-                userLang = null;
+                this.clearJwtToken();
               }
-              this.notifyUserLang(userLang);
-              loadUserSubject.next(authPayload);
-              loadUserSubject.complete();
             },
             (err) => {
               loadUserSubject.error(err);
