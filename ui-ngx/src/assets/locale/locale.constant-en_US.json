@@ -609,7 +609,9 @@
     "dropped-messages-tooltip": "Messages that do not have subscribers or when the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations",
     "sessions-tooltip": "Number of current MQTT sessions",
     "subscriptions-tooltip": "Number of current subscriptions",
-    "topics": "Topics"
+    "topics": "Topics",
+    "processed-bytes": "Network traffic",
+    "processed-bytes-tooltip": "Size of processed data, sent or received by the MQTT clients"
   },
   "timeinterval": {
     "seconds-interval": "{ seconds, plural, =1 {1 second} other {# seconds} }",
