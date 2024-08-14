@@ -169,12 +169,16 @@ public class ClientSessionController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session/credentials", params = {"clientId"}, method = RequestMethod.GET)
+    @RequestMapping(value = "/client-session/details", params = {"clientId"}, method = RequestMethod.GET)
     @ResponseBody
-    public ClientSessionAdvancedDto getClientSessionCredentials(@RequestParam String clientId) throws ThingsboardException {
-        String credentialsName = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE).get(clientId, String.class));
-        String mqttVersion = checkNotNull(cacheNameResolver.getCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE).get(clientId, String.class));
+    public ClientSessionAdvancedDto getClientSessionDetails(@RequestParam String clientId) throws ThingsboardException {
+        String credentialsName = getValueFromCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
+        String mqttVersion = getValueFromCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE, clientId);
         return new ClientSessionAdvancedDto(credentialsName, mqttVersion);
     }
 
+    private String getValueFromCache(String cache, String clientId) {
+        String cacheValue = cacheNameResolver.getCache(cache).get(clientId, String.class);
+        return cacheValue == null ? "Unknown" : cacheValue;
+    }
 }
