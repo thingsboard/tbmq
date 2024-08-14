@@ -69,7 +69,7 @@ public class NettyMqttConverter {
         int messageId = mqttMessageIdVariableHeader.messageId();
         MqttProperties properties = mqttMessageIdVariableHeader.properties();
         int subscriptionIdValue = MqttPropertiesUtil.getSubscriptionIdValue(properties);
-        if (subscriptionIdValue == 0) {
+        if (subscriptionIdValue == 0 || subscriptionIdValue > BrokerConstants.SUBSCRIPTION_ID_MAXIMUM) {
             return null;
         }
 

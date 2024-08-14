@@ -66,6 +66,7 @@ public class BrokerConstants {
     public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";
 
     public static final int DEFAULT_RECEIVE_MAXIMUM = 65535;
+    public static final int SUBSCRIPTION_ID_MAXIMUM = 268_435_455;
 
     public static final String NULL_CHAR_STR = "\u0000";
 

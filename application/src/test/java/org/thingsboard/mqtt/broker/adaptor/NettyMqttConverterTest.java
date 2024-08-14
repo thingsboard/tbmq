@@ -158,15 +158,24 @@ public class NettyMqttConverterTest {
     @Test
     public void testCreateMqttSubscribeMsgWithInvalidSubscriptionId() {
         UUID sessionId = UUID.randomUUID();
-        MqttSubscribeMessage subscribeMessage = getMqttSubscribeMessageWithInvalidSubscriptionId();
+        MqttSubscribeMessage subscribeMessage = getMqttSubscribeMessageWithInvalidSubscriptionId(0);
 
         MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, subscribeMessage);
         Assert.assertNull(mqttSubscribeMsg);
     }
 
-    private @NotNull MqttSubscribeMessage getMqttSubscribeMessageWithInvalidSubscriptionId() {
+    @Test
+    public void testCreateMqttSubscribeMsgWithInvalidSubscriptionIdAboveMaxValue() {
+        UUID sessionId = UUID.randomUUID();
+        MqttSubscribeMessage subscribeMessage = getMqttSubscribeMessageWithInvalidSubscriptionId(BrokerConstants.SUBSCRIPTION_ID_MAXIMUM + 1);
+
+        MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, subscribeMessage);
+        Assert.assertNull(mqttSubscribeMsg);
+    }
+
+    private @NotNull MqttSubscribeMessage getMqttSubscribeMessageWithInvalidSubscriptionId(int value) {
         MqttProperties mqttProperties = new MqttProperties();
-        mqttProperties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(), 0));
+        mqttProperties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(), value));
         return getMqttSubscribeMessage(mqttProperties);
     }
 
