@@ -15,7 +15,12 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from '@shared/models/session.model';
+import {
+  ConnectionState,
+  connectionStateColor,
+  DetailedClientSessionInfo,
+  MqttVersionTranslationMap
+} from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
@@ -53,6 +58,8 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   clientTypeIcon = clientTypeIcon;
   clientCredentials: string = '';
 
+  private mqttVersionTranslationMap = MqttVersionTranslationMap;
+
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
   }
@@ -80,6 +87,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   private buildForms(entity: DetailedClientSessionInfo): void {
     this.buildSessionForm(entity);
     this.updateFormsValues(entity);
+    this.getAdditionalInfo(entity);
   }
 
   private buildSessionForm(entity: DetailedClientSessionInfo): void {
@@ -123,18 +131,22 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
   }
 
-  getAdditionalSessionInfo() {
-    this.clientSessionService.getClientSessionCredentials(this.entity.clientId)
-      .subscribe(
-        credentials => {
-          this.entityForm.patchValue({credentials: credentials.name});
-        },
-        error => {
-          if (error.status === 404) {
-            this.entityForm.patchValue({credentials: '?'});
-          }
-        }
-      );
+  getAdditionalInfo(entity: DetailedClientSessionInfo) {
+    const result = 'Unknown';
+    this.clientSessionService.getClientSessionCredentials(entity.clientId, {ignoreErrors: true}).subscribe(
+      credentials => {
+        this.entityForm.patchValue({
+          credentials: credentials.name || result,
+          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || result
+        });
+      },
+      () => {
+        this.entityForm.patchValue({
+          credentials: result,
+          mqttVersion: result
+        });
+      }
+    );
   }
 
   private onSave(): void {

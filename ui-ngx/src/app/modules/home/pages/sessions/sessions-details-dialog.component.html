@@ -122,7 +122,7 @@
           <legend class="group-title">{{ 'mqtt-client-session.client-info' | translate }}</legend>
           <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
             <div fxFlex>
-              <mat-form-field class="mat-block fuckingdisabled">
+              <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client.client-id</mat-label>
                 <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
@@ -140,6 +140,10 @@
                   </mat-icon>
               </span>
               </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.connections.mqtt-version</mat-label>
+                <input matInput formControlName="mqttVersion">
+              </mat-form-field>
             </div>
             <div fxFlex>
               <mat-form-field class="mat-block">
@@ -150,34 +154,23 @@
                                 [copyText]="entity?.clientIpAdr">
                 </tb-copy-button>
               </mat-form-field>
+              <mat-form-field class="mat-block">
+                <mat-label translate>mqtt-client-credentials.client-credentials</mat-label>
+                <input matInput formControlName="credentials">
+                <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
+                                [disabled]="isLoading$ | async"
+                                [copyText]="entityForm.get('credentials').value">
+                </tb-copy-button>
+              </mat-form-field>
             </div>
           </div>
         </fieldset>
-        <mat-accordion class="mat-elevation-z2" multi>
-          <mat-expansion-panel class="mat-elevation-z2" [expanded]="false" (opened)="getAdditionalSessionInfo()">
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                {{ 'mqtt-client-session.additional-info' | translate }}
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <div fxLayout="column" fxLayoutGap="16px">
-              <mat-form-field class="mat-block" subscriptSizing="dynamic">
-                <mat-label translate>mqtt-client-credentials.client-credentials</mat-label>
-                <input matInput formControlName="credentials">
-              </mat-form-field>
-              <mat-form-field class="mat-block" subscriptSizing="dynamic">
-                <mat-label translate>ws-client.connections.mqtt-version</mat-label>
-                <input matInput formControlName="mqttVersion">
-              </mat-form-field>
-            </div>
-          </mat-expansion-panel>
-        </mat-accordion>
       </div>
     </mat-tab>
     <mat-tab [label]="'mqtt-client-session.subscriptions' | translate">
       <ng-template matTabContent>
-        <tb-subscriptions formControlName="subscriptions">
-        </tb-subscriptions>
+        <tb-session-subscriptions formControlName="subscriptions">
+        </tb-session-subscriptions>
       </ng-template>
     </mat-tab>
   </mat-tab-group>

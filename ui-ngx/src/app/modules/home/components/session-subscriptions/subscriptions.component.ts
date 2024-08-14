@@ -35,7 +35,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { SubscriptionOptions } from '@shared/models/ws-client.model';
 
 @Component({
-  selector: 'tb-subscriptions',
+  selector: 'tb-session-subscriptions',
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.scss'],
   providers: [{

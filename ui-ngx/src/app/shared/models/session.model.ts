@@ -128,6 +128,20 @@ export const connectionStateTranslationMap = new Map<ConnectionState, string>(
   ]
 );
 
+export enum MqttVersion {
+  MQTT_3_1 = 'MQTT_3_1',
+  MQTT_3_1_1 = 'MQTT_3_1_1',
+  MQTT_5 = 'MQTT_5'
+}
+
+export const MqttVersionTranslationMap = new Map<MqttVersion, string>(
+  [
+    [MqttVersion.MQTT_3_1, 'MQTT 3.1'],
+    [MqttVersion.MQTT_3_1_1, 'MQTT 3.1.1'],
+    [MqttVersion.MQTT_5, 'MQTT 5'],
+  ]
+);
+
 export interface ClientSessionStatsInfo {
   connectedCount: number;
   disconnectedCount: number;
@@ -146,6 +160,7 @@ export interface SessionFilterConfig {
 
 export interface ClientSessionCredentials {
   name: string;
+  mqttVersion: MqttVersion;
 }
 
 export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {
