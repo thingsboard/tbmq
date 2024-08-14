@@ -51,6 +51,7 @@ const routes: Routes = [
         component: GeneralSettingsComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
+          title: 'admin.general',
           breadcrumb: {
             label: 'admin.general',
             icon: 'settings'
@@ -65,6 +66,7 @@ const routes: Routes = [
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],
+          title: 'admin.outgoing-mail',
           breadcrumb: {
             label: 'admin.outgoing-mail',
             icon: 'mdi:email'
@@ -76,6 +78,7 @@ const routes: Routes = [
         component: SecuritySettingsComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
+          title: 'home.security',
           breadcrumb: {
             label: 'home.security',
             icon: 'security'
