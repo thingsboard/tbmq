@@ -389,7 +389,6 @@ public class MqttSubscribeHandlerTest {
                 eq(1), eq(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_0, MqttReasonCodes.SubAck.GRANTED_QOS_1, MqttReasonCodes.SubAck.GRANTED_QOS_2))
         );
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
-        verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
     }
 
     @Test

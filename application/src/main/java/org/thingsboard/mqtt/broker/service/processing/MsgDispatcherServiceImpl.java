@@ -368,7 +368,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 qos,
                 createDummyClientSession(sharedSubscription),
                 sharedSubscription.getTopicSharedSubscription().getShareName(),
-                SubscriptionOptions.newInstance()
+                SubscriptionOptions.newInstance(),
+                -1
         );
     }
 
@@ -429,7 +430,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getQos(),
                 clientSessionInfo,
                 clientSubscription.getValue().getShareName(),
-                clientSubscription.getValue().getOptions());
+                clientSubscription.getValue().getOptions(),
+                clientSubscription.getValue().getSubscriptionId());
     }
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,

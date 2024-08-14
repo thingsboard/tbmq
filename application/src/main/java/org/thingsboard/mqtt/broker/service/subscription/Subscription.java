@@ -16,19 +16,15 @@
 package org.thingsboard.mqtt.broker.service.subscription;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
-@Getter
 @AllArgsConstructor
-@EqualsAndHashCode
-@ToString
+@Data
 public class Subscription {
 
     private final String topicFilter;
@@ -36,13 +32,18 @@ public class Subscription {
     private final ClientSessionInfo clientSessionInfo;
     private final String shareName;
     private final SubscriptionOptions options;
+    private final int subscriptionId;
 
     public Subscription(String topicFilter, int qos, ClientSessionInfo clientSessionInfo) {
-        this(topicFilter, qos, clientSessionInfo, null, SubscriptionOptions.newInstance());
+        this(topicFilter, qos, clientSessionInfo, null, SubscriptionOptions.newInstance(), -1);
     }
 
     public Subscription(String topicFilter, ClientSessionInfo clientSessionInfo, String shareName) {
-        this(topicFilter, 0, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
+        this(topicFilter, 0, clientSessionInfo, shareName, SubscriptionOptions.newInstance(), -1);
+    }
+
+    public Subscription(String topicFilter, int qos, ClientSessionInfo clientSessionInfo, String shareName, SubscriptionOptions options) {
+        this(topicFilter, qos, clientSessionInfo, shareName, options, -1);
     }
 
     public static Subscription newInstance(String topicFilter, int qos, ClientSession clientSession) {

@@ -69,6 +69,9 @@ public class NettyMqttConverter {
         int messageId = mqttMessageIdVariableHeader.messageId();
         MqttProperties properties = mqttMessageIdVariableHeader.properties();
         int subscriptionIdValue = MqttPropertiesUtil.getSubscriptionIdValue(properties);
+        if (subscriptionIdValue == 0) {
+            return null;
+        }
 
         List<TopicSubscription> topicSubscriptions = nettySubscribeMsg.payload().topicSubscriptions()
                 .stream()

@@ -195,7 +195,7 @@ public class MqttPropertiesUtil {
     public static void addSubsIdentifierAvailableToProps(MqttProperties properties) {
         properties.add(new MqttProperties.IntegerProperty(
                 BrokerConstants.SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID,
-                0) // TODO: 14/10/2022 after impl MQTT 5 SubscriptionId feature change this to 1 or remove completely
+                1)
         );
     }
 

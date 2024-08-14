@@ -138,6 +138,7 @@ public class NettyMqttConverterTest {
         MqttSubscribeMessage subscribeMessage = getMqttSubscribeMessage();
 
         MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, subscribeMessage);
+        Assert.assertNotNull(mqttSubscribeMsg);
 
         Assert.assertEquals(sessionId, mqttSubscribeMsg.getSessionId());
         Assert.assertEquals(1, mqttSubscribeMsg.getMessageId());
@@ -151,7 +152,26 @@ public class NettyMqttConverterTest {
     }
 
     private @NotNull MqttSubscribeMessage getMqttSubscribeMessage() {
-        MqttMessageIdAndPropertiesVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(1, MqttProperties.NO_PROPERTIES);
+        return getMqttSubscribeMessage(MqttProperties.NO_PROPERTIES);
+    }
+
+    @Test
+    public void testCreateMqttSubscribeMsgWithInvalidSubscriptionId() {
+        UUID sessionId = UUID.randomUUID();
+        MqttSubscribeMessage subscribeMessage = getMqttSubscribeMessageWithInvalidSubscriptionId();
+
+        MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, subscribeMessage);
+        Assert.assertNull(mqttSubscribeMsg);
+    }
+
+    private @NotNull MqttSubscribeMessage getMqttSubscribeMessageWithInvalidSubscriptionId() {
+        MqttProperties mqttProperties = new MqttProperties();
+        mqttProperties.add(new MqttProperties.IntegerProperty(MqttProperties.MqttPropertyType.SUBSCRIPTION_IDENTIFIER.value(), 0));
+        return getMqttSubscribeMessage(mqttProperties);
+    }
+
+    private @NotNull MqttSubscribeMessage getMqttSubscribeMessage(MqttProperties mqttProperties) {
+        MqttMessageIdAndPropertiesVariableHeader variableHeader = new MqttMessageIdAndPropertiesVariableHeader(1, mqttProperties);
         MqttSubscribePayload payload = new MqttSubscribePayload(List.of(new MqttTopicSubscription("topic", MqttQoS.AT_LEAST_ONCE)));
         return new MqttSubscribeMessage(
                 new MqttFixedHeader(MqttMessageType.SUBSCRIBE, false, MqttQoS.AT_LEAST_ONCE, false, 0),
