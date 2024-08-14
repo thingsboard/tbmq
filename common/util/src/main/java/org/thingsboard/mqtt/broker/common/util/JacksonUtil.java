@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.util.Arrays;
 
 public class JacksonUtil {
@@ -112,6 +113,14 @@ public class JacksonUtil {
             return bytes != null ? OBJECT_MAPPER.readValue(bytes, clazz) : null;
         } catch (IOException e) {
             throw new IllegalArgumentException("The given string value cannot be transformed to Json object: " + Arrays.toString(bytes), e);
+        }
+    }
+
+    public static <T> T fromReader(Reader reader, Class<T> clazz) {
+        try {
+            return reader != null ? OBJECT_MAPPER.readValue(reader, clazz) : null;
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Invalid request payload", e);
         }
     }
 }

@@ -237,7 +237,7 @@ public class HistoricalStatsTotalConsumer {
             totalStatsProcessingExecutor.shutdownNow();
         }
         if (sessionsProcessingExecutor != null) {
-            sessionsProcessingExecutor.shutdown();
+            sessionsProcessingExecutor.shutdownNow();
         }
         if (consumer != null) {
             consumer.unsubscribeAndClose();

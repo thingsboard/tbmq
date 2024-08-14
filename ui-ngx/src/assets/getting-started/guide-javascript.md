@@ -107,7 +107,7 @@ Packet send cmd:  disconnect
 Packet send cmd:  puback
 ```
 
-#### Next steps
+#### See also
 On the official MQTT.js [GitHub page](https://github.com/mqttjs/MQTT.js), you can find detailed information about using JavaScript library, including its extensive features and usage examples.
 
-Additionally, our guide on [MQTT over WebSocket](https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/), featuring an example of using the aforementioned library with the [TBMQ WebSocket Client](/ws-client), might be useful to you.
+Additionally, might be useful our guide on [MQTT over WebSocket](https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/), featuring an example of using the aforementioned library with the [TBMQ WebSocket Client](/ws-client).

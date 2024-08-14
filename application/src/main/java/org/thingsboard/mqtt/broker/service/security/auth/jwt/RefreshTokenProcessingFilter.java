@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.security.auth.jwt;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +29,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.service.security.auth.RefreshAuthenticationToken;
 import org.thingsboard.mqtt.broker.service.security.exception.AuthMethodNotSupportedException;
 import org.thingsboard.mqtt.broker.service.security.model.token.RawAccessJwtToken;
@@ -42,30 +42,31 @@ public class RefreshTokenProcessingFilter extends AbstractAuthenticationProcessi
     private final AuthenticationSuccessHandler successHandler;
     private final AuthenticationFailureHandler failureHandler;
 
-    private final ObjectMapper objectMapper;
-
     public RefreshTokenProcessingFilter(String defaultProcessUrl, AuthenticationSuccessHandler successHandler,
-                                        AuthenticationFailureHandler failureHandler, ObjectMapper mapper) {
+                                        AuthenticationFailureHandler failureHandler) {
         super(defaultProcessUrl);
         this.successHandler = successHandler;
         this.failureHandler = failureHandler;
-        this.objectMapper = mapper;
     }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException, IOException, ServletException {
         if (!HttpMethod.POST.name().equals(request.getMethod())) {
-            if(log.isDebugEnabled()) {
-                log.debug("Authentication method not supported. Request method: " + request.getMethod());
+            if (log.isDebugEnabled()) {
+                log.debug("Authentication method not supported. Request method: {}", request.getMethod());
             }
             throw new AuthMethodNotSupportedException("Authentication method not supported");
         }
 
         RefreshTokenRequest refreshTokenRequest;
         try {
-            refreshTokenRequest = objectMapper.readValue(request.getReader(), RefreshTokenRequest.class);
+            refreshTokenRequest = JacksonUtil.fromReader(request.getReader(), RefreshTokenRequest.class);
         } catch (Exception e) {
+            throw new AuthenticationServiceException("Invalid refresh token request payload");
+        }
+
+        if (refreshTokenRequest == null) {
             throw new AuthenticationServiceException("Invalid refresh token request payload");
         }
 

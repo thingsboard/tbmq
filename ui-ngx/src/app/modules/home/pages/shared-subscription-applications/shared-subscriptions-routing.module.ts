@@ -48,7 +48,7 @@ const routes: Routes = [
         component: SharedSubsriptionGroupsTableComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'shared-subscription.application-shared-subscriptions',
+          title: 'shared-subscription.groups',
           breadcrumb: {
             label: 'shared-subscription.groups',
             icon: 'lan'
@@ -60,9 +60,9 @@ const routes: Routes = [
         component: SharedSubsriptionsTableComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'shared-subscription.shared-subscriptions',
+          title: 'shared-subscription.application-shared-subscriptions',
           breadcrumb: {
-            label: 'shared-subscription.applications',
+            label: 'shared-subscription.application-shared-subscriptions',
             icon: 'mdi:monitor-share'
           }
         }

@@ -19,4 +19,6 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 public interface TbMessageStatsReportClient {
 
     void reportStats(String key);
+
+    void reportTraffic(long bytes);
 }

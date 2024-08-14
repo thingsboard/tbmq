@@ -112,7 +112,7 @@ export class MenuService {
           },
           {
             id: 'application_shared_subscriptions',
-            name: 'shared-subscription.applications',
+            name: 'shared-subscription.application-shared-subscriptions',
             type: 'link',
             path: '/shared-subscriptions/applications',
             icon: 'mdi:monitor-share'

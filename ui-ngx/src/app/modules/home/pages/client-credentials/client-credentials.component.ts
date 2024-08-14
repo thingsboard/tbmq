@@ -14,17 +14,13 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Inject, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import {
-  credentialsTypeTranslationMap,
-  ClientCredentials,
-  CredentialsType
-} from '@shared/models/credentials.model';
+import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
@@ -42,9 +38,6 @@ import { isDefinedAndNotNull } from '@core/utils';
   ]
 })
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
-
-  @Output()
-  changePasswordCloseDialog = new EventEmitter<ClientCredentials>();
 
   credentialsType = CredentialsType;
   credentialsTypes = Object.values(CredentialsType);
@@ -65,6 +58,14 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
   hideDelete() {
     if (this.entitiesTableConfig) {
       return !this.entitiesTableConfig.deleteEnabled(this.entity);
+    } else {
+      return false;
+    }
+  }
+
+  hideChangePassword() {
+    if (this.entitiesTableConfig) {
+      return this.entity?.credentialsType !== CredentialsType.MQTT_BASIC;
     } else {
       return false;
     }

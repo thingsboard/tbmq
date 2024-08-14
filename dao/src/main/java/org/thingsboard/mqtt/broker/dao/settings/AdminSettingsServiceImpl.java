@@ -15,15 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.dao.settings;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.HostNameValidator;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -108,6 +114,17 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                     }
                     if (adminSettings.getJsonValue() == null) {
                         throw new DataValidationException("Admin Settings json should be specified!");
+                    }
+                    if (adminSettings.getKey().equals(BrokerConstants.CONNECTIVITY_KEY)) {
+                        Map<String, ConnectivityInfo> connectivityInfoMap = JacksonUtil.convertValue(adminSettings.getJsonValue(), new TypeReference<>() {
+                        });
+                        if (connectivityInfoMap != null) {
+                            connectivityInfoMap.forEach((key, value) -> {
+                                if (value.isEnabled() && !HostNameValidator.isValidHostName(value.getHost())) {
+                                    throw new DataValidationException("Invalid host name found: " + value.getHost());
+                                }
+                            });
+                        }
                     }
                 }
             };
