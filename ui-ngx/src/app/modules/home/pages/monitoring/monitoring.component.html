@@ -159,7 +159,7 @@
         <mat-divider [fxShow]="isFullscreen"></mat-divider>
         <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
           <span fxFlex></span>
-          <span style="padding-left: 140px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
+          <span style="padding-left: 170px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
           <span fxFlex></span>
           <tb-toggle-header (valueChange)="processedBytesChanged($event)"
                             [value]="dataSizeUnitType[0]"
