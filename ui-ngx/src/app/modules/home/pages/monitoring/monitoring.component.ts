@@ -43,10 +43,7 @@ import Zoom from 'chartjs-plugin-zoom';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import {
-  DataSizeUnitType,
-  DataSizeUnitTypeTranslationMap,
-} from "@shared/models/ws-client.model";
+import { DataSizeUnitType, DataSizeUnitTypeTranslationMap, } from "@shared/models/ws-client.model";
 import { convertDataSizeUnits } from "@core/utils";
 
 Chart.register([Zoom]);
@@ -240,6 +237,7 @@ export class MonitoringComponent extends PageComponent {
     ).subscribe(data => {
       this.addPollingIntervalToTimewindow();
       for (const chartType in StatsChartType) {
+        this.prepareData(chartType, data);
         this.pushLatestValue(data as TimeseriesData[], chartType);
         this.updateChartView(chartType);
       }
@@ -249,6 +247,17 @@ export class MonitoringComponent extends PageComponent {
   private addPollingIntervalToTimewindow() {
     this.fixedWindowTimeMs.startTimeMs += POLLING_INTERVAL;
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
+  }
+
+  private prepareData(chartType: StatsChartType, data: TimeseriesData[]) {
+    if (chartType === StatsChartType.processedBytes) {
+      const tsValue = data[0][StatsChartType.processedBytes][0];
+      data[0][StatsChartType.processedBytes][0] = {
+        ...tsValue,
+        ...{value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType)}
+      }
+      this.processedBytesChanged(this.currentDataSizeUnitType);
+    }
   }
 
   private pushLatestValue(data: TimeseriesData[], chartType: string) {

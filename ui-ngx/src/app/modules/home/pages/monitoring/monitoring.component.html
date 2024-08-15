@@ -158,20 +158,19 @@
       <div [id]="'processedBytescontainer'" class="mat-padding chart-container" #processedBytes>
         <mat-divider [fxShow]="isFullscreen"></mat-divider>
         <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <section style="margin-left: 8px">
-            <tb-toggle-header (valueChange)="processedBytesChanged($event)"
-                              [value]="dataSizeUnitType[0]"
-                              name="processedBytes"
-                              useSelectOnMdLg="true"
-                              appearance="fill">
-              <tb-toggle-option *ngFor="let type of dataSizeUnitType" [value]="type">
-                {{ dataSizeUnitTypeTranslationMap.get(type) }}
-              </tb-toggle-option>
-            </tb-toggle-header>
-          </section>
           <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
+          <span style="padding-left: 140px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
           <span fxFlex></span>
+          <tb-toggle-header (valueChange)="processedBytesChanged($event)"
+                            [value]="dataSizeUnitType[0]"
+                            style="padding-right: 12px"
+                            name="processedBytes"
+                            useSelectOnMdLg="true"
+                            appearance="fill">
+            <tb-toggle-option *ngFor="let type of dataSizeUnitType" [value]="type">
+              {{ dataSizeUnitTypeTranslationMap.get(type) }}
+            </tb-toggle-option>
+          </tb-toggle-header>
           <mat-icon [matTooltip]="chartTooltip('processedBytes')" class="material-icons" style="cursor: default">
             info_outline
           </mat-icon>
