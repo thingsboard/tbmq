@@ -21,7 +21,7 @@ import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } f
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { chartKeysTotal, getTimeseriesDataLimit, StatsService } from '@core/http/stats.service';
+import { chartKeysTotal, StatsService, timeseriesDataLimit } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
   chartJsParams,
@@ -43,6 +43,8 @@ import Zoom from 'chartjs-plugin-zoom';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { DataSizeUnitType, DataSizeUnitTypeTranslationMap, } from "@shared/models/ws-client.model";
+import { convertDataSizeUnits } from "@core/utils";
 
 Chart.register([Zoom]);
 
@@ -56,8 +58,9 @@ export class MonitoringComponent extends PageComponent {
   chartPage: ChartPage = 'monitoring';
   charts = {};
   timewindow: Timewindow;
-  statsCharts = Object.values(StatsChartType);
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
+  dataSizeUnitType = Object.values(DataSizeUnitType);
   isFullscreen = false;
   chartHeight = 300;
   chartContainerHeight: string;
@@ -65,6 +68,7 @@ export class MonitoringComponent extends PageComponent {
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
+  private currentDataSizeUnitType = DataSizeUnitType.BYTE;
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
@@ -120,6 +124,20 @@ export class MonitoringComponent extends PageComponent {
       this.fullscreenChart = undefined;
       this.chartContainerHeight = this.chartHeight + 'px';
     }
+  }
+
+  processedBytesChanged(type: DataSizeUnitType) {
+    const chartType = StatsChartType.processedBytes;
+    for (let i = 0; i < this.brokerIds.length; i++) {
+      this.charts[chartType].data.datasets[i].data = this.charts[chartType].data.datasets[i].data.map(el => {
+        return {
+          value: convertDataSizeUnits(el.value, this.currentDataSizeUnitType, type),
+          ts: el.ts
+        }
+      });
+    }
+    this.currentDataSizeUnitType = type;
+    this.updateChartView(chartType);
   }
 
   private initData() {
@@ -192,6 +210,12 @@ export class MonitoringComponent extends PageComponent {
       }
       const params = {...chartJsParams(this.chartPage), ...datasets};
       this.charts[chartType] = new Chart(ctx, params);
+      if (chartType === StatsChartType.processedBytes) {
+        this.charts[chartType].options.plugins.tooltip.callbacks.label = (context) => {
+          const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
+          return `${value} ${this.dataSizeUnitTypeTranslationMap.get(this.currentDataSizeUnitType)}`;
+        }
+      }
       this.updateXScale(chartType);
       ctx.addEventListener('dblclick', () => {
         this.charts[chartType].resetZoom();
@@ -213,6 +237,7 @@ export class MonitoringComponent extends PageComponent {
     ).subscribe(data => {
       this.addPollingIntervalToTimewindow();
       for (const chartType in StatsChartType) {
+        this.prepareData(chartType, data);
         this.pushLatestValue(data as TimeseriesData[], chartType);
         this.updateChartView(chartType);
       }
@@ -222,6 +247,17 @@ export class MonitoringComponent extends PageComponent {
   private addPollingIntervalToTimewindow() {
     this.fixedWindowTimeMs.startTimeMs += POLLING_INTERVAL;
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
+  }
+
+  private prepareData(chartType: StatsChartType, data: TimeseriesData[]) {
+    if (chartType === StatsChartType.processedBytes) {
+      const tsValue = data[0][StatsChartType.processedBytes][0];
+      data[0][StatsChartType.processedBytes][0] = {
+        ...tsValue,
+        ...{value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType)}
+      }
+      this.processedBytesChanged(this.currentDataSizeUnitType);
+    }
   }
 
   private pushLatestValue(data: TimeseriesData[], chartType: string) {
@@ -268,7 +304,7 @@ export class MonitoringComponent extends PageComponent {
     for (const brokerData of data) {
       for (const key in brokerData) {
         const dataLength = brokerData[key].length;
-        if (dataLength === getTimeseriesDataLimit) {
+        if (dataLength === timeseriesDataLimit) {
           showWarning = true;
           break;
         }

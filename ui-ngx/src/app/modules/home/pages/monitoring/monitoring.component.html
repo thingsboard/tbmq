@@ -153,5 +153,40 @@
         <mat-divider [fxShow]="isFullscreen"></mat-divider>
       </div>
     </div>
+    <div tb-fullscreen [fullscreen]="fullscreenChart === 'processedBytes'"
+         [fullscreenElement]="processedBytes" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+      <div [id]="'processedBytescontainer'" class="mat-padding chart-container" #processedBytes>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span fxFlex></span>
+          <span style="padding-left: 170px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
+          <span fxFlex></span>
+          <tb-toggle-header (valueChange)="processedBytesChanged($event)"
+                            [value]="dataSizeUnitType[0]"
+                            style="padding-right: 12px"
+                            name="processedBytes"
+                            useSelectOnMdLg="true"
+                            appearance="fill">
+            <tb-toggle-option *ngFor="let type of dataSizeUnitType" [value]="type">
+              {{ dataSizeUnitTypeTranslationMap.get(type) }}
+            </tb-toggle-option>
+          </tb-toggle-header>
+          <mat-icon [matTooltip]="chartTooltip('processedBytes')" class="material-icons" style="cursor: default">
+            info_outline
+          </mat-icon>
+          <button type="button"
+                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                  (click)="onFullScreen('processedBytes')"
+                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                  matTooltipPosition="above">
+            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+          </button>
+        </section>
+        <section [ngStyle]="{'height': chartContainerHeight}">
+          <canvas [id]="'processedBytesmonitoring'" [height]="chartHeight"></canvas>
+        </section>
+        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      </div>
+    </div>
   </div>
 </div>

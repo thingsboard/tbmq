@@ -260,7 +260,8 @@ export enum AboveSecWebSocketTimeUnit {
 export enum DataSizeUnitType {
   BYTE = 'BYTE',
   KILOBYTE = 'KILOBYTE',
-  MEGABYTE = 'MEGABYTE'
+  MEGABYTE = 'MEGABYTE',
+  GIGABYTE = 'GIGABYTE'
 }
 
 export function transformPropsToObject(input: {props: Array<{k: string, v: number|string}>}): {[key: string]: number|string|Array<number|string>} {
@@ -396,7 +397,8 @@ export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>(
 export const DataSizeUnitTypeTranslationMap = new Map<DataSizeUnitType, string>([
     [DataSizeUnitType.BYTE, 'B'],
     [DataSizeUnitType.KILOBYTE, 'KB'],
-    [DataSizeUnitType.MEGABYTE, 'MB']
+    [DataSizeUnitType.MEGABYTE, 'MB'],
+    [DataSizeUnitType.GIGABYTE, 'GB']
   ]);
 export const TimeUnitTypeTranslationMap = new Map<WebSocketTimeUnit, string>([
     [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
