@@ -161,8 +161,8 @@
           <span fxFlex></span>
           <span style="padding-left: 170px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
           <span fxFlex></span>
-          <tb-toggle-header (valueChange)="processedBytesChanged($event)"
-                            [value]="dataSizeUnitType[0]"
+          <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
+                            [value]="currentDataSizeUnitType"
                             style="padding-right: 12px"
                             name="processedBytes"
                             useSelectOnMdLg="true"

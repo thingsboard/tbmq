@@ -65,10 +65,10 @@ export class MonitoringComponent extends PageComponent {
   chartHeight = 300;
   chartContainerHeight: string;
   fullscreenChart: string;
+  currentDataSizeUnitType = DataSizeUnitType.BYTE;
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
-  private currentDataSizeUnitType = DataSizeUnitType.BYTE;
 
   private stopPolling$ = new Subject();
   private destroy$ = new Subject();
@@ -109,6 +109,7 @@ export class MonitoringComponent extends PageComponent {
   onTimewindowChange() {
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
+    this.processedBytesUnitTypeChanged();
     this.fetchEntityTimeseries();
     for (const chartType in StatsChartType) {
       this.charts[chartType].resetZoom();
@@ -126,7 +127,7 @@ export class MonitoringComponent extends PageComponent {
     }
   }
 
-  processedBytesChanged(type: DataSizeUnitType) {
+  processedBytesUnitTypeChanged(type = DataSizeUnitType.BYTE) {
     const chartType = StatsChartType.processedBytes;
     for (let i = 0; i < this.brokerIds.length; i++) {
       this.charts[chartType].data.datasets[i].data = this.charts[chartType].data.datasets[i].data.map(el => {
@@ -253,10 +254,10 @@ export class MonitoringComponent extends PageComponent {
     if (chartType === StatsChartType.processedBytes) {
       const tsValue = data[0][StatsChartType.processedBytes][0];
       data[0][StatsChartType.processedBytes][0] = {
-        ...tsValue,
-        ...{value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType)}
+        value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
+        ts: tsValue.ts
       }
-      this.processedBytesChanged(this.currentDataSizeUnitType);
+      this.processedBytesUnitTypeChanged(this.currentDataSizeUnitType);
     }
   }
 
