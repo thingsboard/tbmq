@@ -14,14 +14,6 @@
 -- limitations under the License.
 --
 
--- CREATE OR REPLACE PROCEDURE export_device_publish_msgs(IN path_to_file varchar)
---     LANGUAGE plpgsql
--- AS $$
--- BEGIN
---     EXECUTE format('COPY (SELECT * FROM device_publish_msg) TO %L WITH CSV HEADER', path_to_file);
--- END
--- $$;
-
 CREATE OR REPLACE PROCEDURE export_device_publish_msgs(IN msg_limit int, IN path_to_file varchar)
     LANGUAGE plpgsql
 AS $$

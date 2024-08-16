@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -80,15 +81,9 @@ public class DevicePackProcessingContext {
 
     List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
         List<DevicePublishMsg> messages = pack.messages();
-        AtomicInteger packetIdAtomic = new AtomicInteger(previousPacketId);
+        var packetIdDto = new PacketIdDto(previousPacketId);
         for (var msg : messages) {
-            if (packetIdAtomic.get() == MAX_PACKET_ID) {
-                packetIdAtomic.set(1);
-            } else {
-                packetIdAtomic.incrementAndGet();
-            }
-            boolean reachedLimit = packetIdAtomic.compareAndSet(MAX_PACKET_ID, 0);
-            msg.setPacketId(reachedLimit ? MAX_PACKET_ID : packetIdAtomic.get());
+            msg.setPacketId(packetIdDto.getNextPacketId());
         }
         return messages;
     }

@@ -653,9 +653,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         validateSha(scriptSha, scriptShaStr, actualScriptSha, connection);
     }
 
-    private void validateSha(byte[] expectedSha, String expectedShaStr, String actualAddMessagesScriptSha, RedisConnection connection) {
-        if (!Arrays.equals(expectedSha, stringSerializer.serialize(actualAddMessagesScriptSha))) {
-            log.error("SHA for script is wrong! Expected [{}] actual [{}] connection [{}]", expectedShaStr, actualAddMessagesScriptSha, connection.getNativeConnection());
+    private void validateSha(byte[] expectedSha, String expectedShaStr, String actualScriptSha, RedisConnection connection) {
+        if (!Arrays.equals(expectedSha, stringSerializer.serialize(actualScriptSha))) {
+            log.error("SHA for script is wrong! Expected [{}] actual [{}] connection [{}]", expectedShaStr, actualScriptSha, connection.getNativeConnection());
         }
     }
 

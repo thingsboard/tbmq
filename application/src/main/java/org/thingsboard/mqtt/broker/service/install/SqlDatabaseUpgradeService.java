@@ -129,6 +129,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                         log.info("Removing device publish messages from Postgres ...");
                         conn.createStatement().execute("DROP TABLE IF EXISTS device_publish_msg;");
                         conn.createStatement().execute("DROP TABLE IF EXISTS device_session_ctx;");
+                        conn.createStatement().execute("DROP PROCEDURE IF EXISTS export_device_publish_msgs;");
                         log.info("Successfully removed device publish messages from Postgres!");
                     } catch (Exception e) {
                         log.warn("Failed to remove device publish messages from Postgres due to: ", e);

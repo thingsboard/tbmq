@@ -48,7 +48,7 @@ services:
       # ALLOW_EMPTY_PASSWORD is recommended only for development.
       ALLOW_EMPTY_PASSWORD: "yes"
     ports:
-      - "6379:6379"
+      - "6379"
     volumes:
       - tbmq-redis-data:/bitnami/redis/data
   tbmq:

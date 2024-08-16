@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcesso
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -115,7 +116,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
 
         int lastPacketId = deviceMsgService.getLastPacketId(clientId);
-        int prevPacketId = lastPacketId;
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
             boolean anyDeviceClientConnected = sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, topicSharedSubscription);
@@ -144,28 +144,20 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             }
             deviceMsgService.removeLastPacketId(key);
         }
-        if (lastPacketId != prevPacketId) {
-            deviceMsgService.saveLastPacketId(clientId, lastPacketId);
-        }
+        deviceMsgService.saveLastPacketId(clientId, lastPacketId);
     }
 
     int updateMessagesBeforePublishAndReturnLastPacketId(int lastPacketId, TopicSharedSubscription topicSharedSubscription,
                                                          List<DevicePublishMsg> persistedMessages) {
-        AtomicInteger packetIdCounter = new AtomicInteger(lastPacketId);
+        var packetIdDto = new PacketIdDto(lastPacketId);
         for (DevicePublishMsg devicePublishMessage : persistedMessages) {
-            if (packetIdCounter.get() == MAX_PACKET_ID) {
-                packetIdCounter.set(1);
-            } else {
-                packetIdCounter.incrementAndGet();
-            }
-            boolean reachedLimit = packetIdCounter.compareAndSet(MAX_PACKET_ID, 0);
-            int currentPacketId = reachedLimit ? MAX_PACKET_ID : packetIdCounter.get();
+            int currentPacketId = packetIdDto.getNextPacketId();
             sentPacketIdsFromSharedSubscription.put(currentPacketId,
                     newSharedSubscriptionPublishPacket(topicSharedSubscription.getKey(), devicePublishMessage.getPacketId()));
             devicePublishMessage.setPacketId(currentPacketId);
             devicePublishMessage.setQos(getMinQoSValue(topicSharedSubscription, devicePublishMessage));
         }
-        return packetIdCounter.get();
+        return packetIdDto.getCurrentPacketId();
     }
 
     private int getMinQoSValue(TopicSharedSubscription topicSharedSubscription, DevicePublishMsg devicePublishMessage) {

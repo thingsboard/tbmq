@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -53,7 +53,7 @@ public class BurstSubmitStrategy implements DeviceSubmitStrategy {
 
     @Override
     public void update(Map<String, ClientIdMessagesPack> reprocessMap) {
-        Map<String, ClientIdMessagesPack> newClientIdToMessagesMap = new LinkedHashMap<>(reprocessMap.size());
+        Map<String, ClientIdMessagesPack> newClientIdToMessagesMap = Maps.newLinkedHashMapWithExpectedSize(reprocessMap.size());
         for (var pack : clientIdToMessagesMap.values()) {
             if (reprocessMap.containsKey(pack.clientId())) {
                 newClientIdToMessagesMap.put(pack.clientId(), pack);

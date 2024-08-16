@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import com.google.common.collect.Maps;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +33,6 @@ import org.thingsboard.mqtt.broker.service.stats.PublishMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -173,7 +173,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
     }
 
     private Map<UUID, PublishMsgWithId> toPendingPubMsgWithIdMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs, long packId) {
-        Map<UUID, PublishMsgWithId> publishMsgPendingMap = new LinkedHashMap<>(msgs.size());
+        Map<UUID, PublishMsgWithId> publishMsgPendingMap = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
         int i = 0;
         for (var msg : msgs) {
             UUID id = new UUID(packId, i++);

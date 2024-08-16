@@ -120,11 +120,14 @@ public class PersistedDeviceActorMessageProcessorTest {
                         sharedSubscription
                 )
         );
+        int expectedPacketId = 10;
+        when(deviceMsgService.getLastPacketId(CLIENT_ID)).thenReturn(expectedPacketId);
         when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(true);
 
         persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
 
         verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
+        verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
         verifyNoMoreInteractions(deviceMsgService);
     }
 
@@ -136,11 +139,14 @@ public class PersistedDeviceActorMessageProcessorTest {
                         sharedSubscription
                 )
         );
+        int expectedPacketId = 10;
+        when(deviceMsgService.getLastPacketId(CLIENT_ID)).thenReturn(expectedPacketId);
         when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(false);
 
         persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
 
-        verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
+        verify(deviceMsgService).getLastPacketId(CLIENT_ID);
+        verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
         verifyNoMoreInteractions(deviceMsgService);
     }
 
