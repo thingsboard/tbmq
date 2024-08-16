@@ -14,23 +14,23 @@
 /// limitations under the License.
 ///
 
-import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import {AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
 import {
   ConnectionState,
   connectionStateColor,
   DetailedClientSessionInfo,
   MqttVersionTranslationMap
 } from '@shared/models/session.model';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { AppState } from '@core/core.state';
-import { Store } from '@ngrx/store';
-import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { ClientSessionService } from '@core/http/client-session.service';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { appearance } from '@shared/models/constants';
-import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {AppState} from '@core/core.state';
+import {Store} from '@ngrx/store';
+import {Router} from '@angular/router';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {FormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
+import {ClientSessionService} from '@core/http/client-session.service';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import {appearance} from '@shared/models/constants';
+import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/models/client.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -133,7 +133,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   getAdditionalInfo(entity: DetailedClientSessionInfo) {
     const result = 'Unknown';
-    this.clientSessionService.getClientSessionCredentials(entity.clientId, {ignoreErrors: true}).subscribe(
+    this.clientSessionService.getClientSessionDetails(entity.clientId, {ignoreErrors: true}).subscribe(
       credentials => {
         this.entityForm.patchValue({
           credentials: credentials.name || result,
