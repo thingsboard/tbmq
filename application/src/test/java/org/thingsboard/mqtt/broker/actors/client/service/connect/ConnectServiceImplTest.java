@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
@@ -34,6 +35,8 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandlerImpl;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.actors.client.state.QueuedMqttMessages;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -106,6 +109,8 @@ public class ConnectServiceImplTest {
     FlowControlService flowControlService;
     @MockBean
     PublishMsgValidationService publishMsgValidationService;
+    @MockBean
+    CacheNameResolver cacheNameResolver;
 
     @SpyBean
     ConnectServiceImpl connectService;
@@ -144,9 +149,12 @@ public class ConnectServiceImplTest {
     @Test
     public void givenConnectionAcceptedMsg_whenAcceptConnection_thenVerifyExecutions() {
         TbActorRef actorRef = mock(TbActorRef.class);
+        Cache cache = mock(Cache.class);
 
         QueuedMqttMessages queuedMqttMessages = mock(QueuedMqttMessages.class);
         when(actorState.getQueuedMessages()).thenReturn(queuedMqttMessages);
+        when(cacheNameResolver.getCache(eq(CacheConstants.CLIENT_MQTT_VERSION_CACHE))).thenReturn(cache);
+        when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         PublishMsg publishMsg = PublishMsg.builder().build();
         ConnectionAcceptedMsg connectionAcceptedMsg = getConnectionAcceptedMsg(publishMsg);

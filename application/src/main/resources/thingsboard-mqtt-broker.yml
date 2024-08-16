@@ -822,12 +822,12 @@ cache:
   cache-prefix: "${CACHE_PREFIX:}"
   specs:
     packetIdAndSerialNumber:
-      # Cache TTL in minutes
+      # Cache TTL in minutes. Defaults to 1 day
       timeToLiveInMinutes: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_TTL:1440}"
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
       maxSize: "${CACHE_SPECS_PACKET_ID_SERIAL_NUMBER_MAX_SIZE:10000}"
     mqttClientCredentials:
-      # Cache TTL in minutes
+      # Cache TTL in minutes. Defaults to 1 day
       timeToLiveInMinutes: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_TTL:1440}"
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
       maxSize: "${CACHE_SPECS_MQTT_CLIENT_CREDENTIALS_MAX_SIZE:0}"
@@ -837,11 +837,21 @@ cache:
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
       maxSize: "${CACHE_SPECS_BASIC_CREDENTIALS_PASSWORD_MAX_SIZE:0}"
     sslRegexBasedCredentials:
-      # Cache TTL in minutes
+      # Cache TTL in minutes. Defaults to 1 day
       timeToLiveInMinutes: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_TTL:1440}"
       # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine.
       # Defaults to 1, as the cache is designed to store only a single key at any given time. Increasing the size is unnecessary for this use case
       maxSize: "${CACHE_SPECS_SSL_REGEX_BASED_CREDENTIALS_MAX_SIZE:1}"
+    clientSessionCredentials:
+      # Cache TTL in minutes. Defaults to 7 days
+      timeToLiveInMinutes: "${CACHE_SPECS_CLIENT_SESSION_CREDENTIALS_TTL:10080}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_CLIENT_SESSION_CREDENTIALS_MAX_SIZE:10000}"
+    clientMqttVersion:
+      # Cache TTL in minutes. Defaults to 7 days
+      timeToLiveInMinutes: "${CACHE_SPECS_CLIENT_MQTT_VERSION_TTL:10080}"
+      # Cache max size. 0 means the cache is disabled in case CACHE_TYPE=caffeine
+      maxSize: "${CACHE_SPECS_CLIENT_MQTT_VERSION_MAX_SIZE:10000}"
 
 # Redis configuration parameters
 redis:

@@ -13,33 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host ::ng-deep {
-  mat-expansion-panel button {
-    margin-left: 0;
-  }
+:host {
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 
-  .fields-group {
-    .tb-hint {
-      padding: 0;
-      max-width: fit-content;
+    section:first-child {
+      span {
+        font-weight: 500;
+        font-size: 16px;
+        line-height: 24px;
+        color: rgba(0,0,0,0.87);
+      }
+    }
+
+    section:nth-child(2) {
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.12);
+
+      mat-label {
+        color: rgba(0,0,0,0.54);
+        font-size: 14px;
+      }
+
+      div {
+        button {
+          color: rgba(0,0,0,0.54);
+        }
+      }
+    }
+
+    .subscriptions-container {
+      margin-right: 8px;
     }
   }
 
-  .add-button {
-    margin: 8px 0 8px 0;
+  ::ng-deep {
+    .add-button {
+      margin: 8px 0 8px 0;
+    }
   }
-
-  .mat-form-field-appearance-fill.mat-form-field-disabled .mat-form-field-flex,
-  .mat-form-field .mat-select.mat-select-disabled .mat-select-arrow{
-    border-bottom: 1px solid rgba(0,0,0,0.54);
-  }
-
-  .mat-form-field-appearance-fill.mat-form-field-disabled .mat-form-field-label {
-    color: rgba(0,0,0,0.6);
-  }
-
-  .mat-mdc-select-disabled .mat-mdc-select-value {
-    color: rgba(0, 0, 0, 0.54);
-  }
-
 }

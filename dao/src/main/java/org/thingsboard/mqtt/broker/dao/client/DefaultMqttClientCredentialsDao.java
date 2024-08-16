@@ -81,6 +81,14 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
     }
 
     @Override
+    public MqttClientCredentials findCredentialsByName(String name) {
+        if (log.isTraceEnabled()) {
+            log.trace("Trying to find MQTT client credentials by name");
+        }
+        return DaoUtil.getData(mqttClientCredentialsRepository.findMqttClientCredentialsEntityByName(name));
+    }
+
+    @Override
     public PageData<MqttClientCredentials> findAll(PageLink pageLink) {
         if (log.isTraceEnabled()) {
             log.trace("Trying to find credentials by pageLink {}", pageLink);
