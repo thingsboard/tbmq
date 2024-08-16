@@ -14,18 +14,23 @@
 /// limitations under the License.
 ///
 
-import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { ConnectionState, connectionStateColor, DetailedClientSessionInfo } from '@shared/models/session.model';
-import { DialogComponent } from '@shared/components/dialog.component';
-import { AppState } from '@core/core.state';
-import { Store } from '@ngrx/store';
-import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormArray, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { ClientSessionService } from '@core/http/client-session.service';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
-import { appearance } from '@shared/models/constants';
-import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import {AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import {
+  ConnectionState,
+  connectionStateColor,
+  DetailedClientSessionInfo,
+  MqttVersionTranslationMap
+} from '@shared/models/session.model';
+import {DialogComponent} from '@shared/components/dialog.component';
+import {AppState} from '@core/core.state';
+import {Store} from '@ngrx/store';
+import {Router} from '@angular/router';
+import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import {FormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
+import {ClientSessionService} from '@core/http/client-session.service';
+import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import {appearance} from '@shared/models/constants';
+import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/models/client.model';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -51,6 +56,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   showAppClientShouldBePersistentWarning: boolean;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
+  clientCredentials: string = '';
+
+  private mqttVersionTranslationMap = MqttVersionTranslationMap;
 
   get subscriptions(): FormArray {
     return this.entityForm.get('subscriptions').value as FormArray;
@@ -79,6 +87,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   private buildForms(entity: DetailedClientSessionInfo): void {
     this.buildSessionForm(entity);
     this.updateFormsValues(entity);
+    this.getAdditionalInfo(entity);
   }
 
   private buildSessionForm(entity: DetailedClientSessionInfo): void {
@@ -95,7 +104,9 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
       disconnectedAt: [{value: entity ? entity.disconnectedAt : null, disabled: true}],
       subscriptions: [{value: entity ? entity.subscriptions : null, disabled: false}],
       cleanStart: [{value: entity ? entity.cleanStart : null, disabled: true}],
-      subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}]
+      subscriptionsCount: [{value: entity ? entity.subscriptionsCount : null, disabled: false}],
+      credentials: [{value: null, disabled: true}],
+      mqttVersion: [{value: null, disabled: true}]
     });
     this.entityForm.get('subscriptions').valueChanges.subscribe(value => {
       this.entity.subscriptions = value;
@@ -118,6 +129,24 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   isConnected(): boolean {
     return this.entityForm?.get('connectionState')?.value && this.entityForm.get('connectionState').value.toUpperCase() === ConnectionState.CONNECTED;
+  }
+
+  getAdditionalInfo(entity: DetailedClientSessionInfo) {
+    const result = 'Unknown';
+    this.clientSessionService.getClientSessionDetails(entity.clientId, {ignoreErrors: true}).subscribe(
+      credentials => {
+        this.entityForm.patchValue({
+          credentials: credentials.name || result,
+          mqttVersion: this.mqttVersionTranslationMap.get(credentials.mqttVersion) || result
+        });
+      },
+      () => {
+        this.entityForm.patchValue({
+          credentials: result,
+          mqttVersion: result
+        });
+      }
+    );
   }
 
   private onSave(): void {

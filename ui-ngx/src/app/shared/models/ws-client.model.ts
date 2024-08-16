@@ -215,10 +215,10 @@ export interface WebSocketSubscriptionConfiguration {
   topicFilter?: string;
   qos?: QoS;
   color?: string;
-  options: WebSocketSubscriptionOptions;
+  options: SubscriptionOptions;
 }
 
-export interface WebSocketSubscriptionOptions {
+export interface SubscriptionOptions {
   noLocal?: boolean;
   retainAsPublish?: boolean;
   retainHandling?: number;

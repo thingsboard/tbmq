@@ -13,26 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.client.credentials;
+package org.thingsboard.mqtt.broker.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 @Data
-@NoArgsConstructor(force = true)
-@AllArgsConstructor
-public class ClientTypeSslMqttCredentials implements Serializable {
+public class ClientSessionAdvancedDto {
 
-    @Serial
-    private static final long serialVersionUID = 2116141038835060250L;
-
-    private final ClientType type;
-    private final SslMqttCredentials sslMqttCredentials;
     private final String name;
+    private final String mqttVersion;
 
 }
