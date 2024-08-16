@@ -262,7 +262,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             throw new IllegalArgumentException("Persisted messages limit can't be greater than 65535!");
         }
         messagesLimitBytes = intToBytes(messagesLimit);
-        try (var connection = getNonClusterAwareConnection()) {
+        try (var connection = connectionFactory.getConnection()) {
             loadScript(connection, ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
             loadScript(connection, GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
             loadScript(connection, REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
@@ -307,16 +307,29 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         messagesBytes
                 );
             } catch (InvalidDataAccessApiUsageException e) {
-                log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                prevPacketId = connection.scriptingCommands().eval(
-                        Objects.requireNonNull(ADD_MESSAGES_SCRIPT),
-                        ReturnType.INTEGER,
-                        2,
-                        rawMessagesKey,
-                        rawLastPacketIdKey,
-                        messagesLimitBytes,
-                        messagesBytes
-                );
+                loadScript(connection, ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
+                try {
+                    prevPacketId = connection.scriptingCommands().evalSha(
+                            Objects.requireNonNull(ADD_MESSAGES_SCRIPT_SHA),
+                            ReturnType.INTEGER,
+                            2,
+                            rawMessagesKey,
+                            rawLastPacketIdKey,
+                            messagesLimitBytes,
+                            messagesBytes
+                    );
+                } catch (InvalidDataAccessApiUsageException ignored) {
+                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                    prevPacketId = connection.scriptingCommands().eval(
+                            Objects.requireNonNull(ADD_MESSAGES_SCRIPT),
+                            ReturnType.INTEGER,
+                            2,
+                            rawMessagesKey,
+                            rawLastPacketIdKey,
+                            messagesLimitBytes,
+                            messagesBytes
+                    );
+                }
             }
             return prevPacketId != null ? prevPacketId.intValue() : 0;
         }
@@ -339,14 +352,25 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         messagesLimitBytes
                 );
             } catch (InvalidDataAccessApiUsageException e) {
-                log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                messagesBytes = connection.scriptingCommands().eval(
-                        Objects.requireNonNull(GET_MESSAGES_SCRIPT),
-                        ReturnType.MULTI,
-                        1,
-                        rawMessagesKey,
-                        messagesLimitBytes
-                );
+                loadScript(connection, GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
+                try {
+                    messagesBytes = connection.scriptingCommands().evalSha(
+                            Objects.requireNonNull(GET_MESSAGES_SCRIPT_SHA),
+                            ReturnType.MULTI,
+                            1,
+                            rawMessagesKey,
+                            messagesLimitBytes
+                    );
+                } catch (InvalidDataAccessApiUsageException ignored) {
+                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                    messagesBytes = connection.scriptingCommands().eval(
+                            Objects.requireNonNull(GET_MESSAGES_SCRIPT),
+                            ReturnType.MULTI,
+                            1,
+                            rawMessagesKey,
+                            messagesLimitBytes
+                    );
+                }
             }
             return Objects.requireNonNull(messagesBytes)
                     .stream().map(DevicePublishMsgEntity::fromBytes)
@@ -371,14 +395,25 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         rawLastPacketIdKey
                 );
             } catch (InvalidDataAccessApiUsageException e) {
-                log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                connection.scriptingCommands().eval(
-                        Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT),
-                        ReturnType.VALUE,
-                        2,
-                        rawMessagesKey,
-                        rawLastPacketIdKey
-                );
+                loadScript(connection, REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
+                try {
+                    connection.scriptingCommands().evalSha(
+                            Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT_SHA),
+                            ReturnType.VALUE,
+                            2,
+                            rawMessagesKey,
+                            rawLastPacketIdKey
+                    );
+                } catch (InvalidDataAccessApiUsageException ignored) {
+                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                    connection.scriptingCommands().eval(
+                            Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT),
+                            ReturnType.VALUE,
+                            2,
+                            rawMessagesKey,
+                            rawLastPacketIdKey
+                    );
+                }
             }
         } catch (Exception e) {
             log.error("Failed to remove persisted messages, clientId - {}", clientId, e);
@@ -402,14 +437,25 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         packetIdBytes
                 );
             } catch (InvalidDataAccessApiUsageException e) {
-                log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                connection.scriptingCommands().eval(
-                        Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT),
-                        ReturnType.VALUE,
-                        1,
-                        rawMessagesKey,
-                        packetIdBytes
-                );
+                loadScript(connection, REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
+                try {
+                    connection.scriptingCommands().evalSha(
+                            Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT_SHA),
+                            ReturnType.VALUE,
+                            1,
+                            rawMessagesKey,
+                            packetIdBytes
+                    );
+                } catch (InvalidDataAccessApiUsageException ignored) {
+                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                    connection.scriptingCommands().eval(
+                            Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT),
+                            ReturnType.VALUE,
+                            1,
+                            rawMessagesKey,
+                            packetIdBytes
+                    );
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to remove persisted message, clientId - " + clientId + " packetId - " + packetId, e);
@@ -433,13 +479,24 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         packetIdBytes
                 );
             } catch (InvalidDataAccessApiUsageException e) {
-                connection.scriptingCommands().eval(
-                        Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT),
-                        ReturnType.VALUE,
-                        1,
-                        rawMessagesKey,
-                        packetIdBytes
-                );
+                loadScript(connection, UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
+                try {
+                    connection.scriptingCommands().evalSha(
+                            Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT_SHA),
+                            ReturnType.VALUE,
+                            1,
+                            rawMessagesKey,
+                            packetIdBytes
+                    );
+                } catch (InvalidDataAccessApiUsageException ingored) {
+                    connection.scriptingCommands().eval(
+                            Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT),
+                            ReturnType.VALUE,
+                            1,
+                            rawMessagesKey,
+                            packetIdBytes
+                    );
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to update packet type, clientId - " + clientId + " packetId - " + packetId, e);
@@ -528,15 +585,27 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                             messagesBytes
                     );
                 } catch (InvalidDataAccessApiUsageException e) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    connection.scriptingCommands().eval(
-                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER),
-                            ReturnType.VALUE,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey,
-                            messagesBytes
-                    );
+                    loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER);
+                    try {
+                        connection.scriptingCommands().evalSha(
+                                Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA),
+                                ReturnType.VALUE,
+                                2,
+                                rawMessagesKey,
+                                rawLastPacketIdKey,
+                                messagesBytes
+                        );
+                    } catch (InvalidDataAccessApiUsageException ignored) {
+                        log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                        connection.scriptingCommands().eval(
+                                Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER),
+                                ReturnType.VALUE,
+                                2,
+                                rawMessagesKey,
+                                rawLastPacketIdKey,
+                                messagesBytes
+                        );
+                    }
                 }
             } catch (Exception e) {
                 throw new RuntimeException("Failed to migrate messages to Redis for client: " + clientId, e);
@@ -559,7 +628,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         }
         byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
         byte[] rawCachePrefix = stringSerializer.serialize(cachePrefix);
-        try (var connection = getNonClusterAwareConnection()) {
+        try (var connection = connectionFactory.getConnection()) {
             try {
                 connection.scriptingCommands().evalSha(
                         Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE_SHA),
@@ -640,10 +709,6 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         jedisConnection.setConvertPipelineAndTxResults(connectionFactory.getConvertPipelineAndTxResults());
 
         return jedisConnection;
-    }
-
-    private RedisConnection getNonClusterAwareConnection() {
-        return connectionFactory.getConnection();
     }
 
     private void loadScript(RedisConnection connection, byte[] scriptSha, byte[] script) {
