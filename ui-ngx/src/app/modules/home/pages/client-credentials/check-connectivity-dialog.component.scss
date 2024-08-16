@@ -135,7 +135,9 @@
           padding-right: 38px;
           overflow: scroll;
           padding-bottom: 4px;
-
+          @supports (-moz-appearance:none) {
+            padding-bottom: 8px;
+          }
           &::-webkit-scrollbar {
             width: 4px;
             height: 4px;
