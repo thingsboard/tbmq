@@ -47,7 +47,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     public void updateData(String fromVersion) throws Exception {
         switch (fromVersion) {
             case "1.3.0":
-                log.info("Updating data from version 1.3.0 to 1.3.1 ...");
+                log.info("Updating data from version 1.3.0 to 1.4.0 ...");
                 updateSslMqttClientCredentials();
                 createConnectivitySettings();
                 break;
@@ -61,7 +61,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
         log.info("Found {} client credentials with type {}", sslCredentials.size(), ClientCredentialsType.SSL);
         if (!CollectionUtils.isEmpty(sslCredentials)) {
             for (MqttClientCredentials credentials : sslCredentials) {
-                String newCredentialsValueStr = convertSslMqttClientCredentialsForVersion131(credentials.getCredentialsValue());
+                String newCredentialsValueStr = convertSslMqttClientCredentialsForVersion140(credentials.getCredentialsValue());
 
                 if (newCredentialsValueStr == null) {
                     continue;
@@ -74,7 +74,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
         }
     }
 
-    String convertSslMqttClientCredentialsForVersion131(String oldCredentialsValueStr) {
+    String convertSslMqttClientCredentialsForVersion140(String oldCredentialsValueStr) {
         ObjectNode newCredentialsValue = JacksonUtil.newObjectNode();
         JsonNode oldCredentialsValue = JacksonUtil.toJsonNode(oldCredentialsValueStr);
 

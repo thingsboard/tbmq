@@ -27,7 +27,7 @@ BEGIN
     IF (SELECT COUNT(*) FROM tb_schema_settings) = 0 THEN
         INSERT
         INTO tb_schema_settings (schema_version)
-        VALUES (1003001);
+        VALUES (2000000);
     END IF;
 END;
 $$;

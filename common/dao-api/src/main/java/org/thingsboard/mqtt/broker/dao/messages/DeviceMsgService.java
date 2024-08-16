@@ -46,7 +46,7 @@ public interface DeviceMsgService {
      * It is marked as deprecated and is scheduled for removal in a future major release.
      *
      */
-    @Deprecated(forRemoval = true, since = "1.3.1")
+    @Deprecated(forRemoval = true, since = "2.0.0")
     void importFromCsvFile(Path filePath);
 
 }

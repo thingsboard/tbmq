@@ -102,7 +102,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         return Objects.requireNonNull(JacksonUtil.fromBytes(bytes, DevicePublishMsgEntity.class)).toData();
     }
 
-    @Deprecated(forRemoval = true, since = "1.3.1")
+    @Deprecated(forRemoval = true, since = "2.0.0")
     public static DevicePublishMsgEntity fromCsvRecord(CSVRecord record, int defaultTtl) throws DecoderException {
         var entity = new DevicePublishMsgEntity();
         // non-null fields

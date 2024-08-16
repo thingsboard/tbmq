@@ -102,8 +102,11 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 });
                 break;
             case "1.3.0":
+                updateSchema("1.3.0", 1003000, "1.4.0", 1004000);
+                break;
+            case "1.4.0":
                 Path pathToTempFile = getTempFile("device_publish_msgs", ".csv");
-                updateSchema("1.3.0", 1003000, "1.3.1", 1003001, conn -> {
+                updateSchema("1.4.0", 1004000, "2.0.0", 2000000, conn -> {
                     try {
                         log.info("Starting export of device publish messages to temp file: {} ...", pathToTempFile);
                         conn.createStatement().execute("call export_device_publish_msgs(" + messagesLimit + ", '" + pathToTempFile + "')");

@@ -87,7 +87,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
   keepAliveTimeUnitTypes = Object.keys(AboveSecWebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
-  dataSizeUnitTypes = Object.keys(DataSizeUnitType);
+  dataSizeUnitTypes = Object.keys(DataSizeUnitType).filter(el => el !== DataSizeUnitType.GIGABYTE);
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
 
   title = 'ws-client.connections.add-connection';
