@@ -48,15 +48,15 @@ public class DefaultDataUpdateServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        willCallRealMethod().given(service).convertSslMqttClientCredentialsForVersion131(any());
+        willCallRealMethod().given(service).convertSslMqttClientCredentialsForVersion140(any());
     }
 
     @Test
-    public void convertSslMqttClientCredentialsForVersion131FirstRun() throws IOException {
+    public void convertSslMqttClientCredentialsForVersion140FirstRun() throws IOException {
         JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_in.json");
         JsonNode expected = readFromResource("update/131/ssl_mqtt_creds_out.json");
 
-        String credentialsValue = service.convertSslMqttClientCredentialsForVersion131(spec.get("credentialsValue").asText());
+        String credentialsValue = service.convertSslMqttClientCredentialsForVersion140(spec.get("credentialsValue").asText());
         assertThat(credentialsValue).isNotNull();
 
         ObjectNode converted = (ObjectNode) spec;
@@ -69,10 +69,10 @@ public class DefaultDataUpdateServiceTest {
     }
 
     @Test
-    public void convertSslMqttClientCredentialsForVersion131SecondRun() throws IOException {
+    public void convertSslMqttClientCredentialsForVersion140SecondRun() throws IOException {
         JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_out.json");
 
-        String credentialsValue = service.convertSslMqttClientCredentialsForVersion131(spec.get("credentialsValue").asText());
+        String credentialsValue = service.convertSslMqttClientCredentialsForVersion140(spec.get("credentialsValue").asText());
         assertThat(credentialsValue).isNull();
     }
 
