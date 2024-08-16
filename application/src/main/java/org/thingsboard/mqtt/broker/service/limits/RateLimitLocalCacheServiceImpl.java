@@ -95,7 +95,7 @@ public class RateLimitLocalCacheServiceImpl extends AbstractRateLimitCacheServic
 
     @Override
     public long incrementSessionCount() {
-        log.info("Incrementing session count");
+        log.debug("Incrementing session count");
         return sessionsCounter.incrementAndGet();
     }
 
