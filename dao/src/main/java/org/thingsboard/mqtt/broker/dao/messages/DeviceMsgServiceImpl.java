@@ -61,7 +61,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private static final CSVFormat IMPORT_CSV_FORMAT = CSVFormat.Builder.create()
             .setHeader().setSkipHeaderRecord(true).build();
 
-    private static final byte[] ADD_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("cea4fbc467e6f4749bb3170f45b4853e89956a31");
+    private static final byte[] ADD_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("1a36112b30eda656ff34629a18d4890499a79256");
     private static final byte[] GET_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("e083e5645a5f268448aca2ec1d3150ee6de510ef");
     private static final byte[] REMOVE_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("a619f42eb693ea732763d878dd59dff513a295c7");
     private static final byte[] REMOVE_MESSAGE_SCRIPT_SHA = stringSerializer.serialize("038e09c6e313eab0d5be4f31361250f4179bc38c");
@@ -76,10 +76,21 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             local messages = cjson.decode(ARGV[2])
             -- Fetch the last packetId from the key-value store
             local lastPacketId = tonumber(redis.call('GET', lastPacketIdKey)) or 0
-            -- Initialize the score with the last packet ID value
-            local score = lastPacketId
+            
+            -- Get the current maximum score in the sorted set
+            local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
+            
+            -- Check if the maxScoreElement is non-empty
+            local score
+            if #maxScoreElement > 0 then
+               score = tonumber(maxScoreElement[2])
+            else
+               score = lastPacketId
+            end
+            
             -- Track the first packet ID
             local previousPacketId = lastPacketId
+            
             -- Add each message to the sorted set and as a separate key
             for _, msg in ipairs(messages) do
                 lastPacketId = lastPacketId + 1
