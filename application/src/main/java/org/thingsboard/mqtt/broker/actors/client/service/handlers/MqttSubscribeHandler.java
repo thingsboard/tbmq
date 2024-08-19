@@ -76,6 +76,7 @@ public class MqttSubscribeHandler {
     private final RateLimitService rateLimitService;
 
     public void process(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
+        Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
         if (log.isTraceEnabled()) {
@@ -92,7 +93,7 @@ public class MqttSubscribeHandler {
         MqttSubAckMessage subAckMessage = mqttMessageGenerator.createSubAckMessage(msg.getMessageId(), codes);
         subscribeAndPersist(ctx, validTopicSubscriptions, subAckMessage);
 
-        startProcessingSharedSubscriptions(ctx, validTopicSubscriptions);
+        startProcessingSharedSubscriptions(ctx, validTopicSubscriptions, currentSharedSubscriptions);
     }
 
     private List<TopicSubscription> collectValidSubscriptions(List<TopicSubscription> topicSubscriptions, List<MqttReasonCodes.SubAck> codes) {
@@ -259,14 +260,14 @@ public class MqttSubscribeHandler {
         return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
     }
 
-    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions) {
+    private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,
+                                                    Set<TopicSharedSubscription> currentSharedSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
             }
             return;
         }
-        Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
         Set<TopicSharedSubscription> newSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
         if (CollectionUtils.isEmpty(newSharedSubscriptions)) {
             if (log.isDebugEnabled()) {

@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -194,6 +195,12 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
 
         shareSubClient1.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient1ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
         shareSubClient2.on("$share/g1/test/+", getHandler(receivedResponses, shareSubClient2ReceivedMessages), subQos).get(5, TimeUnit.SECONDS);
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            Set<TopicSharedSubscription> clientSubscriptions1 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client1");
+            Set<TopicSharedSubscription> clientSubscriptions2 = clientSubscriptionService.getClientSharedSubscriptions("test_sub_client2");
+            return clientSubscriptions1.size() == 1 && clientSubscriptions2.size() == 1;
+        });
 
         //pub
         MqttClient pubClient = getPubClient();
