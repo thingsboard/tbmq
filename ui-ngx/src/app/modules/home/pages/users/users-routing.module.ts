@@ -17,26 +17,61 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { UsersTableComponent } from '@home/pages/users/users-table.component';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
+import { BreadCrumbConfig } from '@shared/components/breadcrumb';
+import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
+import { UsersTableConfigResolver } from '@home/pages/users/users-table-config.resolver';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 
 const routes: Routes = [
   {
     path: 'users',
-    component: UsersTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'user.users',
       breadcrumb: {
         label: 'user.users',
         icon: 'mdi:account-multiple'
       }
-    }
+    },
+    children: [
+      {
+        path: '',
+        component: EntitiesTableComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'user.users'
+        },
+        resolve: {
+          entitiesTableConfig: UsersTableConfigResolver
+        }
+      },
+      {
+        path: ':entityId',
+        component: EntityDetailsPageComponent,
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          breadcrumb: {
+            labelFunction: entityDetailsPageBreadcrumbLabelFunction,
+            icon: 'mdi:account-multiple'
+          } as BreadCrumbConfig<EntityDetailsPageComponent>,
+          auth: [Authority.SYS_ADMIN],
+          title: 'user.user',
+        },
+        resolve: {
+          entitiesTableConfig: UsersTableConfigResolver
+        }
+      }
+    ]
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    UsersTableConfigResolver
+  ]
 })
 
 export class UsersRoutingModule {

@@ -31,6 +31,7 @@ import { EntityTabsComponent } from '../../components/entity/entity-tabs.compone
 import { ClientType } from '@shared/models/client.model';
 import { IEntitiesTableComponent } from './entity-table-component.models';
 import { DAY, historyInterval } from '@shared/models/time/time.models';
+import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -155,6 +156,7 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
   }
 
   private table: IEntitiesTableComponent = null;
+  private entityDetailsPage: IEntityDetailsPageComponent = null;
 
   componentsData: any = null;
   demoData: any = null;
@@ -219,25 +221,24 @@ export class EntityTableConfig<T extends BaseData, P extends PageLink = PageLink
 
   setTable(table: IEntitiesTableComponent) {
     this.table = table;
-    // this.entityDetailsPage = null;
+    this.entityDetailsPage = null;
   }
 
-  /*getEntityDetailsPage(): IEntityDetailsPageComponent {
+  getEntityDetailsPage(): IEntityDetailsPageComponent {
     return this.entityDetailsPage;
   }
 
   setEntityDetailsPage(entityDetailsPage: IEntityDetailsPageComponent) {
     this.entityDetailsPage = entityDetailsPage;
     this.table = null;
-  }*/
+  }
 
   updateData(closeDetails = false) {
     if (this.table) {
       this.table.updateData(closeDetails);
+    } else if (this.entityDetailsPage) {
+      this.entityDetailsPage.reload();
     }
-    // else if (this.entityDetailsPage) {
-    //   this.entityDetailsPage.reload();
-    // }
   }
 
   toggleEntityDetails($event: Event, entity: T) {
@@ -312,9 +313,3 @@ const arrowDown = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24"
 const arrowUp = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
   <path d="M12 22C10.6868 22 9.38642 21.7413 8.17317 21.2388C6.95991 20.7362 5.85752 19.9997 4.92893 19.0711C3.05357 17.1957 2 14.6522 2 12C2 9.34784 3.05357 6.8043 4.92893 4.92893C6.8043 3.05357 9.34784 2 12 2C13.3132 2 14.6136 2.25866 15.8268 2.7612C17.0401 3.26375 18.1425 4.00035 19.0711 4.92893C19.9997 5.85752 20.7362 6.95991 21.2388 8.17317C21.7413 9.38642 22 10.6868 22 12C22 14.6522 20.9464 17.1957 19.0711 19.0711C17.1957 20.9464 14.6522 22 12 22ZM12 7L7 12H10V16H14V12H17L12 7Z" fill="${color}"/>
 </svg>`;
-
-/*const arrowDown = (color) => createHtmlElement('svg', {color: color}, pathDown, 'http://www.w3.org/2000/svg');
-const arrowUp = (color) => createHtmlElement('svg', {color: color}, pathUp, 'http://www.w3.org/2000/svg');
-
-const pathDown = `...`;
-const pathUp = `...`;*/

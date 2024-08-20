@@ -19,6 +19,12 @@
   <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
     <button mat-raised-button color="primary"
             [disabled]="(isLoading$ | async)"
+            (click)="onEntityAction($event, 'open')"
+            [fxShow]="!isEdit && !isDetailsPage">
+      {{'common.open-details-page' | translate }}
+    </button>
+    <button mat-raised-button color="primary"
+            [disabled]="(isLoading$ | async)"
             (click)="onEntityAction($event, 'delete')"
             [fxShow]="!hideDelete() && !isEdit">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>

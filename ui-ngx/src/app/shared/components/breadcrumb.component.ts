@@ -21,6 +21,7 @@ import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@
 import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
 import { TranslateService } from '@ngx-translate/core';
 import { guid } from '@core/utils';
+import { BroadcastService } from '@core/services/broadcast.service';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { UtilsService } from '@core/services/utils.service';
 
@@ -64,7 +65,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   constructor(private router: Router,
               private activatedRoute: ActivatedRoute,
-              // private broadcast: BroadcastService,
+              private broadcast: BroadcastService,
               private activeComponentService: ActiveComponentService,
               private cd: ChangeDetectorRef,
               private translate: TranslateService,
@@ -72,6 +73,9 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.broadcast.on('updateBreadcrumb', () => {
+      this.cd.markForCheck();
+    });
     this.setActiveComponent(this.activeComponentService.getCurrentActiveComponent());
   }
 
@@ -105,7 +109,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
         let labelFunction;
         let ignoreTranslate;
         if (breadcrumbConfig.labelFunction) {
-          labelFunction = () => breadcrumbConfig.labelFunction(route, this.translate, this.activeComponentValue, lastChild.data);
+          labelFunction = () => this.activeComponentValue ?
+            breadcrumbConfig.labelFunction(route, this.translate, this.activeComponentValue, lastChild.data) : breadcrumbConfig.label;
           ignoreTranslate = true;
         } else {
           label = breadcrumbConfig.label || 'home.home';

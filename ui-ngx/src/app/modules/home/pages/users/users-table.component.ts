@@ -22,6 +22,9 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UserService } from '@core/http/user.service';
 import { UserTableConfig } from '@home/pages/users/users-table-config';
+import { Router } from '@angular/router';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { User } from '@shared/models/user.model';
 
 @Component({
   selector: 'tb-users-table',
@@ -66,6 +69,7 @@ export class UsersTableComponent implements OnInit {
   constructor(private store: Store<AppState>,
               private userService: UserService,
               private translate: TranslateService,
+              private router: Router,
               private datePipe: DatePipe) {
   }
 
@@ -76,6 +80,7 @@ export class UsersTableComponent implements OnInit {
       this.userService,
       this.translate,
       this.datePipe,
+      this.router,
       this.entityIdValue
     );
   }

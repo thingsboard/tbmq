@@ -212,7 +212,8 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "id": "ID",
-    "documentation": "Documentation"
+    "documentation": "Documentation",
+    "open-details-page": "Open details page"
   },
   "color": {
     "color": "Color"
