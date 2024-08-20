@@ -213,7 +213,7 @@ public class MqttSubscribeHandler {
                                                               Set<TopicSubscription> currentSubscriptions) {
         return newSubscriptions
                 .stream()
-                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getShareName()))
+                .filter(TopicSubscription::isCommonSubscription)
                 .filter(topicSubscription ->
                         topicSubscription.getOptions().needSendRetainedForTopicSubscription(
                                 ts -> !currentSubscriptions.contains(ts), topicSubscription))
@@ -235,8 +235,9 @@ public class MqttSubscribeHandler {
             RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, minQoSValue);
 
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
+            MqttPropertiesUtil.addSubscriptionIdToProps(newRetainedMsg.getProperties(), topicSubscription.getSubscriptionId());
             result.add(newRetainedMsg);
         }
         return result;

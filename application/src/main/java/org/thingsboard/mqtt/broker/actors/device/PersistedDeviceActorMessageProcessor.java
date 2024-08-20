@@ -200,7 +200,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
                 PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
                 if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                    MqttPropertiesUtil.addMsgExpiryIntervalToPublish(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
                 }
                 publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
                 break;
@@ -240,7 +240,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         try {
             PublishMsg pubMsg = getPublishMsg(publishMsg, false);
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");

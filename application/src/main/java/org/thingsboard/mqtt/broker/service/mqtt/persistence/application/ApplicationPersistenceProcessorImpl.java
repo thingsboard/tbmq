@@ -804,7 +804,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
 
             PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(msg.getValue(), packetId, minQoSValue, isDup);
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
             result.add(new PersistedPublishMsg(publishMsg, msg.getOffset(), subscription != null));
         }

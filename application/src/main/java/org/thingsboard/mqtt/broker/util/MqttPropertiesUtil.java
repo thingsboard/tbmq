@@ -174,8 +174,14 @@ public class MqttPropertiesUtil {
         }
     }
 
-    public static void addMsgExpiryIntervalToPublish(MqttProperties properties, int messageExpiryInterval) {
+    public static void addMsgExpiryIntervalToProps(MqttProperties properties, int messageExpiryInterval) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval));
+    }
+
+    public static void addSubscriptionIdToProps(MqttProperties properties, int subscriptionId) {
+        if (subscriptionId > 0) {
+            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
+        }
     }
 
     public static void addAssignedClientIdToProps(MqttProperties properties, String assignedClientId) {
