@@ -23,8 +23,8 @@ import { AggregationType } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
 import { TimeseriesData } from '@shared/models/chart.model';
 
-export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions'];
-export const getTimeseriesDataLimit = 50000;
+export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions', 'processedBytes'];
+export const timeseriesDataLimit = 50000;
 
 @Injectable({
   providedIn: 'root'
@@ -35,7 +35,7 @@ export class StatsService {
   }
 
   public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeysTotal,
-                             limit: number = getTimeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
+                             limit: number = timeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
                              orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
     let url = `/api/timeseries/${entityId}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {

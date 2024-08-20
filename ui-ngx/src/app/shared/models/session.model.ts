@@ -25,6 +25,7 @@ import {
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
+import { SubscriptionOptions } from '@shared/models/ws-client.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -42,6 +43,8 @@ export interface DetailedClientSessionInfo extends BaseData {
   clientIpAdr: string;
   subscriptionsCount?: number;
   connected?: boolean;
+  credentials?: string;
+  mqttVersion?: number;
 }
 
 export interface ShortClientSessionInfo {
@@ -50,7 +53,7 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export interface TopicSubscription {
+export interface TopicSubscription extends SubscriptionOptions {
   topic: string;
   qos: WsMqttQoSType;
   shareName: string;
@@ -125,6 +128,20 @@ export const connectionStateTranslationMap = new Map<ConnectionState, string>(
   ]
 );
 
+export enum MqttVersion {
+  MQTT_3_1 = 'MQTT_3_1',
+  MQTT_3_1_1 = 'MQTT_3_1_1',
+  MQTT_5 = 'MQTT_5'
+}
+
+export const MqttVersionTranslationMap = new Map<MqttVersion, string>(
+  [
+    [MqttVersion.MQTT_3_1, 'MQTT 3.1'],
+    [MqttVersion.MQTT_3_1_1, 'MQTT 3.1.1'],
+    [MqttVersion.MQTT_5, 'MQTT 5'],
+  ]
+);
+
 export interface ClientSessionStatsInfo {
   connectedCount: number;
   disconnectedCount: number;
@@ -139,6 +156,11 @@ export interface SessionFilterConfig {
   subscriptions?: number;
   clientId?: string;
   openSession?: boolean;
+}
+
+export interface ClientSessionCredentials {
+  name: string;
+  mqttVersion: MqttVersion;
 }
 
 export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2?: SessionFilterConfig): boolean => {

@@ -129,6 +129,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
+    public MqttClientCredentials findCredentialsByName(String name) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing findCredentialsByName");
+        }
+        return mqttClientCredentialsDao.findCredentialsByName(name);
+    }
+
+    @Override
     public List<MqttClientCredentials> findMatchingCredentials(List<String> credentialIds) {
         if (log.isTraceEnabled()) {
             log.trace("Executing findMatchingCredentials [{}]", credentialIds);

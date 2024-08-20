@@ -174,6 +174,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public boolean isEnabled() {
+        return false;
+    }
+
+    @Override
     public void registerActorsStats(Map<?, ?> actorsMap) {
     }
 

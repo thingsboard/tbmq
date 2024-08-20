@@ -21,7 +21,6 @@ import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
 import lombok.Data;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -50,7 +49,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Configuration
-@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @EnableCaching
 @Data
 public abstract class TBRedisCacheConfiguration {
@@ -122,7 +120,8 @@ public abstract class TBRedisCacheConfiguration {
             }
         }
 
-        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration).withInitialCacheConfigurations(cacheConfigurations).transactionAware();
+        var redisCacheManagerBuilder = RedisCacheManager.builder(cf).cacheDefaults(configuration)
+                .withInitialCacheConfigurations(cacheConfigurations).transactionAware().disableCreateOnMissingCache();
         if (cacheStatsEnabled) {
             redisCacheManagerBuilder.enableStatistics();
         }

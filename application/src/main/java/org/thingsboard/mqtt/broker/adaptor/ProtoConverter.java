@@ -130,7 +130,6 @@ public class ProtoConverter {
                 .properties(mqttProperties)
                 .isRetained(publishMsgProto.getRetain())
                 .packetId(BrokerConstants.BLANK_PACKET_ID)
-                .serialNumber(BrokerConstants.BLANK_SERIAL_NUMBER)
                 .packetType(PersistedPacketType.PUBLISH)
                 .time(System.currentTimeMillis())
                 .build();
@@ -139,7 +138,6 @@ public class ProtoConverter {
     public static QueueProtos.DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
         QueueProtos.DevicePublishMsgProto.Builder builder = QueueProtos.DevicePublishMsgProto.newBuilder()
-                .setSerialNumber(devicePublishMsg.getSerialNumber())
                 .setTime(devicePublishMsg.getTime())
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
@@ -165,7 +163,6 @@ public class ProtoConverter {
         }
 
         return DevicePublishMsg.builder()
-                .serialNumber(devicePublishMsgProto.getSerialNumber())
                 .time(devicePublishMsgProto.getTime())
                 .packetId(devicePublishMsgProto.getPacketId())
                 .payload(devicePublishMsgProto.getPayload().toByteArray())

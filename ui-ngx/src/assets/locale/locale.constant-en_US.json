@@ -147,7 +147,7 @@
     "password-policy": "Password policy",
     "minimum-password-length": "Minimum password length",
     "minimum-password-length-required": "Minimum password length is required",
-    "minimum-password-length-range": "Minimum password length should be in a range from 5 to 50",
+    "minimum-password-length-range": "Minimum password length should be in a range from 6 to 50",
     "minimum-uppercase-letters": "Minimum number of uppercase letters",
     "minimum-uppercase-letters-range": "Minimum number of uppercase letters can't be negative",
     "minimum-lowercase-letters": "Minimum number of lowercase letters",
@@ -176,13 +176,15 @@
       "connectivity": "Connectivity",
       "connectivity-settings": "Connectivity settings",
       "connectivity-settings-hint": "Connectivity settings values will be utilized across TBMQ to replace default host/port values on pages: WebSocket Client (add/edit connection), Client Credentials (check connectivity), Home (getting started).",
-      "connectivity-hint": "If host or port fields are empty, default protocol value will be used.",
+      "connectivity-hint": "If disabled, default host and port parameters will be used.",
       "default-host-port": "Default port and host configurations",
       "default-host-port-description": "These settings allow you to define default host and port parameters for various protocols utilized throughout the TBMQ system.",
       "mqtt": "MQTT",
       "mqtts": "MQTTs",
+      "mqtt-mqtts": "MQTT(s)",
       "ws": "WS",
       "wss": "WSS",
+      "ws-wss": "WS(s)",
       "ws-client-settings": "WebSocket client settings",
       "host": "Host",
       "host-required": "Host is required.",
@@ -524,8 +526,7 @@
     "qos-exactly-once": "2 - Exactly once",
     "should-be-persistent": "Application client should be persistent",
     "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
-    "filter-title": "Filter",
-    "additional-info": "Show session additional info"
+    "filter-title": "Filter"
   },
   "shared-subscription": {
     "add": "Add Application Shared Subscription",
@@ -607,7 +608,9 @@
     "dropped-messages-tooltip": "Messages that do not have subscribers or when the broker fails to deliver to subscribers because of network issues, client disconnections, or resource limitations",
     "sessions-tooltip": "Number of current MQTT sessions",
     "subscriptions-tooltip": "Number of current subscriptions",
-    "topics": "Topics"
+    "topics": "Topics",
+    "processed-bytes": "Network traffic",
+    "processed-bytes-tooltip": "Size of processed data, sent or received by the MQTT clients"
   },
   "timeinterval": {
     "seconds-interval": "{ seconds, plural, =1 {1 second} other {# seconds} }",

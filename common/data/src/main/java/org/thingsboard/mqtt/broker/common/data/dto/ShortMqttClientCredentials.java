@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 
+import java.io.Serial;
 import java.util.UUID;
 
 @Data
@@ -30,6 +31,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ShortMqttClientCredentials implements HasId {
+
+    @Serial
+    private static final long serialVersionUID = 357665496738055767L;
 
     private UUID id;
     private String name;

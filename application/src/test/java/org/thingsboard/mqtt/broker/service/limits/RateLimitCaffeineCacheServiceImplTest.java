@@ -15,22 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.local.LocalBucket;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.caffeine.CaffeineCache;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 
 import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,146 +38,167 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
 
 public class RateLimitCaffeineCacheServiceImplTest {
 
-    @Mock
-    private CacheManager cacheManager;
-
     @InjectMocks
-    private RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheService;
+    private RateLimitLocalCacheServiceImpl rateLimitLocalCacheService;
 
-    private Cache<Object, Object> caffeineCache;
-    private org.springframework.cache.Cache mockCache;
+    private AtomicLong sessionsCounter;
+    private AtomicLong applicationClientsCounter;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // Create a Caffeine cache
-        caffeineCache = Caffeine.newBuilder().build();
-        mockCache = new CaffeineCache(BrokerConstants.EMPTY_STR, caffeineCache);
+        rateLimitLocalCacheService.setSessionsLimit(5);
+        rateLimitLocalCacheService.setApplicationClientsLimit(5);
 
-        // Mock the cache manager to return the Caffeine cache
-        when(cacheManager.getCache(any())).thenReturn(mockCache);
-
-        rateLimitCaffeineCacheService.setSessionsLimit(5);
-        rateLimitCaffeineCacheService.setApplicationClientsLimit(5);
-
-        rateLimitCaffeineCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
+        rateLimitLocalCacheService.setCachePrefix(BrokerConstants.EMPTY_STR);
         // Initialize the service
-        rateLimitCaffeineCacheService.init();
+        rateLimitLocalCacheService.init();
+
+        sessionsCounter = rateLimitLocalCacheService.getSessionsCounter();
+        applicationClientsCounter = rateLimitLocalCacheService.getApplicationClientsCounter();
+
+        assertNotNull(sessionsCounter);
+        assertNotNull(applicationClientsCounter);
+    }
+
+    @Test
+    public void testConcurrentIncrementSessionCount() {
+        int threadCount = 2;
+        CountDownLatch allThreadsReadyLatch = new CountDownLatch(threadCount);
+
+        int count = 5;
+        rateLimitLocalCacheService.initSessionCount(count);
+        rateLimitLocalCacheService.initApplicationClientsCount(count);
+
+        ExecutorService executor = null;
+        try {
+            executor = Executors.newFixedThreadPool(threadCount);
+            for (int i = 0; i < 2; i++) {
+                executor.submit(() -> {
+                    allThreadsReadyLatch.countDown();
+                    try {
+                        allThreadsReadyLatch.await();
+                        rateLimitLocalCacheService.incrementSessionCount();
+                        rateLimitLocalCacheService.incrementApplicationClientsCount();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                });
+            }
+            executor.shutdown();
+            // The final value should be 7 since we started with 5 and had 2 increments
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(executor::isTerminated);
+            assertEquals(7, sessionsCounter.get());
+            assertEquals(7, applicationClientsCounter.get());
+        } finally {
+            if (executor != null) {
+                executor.shutdownNow();
+            }
+        }
     }
 
     @Test
     public void testInitSessionCount() {
         int count = 5;
-        rateLimitCaffeineCacheService.initSessionCount(count);
+        rateLimitLocalCacheService.initSessionCount(count);
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(count), actualCount);
+        assertEquals(count, sessionsCounter.get());
 
         int newCount = 10;
-        rateLimitCaffeineCacheService.initSessionCount(newCount);
+        rateLimitLocalCacheService.initSessionCount(newCount);
 
-        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(count), actualCount);
+        assertEquals(newCount, sessionsCounter.get());
     }
 
     @Test
     public void testSetSessionCount() {
         int count = 10;
-        rateLimitCaffeineCacheService.setSessionCount(count);
+        rateLimitLocalCacheService.setSessionCount(count);
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(count), actualCount);
+        assertEquals(count, sessionsCounter.get());
 
         int newCount = 15;
-        rateLimitCaffeineCacheService.setSessionCount(newCount);
+        rateLimitLocalCacheService.setSessionCount(newCount);
 
-        actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(newCount), actualCount);
+        assertEquals(newCount, sessionsCounter.get());
     }
 
     @Test
     public void testIncrementSessionCount() {
-        caffeineCache.put(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, 5L);
-        long newCount = rateLimitCaffeineCacheService.incrementSessionCount();
+        sessionsCounter.set(5);
+        long newCount = rateLimitLocalCacheService.incrementSessionCount();
 
         assertEquals(6L, newCount);
+        assertEquals(6L, sessionsCounter.get());
     }
 
     @Test
     public void testDecrementSessionCount() {
-        caffeineCache.put(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, 5L);
-        rateLimitCaffeineCacheService.decrementSessionCount();
+        sessionsCounter.set(5);
+        rateLimitLocalCacheService.decrementSessionCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(4), actualCount);
+        assertEquals(4L, sessionsCounter.get());
     }
 
     @Test
     public void testDecrementSessionCount_ZeroValue() {
-        caffeineCache.put(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, 0L);
-        rateLimitCaffeineCacheService.decrementSessionCount();
+        sessionsCounter.set(0);
+        rateLimitLocalCacheService.decrementSessionCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(0), actualCount);
+        assertEquals(0, sessionsCounter.get());
     }
 
     @Test
     public void testDecrementSessionCount_NegativeValue() {
-        caffeineCache.put(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, -1L);
-        rateLimitCaffeineCacheService.decrementSessionCount();
+        sessionsCounter.set(-1);
+        rateLimitLocalCacheService.decrementSessionCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(0), actualCount);
+        assertEquals(0, sessionsCounter.get());
     }
 
     @Test
     public void testInitApplicationClientsCount() {
         int count = 5;
-        rateLimitCaffeineCacheService.initApplicationClientsCount(count);
+        rateLimitLocalCacheService.initApplicationClientsCount(count);
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(count), actualCount);
+        assertEquals(count, applicationClientsCounter.get());
     }
 
     @Test
     public void testIncrementApplicationClientsCount() {
-        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
-        long newCount = rateLimitCaffeineCacheService.incrementApplicationClientsCount();
+        applicationClientsCounter.set(5);
+        long newCount = rateLimitLocalCacheService.incrementApplicationClientsCount();
 
         assertEquals(6L, newCount);
+        assertEquals(6L, applicationClientsCounter.get());
     }
 
     @Test
     public void testDecrementApplicationClientsCount() {
-        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 5L);
-        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+        applicationClientsCounter.set(5);
+        rateLimitLocalCacheService.decrementApplicationClientsCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(4), actualCount);
+        assertEquals(4, applicationClientsCounter.get());
     }
 
     @Test
     public void testDecrementApplicationClientsCount_ZeroValue() {
-        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, 0L);
-        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+        applicationClientsCounter.set(0);
+        rateLimitLocalCacheService.decrementApplicationClientsCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(0), actualCount);
+        assertEquals(0, applicationClientsCounter.get());
     }
 
     @Test
     public void testDecrementApplicationClientsCount_NegativeValue() {
-        caffeineCache.put(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY, -1L);
-        rateLimitCaffeineCacheService.decrementApplicationClientsCount();
+        applicationClientsCounter.set(-1);
+        rateLimitLocalCacheService.decrementApplicationClientsCount();
 
-        Long actualCount = (Long) caffeineCache.getIfPresent(CacheConstants.APP_CLIENTS_LIMIT_CACHE_KEY);
-        assertEquals(Long.valueOf(0), actualCount);
+        assertEquals(0, applicationClientsCounter.get());
     }
 
     @Test
@@ -186,13 +207,13 @@ public class RateLimitCaffeineCacheServiceImplTest {
         Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
 
-        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, bucketConfig, null);
+        rateLimitLocalCacheService = new RateLimitLocalCacheServiceImpl(bucketConfig, null);
 
         // Assuming the bucket has 10 tokens initially
         for (int i = 0; i < 10; i++) {
-            assertTrue(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
+            assertTrue(rateLimitLocalCacheService.tryConsumeDevicePersistedMsg());
         }
-        assertFalse(rateLimitCaffeineCacheService.tryConsumeDevicePersistedMsg());
+        assertFalse(rateLimitLocalCacheService.tryConsumeDevicePersistedMsg());
     }
 
     @Test
@@ -201,32 +222,32 @@ public class RateLimitCaffeineCacheServiceImplTest {
         Bandwidth limit = Bandwidth.builder().capacity(10).refillGreedy(10, Duration.ofMinutes(1)).build();
         BucketConfiguration bucketConfig = BucketConfiguration.builder().addLimit(limit).build();
 
-        rateLimitCaffeineCacheService = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, bucketConfig);
+        rateLimitLocalCacheService = new RateLimitLocalCacheServiceImpl(null, bucketConfig);
 
         // Assuming the bucket has 10 tokens initially
         for (int i = 0; i < 10; i++) {
-            assertTrue(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+            assertTrue(rateLimitLocalCacheService.tryConsumeTotalMsg());
         }
-        assertFalse(rateLimitCaffeineCacheService.tryConsumeTotalMsg());
+        assertFalse(rateLimitLocalCacheService.tryConsumeTotalMsg());
     }
 
     @Test
     public void testTryConsume_NoDevicePersistedMsgsBucketConfig() {
-        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        RateLimitLocalCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitLocalCacheServiceImpl(null, null);
         Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeDevicePersistedMsg);
         assertTrue(exception.getMessage().contains("is null"));
     }
 
     @Test
     public void testTryConsume_NoTotalMsgsBucketConfig() {
-        RateLimitCaffeineCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitCaffeineCacheServiceImpl(cacheManager, null, null);
+        RateLimitLocalCacheServiceImpl rateLimitCaffeineCacheServiceWithoutBucket = new RateLimitLocalCacheServiceImpl(null, null);
         Exception exception = assertThrows(NullPointerException.class, rateLimitCaffeineCacheServiceWithoutBucket::tryConsumeTotalMsg);
         assertTrue(exception.getMessage().contains("is null"));
     }
 
     @Test
     public void testGetLocalBucket_NullConfiguration() {
-        LocalBucket result = rateLimitCaffeineCacheService.getLocalBucket(null);
+        LocalBucket result = rateLimitLocalCacheService.getLocalBucket(null);
         assertNull(result, "Expected null when bucketConfiguration is null");
     }
 
@@ -241,7 +262,7 @@ public class RateLimitCaffeineCacheServiceImplTest {
                         .build())
                 .build();
 
-        LocalBucket result = rateLimitCaffeineCacheService.getLocalBucket(configuration);
+        LocalBucket result = rateLimitLocalCacheService.getLocalBucket(configuration);
 
         assertNotNull(result, "Expected non-null LocalBucket");
 

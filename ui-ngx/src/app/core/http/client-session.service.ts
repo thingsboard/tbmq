@@ -14,13 +14,18 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
-import { ClientSessionStatsInfo, DetailedClientSessionInfo, SessionQuery } from '@shared/models/session.model';
+import {Injectable} from '@angular/core';
+import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
+import {Observable} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {PageLink} from '@shared/models/page/page-link';
+import {PageData} from '@shared/models/page/page-data';
+import {
+  ClientSessionCredentials,
+  ClientSessionStatsInfo,
+  DetailedClientSessionInfo,
+  SessionQuery
+} from '@shared/models/session.model';
 
 @Injectable({
   providedIn: 'root'
@@ -56,5 +61,9 @@ export class ClientSessionService {
 
   public getClientSessionsStats(config?: RequestConfig): Observable<ClientSessionStatsInfo> {
     return this.http.get<ClientSessionStatsInfo>(`/api/client-session/info`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getClientSessionDetails(clientId: string, config?: RequestConfig): Observable<ClientSessionCredentials> {
+    return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 }

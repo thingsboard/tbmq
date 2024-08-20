@@ -33,5 +33,6 @@ public class ClientTypeSslMqttCredentials implements Serializable {
 
     private final ClientType type;
     private final SslMqttCredentials sslMqttCredentials;
+    private final String name;
 
 }

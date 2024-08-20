@@ -96,6 +96,7 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
   }
 
   onCloseDetails() {
+    this.toggleDetailsEditMode.emit(false);
     this.closeDetails.emit();
   }
 

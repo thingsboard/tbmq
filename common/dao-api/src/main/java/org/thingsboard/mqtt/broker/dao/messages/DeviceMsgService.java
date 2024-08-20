@@ -15,23 +15,38 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
+import java.nio.file.Path;
 import java.util.List;
 
 public interface DeviceMsgService {
 
-    void save(List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
+    // TODO: failOnConflict, kafka rebalancing issue. Need to be tested.
+    int saveAndReturnPreviousPacketId(String clientId, List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
 
     List<DevicePublishMsg> findPersistedMessages(String clientId);
 
-    List<DevicePublishMsg> findPersistedMessages(String clientId, long fromSerialNumber, long toSerialNumber);
-
     void removePersistedMessages(String clientId);
 
-    ListenableFuture<Void> tryRemovePersistedMessage(String clientId, int packetId);
+    void removePersistedMessage(String clientId, int packetId);
 
-    ListenableFuture<Void> tryUpdatePacketReceived(String clientId, int packetId);
+    void updatePacketReceived(String clientId, int packetId);
+
+    int getLastPacketId(String clientId);
+
+    void removeLastPacketId(String clientId);
+
+    void saveLastPacketId(String clientId, int lastPacketId);
+
+    /**
+     * Imports data from the CSV file.
+     *
+     * This method is used exclusively by the upgrade script to import data into the system.
+     * It is marked as deprecated and is scheduled for removal in a future major release.
+     *
+     */
+    @Deprecated(forRemoval = true, since = "2.0.0")
+    void importFromCsvFile(Path filePath);
 
 }

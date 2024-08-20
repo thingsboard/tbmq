@@ -17,10 +17,11 @@ package org.thingsboard.mqtt.broker.cache;
 
 public class CacheConstants {
 
-    public static final String PACKET_ID_AND_SERIAL_NUMBER_CACHE = "packetIdAndSerialNumber";
     public static final String MQTT_CLIENT_CREDENTIALS_CACHE = "mqttClientCredentials";
     public static final String BASIC_CREDENTIALS_PASSWORD_CACHE = "basicCredentialsPassword";
     public static final String SSL_REGEX_BASED_CREDENTIALS_CACHE = "sslRegexBasedCredentials";
+    public static final String CLIENT_SESSION_CREDENTIALS_CACHE = "clientSessionCredentials";
+    public static final String CLIENT_MQTT_VERSION_CACHE = "clientMqttVersion";
     public static final String CLIENT_SESSIONS_LIMIT_CACHE = "clientSessionsLimit";
     public static final String APP_CLIENTS_LIMIT_CACHE = "appClientsLimit";
 

@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -66,7 +66,7 @@ public class BurstSubmitStrategy implements SubmitStrategy {
 
     @Override
     public void update(Map<UUID, PublishMsgWithId> reprocessMap) {
-        Map<UUID, PublishMsgWithId> newPublishMsgMap = new LinkedHashMap<>(reprocessMap.size());
+        Map<UUID, PublishMsgWithId> newPublishMsgMap = Maps.newLinkedHashMapWithExpectedSize(reprocessMap.size());
         for (PublishMsgWithId msg : publishMsgMap.values()) {
             if (reprocessMap.containsKey(msg.getId())) {
                 newPublishMsgMap.put(msg.getId(), msg);

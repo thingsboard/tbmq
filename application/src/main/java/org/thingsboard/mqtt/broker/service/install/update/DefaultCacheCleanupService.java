@@ -45,7 +45,7 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
     public void clearCache(String fromVersion) throws Exception {
         switch (fromVersion) {
             case "1.3.0":
-                log.info("Clearing cache to upgrade from version 1.3.0 to 1.3.1");
+                log.info("Clearing cache to upgrade from version 1.3.0 to 1.4.0");
                 clearAll();
                 break;
             default:

@@ -17,8 +17,6 @@ package org.thingsboard.mqtt.broker.actors.device;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -37,12 +35,8 @@ import org.thingsboard.mqtt.broker.actors.device.messages.StopDeviceActorCommand
 import org.thingsboard.mqtt.broker.actors.shared.AbstractContextAwareMsgProcessor;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
-import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
-import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
-import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
-import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.dto.PacketIdAndSerialNumberDto;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -56,11 +50,13 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
 
 @Slf4j
 @Getter
@@ -68,8 +64,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     private final String clientId;
     private final DeviceMsgService deviceMsgService;
-    private final DeviceSessionCtxService deviceSessionCtxService;
-    private final DevicePacketIdAndSerialNumberService serialNumberService;
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ClientLogger clientLogger;
@@ -82,7 +76,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     @Setter
     private volatile ClientSessionCtx sessionCtx;
     @Setter
-    private volatile long lastPersistedMsgSentSerialNumber = -1L;
+    private volatile long lastPersistedMsgSentPacketId = 0L;
     @Setter
     private volatile boolean processedAnyMsg = false;
     private volatile UUID stopActorCommandUUID;
@@ -91,8 +85,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         super(systemContext);
         this.clientId = clientId;
         this.deviceMsgService = systemContext.getDeviceMsgService();
-        this.deviceSessionCtxService = systemContext.getDeviceSessionCtxService();
-        this.serialNumberService = systemContext.getSerialNumberService();
         this.publishMsgDeliveryService = systemContext.getPublishMsgDeliveryService();
         this.clientMqttActorManager = systemContext.getClientMqttActorManager();
         this.clientLogger = systemContext.getClientLogger();
@@ -122,7 +114,8 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
             return;
         }
-        PacketIdAndSerialNumber lastPacketIdAndSerialNumber = getLastPacketIdAndSerialNumber();
+
+        int lastPacketId = deviceMsgService.getLastPacketId(clientId);
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
             boolean anyDeviceClientConnected = sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, topicSharedSubscription);
@@ -141,7 +134,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 continue;
             }
 
-            updateMessagesBeforePublish(lastPacketIdAndSerialNumber, topicSharedSubscription, persistedMessages);
+            lastPacketId = updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, persistedMessages);
 
             try {
                 persistedMessages.forEach(this::deliverPersistedMsg);
@@ -149,40 +142,26 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 log.warn("[{}][{}] Failed to process shared subscription persisted messages.", clientId, sessionCtx.getSessionId(), e);
                 disconnect("Failed to process shared subscription persisted messages");
             }
-            deviceSessionCtxService.removeDeviceSessionContext(key);
+            deviceMsgService.removeLastPacketId(key);
         }
-        serialNumberService.saveLastSerialNumbers(Map.of(clientId, lastPacketIdAndSerialNumber));
+        deviceMsgService.saveLastPacketId(clientId, lastPacketId);
     }
 
-    void updateMessagesBeforePublish(PacketIdAndSerialNumber lastPacketIdAndSerialNumber, TopicSharedSubscription topicSharedSubscription,
-                                     List<DevicePublishMsg> persistedMessages) {
+    int updateMessagesBeforePublishAndReturnLastPacketId(int lastPacketId, TopicSharedSubscription topicSharedSubscription,
+                                                         List<DevicePublishMsg> persistedMessages) {
+        var packetIdDto = new PacketIdDto(lastPacketId);
         for (DevicePublishMsg devicePublishMessage : persistedMessages) {
-            PacketIdAndSerialNumberDto packetIdAndSerialNumberDto = getAndIncrementPacketIdAndSerialNumber(lastPacketIdAndSerialNumber);
-
-            sentPacketIdsFromSharedSubscription.put(packetIdAndSerialNumberDto.getPacketId(),
+            int currentPacketId = packetIdDto.getNextPacketId();
+            sentPacketIdsFromSharedSubscription.put(currentPacketId,
                     newSharedSubscriptionPublishPacket(topicSharedSubscription.getKey(), devicePublishMessage.getPacketId()));
-
-            devicePublishMessage.setPacketId(packetIdAndSerialNumberDto.getPacketId());
-            devicePublishMessage.setSerialNumber(packetIdAndSerialNumberDto.getSerialNumber());
+            devicePublishMessage.setPacketId(currentPacketId);
             devicePublishMessage.setQos(getMinQoSValue(topicSharedSubscription, devicePublishMessage));
         }
+        return packetIdDto.getCurrentPacketId();
     }
 
     private int getMinQoSValue(TopicSharedSubscription topicSharedSubscription, DevicePublishMsg devicePublishMessage) {
         return Math.min(topicSharedSubscription.getQos(), devicePublishMessage.getQos());
-    }
-
-    private PacketIdAndSerialNumber getLastPacketIdAndSerialNumber() {
-        try {
-            return serialNumberService.getLastPacketIdAndSerialNumber(Set.of(clientId)).getOrDefault(clientId, PacketIdAndSerialNumber.initialInstance());
-        } catch (Exception e) {
-            log.warn("[{}] Cannot get last packetId and serialNumbers", clientId, e);
-            return PacketIdAndSerialNumber.initialInstance();
-        }
-    }
-
-    PacketIdAndSerialNumberDto getAndIncrementPacketIdAndSerialNumber(PacketIdAndSerialNumber packetIdAndSerialNumber) {
-        return PacketIdAndSerialNumberDto.incrementAndGet(packetIdAndSerialNumber);
     }
 
     void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
@@ -197,7 +176,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 if (!isDup) {
                     inFlightPacketIds.add(persistedMessage.getPacketId());
                 }
-                lastPersistedMsgSentSerialNumber = persistedMessage.getSerialNumber();
+                lastPersistedMsgSentPacketId = persistedMessage.getPacketId();
                 PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
                 if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                     MqttPropertiesUtil.addMsgExpiryIntervalToProps(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
@@ -221,15 +200,12 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
-        if (publishMsg.getSerialNumber() <= lastPersistedMsgSentSerialNumber) {
+        if (publishMsg.getPacketId() <= lastPersistedMsgSentPacketId) {
             if (log.isDebugEnabled()) {
-                log.debug("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getSerialNumber());
+                log.debug("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getPacketId());
             }
             return;
         }
-
-        checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(publishMsg);
-        processedAnyMsg = true;
 
         MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
         if (msgExpiryResult.isExpired()) {
@@ -248,28 +224,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             log.warn("[{}] Failed to send PUBLISH msg", clientId, e);
             disconnect("Failed to send PUBLISH msg");
         }
-    }
-
-    void checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(DevicePublishMsg publishMsg) {
-        if (!processedAnyMsg && publishMsg.getSerialNumber() > lastPersistedMsgSentSerialNumber + 1) {
-            long nextPersistedSerialNumber = lastPersistedMsgSentSerialNumber + 1;
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Sending not processed persisted messages, 'from' serial number - {}, 'to' serial number - {}",
-                        clientId, nextPersistedSerialNumber, publishMsg.getSerialNumber());
-            }
-
-            List<DevicePublishMsg> persistedMessages = findMissedPersistedMessages(publishMsg, nextPersistedSerialNumber);
-            try {
-                persistedMessages.forEach(this::deliverPersistedMsg);
-            } catch (Exception e) {
-                log.warn("[{}] Failed to process missed persisted messages", clientId, e);
-                disconnect("Failed to process missed persisted messages");
-            }
-        }
-    }
-
-    private List<DevicePublishMsg> findMissedPersistedMessages(DevicePublishMsg publishMsg, long fromSerialNumber) {
-        return deviceMsgService.findPersistedMessages(clientId, fromSerialNumber, publishMsg.getSerialNumber());
     }
 
     private void disconnect(String message) {
@@ -294,56 +248,50 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-
-        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-        future.addListener(() -> {
-            try {
-                inFlightPacketIds.remove(msg.getPacketId());
-            } catch (Exception e) {
-                log.warn("[{}] Failed to process packet acknowledge, packetId - {}", targetClientId, msg.getPacketId(), e);
-            }
-        }, MoreExecutors.directExecutor());
+        try {
+            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+            inFlightPacketIds.remove(msg.getPacketId());
+        } catch (Exception e) {
+            log.warn("[{}] Failed to process packet acknowledge, packetId - {}", targetClientId, msg.getPacketId(), e);
+        }
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-
-        ListenableFuture<Void> future = deviceMsgService.tryUpdatePacketReceived(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-        future.addListener(() -> {
-            try {
-                inFlightPacketIds.remove(msg.getPacketId());
-                if (sessionCtx != null) {
-                    publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
-                }
-            } catch (Exception e) {
-                log.warn("[{}] Failed to process packet received, packetId - {}", targetClientId, msg.getPacketId(), e);
+        try {
+            deviceMsgService.updatePacketReceived(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+            inFlightPacketIds.remove(msg.getPacketId());
+            if (sessionCtx != null) {
+                publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
             }
-        }, MoreExecutors.directExecutor());
+        } catch (Exception e) {
+            log.warn("[{}] Failed to process packet received, packetId - {}", targetClientId, msg.getPacketId(), e);
+        }
     }
 
     public void processPacketReceivedNoDelivery(PacketReceivedNoDeliveryEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-
-        ListenableFuture<Void> future = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-        future.addListener(() -> inFlightPacketIds.remove(msg.getPacketId()), MoreExecutors.directExecutor());
+        try {
+            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+            inFlightPacketIds.remove(msg.getPacketId());
+        } catch (Exception e) {
+            log.warn("[{}] Failed to process packet received no delivery, packetId - {}", targetClientId, msg.getPacketId(), e);
+        }
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-
-        ListenableFuture<Void> resultFuture = deviceMsgService.tryRemovePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-        DonAsynchron.withCallback(
-                resultFuture,
-                unused -> {
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
-                    }
-                },
-                throwable -> log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), throwable)
-        );
+        try {
+            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
+            }
+        } catch (Exception e) {
+            log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), e);
+        }
     }
 
     private String getTargetClientId(SharedSubscriptionPublishPacket packet) {

@@ -32,7 +32,8 @@ export enum StatsChartType {
   outgoingMsgs = 'outgoingMsgs',
   droppedMsgs = 'droppedMsgs',
   sessions = 'sessions',
-  subscriptions = 'subscriptions'
+  subscriptions = 'subscriptions',
+  processedBytes = 'processedBytes',
 }
 
 export const TOTAL_KEY = 'total';
@@ -47,7 +48,8 @@ export const StatsChartTypeTranslationMap = new Map<string, string>(
     [StatsChartType.outgoingMsgs, 'overview.outgoing-messages'],
     [StatsChartType.droppedMsgs, 'overview.dropped-messages'],
     [StatsChartType.sessions, 'overview.sessions'],
-    [StatsChartType.subscriptions, 'overview.subscriptions']
+    [StatsChartType.subscriptions, 'overview.subscriptions'],
+    [StatsChartType.processedBytes, 'overview.processed-bytes'],
   ]
 );
 
@@ -57,7 +59,8 @@ export const ChartTooltipTranslationMap = new Map<string, string>(
     [StatsChartType.outgoingMsgs, 'overview.outgoing-messages-tooltip'],
     [StatsChartType.droppedMsgs, 'overview.dropped-messages-tooltip'],
     [StatsChartType.sessions, 'overview.sessions-tooltip'],
-    [StatsChartType.subscriptions, 'overview.subscriptions-tooltip']
+    [StatsChartType.subscriptions, 'overview.subscriptions-tooltip'],
+    [StatsChartType.processedBytes, 'overview.processed-bytes-tooltip'],
   ]
 );
 
@@ -67,7 +70,8 @@ export const MonitoringChartColorMap = new Map<string, string[]>(
     [StatsChartType.outgoingMsgs, ['#4A6EA8', '#BE4BD1', '#604BDB', '#4A6EA8', '#B39B7C']],
     [StatsChartType.droppedMsgs, ['#47848F', '#4E73C2', '#1860F5', '#47848F', '#9C8175']],
     [StatsChartType.sessions, ['#4FA889', '#3A4142', '#51C0DB', '#4FA889', '#B38381']],
-    [StatsChartType.subscriptions, ['#499E55', '#303836', '#4BD1A9', '#AA799F', '#BE4BD1']]
+    [StatsChartType.subscriptions, ['#499E55', '#303836', '#4BD1A9', '#AA799F', '#BE4BD1']],
+    [StatsChartType.processedBytes, ['#58519E', '#4FA889', '#A356D1', '#AAA081', '#D1A656']],
   ]
 );
 

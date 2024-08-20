@@ -32,9 +32,10 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { MqttQoS, MqttQoSType, mqttQoSTypes, TopicSubscription } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
+import { SubscriptionOptions } from '@shared/models/ws-client.model';
 
 @Component({
-  selector: 'tb-subscriptions',
+  selector: 'tb-session-subscriptions',
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.scss'],
   providers: [{
@@ -125,7 +126,10 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     const group = this.fb.group({
       shareName: [{value: null, disabled: true}, []],
       topicFilter: [null, [Validators.required]],
-      qos: [MqttQoS.AT_LEAST_ONCE, [Validators.required]]
+      qos: [MqttQoS.AT_LEAST_ONCE, []],
+      retainAsPublish: [true, []],
+      retainHandling: [0, []],
+      noLocal: [false, []]
     });
     this.subscriptionsFormArray().push(group);
   }
@@ -145,6 +149,14 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   mqttQoSValue(mqttQoSValue: MqttQoSType): string {
     return this.translate.instant(mqttQoSValue.name);
+  }
+
+  subscriptionOptionsChanged(value: SubscriptionOptions, topicFilter: AbstractControl<SubscriptionOptions>) {
+    topicFilter.patchValue({
+      retainAsPublish: value.retainAsPublish,
+      retainHandling: value.retainHandling,
+      noLocal: value.noLocal,
+    });
   }
 
   private updateView() {

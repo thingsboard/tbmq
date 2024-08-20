@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
@@ -30,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
@@ -48,6 +51,7 @@ public class ClientSessionController extends BaseController {
 
     private final SessionSubscriptionService sessionSubscriptionService;
     private final ClientSessionPageInfos clientSessionPageInfos;
+    private final CacheNameResolver cacheNameResolver;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/client-session/remove", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
@@ -164,4 +168,17 @@ public class ClientSessionController extends BaseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/client-session/details", params = {"clientId"}, method = RequestMethod.GET)
+    @ResponseBody
+    public ClientSessionAdvancedDto getClientSessionDetails(@RequestParam String clientId) throws ThingsboardException {
+        String credentialsName = getValueFromCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
+        String mqttVersion = getValueFromCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE, clientId);
+        return new ClientSessionAdvancedDto(credentialsName, mqttVersion);
+    }
+
+    private String getValueFromCache(String cache, String clientId) {
+        String cacheValue = cacheNameResolver.getCache(cache).get(clientId, String.class);
+        return cacheValue == null ? "Unknown" : cacheValue;
+    }
 }

@@ -15,9 +15,9 @@
 ///
 
 import _ from 'lodash';
-import { Observable, Subject } from 'rxjs';
-import { finalize, share } from 'rxjs/operators';
-import { DataSizeUnitType, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import {Observable, Subject} from 'rxjs';
+import {finalize, share} from 'rxjs/operators';
+import {DataSizeUnitType, WebSocketTimeUnit} from '@shared/models/ws-client.model';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -589,8 +589,10 @@ export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType,
       return bytes / 1024;
     case DataSizeUnitType.MEGABYTE:
       return bytes / (1024 * 1024);
+    case DataSizeUnitType.GIGABYTE:
+      return bytes / (1024 * 1024 * 1024);
     default:
-      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`)
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', 'megabytes', 'gigabytes'`)
   }
 }
 
@@ -602,7 +604,9 @@ const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
       return value * 1024;
     case DataSizeUnitType.MEGABYTE:
       return value * 1024 * 1024;
+    case DataSizeUnitType.GIGABYTE:
+      return value * 1024 * 1024 * 1024;
     default:
-      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', or 'megabytes'`);
+      throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', 'megabytes', 'gigabytes'`);
   }
 }

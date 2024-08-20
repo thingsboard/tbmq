@@ -299,9 +299,9 @@ export class CheckConnectivityDialogComponent extends
 
   private setCommonCommands(config: MqttCommandConfig): string {
     const clientInfoCommands: string[] = [];
-    if (config.clientId) clientInfoCommands.push(`-i '${config.clientId}'`);
-    if (config.userName) clientInfoCommands.push(`-u '${config.userName}'`);
-    if (config.password) clientInfoCommands.push(`-P '${config.password}'`);
+    if (config.clientId) clientInfoCommands.push(`-i "${config.clientId}"`);
+    if (config.userName) clientInfoCommands.push(`-u "${config.userName}"`);
+    if (config.password) clientInfoCommands.push(`-P "${config.password}"`);
     if (config.cleanSession) clientInfoCommands.push('-c');
     return clientInfoCommands.join(' ');
   }

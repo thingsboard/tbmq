@@ -16,11 +16,19 @@
 @import 'constants';
 
 :host {
+  overflow: auto;
+
   mat-toolbar {
-    position: sticky;
+    overflow: hidden;
+    position: absolute;
     top: 0;
-    height: 42px;
+    left: 0;
     z-index: 1;
+    height: 42px;
+
+    + div {
+      margin-top: 42px;
+    }
   }
 
   .chart-container {

@@ -19,23 +19,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class DeviceMsgAcknowledgeStrategyFactory {
+
     private final DeviceAckStrategyConfiguration ackStrategyConfiguration;
 
     public DeviceAckStrategy newInstance(String consumerId) {
-        switch (ackStrategyConfiguration.getType()) {
-            case SKIP_ALL:
-                return new SkipStrategy(consumerId);
-            case RETRY_ALL:
-                return new RetryStrategy(consumerId, ackStrategyConfiguration);
-            default:
-                throw new RuntimeException("DeviceAckStrategy with type " + ackStrategyConfiguration.getType() + " is not supported!");
-        }
+        return switch (ackStrategyConfiguration.getType()) {
+            case SKIP_ALL -> new SkipStrategy(consumerId);
+            case RETRY_ALL -> new RetryStrategy(consumerId, ackStrategyConfiguration);
+            default ->
+                    throw new RuntimeException("AckStrategy with type " + ackStrategyConfiguration.getType() + " is not supported!");
+        };
     }
 
     @RequiredArgsConstructor
@@ -43,17 +46,23 @@ public class DeviceMsgAcknowledgeStrategyFactory {
         private final String consumerId;
 
         @Override
-        public DeviceProcessingDecision analyze(DevicePackProcessingContext processingContext) {
-            if (!processingContext.isSuccessful()) {
-                log.debug("[{}] Skip reprocess for {} messages.", consumerId, processingContext.getMessages().size());
+        public DeviceProcessingDecision analyze(DevicePackProcessingResult result) {
+            if (!result.getPendingMap().isEmpty() || !result.getFailedMap().isEmpty()) {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Skip reprocess for {} failed and {} timeout messages.", consumerId, result.getFailedMap().size(), result.getPendingMap().size());
+                }
             }
             if (log.isTraceEnabled()) {
-                processingContext.getMessages().forEach((msg) ->
-                        log.trace("[{}] Failed message: clientId - {}, topic - {}.",
-                                consumerId, msg.getClientId(), msg.getTopic())
+                result.getFailedMap().forEach((clientId, pack) ->
+                        log.trace("[{}] Failed messages: clientId - {}, pack size - {}.",
+                                consumerId, clientId, pack.messages().size())
+                );
+                result.getPendingMap().forEach((clientId, pack) ->
+                        log.trace("[{}] Timeout messages: clientId - {}, pack size - {}.",
+                                consumerId, clientId, pack.messages().size())
                 );
             }
-            return new DeviceProcessingDecision(true);
+            return new DeviceProcessingDecision(true, Collections.emptyMap());
         }
     }
 
@@ -71,20 +80,33 @@ public class DeviceMsgAcknowledgeStrategyFactory {
         private int retryCount;
 
         @Override
-        public DeviceProcessingDecision analyze(DevicePackProcessingContext processingContext) {
-            if (processingContext.isSuccessful()) {
-                return new DeviceProcessingDecision(true);
+        public DeviceProcessingDecision analyze(DevicePackProcessingResult result) {
+            Map<String, ClientIdMessagesPack> pendingMap = result.getPendingMap();
+            Map<String, ClientIdMessagesPack> failedMap = result.getFailedMap();
+            if (pendingMap.isEmpty() && failedMap.isEmpty()) {
+                return new DeviceProcessingDecision(true, Collections.emptyMap());
             }
             if (maxRetries != 0 && ++retryCount > maxRetries) {
-                log.debug("[{}] Skip reprocess due to max retries.", consumerId);
-                return new DeviceProcessingDecision(true);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Skip reprocess due to max retries.", consumerId);
+                }
+                return new DeviceProcessingDecision(true, Collections.emptyMap());
             }
-            log.debug("[{}] Going to reprocess {} messages", consumerId, processingContext.getMessages().size());
+            ConcurrentMap<String, ClientIdMessagesPack> toReprocess = new ConcurrentHashMap<>();
+            toReprocess.putAll(pendingMap);
+            toReprocess.putAll(failedMap);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Going to reprocess {} packs", consumerId, toReprocess);
+            }
             if (log.isTraceEnabled()) {
-                processingContext.getMessages().forEach((msg) ->
-                        log.trace("[{}] Going to reprocess message: clientId - {}, topic - {}.",
-                                consumerId, msg.getClientId(), msg.getTopic())
+                failedMap.forEach((clientId, pack) ->
+                        log.trace("[{}] Going to reprocess failed messages: clientId - {}, pack size - {}.",
+                                consumerId, clientId, pack.messages().size())
                 );
+                pendingMap.forEach((clientId, pack) ->
+                        log.trace("[{}] Going to reprocess timed-out messages: clientId - {}, pack size - {}.",
+                                consumerId, clientId, pack.messages().size()
+                ));
             }
             if (pauseBetweenRetries > 0) {
                 try {
@@ -93,7 +115,8 @@ public class DeviceMsgAcknowledgeStrategyFactory {
                     log.error("[{}] Failed to pause for retry.", consumerId);
                 }
             }
-            return new DeviceProcessingDecision(false);
+            return new DeviceProcessingDecision(false, toReprocess);
         }
     }
+
 }

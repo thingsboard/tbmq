@@ -32,6 +32,8 @@ public interface MqttClientCredentialsDao extends Dao<MqttClientCredentials> {
 
     MqttClientCredentials findSystemWebSocketCredentials();
 
+    MqttClientCredentials findCredentialsByName(String name);
+
     PageData<MqttClientCredentials> findAll(PageLink pageLink);
 
     PageData<MqttClientCredentials> findAllV2(ClientCredentialsQuery query);

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.util.DomainNameValidator;
+import org.thingsboard.mqtt.broker.common.util.HostNameValidator;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
@@ -120,7 +120,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                         });
                         if (connectivityInfoMap != null) {
                             connectivityInfoMap.forEach((key, value) -> {
-                                if (value.isEnabled() && !DomainNameValidator.isValidDomainName(value.getHost())) {
+                                if (value.isEnabled() && !HostNameValidator.isValidHostName(value.getHost())) {
                                     throw new DataValidationException("Invalid host name found: " + value.getHost());
                                 }
                             });

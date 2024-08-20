@@ -417,6 +417,11 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         return clientActorStats;
     }
 
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
     @Scheduled(fixedDelayString = "${stats.print-interval-ms}")
     public void printStats() {
         log.info("----------------------------------------------------------------");
@@ -447,7 +452,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             String statsStr = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Stats: {}", StatsType.DEVICE_PROCESSOR.getPrintName(), stats.getConsumerId(), statsStr);
+            log.info("[{}][{}] Average pack size - {}, pack processing time - {}, client msgs processing time - {} ms, counters stats: {}", StatsType.DEVICE_PROCESSOR.getPrintName(), stats.getConsumerId(),
+                    stats.getAvgPackSize(), stats.getAvgPackProcessingTime(), stats.getAvgClientIdMsgPackProcessingTime(), statsStr);
             stats.reset();
         }
 

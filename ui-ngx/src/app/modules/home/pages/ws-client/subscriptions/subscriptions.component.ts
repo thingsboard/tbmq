@@ -27,7 +27,7 @@ import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 
 @Component({
-  selector: 'tb-subscriptions',
+  selector: 'tb-ws-subscriptions',
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.scss']
 })

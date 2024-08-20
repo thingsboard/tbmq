@@ -67,8 +67,8 @@
         <section class="tb-form-panel no-border no-padding">
           <div class="tb-form-panel no-border no-padding toggle-group">
             <tb-toggle-select appearance="fill" [(ngModel)]="protocol">
-              <tb-toggle-option value="mqtt">{{ 'admin.settings.mqtt' | translate }}</tb-toggle-option>
-              <tb-toggle-option value="ws">{{ "admin.settings.ws" | translate }}</tb-toggle-option>
+              <tb-toggle-option value="mqtt">{{ 'admin.settings.mqtt-mqtts' | translate }}</tb-toggle-option>
+              <tb-toggle-option value="ws">{{ "admin.settings.ws-wss" | translate }}</tb-toggle-option>
             </tb-toggle-select>
             <div class="tb-form-hint tb-primary-fill">{{ 'admin.settings.connectivity-hint' | translate }}</div>
           </div>
@@ -117,7 +117,8 @@
                       (click)="discardConnectivitySettings()"
                       type="button">{{'action.undo' | translate}}
               </button>
-              <button mat-button mat-raised-button color="primary" [disabled]="(isLoading$ | async) || connectivitySettingsForm.invalid || !connectivitySettingsForm.dirty"
+              <button mat-button mat-raised-button color="primary"
+                      [disabled]="(isLoading$ | async) || connectivitySettingsForm.invalid || !connectivitySettingsForm.dirty"
                       type="submit">{{'action.save' | translate}}
               </button>
             </div>

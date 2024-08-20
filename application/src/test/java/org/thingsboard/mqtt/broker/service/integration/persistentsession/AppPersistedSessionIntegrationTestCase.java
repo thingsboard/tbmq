@@ -178,8 +178,11 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         });
         persistedClient.connect("localhost", mqttPort).get();
 
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
-        Assert.assertNotNull(clientSessionCtx);
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
+            return clientSessionCtx != null;
+        });
+
         ClientSession persistedClientSession = clientSessionCache.getClientSession(TEST_CLIENT_ID);
         Assert.assertNotNull(persistedClientSession);
         SessionInfo sessionInfo = persistedClientSession.getSessionInfo();
@@ -250,8 +253,12 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         persistedClient.connect("localhost", mqttPort).get();
 
         ClientSession persistedClientSession = clientSessionCache.getClientSession(TEST_CLIENT_ID);
-        ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
-        Assert.assertNotNull(clientSessionCtx);
+
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            ClientSessionCtx clientSessionCtx = clientSessionCtxService.getClientSessionCtx(TEST_CLIENT_ID);
+            return clientSessionCtx != null;
+        });
+
         Assert.assertTrue(persistedClientSession.isConnected());
         Assert.assertTrue(persistedClientSession.getSessionInfo().isCleanSession());
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);

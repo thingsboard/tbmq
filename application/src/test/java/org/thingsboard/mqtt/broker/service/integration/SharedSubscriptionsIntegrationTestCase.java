@@ -38,7 +38,6 @@ import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionSe
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.DbConnectionChecker;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
@@ -56,8 +55,6 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
     static final int TOTAL_MSG_COUNT = 10;
 
-    @Autowired
-    private DbConnectionChecker dbConnectionChecker;
     @Autowired
     private ClientSessionService clientSessionService;
     @Autowired
@@ -323,8 +320,6 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
 
     @Test
     public void givenTwoPersistentClients_whenBothGotDisconnectedAndMessagesSent_thenBothConnectedAndFirstOneReceiveAllMessages() throws Throwable {
-        dbConnectionChecker.setDbConnected(true);
-
         CountDownLatch receivedResponses = new CountDownLatch(TOTAL_MSG_COUNT);
 
         AtomicInteger shareSubClient1ReceivedMessages = new AtomicInteger();

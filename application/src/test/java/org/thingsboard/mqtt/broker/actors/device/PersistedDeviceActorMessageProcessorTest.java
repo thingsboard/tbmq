@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.device;
 
-import com.google.common.util.concurrent.Futures;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Before;
@@ -34,11 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEven
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
-import org.thingsboard.mqtt.broker.dao.client.device.DevicePacketIdAndSerialNumberService;
-import org.thingsboard.mqtt.broker.dao.client.device.DeviceSessionCtxService;
-import org.thingsboard.mqtt.broker.dao.client.device.PacketIdAndSerialNumber;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.dto.PacketIdAndSerialNumberDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -58,26 +53,23 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PersistedDeviceActorMessageProcessorTest {
 
     private static final String SS_TEST_KEY = "testKey";
-    private static final String CLIENT = "client";
+    private static final String CLIENT_ID = "client";
 
     PersistedDeviceActorMessageProcessor persistedDeviceActorMessageProcessor;
 
     DeviceMsgService deviceMsgService;
-    DeviceSessionCtxService deviceSessionCtxService;
-    DevicePacketIdAndSerialNumberService serialNumberService;
     PublishMsgDeliveryService publishMsgDeliveryService;
     ClientMqttActorManager clientMqttActorManager;
     ClientLogger clientLogger;
@@ -89,8 +81,6 @@ public class PersistedDeviceActorMessageProcessorTest {
         ActorSystemContext actorSystemContext = mock(ActorSystemContext.class);
 
         deviceMsgService = mock(DeviceMsgService.class);
-        deviceSessionCtxService = mock(DeviceSessionCtxService.class);
-        serialNumberService = mock(DevicePacketIdAndSerialNumberService.class);
         publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         clientLogger = mock(ClientLogger.class);
@@ -98,21 +88,19 @@ public class PersistedDeviceActorMessageProcessorTest {
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
 
         when(actorSystemContext.getDeviceMsgService()).thenReturn(deviceMsgService);
-        when(actorSystemContext.getDeviceSessionCtxService()).thenReturn(deviceSessionCtxService);
-        when(actorSystemContext.getSerialNumberService()).thenReturn(serialNumberService);
         when(actorSystemContext.getPublishMsgDeliveryService()).thenReturn(publishMsgDeliveryService);
         when(actorSystemContext.getClientMqttActorManager()).thenReturn(clientMqttActorManager);
         when(actorSystemContext.getClientLogger()).thenReturn(clientLogger);
         when(actorSystemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
         when(actorSystemContext.getSharedSubscriptionCacheService()).thenReturn(sharedSubscriptionCacheService);
 
-        this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(actorSystemContext, CLIENT));
+        this.persistedDeviceActorMessageProcessor = spy(new PersistedDeviceActorMessageProcessor(actorSystemContext, CLIENT_ID));
     }
 
     @After
-    public void tearDown() throws Exception {
-        Mockito.reset(deviceMsgService, deviceSessionCtxService, serialNumberService, publishMsgDeliveryService,
-                clientMqttActorManager, clientLogger, deviceActorConfig, sharedSubscriptionCacheService);
+    public void tearDown() {
+        Mockito.reset(deviceMsgService, publishMsgDeliveryService, clientMqttActorManager,
+                clientLogger, deviceActorConfig, sharedSubscriptionCacheService);
     }
 
     @Test
@@ -120,7 +108,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         persistedDeviceActorMessageProcessor.processDeviceConnect(new DeviceConnectedEventMsg(ctx));
 
-        verify(deviceMsgService, times(1)).findPersistedMessages(eq(CLIENT));
+        verify(deviceMsgService).findPersistedMessages(eq(CLIENT_ID));
         assertEquals(persistedDeviceActorMessageProcessor.getSessionCtx(), ctx);
     }
 
@@ -132,12 +120,15 @@ public class PersistedDeviceActorMessageProcessorTest {
                         sharedSubscription
                 )
         );
-        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT), eq(sharedSubscription))).thenReturn(true);
+        int expectedPacketId = 10;
+        when(deviceMsgService.getLastPacketId(CLIENT_ID)).thenReturn(expectedPacketId);
+        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(true);
 
         persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
 
-        verify(deviceMsgService, times(0)).findPersistedMessages(anyString());
-        verify(deviceSessionCtxService, times(0)).removeDeviceSessionContext(anyString());
+        verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
+        verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
+        verifyNoMoreInteractions(deviceMsgService);
     }
 
     @Test
@@ -148,12 +139,15 @@ public class PersistedDeviceActorMessageProcessorTest {
                         sharedSubscription
                 )
         );
-        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT), eq(sharedSubscription))).thenReturn(false);
+        int expectedPacketId = 10;
+        when(deviceMsgService.getLastPacketId(CLIENT_ID)).thenReturn(expectedPacketId);
+        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(false);
 
         persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
 
-        verify(deviceMsgService, times(0)).findPersistedMessages(anyString());
-        verify(deviceSessionCtxService, times(0)).removeDeviceSessionContext(anyString());
+        verify(deviceMsgService).getLastPacketId(CLIENT_ID);
+        verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
+        verifyNoMoreInteractions(deviceMsgService);
     }
 
     @Test
@@ -167,6 +161,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .properties(MqttProperties.NO_PROPERTIES)
                 .build();
 
+        int lastPacketId = 1;
+        when(deviceMsgService.getLastPacketId(CLIENT_ID)).thenReturn(lastPacketId);
         when(deviceMsgService.findPersistedMessages("ss_g1_tf")).thenReturn(List.of(devicePublishMsg));
 
         TopicSharedSubscription sharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
@@ -175,17 +171,18 @@ public class PersistedDeviceActorMessageProcessorTest {
                         sharedSubscription
                 )
         );
-        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT), eq(sharedSubscription))).thenReturn(false);
+        when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(false);
 
         persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
 
-        verify(deviceMsgService, times(1)).findPersistedMessages(eq("ss_g1_tf"));
-        verify(deviceSessionCtxService, times(1)).removeDeviceSessionContext(eq("ss_g1_tf"));
-        verify(serialNumberService, times(1)).saveLastSerialNumbers(any());
+        verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
+        verify(deviceMsgService).findPersistedMessages(eq("ss_g1_tf"));
+        verify(deviceMsgService).removeLastPacketId(eq("ss_g1_tf"));
+        verify(deviceMsgService).saveLastPacketId(eq(CLIENT_ID), eq(lastPacketId + 1));
     }
 
     @Test
-    public void givenTopicSharedSubscriptionAndMessages_whenUpdateMessagesBeforePublish_thenGetExpectedResult() {
+    public void givenTopicSharedSubscriptionAndMessages_whenUpdateMessagesBeforePublish_AndReturnLastPacketId_thenGetExpectedResult() {
         DevicePublishMsg msg1 = DevicePublishMsg
                 .builder()
                 .packetId(100)
@@ -202,22 +199,19 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .qos(2)
                 .build();
 
-        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.newInstance(1, 0L);
+        int lastPacketId = 1;
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
         List<DevicePublishMsg> devicePublishMsgList = List.of(msg1, msg2, msg3);
 
-        persistedDeviceActorMessageProcessor.updateMessagesBeforePublish(packetIdAndSerialNumber, topicSharedSubscription, devicePublishMsgList);
+        persistedDeviceActorMessageProcessor.updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, devicePublishMsgList);
 
         assertEquals(2, devicePublishMsgList.get(0).getPacketId().intValue());
-        assertEquals(1, devicePublishMsgList.get(0).getSerialNumber().longValue());
         assertEquals(0, devicePublishMsgList.get(0).getQos().intValue());
 
         assertEquals(3, devicePublishMsgList.get(1).getPacketId().intValue());
-        assertEquals(2, devicePublishMsgList.get(1).getSerialNumber().longValue());
         assertEquals(1, devicePublishMsgList.get(1).getQos().intValue());
 
         assertEquals(4, devicePublishMsgList.get(2).getPacketId().intValue());
-        assertEquals(3, devicePublishMsgList.get(2).getSerialNumber().longValue());
         assertEquals(1, devicePublishMsgList.get(2).getQos().intValue());
 
         ConcurrentMap<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription();
@@ -237,8 +231,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, times(0)).sendPublishMsgToClient(any(), any());
-        verify(publishMsgDeliveryService, times(1)).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
     }
 
     @Test
@@ -256,8 +250,8 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, times(0)).sendPublishMsgToClient(any(), any());
-        verify(publishMsgDeliveryService, times(0)).sendPubRelMsgToClient(any(), anyInt());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
     }
 
     @Test
@@ -269,7 +263,6 @@ public class PersistedDeviceActorMessageProcessorTest {
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
                 .packetId(101)
-                .serialNumber(100L)
                 .packetType(PersistedPacketType.PUBLISH)
                 .time(System.currentTimeMillis())
                 .qos(1)
@@ -277,11 +270,11 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, times(1)).sendPublishMsgToClient(any(), any());
-        verify(publishMsgDeliveryService, times(0)).sendPubRelMsgToClient(any(), anyInt());
+        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
 
         assertEquals(1, persistedDeviceActorMessageProcessor.getInFlightPacketIds().size());
-        assertEquals(100L, persistedDeviceActorMessageProcessor.getLastPersistedMsgSentSerialNumber());
+        assertEquals(101L, persistedDeviceActorMessageProcessor.getLastPersistedMsgSentPacketId());
     }
 
     @Test
@@ -295,14 +288,11 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenDevicePublishMsg_whenSerialNumberIsLessThanLastPersistedMsgSentSerialNumber_thenStopProcessing() {
-        DevicePublishMsg devicePublishMsg = DevicePublishMsg
-                .builder()
-                .serialNumber(-2L)
-                .build();
+        DevicePublishMsg devicePublishMsg = DevicePublishMsg.builder().packetId(0).build();
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, times(0)).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
     }
 
     @Test
@@ -312,14 +302,14 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
-                .serialNumber(1L)
+                .packetId(2)
                 .time(System.currentTimeMillis())
                 .properties(properties)
                 .build();
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, times(0)).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
     }
 
     @Test
@@ -329,73 +319,26 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
-                .serialNumber(0L)
                 .packetId(1)
                 .time(System.currentTimeMillis())
                 .properties(properties)
-                .clientId(CLIENT)
+                .clientId(CLIENT_ID)
                 .payload(null)
                 .qos(1)
                 .build();
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, times(1)).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any());
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().contains(1));
     }
 
     @Test
-    public void givenDevicePublishMsg_whenCheckForMissedMessagesAndProcessBeforeFirstIncomingMsg_thenVerifiedMethodExecution() {
-        persistedDeviceActorMessageProcessor.setLastPersistedMsgSentSerialNumber(5L);
-
-        DevicePublishMsg devicePublishMsg = DevicePublishMsg
-                .builder()
-                .serialNumber(10L)
-                .build();
-
-        when(deviceMsgService.findPersistedMessages(anyString(), anyLong(), anyLong())).thenReturn(List.of());
-
-        persistedDeviceActorMessageProcessor.checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(devicePublishMsg);
-
-        verify(deviceMsgService, times(1)).findPersistedMessages(eq(CLIENT), eq(6L), eq(10L));
-    }
-
-    @Test
-    public void givenNextDevicePublishMsg_whenCheckForMissedMessagesAndProcessBeforeFirstIncomingMsg_thenVerifiedMethodExecution() {
-        persistedDeviceActorMessageProcessor.setLastPersistedMsgSentSerialNumber(9L);
-
-        DevicePublishMsg devicePublishMsg = DevicePublishMsg
-                .builder()
-                .serialNumber(10L)
-                .build();
-        persistedDeviceActorMessageProcessor.checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(devicePublishMsg);
-
-        verify(deviceMsgService, times(0)).findPersistedMessages(anyString(), anyLong(), anyLong());
-    }
-
-    @Test
-    public void givenDevicePublishMsgAndAlreadyProcessedMsg_whenCheckForMissedMessagesAndProcessBeforeFirstIncomingMsg_thenVerifiedMethodExecution() {
-        persistedDeviceActorMessageProcessor.setProcessedAnyMsg(true);
-
-        DevicePublishMsg devicePublishMsg = DevicePublishMsg
-                .builder()
-                .serialNumber(10L)
-                .build();
-        persistedDeviceActorMessageProcessor.checkForMissedMessagesAndProcessBeforeFirstIncomingMsg(devicePublishMsg);
-
-        verify(deviceMsgService, times(0)).findPersistedMessages(anyString(), anyLong(), anyLong());
-    }
-
-    @Test
     public void givenPacketAcknowledgedEventMsg_whenProcessPacketAcknowledge_thenVerifiedMethodExecution() {
         persistedDeviceActorMessageProcessor.getInFlightPacketIds().add(1);
-
-        when(deviceMsgService.tryRemovePersistedMessage(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(1));
-
-        verify(deviceMsgService, times(1)).tryRemovePersistedMessage(eq(CLIENT), eq(1));
-
+        verify(deviceMsgService).removePersistedMessage(eq(CLIENT_ID), eq(1));
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
 
@@ -406,11 +349,8 @@ public class PersistedDeviceActorMessageProcessorTest {
         Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription();
         sentPacketIdsFromSharedSubscription.put(1, new SharedSubscriptionPublishPacket(SS_TEST_KEY, 200));
 
-        when(deviceMsgService.tryRemovePersistedMessage(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketAcknowledge(new PacketAcknowledgedEventMsg(1));
-
-        verify(deviceMsgService, times(1)).tryRemovePersistedMessage(eq(SS_TEST_KEY), eq(200));
-
+        verify(deviceMsgService).removePersistedMessage(eq(SS_TEST_KEY), eq(200));
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
 
@@ -421,11 +361,10 @@ public class PersistedDeviceActorMessageProcessorTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
         persistedDeviceActorMessageProcessor.setSessionCtx(ctx);
 
-        when(deviceMsgService.tryUpdatePacketReceived(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketReceived(new PacketReceivedEventMsg(1));
 
-        verify(deviceMsgService, times(1)).tryUpdatePacketReceived(eq(CLIENT), eq(1));
-        verify(publishMsgDeliveryService, times(1)).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(deviceMsgService).updatePacketReceived(eq(CLIENT_ID), eq(1));
+        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
@@ -440,21 +379,19 @@ public class PersistedDeviceActorMessageProcessorTest {
         Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription();
         sentPacketIdsFromSharedSubscription.put(1, new SharedSubscriptionPublishPacket(SS_TEST_KEY, 200));
 
-        when(deviceMsgService.tryUpdatePacketReceived(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketReceived(new PacketReceivedEventMsg(1));
 
-        verify(deviceMsgService, times(1)).tryUpdatePacketReceived(eq(SS_TEST_KEY), eq(200));
-        verify(publishMsgDeliveryService, times(1)).sendPubRelMsgToClient(eq(ctx), eq(1));
+        verify(deviceMsgService).updatePacketReceived(eq(SS_TEST_KEY), eq(200));
+        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
 
     @Test
     public void givenPacketCompletedEventMsg_whenProcessPacketComplete_thenVerifiedMethodExecution() {
-        when(deviceMsgService.tryRemovePersistedMessage(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketComplete(new PacketCompletedEventMsg(1));
 
-        verify(deviceMsgService, times(1)).tryRemovePersistedMessage(eq(CLIENT), eq(1));
+        verify(deviceMsgService).removePersistedMessage(eq(CLIENT_ID), eq(1));
     }
 
     @Test
@@ -462,72 +399,48 @@ public class PersistedDeviceActorMessageProcessorTest {
         Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription();
         sentPacketIdsFromSharedSubscription.put(1, new SharedSubscriptionPublishPacket(SS_TEST_KEY, 200));
 
-        when(deviceMsgService.tryRemovePersistedMessage(anyString(), anyInt())).thenReturn(Futures.immediateVoidFuture());
         persistedDeviceActorMessageProcessor.processPacketComplete(new PacketCompletedEventMsg(1));
 
-        verify(deviceMsgService, times(1)).tryRemovePersistedMessage(eq(SS_TEST_KEY), eq(200));
+        verify(deviceMsgService).removePersistedMessage(eq(SS_TEST_KEY), eq(200));
     }
 
     @Test
-    public void givenInitialPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
-        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.initialInstance();
+    public void givenInitialPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = 0; // no last_packet_id in redis
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(0).build();
 
-        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(1, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(0, packetIdAndSerialNumberDto.getSerialNumber());
-
-        packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(2, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(1, packetIdAndSerialNumberDto.getSerialNumber());
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(1, lastPacketId);
+        assertEquals(1, (int) msg.getPacketId());
+        assertEquals(0, (int) msg.getQos());
     }
 
     @Test
-    public void givenPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
-        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.newInstance(10, 20);
+    public void givenPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = 100;
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(1).build();
 
-        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(11, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(21, packetIdAndSerialNumberDto.getSerialNumber());
-
-        packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(12, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(22, packetIdAndSerialNumberDto.getSerialNumber());
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(101, lastPacketId);
+        assertEquals(101, (int) msg.getPacketId());
+        assertEquals(1, (int) msg.getQos());
     }
 
     @Test
-    public void givenFullPacketIdAndSerialNumber_whenIncrementAndGet_thenReturnExpectedResult() {
-        PacketIdAndSerialNumber packetIdAndSerialNumber = PacketIdAndSerialNumber.newInstance(0xfffd, 50);
+    public void givenMaxPacketId_whenUpdateMessagesBeforePublishAndReturnLastPacketId_thenReturnExpectedResult() {
+        int lastPacketId = BrokerConstants.MAX_PACKET_ID;
+        var msg = DevicePublishMsg.builder().packetId(BrokerConstants.BLANK_PACKET_ID).qos(1).build();
 
-        PacketIdAndSerialNumberDto packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(0xfffe, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(51, packetIdAndSerialNumberDto.getSerialNumber());
-
-        packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(0xffff, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(52, packetIdAndSerialNumberDto.getSerialNumber());
-
-        packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(1, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(53, packetIdAndSerialNumberDto.getSerialNumber());
-
-        packetIdAndSerialNumberDto =
-                persistedDeviceActorMessageProcessor.getAndIncrementPacketIdAndSerialNumber(packetIdAndSerialNumber);
-
-        assertEquals(2, packetIdAndSerialNumberDto.getPacketId());
-        assertEquals(54, packetIdAndSerialNumberDto.getSerialNumber());
+        TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("tf", "g1", 1);
+        lastPacketId = persistedDeviceActorMessageProcessor
+                .updateMessagesBeforePublishAndReturnLastPacketId(lastPacketId, topicSharedSubscription, List.of(msg));
+        assertEquals(1, lastPacketId);
+        assertEquals(1, (int) msg.getPacketId());
+        assertEquals(1, (int) msg.getQos());
     }
+
 }
