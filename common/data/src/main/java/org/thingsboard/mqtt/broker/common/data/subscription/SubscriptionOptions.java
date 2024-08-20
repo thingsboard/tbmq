@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 
 import java.util.function.Function;
 
@@ -74,6 +75,10 @@ public final class SubscriptionOptions {
 
     public static SubscriptionOptions newInstance() {
         return new SubscriptionOptions(false, false, RetainHandlingPolicy.SEND_AT_SUBSCRIBE);
+    }
+
+    public static SubscriptionOptions fromSubscriptionOptionsDto(SubscriptionOptionsDto options) {
+        return new SubscriptionOptions(options.isNoLocal(), options.isRetainAsPublish(), RetainHandlingPolicy.valueOf(options.getRetainHandling()));
     }
 
     public boolean isNoLocalOptionMet(String receiverClientId, String senderClientId) {

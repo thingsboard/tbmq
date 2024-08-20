@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
@@ -34,14 +35,14 @@ public class SubscriptionInfoDto {
 
     private String topicFilter;
     private MqttQoS qos;
-    private SubscriptionOptions options;
+    private SubscriptionOptionsDto options;
     private Integer subscriptionId;
 
     public static SubscriptionInfoDto fromTopicSubscription(TopicSubscription topicSubscription) {
         return new SubscriptionInfoDto(
                 getTopicFilter(topicSubscription),
                 MqttQoS.valueOf(topicSubscription.getQos()),
-                topicSubscription.getOptions(),
+                SubscriptionOptionsDto.fromSubscriptionOptions(topicSubscription.getOptions()),
                 getSubscriptionId(topicSubscription)
         );
     }
@@ -51,7 +52,7 @@ public class SubscriptionInfoDto {
                 NettyMqttConverter.getTopicFilter(subscriptionInfoDto.getTopicFilter()),
                 subscriptionInfoDto.getQos().value(),
                 NettyMqttConverter.getShareName(subscriptionInfoDto.getTopicFilter()),
-                subscriptionInfoDto.getOptions(),
+                SubscriptionOptions.fromSubscriptionOptionsDto(subscriptionInfoDto.getOptions()),
                 getSubscriptionId(subscriptionInfoDto)
         );
     }

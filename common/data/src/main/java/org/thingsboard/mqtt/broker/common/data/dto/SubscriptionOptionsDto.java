@@ -16,8 +16,11 @@
 package org.thingsboard.mqtt.broker.common.data.dto;
 
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 
 @Data
+@RequiredArgsConstructor
 public final class SubscriptionOptionsDto {
 
     private final boolean noLocal;
@@ -32,6 +35,10 @@ public final class SubscriptionOptionsDto {
 
     public static SubscriptionOptionsDto newInstance() {
         return new SubscriptionOptionsDto();
+    }
+
+    public static SubscriptionOptionsDto fromSubscriptionOptions(SubscriptionOptions options) {
+        return new SubscriptionOptionsDto(options.isNoLocal(), options.isRetainAsPublish(), options.getRetainHandling().value());
     }
 
 }

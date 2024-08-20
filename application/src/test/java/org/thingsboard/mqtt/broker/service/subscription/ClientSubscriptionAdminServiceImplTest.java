@@ -27,9 +27,9 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
-import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
@@ -115,7 +115,7 @@ public class ClientSubscriptionAdminServiceImplTest {
 
         when(clientSubscriptionCache.getClientSubscriptions("clientId")).thenReturn(Collections.emptySet());
 
-        List<SubscriptionInfoDto> subscriptions = List.of(new SubscriptionInfoDto("subscribe", MqttQoS.AT_LEAST_ONCE, SubscriptionOptions.newInstance(), null));
+        List<SubscriptionInfoDto> subscriptions = List.of(new SubscriptionInfoDto("subscribe", MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null));
 
         clientSubscriptionAdminService.updateSubscriptions("clientId", subscriptions);
 
@@ -136,7 +136,7 @@ public class ClientSubscriptionAdminServiceImplTest {
         when(clientSubscriptionCache.getClientSubscriptions("clientId")).thenReturn(currentSubscriptions);
 
         List<SubscriptionInfoDto> subscriptions = List.of(
-                new SubscriptionInfoDto("new", MqttQoS.AT_LEAST_ONCE, SubscriptionOptions.newInstance(), null)
+                new SubscriptionInfoDto("new", MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null)
         );
 
         clientSubscriptionAdminService.updateSubscriptions("clientId", subscriptions);

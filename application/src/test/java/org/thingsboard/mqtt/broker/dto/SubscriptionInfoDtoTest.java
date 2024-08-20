@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.dto;
 
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
+import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
@@ -31,6 +32,7 @@ public class SubscriptionInfoDtoTest {
     @Test
     public void fromSubscription_ShouldCreateSubscriptionInfoDto() {
         SubscriptionOptions options = SubscriptionOptions.newInstance();
+        SubscriptionOptionsDto optionsDto = SubscriptionOptionsDto.fromSubscriptionOptions(options);
         TopicSubscription topicSubscription = new TopicSubscription("test/topic", 1, options);
 
         SubscriptionInfoDto dto = SubscriptionInfoDto.fromTopicSubscription(topicSubscription);
@@ -40,7 +42,7 @@ public class SubscriptionInfoDtoTest {
         assertEquals("test/topic", dto.getTopicFilter());
         assertEquals(MqttQoS.AT_LEAST_ONCE, dto.getQos());
         assertNull(dto.getSubscriptionId());
-        assertEquals(options, dto.getOptions());
+        assertEquals(optionsDto, dto.getOptions());
     }
 
     @Test
@@ -68,7 +70,8 @@ public class SubscriptionInfoDtoTest {
 
     @Test
     public void toTopicSubscription_ShouldConvertSubscriptionInfoDtoToTopicSubscription_ForNonSharedSubscription() {
-        SubscriptionOptions options = SubscriptionOptions.newInstance();
+        SubscriptionOptionsDto options = SubscriptionOptionsDto.newInstance();
+        SubscriptionOptions subscriptionOptions = SubscriptionOptions.fromSubscriptionOptionsDto(options);
         SubscriptionInfoDto dto = SubscriptionInfoDto.builder()
                 .topicFilter("test/topic")
                 .qos(MqttQoS.AT_LEAST_ONCE)
@@ -82,13 +85,14 @@ public class SubscriptionInfoDtoTest {
         assertEquals("test/topic", topicSubscription.getTopicFilter());
         assertEquals(1, topicSubscription.getQos());
         assertNull(topicSubscription.getShareName());
-        assertEquals(options, topicSubscription.getOptions());
+        assertEquals(subscriptionOptions, topicSubscription.getOptions());
         assertEquals(-1, topicSubscription.getSubscriptionId());
     }
 
     @Test
     public void toTopicSubscription_ShouldConvertSubscriptionInfoDtoToTopicSubscription_ForSharedSubscription() {
-        SubscriptionOptions options = SubscriptionOptions.newInstance();
+        SubscriptionOptionsDto options = SubscriptionOptionsDto.newInstance();
+        SubscriptionOptions subscriptionOptions = SubscriptionOptions.fromSubscriptionOptionsDto(options);
         SubscriptionInfoDto dto = SubscriptionInfoDto.builder()
                 .topicFilter("$share/shareName/test/topic")
                 .qos(MqttQoS.EXACTLY_ONCE)
@@ -102,7 +106,7 @@ public class SubscriptionInfoDtoTest {
         assertEquals("test/topic", topicSubscription.getTopicFilter());
         assertEquals(2, topicSubscription.getQos());
         assertEquals("shareName", topicSubscription.getShareName());
-        assertEquals(options, topicSubscription.getOptions());
+        assertEquals(subscriptionOptions, topicSubscription.getOptions());
         assertEquals(1, topicSubscription.getSubscriptionId());
     }
 }
