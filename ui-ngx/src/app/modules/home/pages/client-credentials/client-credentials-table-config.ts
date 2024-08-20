@@ -269,7 +269,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       }
     }).afterClosed().subscribe((res: ClientCredentials) => {
       if (res) {
-        this.updateData(true);
+        this.updateData(false);
       }
     });
   }

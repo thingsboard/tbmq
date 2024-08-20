@@ -312,11 +312,6 @@
             height: 18px;
             filter: invert(51%) sepia(6%) saturate(172%) hue-rotate(177deg) brightness(94%) contrast(92%);
           }
-
-          @supports (-moz-appearance:none) {
-            height: 36px;
-            top: 1px;
-          }
         }
       }
 
@@ -342,7 +337,7 @@
     }
 
     th, td {
-      div.code-wrapper {
+      div.code-wrapper  {
         display: inline-block;
         width: 100%;
 

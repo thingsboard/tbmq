@@ -26,8 +26,7 @@
                  timezone="false">
   </tb-timewindow>
 </mat-toolbar>
-<div class="mat-padding">
-  <div fxFlex fxLayout="column" fxLayoutGap="16px">
+<div class="mat-padding" fxFlex fxLayout="column" fxLayoutGap="16px">
     <div tb-fullscreen [fullscreen]="fullscreenChart === 'incomingMsgs'"
          [fullscreenElement]="incomingMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
       <div [id]="'incomingMsgscontainer'" class="mat-padding chart-container" #incomingMsgs>
@@ -189,4 +188,3 @@
       </div>
     </div>
   </div>
-</div>
