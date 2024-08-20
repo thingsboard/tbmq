@@ -54,6 +54,8 @@ import java.util.stream.Collectors;
 @Service
 public class DeviceMsgServiceImpl implements DeviceMsgService {
 
+    private static final int IMPORT_TO_REDIS_BATCH_SIZE = 1000;
+
     private static final JedisPool MOCK_POOL = new JedisPool(); //non-null pool required for JedisConnection to trigger closing jedis connection
 
     private static final RedisSerializer<String> stringSerializer = StringRedisSerializer.UTF_8;
@@ -66,8 +68,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private static final byte[] REMOVE_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("a619f42eb693ea732763d878dd59dff513a295c7");
     private static final byte[] REMOVE_MESSAGE_SCRIPT_SHA = stringSerializer.serialize("038e09c6e313eab0d5be4f31361250f4179bc38c");
     private static final byte[] UPDATE_PACKET_TYPE_SCRIPT_SHA = stringSerializer.serialize("958139aa4015911c82ddd423ff408b6638805081");
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA = stringSerializer.serialize("844fe5707cd0b3ed8397108ea9e1ab27ab0917be");
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE_SHA = stringSerializer.serialize("bade718d27865f5520fc988898bad4268eb8180c");
+    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA = stringSerializer.serialize("c67a939d71d127455883af90edbc578f0ce22b48");
 
     private static final byte[] ADD_MESSAGES_SCRIPT = stringSerializer.serialize("""
             local messagesKey = KEYS[1]
@@ -183,11 +184,21 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             redis.call('SET', msgKey, updatedMsgJson)
             return nil
             """);
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER = stringSerializer.serialize("""
+    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT = stringSerializer.serialize("""
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]
             local messages = cjson.decode(ARGV[1])
             local lastPacketId = 0
+            
+            -- Get the current maximum score in the sorted set
+            local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
+            -- Check if the maxScoreElement is non-empty
+            local score
+            if #maxScoreElement > 0 then
+               score = tonumber(maxScoreElement[2])
+            else
+               score = 0
+            end
             
             -- Add each message to the sorted set using packetId as the score
             for _, msg in ipairs(messages) do
@@ -195,55 +206,15 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 local msgJson = cjson.encode(msg)
                 -- Store the message as a separate key with TTL
                 redis.call('SET', msgKey, msgJson, 'EX', msg.msgExpiryInterval)
-                -- Use msg.packetId as the score
-                redis.call('ZADD', messagesKey, msg.packetId, msgKey)
+                -- increase the score
+                score = score + 1
+                redis.call('ZADD', messagesKey, score, msgKey)
                 -- Update lastPacketId with the current packetId
                 lastPacketId = msg.packetId
             end
 
             -- Update the last packetId in the key-value store
             redis.call('SET', lastPacketIdKey, lastPacketId)
-            
-            return nil
-            """);
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE = stringSerializer.serialize("""
-            local messages = cjson.decode(ARGV[1])
-            local cachePrefix = ARGV[2]
-            local lastPacketIdMap = {}
-            
-            -- Helper function to generate Redis keys based on clientId and cachePrefix
-            local function generateKeys(clientId)
-                local messagesKey = "{" .. clientId .. "}_messages"
-                local lastPacketIdKey = "{" .. clientId .. "}_last_packet_id"
-
-                -- If cachePrefix is provided, prepend it to the base keys
-                if cachePrefix and cachePrefix ~= "" then
-                    messagesKey = cachePrefix .. messagesKey
-                    lastPacketIdKey = cachePrefix .. lastPacketIdKey
-                end
-
-                return messagesKey, lastPacketIdKey
-            end
-            
-            -- Add each message to the sorted set using packetId as the score
-            for _, msg in ipairs(messages) do
-                local clientId = msg.clientId
-                local messagesKey, lastPacketIdKey = generateKeys(clientId)
-                local msgKey = messagesKey .. "_" .. msg.packetId
-                local msgJson = cjson.encode(msg)
-
-                -- Store the message as a separate key with TTL
-                redis.call('SET', msgKey, msgJson, 'EX', msg.msgExpiryInterval)
-                -- Use msg.packetId as the score
-                redis.call('ZADD', messagesKey, msg.packetId, msgKey)
-                -- Update the lastPacketId in the map
-                lastPacketIdMap[lastPacketIdKey] = msg.packetId
-            end
-            
-            -- After processing all messages, update the last packetId for each clientId
-            for lastPacketIdKey, lastPacketId in pairs(lastPacketIdMap) do
-                redis.call('SET', lastPacketIdKey, lastPacketId)
-            end
             
             return nil
             """);
@@ -282,13 +253,8 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             if (!installProfileActive) {
                 return;
             }
-            if (connectionFactory.isRedisClusterAware()) {
-                loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA,
-                        MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER);
-                return;
-            }
-            loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE_SHA,
-                    MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE);
+            loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA,
+                    MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
         } catch (Throwable t) {
             throw new RuntimeException("Failed to init persisted device messages cache service!", t);
         }
@@ -560,106 +526,73 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         if (log.isTraceEnabled()) {
             log.trace("Import from csv file: {}", filePath);
         }
-        if (connectionFactory.isRedisClusterAware()) {
-            migrateMessagesToRedisCluster(filePath);
-            return;
-        }
-        migrateMessagesToRedisStandalone(filePath);
+        migrateMessagesToRedis(filePath);
     }
 
-    private void migrateMessagesToRedisCluster(Path filePath) {
+    private void migrateMessagesToRedis(Path filePath) {
         var clientIdToMsgMap = new HashMap<String, List<DevicePublishMsgEntity>>();
         consumeCsvRecords(filePath, record -> {
             String clientId = record.get("client_id");
             try {
-                clientIdToMsgMap.computeIfAbsent(clientId, k -> new ArrayList<>())
-                        .add(DevicePublishMsgEntity.fromCsvRecord(record, defaultTtl));
+                var messages = clientIdToMsgMap.computeIfAbsent(clientId, k -> new ArrayList<>());
+                messages.add(DevicePublishMsgEntity.fromCsvRecord(record, defaultTtl));
+                if (messages.size() >= IMPORT_TO_REDIS_BATCH_SIZE) {
+                    writeBatchToRedis(clientId, messages);
+                    messages.clear();
+                }
             } catch (DecoderException e) {
                 throw new RuntimeException("Failed to deserialize message for client: " + clientId, e);
             }
         });
-        if (clientIdToMsgMap.isEmpty()) {
-            return;
-        }
         clientIdToMsgMap.forEach((clientId, messages) -> {
-            byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-            byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-            byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
-            try (var connection = getConnection(rawMessagesKey)) {
+            if (!messages.isEmpty()) {
+                writeBatchToRedis(clientId, messages);
+            }
+            log.info("All messages from client {} have been migrated!", clientId);
+        });
+    }
+
+    private void writeBatchToRedis(String clientId, List<DevicePublishMsgEntity> messages) {
+        log.info("[{}] Adding {} messages to Redis ...", clientId, messages.size());
+        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
+        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
+        byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
+        try (var connection = getConnection(rawMessagesKey)) {
+            try {
+                connection.scriptingCommands().evalSha(
+                        Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA),
+                        ReturnType.VALUE,
+                        2,
+                        rawMessagesKey,
+                        rawLastPacketIdKey,
+                        messagesBytes
+                );
+            } catch (InvalidDataAccessApiUsageException e) {
+                loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
                 try {
                     connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA),
+                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA),
                             ReturnType.VALUE,
                             2,
                             rawMessagesKey,
                             rawLastPacketIdKey,
                             messagesBytes
                     );
-                } catch (InvalidDataAccessApiUsageException e) {
-                    loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER);
-                    try {
-                        connection.scriptingCommands().evalSha(
-                                Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER_SHA),
-                                ReturnType.VALUE,
-                                2,
-                                rawMessagesKey,
-                                rawLastPacketIdKey,
-                                messagesBytes
-                        );
-                    } catch (InvalidDataAccessApiUsageException ignored) {
-                        log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                        connection.scriptingCommands().eval(
-                                Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_CLUSTER),
-                                ReturnType.VALUE,
-                                2,
-                                rawMessagesKey,
-                                rawLastPacketIdKey,
-                                messagesBytes
-                        );
-                    }
+                } catch (InvalidDataAccessApiUsageException ignored) {
+                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
+                    connection.scriptingCommands().eval(
+                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT),
+                            ReturnType.VALUE,
+                            2,
+                            rawMessagesKey,
+                            rawLastPacketIdKey,
+                            messagesBytes
+                    );
                 }
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to migrate messages to Redis for client: " + clientId, e);
             }
-        });
-    }
-
-    private void migrateMessagesToRedisStandalone(Path filePath) {
-        var messages = new ArrayList<DevicePublishMsgEntity>();
-        consumeCsvRecords(filePath, record -> {
-            String clientId = record.get("client_id");
-            try {
-                messages.add(DevicePublishMsgEntity.fromCsvRecord(record, defaultTtl));
-            } catch (DecoderException e) {
-                throw new RuntimeException("Failed to deserialize message for client: " + clientId, e);
-            }
-        });
-        if (messages.isEmpty()) {
-            return;
-        }
-        byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
-        byte[] rawCachePrefix = stringSerializer.serialize(cachePrefix);
-        try (var connection = connectionFactory.getConnection()) {
-            try {
-                connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE_SHA),
-                        ReturnType.VALUE,
-                        0,
-                        messagesBytes,
-                        rawCachePrefix
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                connection.scriptingCommands().eval(
-                        Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_STANDALONE),
-                        ReturnType.VALUE,
-                        0,
-                        messagesBytes,
-                        rawCachePrefix
-                );
-            }
+            log.info("[{}] Successfully added {} messages to Redis!", clientId, messages.size());
         } catch (Exception e) {
-            throw new RuntimeException("Failed to migrate messages to Redis: ", e);
+            throw new RuntimeException("Failed to migrate messages to Redis for client: " + clientId, e);
         }
     }
 

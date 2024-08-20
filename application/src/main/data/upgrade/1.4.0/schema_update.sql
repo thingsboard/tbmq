@@ -16,21 +16,31 @@
 
 CREATE OR REPLACE PROCEDURE export_device_publish_msgs(IN msg_limit int, IN path_to_file varchar)
     LANGUAGE plpgsql
-AS $$
+AS
+$$
 BEGIN
-    EXECUTE format('COPY (
-                        SELECT *
-                        FROM device_publish_msg dpm
-                        WHERE serial_number >= (
-                            SELECT min(serial_number)
-                            FROM (
-                                SELECT serial_number
-                                FROM device_publish_msg
-                                WHERE client_id = dpm.client_id
-                                ORDER BY serial_number DESC
-                                LIMIT %L
-                            ) AS subquery
-                        ) ORDER BY client_id, serial_number ASC
-                    ) TO %L WITH CSV HEADER', msg_limit, path_to_file);
+    EXECUTE format(
+            'COPY (
+                SELECT dpm.client_id,
+                       dpm.topic,
+                       dpm.time,
+                       dpm.packet_id,
+                       dpm.packet_type,
+                       dpm.qos,
+                       dpm.payload,
+                       dpm.user_properties,
+                       dpm.retain,
+                       dpm.msg_expiry_interval,
+                       dpm.payload_format_indicator,
+                       dpm.content_type,
+                       dpm.response_topic,
+                       dpm.correlation_data
+                FROM device_publish_msg dpm
+                JOIN device_session_ctx dsc ON dpm.client_id = dsc.client_id
+                WHERE dpm.serial_number >= (dsc.last_serial_number - %L + 1)
+                ORDER BY dpm.client_id, dpm.serial_number ASC
+            ) TO %L WITH CSV HEADER',
+            msg_limit,
+            path_to_file);
 END
 $$;
