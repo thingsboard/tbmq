@@ -16,15 +16,27 @@
 package org.thingsboard.mqtt.broker.service.stats;
 
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingResult;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public interface DeviceProcessorStats {
     String getConsumerId();
 
-    void log(int msgsCount, boolean successful, boolean finalIterationForPack);
+    void log(int msgsCount, DevicePackProcessingResult result, boolean finalIterationForPack);
+
+    void logClientIdPackProcessingTime(long amount, TimeUnit unit);
+
+    void logClientIdPacksProcessingTime(int packSize, long amount, TimeUnit unit);
 
     List<StatsCounter> getStatsCounters();
+
+    double getAvgClientIdMsgPackProcessingTime();
+
+    double getAvgPackProcessingTime();
+
+    double getAvgPackSize();
 
     void reset();
 }

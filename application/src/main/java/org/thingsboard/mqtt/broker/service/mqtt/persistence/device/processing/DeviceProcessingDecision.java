@@ -15,9 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import lombok.Data;
+import java.util.Map;
 
-@Data
-public class DeviceProcessingDecision {
-    private final boolean commit;
+public record DeviceProcessingDecision(boolean commit, Map<String, ClientIdMessagesPack> reprocessMap) {
 }

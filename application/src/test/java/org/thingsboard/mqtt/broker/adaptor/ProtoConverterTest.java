@@ -289,7 +289,6 @@ public class ProtoConverterTest {
         DevicePublishMsg devicePublishMsg = DevicePublishMsg.builder()
                 .properties(properties)
                 .qos(0)
-                .serialNumber(123L)
                 .time(123213L)
                 .payload("p".getBytes(StandardCharsets.UTF_8))
                 .packetType(PersistedPacketType.PUBREL)

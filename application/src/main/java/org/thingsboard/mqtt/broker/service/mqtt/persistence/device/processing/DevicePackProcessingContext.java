@@ -18,36 +18,74 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
 
 @Slf4j
 public class DevicePackProcessingContext {
+
     @Getter
-    private final List<DevicePublishMsg> messages;
-    private final AtomicBoolean successful = new AtomicBoolean(false);
-    private volatile boolean detectMsgDuplication;
+    private final ConcurrentMap<String, ClientIdMessagesPack> pendingMap;
+    @Getter
+    private final ConcurrentMap<String, ClientIdMessagesPack> failedMap = new ConcurrentHashMap<>();
+    @Getter
+    private final ConcurrentMap<String, List<DevicePublishMsg>> successMap = new ConcurrentHashMap<>();
 
-    public DevicePackProcessingContext(List<DevicePublishMsg> messages) {
-        this.messages = messages;
-        this.detectMsgDuplication = true;
+    private final CountDownLatch processingTimeoutLatch;
+
+    public DevicePackProcessingContext(ConcurrentMap<String, ClientIdMessagesPack> pendingClientIdPacks) {
+        this.pendingMap = pendingClientIdPacks;
+        this.processingTimeoutLatch = new CountDownLatch(pendingMap.size());
     }
 
-    public void disableMsgDuplicationDetection(){
-        this.detectMsgDuplication = false;
+    public boolean await(long packProcessingTimeout, TimeUnit timeUnit) throws InterruptedException {
+        return processingTimeoutLatch.await(packProcessingTimeout, timeUnit);
     }
 
-
-    public boolean detectMsgDuplication(){
-        return detectMsgDuplication;
+    public void onSuccess(String clientId, int previousPacketId) {
+        ClientIdMessagesPack pack = pendingMap.remove(clientId);
+        if (pack != null) {
+            successMap.put(clientId, updatePacketIds(previousPacketId, pack));
+            processingTimeoutLatch.countDown();
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Couldn't find messages pack for clientId {} to acknowledge success.", clientId);
+            }
+        }
     }
 
-    public void onSuccess() {
-        successful.getAndSet(true);
+    public void onFailure(String clientId) {
+        ClientIdMessagesPack pack = pendingMap.remove(clientId);
+        if (pack != null) {
+            failedMap.put(clientId, pack);
+            processingTimeoutLatch.countDown();
+        } else {
+            if (log.isDebugEnabled()) {
+                log.debug("Couldn't find messages pack for clientId {} to acknowledge failure.", clientId);
+            }
+        }
     }
 
-    public boolean isSuccessful() {
-        return successful.get();
+    public void cleanup() {
+        pendingMap.clear();
+        successMap.clear();
     }
+
+    List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
+        List<DevicePublishMsg> messages = pack.messages();
+        var packetIdDto = new PacketIdDto(previousPacketId);
+        for (var msg : messages) {
+            msg.setPacketId(packetIdDto.getNextPacketId());
+        }
+        return messages;
+    }
+
 }

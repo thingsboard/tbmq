@@ -41,12 +41,23 @@ services:
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
     volumes:
       - tbmq-kafka-data:/bitnami/kafka
+  redis:
+    restart: always
+    image: "bitnami/redis:7.0"
+    environment:
+      # ALLOW_EMPTY_PASSWORD is recommended only for development.
+      ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "6379"
+    volumes:
+      - tbmq-redis-data:/bitnami/redis/data
   tbmq:
     restart: always
     image: "thingsboard/tbmq:1.4.0"
     depends_on:
       - postgres
       - kafka
+      - redis
     ports:
       - "8083:8083"
       - "1883:1883"
@@ -57,6 +68,7 @@ services:
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres
       TB_KAFKA_SERVERS: kafka:9092
+      REDIS_HOST: redis
       SECURITY_MQTT_BASIC_ENABLED: "true"
       #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
     volumes:
@@ -67,6 +79,8 @@ volumes:
   tbmq-postgres-data:
     external: true
   tbmq-kafka-data:
+    external: true
+  tbmq-redis-data:
     external: true
   tbmq-logs:
     external: true

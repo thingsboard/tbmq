@@ -80,6 +80,7 @@ if (Select-String -Path "docker-compose.yml" -Pattern $search_string) {
 
 create_volume_if_not_exists "tbmq-postgres-data"
 create_volume_if_not_exists "tbmq-kafka-data"
+create_volume_if_not_exists "tbmq-redis-data"
 create_volume_if_not_exists "tbmq-logs"
 create_volume_if_not_exists "tbmq-data"
 

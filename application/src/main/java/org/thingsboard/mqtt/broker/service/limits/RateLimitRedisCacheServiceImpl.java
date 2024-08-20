@@ -28,9 +28,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
-@Service
-@ConditionalOnProperty(prefix = "cache", value = "type", havingValue = "redis")
 @Slf4j
+@Service
+@ConditionalOnProperty(prefix = "service", value = "singleton-mode", havingValue = "false")
 public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheService implements RateLimitCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;

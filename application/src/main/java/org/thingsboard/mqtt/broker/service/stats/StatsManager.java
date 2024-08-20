@@ -87,4 +87,6 @@ public interface StatsManager {
     DeliveryTimerStats getDeliveryTimerStats();
 
     ClientActorStats getClientActorStats();
+
+    boolean isEnabled();
 }
