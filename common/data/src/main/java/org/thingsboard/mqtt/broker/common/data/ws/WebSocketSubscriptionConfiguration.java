@@ -32,6 +32,7 @@ public class WebSocketSubscriptionConfiguration {
     @NoXss
     private String color;
     private SubscriptionOptionsDto options;
+    private int subscriptionId;
 
     public WebSocketSubscriptionConfiguration(String topicFilter) {
         this(topicFilter, 1);
