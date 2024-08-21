@@ -85,6 +85,13 @@
           help
         </mat-icon>
       </mat-form-field>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>ws-client.subscriptions.subscription-identifier</mat-label>
+        <input matInput formControlName="subscriptionIdentifier">
+        <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate">
+          help
+        </mat-icon>
+      </mat-form-field>
       <tb-user-properties [entity]="entity?.userProperties" formControlName="userProperties"></tb-user-properties>
     </section>
   </form>

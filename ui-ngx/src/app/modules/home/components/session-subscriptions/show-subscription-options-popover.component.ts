@@ -43,7 +43,8 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
     this.subscriptionOptionsForm = this.fb.group({
       retainAsPublish: [this.data ? this.data.retainAsPublish : null, []],
       retainHandling: [this.data ? this.data.retainHandling : null, []],
-      noLocal: [this.data ? this.data.noLocal : null, []]
+      noLocal: [this.data ? this.data.noLocal : null, []],
+      subscriptionIdentifier: [this.data ? this.data.subscriptionIdentifier : null, []],
     });
   }
 

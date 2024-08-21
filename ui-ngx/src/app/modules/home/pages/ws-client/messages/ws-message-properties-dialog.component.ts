@@ -68,6 +68,7 @@ export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessag
       topicAlias: [{value: entity.topicAlias, disabled: true}, []],
       correlationData: [{value: entity.correlationData, disabled: true}, []],
       responseTopic: [{value: entity.responseTopic, disabled: true}, []],
+      subscriptionIdentifier: [{value: entity.subscriptionIdentifier, disabled: true}, []],
       userProperties: [{value: entity.userProperties, disabled: true}, []]
     });
   }

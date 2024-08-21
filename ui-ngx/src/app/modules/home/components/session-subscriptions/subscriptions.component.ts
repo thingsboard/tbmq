@@ -87,16 +87,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.disabled = isDisabled;
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
-    } else {
-      Object.keys(this.subscriptionsFormArray().controls).forEach(
-        (control: string) => {
-          const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
-          typedControl.get('shareName').disable();
-          if (typedControl.get('shareName')?.value) {
-            typedControl.disable();
-          }
-        }
-      );
     }
   }
 
@@ -108,7 +98,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (topics) {
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
-        if (topic.shareName?.length) this.shareNameCounter++;
+        // if (topic.shareName?.length) this.shareNameCounter++;
         subscriptionsControls.push(topicControl);
       }
     }

@@ -202,6 +202,7 @@ export interface PublishMessageProperties {
   topicAlias?: number;
   correlationData?: Buffer;
   responseTopic?: string;
+  subscriptionIdentifier?: number;
   userProperties?: any;
   changed?: boolean;
 }
@@ -222,6 +223,7 @@ export interface SubscriptionOptions {
   noLocal?: boolean;
   retainAsPublish?: boolean;
   retainHandling?: number;
+  subscriptionIdentifier?: number;
 }
 
 export interface MessageFilterConfig {
