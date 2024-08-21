@@ -143,8 +143,9 @@ export class MqttJsClientService {
       const nl = subscription.configuration?.options?.noLocal;
       const rap = subscription.configuration?.options?.retainAsPublish;
       const rh = subscription.configuration?.options?.retainHandling;
+      const properties = {subscriptionIdentifier: subscription.configuration?.options?.subscriptionIdentifier};
       const topicObject = {
-        [topic]: {qos, nl, rap, rh}
+        [topic]: {qos, nl, rap, rh, properties}
       };
       if (!this.mqttClientIdSubscriptionsMap.has(mqttClient.options.clientId)) {
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, []);
@@ -487,7 +488,8 @@ export class MqttJsClientService {
           const nl = subscription.configuration?.options?.noLocal;
           const rap = subscription.configuration?.options?.retainAsPublish;
           const rh = subscription.configuration?.options?.retainHandling;
-          topicObject[topic] = {qos, nl, rap, rh};
+          const properties = {subscriptionIdentifier: subscription.configuration?.options?.subscriptionIdentifier};
+          topicObject[topic] = {qos, nl, rap, rh, properties};
           subscriptions.push(subscription);
         }
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, subscriptions);
