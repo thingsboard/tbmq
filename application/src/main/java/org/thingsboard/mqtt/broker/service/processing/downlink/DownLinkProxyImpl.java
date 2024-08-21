@@ -25,6 +25,8 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLi
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
+import static org.thingsboard.mqtt.broker.adaptor.ProtoConverter.updatePublishMsg;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -68,20 +70,6 @@ public class DownLinkProxyImpl implements DownLinkProxy {
 
     private boolean belongsToThisNode(String targetServiceId) {
         return serviceInfoProvider.getServiceId().equals(targetServiceId);
-    }
-
-    PublishMsgProto updatePublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
-        var minQos = Math.min(subscription.getQos(), publishMsgProto.getQos());
-        var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
-
-        if (minQos != publishMsgProto.getQos() || retain != publishMsgProto.getRetain()) {
-            return publishMsgProto.toBuilder()
-                    .setQos(minQos)
-                    .setRetain(retain)
-                    .build();
-        } else {
-            return publishMsgProto;
-        }
     }
 
 }

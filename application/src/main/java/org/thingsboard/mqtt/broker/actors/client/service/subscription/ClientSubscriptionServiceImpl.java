@@ -39,10 +39,12 @@ import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
+/**
+ * not thread-safe for operations with the same 'clientId'
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-// not thread-safe for operations with the same 'clientId'
 public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
 
     private final SubscriptionPersistenceService subscriptionPersistenceService;
@@ -221,6 +223,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     private TopicSharedSubscription topicSubscriptionToTopicSharedSubscription(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName(), topicSubscription.getQos());
+        return TopicSharedSubscription.fromTopicSubscription(topicSubscription);
     }
 }

@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeUtil;
 
@@ -231,8 +232,8 @@ public class MqttSubscribeHandler {
             if (msgExpiryResult.isExpired()) {
                 continue;
             }
-            int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
-            RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, minQoSValue);
+            int qos = MqttQosUtil.downgradeQos(topicSubscription, retainedMsg);
+            RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, qos);
 
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToProps(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
@@ -247,18 +248,8 @@ public class MqttSubscribeHandler {
         return retainedMsgService.getRetainedMessages(topicSubscription.getTopicFilter());
     }
 
-    private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
-        return new RetainedMsg(
-                retainedMsg.getTopic(),
-                retainedMsg.getPayload(),
-                minQoSValue,
-                retainedMsg.getProperties(),
-                retainedMsg.getCreatedTime()
-        );
-    }
-
-    private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {
-        return Math.min(topicSubscription.getQos(), retainedMsg.getQos());
+    private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int qos) {
+        return retainedMsg.withQosAndProps(qos, MqttPropertiesUtil.copyProps(retainedMsg.getProperties()));
     }
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,
@@ -336,8 +327,7 @@ public class MqttSubscribeHandler {
         return topicSubscriptions
                 .stream()
                 .filter(TopicSubscription::isSharedSubscription)
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
+                .collect(Collectors.groupingBy(TopicSharedSubscription::fromTopicSubscription))
                 .keySet();
     }
 

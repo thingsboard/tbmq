@@ -18,11 +18,11 @@ package org.thingsboard.mqtt.broker.actors;
 import lombok.Getter;
 import lombok.ToString;
 
+@Getter
 @ToString
 public class ProcessFailureStrategy {
 
-    @Getter
-    private boolean stop;
+    private final boolean stop;
 
     private ProcessFailureStrategy(boolean stop) {
         this.stop = stop;

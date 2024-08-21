@@ -19,21 +19,29 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
 @Getter
 @RequiredArgsConstructor
-@EqualsAndHashCode(exclude = "qos")
+@EqualsAndHashCode(exclude = {"qos", "subscriptionId"})
 @ToString
 public class TopicSharedSubscription {
 
     private final String topicFilter;
     private final String shareName;
     private final int qos;
+    private final int subscriptionId;
+
+    public TopicSharedSubscription(String topicFilter, String shareName, int qos) {
+        this(topicFilter, shareName, qos, -1);
+    }
 
     public TopicSharedSubscription(String topicFilter, String shareName) {
-        this.topicFilter = topicFilter;
-        this.shareName = shareName;
-        this.qos = 0;
+        this(topicFilter, shareName, 0, -1);
+    }
+
+    public static TopicSharedSubscription fromTopicSubscription(TopicSubscription subscription) {
+        return new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos(), subscription.getSubscriptionId());
     }
 
     public String getKey() {

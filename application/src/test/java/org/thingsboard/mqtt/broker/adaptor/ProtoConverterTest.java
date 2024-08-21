@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.adaptor;
 
+import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Assert;
@@ -22,6 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -33,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
@@ -384,13 +387,81 @@ public class ProtoConverterTest {
                 .setPayload(ByteString.copyFromUtf8("p"))
                 .setMqttProperties(QueueProtos.MqttPropertiesProto.newBuilder().setPayloadFormatIndicator(1).build())
                 .build();
-        PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(proto, 1, 1, false);
+        PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(proto, 1, 1, false, -1);
 
         assertEquals("t", publishMsg.getTopicName());
         assertEquals(1, publishMsg.getPacketId());
         assertEquals(1, publishMsg.getQosLevel());
         assertNotNull(publishMsg.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
         assertNull(publishMsg.getProperties().getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID));
+        assertNull(publishMsg.getProperties().getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID));
+    }
+
+    @Test
+    public void givenPubMsgAndSubscriptionWithSameQosAndFalseRetainAsPublish_whenProcessUpdatePublishMsg_thenReturnSameMsg() {
+        Subscription subscription = new Subscription("test/topic", 1, ClientSessionInfo.builder().build());
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(1).setRetain(false).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.updatePublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertEquals(beforePublishMsgProto, afterPublishMsgProto);
+    }
+
+    @Test
+    public void givenPubMsgAndSubscriptionWithDifferentQos_whenProcessUpdatePublishMsg_thenReturnUpdatedMsgWithMinQos() {
+        Subscription subscription = new Subscription("test/topic", 1, ClientSessionInfo.builder().build());
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(true).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.updatePublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertNotEquals(beforePublishMsgProto, afterPublishMsgProto);
+        Assert.assertEquals(1, afterPublishMsgProto.getQos());
+        Assert.assertFalse(afterPublishMsgProto.getRetain());
+    }
+
+    @Test
+    public void givenPubMsgAndSubscriptionWithSameQosAndRetainAsPublish_whenProcessUpdatePublishMsg_thenReturnSameMsg() {
+        Subscription subscription = new Subscription(
+                "test/topic",
+                2,
+                ClientSessionInfo.builder().build(),
+                null,
+                new SubscriptionOptions(
+                        false,
+                        true,
+                        SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE));
+
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(true).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.updatePublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertEquals(beforePublishMsgProto, afterPublishMsgProto);
+        Assert.assertEquals(2, afterPublishMsgProto.getQos());
+        Assert.assertTrue(afterPublishMsgProto.getRetain());
+    }
+
+    @Test
+    public void givenPubMsgAndSubsWithIds_whenProcessUpdatePublishMsg_thenReturnUpdatedMsgWithIds() {
+        Subscription subscription = new Subscription("test/topic", 1, Lists.newArrayList(1, 2, 3));
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(false).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.updatePublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertEquals(1, afterPublishMsgProto.getQos());
+        Assert.assertEquals(List.of(1, 2, 3), afterPublishMsgProto.getMqttProperties().getSubscriptionIdsList());
+    }
+
+    @Test
+    public void givenPubMsgWithPropsAndSubsWithIds_whenProcessUpdatePublishMsg_thenReturnUpdatedMsgWithIds() {
+        Subscription subscription = new Subscription("test/topic", 1, Lists.newArrayList(1, 2, 3));
+        QueueProtos.MqttPropertiesProto mqttPropertiesProto = QueueProtos.MqttPropertiesProto.newBuilder().setContentType("test").build();
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(false).setMqttProperties(mqttPropertiesProto).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.updatePublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertEquals(1, afterPublishMsgProto.getQos());
+        Assert.assertEquals(List.of(1, 2, 3), afterPublishMsgProto.getMqttProperties().getSubscriptionIdsList());
+        Assert.assertEquals("test", afterPublishMsgProto.getMqttProperties().getContentType());
     }
 
 }

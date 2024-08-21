@@ -36,4 +36,8 @@ public class RetainedMsg {
     public RetainedMsg(String topic, byte[] payload, int qos, MqttProperties properties) {
         this(topic, payload, qos, properties, System.currentTimeMillis());
     }
+
+    public RetainedMsg withQosAndProps(int qos, MqttProperties properties) {
+        return new RetainedMsg(this.topic, this.payload, qos, properties, this.createdTime);
+    }
 }

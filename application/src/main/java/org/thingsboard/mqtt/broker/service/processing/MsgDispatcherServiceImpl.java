@@ -408,7 +408,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             var clientId = subscription.getClientId();
             var value = map.get(clientId);
             if (value != null) {
-                map.put(clientId, getSubscriptionWithHigherQos(value, subscription));
+                map.put(clientId, getSubscriptionWithHigherQosAndAllSubscriptionIds(value, subscription));
             } else {
                 map.put(clientId, subscription);
             }
@@ -445,8 +445,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    Subscription getSubscriptionWithHigherQos(Subscription first, Subscription second) {
-        return first.getQos() > second.getQos() ? first : second;
+    Subscription getSubscriptionWithHigherQosAndAllSubscriptionIds(Subscription first, Subscription second) {
+        return first.compareAndGetHigherQosAndAllSubscriptionIds(second);
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {

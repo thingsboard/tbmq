@@ -45,6 +45,7 @@ message MqttPropertiesProto {
   optional string contentType = 2;
   optional string responseTopic = 3;
   optional bytes correlationData = 4;
+  repeated int32 subscriptionIds = 5;
 }
 
 message UserPropertyProto {

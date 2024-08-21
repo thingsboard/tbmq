@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
@@ -30,6 +31,8 @@ import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.model.ToData;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Data
@@ -51,6 +54,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     private String contentType;
     private String responseTopic;
     private byte[] correlationData;
+    private List<Integer> subscriptionIds;
 
     public DevicePublishMsgEntity() {
 
@@ -71,6 +75,7 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         this.contentType = getContentType(devicePublishMsg);
         this.responseTopic = getResponseTopic(devicePublishMsg);
         this.correlationData = getCorrelationData(devicePublishMsg);
+        this.subscriptionIds = getSubscriptionIds(devicePublishMsg);
     }
 
     private Integer getMsgExpiryInterval(DevicePublishMsg devicePublishMsg, int defaultTtl) {
@@ -96,6 +101,17 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
     private byte[] getCorrelationData(DevicePublishMsg devicePublishMsg) {
         MqttProperties.BinaryProperty property = (MqttProperties.BinaryProperty) devicePublishMsg.getProperties().getProperty(BrokerConstants.CORRELATION_DATA_PROP_ID);
         return property == null ? null : property.value();
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Integer> getSubscriptionIds(DevicePublishMsg devicePublishMsg) {
+        List<MqttProperties.IntegerProperty> properties = (List<MqttProperties.IntegerProperty>) devicePublishMsg.getProperties().getProperties(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+        if (properties.isEmpty()) {
+            return null;
+        }
+        ArrayList<Integer> subscriptionIds = new ArrayList<>(properties.size());
+        properties.forEach(mqttProperty -> subscriptionIds.add(mqttProperty.value()));
+        return subscriptionIds;
     }
 
     public static DevicePublishMsg fromBytes(byte[] bytes) {
@@ -197,6 +213,13 @@ public class DevicePublishMsgEntity implements ToData<DevicePublishMsg> {
         }
         if (correlationData != null) {
             properties.add(new MqttProperties.BinaryProperty(BrokerConstants.CORRELATION_DATA_PROP_ID, correlationData));
+        }
+        if (!CollectionUtils.isEmpty(subscriptionIds)) {
+            subscriptionIds.forEach(subscriptionId -> {
+                if (subscriptionId > 0) {
+                    properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
+                }
+            });
         }
         return DevicePublishMsg.builder()
                 .clientId(clientId)

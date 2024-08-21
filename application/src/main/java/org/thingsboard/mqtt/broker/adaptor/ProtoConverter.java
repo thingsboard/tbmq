@@ -17,8 +17,6 @@ package org.thingsboard.mqtt.broker.adaptor;
 
 import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttProperties;
-import io.netty.handler.codec.mqtt.MqttProperties.IntegerProperty;
-import io.netty.handler.codec.mqtt.MqttProperties.StringProperty;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
@@ -37,8 +35,10 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,16 +94,61 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId,
-                                                 int qos, boolean isDup) {
-        return convertProtoToPublishMsg(msg, packetId, qos, isDup);
+    public static QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+        var minQos = MqttQosUtil.downgradeQos(subscription, publishMsgProto);
+        var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
+
+        QueueProtos.MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
+
+        return publishMsgProto.toBuilder()
+                .setPacketId(0)
+                .setQos(minQos)
+                .setRetain(retain)
+                .setMqttProperties(mqttProperties)
+                .build();
     }
 
-    private static PublishMsg convertProtoToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId, int qos, boolean isDup) {
+    public static QueueProtos.PublishMsgProto createReceiverPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
+        return publishMsgProto.toBuilder()
+                .setPacketId(0)
+                .build();
+    }
+
+    public static QueueProtos.PublishMsgProto updatePublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+        var minQos = MqttQosUtil.downgradeQos(subscription, publishMsgProto);
+        var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
+
+        if (minQos != publishMsgProto.getQos() || retain != publishMsgProto.getRetain() || subscription.isSubsIdsPresent()) {
+
+            QueueProtos.MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
+
+            return publishMsgProto.toBuilder()
+                    .setQos(minQos)
+                    .setRetain(retain)
+                    .setMqttProperties(mqttProperties)
+                    .build();
+        } else {
+            return publishMsgProto;
+        }
+    }
+
+    private static QueueProtos.MqttPropertiesProto updateMqttPropsWithSubsIds(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+        QueueProtos.MqttPropertiesProto mqttProperties = publishMsgProto.getMqttProperties();
+        if (subscription.isSubsIdsPresent()) {
+            QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = mqttProperties.toBuilder();
+            subscription.getSubscriptionIds().forEach(mqttPropertiesBuilder::addSubscriptionIds);
+            mqttProperties = mqttPropertiesBuilder.build();
+        }
+        return mqttProperties;
+    }
+
+    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId,
+                                                 int qos, boolean isDup, int subscriptionId) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(msg.getUserPropertiesList());
         if (msg.hasMqttProperties()) {
             addFromProtoToMqttProperties(msg.getMqttProperties(), properties);
         }
+        MqttPropertiesUtil.addSubscriptionIdToProps(properties, subscriptionId);
         return PublishMsg.builder()
                 .topicName(msg.getTopicName())
                 .isRetained(msg.getRetain())
@@ -487,11 +532,12 @@ public class ProtoConverter {
     }
 
     static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
-        Integer payloadFormatIndicator = getPayloadFormatIndicatorFromMqttProperties(properties);
-        String contentType = getContentTypeFromMqttProperties(properties);
+        Integer payloadFormatIndicator = MqttPropertiesUtil.getPayloadFormatIndicatorValue(properties);
+        String contentType = MqttPropertiesUtil.getContentTypeValue(properties);
         String responseTopic = MqttPropertiesUtil.getResponseTopicValue(properties);
         byte[] correlationData = MqttPropertiesUtil.getCorrelationDataValue(properties);
-        if (payloadFormatIndicator != null || contentType != null || responseTopic != null || correlationData != null) {
+        List<Integer> subscriptionIds = MqttPropertiesUtil.getSubscriptionIds(properties);
+        if (payloadFormatIndicator != null || contentType != null || responseTopic != null || correlationData != null || !subscriptionIds.isEmpty()) {
             QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = QueueProtos.MqttPropertiesProto.newBuilder();
             if (payloadFormatIndicator != null) {
                 mqttPropertiesBuilder.setPayloadFormatIndicator(payloadFormatIndicator);
@@ -505,19 +551,12 @@ public class ProtoConverter {
             if (correlationData != null) {
                 mqttPropertiesBuilder.setCorrelationData(ByteString.copyFrom(correlationData));
             }
+            if (!subscriptionIds.isEmpty()) {
+                mqttPropertiesBuilder.addAllSubscriptionIds(subscriptionIds);
+            }
             return mqttPropertiesBuilder;
         }
         return null;
-    }
-
-    private static Integer getPayloadFormatIndicatorFromMqttProperties(MqttProperties mqttProperties) {
-        IntegerProperty payloadFormatProperty = MqttPropertiesUtil.getPayloadFormatProperty(mqttProperties);
-        return payloadFormatProperty == null ? null : payloadFormatProperty.value();
-    }
-
-    private static String getContentTypeFromMqttProperties(MqttProperties mqttProperties) {
-        StringProperty contentTypeProperty = MqttPropertiesUtil.getContentTypeProperty(mqttProperties);
-        return contentTypeProperty == null ? null : contentTypeProperty.value();
     }
 
     public static void addFromProtoToMqttProperties(QueueProtos.MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
@@ -532,6 +571,9 @@ public class ProtoConverter {
         }
         if (mqttPropertiesProto.hasCorrelationData()) {
             MqttPropertiesUtil.addCorrelationDataToProps(properties, mqttPropertiesProto.getCorrelationData().toByteArray());
+        }
+        if (mqttPropertiesProto.getSubscriptionIdsCount() > 0) {
+            mqttPropertiesProto.getSubscriptionIdsList().forEach(subId -> MqttPropertiesUtil.addSubscriptionIdToProps(properties, subId));
         }
     }
 

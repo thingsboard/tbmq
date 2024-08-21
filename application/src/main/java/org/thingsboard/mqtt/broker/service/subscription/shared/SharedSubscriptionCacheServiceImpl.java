@@ -174,13 +174,13 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return new HashMap<>(sharedSubscriptionsMap);
     }
 
-    private Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {
+    Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {
         if (subscriptions.isEmpty()) {
             return subscriptions;
         }
         return subscriptions.stream()
                 .map(subscription -> {
-                    var clientSessionInfo = findClientSessionInfo(subscription.getClientSessionInfo().getClientId());
+                    var clientSessionInfo = findClientSessionInfo(subscription.getClientId());
                     if (clientSessionInfo == null) {
                         return null;
                     }
@@ -189,7 +189,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
                 .collect(Collectors.toMap(
                         subscription -> subscription.getClientSessionInfo().getClientId(),
                         Function.identity(),
-                        this::getSubscriptionWithHigherQos)
+                        this::getSubscriptionWithHigherQosAndAllSubscriptionIds)
                 )
                 .values();
     }
@@ -208,8 +208,8 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return result;
     }
 
-    private Subscription getSubscriptionWithHigherQos(Subscription first, Subscription second) {
-        return first.getQos() > second.getQos() ? first : second;
+    private Subscription getSubscriptionWithHigherQosAndAllSubscriptionIds(Subscription first, Subscription second) {
+        return first.compareAndGetHigherQosAndAllSubscriptionIds(second);
     }
 
     private TopicSharedSubscription getKey(TopicSubscription topicSubscription) {
@@ -228,14 +228,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     }
 
     private Subscription newSubscription(Subscription subscription, ClientSessionInfo clientSessionInfo) {
-        return new Subscription(
-                subscription.getTopicFilter(),
-                subscription.getQos(),
-                clientSessionInfo,
-                subscription.getShareName(),
-                subscription.getOptions(),
-                subscription.getSubscriptionId()
-        );
+        return subscription.withClientSessionInfo(clientSessionInfo);
     }
 
     private ClientSessionInfo findClientSessionInfo(String clientId) {
