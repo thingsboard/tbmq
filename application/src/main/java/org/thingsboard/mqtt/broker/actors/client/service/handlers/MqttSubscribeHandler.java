@@ -258,7 +258,7 @@ public class MqttSubscribeHandler {
     }
 
     private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {
-        return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
+        return Math.min(topicSubscription.getQos(), retainedMsg.getQos());
     }
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,

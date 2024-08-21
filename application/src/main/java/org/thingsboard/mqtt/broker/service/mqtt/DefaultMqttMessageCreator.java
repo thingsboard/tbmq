@@ -215,7 +215,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttPublishMessage createPubRetainMsg(int msgId, RetainedMsg retainedMsg) {
-        return getMqttPublishMessage(false, retainedMsg.getQosLevel(), true,
+        return getMqttPublishMessage(false, retainedMsg.getQos(), true,
                 retainedMsg.getTopic(), msgId, retainedMsg.getPayload(), retainedMsg.getProperties());
     }
 

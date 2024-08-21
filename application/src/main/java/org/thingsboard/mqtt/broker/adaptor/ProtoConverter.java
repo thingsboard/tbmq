@@ -430,7 +430,7 @@ public class ProtoConverter {
     public static QueueProtos.RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
         QueueProtos.RetainedMsgProto.Builder builder = QueueProtos.RetainedMsgProto.newBuilder()
                 .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
-                .setQos(retainedMsg.getQosLevel())
+                .setQos(retainedMsg.getQos())
                 .setTopic(retainedMsg.getTopic())
                 .addAllUserProperties(getUserPropertyProtos(retainedMsg.getProperties()))
                 .setCreatedTime(retainedMsg.getCreatedTime());

@@ -350,7 +350,7 @@ public class MqttSubscribeHandlerTest {
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
         List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0));
         assertEquals(1, messages.size());
-        assertEquals(0, messages.get(0).getQosLevel());
+        assertEquals(0, messages.get(0).getQos());
     }
 
     @Test

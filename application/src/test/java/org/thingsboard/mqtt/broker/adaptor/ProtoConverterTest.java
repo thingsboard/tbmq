@@ -303,7 +303,7 @@ public class ProtoConverterTest {
 
         RetainedMsg retainedMsg = ProtoConverter.convertProtoToRetainedMsg(proto);
         assertEquals("topic", retainedMsg.getTopic());
-        assertEquals(1, retainedMsg.getQosLevel());
+        assertEquals(1, retainedMsg.getQos());
         assertNotNull(retainedMsg.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
         assertNull(retainedMsg.getProperties().getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID));
     }

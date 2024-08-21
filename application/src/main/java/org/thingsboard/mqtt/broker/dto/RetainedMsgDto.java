@@ -37,7 +37,7 @@ public class RetainedMsgDto {
         return new RetainedMsgDto(
                 retainedMsg.getTopic(),
                 new String(retainedMsg.getPayload(), StandardCharsets.UTF_8),
-                retainedMsg.getQosLevel(),
+                retainedMsg.getQos(),
                 retainedMsg.getCreatedTime(),
                 UserProperties.newInstance(retainedMsg.getProperties())
         );
