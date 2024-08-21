@@ -208,8 +208,8 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           .subscribe((res) => {
             if (res) {
               setTimeout(() => {
-                this.updateTable()
-              }, 500)
+                this.updateTable();
+              }, 500);
             }
           });
       }

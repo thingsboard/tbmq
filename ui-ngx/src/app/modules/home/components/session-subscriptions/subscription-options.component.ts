@@ -71,9 +71,10 @@ export class SubscriptionOptionsComponent {
   private getSubscriptionOptions(): SubscriptionOptions {
     const formValue = this.subscriptionOptions.getRawValue();
     return {
-      retainAsPublish: formValue.retainAsPublish,
-      retainHandling: formValue.retainHandling,
-      noLocal: formValue.noLocal
+      retainAsPublish: formValue.options.retainAsPublish,
+      retainHandling: formValue.options.retainHandling,
+      noLocal: formValue.options.noLocal,
+      subscriptionIdentifier: formValue.options.subscriptionIdentifier,
     } as SubscriptionOptions;
   }
 }

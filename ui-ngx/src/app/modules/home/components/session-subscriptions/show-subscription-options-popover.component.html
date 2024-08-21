@@ -34,35 +34,50 @@
 <ng-template #subscriptionOptions>
   <div class="tb-form-panel tb-session-filter-config-component no-padding no-border" [formGroup]="subscriptionOptionsForm">
     <div class="tb-form-panel-title" translate>ws-client.subscriptions.mqtt-5-features</div>
-     <div class="tb-form-row space-between column-xs" style="height: 56px;">
-        <div style="width: 140px;" translate>ws-client.subscriptions.rh</div>
-        <mat-form-field fxFlex class="mat-block" appearance="outline" subscriptSizing="dynamic">
-          <mat-select formControlName="retainHandling">
-            <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
-              <span style="font-size: 14px">{{ rh.name }}</span>
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
+    <div class="tb-form-row space-between column-xs" style="height: 56px;">
+      <div class="fixed-title-width" translate>ws-client.subscriptions.rh</div>
+      <mat-form-field fxFlex class="mat-block" appearance="outline" subscriptSizing="dynamic">
+        <mat-select formControlName="retainHandling">
+          <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
+            <span style="font-size: 14px">{{ rh.name }}</span>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs" style="height: 56px">
+      <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
+        <mat-slide-toggle formControlName="noLocal"></mat-slide-toggle>
+        <div translate>ws-client.subscriptions.nl</div>
+        <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18);"
+                  [matTooltip]="'ws-client.subscriptions.nl-hint' | translate"
+                  matTooltipPosition="right">
+          info</mat-icon>
       </div>
-      <div class="tb-form-row space-between column-xs" style="height: 56px">
-        <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
-          <mat-slide-toggle formControlName="noLocal"></mat-slide-toggle>
-          <div translate>ws-client.subscriptions.nl</div>
-          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18);"
-                    [matTooltip]="'ws-client.subscriptions.nl-hint' | translate"
-                    matTooltipPosition="right">
-            info</mat-icon>
-        </div>
+    </div>
+    <div class="tb-form-row space-between column-xs" style="height: 56px">
+      <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
+        <mat-slide-toggle formControlName="retainAsPublish"></mat-slide-toggle>
+        <div translate>ws-client.subscriptions.rap</div>
+        <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                  [matTooltip]="'ws-client.subscriptions.rap-hint' | translate"
+                  matTooltipPosition="right">
+          info</mat-icon>
       </div>
-      <div class="tb-form-row space-between column-xs" style="height: 56px">
-        <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
-          <mat-slide-toggle formControlName="retainAsPublish"></mat-slide-toggle>
-          <div translate>ws-client.subscriptions.rap</div>
-          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                    [matTooltip]="'ws-client.subscriptions.rap-hint' | translate"
-                    matTooltipPosition="right">
-            info</mat-icon>
-        </div>
-      </div>
+    </div>
+    <div class="tb-form-row space-between column-xs" style="height: 56px">
+      <div class="fixed-title-width" translate>ws-client.subscriptions.subscription-identifier</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="number" min="1" max="268435455" formControlName="subscriptionIdentifier">
+        <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate">
+          info
+        </mat-icon>
+        <mat-error *ngIf="subscriptionOptionsForm.get('subscriptionIdentifier').hasError('min')">
+          {{ 'ws-client.subscriptions.subscription-identifier-min' | translate }}
+        </mat-error>
+        <mat-error *ngIf="subscriptionOptionsForm.get('subscriptionIdentifier').hasError('max')">
+          {{ 'ws-client.subscriptions.subscription-identifier-max' | translate }}
+        </mat-error>
+      </mat-form-field>
+    </div>
   </div>
 </ng-template>
