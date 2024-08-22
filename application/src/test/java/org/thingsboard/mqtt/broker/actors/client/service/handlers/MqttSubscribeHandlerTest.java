@@ -492,7 +492,7 @@ public class MqttSubscribeHandlerTest {
                 newRetainedMsg("payload7", 2, ts)
         ));
 
-        Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
+        List<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
                 List.of(
                         getTopicSubscription("one", 1),
                         getTopicSubscription("two", 2),
@@ -514,7 +514,7 @@ public class MqttSubscribeHandlerTest {
                 newRetainedMsg("payload3", 0, ts), newRetainedMsg("payload4", 0, ts)
         ));
         when(retainedMsgService.getRetainedMessages(eq("three"))).thenReturn(List.of(
-                newRetainedMsg("payload5", 2, ts), newRetainedMsg("payload5", 2, ts)
+                newRetainedMsg("payload5", 2, ts), newRetainedMsg("payload5", 2, ts) // these retained messages are not equal
         ));
         when(retainedMsgService.getRetainedMessages(eq("four"))).thenReturn(List.of(
                 newRetainedMsg("payload6", 1, ts), newRetainedMsg("payload1", 1, ts)
@@ -523,7 +523,7 @@ public class MqttSubscribeHandlerTest {
                 newRetainedMsg("payload6", 2, ts), newRetainedMsg("payload4", 1, ts)
         ));
 
-        Set<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
+        List<RetainedMsg> retainedMsgSet = mqttSubscribeHandler.getRetainedMessagesForTopicSubscriptions(
                 List.of(
                         getTopicSubscription("one", 1, getOptions(SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE)),
                         getTopicSubscription("two", 2, getOptions(SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS)),
@@ -533,7 +533,7 @@ public class MqttSubscribeHandlerTest {
                 ),
                 Set.of(getTopicSubscription("two", 1))
         );
-        assertEquals(3, retainedMsgSet.size());
+        assertEquals(4, retainedMsgSet.size());
     }
 
     private static SubscriptionOptions getOptions(SubscriptionOptions.RetainHandlingPolicy retainHandlingPolicy) {
@@ -559,7 +559,7 @@ public class MqttSubscribeHandlerTest {
     public void givenEmptyRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnEmptyResult() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
 
-        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of());
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of());
 
         assertTrue(retainedMsgs.isEmpty());
     }
@@ -568,7 +568,7 @@ public class MqttSubscribeHandlerTest {
     public void givenRetainedMsgSetAndTotalMsgsLimitDisabled_whenApplyRateLimits_thenReturnAllMsgs() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
 
-        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("msg1", 1),
                 newRetainedMsg("msg2", 2)
         ));
@@ -581,7 +581,7 @@ public class MqttSubscribeHandlerTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(0L);
 
-        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("msg1", 1),
                 newRetainedMsg("msg2", 2)
         ));
@@ -594,10 +594,10 @@ public class MqttSubscribeHandlerTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(2L);
 
-        Set<RetainedMsg> retainedMsgSet = Set.of(
+        List<RetainedMsg> retainedMsgSet = List.of(
                 newRetainedMsg("msg1", 1), newRetainedMsg("msg2", 2)
         );
-        Set<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(retainedMsgSet);
+        List<RetainedMsg> result = mqttSubscribeHandler.applyRateLimits(retainedMsgSet);
 
         assertEquals(2, result.size());
         assertTrue(result.containsAll(retainedMsgSet));
@@ -608,7 +608,7 @@ public class MqttSubscribeHandlerTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(anyLong())).thenReturn(1L);
 
-        Set<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(Set.of(
+        List<RetainedMsg> retainedMsgs = mqttSubscribeHandler.applyRateLimits(List.of(
                 newRetainedMsg("msg1", 1),
                 newRetainedMsg("msg2", 2),
                 newRetainedMsg("msg3", 0)

@@ -187,30 +187,30 @@ public class MqttSubscribeHandler {
     private void processRetainedMessages(ClientSessionCtx ctx,
                                          List<TopicSubscription> newSubscriptions,
                                          Set<TopicSubscription> currentSubscriptions) {
-        Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
-        retainedMsgSet = applyRateLimits(retainedMsgSet);
-        retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+        List<RetainedMsg> retainedMsgList = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
+        retainedMsgList = applyRateLimits(retainedMsgList);
+        retainedMsgList.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
     }
 
-    Set<RetainedMsg> applyRateLimits(Set<RetainedMsg> retainedMsgSet) {
+    List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
         if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgSet.size());
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgList.size());
             if (availableTokens == 0) {
-                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgSet.size());
-                return Collections.emptySet();
+                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgList.size());
+                return Collections.emptyList();
             }
-            if (availableTokens == retainedMsgSet.size()) {
-                return retainedMsgSet;
+            if (availableTokens == retainedMsgList.size()) {
+                return retainedMsgList;
             }
-            if (log.isDebugEnabled() && availableTokens < retainedMsgSet.size()) {
-                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgSet.size() - availableTokens);
+            if (log.isDebugEnabled() && availableTokens < retainedMsgList.size()) {
+                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgList.size() - availableTokens);
             }
-            return retainedMsgSet.stream().limit(availableTokens).collect(Collectors.toSet());
+            return retainedMsgList.stream().limit(availableTokens).toList();
         }
-        return retainedMsgSet;
+        return retainedMsgList;
     }
 
-    Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
+    List<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
                                                               Set<TopicSubscription> currentSubscriptions) {
         return newSubscriptions
                 .stream()
@@ -220,7 +220,7 @@ public class MqttSubscribeHandler {
                                 ts -> !currentSubscriptions.contains(ts), topicSubscription))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
-                .collect(Collectors.toSet());
+                .toList();
     }
 
     List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
