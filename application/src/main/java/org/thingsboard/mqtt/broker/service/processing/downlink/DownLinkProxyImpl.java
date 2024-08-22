@@ -38,7 +38,7 @@ public class DownLinkProxyImpl implements DownLinkProxy {
     private final PersistentDownLinkProcessor persistentDownLinkProcessor;
 
     /**
-     * This method will almost never be executed since it is called when Postgres was
+     * This method will almost never be executed since it is called when Redis was
      * not reachable to persist Device messages before delivery to client
      */
     @Override

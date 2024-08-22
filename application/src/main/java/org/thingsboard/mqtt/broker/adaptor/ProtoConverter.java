@@ -136,7 +136,7 @@ public class ProtoConverter {
         QueueProtos.MqttPropertiesProto mqttProperties = publishMsgProto.getMqttProperties();
         if (subscription.isSubsIdsPresent()) {
             QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = mqttProperties.toBuilder();
-            subscription.getSubscriptionIds().forEach(mqttPropertiesBuilder::addSubscriptionIds);
+            mqttPropertiesBuilder.addAllSubscriptionIds(subscription.getSubscriptionIds());
             mqttProperties = mqttPropertiesBuilder.build();
         }
         return mqttProperties;

@@ -464,4 +464,17 @@ public class ProtoConverterTest {
         Assert.assertEquals("test", afterPublishMsgProto.getMqttProperties().getContentType());
     }
 
+    @Test
+    public void givenPubMsgWithPropsAndSubsWithIds_whenProcessCreateReceiverPublishMsg_thenReturnUpdatedMsgWithIds() {
+        Subscription subscription = new Subscription("test/topic", 1, Lists.newArrayList(1, 2, 3));
+        QueueProtos.MqttPropertiesProto mqttPropertiesProto = QueueProtos.MqttPropertiesProto.newBuilder().setContentType("test").build();
+        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setPacketId(1).setRetain(false).setMqttProperties(mqttPropertiesProto).build();
+
+        QueueProtos.PublishMsgProto afterPublishMsgProto = ProtoConverter.createReceiverPublishMsg(subscription, beforePublishMsgProto);
+
+        Assert.assertEquals(1, afterPublishMsgProto.getQos());
+        Assert.assertEquals(0, afterPublishMsgProto.getPacketId());
+        Assert.assertEquals(List.of(1, 2, 3), afterPublishMsgProto.getMqttProperties().getSubscriptionIdsList());
+        Assert.assertEquals("test", afterPublishMsgProto.getMqttProperties().getContentType());
+    }
 }
