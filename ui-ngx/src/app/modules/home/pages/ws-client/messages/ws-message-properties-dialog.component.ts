@@ -20,7 +20,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { TranslateService } from '@ngx-translate/core';
 import { FormBuilder, UntypedFormGroup } from '@angular/forms';
 import { PublishMessageProperties, TimeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
 
@@ -45,8 +44,7 @@ export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessag
               protected router: Router,
               public fb: FormBuilder,
               @Inject(MAT_DIALOG_DATA) public data: WsMessagePropertiesDialogData,
-              public dialogRef: MatDialogRef<WsMessagePropertiesDialogComponent>,
-              private translate: TranslateService) {
+              public dialogRef: MatDialogRef<WsMessagePropertiesDialogComponent>) {
     super(store, router, dialogRef);
   }
 
@@ -68,7 +66,7 @@ export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessag
       topicAlias: [{value: entity.topicAlias, disabled: true}, []],
       correlationData: [{value: entity.correlationData, disabled: true}, []],
       responseTopic: [{value: entity.responseTopic, disabled: true}, []],
-      subscriptionIdentifier: [{value: entity.subscriptionIdentifier, disabled: true}, []],
+      subscriptionId: [{value: entity.subscriptionIdentifier, disabled: true}, []],
       userProperties: [{value: entity.userProperties, disabled: true}, []]
     });
   }

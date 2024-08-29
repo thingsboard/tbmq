@@ -44,7 +44,7 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
       retainAsPublish: [this.data ? this.data.retainAsPublish : null, []],
       retainHandling: [this.data ? this.data.retainHandling : null, []],
       noLocal: [this.data ? this.data.noLocal : null, []],
-      subscriptionIdentifier: [this.data ? this.data.subscriptionIdentifier : null, []],
+      subscriptionId: [this.data ? this.data.subscriptionId : null, []],
     });
   }
 

@@ -141,12 +141,16 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return this.translate.instant(mqttQoSValue.name);
   }
 
-  subscriptionOptionsChanged(value: SubscriptionOptions, topicFilter: AbstractControl<SubscriptionOptions>) {
-    topicFilter.patchValue({
-      retainAsPublish: value.retainAsPublish,
-      retainHandling: value.retainHandling,
-      noLocal: value.noLocal,
-    });
+  subscriptionOptionsChanged(value: SubscriptionOptions, topicFilter: AbstractControl<SubscriptionOptions>, index) {
+    const result = {
+      options: {
+        retainAsPublish: value.retainAsPublish,
+        retainHandling: value.retainHandling,
+        noLocal: value.noLocal,
+      },
+      subscriptionId: value.subscriptionId
+    };
+    this.subscriptionsFormArray().at(index).patchValue(result);
   }
 
   private updateView() {

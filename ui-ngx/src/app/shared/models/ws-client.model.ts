@@ -112,10 +112,10 @@ export interface LastWillMsg {
 }
 
 export interface Connection extends TbConnectionDetails {
-  protocol?: MqttJsProtocolSecurity,
-  host?: string,
-  port?: number,
-  path?: string,
+  protocol?: MqttJsProtocolSecurity;
+  host?: string;
+  port?: number;
+  path?: string;
   protocolId?: MqttJsProtocolId;
   protocolVersion?: MqttJsProtocolVersion;
   clean?: boolean;
@@ -216,6 +216,7 @@ export interface WebSocketSubscriptionConfiguration {
   topicFilter?: string;
   qos?: QoS;
   color?: string;
+  subscriptionId?: number;
   options: SubscriptionOptions;
 }
 
@@ -223,7 +224,7 @@ export interface SubscriptionOptions {
   noLocal?: boolean;
   retainAsPublish?: boolean;
   retainHandling?: number;
-  subscriptionIdentifier?: number;
+  subscriptionId?: number;
 }
 
 export interface MessageFilterConfig {

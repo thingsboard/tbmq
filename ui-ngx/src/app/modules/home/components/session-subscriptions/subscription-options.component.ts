@@ -74,7 +74,7 @@ export class SubscriptionOptionsComponent {
       retainAsPublish: formValue.options.retainAsPublish,
       retainHandling: formValue.options.retainHandling,
       noLocal: formValue.options.noLocal,
-      subscriptionIdentifier: formValue.options.subscriptionIdentifier,
+      subscriptionId: formValue.subscriptionId,
     } as SubscriptionOptions;
   }
 }

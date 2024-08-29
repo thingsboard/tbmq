@@ -94,7 +94,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
         retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled}, []],
         retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : 0, disabled}, []],
-        subscriptionIdentifier: [{value: this.entity ? this.entity.configuration.options.subscriptionIdentifier : null, disabled}, []]
+        subscriptionId: [{value: this.entity ? this.entity.configuration.subscriptionId : null, disabled}, []]
       })
     });
   }
@@ -107,6 +107,8 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   save() {
     const formValues = this.formGroup.getRawValue();
     formValues.color = formValues.color || colorRandom();
+    formValues.subscriptionId = formValues.options.subscriptionId;
+    delete formValues.options.subscriptionId;
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
     if (!this.topicFilterDuplicate) {
       this.dialogRef.close(result);
