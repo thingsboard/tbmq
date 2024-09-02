@@ -16,7 +16,7 @@
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { RhOptions, SubscriptionOptions } from '@shared/models/ws-client.model';
+import { RhOptions, WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-show-subscription-options',
@@ -29,10 +29,10 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
   onClose: () => void;
 
   @Output()
-  subscriptionOptionsApplied = new EventEmitter<SubscriptionOptions>();
+  subscriptionOptionsApplied = new EventEmitter<WebSocketSubscriptionConfiguration>();
 
   @Input()
-  data: SubscriptionOptions;
+  data: WebSocketSubscriptionConfiguration;
 
   subscriptionOptionsForm: UntypedFormGroup;
   rhOptions = RhOptions;
@@ -41,9 +41,9 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
 
   ngOnInit() {
     this.subscriptionOptionsForm = this.fb.group({
-      retainAsPublish: [this.data ? this.data.retainAsPublish : null, []],
-      retainHandling: [this.data ? this.data.retainHandling : null, []],
-      noLocal: [this.data ? this.data.noLocal : null, []],
+      retainAsPublish: [this.data ? this.data.options?.retainAsPublish : null, []],
+      retainHandling: [this.data ? this.data.options?.retainHandling : null, []],
+      noLocal: [this.data ? this.data.options?.noLocal : null, []],
       subscriptionId: [this.data ? this.data.subscriptionId : null, []],
     });
   }
@@ -57,6 +57,14 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
   }
 
   apply() {
-    this.subscriptionOptionsApplied.emit(this.subscriptionOptionsForm.getRawValue());
+    const formValue = this.subscriptionOptionsForm.getRawValue();
+    this.subscriptionOptionsApplied.emit({
+      subscriptionId: formValue.subscriptionId,
+      options: {
+        retainAsPublish: formValue.retainAsPublish,
+        retainHandling: formValue.retainHandling,
+        noLocal: formValue.noLocal,
+      }
+    });
   }
 }

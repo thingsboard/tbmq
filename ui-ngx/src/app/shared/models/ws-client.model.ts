@@ -224,7 +224,6 @@ export interface SubscriptionOptions {
   noLocal?: boolean;
   retainAsPublish?: boolean;
   retainHandling?: number;
-  subscriptionId?: number;
 }
 
 export interface MessageFilterConfig {
