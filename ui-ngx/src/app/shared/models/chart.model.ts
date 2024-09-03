@@ -16,6 +16,7 @@
 
 import _ from 'lodash';
 import { Tooltip } from 'chart.js';
+import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models/ws-client.model';
 
 export interface TimeseriesData {
   [key: string]: Array<TsValue>;
@@ -303,6 +304,19 @@ function getParams(type) {
         plugins: {
           legend: {
             display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const chartType = context.dataset.chartType;
+                const value = context.parsed.y || 0;
+                let label = `${context.dataset.label}: ${value}`;
+                if (chartType === StatsChartType.processedBytes) {
+                  label += ' ' + DataSizeUnitTypeTranslationMap.get(DataSizeUnitType.BYTE);
+                }
+                return label;
+              }
+            }
           }
         }
       }

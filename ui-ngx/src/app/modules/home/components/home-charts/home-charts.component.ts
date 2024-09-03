@@ -109,7 +109,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         pointBackgroundColor: color,
         pointHoverBackgroundColor: color,
         pointHoverBorderColor: color,
-        pointRadius: 0
+        pointRadius: 0,
+        chartType
       };
       const params = {...chartJsParams(this.chartPage), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params as any);
