@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
+import { gettingStartedActions, gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-getting-started',
@@ -28,14 +29,26 @@ import { gettingStartedGuides, GettingStartedLink } from '@shared/models/getting
   styleUrls: ['./getting-started.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GettingStartedComponent extends PageComponent implements OnDestroy {
+export class GettingStartedComponent extends PageComponent implements OnInit, OnDestroy {
+
+  currentReleaseVersion: string;
 
   guides = gettingStartedGuides;
+  actions = gettingStartedActions;
 
   constructor(protected store: Store<AppState>,
+              private configService: ConfigService,
               private router: Router,
               public fb: UntypedFormBuilder) {
     super(store);
+  }
+
+  ngOnInit() {
+    this.configService.getSystemVersion().subscribe(currentRelease => {
+      if (currentRelease) {
+        this.currentReleaseVersion = currentRelease.version.split('-')[0];
+      }
+    });
   }
 
   ngOnDestroy() {
@@ -44,5 +57,9 @@ export class GettingStartedComponent extends PageComponent implements OnDestroy 
 
   navigate(guide: GettingStartedLink) {
     this.router.navigateByUrl(guide.url);
+  }
+
+  navigateNewTab(guide: GettingStartedLink) {
+    window.open(guide.url, '_blank');
   }
 }

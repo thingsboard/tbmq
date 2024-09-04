@@ -18,18 +18,11 @@ export const gettingStartedGuideTitle = (id: string) => gettingStartedGuides.fin
 
 export const gettingStartedGuides: GettingStartedLink[] = [
   {
-    id: 'websocket',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'ws-client.ws-client',
-    subtitle: 'getting-started.guide.ws-client-subtitle',
-    url: '/ws-client'
-  },
-  {
-    id: 'guide-mosquitto',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'getting-started.guide.mosquitto-title',
-    subtitle: 'getting-started.guide.mosquitto-subtitle',
-    url: '/getting-started/guide-mosquitto'
+    id: 'guide-python',
+    img: '/assets/getting-started/python.png',
+    title: 'getting-started.guide.python-title',
+    subtitle: 'getting-started.guide.python-subtitle',
+    url: '/getting-started/guide-python'
   },
   {
     id: 'guide-javascript',
@@ -39,13 +32,6 @@ export const gettingStartedGuides: GettingStartedLink[] = [
     url: '/getting-started/guide-javascript'
   },
   {
-    id: 'guide-python',
-    img: '/assets/getting-started/python.png',
-    title: 'getting-started.guide.python-title',
-    subtitle: 'getting-started.guide.python-subtitle',
-    url: '/getting-started/guide-python'
-  },
-  {
     id: 'guide-arduino',
     img: '/assets/getting-started/arduino.png',
     title: 'getting-started.guide.arduino-title',
@@ -53,18 +39,62 @@ export const gettingStartedGuides: GettingStartedLink[] = [
     url: '/getting-started/guide-arduino'
   },
   {
-    id: 'github',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'Github',
-    subtitle: '',
-    url: ''
+    id: 'guide-mosquitto',
+    img: '/assets/getting-started/mosquitto.png',
+    title: 'getting-started.guide.mosquitto-title',
+    subtitle: 'getting-started.guide.mosquitto-subtitle',
+    url: '/getting-started/guide-mosquitto'
   },
+  {
+    id: 'guide-java',
+    img: '/assets/getting-started/java.webp',
+    title: 'getting-started.guide.java-title',
+    subtitle: 'getting-started.guide.java-subtitle',
+    url: '/getting-started/guide-java'
+  },
+  {
+    id: 'guide-java-ws',
+    img: '/assets/getting-started/java.webp',
+    title: 'getting-started.guide.java-ws-title',
+    subtitle: 'getting-started.guide.java-ws-subtitle',
+    url: '/getting-started/guide-java-ws'
+  },
+  /*{
+    id: 'websocket',
+    img: '/assets/home/no_data_bg.svg',
+    title: 'ws-client.ws-client',
+    subtitle: 'getting-started.guide.ws-client-subtitle',
+    url: '/ws-client'
+  },*/
 ]
 
 export interface GettingStartedLink {
-  id: string;
+  title: string;
   url: string;
-  img: string;
-  title?: string;
+  id?: string;
+  img?: string;
   subtitle?: string;
 }
+
+export const gettingStartedActions: GettingStartedLink[] = [
+  {
+    title: 'getting-started.guide.releases',
+    url: 'https://github.com/thingsboard/tbmq/releases'
+  },
+  {
+    title: 'getting-started.guide.support',
+    url: 'https://thingsboard.io/docs/contact-us'
+  },
+  {
+    title: 'getting-started.guide.github',
+    url: 'https://github.com/thingsboard/tbmq'
+  },
+  {
+    title: 'getting-started.guide.docs',
+    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started/'
+  },
+  {
+    title: 'getting-started.guide.pricing',
+    url: 'https://thingsboard.io/pricing/?section=tbmq'
+  }
+]

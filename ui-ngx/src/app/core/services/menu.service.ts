@@ -22,7 +22,6 @@ import { take } from 'rxjs/operators';
 import { MenuSection } from '@core/services/menu.models';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { Authority } from '@shared/models/authority.enum';
-import { guid } from '@core/utils';
 import { AuthState } from '@core/auth/auth.models';
 
 @Injectable({

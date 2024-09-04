@@ -18,7 +18,7 @@
 <mat-card appearance="outlined">
   <mat-card-header>
     <mat-card-title>
-      <span class="mat-headline-5" translate>INFO</span>
+      <span class="mat-headline-5" translate>getting-started.guide.info-title</span>
     </mat-card-title>
   </mat-card-header>
   <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
@@ -26,14 +26,15 @@
   <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
   <mat-card-content>
     <div class="tb-form-panel no-border no-padding">
-      <div fxLayout="column">
-        <span><b>Version 1.3.1</b></span>
-        <span>TBMQ is an industry-ready MQTT broker developed and distributed under the ThingsBoard umbrella that facilitates MQTT client connectivity, message publishing, and distribution among subscribers.</span>
-        <a>Releases</a>
-        <a>Support</a>
-        <a>Github</a>
-        <a>Docs</a>
-        <a>Pricing</a>
+      <div class="info-container" fxLayout="column" fxLayoutGap="16px">
+        <span class="content info" translate>getting-started.guide.info-text</span>
+        <a class="content read-more" href="https://thingsboard.io/docs/mqtt-broker" translate>action.read-more</a>
+        <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
+        <section fxLayout="row" fxLayoutGap="8px">
+          <button mat-stroked-button color="primary" *ngFor="let action of actions" (click)="navigateNewTab(action)">
+            <span translate>{{action.title}}</span>
+          </button>
+        </section>
       </div>
     </div>
   </mat-card-content>
@@ -42,24 +43,23 @@
 <mat-card appearance="outlined">
   <mat-card-header>
     <mat-card-title>
-      <span class="mat-headline-5" translate>getting-started.guide.getting-started-guides</span>
+      <span class="mat-headline-5" translate>getting-started.guide.guide-title</span>
     </mat-card-title>
   </mat-card-header>
   <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
   </mat-progress-bar>
   <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
   <mat-card-content>
-    <span translate>MQTT guides to get started with TBMQ and MQTT.</span>
     <div class="tb-form-panel no-border no-padding">
-      <div class="flex-container">
-        <div class="flex-item"
-             *ngFor="let guide of guides"
-             (click)="navigate(guide)">
-          <img [src]="guide.img" [alt]="guide.title">
-          <section fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
-            <h5 translate>{{guide.title}}</h5>
+      <span class="content info" translate>getting-started.guide.guide-text</span>
+      <div class="guides-container">
+        <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
+             *ngFor="let guide of guides" (click)="navigate(guide)">
+          <div class="guide">
+            <img [src]="guide.img" [alt]="guide.subtitle">
             <span translate>{{guide.subtitle}}</span>
-          </section>
+          </div>
+          <span style="font-weight: 500" translate>{{guide.title}}</span>
         </div>
       </div>
     </div>
