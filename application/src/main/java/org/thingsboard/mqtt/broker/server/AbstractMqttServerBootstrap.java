@@ -48,7 +48,7 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
                 .childOption(ChannelOption.SO_KEEPALIVE, isKeepAlive());
 
         serverChannel = b.bind(getHost(), getPort()).sync().channel();
-        log.info("[{}] Mqtt server started!", getServerName());
+        log.info("[{}] Mqtt server started on port {}!", getServerName(), getPort());
     }
 
     public void shutdown() throws InterruptedException {

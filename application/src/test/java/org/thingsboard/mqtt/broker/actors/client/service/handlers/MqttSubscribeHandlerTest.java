@@ -354,6 +354,19 @@ public class MqttSubscribeHandlerTest {
     }
 
     @Test
+    public void givenTopicSubscriptionWithSubId_whenGetRetainedMessagesForTopicSubscription_thenReturnExpectedResult() {
+        MqttProperties properties = new MqttProperties();
+
+        when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0, null, SubscriptionOptions.newInstance(), 1));
+        assertEquals(1, messages.size());
+        assertEquals(0, messages.get(0).getQos());
+        MqttProperties resultProps = messages.get(0).getProperties();
+        assertFalse(resultProps.listAll().isEmpty());
+        assertEquals(1, resultProps.getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID).value());
+    }
+
+    @Test
     public void givenTopicSubscription_whenGetExpiredRetainedMessagesForTopicSubscription_thenReturnEmptyResult() {
         MqttProperties properties = new MqttProperties();
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, -10));
@@ -389,6 +402,7 @@ public class MqttSubscribeHandlerTest {
                 eq(1), eq(List.of(MqttReasonCodes.SubAck.GRANTED_QOS_0, MqttReasonCodes.SubAck.GRANTED_QOS_1, MqttReasonCodes.SubAck.GRANTED_QOS_2))
         );
         verify(clientSubscriptionService, times(1)).subscribeAndPersist(any(), any(), any());
+        verify(clientSubscriptionService, times(1)).getClientSharedSubscriptions(any());
     }
 
     @Test
