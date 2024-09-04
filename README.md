@@ -79,4 +79,3 @@ This project is released under [Apache 2.0 License](./LICENSE).
 ## MQTT 5 features in active development:
 
 - AUTH packet & Enhanced Authentication
-- Subscription Identifiers
