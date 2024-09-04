@@ -24,6 +24,9 @@ import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MqttPropertiesUtil {
@@ -79,8 +82,23 @@ public class MqttPropertiesUtil {
         return requestResponseInfoProp == null ? 0 : requestResponseInfoProp.value();
     }
 
-    public static MqttProperties.MqttProperty getSubscriptionIdProperty(MqttProperties properties) {
-        return properties.getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+    public static MqttProperties.IntegerProperty getSubscriptionIdProperty(MqttProperties properties) {
+        return getIntegerProperty(properties, BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+    }
+
+    public static List<Integer> getSubscriptionIds(MqttProperties properties) {
+        List<MqttProperties.IntegerProperty> integerProperties = getIntegerProperties(properties, BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+        if (integerProperties.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Integer> subscriptionIds = new ArrayList<>(integerProperties.size());
+        integerProperties.forEach(integerProperty -> subscriptionIds.add(integerProperty.value()));
+        return subscriptionIds;
+    }
+
+    public static int getSubscriptionIdValue(MqttProperties properties) {
+        MqttProperties.IntegerProperty integerProperty = getIntegerProperty(properties, BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID);
+        return integerProperty != null ? integerProperty.value() : -1;
     }
 
     public static MqttProperties.IntegerProperty getSessionExpiryIntervalProperty(MqttProperties properties) {
@@ -91,12 +109,22 @@ public class MqttPropertiesUtil {
         return getIntegerProperty(properties, BrokerConstants.TOPIC_ALIAS_PROP_ID);
     }
 
-    public static MqttProperties.IntegerProperty getPayloadFormatProperty(MqttProperties mqttProperties) {
+    public static MqttProperties.IntegerProperty getPayloadFormatIndicatorProperty(MqttProperties mqttProperties) {
         return getIntegerProperty(mqttProperties, BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID);
+    }
+
+    public static Integer getPayloadFormatIndicatorValue(MqttProperties mqttProperties) {
+        MqttProperties.IntegerProperty payloadFormatProperty = getPayloadFormatIndicatorProperty(mqttProperties);
+        return payloadFormatProperty == null ? null : payloadFormatProperty.value();
     }
 
     public static MqttProperties.StringProperty getContentTypeProperty(MqttProperties mqttProperties) {
         return (MqttProperties.StringProperty) mqttProperties.getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID);
+    }
+
+    public static String getContentTypeValue(MqttProperties mqttProperties) {
+        MqttProperties.StringProperty contentTypeProperty = getContentTypeProperty(mqttProperties);
+        return contentTypeProperty == null ? null : contentTypeProperty.value();
     }
 
     public static MqttProperties.BinaryProperty getCorrelationDataProperty(MqttProperties mqttProperties) {
@@ -125,6 +153,11 @@ public class MqttPropertiesUtil {
     private static MqttProperties.IntegerProperty getIntegerProperty(MqttProperties properties, int propertyId) {
         MqttProperties.MqttProperty property = properties.getProperty(propertyId);
         return property != null ? (MqttProperties.IntegerProperty) property : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<MqttProperties.IntegerProperty> getIntegerProperties(MqttProperties properties, int propertyId) {
+        return (List<MqttProperties.IntegerProperty>) properties.getProperties(propertyId);
     }
 
     public static MqttProperties.UserProperties getUserProperties(PublishMsg publishMsg) {
@@ -169,8 +202,14 @@ public class MqttPropertiesUtil {
         }
     }
 
-    public static void addMsgExpiryIntervalToPublish(MqttProperties properties, int messageExpiryInterval) {
+    public static void addMsgExpiryIntervalToProps(MqttProperties properties, int messageExpiryInterval) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, messageExpiryInterval));
+    }
+
+    public static void addSubscriptionIdToProps(MqttProperties properties, int subscriptionId) {
+        if (subscriptionId > 0) {
+            properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
+        }
     }
 
     public static void addAssignedClientIdToProps(MqttProperties properties, String assignedClientId) {
@@ -190,7 +229,7 @@ public class MqttPropertiesUtil {
     public static void addSubsIdentifierAvailableToProps(MqttProperties properties) {
         properties.add(new MqttProperties.IntegerProperty(
                 BrokerConstants.SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID,
-                0) // TODO: 14/10/2022 after impl MQTT 5 SubscriptionId feature change this to 1 or remove completely
+                1)
         );
     }
 
@@ -316,7 +355,7 @@ public class MqttPropertiesUtil {
         if (pubExpiryIntervalProperty != null) {
             properties.add(pubExpiryIntervalProperty);
         }
-        MqttProperties.IntegerProperty payloadFormatProperty = getPayloadFormatProperty(publishMsg.getProperties());
+        MqttProperties.IntegerProperty payloadFormatProperty = getPayloadFormatIndicatorProperty(publishMsg.getProperties());
         if (payloadFormatProperty != null) {
             properties.add(payloadFormatProperty);
         }
@@ -332,6 +371,12 @@ public class MqttPropertiesUtil {
         if (correlationDataProperty != null) {
             properties.add(correlationDataProperty);
         }
+        return properties;
+    }
+
+    public static MqttProperties copyProps(MqttProperties source) {
+        MqttProperties properties = new MqttProperties();
+        source.listAll().forEach(properties::add);
         return properties;
     }
 

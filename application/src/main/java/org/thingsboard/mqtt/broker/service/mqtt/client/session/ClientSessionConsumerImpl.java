@@ -49,18 +49,19 @@ import static org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory.getClien
 @Component
 @RequiredArgsConstructor
 public class ClientSessionConsumerImpl implements ClientSessionConsumer {
-    private volatile boolean initializing = true;
-    private volatile boolean stopped = false;
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-session-listener"));
-
-    @Value("${queue.client-session.poll-interval}")
-    private long pollDuration;
 
     private final ClientSessionQueueFactory clientSessionQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
     private final ClientSessionPersistenceService persistenceService;
     private final TbQueueAdmin queueAdmin;
+
+    @Value("${queue.client-session.poll-interval}")
+    private long pollDuration;
+
+    private volatile boolean initializing = true;
+    private volatile boolean stopped = false;
 
     private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionConsumer;
 

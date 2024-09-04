@@ -368,7 +368,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 qos,
                 createDummyClientSession(sharedSubscription),
                 sharedSubscription.getTopicSharedSubscription().getShareName(),
-                SubscriptionOptions.newInstance()
+                SubscriptionOptions.newInstance(),
+                -1
         );
     }
 
@@ -407,7 +408,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             var clientId = subscription.getClientId();
             var value = map.get(clientId);
             if (value != null) {
-                map.put(clientId, getSubscriptionWithHigherQos(value, subscription));
+                map.put(clientId, getSubscriptionWithHigherQosAndAllSubscriptionIds(value, subscription));
             } else {
                 map.put(clientId, subscription);
             }
@@ -426,10 +427,11 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
         return new Subscription(
                 clientSubscription.getTopicFilter(),
-                clientSubscription.getValue().getQosValue(),
+                clientSubscription.getValue().getQos(),
                 clientSessionInfo,
                 clientSubscription.getValue().getShareName(),
-                clientSubscription.getValue().getOptions());
+                clientSubscription.getValue().getOptions(),
+                clientSubscription.getValue().getSubscriptionId());
     }
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
@@ -443,8 +445,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 );
     }
 
-    Subscription getSubscriptionWithHigherQos(Subscription first, Subscription second) {
-        return first.getQos() > second.getQos() ? first : second;
+    Subscription getSubscriptionWithHigherQosAndAllSubscriptionIds(Subscription first, Subscription second) {
+        return first.compareAndGetHigherQosAndAllSubscriptionIds(second);
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {

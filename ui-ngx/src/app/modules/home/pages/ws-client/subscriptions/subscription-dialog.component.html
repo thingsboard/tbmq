@@ -90,6 +90,19 @@
                           matTooltipPosition="right">
                   info</mat-icon>
               </section>
+              <mat-form-field class="mat-block">
+                <mat-label translate>ws-client.subscriptions.subscription-identifier</mat-label>
+                <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
+                <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate">
+                  info
+                </mat-icon>
+                <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('min')">
+                  {{ 'ws-client.subscriptions.subscription-identifier-min' | translate }}
+                </mat-error>
+                <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('max')">
+                  {{ 'ws-client.subscriptions.subscription-identifier-max' | translate }}
+                </mat-error>
+              </mat-form-field>
             </div>
           </ng-template>
         </mat-expansion-panel>

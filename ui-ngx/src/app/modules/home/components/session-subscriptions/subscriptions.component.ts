@@ -32,7 +32,7 @@ import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
 import { MqttQoS, MqttQoSType, mqttQoSTypes, TopicSubscription } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
-import { SubscriptionOptions } from '@shared/models/ws-client.model';
+import { WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-session-subscriptions',
@@ -55,8 +55,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   topicListFormGroup: UntypedFormGroup;
   mqttQoSTypes = mqttQoSTypes;
-  showShareName = false;
-  shareNameCounter = 0;
 
   private propagateChange = (v: any) => {};
   private valueChangeSubscription: Subscription = null;
@@ -87,16 +85,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.disabled = isDisabled;
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
-    } else {
-      Object.keys(this.subscriptionsFormArray().controls).forEach(
-        (control: string) => {
-          const typedControl: AbstractControl = this.subscriptionsFormArray().controls[control];
-          typedControl.get('shareName').disable();
-          if (typedControl.get('shareName')?.value) {
-            typedControl.disable();
-          }
-        }
-      );
     }
   }
 
@@ -108,7 +96,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     if (topics) {
       for (const topic of topics) {
         const topicControl = this.fb.group(topic);
-        if (topic.shareName?.length) this.shareNameCounter++;
         subscriptionsControls.push(topicControl);
       }
     }
@@ -124,12 +111,14 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
 
   addTopic() {
     const group = this.fb.group({
-      shareName: [{value: null, disabled: true}, []],
       topicFilter: [null, [Validators.required]],
       qos: [MqttQoS.AT_LEAST_ONCE, []],
-      retainAsPublish: [true, []],
-      retainHandling: [0, []],
-      noLocal: [false, []]
+      subscriptionId: [null, []],
+      options: this.fb.group({
+        retainAsPublish: [false, []],
+        retainHandling: [0, []],
+        noLocal: [false, []],
+      })
     });
     this.subscriptionsFormArray().push(group);
   }
@@ -140,23 +129,12 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     };
   }
 
-  toggleShowShareName($event) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.showShareName = !this.showShareName;
-  }
-
   mqttQoSValue(mqttQoSValue: MqttQoSType): string {
     return this.translate.instant(mqttQoSValue.name);
   }
 
-  subscriptionOptionsChanged(value: SubscriptionOptions, topicFilter: AbstractControl<SubscriptionOptions>) {
-    topicFilter.patchValue({
-      retainAsPublish: value.retainAsPublish,
-      retainHandling: value.retainHandling,
-      noLocal: value.noLocal,
-    });
+  subscriptionOptionsChanged(value: WebSocketSubscriptionConfiguration, topicFilter: AbstractControl<WebSocketSubscriptionConfiguration>) {
+    topicFilter.patchValue(value);
   }
 
   private updateView() {

@@ -56,7 +56,6 @@ export interface ShortClientSessionInfo {
 export interface TopicSubscription extends SubscriptionOptions {
   topic: string;
   qos: WsMqttQoSType;
-  shareName: string;
 }
 
 export enum MqttQoS {

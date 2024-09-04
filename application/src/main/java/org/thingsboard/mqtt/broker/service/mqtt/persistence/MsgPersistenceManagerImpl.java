@@ -103,7 +103,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             for (String sharedTopic : sharedTopics) {
                 applicationMsgQueuePublisher.sendMsgToSharedTopic(
                         sharedTopic,
-                        new TbProtoQueueMsg<>(createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
+                        new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
                         callbackWrapper);
             }
         }
@@ -126,8 +126,8 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private void sendDeviceMsg(Subscription deviceSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
-        String clientId = getClientIdFromSubscription(deviceSubscription);
-        PublishMsgProto publishMsg = createReceiverPublishMsg(deviceSubscription, publishMsgWithId.getPublishMsgProto());
+        String clientId = deviceSubscription.getClientId();
+        PublishMsgProto publishMsg = ProtoConverter.createReceiverPublishMsg(deviceSubscription, publishMsgWithId.getPublishMsgProto());
         deviceMsgQueuePublisher.sendMsg(
                 clientId,
                 new TbProtoQueueMsg<>(clientId, publishMsg, publishMsgWithId.getHeaders().copy()),
@@ -135,9 +135,9 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     }
 
     private void sendApplicationMsg(Subscription applicationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
-        PublishMsgProto publishMsg = createReceiverPublishMsg(applicationSubscription, publishMsgWithId.getPublishMsgProto());
+        PublishMsgProto publishMsg = ProtoConverter.createReceiverPublishMsg(applicationSubscription, publishMsgWithId.getPublishMsgProto());
         applicationMsgQueuePublisher.sendMsg(
-                getClientIdFromSubscription(applicationSubscription),
+                applicationSubscription.getClientId(),
                 new TbProtoQueueMsg<>(publishMsg.getTopicName(), publishMsg, getAppMsgHeaders(publishMsgWithId)),
                 callbackWrapper);
     }
@@ -162,10 +162,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 .keySet();
     }
 
-    private String getClientIdFromSubscription(Subscription subscription) {
-        return subscription.getClientSessionInfo().getClientId();
-    }
-
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
                                  List<Subscription> applicationSubscriptions,
                                  Set<String> sharedTopics) {
@@ -178,22 +174,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         return collection == null ? 0 : collection.size();
     }
 
-    private PublishMsgProto createReceiverPublishMsg(Subscription clientSubscription, PublishMsgProto publishMsgProto) {
-        var minQoSValue = Math.min(clientSubscription.getQos(), publishMsgProto.getQos());
-        var retain = clientSubscription.getOptions().isRetain(publishMsgProto.getRetain());
-        return publishMsgProto.toBuilder()
-                .setPacketId(0)
-                .setQos(minQoSValue)
-                .setRetain(retain)
-                .build();
-    }
-
-    private PublishMsgProto createReceiverPublishMsg(PublishMsgProto publishMsgProto) {
-        return publishMsgProto.toBuilder()
-                .setPacketId(0)
-                .build();
-    }
-
     @Override
     public void startProcessingPersistedMessages(ClientActorStateInfo actorState, boolean wasPrevSessionPersistent) {
         ClientSessionCtx clientSessionCtx = actorState.getCurrentSessionCtx();
@@ -204,8 +184,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             applicationPersistenceProcessor.startProcessingPersistedMessages(actorState);
         } else if (clientType == DEVICE) {
             if (!wasPrevSessionPersistent) {
-                // TODO: it's still possible to get old msgs if DEVICE queue is overloaded
-                // in case some messages got persisted after session clear
                 devicePersistenceProcessor.clearPersistedMsgs(clientSessionCtx.getClientId());
             }
             devicePersistenceProcessor.startProcessingPersistedMessages(clientSessionCtx);
@@ -228,7 +206,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
             applicationPersistenceProcessor.stopProcessingPersistedMessages(clientInfo.getClientId());
         } else if (clientInfo.getType() == DEVICE) {
             devicePersistenceProcessor.stopProcessingPersistedMessages(clientInfo.getClientId());
-            // TODO: stop select query if it's running
         } else {
             log.warn("[{}] Persisted messages are not supported for client type {}.", clientInfo.getClientId(), clientInfo.getType());
         }
@@ -241,7 +218,6 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     @Override
     public void clearPersistedMessages(ClientInfo clientInfo) {
-        // TODO: make async
         genericClientSessionCtxManager.clearAwaitingQoS2Packets(clientInfo.getClientId());
         if (clientInfo.getType() == APPLICATION) {
             applicationPersistenceProcessor.clearPersistedMsgs(clientInfo.getClientId());

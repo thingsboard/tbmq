@@ -18,13 +18,12 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.util.CollectionsUtil;
+import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
 
-import java.util.Comparator;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -39,8 +38,8 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
         Set<TopicSubscription> newTopicSubscriptions = msg.getTopicSubscriptions();
 
         if (log.isDebugEnabled()) {
-            log.debug("[{}] Updating Client's subscriptions, new subscriptions size - {}, current subscriptions size - {}.",
-                    clientId, newTopicSubscriptions.size(), currentTopicSubscriptions.size());
+            log.debug("[{}] Updating Client's subscriptions, new subscriptions - {}, current subscriptions - {}.",
+                    clientId, newTopicSubscriptions, currentTopicSubscriptions);
         }
 
         if (newTopicSubscriptions.isEmpty()) {
@@ -48,39 +47,26 @@ public class SubscriptionChangesManagerImpl implements SubscriptionChangesManage
             return;
         }
 
-        processUnsubscribe(clientId, newTopicSubscriptions, currentTopicSubscriptions);
-
-        processSubscribe(clientId, newTopicSubscriptions, currentTopicSubscriptions);
+        TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(currentTopicSubscriptions, newTopicSubscriptions);
+        processUnsubscribe(clientId, subscriptionsUpdate);
+        processSubscribe(clientId, subscriptionsUpdate);
     }
 
-    private void processUnsubscribe(String clientId, Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
-        Set<TopicSubscription> removedSubscriptions = getRemovedSubscriptions(newTopicSubscriptions, currentTopicSubscriptions);
-        Set<String> unsubscribeTopics = getUnsubscribeTopics(removedSubscriptions);
+    private void processUnsubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+        Set<TopicSubscription> removedSubscriptions = subscriptionsUpdate.getToUnsubscribe();
+        if (CollectionUtils.isEmpty(removedSubscriptions)) {
+            return;
+        }
+        Set<String> unsubscribeTopics = TopicSubscriptionsUtil.getUnsubscribeTopics(removedSubscriptions);
         clientSubscriptionService.unsubscribeInternally(clientId, unsubscribeTopics);
     }
 
-    private Set<TopicSubscription> getRemovedSubscriptions(Set<TopicSubscription> newTopicSubscriptions,
-                                                           Set<TopicSubscription> currentTopicSubscriptions) {
-        return CollectionsUtil.getRemovedValues(newTopicSubscriptions, currentTopicSubscriptions, getComparator());
+    private void processSubscribe(String clientId, TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate) {
+        Set<TopicSubscription> addedSubscriptions = subscriptionsUpdate.getToSubscribe();
+        if (CollectionUtils.isEmpty(addedSubscriptions)) {
+            return;
+        }
+        clientSubscriptionService.subscribeInternally(clientId, addedSubscriptions);
     }
 
-    private void processSubscribe(String clientId, Set<TopicSubscription> newTopicSubscriptions, Set<TopicSubscription> currentTopicSubscriptions) {
-        Set<TopicSubscription> addedTopicSubscriptions = getAddedSubscriptions(newTopicSubscriptions, currentTopicSubscriptions);
-        clientSubscriptionService.subscribeInternally(clientId, addedTopicSubscriptions);
-    }
-
-    private Set<TopicSubscription> getAddedSubscriptions(Set<TopicSubscription> newTopicSubscriptions,
-                                                         Set<TopicSubscription> currentTopicSubscriptions) {
-        return CollectionsUtil.getAddedValues(newTopicSubscriptions, currentTopicSubscriptions, getComparator());
-    }
-
-    private Comparator<TopicSubscription> getComparator() {
-        return Comparator.comparing(TopicSubscription::getTopicFilter).thenComparing(TopicSubscription::getQos);
-    }
-
-    private Set<String> getUnsubscribeTopics(Set<TopicSubscription> removedSubscriptions) {
-        return removedSubscriptions.stream()
-                .map(TopicSubscription::getTopicFilter)
-                .collect(Collectors.toSet());
-    }
 }

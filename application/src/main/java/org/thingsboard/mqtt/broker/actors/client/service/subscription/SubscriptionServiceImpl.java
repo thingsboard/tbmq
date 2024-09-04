@@ -54,7 +54,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                             clientId,
                             topicSubscription.getQos(),
                             topicSubscription.getShareName(),
-                            topicSubscription.getOptions())
+                            topicSubscription.getOptions(),
+                            topicSubscription.getSubscriptionId())
             );
         }
     }

@@ -54,7 +54,6 @@
       </section>
       <section style="width: 40px">
         <button mat-icon-button
-                [disabled]="topicFilter.get('shareName').value?.length > 0"
                 [fxShow]="!disabled"
                 (click)="removeTopic($index)"
                 matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"

@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
@@ -106,7 +107,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
         options.setUserName(null);
         options.setPassword(password.getBytes(StandardCharsets.UTF_8));
         pubClient.connect(options);
-        pubClient.publish(MY_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
+        pubClient.publish(MY_TOPIC, BrokerConstants.DUMMY_PAYLOAD, 1, false);
 
         pubClient.disconnect();
         pubClient.close();
@@ -126,7 +127,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT_ID);
         pubClient.connect();
-        pubClient.publish(MY_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
+        pubClient.publish(MY_TOPIC, BrokerConstants.DUMMY_PAYLOAD, 1, false);
 
         boolean await = latch.await(1, TimeUnit.SECONDS);
         Assert.assertFalse(await);
@@ -150,7 +151,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         MqttClient pubClient = new MqttClient(SERVER_URI + mqttPort, PUB_CLIENT_ID);
         pubClient.connect();
-        pubClient.publish(TEST_TOPIC, "test".getBytes(StandardCharsets.UTF_8), 1, false);
+        pubClient.publish(TEST_TOPIC, BrokerConstants.DUMMY_PAYLOAD, 1, false);
 
         boolean await = latch.await(1, TimeUnit.SECONDS);
         Assert.assertFalse(await);
@@ -241,7 +242,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
         Assert.assertEquals(1, clientSubscriptionsFromTrie.size());
         clientSubscriptionsFromTrie.forEach(clientSubscriptionValueWithTopicFilter -> {
             Assert.assertEquals(SUB_CLIENT_ID, clientSubscriptionValueWithTopicFilter.getValue().getClientId());
-            Assert.assertEquals(qos, clientSubscriptionValueWithTopicFilter.getValue().getQosValue());
+            Assert.assertEquals(qos, clientSubscriptionValueWithTopicFilter.getValue().getQos());
         });
     }
 }

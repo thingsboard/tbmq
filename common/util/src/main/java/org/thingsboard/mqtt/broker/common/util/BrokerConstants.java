@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.common.util;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 
@@ -65,6 +66,7 @@ public class BrokerConstants {
     public static final String MQTT_V_3_1_PROTOCOL_NAME = "MQIsdp";
 
     public static final int DEFAULT_RECEIVE_MAXIMUM = 65535;
+    public static final int SUBSCRIPTION_ID_MAXIMUM = 268_435_455;
 
     public static final String NULL_CHAR_STR = "\u0000";
 
@@ -113,6 +115,7 @@ public class BrokerConstants {
     public static final String RESPONSE_TOPIC_HEADER = "responseTopic";
     public static final String REQUEST_TIME = "requestTime";
 
+    public static final String SUBSCRIPTION_ID_IS_0_ERROR_MSG = "It is a Protocol Error if the Subscription Identifier has a value of 0";
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
 
     public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-msg-consumer-group-";
@@ -141,6 +144,11 @@ public class BrokerConstants {
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_TOPIC_FILTER = "sensors/#";
     public static final int WEB_SOCKET_DEFAULT_SUBSCRIPTION_QOS = 1;
     public static final String WEB_SOCKET_DEFAULT_SUBSCRIPTION_COLOR = "#34920C";
+
+    public static final String SYSTEM_DUMMY_CLIENT_ID_PREFIX = "tbmq_system_dummy_client_id_";
+    public static final String SYSTEM_DUMMY_TOPIC_FILTER = "tbmq_system_dummy_topic_filter";
+
+    public static final byte[] DUMMY_PAYLOAD = "test".getBytes(StandardCharsets.UTF_8);
 
     public static final String MQTT_CONNECTIVITY = "mqtt";
     public static final String MQTTS_CONNECTIVITY = "mqtts";

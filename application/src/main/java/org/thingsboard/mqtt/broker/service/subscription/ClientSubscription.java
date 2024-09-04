@@ -17,18 +17,25 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 
 import java.util.Objects;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class ClientSubscription {
 
     private final String clientId;
-    private final int qosValue;
+    private final int qos;
     private final String shareName;
     private final SubscriptionOptions options;
+    private final int subscriptionId;
+
+    public ClientSubscription(String clientId, int qos, String shareName, SubscriptionOptions options) {
+        this(clientId, qos, shareName, options, -1);
+    }
 
     @Override
     public boolean equals(Object o) {

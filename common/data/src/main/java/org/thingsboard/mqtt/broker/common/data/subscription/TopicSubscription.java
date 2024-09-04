@@ -32,17 +32,22 @@ public class TopicSubscription {
     private final int qos;
     private final String shareName;
     private final SubscriptionOptions options;
+    private final int subscriptionId;
 
     public TopicSubscription(String topicFilter, int qos) {
-        this(topicFilter, qos, null, SubscriptionOptions.newInstance());
+        this(topicFilter, qos, null, SubscriptionOptions.newInstance(), -1);
     }
 
     public TopicSubscription(String topicFilter, int qos, String shareName) {
-        this(topicFilter, qos, shareName, SubscriptionOptions.newInstance());
+        this(topicFilter, qos, shareName, SubscriptionOptions.newInstance(), -1);
     }
 
     public TopicSubscription(String topicFilter, int qos, SubscriptionOptions options) {
-        this(topicFilter, qos, null, options);
+        this(topicFilter, qos, null, options, -1);
+    }
+
+    public TopicSubscription(String topicFilter, int qos, String shareName, SubscriptionOptions options) {
+        this(topicFilter, qos, shareName, options, -1);
     }
 
     @Override
@@ -61,4 +66,9 @@ public class TopicSubscription {
     public boolean isSharedSubscription() {
         return shareName != null;
     }
+
+    public boolean isCommonSubscription() {
+        return !isSharedSubscription();
+    }
+
 }

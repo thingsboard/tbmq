@@ -39,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
@@ -146,7 +147,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
                 break;
             case SUBSCRIBE:
-                clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttSubscribeMsg(sessionId, (MqttSubscribeMessage) msg));
+                MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, (MqttSubscribeMessage) msg);
+                if (mqttSubscribeMsg == null) {
+                    disconnect(new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR, BrokerConstants.SUBSCRIPTION_ID_IS_0_ERROR_MSG));
+                    return;
+                }
+                clientMqttActorManager.processMqttMsg(clientId, mqttSubscribeMsg);
                 break;
             case UNSUBSCRIBE:
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttUnsubscribeMsg(sessionId, (MqttUnsubscribeMessage) msg));

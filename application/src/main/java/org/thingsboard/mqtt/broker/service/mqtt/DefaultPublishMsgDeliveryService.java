@@ -22,6 +22,7 @@ import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -33,8 +34,10 @@ import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.TopicAliasResult;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -82,17 +85,18 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
     @Override
     public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg) {
-        sendPublishMsgProtoToClient(sessionCtx, msg, msg.getQos(), msg.getRetain());
+        sendPublishMsgProtoToClient(sessionCtx, msg, msg.getQos(), msg.getRetain(), null);
     }
 
     @Override
     public void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, Subscription subscription) {
-        int qos = Math.min(subscription.getQos(), msg.getQos());
+        int qos = MqttQosUtil.downgradeQos(subscription, msg);
         boolean retain = subscription.getOptions().isRetain(msg.getRetain());
-        sendPublishMsgProtoToClient(sessionCtx, msg, qos, retain);
+        sendPublishMsgProtoToClient(sessionCtx, msg, qos, retain, subscription.getSubscriptionIds());
     }
 
-    private void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, int qos, boolean retain) {
+    private void sendPublishMsgProtoToClient(ClientSessionCtx sessionCtx, PublishMsgProto msg, int qos, boolean retain,
+                                             List<Integer> subscriptionIds) {
         if (isTraceEnabled) {
             log.trace("[{}] Executing sendPublishMsgProtoToClient [{}][{}][{}]", sessionCtx.getClientId(), msg, qos, retain);
         }
@@ -103,6 +107,9 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         if (msg.hasMqttProperties()) {
             ProtoConverter.addFromProtoToMqttProperties(msg.getMqttProperties(), properties);
+        }
+        if (!CollectionUtils.isEmpty(subscriptionIds)) {
+            subscriptionIds.forEach(id -> MqttPropertiesUtil.addSubscriptionIdToProps(properties, id));
         }
 
         String topicName = topicAliasResult == null ? msg.getTopicName() : topicAliasResult.getTopicName();

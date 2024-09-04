@@ -15,7 +15,7 @@
 ///
 
 import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
-import { SubscriptionOptions } from '@shared/models/ws-client.model';
+import { WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
 import { MatButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import {
@@ -34,7 +34,7 @@ export class SubscriptionOptionsComponent {
   subscriptionOptions: AbstractControl;
 
   @Output()
-  subscriptionOptionsValue = new EventEmitter<SubscriptionOptions>();
+  subscriptionOptionsValue = new EventEmitter<WebSocketSubscriptionConfiguration>();
 
   constructor(private renderer: Renderer2,
               private popoverService: TbPopoverService,
@@ -55,7 +55,7 @@ export class SubscriptionOptionsComponent {
           onClose: () => {
             showNotificationPopover.hide();
           },
-          data: this.getSubscriptionOptions(),
+          data: this.subscriptionOptions.getRawValue(),
         },
         {maxHeight: '90vh', height: '100%', padding: '10px'},
         {width: '560px', minWidth: '100%', maxWidth: '100%'},
@@ -66,14 +66,5 @@ export class SubscriptionOptionsComponent {
         showNotificationPopover.hide();
       });
     }
-  }
-
-  private getSubscriptionOptions(): SubscriptionOptions {
-    const formValue = this.subscriptionOptions.getRawValue();
-    return {
-      retainAsPublish: formValue.retainAsPublish,
-      retainHandling: formValue.retainHandling,
-      noLocal: formValue.noLocal
-    } as SubscriptionOptions;
   }
 }

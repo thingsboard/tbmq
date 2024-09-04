@@ -25,15 +25,19 @@ public class RetainedMsg {
 
     private final String topic;
     private final byte[] payload;
-    private final int qosLevel;
+    private final int qos;
     private final MqttProperties properties;
     private final long createdTime;
 
-    public RetainedMsg(String topic, byte[] payload, int qosLevel) {
-        this(topic, payload, qosLevel, MqttProperties.NO_PROPERTIES, System.currentTimeMillis());
+    public RetainedMsg(String topic, byte[] payload, int qos) {
+        this(topic, payload, qos, MqttProperties.NO_PROPERTIES, System.currentTimeMillis());
     }
 
-    public RetainedMsg(String topic, byte[] payload, int qosLevel, MqttProperties properties) {
-        this(topic, payload, qosLevel, properties, System.currentTimeMillis());
+    public RetainedMsg(String topic, byte[] payload, int qos, MqttProperties properties) {
+        this(topic, payload, qos, properties, System.currentTimeMillis());
+    }
+
+    public RetainedMsg withQosAndProps(int qos, MqttProperties properties) {
+        return new RetainedMsg(this.topic, this.payload, qos, properties, this.createdTime);
     }
 }

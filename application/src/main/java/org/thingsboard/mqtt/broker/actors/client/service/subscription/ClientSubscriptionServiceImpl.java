@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
@@ -40,10 +39,12 @@ import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
 
+/**
+ * not thread-safe for operations with the same 'clientId'
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-// not thread-safe for operations with the same 'clientId'
 public class ClientSubscriptionServiceImpl implements ClientSubscriptionService {
 
     private final SubscriptionPersistenceService subscriptionPersistenceService;
@@ -53,10 +54,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private final StatsManager statsManager;
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
-
-    // TODO: sync subscriptions (and probably ClientSession)
-    //      - store events for each action in separate topic + sometimes make snapshots (apply events on 'value' sequentially)
-    //      - manage subscriptions in one thread and one node (probably merge subscriptions with ClientSession)
 
     @Override
     public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
@@ -76,11 +73,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted topic subscriptions", clientId);
-                    }
-                },
+                () -> log.trace("[{}] Persisted topic subscriptions", clientId),
                 t -> log.warn("[{}] Failed to persist topic subscriptions", clientId, t));
         subscribeAndPersist(clientId, topicSubscriptions, callback);
     }
@@ -106,22 +99,23 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private Set<TopicSubscription> subscribe(String clientId, Collection<TopicSubscription> topicSubscriptions) {
         subscriptionService.subscribe(clientId, topicSubscriptions);
 
-        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
-
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.computeIfAbsent(clientId, s -> new HashSet<>());
-        clientSubscriptions.removeIf(topicSubscriptions::contains);
+        clientSubscriptions.removeIf(sub -> {
+            boolean existSubs = topicSubscriptions.contains(sub);
+            if (existSubs && sub.isSharedSubscription()) {
+                sharedSubscriptionCacheService.remove(clientId, sub);
+            }
+            return existSubs;
+        });
         clientSubscriptions.addAll(topicSubscriptions);
+        sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         return clientSubscriptions;
     }
 
     @Override
     public void unsubscribeAndPersist(String clientId, Collection<String> topicFilters) {
         BasicCallback callback = createCallback(
-                () -> {
-                    if (log.isTraceEnabled()) {
-                        log.trace("[{}] Persisted unsubscribed topics", clientId);
-                    }
-                },
+                () -> log.trace("[{}] Persisted unsubscribed topics", clientId),
                 t -> log.warn("[{}] Failed to persist unsubscribed topics", clientId, t));
         unsubscribeAndPersist(clientId, topicFilters, callback);
     }
@@ -161,7 +155,7 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private List<String> extractTopicFilterFromSharedTopic(Collection<String> topicFilters) {
         return topicFilters.stream()
-                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicName(tf) : tf)
+                .map(tf -> NettyMqttConverter.isSharedTopic(tf) ? NettyMqttConverter.getTopicFilter(tf) : tf)
                 .collect(Collectors.toList());
     }
 
@@ -182,11 +176,6 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         clearSubscriptions(clientId);
     }
 
-    @Override
-    public int getClientSubscriptionsCount() {
-        return clientSubscriptionsMap == null ? 0 : clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
-    }
-
     private void clearSubscriptions(String clientId) {
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionsMap.remove(clientId);
         if (clientSubscriptions == null) {
@@ -203,6 +192,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
+    public int getClientSubscriptionsCount() {
+        return clientSubscriptionsMap == null ? 0 : clientSubscriptionsMap.values().stream().mapToInt(Set::size).sum();
+    }
+
+    @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
@@ -213,27 +207,22 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
         return clientSubscriptions
                 .stream()
                 .filter(TopicSubscription::isSharedSubscription)
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
-                .keySet();
+                .map(this::topicSubscriptionToTopicSharedSubscription)
+                .collect(Collectors.toSet());
     }
 
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
-        if (isSharedSubscription(topicSubscription)) {
+        if (topicSubscription.isSharedSubscription()) {
             unsubscribeSharedSubscription(topicSubscription);
             sharedSubscriptionCacheService.remove(clientId, topicSubscription);
         }
     }
 
-    private boolean isSharedSubscription(TopicSubscription topicSubscription) {
-        return !StringUtils.isEmpty(topicSubscription.getShareName());
-    }
-
     private void unsubscribeSharedSubscription(TopicSubscription topicSubscription) {
-        sharedSubscriptionProcessor.unsubscribe(getSharedSubscriptionTopicFilter(topicSubscription));
+        sharedSubscriptionProcessor.unsubscribe(topicSubscriptionToTopicSharedSubscription(topicSubscription));
     }
 
-    private TopicSharedSubscription getSharedSubscriptionTopicFilter(TopicSubscription topicSubscription) {
-        return new TopicSharedSubscription(topicSubscription.getTopicFilter(), topicSubscription.getShareName());
+    private TopicSharedSubscription topicSubscriptionToTopicSharedSubscription(TopicSubscription topicSubscription) {
+        return TopicSharedSubscription.fromTopicSubscription(topicSubscription);
     }
 }

@@ -56,7 +56,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   showAppClientShouldBePersistentWarning: boolean;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
-  clientCredentials: string = '';
+  clientCredentials = '';
 
   private mqttVersionTranslationMap = MqttVersionTranslationMap;
 

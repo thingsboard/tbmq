@@ -44,8 +44,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ClientSessionEventConsumerImpl implements ClientSessionEventConsumer {
 
-    private ExecutorService consumersExecutor;
-    private volatile boolean stopped = false;
+    private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ClientSessionCallbackMsgFactory callbackMsgFactory;
@@ -57,11 +56,11 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
     private int consumersCount;
     @Value("${queue.client-session-event.poll-interval}")
     private long pollDuration;
-
     @Value("${queue.client-session-event.batch-wait-timeout-ms:2000}")
     private long waitTimeoutMs;
 
-    private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
+    private volatile boolean stopped = false;
+    private ExecutorService consumersExecutor;
 
     @Override
     public void startConsuming() {
@@ -73,7 +72,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
 
     private void initConsumer(int consumerIndex) {
         String consumerId = serviceInfoProvider.getServiceId() + "-" + consumerIndex;
-        TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerId);
+        var eventConsumer = clientSessionEventQueueFactory.createEventConsumer(consumerId);
         eventConsumers.add(eventConsumer);
         eventConsumer.subscribe();
         ClientSessionEventConsumerStats stats = statsManager.createClientSessionEventConsumerStats(consumerId);

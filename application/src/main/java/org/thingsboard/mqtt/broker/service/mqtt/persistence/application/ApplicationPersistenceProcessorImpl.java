@@ -65,6 +65,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -761,8 +762,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         clientSessionCtx.getChannel().flush();
     }
 
-    private int getMinQoSValue(TopicSharedSubscription subscription, int publishMsgQos) {
-        return subscription == null ? publishMsgQos : Math.min(subscription.getQos(), publishMsgQos);
+    private int getQos(TopicSharedSubscription subscription, int publishMsgQos) {
+        return subscription == null ? publishMsgQos : MqttQosUtil.downgradeQos(subscription, publishMsgQos);
     }
 
     private List<PersistedMsg> collectMessagesToDeliver(List<PersistedPubRelMsg> pubRelMessagesToDeliver,
@@ -800,11 +801,12 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             var msgPacketId = persistedMsgCtx.getMsgPacketId(msg.getOffset());
             int packetId = msgPacketId != null ? msgPacketId : clientSessionCtx.getMsgIdSeq().nextMsgId();
             boolean isDup = msgPacketId != null;
-            int minQoSValue = getMinQoSValue(subscription, msg.getValue().getQos());
+            int qos = getQos(subscription, msg.getValue().getQos());
+            int subscriptionId = subscription == null ? -1 : subscription.getSubscriptionId();
 
-            PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(msg.getValue(), packetId, minQoSValue, isDup);
+            PublishMsg publishMsg = ProtoConverter.convertToPublishMsg(msg.getValue(), packetId, qos, isDup, subscriptionId);
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
             result.add(new PersistedPublishMsg(publishMsg, msg.getOffset(), subscription != null));
         }

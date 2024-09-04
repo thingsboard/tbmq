@@ -95,6 +95,25 @@ public class ClientSubscriptionServiceImplTest {
     }
 
     @Test
+    public void givenClientSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnExpectedResult() {
+        String clientId = "sharedClientId";
+        getAndVerifyClientSubscriptionsForClient(clientId, 0);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11", 2)));
+        getAndVerifyClientSubscriptionsForClient(clientId, 1);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic11", 1)));
+        getAndVerifyClientSubscriptionsForClient(clientId, 1);
+
+        clientSubscriptionService.subscribeInternally(clientId, Set.of(getSharedTopicSubscription("topic12", 2)));
+        getAndVerifyClientSubscriptionsForClient(clientId, 2);
+
+        Set<TopicSharedSubscription> clientSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(clientId);
+
+        assertEquals(2, clientSharedSubscriptions.size());
+    }
+
+    @Test
     public void givenClientTopicSubscriptionsAndNoSharedSubscriptions_whenGetClientSharedSubscriptions_thenReturnEmptySet() {
         String clientId = "sharedClientId";
         getAndVerifyClientSubscriptionsForClient(clientId, 0);
@@ -198,5 +217,9 @@ public class ClientSubscriptionServiceImplTest {
 
     private TopicSubscription getSharedTopicSubscription(String topic) {
         return new TopicSubscription(topic, 1, "sharedGroup");
+    }
+
+    private TopicSubscription getSharedTopicSubscription(String topic, int qos) {
+        return new TopicSubscription(topic, qos, "sharedGroup");
     }
 }

@@ -47,18 +47,11 @@ import static org.thingsboard.mqtt.broker.util.BytesUtil.bytesToString;
 @Slf4j
 @Component
 public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsumer {
-    private static final String DUMMY_TOPIC = "dummy_topic";
-
-    private volatile boolean initializing = true;
-    private volatile boolean stopped = false;
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-subscriptions-listener"));
 
-    @Value("${queue.client-subscriptions.poll-interval}")
-    private long pollDuration;
-
-    private final SubscriptionPersistenceService persistenceService;
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private final SubscriptionPersistenceService persistenceService;
     private final TbQueueAdmin queueAdmin;
     private final ClientSubscriptionConsumerStats stats;
 
@@ -70,6 +63,12 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         this.queueAdmin = queueAdmin;
         this.stats = statsManager.getClientSubscriptionConsumerStats();
     }
+
+    @Value("${queue.client-subscriptions.poll-interval}")
+    private long pollDuration;
+
+    private volatile boolean initializing = true;
+    private volatile boolean stopped = false;
 
     @Override
     public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
@@ -138,6 +137,10 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                     int ignoredSubscriptions = 0;
                     for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
+                        if (clientId.startsWith(BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX)) {
+                            ignoredSubscriptions++;
+                            continue;
+                        }
                         String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
                         Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                         boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
@@ -166,8 +169,8 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     }
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {
-        String dummyClientId = UUID.randomUUID().toString();
-        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new TopicSubscription(DUMMY_TOPIC, 0)));
+        String dummyClientId = BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX + UUID.randomUUID();
+        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new TopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
         return dummyClientId;
     }
 

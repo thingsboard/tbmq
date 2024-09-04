@@ -36,7 +36,6 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -49,15 +48,8 @@ import java.util.concurrent.Executors;
 public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private static final String DUMMY_TOPIC_PREFIX = "dummy/topic/";
-    private static final byte[] DUMMY_PAYLOAD = "test".getBytes(StandardCharsets.UTF_8);
-
-    private volatile boolean initializing = true;
-    private volatile boolean stopped = false;
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("retained-msg-listener"));
-
-    @Value("${queue.retained-msg.poll-interval}")
-    private long pollDuration;
 
     private final RetainedMsgPersistenceService persistenceService;
     private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgConsumer;
@@ -72,6 +64,12 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         this.persistenceService = persistenceService;
         this.stats = statsManager.getRetainedMsgConsumerStats();
     }
+
+    @Value("${queue.retained-msg.poll-interval}")
+    private long pollDuration;
+
+    private volatile boolean initializing = true;
+    private volatile boolean stopped = false;
 
     @Override
     public Map<String, RetainedMsg> initLoad() throws QueuePersistenceException {
@@ -177,7 +175,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private String persistDummyRetainedMsg() throws QueuePersistenceException {
         String dummyTopic = DUMMY_TOPIC_PREFIX + RandomStringUtils.randomAlphanumeric(8);
-        RetainedMsg retainedMsg = new RetainedMsg(dummyTopic, DUMMY_PAYLOAD, 0);
+        RetainedMsg retainedMsg = new RetainedMsg(dummyTopic, BrokerConstants.DUMMY_PAYLOAD, 0);
         persistenceService.persistRetainedMsgSync(dummyTopic, ProtoConverter.convertToRetainedMsgProto(retainedMsg));
         return dummyTopic;
     }

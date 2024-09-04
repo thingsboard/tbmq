@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors;
+package org.thingsboard.mqtt.broker.dto;
 
-import lombok.Getter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter
-@ToString
-public class ProcessFailureStrategy {
+import java.util.List;
 
-    private final boolean stop;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class ClientIdSubscriptionInfoDto {
 
-    private ProcessFailureStrategy(boolean stop) {
-        this.stop = stop;
-    }
+    private String clientId;
+    private List<SubscriptionInfoDto> subscriptions;
 
-    public static ProcessFailureStrategy stop() {
-        return new ProcessFailureStrategy(true);
-    }
-
-    public static ProcessFailureStrategy resume() {
-        return new ProcessFailureStrategy(false);
-    }
 }

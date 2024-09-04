@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 
 import java.util.function.Function;
 
@@ -45,16 +46,12 @@ public final class SubscriptionOptions {
         }
 
         public static RetainHandlingPolicy valueOf(int value) {
-            switch (value) {
-                case 0:
-                    return SEND_AT_SUBSCRIBE;
-                case 1:
-                    return SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS;
-                case 2:
-                    return DONT_SEND_AT_SUBSCRIBE;
-                default:
-                    throw new IllegalArgumentException("invalid RetainedHandlingPolicy: " + value);
-            }
+            return switch (value) {
+                case 0 -> SEND_AT_SUBSCRIBE;
+                case 1 -> SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS;
+                case 2 -> DONT_SEND_AT_SUBSCRIBE;
+                default -> throw new IllegalArgumentException("invalid RetainedHandlingPolicy: " + value);
+            };
         }
     }
 
@@ -80,6 +77,10 @@ public final class SubscriptionOptions {
         return new SubscriptionOptions(false, false, RetainHandlingPolicy.SEND_AT_SUBSCRIBE);
     }
 
+    public static SubscriptionOptions fromSubscriptionOptionsDto(SubscriptionOptionsDto options) {
+        return new SubscriptionOptions(options.isNoLocal(), options.isRetainAsPublish(), RetainHandlingPolicy.valueOf(options.getRetainHandling()));
+    }
+
     public boolean isNoLocalOptionMet(String receiverClientId, String senderClientId) {
         return receiverClientId.equals(senderClientId) && noLocal;
     }
@@ -93,14 +94,10 @@ public final class SubscriptionOptions {
 
     public boolean needSendRetainedForTopicSubscription(Function<TopicSubscription, Boolean> subscriptionPresentFunction,
                                                         TopicSubscription topicSubscription) {
-        switch (retainHandling) {
-            case SEND_AT_SUBSCRIBE:
-                return true;
-            case SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS:
-                return subscriptionPresentFunction.apply(topicSubscription);
-            case DONT_SEND_AT_SUBSCRIBE:
-                return false;
-        }
-        return true;
+        return switch (retainHandling) {
+            case SEND_AT_SUBSCRIBE -> true;
+            case SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS -> subscriptionPresentFunction.apply(topicSubscription);
+            case DONT_SEND_AT_SUBSCRIBE -> false;
+        };
     }
 }

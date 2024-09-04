@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,11 +23,12 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -34,6 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -71,8 +74,8 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void givenNonSharedSubscriptions_whenPutSubscriptions_thenNothingAdded() {
-        when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
-        when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo1.isAppClient()).thenReturn(true);
+        when(clientSessionInfo2.isAppClient()).thenReturn(true);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
                 new TopicSubscription("/test/topic/1", 1),
@@ -91,8 +94,8 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void givenDifferentClientsAndSubscriptions_whenPutSubscriptions_thenAddedSuccessfully() {
-        when(clientSessionInfo1.getType()).thenReturn(ClientType.APPLICATION);
-        when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo1.isAppClient()).thenReturn(true);
+        when(clientSessionInfo2.isAppClient()).thenReturn(true);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
                 new TopicSubscription("/test/topic/1", 1, "g1"),
@@ -128,7 +131,7 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void givenSameClientAndItsSubscriptions_whenExecutePut_thenAddedSuccessfully() {
-        when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo1.isAppClient()).thenReturn(false);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
@@ -158,10 +161,10 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void givenSubscriptions_whenExecuteRemove_thenUpdatedSuccessfully() {
-        when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo1.isAppClient()).thenReturn(false);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
-        when(clientSessionInfo2.getType()).thenReturn(ClientType.APPLICATION);
+        when(clientSessionInfo2.isAppClient()).thenReturn(true);
         when(clientSessionInfo2.getClientId()).thenReturn(CLIENT_ID_2);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
@@ -206,10 +209,10 @@ public class SharedSubscriptionCacheServiceImplTest {
 
     @Test
     public void givenSubscriptions_whenGetSubscriptions_thenReturnedCorrectResult() {
-        when(clientSessionInfo1.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo1.isAppClient()).thenReturn(false);
         when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
 
-        when(clientSessionInfo2.getType()).thenReturn(ClientType.DEVICE);
+        when(clientSessionInfo2.isAppClient()).thenReturn(false);
         when(clientSessionInfo2.getClientId()).thenReturn(CLIENT_ID_2);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
@@ -300,6 +303,44 @@ public class SharedSubscriptionCacheServiceImplTest {
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
         boolean anyDeviceClientConnected = sharedSubscriptionCache.isAnyOtherDeviceClientConnected(CLIENT_ID_3, topicSharedSubscription);
         assertTrue(anyDeviceClientConnected);
+    }
+
+    @Test
+    public void givenEmptySubscriptionsSet_whenFilterSubscriptions_thenReturnNothing() {
+        Collection<Subscription> subscriptions = sharedSubscriptionCache.filterSubscriptions(Set.of());
+        assertTrue(subscriptions.isEmpty());
+    }
+
+    @Test
+    public void givenSubscriptionsSetAndMissingClientSession_whenFilterSubscriptions_thenReturnNothing() {
+        Collection<Subscription> subscriptions = sharedSubscriptionCache.filterSubscriptions(
+                Set.of(getSubscription("#", 1, clientSessionInfo1, List.of(1, 2, 3)))
+        );
+        assertTrue(subscriptions.isEmpty());
+    }
+
+    @Test
+    public void givenSubscriptionsSet_whenFilterSubscriptions_thenReturnCorrectSubscriptions() {
+        when(clientSessionCache.getClientSessionInfo(anyString())).thenReturn(clientSessionInfo1);
+        when(clientSessionInfo1.getClientId()).thenReturn(CLIENT_ID_1);
+
+        Collection<Subscription> subscriptions = sharedSubscriptionCache.filterSubscriptions(
+                Set.of(
+                        getSubscription("#", 1, clientSessionInfo1, Lists.newArrayList(1, 2, 3)),
+                        getSubscription("+", 2, clientSessionInfo1, Lists.newArrayList(3, 4, 5))
+                )
+        );
+        assertEquals(1, subscriptions.size());
+        Subscription subscription = subscriptions.stream().toList().get(0);
+        assertEquals("+", subscription.getTopicFilter());
+        assertEquals(2, subscription.getQos());
+        assertEquals(6, subscription.getSubscriptionIds().size());
+        assertEquals(List.of(3, 4, 5, 1, 2, 3), subscription.getSubscriptionIds());
+    }
+
+    private Subscription getSubscription(String tf, int qos, ClientSessionInfo clientSessionInfo,
+                                         List<Integer> subscriptionIds) {
+        return new Subscription(tf, qos, clientSessionInfo, null, SubscriptionOptions.newInstance(), subscriptionIds);
     }
 
 }

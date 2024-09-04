@@ -15,10 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
-import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -50,6 +48,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeUtil;
 
@@ -111,10 +110,7 @@ public class MqttSubscribeHandler {
     List<MqttReasonCodes.SubAck> collectMqttReasonCodes(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        List<MqttReasonCodes.SubAck> codes = populateReasonCodesIfSubscriptionIdPresent(ctx, msg);
-        if (!codes.isEmpty()) {
-            return codes;
-        }
+        List<MqttReasonCodes.SubAck> codes = new ArrayList<>(topicSubscriptions.size());
 
         for (TopicSubscription subscription : topicSubscriptions) {
             var topic = subscription.getTopicFilter();
@@ -157,27 +153,9 @@ public class MqttSubscribeHandler {
         return codes;
     }
 
-    private List<MqttReasonCodes.SubAck> populateReasonCodesIfSubscriptionIdPresent(ClientSessionCtx ctx, MqttSubscribeMsg msg) {
-        var subscriptionsCount = msg.getTopicSubscriptions().size();
-        List<MqttReasonCodes.SubAck> codes = new ArrayList<>(subscriptionsCount);
-        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            MqttProperties.MqttProperty subscriptionIdProperty = MqttPropertiesUtil.getSubscriptionIdProperty(msg.getProperties());
-            if (subscriptionIdProperty != null) {
-                log.warn("[{}] Subscription id MQTT property present, server not support this!", ctx.getClientId());
-                for (int i = 0; i < subscriptionsCount; i++) {
-                    codes.add(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED);
-                }
-            }
-        }
-        return codes;
-    }
-
     private void subscribeAndPersist(ClientSessionCtx ctx, List<TopicSubscription> newSubscriptions, MqttSubAckMessage subAckMessage) {
         if (CollectionUtils.isEmpty(newSubscriptions)) {
             sendSubAck(ctx, subAckMessage);
-            if (isSubscriptionIdNotSupportedCodePresent(subAckMessage)) {
-                disconnectClient(ctx, DisconnectReasonType.ON_SUBSCRIPTION_ID_NOT_SUPPORTED);
-            }
             return;
         }
 
@@ -206,47 +184,43 @@ public class MqttSubscribeHandler {
         ctx.getChannel().writeAndFlush(subAckMessage);
     }
 
-    private boolean isSubscriptionIdNotSupportedCodePresent(MqttSubAckMessage subAckMessage) {
-        return subAckMessage.payload().reasonCodes().contains(MqttReasonCodeUtil.byteToInt(MqttReasonCodes.SubAck.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byteValue()));
-    }
-
     private void processRetainedMessages(ClientSessionCtx ctx,
                                          List<TopicSubscription> newSubscriptions,
                                          Set<TopicSubscription> currentSubscriptions) {
-        Set<RetainedMsg> retainedMsgSet = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
-        retainedMsgSet = applyRateLimits(retainedMsgSet);
-        retainedMsgSet.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+        List<RetainedMsg> retainedMsgList = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
+        retainedMsgList = applyRateLimits(retainedMsgList);
+        retainedMsgList.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
     }
 
-    Set<RetainedMsg> applyRateLimits(Set<RetainedMsg> retainedMsgSet) {
+    List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {
         if (rateLimitService.isTotalMsgsLimitEnabled()) {
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgSet.size());
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(retainedMsgList.size());
             if (availableTokens == 0) {
-                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgSet.size());
-                return Collections.emptySet();
+                log.debug("No available tokens left for total msgs bucket during retained msg processing. Skipping {} messages", retainedMsgList.size());
+                return Collections.emptyList();
             }
-            if (availableTokens == retainedMsgSet.size()) {
-                return retainedMsgSet;
+            if (availableTokens == retainedMsgList.size()) {
+                return retainedMsgList;
             }
-            if (log.isDebugEnabled() && availableTokens < retainedMsgSet.size()) {
-                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgSet.size() - availableTokens);
+            if (log.isDebugEnabled() && availableTokens < retainedMsgList.size()) {
+                log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgList.size() - availableTokens);
             }
-            return retainedMsgSet.stream().limit(availableTokens).collect(Collectors.toSet());
+            return retainedMsgList.stream().limit(availableTokens).toList();
         }
-        return retainedMsgSet;
+        return retainedMsgList;
     }
 
-    Set<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
+    List<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
                                                               Set<TopicSubscription> currentSubscriptions) {
         return newSubscriptions
                 .stream()
-                .filter(topicSubscription -> StringUtils.isEmpty(topicSubscription.getShareName()))
+                .filter(TopicSubscription::isCommonSubscription)
                 .filter(topicSubscription ->
                         topicSubscription.getOptions().needSendRetainedForTopicSubscription(
                                 ts -> !currentSubscriptions.contains(ts), topicSubscription))
                 .map(this::getRetainedMessagesForTopicSubscription)
                 .flatMap(List::stream)
-                .collect(Collectors.toSet());
+                .toList();
     }
 
     List<RetainedMsg> getRetainedMessagesForTopicSubscription(TopicSubscription topicSubscription) {
@@ -258,12 +232,13 @@ public class MqttSubscribeHandler {
             if (msgExpiryResult.isExpired()) {
                 continue;
             }
-            int minQoSValue = getMinQoSValue(topicSubscription, retainedMsg);
-            RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, minQoSValue);
+            int qos = MqttQosUtil.downgradeQos(topicSubscription, retainedMsg);
+            RetainedMsg newRetainedMsg = newRetainedMsg(retainedMsg, qos);
 
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(newRetainedMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
+            MqttPropertiesUtil.addSubscriptionIdToProps(newRetainedMsg.getProperties(), topicSubscription.getSubscriptionId());
             result.add(newRetainedMsg);
         }
         return result;
@@ -273,18 +248,8 @@ public class MqttSubscribeHandler {
         return retainedMsgService.getRetainedMessages(topicSubscription.getTopicFilter());
     }
 
-    private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int minQoSValue) {
-        return new RetainedMsg(
-                retainedMsg.getTopic(),
-                retainedMsg.getPayload(),
-                minQoSValue,
-                retainedMsg.getProperties(),
-                retainedMsg.getCreatedTime()
-        );
-    }
-
-    private int getMinQoSValue(TopicSubscription topicSubscription, RetainedMsg retainedMsg) {
-        return Math.min(topicSubscription.getQos(), retainedMsg.getQosLevel());
+    private RetainedMsg newRetainedMsg(RetainedMsg retainedMsg, int qos) {
+        return retainedMsg.withQosAndProps(qos, MqttPropertiesUtil.copyProps(retainedMsg.getProperties()));
     }
 
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,
@@ -361,9 +326,8 @@ public class MqttSubscribeHandler {
     Set<TopicSharedSubscription> collectUniqueSharedSubscriptions(List<TopicSubscription> topicSubscriptions) {
         return topicSubscriptions
                 .stream()
-                .filter(subscription -> !StringUtils.isEmpty(subscription.getShareName()))
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
+                .filter(TopicSubscription::isSharedSubscription)
+                .collect(Collectors.groupingBy(TopicSharedSubscription::fromTopicSubscription))
                 .keySet();
     }
 

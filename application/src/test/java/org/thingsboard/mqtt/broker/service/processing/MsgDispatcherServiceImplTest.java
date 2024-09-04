@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing;
 
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -168,12 +169,22 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testGetSubscriptionWithHigherQos() {
-        Subscription subscription1 = new Subscription("test/+", 1, null);
-        Subscription subscription2 = new Subscription("#", 0, null);
+        Subscription subscription1 = new Subscription("test/+", 1, (ClientSessionInfo) null);
+        Subscription subscription2 = new Subscription("#", 0, (ClientSessionInfo) null);
 
-        Subscription result = msgDispatcherService.getSubscriptionWithHigherQos(subscription1, subscription2);
+        Subscription result = msgDispatcherService.getSubscriptionWithHigherQosAndAllSubscriptionIds(subscription1, subscription2);
 
         assertEquals(result, subscription1);
+    }
+
+    @Test
+    public void testGetSubscriptionWithHigherQosAndAllSubscriptionIds() {
+        Subscription subscription1 = new Subscription("test/+", 1, null, null, null, Lists.newArrayList(1, 2));
+        Subscription subscription2 = new Subscription("#", 0, null, null, null, Lists.newArrayList(3, 4, 1));
+
+        Subscription result = msgDispatcherService.getSubscriptionWithHigherQosAndAllSubscriptionIds(subscription1, subscription2);
+        assertEquals(1, result.getQos());
+        assertEquals(List.of(1, 2, 3, 4, 1), result.getSubscriptionIds());
     }
 
     @Test

@@ -93,7 +93,8 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
         retainAsPublish: [{value: this.entity ? this.entity.configuration.options.retainAsPublish : null, disabled}, []],
-        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : 0, disabled}, []]
+        retainHandling: [{value: this.entity ? this.entity.configuration.options.retainHandling : 0, disabled}, []],
+        subscriptionId: [{value: this.entity ? this.entity.configuration.subscriptionId : null, disabled}, []]
       })
     });
   }
@@ -106,6 +107,8 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   save() {
     const formValues = this.formGroup.getRawValue();
     formValues.color = formValues.color || colorRandom();
+    formValues.subscriptionId = formValues.options.subscriptionId;
+    delete formValues.options.subscriptionId;
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
     if (!this.topicFilterDuplicate) {
       this.dialogRef.close(result);

@@ -21,6 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
@@ -28,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -63,5 +65,17 @@ public class SubscriptionServiceImplTest {
     public void givenClientTopics_whenUnsubscribe_thenOk() {
         subscriptionService.unsubscribe("clientId", Set.of("topic1", "topic2"));
         verify(subscriptionTrie, times(2)).delete(any(), any());
+    }
+
+    @Test
+    public void givenClientTopics_whenClearEmptyTopicNodes_thenOk() throws SubscriptionTrieClearException {
+        subscriptionService.clearEmptyTopicNodes();
+        verify(subscriptionTrie, times(1)).clearEmptyNodes();
+    }
+
+    @Test(expected = SubscriptionTrieClearException.class)
+    public void givenClientTopics_whenClearEmptyTopicNodes_thenThrowException() throws SubscriptionTrieClearException {
+        doThrow(SubscriptionTrieClearException.class).when(subscriptionTrie).clearEmptyNodes();
+        subscriptionService.clearEmptyTopicNodes();
     }
 }

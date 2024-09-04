@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +24,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkProcessor;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkProcessor;
@@ -61,49 +59,6 @@ public class DownLinkProxyImplTest {
     @After
     public void tearDown() throws Exception {
         Mockito.reset(serviceInfoProvider, queuePublisher, basicDownLinkProcessor, persistentDownLinkProcessor);
-    }
-
-    @Test
-    public void givenPubMsgAndSubscriptionWithSameQosAndFalseRetainAsPublish_whenProcessUpdatePublishMsg_thenReturnSameMsg() {
-        Subscription subscription = new Subscription("test/topic", 1, ClientSessionInfo.builder().build());
-        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(1).setRetain(false).build();
-
-        QueueProtos.PublishMsgProto afterPublishMsgProto = downLinkProxy.updatePublishMsg(subscription, beforePublishMsgProto);
-
-        Assert.assertEquals(beforePublishMsgProto, afterPublishMsgProto);
-    }
-
-    @Test
-    public void givenPubMsgAndSubscriptionWithDifferentQos_whenProcessUpdatePublishMsg_thenReturnUpdatedMsgWithMinQos() {
-        Subscription subscription = new Subscription("test/topic", 1, ClientSessionInfo.builder().build());
-        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(true).build();
-
-        QueueProtos.PublishMsgProto afterPublishMsgProto = downLinkProxy.updatePublishMsg(subscription, beforePublishMsgProto);
-
-        Assert.assertNotEquals(beforePublishMsgProto, afterPublishMsgProto);
-        Assert.assertEquals(1, afterPublishMsgProto.getQos());
-        Assert.assertFalse(afterPublishMsgProto.getRetain());
-    }
-
-    @Test
-    public void givenPubMsgAndSubscriptionWithSameQosAndRetainAsPublish_whenProcessUpdatePublishMsg_thenReturnSameMsg() {
-        Subscription subscription = new Subscription(
-                "test/topic",
-                2,
-                ClientSessionInfo.builder().build(),
-                null,
-                new SubscriptionOptions(
-                        false,
-                        true,
-                        SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE));
-
-        QueueProtos.PublishMsgProto beforePublishMsgProto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).setRetain(true).build();
-
-        QueueProtos.PublishMsgProto afterPublishMsgProto = downLinkProxy.updatePublishMsg(subscription, beforePublishMsgProto);
-
-        Assert.assertEquals(beforePublishMsgProto, afterPublishMsgProto);
-        Assert.assertEquals(2, afterPublishMsgProto.getQos());
-        Assert.assertTrue(afterPublishMsgProto.getRetain());
     }
 
     @Test

@@ -22,13 +22,12 @@ import lombok.RequiredArgsConstructor;
 import java.util.Collections;
 import java.util.Map;
 
+@Getter
 @RequiredArgsConstructor
 @EqualsAndHashCode
 public class ApplicationPersistedMsgCtx {
 
-    @Getter
     private final Map<Long, Integer> publishMsgIds;
-    @Getter
     private final Map<Long, Integer> pubRelMsgIds;
 
     public ApplicationPersistedMsgCtx() {

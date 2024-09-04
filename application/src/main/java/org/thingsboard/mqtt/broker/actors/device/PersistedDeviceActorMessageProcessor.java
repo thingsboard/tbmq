@@ -48,15 +48,13 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
 
 @Slf4j
 @Getter
@@ -77,8 +75,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     private volatile ClientSessionCtx sessionCtx;
     @Setter
     private volatile long lastPersistedMsgSentPacketId = 0L;
-    @Setter
-    private volatile boolean processedAnyMsg = false;
     private volatile UUID stopActorCommandUUID;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
@@ -155,13 +151,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             sentPacketIdsFromSharedSubscription.put(currentPacketId,
                     newSharedSubscriptionPublishPacket(topicSharedSubscription.getKey(), devicePublishMessage.getPacketId()));
             devicePublishMessage.setPacketId(currentPacketId);
-            devicePublishMessage.setQos(getMinQoSValue(topicSharedSubscription, devicePublishMessage));
+            devicePublishMessage.setQos(MqttQosUtil.downgradeQos(topicSharedSubscription, devicePublishMessage));
+            MqttPropertiesUtil.addSubscriptionIdToProps(devicePublishMessage.getProperties(), topicSharedSubscription.getSubscriptionId());
         }
         return packetIdDto.getCurrentPacketId();
-    }
-
-    private int getMinQoSValue(TopicSharedSubscription topicSharedSubscription, DevicePublishMsg devicePublishMessage) {
-        return Math.min(topicSharedSubscription.getQos(), devicePublishMessage.getQos());
     }
 
     void deliverPersistedMsg(DevicePublishMsg persistedMessage) {
@@ -179,7 +172,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 lastPersistedMsgSentPacketId = persistedMessage.getPacketId();
                 PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
                 if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                    MqttPropertiesUtil.addMsgExpiryIntervalToPublish(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
                 }
                 publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
                 break;
@@ -216,7 +209,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         try {
             PublishMsg pubMsg = getPublishMsg(publishMsg, false);
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                MqttPropertiesUtil.addMsgExpiryIntervalToPublish(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
             publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");

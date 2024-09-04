@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
@@ -89,12 +88,7 @@ public class SessionSubscriptionServiceImpl implements SessionSubscriptionServic
 
     private List<SubscriptionInfoDto> collectSubscriptions(Set<TopicSubscription> subscriptions) {
         return subscriptions.stream()
-                .map(topicSubscription ->
-                        new SubscriptionInfoDto(
-                                topicSubscription.getTopicFilter(),
-                                MqttQoS.valueOf(topicSubscription.getQos()),
-                                topicSubscription.getShareName()
-                        ))
+                .map(SubscriptionInfoDto::fromTopicSubscription)
                 .collect(Collectors.toList());
     }
 }

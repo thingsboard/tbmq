@@ -43,6 +43,7 @@ import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
 import { WebsocketSettings } from '@shared/models/settings.models';
+import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
 
 @Injectable({
   providedIn: 'root'
@@ -139,19 +140,13 @@ export class MqttJsClientService {
     const mqttClient: MqttClient = this.getSelectedMqttJsClient();
     if (mqttClient) {
       const topic = subscription.configuration.topicFilter;
-      const qos = subscription.configuration.qos;
-      const nl = subscription.configuration?.options?.noLocal;
-      const rap = subscription.configuration?.options?.retainAsPublish;
-      const rh = subscription.configuration?.options?.retainHandling;
-      const topicObject = {
-        [topic]: {qos, nl, rap, rh}
-      };
+      const options = this.subscriptionOptions(subscription);
       if (!this.mqttClientIdSubscriptionsMap.has(mqttClient.options.clientId)) {
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, []);
       }
       const currentSubscription = this.mqttClientIdSubscriptionsMap.get(mqttClient.options.clientId);
       currentSubscription.push(subscription);
-      this.subscribeMqttClient(mqttClient, topicObject);
+      this.subscribeMqttClient(mqttClient, topic, options);
     }
   }
 
@@ -175,7 +170,7 @@ export class MqttJsClientService {
     let color = options.color;
     if (isDefinedAndNotNull(options?.properties)) properties = JSON.parse(JSON.stringify(options?.properties));
     const message: any = {
-      topic: topic,
+      topic,
       payload,
       qos: options.qos,
       retain: options.retain,
@@ -346,7 +341,7 @@ export class MqttJsClientService {
         id: guid(),
         subscriptionId: subscription?.id || wildcardSubscription?.id,
         payload: payload.toString(),
-        topic: topic,
+        topic,
         qos: packet.qos,
         createdTime: this.nowTs(),
         retain: packet.retain,
@@ -479,19 +474,14 @@ export class MqttJsClientService {
     this.webSocketSubscriptionService.getWebSocketSubscriptions(connection.id).subscribe(
       webSocketSubscriptions => {
         const subscriptions = [];
-        const topicObject: any = {};
         for (let i = 0; i < webSocketSubscriptions?.length; i++) {
           const subscription = webSocketSubscriptions[i];
           const topic = subscription.configuration.topicFilter;
-          const qos = subscription.configuration.qos;
-          const nl = subscription.configuration?.options?.noLocal;
-          const rap = subscription.configuration?.options?.retainAsPublish;
-          const rh = subscription.configuration?.options?.retainHandling;
-          topicObject[topic] = {qos, nl, rap, rh};
+          const options = this.subscriptionOptions(subscription);
           subscriptions.push(subscription);
+          this.subscribeMqttClient(mqttClient, topic, options);
         }
         this.mqttClientIdSubscriptionsMap.set(mqttClient.options.clientId, subscriptions);
-        this.subscribeMqttClient(mqttClient, topicObject);
         this.manageMqttClientCallbacks(mqttClient, connection);
       }
     );
@@ -545,8 +535,8 @@ export class MqttJsClientService {
     this.messagesSubject$.next(null);
   }
 
-  private subscribeMqttClient(mqttClient: MqttClient, topicObject: any) {
-    mqttClient.subscribe(topicObject);
+  private subscribeMqttClient(mqttClient: MqttClient, topic: string, options: IClientSubscribeOptions) {
+    mqttClient.subscribe(topic, options);
   }
 
   private unsubscribeMqttClient(mqttClient: MqttClient, topic: string) {
@@ -575,5 +565,18 @@ export class MqttJsClientService {
       received,
       published: all - received
     });
+  }
+
+  private subscriptionOptions(subscription: WebSocketSubscription): IClientSubscribeOptions {
+    const options = {} as IClientSubscribeOptions;
+    options.qos = subscription.configuration.qos;
+    options.nl = subscription.configuration?.options?.noLocal;
+    options.rap = subscription.configuration?.options?.retainAsPublish;
+    options.rh = subscription.configuration?.options?.retainHandling;
+    if (isDefinedAndNotNull(subscription.configuration?.subscriptionId)) {
+      options.properties = {};
+      options.properties.subscriptionIdentifier = subscription.configuration.subscriptionId;
+    }
+    return options;
   }
 }
