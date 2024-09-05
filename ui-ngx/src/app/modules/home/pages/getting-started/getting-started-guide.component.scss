@@ -36,8 +36,8 @@
     margin: 8px;
   }
 
-  .mat-mdc-card-content {
-    margin-top: 16px;
+  .mat-mdc-card-content:first-child {
+    padding-top: 0;
   }
 
   .tb-markdown-view {

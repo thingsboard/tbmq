@@ -14,10 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { PageComponent } from '@shared/components/page.component';
+import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { gettingStartedActions, gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
@@ -29,18 +26,16 @@ import { ConfigService } from '@core/http/config.service';
   styleUrls: ['./getting-started.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GettingStartedComponent extends PageComponent implements OnInit, OnDestroy {
+export class GettingStartedComponent implements OnInit {
 
   currentReleaseVersion: string;
 
   guides = gettingStartedGuides;
   actions = gettingStartedActions;
 
-  constructor(protected store: Store<AppState>,
-              private configService: ConfigService,
+  constructor(private configService: ConfigService,
               private router: Router,
               public fb: UntypedFormBuilder) {
-    super(store);
   }
 
   ngOnInit() {
@@ -49,10 +44,6 @@ export class GettingStartedComponent extends PageComponent implements OnInit, On
         this.currentReleaseVersion = currentRelease.version.split('-')[0];
       }
     });
-  }
-
-  ngOnDestroy() {
-    super.ngOnDestroy();
   }
 
   navigate(guide: GettingStartedLink) {

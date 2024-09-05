@@ -4,11 +4,11 @@ This guide provides a ready-to-use example of how to use the **Paho MQTT Python 
 Using it, you will learn how to connect an MQTT client, subscribe to a topic, publish a message, and handle MQTT events.
 
 ##### Prerequisites
-In order to run the code  Python code please make sure you have installed:
+In order to run the Python code please make sure you have installed:
 * [python3](https://www.python.org/downloads)
 * [paho-mqtt](https://github.com/eclipse/paho.mqtt.python)
 
-This guide was developed by using Python v3.10.12 and the new Paho-MQTT 2.0 version (which contains some breaking [changes]((https://github.com/eclipse/paho.mqtt.python/blob/master/docs/migrations.rst)) comparing to older 1.X version). 
+This guide was developed by using Python v3.10.12 and the new Paho-MQTT 2.1.0 version (which contains some breaking [changes](https://github.com/eclipse/paho.mqtt.python/blob/master/docs/migrations.rst) comparing to older 1.X version). 
 
 Use the next commands to check your Python and Paho versions:
 
@@ -17,20 +17,20 @@ python3 --version{:copy-code}
 ```
 
 ```bash
-pip show paho-mqtt{:copy-code}
+pip3 show paho-mqtt{:copy-code}
 ```
 
-##### Connect paho-mqtt to the TBMQ
+##### Connect to the TBMQ
 The script below sets up a Paho MQTT client to connect to the TBMQ broker, handles basic MQTT operations such as publishing a message and subscribing to a topic.
 
-You can paste this code into a new python file in your project, e.g. 'tbmq-python.py':
+You can paste this code into a new file in your project `tbmq-python.py`.
 
 ```bash
 import paho.mqtt.client as pahoMqtt
 from paho import mqtt
 
-host = "localhost"
-port = 1883
+host = "{:hostname}"
+port = {:port}
 topic = "sensors/temperature"
 payload = "Hello world"
 qos = 1
@@ -58,6 +58,8 @@ def init_mqtt_client() -> pahoMqtt:
 def on_connect(client, userdata, flags, rc, properties=None):
     if rc == 0:
         print("Client connected!")
+        # Publish a message after client is connected
+        client.publish(topic, payload, qos, retain)
     else:
         print("Client not connected, reason code: ", rc)
 
@@ -95,7 +97,7 @@ python3 tbmq-python.py
 {:copy-code}
 ```
 
-The output from executing the _tbmq-python.py_ file:
+The output from executing the `tbmq-python.py` file:
 ```bash
 Client connected!
 Received message 'Hello world' on topic sensors/temperature

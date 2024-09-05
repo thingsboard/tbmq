@@ -1,11 +1,11 @@
 ### Javascript
-In this guide, we present an illustrative example of using a JavaScript library [MQTT.js](https://github.com/mqttjs/MQTT.js) 
+In this guide, we present an illustrative example of using a JavaScript library **MQTT.js** 
 to establish a connection to the TBMQ broker, subscribe to a topic and publish a message.
 
 ##### Prerequisites
-To start using the MQTT.js library in your project, you first need to install it using a package manager such as **npm** or **yarn**.
+To start using the MQTT.js library in your project, you first need to install it using a package manager such as `npm` or `yarn`.
 
-If you want to install package globally, please do not forget to add _‘-g’_ flag to the installation command with npm and _‘global’_ option for yarn.
+If you want to install package globally, please do not forget to add `-g` flag to the installation command with `npm` and `global` option for `yarn`.
 
 ```bash
 npm install mqtt{:copy-code}
@@ -21,7 +21,7 @@ If you prefer to link directly to a CDN-hosted version of MQTT.js, you can inclu
 <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>{:copy-code}
 ```
 
-To confirm the successful installation of the library, please use the following command::
+To confirm the successful installation of the library, please use the following command:
 
 ```bash
 mqtt --version{:copy-code}
@@ -33,21 +33,22 @@ The output should be similar to the following result:
 MQTT.js version: 5.9.1
 ```
 
-##### Connect MQTT.js to the TBMQ
+##### Connect to the TBMQ
 The code snippet below provides a demonstration on how to:
-1. connect to a TBMQ broker using default pre-configured client credentials _'TBMQ WebSockets MQTT Credentials'_
-2. subscribe for a topic 
-3. publish a message 
-4. handle received messages
-5. end session
-6. handle basic MQTT client events
+1. Connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`.
+2. Subscribe for a topic.
+3. Publish a message.
+4. Handle received messages.
+5. End session.
+6. Handle basic MQTT client events.
 
-Please paste this code into a new JavaScript file in your project, e.g. _tbmq_js_example.ja_:
+You may paste this code into a new JavaScript file in your project, e.g. `tbmq_js_example.js`. 
+Please do not forget to edit constant `url` with your actual TBMQ host name and WebSocket port (default is **8084**).
 
 ```bash
 const mqtt = require('mqtt');
 
-const url = 'ws://localhost:8084/mqtt'; // default TBMQ WebSocket port is 8084
+const url = 'ws://{:hostname}:8084/mqtt';
 const options = {
  clean: true, // clean session flag
  clientId: 'tbmq_websockets_client_id',
@@ -79,19 +80,17 @@ client.on('error', (error) => { console.log('Error: ', error?.message); }); // h
 client.on('packetreceive', (packet) => { console.log('Packet receive cmd: ', packet.cmd); }); // handle received packet
 client.on('packetsend', (packet) => { console.log('Packet send cmd: ', packet.cmd); }); // handle sent packet
 
-// client.publish(topic, 'Hello World',{qos: 1}); // publish a message
-
 {:copy-code}
 ```
 
-To run this JavaScript application you may use [node](https://nodejs.org/en/download/package-manager/):
+To run this JavaScript application you may use [Node.js](https://nodejs.org/en/download/package-manager/):
 
 ```bash
 node tbmq_js_example.js
 {:copy-code}
 ```
 
-Here is the output from executing the _tbmq_js_example_.js file:
+Here is the output from executing the `tbmq_js_example.js` file:
 
 ```bash
 Packet receive cmd:  connack
@@ -108,6 +107,6 @@ Packet send cmd:  puback
 ```
 
 #### See also
-On the official MQTT.js [GitHub page](https://github.com/mqttjs/MQTT.js), you can find detailed information about using JavaScript library, including its extensive features and usage examples.
+On the official MQTT.js [GitHub page](https://github.com/mqttjs/MQTT.js) you can find detailed information about using JavaScript library, including its extensive features and usage examples.
 
 Additionally, might be useful our guide on [MQTT over WebSocket](https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/), featuring an example of using the aforementioned library with the [TBMQ WebSocket Client](/ws-client).

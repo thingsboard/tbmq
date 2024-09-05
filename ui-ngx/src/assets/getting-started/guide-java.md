@@ -2,9 +2,8 @@
 This guide will walk you through setting up an MQTT client in Java using the Eclipse Paho library.
 You'll learn how to install the Paho library, connect to an MQTT broker, subscribe to a topic, and publish a message using Java.
 
-
-##### Install MQTT client
-To include this library in your Maven project, add the following dependency to your `pom.xml` file:
+##### Prerequisites
+In order to use Paho library in your Maven project, please make sure you have added the following dependency to your `pom.xml` file:
 
 ```bash
 <dependencies>
@@ -17,26 +16,23 @@ To include this library in your Maven project, add the following dependency to y
 {:copy-code}
 ```
 
-##### Connect MQTT clients
+##### Connect to the TBMQ
 
 Next, open your project in your preferred IDE and create a new class named `TBMQMain`. In this class, you'll establish a connection to TBMQ, subscribe to a topic, and publish a message.
-Replace `<your_password>`, `<your_username>`, `<your_clientId>`, and `<your_serverURI>` with your actual credentials and server details.
 
-For example, use the following values to connect to the broker deployed on your local machine, and use default WebSocket TBMQ credentials:
+For example, use the following values to connect to the broker deployed on your local machine, and use default credentials `TBMQ WebSockets MQTT Credentials`:
 
 ```bash
-final String serverURI = "ws://localhost:8084";
+final String serverURI = "tcp://{:hostname}:{:port}";
 final String clientId = "testClient";
 final String username = "tbmq_websockets_username";
 final String password = "";
 {:copy-code}
 ```
 
-Make sure the **ws** protocol is specified and the correct port (**8084** is the default one) is used.
-
 ##### Complete code
 
-Here's the complete Java code:
+Here's the complete Java code. Please do not forget to replace `<your_serverURI>`, `<your_clientId>`, `<your_username>` and `<your_password>` with your actual credentials and server details.
 
 ```bash
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
@@ -101,7 +97,7 @@ You'll also see the received message echoed back in the console.
 Example output:
 
 ```bash
-Connecting to broker on: ws://localhost:8084
+Connecting to broker on: tcp://localhost:1883
 Connected successfully
 Subscribing to topic: tbmq/demo/+
 Publishing message...
@@ -111,4 +107,4 @@ Disconnecting the client...
 
 #### See also
 
-For more details and advanced usage, refer to the Eclipse Paho client [documentation on GitHub](https://github.com/eclipse/paho.mqtt.java).
+For more details and advanced usage, refer to the [Eclipse Paho client documentation on GitHub](https://github.com/eclipse/paho.mqtt.java).

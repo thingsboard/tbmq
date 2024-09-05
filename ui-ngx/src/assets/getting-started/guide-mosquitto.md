@@ -44,6 +44,3 @@ Client tbmq received PUBLISH (d0, q1, r0, m3, 'tbmq/demo/topic', ... (11 bytes))
 Client tbmq sending PUBACK (m3, rc0)
 tbmq/demo/topic Hello World
 ```
-
-#### See also
-
