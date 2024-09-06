@@ -18,21 +18,7 @@ In order to use Paho library in your Maven project, please make sure you have ad
 
 ##### Connect to the TBMQ
 
-Next, open your project in your preferred IDE and create a new class named `TBMQMain`. In this class, you'll establish a connection to TBMQ, subscribe to a topic, and publish a message.
-
-For example, use the following values to connect to the broker deployed on your local machine, and use default credentials `TBMQ WebSockets MQTT Credentials`:
-
-```bash
-final String serverURI = "tcp://{:hostname}:{:port}";
-final String clientId = "testClient";
-final String username = "tbmq_websockets_username";
-final String password = "";
-{:copy-code}
-```
-
-##### Complete code
-
-Here's the complete Java code. Please do not forget to replace `<your_serverURI>`, `<your_clientId>`, `<your_username>` and `<your_password>` with your actual credentials and server details.
+The Java code below is an example of how to establish a connection to the TBMQ using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, and publish a message.
 
 ```bash
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
@@ -44,12 +30,12 @@ import java.nio.charset.StandardCharsets;
 
 public class TBMQMain {
    public static void main(String[] args) throws Exception {
-       final String serverURI = "<your_serverURI>";
-       final String clientId = "<your_clientId>";
-       final String username = "<your_username>";
-       final String password = "<your_password>";
+       final String serverURI = "tcp://{:mqttHost}:{:mqttPort}";
+       final String clientId = "testClient";
+       final String username = "tbmq_websockets_username";
+       final String password = "";
 
-       System.out.println("Connecting to broker on: " + serverURI);
+       System.out.println("Connecting to TBMQ...");
 
        // Create MQTT 5 client
        MqttClient client = new MqttClient(serverURI, clientId);
@@ -97,7 +83,7 @@ You'll also see the received message echoed back in the console.
 Example output:
 
 ```bash
-Connecting to broker on: tcp://localhost:1883
+Connecting to TBMQ...
 Connected successfully
 Subscribing to topic: tbmq/demo/+
 Publishing message...

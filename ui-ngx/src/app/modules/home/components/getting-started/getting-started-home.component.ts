@@ -38,11 +38,10 @@ import { TranslateService } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   ClientCredentialsWizardDialogComponent
-} from "@home/components/wizard/client-credentials-wizard-dialog.component";
+} from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
 import { SettingsService } from '@core/http/settings.service';
-import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
 
 @Component({
   selector: 'tb-getting-started',
@@ -84,25 +83,14 @@ export class GettingStartedHomeComponent implements AfterViewInit {
           this.steps.subscribe((res) => {
             this.stepsData = res;
           });
-          window.tbmqSettings = {};
-          window.tbmqSettings.mqttPort = tcpPort;
-          window.tbmqSettings.mqttHost = undefined;
-          this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
-            (settings) => {
-              if (settings?.jsonValue?.mqtt?.enabled) {
-                window.tbmqSettings.mqttPort = settings.jsonValue.mqtt.port;
-                window.tbmqSettings.mqttHost = settings.jsonValue.mqtt.host;
-              } else {
-                window.tbmqSettings.mqttPort = undefined;
-                window.tbmqSettings.mqttHost = undefined;
-              }
-            },
-            () => {}
-          );
           this.configParams = {} as BrokerConfig;
           this.configParams[ConfigParams.basicAuthEnabled] = basicAuthEnabled;
           this.configParams[ConfigParams.tcpPort] = tcpPort;
-          this.configParams[ConfigParams.basicAuthEnabled] ? this.init('client-app') : this.init('enable-basic-auth');
+          if (basicAuthEnabled) {
+            this.init('client-app');
+          } else {
+            this.init('enable-basic-auth');
+          }
           return data;
         }
       )).subscribe();

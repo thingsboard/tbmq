@@ -19,7 +19,7 @@ Please copy and paste the following code into a terminal tab:
 <br>
 
 ```bash
-mosquitto_sub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
+mosquitto_sub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
 ```
 
 ##### Publish
@@ -29,7 +29,7 @@ In order to publish a message on topic `tbmq/demo/topic`, open a new terminal ta
 <br>
 
 ```bash
-mosquitto_pub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
+mosquitto_pub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
 ```
 
 Once you run this command, you should see the published message in the terminal tab of the subscribed client:

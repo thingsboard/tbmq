@@ -1,4 +1,4 @@
-### Java over WebSocket
+### Java using WebSocket
 This guide will walk you through setting up an MQTT over WebSocket client in Java using the Eclipse Paho library. 
 You'll learn how to install the Paho library, connect to an MQTT broker using WebSocket, subscribe to a topic, and publish a message using Java.
 
@@ -18,23 +18,7 @@ In order to use Paho library in your Maven project, please make sure you have ad
 
 ##### Connect to the TBMQ
 
-Next, open your project in your preferred IDE and create a new class named `TBMQMain`. In this class, you'll establish a connection to TBMQ, subscribe to a topic, and publish a message.
-
-For example, use the following values to connect to the broker deployed on your local machine, and use default credentials `TBMQ WebSockets MQTT Credentials`:
-
-```bash
-final String serverURI = "ws://{:hostname}:8084";
-final String clientId = "testClient";
-final String username = "tbmq_websockets_username";
-final String password = "";
-{:copy-code}
-```
-
-Make sure the **ws** protocol is specified and the correct port is used (default is **8084**) .
-
-##### Complete code
-
-Here's the complete Java code. Please do not forget to replace `<your_serverURI>`, `<your_clientId>`, `<your_username>` and `<your_password>` with your actual credentials and server details.
+The Java code below is an example of how to establish a connection to the TBMQ using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, and publish a message.
 
 ```bash
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
@@ -42,19 +26,17 @@ import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 
-
 import java.nio.charset.StandardCharsets;
-
 
 public class TBMQMain {
   
    public static void main(String[] args) throws Exception {
-       final String serverURI = "<your_serverURI>";
-       final String clientId = "<your_clientId>";
-       final String username = "<your_username>";
-       final String password = "<your_password>";
+       final String serverURI = "ws://{:wsHost}:{:wsPort}";
+       final String clientId = "testClient";
+       final String username = "tbmq_websockets_username";
+       final String password = "";
 
-       System.out.println("Connecting to broker on: " + serverURI);
+       System.out.println("Connecting to TBMQ...");
 
        // Create MQTT 5 client
        MqttClient client = new MqttClient(serverURI, clientId);
@@ -103,7 +85,7 @@ You'll also see the received message echoed back in the console.
 Example output:
 
 ```bash
-Connecting to broker on: ws://localhost:8084
+Connecting to TBMQ...
 Connected successfully
 Subscribing to topic: tbmq/demo/+
 Publishing message...

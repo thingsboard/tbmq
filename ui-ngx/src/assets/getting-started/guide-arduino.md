@@ -31,18 +31,12 @@ Find and install the following libraries:
 
 ##### Connect to the TBMQ
 
-The code snippet below provides an example on how to:
-1. Connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`.
-2. Subscribe for a topic.
-3. Publish a message.
-4. Handle received message.
+The code snippet below provides an example on how to connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, publish a message, and handle received message.
 
 Please do not forget to edit following constants and variables in the sketch:
 
 - `WIFI_AP` - name of your access point
 - `WIFI_PASSWORD` - access point password
-- `MQTT_HOST` - the address of the server
-- `MQTT_PORT` - the port to connect to
 
 ```bash
 #include <WiFi.h>
@@ -50,8 +44,8 @@ Please do not forget to edit following constants and variables in the sketch:
 
 constexpr char WIFI_AP[] = "WIFI_AP";
 constexpr char WIFI_PASSWORD[] = "WIFI_PASSWORD";
-constexpr char MQTT_HOST[] = "MQTT_HOST"; // In case of working locally use you public IP address
-const int MQTT_PORT = MQTT_PORT; // default TBMQ port is 1883
+constexpr char MQTT_HOST[] = "{:mqttHost}";
+const int MQTT_PORT = {:mqttPort};
 
 constexpr uint32_t SERIAL_DEBUG_BAUD = 115200U;
 constexpr char TOPIC[] = "tbmq/demo";

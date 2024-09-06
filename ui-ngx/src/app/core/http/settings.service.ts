@@ -17,14 +17,22 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable } from 'rxjs';
+import { mergeMap, Observable, of } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
-import { AdminSettings, SecuritySettings } from '@shared/models/settings.models';
+import {
+  AdminSettings,
+  ConnectivitySettings,
+  connectivitySettingsKey,
+  defaultConnectivitySettings,
+  SecuritySettings
+} from '@shared/models/settings.models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SettingsService {
+
+  private connectivitySettingsValue = {} as ConnectivitySettings;
 
   constructor(private http: HttpClient) {
   }
@@ -46,5 +54,32 @@ export class SettingsService {
                               config?: RequestConfig): Observable<SecuritySettings> {
     return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings,
       defaultHttpOptionsFromConfig(config));
+  }
+
+  public updateConnectivitySettings() {
+    return this.getGeneralSettings(connectivitySettingsKey).pipe(
+      mergeMap(connectivitySettings => {
+        this.connectivitySettingsValue = this.transformConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings);
+        // @ts-ignore
+        window.tbmqSettings = this.connectivitySettingsValue;
+        return of(this.connectivitySettingsValue);
+      })
+    );
+  }
+
+  public getConnectivitySettings(): ConnectivitySettings {
+    return this.connectivitySettingsValue;
+  }
+
+  private transformConnectivitySettings(settings: ConnectivitySettings): ConnectivitySettings {
+    const connectivitySettings = JSON.parse(JSON.stringify(defaultConnectivitySettings));
+    for (const prop of Object.keys(settings)) {
+      if (settings[prop]?.enabled) {
+        connectivitySettings[prop].enabled = true;
+        connectivitySettings[prop].host = settings[prop].host;
+        connectivitySettings[prop].port = settings[prop].port;
+      }
+    }
+    return connectivitySettings;
   }
 }

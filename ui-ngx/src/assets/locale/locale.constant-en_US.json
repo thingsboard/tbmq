@@ -808,7 +808,7 @@
       "guide-text": "Select guide to get started with TBMQ and MQTT.",
       "java-title": "Java",
       "java-subtitle": "Eclipse Paho",
-      "java-ws-title": "Java over WebSocket",
+      "java-ws-title": "Java using WebSocket",
       "java-ws-subtitle": "Eclipse Paho"
     }
   },

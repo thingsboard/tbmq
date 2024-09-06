@@ -5,5 +5,5 @@ Please copy and paste the following code into a terminal tab:
 <br>
 
 ```bash
-mosquitto_sub -h {:hostname} -p {:port} -d -u tbmq_app -P tbmq_app -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
+mosquitto_sub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_app -P tbmq_app -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
 ```

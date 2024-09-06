@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import { gettingStartedActions, gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
@@ -35,6 +35,7 @@ export class GettingStartedComponent implements OnInit {
 
   constructor(private configService: ConfigService,
               private router: Router,
+              private cd: ChangeDetectorRef,
               public fb: UntypedFormBuilder) {
   }
 
@@ -42,6 +43,7 @@ export class GettingStartedComponent implements OnInit {
     this.configService.getSystemVersion().subscribe(currentRelease => {
       if (currentRelease) {
         this.currentReleaseVersion = currentRelease.version.split('-')[0];
+        this.cd.detectChanges();
       }
     });
   }
