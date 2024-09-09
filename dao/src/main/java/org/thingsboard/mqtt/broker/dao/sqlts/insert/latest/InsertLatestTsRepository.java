@@ -13,26 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.kv;
+package org.thingsboard.mqtt.broker.dao.sqlts.insert.latest;
 
-import lombok.Data;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestEntity;
 
-@Data
-public class BaseTsKvQuery implements TsKvQuery {
+import java.util.List;
 
-    private final String key;
-    private final long startTs;
-    private final long endTs;
+public interface InsertLatestTsRepository {
 
-    public BaseTsKvQuery(String key, long startTs, long endTs) {
-        this.key = key;
-        this.startTs = startTs;
-        this.endTs = endTs;
-    }
+    void saveOrUpdate(List<TsKvLatestEntity> entities);
 
-    public BaseTsKvQuery() {
-        this.key = null;
-        this.startTs = 0L;
-        this.endTs = 0L;
-    }
 }

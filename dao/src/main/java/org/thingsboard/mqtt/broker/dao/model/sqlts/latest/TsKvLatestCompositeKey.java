@@ -13,26 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.kv;
+package org.thingsboard.mqtt.broker.dao.model.sqlts.latest;
 
+import jakarta.persistence.Transient;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 @Data
-public class BaseTsKvQuery implements TsKvQuery {
+@NoArgsConstructor
+@AllArgsConstructor
+public class TsKvLatestCompositeKey implements Serializable {
 
-    private final String key;
-    private final long startTs;
-    private final long endTs;
+    @Transient
+    @Serial
+    private static final long serialVersionUID = -6708123794369043703L;
 
-    public BaseTsKvQuery(String key, long startTs, long endTs) {
-        this.key = key;
-        this.startTs = startTs;
-        this.endTs = endTs;
-    }
-
-    public BaseTsKvQuery() {
-        this.key = null;
-        this.startTs = 0L;
-        this.endTs = 0L;
-    }
+    private String entityId;
+    private int key;
 }

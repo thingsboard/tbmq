@@ -49,7 +49,6 @@ public abstract class AbstractTsKvEntity implements ToData<TsKvEntry> {
     @Column(name = KEY_COLUMN)
     protected int key;
 
-    @Id
     @Column(name = TS_COLUMN)
     protected Long ts;
 

@@ -15,24 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.data.kv;
 
-import lombok.Data;
+public interface DeleteTsKvQuery extends TsKvQuery {
 
-@Data
-public class BaseTsKvQuery implements TsKvQuery {
+    Boolean getRewriteLatestIfDeleted();
 
-    private final String key;
-    private final long startTs;
-    private final long endTs;
+    Boolean getDeleteLatest();
 
-    public BaseTsKvQuery(String key, long startTs, long endTs) {
-        this.key = key;
-        this.startTs = startTs;
-        this.endTs = endTs;
-    }
-
-    public BaseTsKvQuery() {
-        this.key = null;
-        this.startTs = 0L;
-        this.endTs = 0L;
-    }
 }

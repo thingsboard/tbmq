@@ -25,13 +25,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
-import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
@@ -51,7 +49,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
-@SuppressWarnings("UnstableApiUsage")
 public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstractSqlTimeseriesDao implements TimeseriesDao, AggregationTimeseriesDao {
 
     @Value("${sql.ts.batch_size:1000}")
@@ -124,25 +121,25 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
         });
     }
 
-    @Override
-    public ListenableFuture<TsKvEntry> findLatest(String entityId, String key) {
-        ListenableFuture<List<TsKvEntry>> future = findAllAsync(entityId, createQuery(key));
-        return Futures.transform(future, tsKvEntries -> {
-            if (!CollectionUtils.isEmpty(tsKvEntries)) {
-                return tsKvEntries.get(0);
-            }
-            return null;
-        }, service);
-    }
-
-    @Override
-    public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
-        List<ReadTsKvQuery> queries = new ArrayList<>();
-        for (String key : BrokerConstants.HISTORICAL_KEYS) {
-            queries.add(createQuery(key));
-        }
-        return findAllAsync(entityId, queries);
-    }
+//    @Override
+//    public ListenableFuture<TsKvEntry> findLatest(String entityId, String key) {
+//        ListenableFuture<List<TsKvEntry>> future = findAllAsync(entityId, createQuery(key));
+//        return Futures.transform(future, tsKvEntries -> {
+//            if (!CollectionUtils.isEmpty(tsKvEntries)) {
+//                return tsKvEntries.get(0);
+//            }
+//            return null;
+//        }, service);
+//    }
+//
+//    @Override
+//    public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
+//        List<ReadTsKvQuery> queries = new ArrayList<>();
+//        for (String key : BrokerConstants.HISTORICAL_KEYS) {
+//            queries.add(createQuery(key));
+//        }
+//        return findAllAsync(entityId, queries);
+//    }
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllAsync(String entityId, ReadTsKvQuery query) {

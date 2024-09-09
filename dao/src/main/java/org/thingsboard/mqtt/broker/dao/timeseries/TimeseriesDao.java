@@ -33,7 +33,4 @@ public interface TimeseriesDao {
 
     CleanUpResult cleanUp(long systemTtl);
 
-    ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
-
-    ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId);
 }

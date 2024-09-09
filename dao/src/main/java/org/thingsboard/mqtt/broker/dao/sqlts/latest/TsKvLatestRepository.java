@@ -13,26 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.kv;
+package org.thingsboard.mqtt.broker.dao.sqlts.latest;
 
-import lombok.Data;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestCompositeKey;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestEntity;
 
-@Data
-public class BaseTsKvQuery implements TsKvQuery {
+public interface TsKvLatestRepository extends JpaRepository<TsKvLatestEntity, TsKvLatestCompositeKey> {
 
-    private final String key;
-    private final long startTs;
-    private final long endTs;
-
-    public BaseTsKvQuery(String key, long startTs, long endTs) {
-        this.key = key;
-        this.startTs = startTs;
-        this.endTs = endTs;
-    }
-
-    public BaseTsKvQuery() {
-        this.key = null;
-        this.startTs = 0L;
-        this.endTs = 0L;
-    }
 }

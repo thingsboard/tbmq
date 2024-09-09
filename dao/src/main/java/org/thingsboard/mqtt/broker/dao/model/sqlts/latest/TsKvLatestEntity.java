@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.kv;
+package org.thingsboard.mqtt.broker.dao.model.sqlts.latest;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.Table;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 
 @Data
-public class BaseTsKvQuery implements TsKvQuery {
+@Entity
+@Table(name = "ts_kv_latest")
+@IdClass(TsKvLatestCompositeKey.class)
+public final class TsKvLatestEntity extends AbstractTsKvEntity {
 
-    private final String key;
-    private final long startTs;
-    private final long endTs;
-
-    public BaseTsKvQuery(String key, long startTs, long endTs) {
-        this.key = key;
-        this.startTs = startTs;
-        this.endTs = endTs;
+    @Override
+    public boolean isNotEmpty() {
+        return longValue != null || doubleValue != null;
     }
 
-    public BaseTsKvQuery() {
-        this.key = null;
-        this.startTs = 0L;
-        this.endTs = 0L;
+    public TsKvLatestEntity() {
     }
+
 }
