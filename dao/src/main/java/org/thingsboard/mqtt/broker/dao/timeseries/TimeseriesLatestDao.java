@@ -32,7 +32,7 @@ public interface TimeseriesLatestDao {
     ListenableFuture<Optional<TsKvEntry>> findLatestOpt(String entityId, String key);
 
     /**
-     * Returns new BasicTsKvEntry(System.currentTimeMillis(), new StringDataEntry(key, null)) if the value is NOT present in the DB
+     * Returns new BasicTsKvEntry(System.currentTimeMillis(), new LongDataEntry(key, null)) if the value is NOT present in the DB
      *
      */
     ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
