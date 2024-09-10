@@ -87,7 +87,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
     private TbSqlBlockingQueuePool<TsKvLatestEntity> tsLatestQueue;
 
     @PostConstruct
-    protected void init() {
+    public void init() {
         TbSqlQueueParams tsLatestParams = TbSqlQueueParams.builder()
                 .queueName("LatestTimeseriesQueue")
                 .batchSize(tsLatestBatchSize)
@@ -112,7 +112,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
     }
 
     @PreDestroy
-    protected void destroy() {
+    public void destroy() {
         if (tsLatestQueue != null) {
             tsLatestQueue.destroy();
         }
@@ -178,7 +178,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
         return aggregationTimeseriesDao.findAllAsync(entityId, findNewLatestQuery);
     }
 
-    protected TsKvEntry doFindLatest(String entityId, String key) {
+    private TsKvEntry doFindLatest(String entityId, String key) {
         TsKvLatestCompositeKey compositeKey =
                 new TsKvLatestCompositeKey(
                         entityId,
@@ -193,7 +193,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
         }
     }
 
-    protected ListenableFuture<TsKvLatestRemovingResult> getRemoveLatestFuture(String entityId, DeleteTsKvQuery query) {
+    private ListenableFuture<TsKvLatestRemovingResult> getRemoveLatestFuture(String entityId, DeleteTsKvQuery query) {
         ListenableFuture<TsKvEntry> latestFuture = service.submit(() -> doFindLatest(entityId, query.getKey()));
         return Futures.transformAsync(latestFuture, latest -> {
             if (latest == null) {
@@ -215,7 +215,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
         }, MoreExecutors.directExecutor());
     }
 
-    protected ListenableFuture<Void> getSaveLatestFuture(String entityId, TsKvEntry tsKvEntry) {
+    private ListenableFuture<Void> getSaveLatestFuture(String entityId, TsKvEntry tsKvEntry) {
         TsKvLatestEntity latestEntity = new TsKvLatestEntity();
         latestEntity.setEntityId(entityId);
         latestEntity.setTs(tsKvEntry.getTs());
