@@ -157,6 +157,10 @@
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-credentials.client-credentials</mat-label>
                 <input matInput formControlName="credentials">
+                <tb-edit-client-credentials-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
+                                                   [disabled]="isLoading$ | async"
+                                                   [name]="entityForm.get('credentials').value">
+                </tb-edit-client-credentials-button>
                 <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
                                 [disabled]="isLoading$ | async"
                                 [copyText]="entityForm.get('credentials').value">

@@ -123,6 +123,9 @@ import { TbComponentOutletDirective } from '@shared/components/directives/compon
 import { ColorPickerComponent } from '@shared/components/color-picker/color-picker.component';
 import { HelpPageComponent } from '@shared/components/help-page.component';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
+import {
+  EditClientCredentialsButtonComponent
+} from '@shared/components/button/edit-client-credentials-button.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -179,6 +182,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     HighlightPipe,
     BooleanPipe,
     CopyButtonComponent,
+    EditClientCredentialsButtonComponent,
     CardTitleButtonComponent,
     CopyContentButtonComponent,
     TogglePasswordComponent,
@@ -338,6 +342,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     HighlightPipe,
     TranslateModule,
     CopyButtonComponent,
+    EditClientCredentialsButtonComponent,
     CardTitleButtonComponent,
     CopyContentButtonComponent,
     TogglePasswordComponent,

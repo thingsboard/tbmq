@@ -85,7 +85,7 @@ export class EntityDetailsPageComponent extends EntityDetailsPanelComponent impl
 
   ngOnInit() {
     this.headerSubtitle = '';
-    this.headerSubtitle = 'WOW'; //this.translate.instant(this.entitiesTableConfig.entityTranslations.details);
+    this.headerSubtitle = this.translate.instant(this.entitiesTableConfig.entityTranslations.details);
     super.init();
     this.entityComponent.isDetailsPage = true;
     this.subscriptions.push(this.entityAction.subscribe((action) => {

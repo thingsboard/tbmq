@@ -30,6 +30,18 @@ import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
+import {
+  ClientCredentialsWizardDialogComponent
+} from '@home/components/wizard/client-credentials-wizard-dialog.component';
+import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
+import { MatDialog } from '@angular/material/dialog';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
+import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
+import { ClientType } from '@shared/models/client.model';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 @Component({
   selector: 'tb-client-credentials-autocomplete',
@@ -63,10 +75,10 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   displayAllOnEmpty = false;
 
   @Input()
-  editProfileEnabled = true;
+  editEnabled = false;
 
   @Input()
-  addNewProfile = true;
+  addNewCredentials = true;
 
   @Input()
   showDetailsPageLink = false;
@@ -100,6 +112,8 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
 
   constructor(public translate: TranslateService,
               public truncate: TruncatePipe,
+              private dialog: MatDialog,
+              private store: Store<AppState>,
               private clientCredentialsService: ClientCredentialsService,
               private fb: UntypedFormBuilder,
               private zone: NgZone) {
@@ -242,7 +256,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   }
 
   clientCredentialsEnter($event: KeyboardEvent) {
-    if (this.editProfileEnabled && $event.keyCode === ENTER) {
+    if (this.editEnabled && $event.keyCode === ENTER) {
       $event.preventDefault();
       if (!this.modelValue) {
         this.createClientCredentials($event, this.searchText);
@@ -255,20 +269,57 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     const clientCredentials: ClientCredentials = {
       name: credentialsName
     } as ClientCredentials;
-    if (this.addNewProfile) {
-      this.openClientCredentialsDialog(clientCredentials, true);
+    if (this.addNewCredentials) {
+      this.addClientCredentials(clientCredentials);
     }
   }
 
-  editClientCredentials($event: Event) {
-    $event.preventDefault();
-    this.clientCredentialsService.getClientCredentials(this.modelValue.id).subscribe(
-      (clientCredentials) => {
-        this.openClientCredentialsDialog(clientCredentials, false);
+  addClientCredentials(clientCredentials: ClientCredentials) {
+    const config = new EntityTableConfig<ClientCredentials>();
+    config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    config.entityComponent = ClientCredentialsComponent;
+    config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    config.addDialogStyle = {width: 'fit-content'};
+    config.demoData = {
+      name: clientCredentials.name,
+      clientType: ClientType.DEVICE,
+      credentialsType: CredentialsType.MQTT_BASIC,
+      credentialsValue: JSON.stringify({
+        userName: null,
+        password: null,
+        authRules: {
+          pubAuthRulePatterns: ['.*'],
+          subAuthRulePatterns: ['.*']
+        }
+      })
+    };
+    const $entity = this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<ClientCredentials>,
+      ClientCredentials>(ClientCredentialsWizardDialogComponent, {
+      disableClose: true,
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      data: {
+        entitiesTableConfig: config
+      }
+    }).afterClosed();
+    $entity.subscribe(
+      (entity) => {
+        if (entity) {
+          this.writeValue(entity.id);
+          this.clientCredentialsService.saveClientCredentials(entity).subscribe(() => {
+            this.store.dispatch(new ActionNotificationShow(
+              {
+                message: this.translate.instant('getting-started.credentials-added'),
+                type: 'success',
+                duration: 1500,
+                verticalPosition: 'top',
+                horizontalPosition: 'left'
+              }));
+          });
+        }
       }
     );
   }
 
-  openClientCredentialsDialog(clientCredentials: ClientCredentials, isAdd: boolean) {
-  }
+
 }

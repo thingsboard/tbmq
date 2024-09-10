@@ -17,10 +17,17 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscription-applications/shared-subsriptions-table.component';
 import {
   SharedSubsriptionGroupsTableComponent
-} from "@home/pages/shared-subscription-groups/shared-subsription-groups-table.component";
+} from '@home/pages/shared-subscription-groups/shared-subsription-groups-table.component';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
+import { BreadCrumbConfig } from '@shared/components/breadcrumb';
+import {
+  SharedSubscriptionsTableConfigResolver
+} from '@home/pages/shared-subscription-applications/shared-subscriptions-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -57,15 +64,42 @@ const routes: Routes = [
       },
       {
         path: 'applications',
-        component: SharedSubsriptionsTableComponent,
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'shared-subscription.application-shared-subscriptions',
           breadcrumb: {
             label: 'shared-subscription.application-shared-subscriptions',
             icon: 'mdi:monitor-share'
           }
-        }
+        },
+        children: [
+          {
+            path: '',
+            component: EntitiesTableComponent,
+            data: {
+              auth: [Authority.SYS_ADMIN],
+              title: 'shared-subscription.application-shared-subscriptions'
+            },
+            resolve: {
+              entitiesTableConfig: SharedSubscriptionsTableConfigResolver
+            }
+          },
+          {
+            path: ':entityId',
+            component: EntityDetailsPageComponent,
+            canDeactivate: [ConfirmOnExitGuard],
+            data: {
+              breadcrumb: {
+                labelFunction: entityDetailsPageBreadcrumbLabelFunction,
+                icon: 'mdi:monitor-share'
+              } as BreadCrumbConfig<EntityDetailsPageComponent>,
+              auth: [Authority.SYS_ADMIN],
+              title: 'shared-subscription.application-shared-subscriptions',
+            },
+            resolve: {
+              entitiesTableConfig: SharedSubscriptionsTableConfigResolver
+            }
+          }
+        ]
       }
     ]
   }
@@ -73,7 +107,10 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    SharedSubscriptionsTableConfigResolver
+  ]
 })
 
 export class SharedSubscriptionsRoutingModule { }

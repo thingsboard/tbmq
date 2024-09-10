@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
 import {
   cellWithIcon,
   DateEntityTableColumn,
@@ -24,8 +24,6 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { select, Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap, clientTypeValueColor } from '@shared/models/client.model';
 import {
@@ -37,9 +35,6 @@ import {
   credentialsWarningTranslations,
   wsSystemCredentialsName
 } from '@shared/models/credentials.model';
-import { map } from 'rxjs/operators';
-import { selectUserDetails } from '@core/auth/auth.selectors';
-import { ConfigParams } from '@shared/models/config.model';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
@@ -57,37 +52,39 @@ import {
 import {
   ChangeBasicPasswordDialogComponent,
   ChangeBasicPasswordDialogData
-} from "@home/pages/client-credentials/change-basic-password-dialog.component";
+} from '@home/pages/client-credentials/change-basic-password-dialog.component';
+import { Injectable } from '@angular/core';
+import { ConfigService } from '@core/http/config.service';
 
-export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCredentials, TimePageLink> {
+@Injectable()
+export class ClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<ClientCredentials>> {
 
   clientCredentialsFilterConfig: ClientCredentialsFilterConfig = {};
+  private readonly config: EntityTableConfig<ClientCredentials> = new EntityTableConfig<ClientCredentials>();
 
-  constructor(private store: Store<AppState>,
-              private clientCredentialsService: ClientCredentialsService,
+  constructor(private clientCredentialsService: ClientCredentialsService,
+              private configService: ConfigService,
               private translate: TranslateService,
               private datePipe: DatePipe,
-              public entityId: string = null,
               private route: ActivatedRoute,
               private router: Router,
               private dialog: MatDialog) {
-    super();
 
-    this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
-    this.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
-    this.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
-    this.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
-    this.entityTitle = (entity) => entity ? entity.name : '';
-    this.addDialogStyle = {width: 'fit-content'};
-    this.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
-    this.onEntityAction = action => this.onAction(action);
-    this.deleteEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
-    this.entitySelectionEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
+    this.config.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_CLIENT_CREDENTIALS);
+    this.config.tableTitle = this.translate.instant('mqtt-client-credentials.client-credentials');
+    this.config.entityTitle = (entity) => entity ? entity.name : '';
+    this.config.addDialogStyle = {width: 'fit-content'};
+    this.config.addEntity = () => {this.clientCredentialsWizard(null); return of(null); }
+    this.config.onEntityAction = action => this.onAction(action, this.config);
+    this.config.deleteEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
+    this.config.entitySelectionEnabled = (entity) => entity?.name !== wsSystemCredentialsName;
 
-    this.entityComponent = ClientCredentialsComponent;
-    this.headerComponent = ClientCredentialsTableHeaderComponent;
+    this.config.entityComponent = ClientCredentialsComponent;
+    this.config.headerComponent = ClientCredentialsTableHeaderComponent;
 
-    this.columns.push(
+    this.config.columns.push(
       new DateEntityTableColumn<ClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<ClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
         (entity) => entity.name),
@@ -104,58 +101,56 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       })
     );
 
-    this.addActionDescriptors.push(
+    this.config.addActionDescriptors.push(
       {
         name: this.translate.instant('mqtt-client-credentials.add-client-credentials'),
         icon: 'add',
         isEnabled: () => true,
-        onAction: ($event) => this.getTable().addEntity($event)
+        onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
 
-    this.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credential-title',
+    this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credential-title',
       { clientCredentialsName: mqttClient.name });
-    this.deleteEntityContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credential-text');
-    this.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title', {count});
-    this.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
+    this.config.deleteEntityContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credential-text');
+    this.config.deleteEntitiesTitle = count => this.translate.instant('mqtt-client-credentials.delete-client-credentials-title', {count});
+    this.config.deleteEntitiesContent = () => this.translate.instant('mqtt-client-credentials.delete-client-credentials-text');
 
-    this.loadEntity = id => this.clientCredentialsService.getClientCredentials(id);
-    this.saveEntity = mqttClient => this.clientCredentialsService.saveClientCredentials(mqttClient);
-    this.deleteEntity = id => this.clientCredentialsService.deleteClientCredentials(id);
-    this.entitiesFetchFunction = pageLink => this.fetchClientCredentials(pageLink);
+    this.config.loadEntity = id => this.clientCredentialsService.getClientCredentials(id);
+    this.config.saveEntity = mqttClient => this.clientCredentialsService.saveClientCredentials(mqttClient);
+    this.config.deleteEntity = id => this.clientCredentialsService.deleteClientCredentials(id);
+    this.config.entitiesFetchFunction = pageLink => this.fetchClientCredentials(pageLink as TimePageLink);
 
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => {
-        this.componentsData = {};
-        this.componentsData.config = {
-          basicAuthEnabled: user.additionalInfo?.config?.[ConfigParams.basicAuthEnabled],
-          sslAuthEnabled: user.additionalInfo?.config?.[ConfigParams.x509AuthEnabled]
-        };
-        if (!this.columns.find(el => el.key === 'warning')) {
-          this.columns.push(
-            new EntityTableColumn<ClientCredentials>('warning', null, '300px',
-              (entity) => {
-                if ((entity.credentialsType === CredentialsType.MQTT_BASIC && !this.componentsData.config?.basicAuthEnabled) ||
-                  (entity.credentialsType === CredentialsType.SSL && !this.componentsData.config?.sslAuthEnabled)) {
-                  const value = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
-                  const icon = 'warning';
-                  const backgroundColor = 'rgba(255,236,128,0)';
-                  const iconColor = '#ff9a00';
-                  const valueColor = 'inherit';
-                  return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
-                }
-                return '';
-              }, () => null, false
-            )
-          );
-        }
-        return true;
-      })
-    ).subscribe();
+    const brokerConfig = this.configService.brokerConfig;
+    if (!this.config.columns.find(el => el.key === 'warning')) {
+      this.config.columns.push(
+        new EntityTableColumn<ClientCredentials>('warning', null, '300px',
+          (entity) => {
+            if ((entity.credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
+              (entity.credentialsType === CredentialsType.SSL && !brokerConfig.x509AuthEnabled)) {
+              const value = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
+              const icon = 'warning';
+              const backgroundColor = 'rgba(255,236,128,0)';
+              const iconColor = '#ff9a00';
+              const valueColor = 'inherit';
+              return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
+            }
+            return '';
+          }, () => null, false
+        )
+      );
+    }
+  }
+
+  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<ClientCredentials>> {
+    this.config.componentsData = {
+      clientCredentialsFilterConfig: {},
+    };
+    return of(this.config);
   }
 
   private fetchClientCredentials(pageLink: TimePageLink): Observable<PageData<ClientCredentials>> {
+    this.clientCredentialsFilterConfig = deepClone(this.config.componentsData.clientCredentialsFilterConfig);
     const routerQueryParams: ClientCredentialsFilterConfig = this.route.snapshot.queryParams;
     if (routerQueryParams) {
       const queryParams = deepClone(routerQueryParams);
@@ -200,7 +195,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     }).afterClosed().subscribe(
       (res) => {
         if (res) {
-          this.updateData();
+          this.config.updateData();
           if (!localStorage.getItem('notDisplayCheckAfterAddCredentials') && res.credentialsType === CredentialsType.MQTT_BASIC) {
             this.checkCredentials(null, res, true);
           }
@@ -209,8 +204,11 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     );
   }
 
-  private onAction(action: EntityAction<ClientCredentials>): boolean {
+  private onAction(action: EntityAction<ClientCredentials>, config: EntityTableConfig<ClientCredentials>): boolean {
     switch (action.action) {
+      case 'open':
+        this.openCredentials(action.event, action.entity, config);
+        return true;
       case 'checkConnectivity':
         this.checkCredentials(action.event, action.entity);
         return true;
@@ -221,7 +219,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     return false;
   }
 
-  checkCredentials($event: Event, credentials: ClientCredentials, afterAdd = false) {
+  private checkCredentials($event: Event, credentials: ClientCredentials, afterAdd = false) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -256,7 +254,15 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
     }
   }
 
-  changePassword($event: Event, credentials: ClientCredentials) {
+  private openCredentials($event: Event, user: ClientCredentials, config: EntityTableConfig<ClientCredentials>) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    const url = this.router.createUrlTree([user.id], {relativeTo: config.getActivatedRoute()});
+    this.router.navigateByUrl(url);
+  }
+
+  private changePassword($event: Event, credentials: ClientCredentials) {
     if ($event) {
       $event.stopPropagation();
     }
@@ -269,7 +275,7 @@ export class ClientCredentialsTableConfig extends EntityTableConfig<ClientCreden
       }
     }).afterClosed().subscribe((res: ClientCredentials) => {
       if (res) {
-        this.updateData(false);
+        this.config.updateData(false);
       }
     });
   }

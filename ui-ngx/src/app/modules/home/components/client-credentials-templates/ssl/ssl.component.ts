@@ -18,7 +18,6 @@ import { AfterViewInit, Component, forwardRef, Input, OnDestroy, ViewChild } fro
 import {
   ControlValueAccessor,
   FormBuilder,
-  FormGroup,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR, UntypedFormGroup,
   ValidationErrors,
@@ -27,7 +26,7 @@ import {
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
-import { ClientCredentials, SslMqttCredentials } from "@shared/models/credentials.model";
+import { ClientCredentials, SslMqttCredentials } from '@shared/models/credentials.model';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
@@ -120,13 +119,6 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     const formValue = JSON.stringify(value);
     this.updateCertificateCnView(value?.certCnIsRegex);
     this.propagateChange(formValue);
-  }
-
-  copyText(key: string): string {
-    if (this.entity?.credentialsValue) {
-      const credentialsValue = JSON.parse(this.entity.credentialsValue);
-      return credentialsValue[key] || ' ';
-    }
   }
 
   onClickTbCopyButton(value: string) {
