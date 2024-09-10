@@ -30,9 +30,9 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ANY_CHARACTERS, AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
-import { MatDialog } from '@angular/material/dialog';
 import { MatChipInputEvent } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { clientIdRandom, clientUserNameRandom } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -73,10 +73,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   private propagateChange = (v: any) => {};
 
   constructor(public fb: FormBuilder,
-              private cd: ChangeDetectorRef,
-              private dialog: MatDialog) {
+              private cd: ChangeDetectorRef) {
     this.credentialsMqttFormGroup = this.fb.group({
-      clientId: [null],
+      clientId: [clientIdRandom()],
       userName: [null],
       password: [null],
       authRules: this.fb.group({
@@ -214,18 +213,26 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     };
   }
 
-  copyText(key: string): string {
-    if (this.entity?.credentialsValue) {
-      const credentialsValue = JSON.parse(this.entity.credentialsValue);
-      return credentialsValue[key] || ' ';
-    }
-  }
-
   onClickTbCopyButton(value: string) {
     if (value === 'clientId') {
       this.copyClientIdBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
     } else if (value === 'userName') {
       this.copyUsernameBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+    }
+  }
+
+  regenerate(type: string) {
+    switch (type) {
+      case 'clientId':
+        this.credentialsMqttFormGroup.patchValue({
+          clientId: clientIdRandom()
+        });
+        break;
+      case 'userName':
+        this.credentialsMqttFormGroup.patchValue({
+          userName: clientUserNameRandom()
+        });
+        break;
     }
   }
 }
