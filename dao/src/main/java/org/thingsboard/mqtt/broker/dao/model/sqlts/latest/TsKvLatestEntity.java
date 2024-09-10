@@ -19,8 +19,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
 @Table(name = "ts_kv_latest")
