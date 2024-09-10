@@ -120,6 +120,13 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
+    public ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key) {
+        validate(entityId);
+        validate(key);
+        return timeseriesLatestDao.removeLatest(entityId, key);
+    }
+
+    @Override
     public ListenableFuture<List<TsKvLatestRemovingResult>> removeLatest(String entityId, Collection<String> keys) {
         validate(entityId);
         List<ListenableFuture<TsKvLatestRemovingResult>> futures = new ArrayList<>(keys.size());

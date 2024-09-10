@@ -44,6 +44,8 @@ public interface TimeseriesService {
 
     ListenableFuture<List<Void>> remove(String entityId, List<TsKvQuery> queries);
 
+    ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key);
+
     ListenableFuture<List<TsKvLatestRemovingResult>> removeLatest(String entityId, Collection<String> keys);
 
     ListenableFuture<Collection<String>> removeAllLatest(String entityId);
