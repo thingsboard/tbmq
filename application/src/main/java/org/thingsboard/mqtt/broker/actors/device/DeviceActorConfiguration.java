@@ -15,18 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.actors.device;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
-@ConfigurationProperties(prefix = "actors.system.persisted-device")
+@ConfigurationProperties(prefix = "actors.persisted-device")
 public class DeviceActorConfiguration {
 
-    @Value("${actors.system.persisted-device.dispatcher-pool-size:4}")
-    private int dispatcherSize;
-    @Value("${actors.system.persisted-device.wait-before-actor-stop-minutes:10}")
-    private int timeToWaitBeforeActorStopMinutes;
+    private int dispatcherPoolSize;
+    private int waitBeforeActorStopMinutes;
+
 }
