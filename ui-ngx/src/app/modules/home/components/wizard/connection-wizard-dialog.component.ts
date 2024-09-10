@@ -101,7 +101,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   addressProtocol = WsAddressProtocolType.WS;
   displayUrlWarning: boolean;
 
-  private connectivitySettings: ConnectivitySettings = this.settingsService.getConnectivitySettings();
+  private connectivitySettings: ConnectivitySettings = this.settingsService.connectivitySettings;
   private urlConfig = {
     [WsAddressProtocolType.WS]: {
       protocol: 'ws://',

@@ -16,7 +16,7 @@
 
 // @ts-nocheck
 
-import { AfterViewInit, Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,10 +26,7 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
-import { BrokerConfig, ConfigParams } from '@shared/models/config.model';
-import { select, Store } from '@ngrx/store';
-import { selectUserDetails } from '@core/auth/auth.selectors';
-import { map } from 'rxjs/operators';
+import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
@@ -41,7 +38,7 @@ import {
 } from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
-import { SettingsService } from '@core/http/settings.service';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-getting-started',
@@ -54,46 +51,36 @@ import { SettingsService } from '@core/http/settings.service';
     }
   ]
 })
-export class GettingStartedHomeComponent implements AfterViewInit {
+export class GettingStartedHomeComponent implements OnInit {
 
   cardType = HomePageTitleType.GETTING_STARTED;
   steps: Observable<Array<any>> = of([]);
   stepsData: Array<any> = [];
   data: string;
-  configParams: BrokerConfig;
   selectedStep = 0;
+
+  configParams = this.configService.brokerConfig;
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
-              private settingsService: SettingsService,
               private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
               private store: Store<AppState>,
+              private configService: ConfigService,
               private router: Router) {
   }
 
-  ngAfterViewInit(): void {
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => user?.additionalInfo?.config)).pipe(
-      map((data) => {
-          const tcpPort = data ? data[ConfigParams.tcpPort] : null;
-          const basicAuthEnabled = data ? data[ConfigParams.basicAuthEnabled] : null;
-          this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
-          this.steps.subscribe((res) => {
-            this.stepsData = res;
-          });
-          this.configParams = {} as BrokerConfig;
-          this.configParams[ConfigParams.basicAuthEnabled] = basicAuthEnabled;
-          this.configParams[ConfigParams.tcpPort] = tcpPort;
-          if (basicAuthEnabled) {
-            this.init('client-app');
-          } else {
-            this.init('enable-basic-auth');
-          }
-          return data;
-        }
-      )).subscribe();
+  ngOnInit() {
+    const basicAuthEnabled = this.configParams.basicAuthEnabled;
+    this.steps = this.instructionsService.setInstructionsList(basicAuthEnabled);
+    this.steps.subscribe((res) => {
+      this.stepsData = res;
+    });
+    if (basicAuthEnabled) {
+      this.init('client-app');
+    } else {
+      this.init('enable-basic-auth');
+    }
   }
 
   selectStep(event: any) {

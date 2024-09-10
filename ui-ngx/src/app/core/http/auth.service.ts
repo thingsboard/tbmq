@@ -38,6 +38,7 @@ import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated 
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
+import { ConfigService } from '@core/http/config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -47,6 +48,7 @@ export class AuthService {
   constructor(private store: Store<AppState>,
               private http: HttpClient,
               private settingsService: SettingsService,
+              private configService: ConfigService,
               private router: Router,
               private utils: UtilsService,
               private translate: TranslateService,
@@ -168,14 +170,6 @@ export class AuthService {
       this.redirectUrl = this.router.url;
     }
     this.clearJwtToken();
-    /*this.http.post('/api/auth/logout', null, defaultHttpOptions(true, true))
-      .subscribe(() => {
-          this.clearJwtToken();
-        },
-        () => {
-          this.clearJwtToken();
-        }
-      );*/
   }
 
   private notifyUserLoaded(isUserLoaded: boolean) {
@@ -283,7 +277,8 @@ export class AuthService {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
     forkJoin([
       this.validateJwtToken(doTokenRefresh),
-      this.settingsService.updateConnectivitySettings()
+      this.settingsService.fetchConnectivitySettings(),
+      this.configService.fetchBrokerConfig()
     ]).subscribe(
       () => {
         const authPayload = {} as AuthPayload;

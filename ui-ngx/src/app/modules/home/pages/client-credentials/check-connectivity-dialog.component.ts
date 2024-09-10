@@ -86,7 +86,7 @@ export class CheckConnectivityDialogComponent extends
   notShowAgain = false;
   mqttTabIndex = 0;
 
-  private connectivitySettings = this.settingsService.getConnectivitySettings();
+  private connectivitySettings = this.settingsService.connectivitySettings;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
