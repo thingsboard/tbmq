@@ -24,10 +24,13 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface TimeseriesService {
 
     ListenableFuture<List<TsKvEntry>> findAll(String entityId, List<ReadTsKvQuery> queries);
+
+    ListenableFuture<Optional<TsKvEntry>> findLatestOpt(String entityId, String key);
 
     ListenableFuture<List<TsKvEntry>> findLatest(String entityId, Collection<String> keys);
 

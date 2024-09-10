@@ -39,12 +39,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@SuppressWarnings("UnstableApiUsage")
 public class BaseTimeseriesService implements TimeseriesService {
 
     private static final int INSERTS_PER_ENTRY = 2; // save into ts_kv and ts_kv_latest
@@ -62,6 +62,12 @@ public class BaseTimeseriesService implements TimeseriesService {
             validate(query);
         }
         return timeseriesDao.findAllAsync(entityId, queries);
+    }
+
+    @Override
+    public ListenableFuture<Optional<TsKvEntry>> findLatestOpt(String entityId, String key) {
+        validate(entityId);
+        return timeseriesLatestDao.findLatestOpt(entityId, key);
     }
 
     @Override

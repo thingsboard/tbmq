@@ -41,6 +41,8 @@ public interface TimeseriesLatestDao {
 
     ListenableFuture<Void> saveLatest(String entityId, TsKvEntry tsKvEntry);
 
+    ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key);
+
     ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, DeleteTsKvQuery query);
 
 }

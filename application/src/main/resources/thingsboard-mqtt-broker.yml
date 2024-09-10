@@ -562,6 +562,13 @@ sql:
     batch_max_delay: "${SQL_TS_BATCH_MAX_DELAY_MS:100}"
     # Number of threads that execute batch insert/update statements for time series data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
     batch_threads: "${SQL_TS_BATCH_THREADS:3}"
+  ts_latest:
+    # Batch size for persisting latest time series inserts
+    batch_size: "${SQL_TS_LATEST_BATCH_SIZE:1000}"
+    # Max timeout for latest time series entries queue polling. Value set in milliseconds
+    batch_max_delay: "${SQL_TS_LATEST_BATCH_MAX_DELAY_MS:50}"
+    # Number of threads that execute batch insert/update statements for latest time series data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+    batch_threads: "${SQL_TS_LATEST_BATCH_THREADS:3}"
   ttl:
     ts:
       # The parameter to specify whether to use TTL (Time To Live) for time series records

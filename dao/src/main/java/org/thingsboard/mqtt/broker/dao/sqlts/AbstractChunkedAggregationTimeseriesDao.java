@@ -26,11 +26,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
-import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
+import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
 import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
@@ -69,6 +69,8 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
     protected InsertTsRepository<TsKvEntity> insertRepository;
     @Autowired(required = false)
     private SqlQueueStatsManager statsManager;
+    @Autowired
+    private KeyDictionaryDao keyDictionaryDao;
 
     protected TbSqlBlockingQueuePool<TsKvEntity> tsQueue;
 
@@ -114,32 +116,12 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
         return service.submit(() -> {
             tsKvRepository.delete(
                     entityId,
-                    getOrSaveKeyId(query.getKey()),
+                    keyDictionaryDao.getOrSaveKeyId(query.getKey()),
                     query.getStartTs(),
                     query.getEndTs());
             return null;
         });
     }
-
-//    @Override
-//    public ListenableFuture<TsKvEntry> findLatest(String entityId, String key) {
-//        ListenableFuture<List<TsKvEntry>> future = findAllAsync(entityId, createQuery(key));
-//        return Futures.transform(future, tsKvEntries -> {
-//            if (!CollectionUtils.isEmpty(tsKvEntries)) {
-//                return tsKvEntries.get(0);
-//            }
-//            return null;
-//        }, service);
-//    }
-//
-//    @Override
-//    public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
-//        List<ReadTsKvQuery> queries = new ArrayList<>();
-//        for (String key : BrokerConstants.HISTORICAL_KEYS) {
-//            queries.add(createQuery(key));
-//        }
-//        return findAllAsync(entityId, queries);
-//    }
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllAsync(String entityId, ReadTsKvQuery query) {
@@ -179,12 +161,8 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
         }, service);
     }
 
-    private BaseReadTsKvQuery createQuery(String key) {
-        return new BaseReadTsKvQuery(key, 0, System.currentTimeMillis(), 1, "DESC");
-    }
-
     private List<TsKvEntry> findAllAsyncWithLimit(String entityId, ReadTsKvQuery query) {
-        Integer keyId = getOrSaveKeyId(query.getKey());
+        Integer keyId = keyDictionaryDao.getOrSaveKeyId(query.getKey());
         List<TsKvEntity> tsKvEntities = tsKvRepository.findAllWithLimit(
                 entityId,
                 keyId,
@@ -210,7 +188,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
     }
 
     protected TsKvEntity switchAggregation(String entityId, String key, long startTs, long endTs, Aggregation aggregation) {
-        var keyId = getOrSaveKeyId(key);
+        var keyId = keyDictionaryDao.getOrSaveKeyId(key);
         switch (aggregation) {
             case AVG:
                 return tsKvRepository.findAvg(entityId, keyId, startTs, endTs);
