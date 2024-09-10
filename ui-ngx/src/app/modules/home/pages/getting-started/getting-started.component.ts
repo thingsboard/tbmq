@@ -17,7 +17,12 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { gettingStartedActions, gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
+import {
+  gettingStartedActions,
+  gettingStartedDocs,
+  gettingStartedGuides,
+  GettingStartedLink
+} from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 
 @Component({
@@ -31,6 +36,7 @@ export class GettingStartedComponent implements OnInit {
   currentReleaseVersion: string;
 
   guides = gettingStartedGuides;
+  docs = gettingStartedDocs;
   actions = gettingStartedActions;
 
   constructor(private configService: ConfigService,

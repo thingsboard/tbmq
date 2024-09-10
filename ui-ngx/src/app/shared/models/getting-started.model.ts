@@ -68,6 +68,51 @@ export const gettingStartedGuides: GettingStartedLink[] = [
   },*/
 ]
 
+export const gettingStartedDocs: GettingStartedLink[] = [
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Getting Started',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Configuration',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/install/config/'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Security',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Client Type',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/mqtt-client-type'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Monitoring',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'WebSocket Client',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/ui/websocket-client'
+  },
+  {
+    img: '/assets/home/no_data_bg.svg',
+    title: 'Troubleshooting',
+    subtitle: 'TBMQ',
+    url: 'https://thingsboard.io/docs/mqtt-broker/troubleshooting'
+  },
+]
+
 export interface GettingStartedLink {
   title: string;
   url: string;
