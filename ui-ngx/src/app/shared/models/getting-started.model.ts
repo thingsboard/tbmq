@@ -40,7 +40,7 @@ export const gettingStartedGuides: GettingStartedLink[] = [
   },
   {
     id: 'guide-mosquitto',
-    img: '/assets/getting-started/mosquitto.png',
+    img: '/assets/getting-started/mosquitto.svg',
     title: 'getting-started.guide.mosquitto-title',
     subtitle: 'getting-started.guide.mosquitto-subtitle',
     url: '/getting-started/guide-mosquitto'
@@ -70,45 +70,38 @@ export const gettingStartedGuides: GettingStartedLink[] = [
 
 export const gettingStartedDocs: GettingStartedLink[] = [
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/getting_started.svg',
     title: 'Getting Started',
-    subtitle: 'TBMQ',
     url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/configuration.svg',
     title: 'Configuration',
-    subtitle: 'TBMQ',
     url: 'https://thingsboard.io/docs/mqtt-broker/install/config/'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/security.svg',
     title: 'Security',
-    subtitle: 'TBMQ',
-    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
+    url: 'https://thingsboard.io/docs/mqtt-broker/security'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/client_type.svg',
     title: 'Client Type',
-    subtitle: 'TBMQ',
-    url: 'https://thingsboard.io/docs/mqtt-broker/mqtt-client-type'
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/configuration.svg',
     title: 'Monitoring',
-    subtitle: 'TBMQ',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/websocket_client.svg',
     title: 'WebSocket Client',
-    subtitle: 'TBMQ',
-    url: 'https://thingsboard.io/docs/mqtt-broker/ui/websocket-client'
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'
   },
   {
-    img: '/assets/home/no_data_bg.svg',
+    img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
-    subtitle: 'TBMQ',
     url: 'https://thingsboard.io/docs/mqtt-broker/troubleshooting'
   },
 ]

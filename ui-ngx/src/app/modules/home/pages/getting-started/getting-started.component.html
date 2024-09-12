@@ -73,10 +73,9 @@
         <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
              *ngFor="let guide of docs" (click)="navigateNewTab(guide)">
           <div class="guide">
-            <img [src]="guide.img" [alt]="guide.subtitle">
-            <span translate>{{guide.subtitle}}</span>
+            <img [src]="guide.img" [alt]="guide.title">
+            <span class="doc-title" translate>{{guide.title}}</span>
           </div>
-          <span style="font-weight: 500" translate>{{guide.title}}</span>
         </div>
       </div>
     </div>

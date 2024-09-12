@@ -72,6 +72,11 @@
         object-fit: cover;
       }
 
+      .doc-title{
+        font-weight: 500;
+        color: rgba(0,0,0,0.76);
+      }
+
       &:hover {
         background: rgba(0,0,0,0.06);
       }
