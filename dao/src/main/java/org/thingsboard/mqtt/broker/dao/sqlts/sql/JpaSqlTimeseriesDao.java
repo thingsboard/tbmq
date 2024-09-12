@@ -138,6 +138,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
                      "WHERE schemaname = 'public'" +
                      "AND tablename like 'ts_kv_' || '%' " +
                      "AND tablename != 'ts_kv_dictionary' " +
+                     "AND tablename != 'ts_kv_latest' " +
                      "AND tablename != 'ts_kv_indefinite' " +
                      "AND tablename != ?")) {
             stmt.setString(1, partitionByTtlDate);
