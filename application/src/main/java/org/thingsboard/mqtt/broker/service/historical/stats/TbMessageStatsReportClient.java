@@ -21,4 +21,10 @@ public interface TbMessageStatsReportClient {
     void reportStats(String key);
 
     void reportTraffic(long bytes);
+
+    void reportClientSendStats(String clientId, int qos);
+
+    void reportClientReceiveStats(String clientId, int qos);
+
+    void removeClient(String clientId);
 }

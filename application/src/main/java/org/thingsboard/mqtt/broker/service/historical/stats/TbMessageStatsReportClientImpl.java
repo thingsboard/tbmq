@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
@@ -67,6 +70,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
+    private ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> clientSessionsStats;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @PostConstruct
@@ -77,6 +81,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         serviceId = serviceInfoProvider.getServiceId();
         historicalStatsProducer = historicalDataQueueFactory.createProducer(serviceId);
         stats = new ConcurrentHashMap<>();
+        clientSessionsStats = new ConcurrentHashMap<>();
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             stats.put(key, new AtomicLong(0));
         }
@@ -85,8 +90,28 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
-            reportStats(getStartOfCurrentMinute());
+            long startOfCurrentMinute = getStartOfCurrentMinute();
+            reportStats(startOfCurrentMinute);
+            reportClientSessionsStats(startOfCurrentMinute);
         }
+    }
+
+    // TODO: improve this method. If we have a lot of clients, all stats will be persisted for them at once
+    private void reportClientSessionsStats(long ts) {
+        List<ListenableFuture<List<Void>>> futures = new ArrayList<>();
+        clientSessionsStats.forEach((clientId, clientStatsMap) -> {
+
+            List<TsKvEntry> tsKvEntries = clientStatsMap
+                    .entrySet()
+                    .stream()
+                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().get())))
+                    .collect(Collectors.toList());
+
+            futures.add(timeseriesService.saveLatest(clientId, tsKvEntries));
+        });
+        DonAsynchron.withCallback(Futures.allAsList(futures),
+                lists -> log.debug("Successfully persisted client sessions latest"),
+                throwable -> log.warn("Failed to persist client sessions latest", throwable));
     }
 
     private void reportStats(long ts) {
@@ -153,6 +178,35 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             AtomicLong al = stats.get(PROCESSED_BYTES);
             al.addAndGet(bytes);
         }
+    }
+
+    @Override
+    public void reportClientSendStats(String clientId, int qos) {
+        if (enabled) {
+            reportClientStats(clientId, BrokerConstants.SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
+        }
+    }
+
+    @Override
+    public void reportClientReceiveStats(String clientId, int qos) {
+        if (enabled) {
+            reportClientStats(clientId, BrokerConstants.RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
+        }
+    }
+
+    @Override
+    public void removeClient(String clientId) {
+        clientSessionsStats.remove(clientId);
+    }
+
+    private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
+        var clientStatsMap = clientSessionsStats.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
+
+        AtomicLong counter = clientStatsMap.computeIfAbsent(clientStatsKey, s -> new AtomicLong(0));
+        counter.incrementAndGet();
+
+        AtomicLong qosCounter = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> new AtomicLong(0));
+        qosCounter.incrementAndGet();
     }
 
     private void validateIntervalAndThrowExceptionOnInvalid() {

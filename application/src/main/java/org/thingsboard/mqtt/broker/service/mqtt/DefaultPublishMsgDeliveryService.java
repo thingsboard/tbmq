@@ -80,6 +80,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQosLevel());
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
@@ -117,6 +118,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(msg, qos, retain, topicName, packetId, properties);
 
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), qos);
         if (writeAndFlush) {
             sendPublishMsgToClient(sessionCtx, mqttPubMsg);
         } else {
@@ -135,6 +137,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         pubMsg = sessionCtx.getTopicAliasCtx().createPublishMsgUsingTopicAlias(pubMsg, minTopicNameLengthForAliasReplacement);
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQosLevel());
         sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
     }
 

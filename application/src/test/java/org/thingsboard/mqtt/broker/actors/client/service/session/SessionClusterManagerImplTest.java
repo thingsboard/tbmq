@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -87,6 +88,8 @@ public class SessionClusterManagerImplTest {
     RateLimitCacheService rateLimitCacheService;
     @MockBean
     CacheNameResolver cacheNameResolver;
+    @MockBean
+    TimeseriesService timeseriesService;
 
     @SpyBean
     SessionClusterManagerImpl sessionClusterManager;
