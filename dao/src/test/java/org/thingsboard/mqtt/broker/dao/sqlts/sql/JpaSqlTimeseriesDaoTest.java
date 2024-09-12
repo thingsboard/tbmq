@@ -31,7 +31,7 @@ public class JpaSqlTimeseriesDaoTest {
 
     @Before
     public void setUp() {
-        jpaSqlTimeseriesDao = new JpaSqlTimeseriesDao(null);
+        jpaSqlTimeseriesDao = new JpaSqlTimeseriesDao(null, null);
     }
 
     @Test

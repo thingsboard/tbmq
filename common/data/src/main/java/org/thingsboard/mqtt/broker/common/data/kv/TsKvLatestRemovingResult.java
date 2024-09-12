@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
 
 @Data
-@Component
-@ConfigurationProperties(prefix = "actors.persisted-device")
-public class DeviceActorConfiguration {
+public class TsKvLatestRemovingResult {
 
-    private int dispatcherPoolSize;
-    private int waitBeforeActorStopMinutes;
+    private String key;
+    private TsKvEntry data;
+    private boolean removed;
 
+    public TsKvLatestRemovingResult(TsKvEntry data) {
+        this.key = data.getKey();
+        this.data = data;
+        this.removed = true;
+    }
+
+    public TsKvLatestRemovingResult(String key, boolean removed) {
+        this.key = key;
+        this.removed = removed;
+    }
 }

@@ -58,8 +58,8 @@ public class ActorSystemLifecycle {
 
     @PostConstruct
     public void init() {
-        actorSystem.createDispatcher(PERSISTED_DEVICE_DISPATCHER_NAME, initDispatcherExecutor(PERSISTED_DEVICE_DISPATCHER_NAME, deviceActorConfiguration.getDispatcherSize()));
-        actorSystem.createDispatcher(CLIENT_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_DISPATCHER_NAME, clientActorConfiguration.getDispatcherSize()));
+        actorSystem.createDispatcher(PERSISTED_DEVICE_DISPATCHER_NAME, initDispatcherExecutor(PERSISTED_DEVICE_DISPATCHER_NAME, deviceActorConfiguration.getDispatcherPoolSize()));
+        actorSystem.createDispatcher(CLIENT_DISPATCHER_NAME, initDispatcherExecutor(CLIENT_DISPATCHER_NAME, clientActorConfiguration.getDispatcherPoolSize()));
     }
 
     @PreDestroy

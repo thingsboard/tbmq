@@ -65,6 +65,6 @@ public class DoubleDataEntry extends BasicKvEntry {
 
     @Override
     public String getValueAsString() {
-        return Double.toString(value);
+        return value != null ? Double.toString(value) : null;
     }
 }

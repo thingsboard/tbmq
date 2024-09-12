@@ -366,8 +366,8 @@ public class ClientActor extends ContextAwareActor {
         state.setStopActorCommandId(UUID.randomUUID());
         StopActorCommandMsg stopActorCommandMsg = new StopActorCommandMsg(state.getStopActorCommandId());
 
-        long delay = state.isClientIdGenerated() ? TimeUnit.SECONDS.toMillis(actorConfiguration.getTimeToWaitBeforeGeneratedActorStopSeconds())
-                : TimeUnit.SECONDS.toMillis(actorConfiguration.getTimeToWaitBeforeNamedActorStopSeconds());
+        long delay = state.isClientIdGenerated() ? TimeUnit.SECONDS.toMillis(actorConfiguration.getWaitBeforeGeneratedActorStopSeconds())
+                : TimeUnit.SECONDS.toMillis(actorConfiguration.getWaitBeforeNamedActorStopSeconds());
         systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, delay);
     }
 

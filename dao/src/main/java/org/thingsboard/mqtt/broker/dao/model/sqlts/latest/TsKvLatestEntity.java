@@ -13,31 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.model.sqlts.dictionary;
+package org.thingsboard.mqtt.broker.dao.model.sqlts.latest;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 import lombok.Data;
-import org.hibernate.annotations.Generated;
+import lombok.EqualsAndHashCode;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 
-import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.KEY_COLUMN;
-import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.KEY_ID_COLUMN;
-
+@EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
-@Table(name = "ts_kv_dictionary")
-@IdClass(TsKvDictionaryCompositeKey.class)
-public final class TsKvDictionary {
+@Table(name = "ts_kv_latest")
+@IdClass(TsKvLatestCompositeKey.class)
+public final class TsKvLatestEntity extends AbstractTsKvEntity {
 
-    @Id
-    @Column(name = KEY_COLUMN)
-    private String key;
+    @Override
+    public boolean isNotEmpty() {
+        return longValue != null || doubleValue != null;
+    }
 
-    @Column(name = KEY_ID_COLUMN, unique = true, columnDefinition = "int")
-    @Generated
-    private int keyId;
+    public TsKvLatestEntity() {
+    }
 
 }

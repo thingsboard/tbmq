@@ -16,39 +16,33 @@
 package org.thingsboard.mqtt.broker.dao.timeseries;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
-import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
+import org.thingsboard.mqtt.broker.common.data.kv.DeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
-import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public interface TimeseriesService {
+public interface TimeseriesLatestDao {
 
-    ListenableFuture<List<TsKvEntry>> findAll(String entityId, List<ReadTsKvQuery> queries);
-
+    /**
+     * Optional TsKvEntry if the value is present in the DB
+     *
+     */
     ListenableFuture<Optional<TsKvEntry>> findLatestOpt(String entityId, String key);
 
-    ListenableFuture<List<TsKvEntry>> findLatest(String entityId, Collection<String> keys);
+    /**
+     * Returns new BasicTsKvEntry(System.currentTimeMillis(), new LongDataEntry(key, null)) if the value is NOT present in the DB
+     *
+     */
+    ListenableFuture<TsKvEntry> findLatest(String entityId, String key);
 
     ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId);
 
-    ListenableFuture<Void> save(String entityId, List<TsKvEntry> tsKvEntries);
-
-    ListenableFuture<Void> save(String entityId, TsKvEntry tsKvEntry);
-
-    ListenableFuture<List<Void>> saveLatest(String entityId, List<TsKvEntry> tsKvEntry);
-
-    ListenableFuture<List<Void>> remove(String entityId, List<TsKvQuery> queries);
+    ListenableFuture<Void> saveLatest(String entityId, TsKvEntry tsKvEntry);
 
     ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key);
 
-    ListenableFuture<List<TsKvLatestRemovingResult>> removeLatest(String entityId, Collection<String> keys);
+    ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, DeleteTsKvQuery query);
 
-    ListenableFuture<Collection<String>> removeAllLatest(String entityId);
-
-    CleanUpResult cleanUp(long systemTtl);
 }

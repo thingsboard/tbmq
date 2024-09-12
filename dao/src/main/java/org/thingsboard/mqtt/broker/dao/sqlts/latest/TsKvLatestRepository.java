@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device;
+package org.thingsboard.mqtt.broker.dao.sqlts.latest;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestCompositeKey;
+import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestEntity;
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "actors.persisted-device")
-public class DeviceActorConfiguration {
-
-    private int dispatcherPoolSize;
-    private int waitBeforeActorStopMinutes;
+public interface TsKvLatestRepository extends JpaRepository<TsKvLatestEntity, TsKvLatestCompositeKey> {
 
 }

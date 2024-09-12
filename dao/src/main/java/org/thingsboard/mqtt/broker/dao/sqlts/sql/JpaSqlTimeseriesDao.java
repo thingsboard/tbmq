@@ -27,6 +27,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
 import org.thingsboard.mqtt.broker.dao.sqlts.AbstractChunkedAggregationTimeseriesDao;
 import org.thingsboard.mqtt.broker.dao.sqlts.insert.sql.SqlPartitioningRepository;
@@ -59,6 +60,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
     private final Map<Long, SqlPartition> partitions = new ConcurrentHashMap<>();
 
     private final SqlPartitioningRepository partitioningRepository;
+    private final KeyDictionaryDao keyDictionaryDao;
 
     private SqlTsPartitionDate tsFormat;
 
@@ -82,7 +84,7 @@ public class JpaSqlTimeseriesDao extends AbstractChunkedAggregationTimeseriesDao
     public ListenableFuture<Void> save(String entityId, TsKvEntry tsKvEntry) {
         savePartitionIfNotExist(tsKvEntry.getTs());
         String strKey = tsKvEntry.getKey();
-        Integer keyId = getOrSaveKeyId(strKey);
+        Integer keyId = keyDictionaryDao.getOrSaveKeyId(strKey);
         TsKvEntity entity = new TsKvEntity();
         entity.setEntityId(entityId);
         entity.setTs(tsKvEntry.getTs());

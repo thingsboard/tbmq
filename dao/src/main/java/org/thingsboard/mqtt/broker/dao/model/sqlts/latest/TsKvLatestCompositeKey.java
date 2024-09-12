@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device;
+package org.thingsboard.mqtt.broker.dao.model.sqlts.latest;
 
+import jakarta.persistence.Transient;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import lombok.NoArgsConstructor;
+
+import java.io.Serial;
+import java.io.Serializable;
 
 @Data
-@Component
-@ConfigurationProperties(prefix = "actors.persisted-device")
-public class DeviceActorConfiguration {
+@NoArgsConstructor
+@AllArgsConstructor
+public class TsKvLatestCompositeKey implements Serializable {
 
-    private int dispatcherPoolSize;
-    private int waitBeforeActorStopMinutes;
+    @Transient
+    @Serial
+    private static final long serialVersionUID = -6708123794369043703L;
 
+    private String entityId;
+    private int key;
 }

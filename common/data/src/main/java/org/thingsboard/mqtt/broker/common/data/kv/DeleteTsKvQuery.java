@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device;
+package org.thingsboard.mqtt.broker.common.data.kv;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+public interface DeleteTsKvQuery extends TsKvQuery {
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "actors.persisted-device")
-public class DeviceActorConfiguration {
+    Boolean getRewriteLatestIfDeleted();
 
-    private int dispatcherPoolSize;
-    private int waitBeforeActorStopMinutes;
+    Boolean getDeleteLatest();
 
 }

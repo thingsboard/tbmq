@@ -15,20 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.actors.client;
 
-import lombok.Getter;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-@Getter
+@Data
 @Component
-@ConfigurationProperties(prefix = "actors.system.client")
+@ConfigurationProperties(prefix = "actors.client")
 public class ClientActorConfiguration {
 
-    @Value("${actors.system.client.dispatcher-pool-size:8}")
-    private int dispatcherSize;
-    @Value("${actors.system.client.wait-before-generated-actor-stop-seconds:10}")
-    private int timeToWaitBeforeGeneratedActorStopSeconds;
-    @Value("${actors.system.client.wait-before-named-actor-stop-seconds:60}")
-    private int timeToWaitBeforeNamedActorStopSeconds;
+    private int dispatcherPoolSize;
+    private int waitBeforeGeneratedActorStopSeconds;
+    private int waitBeforeNamedActorStopSeconds;
+
 }

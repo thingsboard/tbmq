@@ -30,4 +30,9 @@ public class BaseTsKvQuery implements TsKvQuery {
         this.endTs = endTs;
     }
 
+    public BaseTsKvQuery() {
+        this.key = null;
+        this.startTs = 0L;
+        this.endTs = System.currentTimeMillis();
+    }
 }

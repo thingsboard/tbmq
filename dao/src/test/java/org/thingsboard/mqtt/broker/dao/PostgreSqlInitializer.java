@@ -72,6 +72,7 @@ public class PostgreSqlInitializer {
                     "        WHERE schemaname = 'public'\n" +
                     "          AND tablename like 'ts_kv_' || '%'\n" +
                     "          AND tablename != 'ts_kv_dictionary'\n" +
+                    "          AND tablename != 'ts_kv_latest'\n" +
                     "          AND tablename != 'ts_kv_indefinite' \n" +
                     "    LOOP\n" +
                     "        EXECUTE format('DROP TABLE IF EXISTS %I CASCADE', table_name);\n" +

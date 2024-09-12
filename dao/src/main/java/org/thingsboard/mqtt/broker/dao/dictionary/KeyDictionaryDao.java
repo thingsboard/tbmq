@@ -13,18 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.device;
+package org.thingsboard.mqtt.broker.dao.dictionary;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+public interface KeyDictionaryDao {
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "actors.persisted-device")
-public class DeviceActorConfiguration {
+    Integer getOrSaveKeyId(String strKey);
 
-    private int dispatcherPoolSize;
-    private int waitBeforeActorStopMinutes;
+    String getKey(Integer keyId);
+
+    Integer getKeyId(String key);
 
 }

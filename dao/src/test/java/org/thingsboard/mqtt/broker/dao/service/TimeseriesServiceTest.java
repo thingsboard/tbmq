@@ -33,7 +33,6 @@ import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @Slf4j
 @DaoSqlTest
@@ -67,24 +67,17 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         saveEntries(entityId, TS - 1);
         saveEntries(entityId, TS);
 
-        testLatestTsAndVerify(entityId);
-    }
-
-    private void testLatestTsAndVerify(String entityId) throws ExecutionException, InterruptedException, TimeoutException {
         List<TsKvEntry> tsList = tsService.findAllLatest(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertNotNull(tsList);
-        assertEquals(1, tsList.size());
+        assertEquals(6, tsList.size());
         for (TsKvEntry tsKvEntry : tsList) {
-            assertEquals(TS, tsKvEntry.getTs());
+            if (tsKvEntry.getKey().equals(LONG_KEY)) {
+                assertEquals(TS, tsKvEntry.getTs());
+            } else {
+                assertNull(tsKvEntry.getValue());
+            }
         }
-
-        tsList.sort(Comparator.comparing(KvEntry::getKey));
-
-        List<TsKvEntry> expected = new ArrayList<>(List.of(toTsEntry(TS, longKvEntry)));
-        expected.sort(Comparator.comparing(KvEntry::getKey));
-
-        assertEquals(expected, tsList);
     }
 
     @Test
@@ -247,7 +240,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         Assert.assertEquals(2, list.size());
 
         List<TsKvEntry> latest = tsService.findLatest(entityId, Collections.singletonList(LONG_KEY)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertEquals(20000, latest.get(0).getTs());
+        Assert.assertEquals(40000, latest.get(0).getTs());
     }
 
     @Test

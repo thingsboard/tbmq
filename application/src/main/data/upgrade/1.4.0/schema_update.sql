@@ -44,3 +44,11 @@ BEGIN
             path_to_file);
 END
 $$;
+
+CREATE TABLE IF NOT EXISTS ts_kv_latest (
+    entity_id varchar (255) NOT NULL,
+    key int NOT NULL,
+    ts bigint NOT NULL,
+    long_v bigint,
+    CONSTRAINT ts_kv_latest_pkey PRIMARY KEY (entity_id, key)
+);
