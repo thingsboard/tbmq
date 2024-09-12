@@ -118,7 +118,7 @@ export class AppComponent {
 
   private gotoDefaultPlace(isAuthenticated: boolean) {
     const authState = getCurrentAuthState(this.store);
-    if (this.userHasDefaultPassword(authState)) {
+    if (this.userHasDefaultPassword(authState) && !localStorage.getItem('notDisplayChangeDefaultPassword')) {
       this.dialog.open(ChangePasswordDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
