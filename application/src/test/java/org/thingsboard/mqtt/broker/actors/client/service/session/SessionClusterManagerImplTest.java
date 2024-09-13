@@ -116,6 +116,7 @@ public class SessionClusterManagerImplTest {
             }
         };
         doReturn(eventResponseProducer).when(clientSessionEventQueueFactory).createEventResponseProducer(any());
+        when(timeseriesService.removeAllLatestForClient(anyString())).thenReturn(Futures.immediateFuture(null));
         sessionClusterManager.init();
     }
 
@@ -134,7 +135,6 @@ public class SessionClusterManagerImplTest {
     public void givenPresentNonPersistentSession_whenProcessConnectionRequest_thenVerify() {
         Cache cache = mock(Cache.class);
         when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
-        when(timeseriesService.removeAllLatest(anyString())).thenReturn(Futures.immediateFuture(null));
 
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2");

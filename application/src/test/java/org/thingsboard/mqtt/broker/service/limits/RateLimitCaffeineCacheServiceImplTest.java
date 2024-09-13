@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.limits;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.local.LocalBucket;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -47,9 +48,11 @@ public class RateLimitCaffeineCacheServiceImplTest {
     private AtomicLong sessionsCounter;
     private AtomicLong applicationClientsCounter;
 
+    AutoCloseable autoCloseable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        autoCloseable = MockitoAnnotations.openMocks(this);
 
         rateLimitLocalCacheService.setSessionsLimit(5);
         rateLimitLocalCacheService.setApplicationClientsLimit(5);
@@ -63,6 +66,11 @@ public class RateLimitCaffeineCacheServiceImplTest {
 
         assertNotNull(sessionsCounter);
         assertNotNull(applicationClientsCounter);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        autoCloseable.close();
     }
 
     @Test

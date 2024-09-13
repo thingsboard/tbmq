@@ -137,6 +137,7 @@ public class DisconnectServiceImplTest {
         verify(rateLimitService, times(1)).remove(eq(CLIENT_ID));
         verify(authorizationRuleService, times(1)).evict(eq(CLIENT_ID));
         verify(flowControlService, times(1)).removeFromMap(eq(CLIENT_ID));
+        verify(tbMessageStatsReportClient).removeClient(eq(CLIENT_ID));
         verify(mqttMessageGenerator, never()).createDisconnectMsg(any());
     }
 
