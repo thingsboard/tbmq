@@ -47,11 +47,15 @@ import org.thingsboard.mqtt.broker.dao.sqlts.latest.SearchTsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.latest.TsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesLatestDao;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static java.time.ZoneOffset.UTC;
 
 @Slf4j
 @Component
@@ -249,9 +253,13 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
     private TsKvEntry getLatestTsKvEntry(String entityId, String key) {
         TsKvEntry latest = doFindLatest(entityId, key);
         if (latest == null) {
-            latest = new BasicTsKvEntry(System.currentTimeMillis(), new LongDataEntry(key, null));
+            latest = new BasicTsKvEntry(getStartOfCurrentMinute(), new LongDataEntry(key, null));
         }
         return latest;
+    }
+
+    private long getStartOfCurrentMinute() {
+        return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
 }
