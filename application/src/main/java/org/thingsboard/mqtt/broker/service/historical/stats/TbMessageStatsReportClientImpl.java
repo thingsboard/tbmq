@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,6 +53,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.PROCESSED_BYTES;
 
+@Data
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -74,7 +76,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @PostConstruct
-    private void init() {
+    void init() {
         if (!enabled) return;
         validateIntervalAndThrowExceptionOnInvalid();
 
@@ -91,12 +93,12 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void process() {
         if (enabled) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
-            reportStats(startOfCurrentMinute);
+            reportAndPersistStats(startOfCurrentMinute);
             reportClientSessionsStats(startOfCurrentMinute);
         }
     }
 
-    private void reportClientSessionsStats(long ts) {
+    void reportClientSessionsStats(long ts) {
         List<ListenableFuture<List<Void>>> futures = new ArrayList<>();
         clientSessionsStats.forEach((clientId, clientStatsMap) -> {
 
@@ -108,14 +110,17 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                     .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCounter().get())))
                     .collect(Collectors.toList());
 
-            futures.add(timeseriesService.saveLatest(clientId, tsKvEntries));
+            if (!tsKvEntries.isEmpty()) {
+                futures.add(timeseriesService.saveLatest(clientId, tsKvEntries));
+            }
         });
+        if (futures.isEmpty()) return;
         DonAsynchron.withCallback(Futures.allAsList(futures),
                 lists -> log.debug("Successfully persisted client sessions latest"),
                 throwable -> log.warn("Failed to persist client sessions latest", throwable));
     }
 
-    private void reportStats(long ts) {
+    void reportAndPersistStats(long ts) {
         List<ToUsageStatsMsgProto> report = new ArrayList<>();
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
@@ -216,7 +221,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         return ClientSessionMetricState.newClientSessionMetricState();
     }
 
-    private void validateIntervalAndThrowExceptionOnInvalid() {
+    void validateIntervalAndThrowExceptionOnInvalid() {
         if (interval < 1 || interval > 60) {
             String message = String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval);
             log.error(message);

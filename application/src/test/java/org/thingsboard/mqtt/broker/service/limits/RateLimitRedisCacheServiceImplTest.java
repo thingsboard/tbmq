@@ -19,6 +19,7 @@ import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -57,13 +58,20 @@ public class RateLimitRedisCacheServiceImplTest {
     @InjectMocks
     private RateLimitRedisCacheServiceImpl rateLimitRedisCacheService;
 
+    AutoCloseable autoCloseable;
+
     @Before
     public void setUp() {
-        MockitoAnnotations.openMocks(this);
+        autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         rateLimitRedisCacheService.setSessionsLimit(5);
         rateLimitRedisCacheService.setApplicationClientsLimit(5);
         setCachePrefixAndInit();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        autoCloseable.close();
     }
 
     private void setCachePrefixAndInit() {
