@@ -19,12 +19,20 @@
   <section class="metrics" fxFlex fxFlex.lt-lg="auto">
     <div fxLayout="row" fxLayoutAlign="space-between center">
       <span>{{'mqtt-client-session.metrics-title' | translate}}</span>
-      <button mat-icon-button type="button" (click)="updateData()"
-              style="color: rgba(0,0,0,0.54)"
-              matTooltip="{{'action.refresh' | translate}}"
-              matTooltipPosition="above">
-        <mat-icon class="material-icons">refresh</mat-icon>
-      </button>
+        <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
+            <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
+                    style="color: rgba(0,0,0,0.54)"
+                    matTooltip="{{'action.clear' | translate}}"
+                    matTooltipPosition="above">
+                <mat-icon class="material-icons">delete_forever</mat-icon>
+            </button>
+            <button mat-icon-button type="button" (click)="updateData()"
+                    style="color: rgba(0,0,0,0.54)"
+                    matTooltip="{{'action.refresh' | translate}}"
+                    matTooltipPosition="above">
+                <mat-icon class="material-icons">refresh</mat-icon>
+            </button>
+        </section>
     </div>
     <table mat-table matSort [dataSource]="dataSource">
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">

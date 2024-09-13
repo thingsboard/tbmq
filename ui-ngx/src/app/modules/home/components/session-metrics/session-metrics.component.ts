@@ -59,4 +59,10 @@ export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<Sessi
     );
     return columns;
   }
+
+  deleteSessionMetrics() {
+    this.clientSessionService.deleteSessionMetrics(this.entity.clientId).subscribe(() => {
+      this.updateData();
+    })
+  }
 }
