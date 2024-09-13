@@ -14,25 +14,30 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {PageLink} from '@shared/models/page/page-link';
-import {PageData} from '@shared/models/page/page-data';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
 import {
   ClientSessionCredentials,
   ClientSessionStatsInfo,
   DetailedClientSessionInfo,
+  SessionMetrics,
+  SessionMetricsList,
   SessionQuery
 } from '@shared/models/session.model';
+import { StatsService } from '@core/http/stats.service';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ClientSessionService {
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private statsService: StatsService) {
   }
 
   public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
@@ -65,5 +70,26 @@ export class ClientSessionService {
 
   public getClientSessionDetails(clientId: string, config?: RequestConfig): Observable<ClientSessionCredentials> {
     return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getSessionMetrics(clientId: string, config?: RequestConfig): Observable<PageData<SessionMetrics>> {
+    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true, config).pipe(
+      map((metrics) => {
+        const data = [];
+        for (const [key, value] of Object.entries(metrics)) {
+          data.push({
+            key,
+            ts: value[0].ts,
+            value: value[0].value || 0
+          });
+        }
+        return {
+          data,
+          totalPages: 1,
+          totalElements: data.length,
+          hasNext: false
+        };
+      })
+    );
   }
 }
