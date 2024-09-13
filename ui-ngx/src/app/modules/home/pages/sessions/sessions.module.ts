@@ -18,20 +18,22 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
-import { SessionsDetailsDialogComponent } from "@home/pages/sessions/sessions-details-dialog.component";
-import { SessionsRoutingModule } from "@home/pages/sessions/sessions-routing.module";
-import { SubscriptionsComponent } from "@home/components/session-subscriptions/subscriptions.component";
-import { SessionTableHeaderComponent } from "@home/pages/sessions/session-table-header.component";
-import { SessionFilterConfigComponent } from "@home/pages/sessions/session-filter-config.component";
+import { SessionsTableComponent } from '@home/pages/sessions/sessions-table.component';
+import { SessionsDetailsDialogComponent } from '@home/pages/sessions/sessions-details-dialog.component';
+import { SessionsRoutingModule } from '@home/pages/sessions/sessions-routing.module';
+import { SubscriptionsComponent } from '@home/components/session-subscriptions/subscriptions.component';
+import { SessionTableHeaderComponent } from '@home/pages/sessions/session-table-header.component';
+import { SessionFilterConfigComponent } from '@home/pages/sessions/session-filter-config.component';
 import { SubscriptionOptionsComponent } from '@home/components/session-subscriptions/subscription-options.component';
 import { ShowSubscriptionOptionsPopoverComponent } from '@home/components/session-subscriptions/show-subscription-options-popover.component';
+import { SessionMetricsComponent } from '@home/components/session-metrics/session-metrics.component';
 
 @NgModule({
   declarations: [
     SessionsTableComponent,
     SessionsDetailsDialogComponent,
     SubscriptionsComponent,
+    SessionMetricsComponent,
     SubscriptionOptionsComponent,
     ShowSubscriptionOptionsPopoverComponent,
     SessionTableHeaderComponent,
@@ -39,7 +41,8 @@ import { ShowSubscriptionOptionsPopoverComponent } from '@home/components/sessio
   ],
   exports: [
       SessionsDetailsDialogComponent,
-      SubscriptionsComponent
+      SubscriptionsComponent,
+      SessionMetricsComponent
   ],
   imports: [
     CommonModule,

@@ -234,3 +234,35 @@ export class SessionQuery {
     return query;
   }
 }
+
+export interface SessionMetricsTable extends BaseData {
+  key: SessionMetrics;
+  value: number;
+  ts: number;
+}
+
+export enum SessionMetrics {
+  receivedPubMsgs = 'receivedPubMsgs',
+  qos0ReceivedPubMsgs = 'qos0ReceivedPubMsgs',
+  qos1ReceivedPubMsgs = 'qos1ReceivedPubMsgs',
+  qos2ReceivedPubMsgs = 'qos2ReceivedPubMsgs',
+  sentPubMsgs = 'sentPubMsgs',
+  qos0SentPubMsgs = 'qos0SentPubMsgs',
+  qos1SentPubMsgs = 'qos1SentPubMsgs',
+  qos2SentPubMsgs = 'qos2SentPubMsgs',
+}
+
+export const SessionMetricsTranslationMap = new Map<SessionMetrics, string>(
+  [
+    [SessionMetrics.receivedPubMsgs, 'mqtt-client-session.metrics-received'],
+    [SessionMetrics.qos0ReceivedPubMsgs, 'mqtt-client-session.metrics-qos-0-received'],
+    [SessionMetrics.qos1ReceivedPubMsgs, 'mqtt-client-session.metrics-qos-1-received'],
+    [SessionMetrics.qos2ReceivedPubMsgs, 'mqtt-client-session.metrics-qos-2-received'],
+    [SessionMetrics.sentPubMsgs, 'mqtt-client-session.metrics-sent'],
+    [SessionMetrics.qos0SentPubMsgs, 'mqtt-client-session.metrics-qos-0-sent'],
+    [SessionMetrics.qos1SentPubMsgs, 'mqtt-client-session.metrics-qos-1-sent'],
+    [SessionMetrics.qos2SentPubMsgs, 'mqtt-client-session.metrics-qos-2-sent'],
+  ]
+);
+
+export const SessionMetricsList: string[] = Object.values(SessionMetrics);
