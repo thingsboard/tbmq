@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.sqlts;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -42,6 +43,7 @@ import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlBlockingQueuePool;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueueParams;
 import org.thingsboard.mqtt.broker.dao.sqlts.insert.latest.InsertLatestTsRepository;
+import org.thingsboard.mqtt.broker.dao.sqlts.latest.SearchTsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.latest.TsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesLatestDao;
 
@@ -62,6 +64,9 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
 
     @Autowired
     protected AggregationTimeseriesDao aggregationTimeseriesDao;
+
+    @Autowired
+    private SearchTsKvLatestRepository searchTsKvLatestRepository;
 
     @Autowired
     private InsertLatestTsRepository insertLatestTsRepository;
@@ -150,9 +155,25 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
-        List<ListenableFuture<TsKvEntry>> futures = new ArrayList<>(BrokerConstants.HISTORICAL_KEYS.size());
-        for (String key : BrokerConstants.HISTORICAL_KEYS) {
-            futures.add(findLatest(entityId, key));
+        return service.submit(() ->
+                DaoUtil.convertDataList(Lists.newArrayList(
+                        searchTsKvLatestRepository.findAllByEntityId(entityId))));
+    }
+
+    @Override
+    public ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForNode(String entityId) {
+        return doFindAllLatest(BrokerConstants.HISTORICAL_KEYS, entityId);
+    }
+
+    @Override
+    public ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForClient(String entityId) {
+        return doFindAllLatest(BrokerConstants.CLIENT_SESSION_METRIC_KEYS, entityId);
+    }
+
+    private ListenableFuture<List<Optional<TsKvEntry>>> doFindAllLatest(List<String> keys, String entityId) {
+        List<ListenableFuture<Optional<TsKvEntry>>> futures = new ArrayList<>(keys.size());
+        for (String key : keys) {
+            futures.add(findLatestOpt(entityId, key));
         }
         return Futures.allAsList(futures);
     }

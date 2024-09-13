@@ -59,6 +59,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_ID;
+
 @RestController
 @RequestMapping("/api/timeseries")
 @Slf4j
@@ -75,7 +77,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
 
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
             ListenableFuture<List<TsKvEntry>> future;
@@ -105,7 +107,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
 
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
@@ -183,7 +185,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "startTs", required = false) Long startTs,
             @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
             return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
         } catch (Exception e) {
             throw handleException(e);

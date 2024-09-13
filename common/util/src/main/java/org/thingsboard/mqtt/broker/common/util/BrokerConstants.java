@@ -49,6 +49,10 @@ public class BrokerConstants {
     public static final String QOS_1_SENT_PUBLISH_MSGS = "qos1SentPubMsgs";
     public static final String QOS_2_SENT_PUBLISH_MSGS = "qos2SentPubMsgs";
 
+    public static final List<String> CLIENT_SESSION_METRIC_KEYS = List.of(RECEIVED_PUBLISH_MSGS, QOS_0_RECEIVED_PUBLISH_MSGS,
+            QOS_1_RECEIVED_PUBLISH_MSGS, QOS_2_RECEIVED_PUBLISH_MSGS,
+            SENT_PUBLISH_MSGS, QOS_0_SENT_PUBLISH_MSGS, QOS_1_SENT_PUBLISH_MSGS, QOS_2_SENT_PUBLISH_MSGS);
+
     public static String getQosReceivedStatsKey(int qos) {
         return switch (qos) {
             case 0 -> QOS_0_RECEIVED_PUBLISH_MSGS;

@@ -15,18 +15,50 @@
  */
 package org.thingsboard.mqtt.broker.dao.model.sqlts.latest;
 
+import jakarta.persistence.ColumnResult;
+import jakarta.persistence.ConstructorResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.IdClass;
+import jakarta.persistence.NamedNativeQueries;
+import jakarta.persistence.NamedNativeQuery;
+import jakarta.persistence.SqlResultSetMapping;
+import jakarta.persistence.SqlResultSetMappings;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
+import org.thingsboard.mqtt.broker.dao.sqlts.latest.SearchTsKvLatestRepository;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Entity
 @Table(name = "ts_kv_latest")
 @IdClass(TsKvLatestCompositeKey.class)
+@SqlResultSetMappings({
+        @SqlResultSetMapping(
+                name = "tsKvLatestFindMapping",
+                classes = {
+                        @ConstructorResult(
+                                targetClass = TsKvLatestEntity.class,
+                                columns = {
+                                        @ColumnResult(name = "entityId", type = String.class),
+                                        @ColumnResult(name = "key", type = Integer.class),
+                                        @ColumnResult(name = "strKey", type = String.class),
+                                        @ColumnResult(name = "longValue", type = Long.class),
+                                        @ColumnResult(name = "ts", type = Long.class),
+
+                                }
+                        ),
+                })
+})
+@NamedNativeQueries({
+        @NamedNativeQuery(
+                name = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_ID,
+                query = SearchTsKvLatestRepository.FIND_ALL_BY_ENTITY_ID_QUERY,
+                resultSetMapping = "tsKvLatestFindMapping",
+                resultClass = TsKvLatestEntity.class
+        )
+})
 public final class TsKvLatestEntity extends AbstractTsKvEntity {
 
     @Override

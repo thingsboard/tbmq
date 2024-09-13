@@ -39,6 +39,10 @@ public interface TimeseriesLatestDao {
 
     ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId);
 
+    ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForNode(String entityId);
+
+    ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForClient(String entityId);
+
     ListenableFuture<Void> saveLatest(String entityId, TsKvEntry tsKvEntry);
 
     ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key);

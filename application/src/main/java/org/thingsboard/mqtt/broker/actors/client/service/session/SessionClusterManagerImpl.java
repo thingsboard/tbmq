@@ -286,8 +286,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     private void removeClientLatestTs(String clientId) {
-        // TODO: correct removeAllLatest for client
-        ListenableFuture<Collection<String>> future = timeseriesService.removeAllLatest(clientId);
+        ListenableFuture<Collection<String>> future = timeseriesService.removeAllLatestForClient(clientId);
         DonAsynchron.withCallback(future,
                 keys -> log.debug("[{}] Removed all latest keys for client {}", clientId, keys),
                 throwable -> log.warn("[{}] Failed to removed all latest keys for client", clientId, throwable));
