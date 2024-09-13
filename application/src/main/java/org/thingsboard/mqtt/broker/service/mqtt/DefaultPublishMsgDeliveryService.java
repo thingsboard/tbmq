@@ -148,6 +148,8 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
         int packetId = sessionCtx.getMsgIdSeq().nextMsgId();
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
+        tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
+        tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), retainedMsg.getQos());
         sendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
