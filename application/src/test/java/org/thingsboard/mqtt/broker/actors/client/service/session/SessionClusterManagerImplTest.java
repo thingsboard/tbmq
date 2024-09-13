@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import com.google.common.util.concurrent.Futures;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -133,6 +134,7 @@ public class SessionClusterManagerImplTest {
     public void givenPresentNonPersistentSession_whenProcessConnectionRequest_thenVerify() {
         Cache cache = mock(Cache.class);
         when(cacheNameResolver.getCache(anyString())).thenReturn(cache);
+        when(timeseriesService.removeAllLatest(anyString())).thenReturn(Futures.immediateFuture(null));
 
         SessionInfo sessionInfoNew = getSessionInfo("clientId1");
         SessionInfo sessionInfoOld = getSessionInfo("clientId2");
