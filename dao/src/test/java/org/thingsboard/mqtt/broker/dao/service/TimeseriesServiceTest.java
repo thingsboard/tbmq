@@ -41,7 +41,6 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 @Slf4j
 @DaoSqlTest
@@ -70,14 +69,9 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         List<TsKvEntry> tsList = tsService.findAllLatest(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertNotNull(tsList);
-        assertEquals(6, tsList.size());
-        for (TsKvEntry tsKvEntry : tsList) {
-            if (tsKvEntry.getKey().equals(LONG_KEY)) {
-                assertEquals(TS, tsKvEntry.getTs());
-            } else {
-                assertNull(tsKvEntry.getValue());
-            }
-        }
+        assertEquals(1, tsList.size());
+        assertEquals(LONG_KEY, tsList.get(0).getKey());
+        assertEquals(TS, tsList.get(0).getTs());
     }
 
     @Test

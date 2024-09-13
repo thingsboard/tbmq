@@ -137,6 +137,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Updating client session.", clientInfo.getClientId());
         }
+        if (sessionPresent) {
+            removeClientLatestTs(clientInfo.getClientId());
+        }
 
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
         AtomicInteger finishedOperations = new AtomicInteger(0);

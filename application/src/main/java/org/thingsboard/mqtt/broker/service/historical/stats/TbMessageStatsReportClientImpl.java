@@ -70,7 +70,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
-    private ConcurrentMap<String, ConcurrentMap<String, AtomicLong>> clientSessionsStats;
+    private ConcurrentMap<String, ConcurrentMap<String, ClientSessionMetricState>> clientSessionsStats;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @PostConstruct
@@ -96,7 +96,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
     }
 
-    // TODO: improve this method. If we have a lot of clients, all stats will be persisted for them at once
     private void reportClientSessionsStats(long ts) {
         List<ListenableFuture<List<Void>>> futures = new ArrayList<>();
         clientSessionsStats.forEach((clientId, clientStatsMap) -> {
@@ -104,7 +103,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             List<TsKvEntry> tsKvEntries = clientStatsMap
                     .entrySet()
                     .stream()
-                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().get())))
+                    .filter(entry -> entry.getValue().isValueChangedSinceLastUpdate())
+                    .peek(entry -> entry.getValue().setValueChangedSinceLastUpdate(false))
+                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCounter().get())))
                     .collect(Collectors.toList());
 
             futures.add(timeseriesService.saveLatest(clientId, tsKvEntries));
@@ -202,11 +203,17 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
         var clientStatsMap = clientSessionsStats.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
 
-        AtomicLong counter = clientStatsMap.computeIfAbsent(clientStatsKey, s -> new AtomicLong(0));
-        counter.incrementAndGet();
+        ClientSessionMetricState metricState = clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState());
+        metricState.getCounter().incrementAndGet();
+        metricState.setValueChangedSinceLastUpdate(true);
 
-        AtomicLong qosCounter = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> new AtomicLong(0));
-        qosCounter.incrementAndGet();
+        ClientSessionMetricState qosMetricState = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState());
+        qosMetricState.getCounter().incrementAndGet();
+        qosMetricState.setValueChangedSinceLastUpdate(true);
+    }
+
+    private ClientSessionMetricState newClientSessionMetricState() {
+        return ClientSessionMetricState.newClientSessionMetricState();
     }
 
     private void validateIntervalAndThrowExceptionOnInvalid() {
