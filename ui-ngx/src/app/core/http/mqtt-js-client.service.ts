@@ -194,7 +194,7 @@ export class MqttJsClientService {
       console.log(`Unknown error on publish message with topic '${topic}' \n${JSON.stringify(options)}`);
     }, 3000);
     this.getSelectedMqttJsClient().publish(topic, payload, options, (error, packet) => {
-      if (!isUndefined(error)) {
+      if (!isUndefined(error) || error !== null) {
         clearTimeout(logUnknownPubErrorTimeout);
         this.addMessage(message, this.getSelectedConnectionId());
       }
