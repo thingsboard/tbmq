@@ -94,6 +94,6 @@ export class ClientSessionService {
   }
 
   public deleteSessionMetrics(clientId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/client-session/?clientId=${clientId}}`, defaultHttpOptionsFromConfig(config));
+    return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
   }
 }

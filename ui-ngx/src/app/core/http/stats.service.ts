@@ -77,4 +77,15 @@ export class StatsService {
     const url = `/api/timeseries/${entityId}/save`;
     return this.http.post<TimeseriesData>(url, data, defaultHttpOptionsFromConfig(config));
   }
+
+  public deleteLatestTimeseries(clientId: string, keys: string[], deleteClientSessionStats: boolean, config?: RequestConfig) {
+    let url = `/api/timeseries/${clientId}/latest`;
+    if (keys && keys.length) {
+      url += `?keys=${keys.join(',')}`;
+    }
+    if (isDefinedAndNotNull(deleteClientSessionStats)) {
+      url += `&deleteClientSessionStats=${deleteClientSessionStats}`;
+    }
+    return this.http.delete(url, defaultHttpOptionsFromConfig(config));
+  }
 }
