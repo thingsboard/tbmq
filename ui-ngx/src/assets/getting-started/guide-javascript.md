@@ -44,7 +44,7 @@ const mqtt = require('mqtt');
 const url = 'ws://{:wsHost}:{:wsPort}/mqtt';
 const options = {
  clean: true, // clean session flag
- clientId: 'tbmq_websockets_client_id',
+ clientId: 'tbmq_test_client',
  username: 'tbmq_websockets_username',
  password: null
 };

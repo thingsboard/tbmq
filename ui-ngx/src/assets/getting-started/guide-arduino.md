@@ -52,7 +52,7 @@ constexpr char TOPIC[] = "tbmq/demo";
 constexpr char MESSAGE[] = "Hello World";
 constexpr char USERNAME[] = "tbmq_websockets_username";
 constexpr char PASSWORD[] = "";
-String CLIENT_ID = "tbmq_websockets_client_id";
+String CLIENT_ID = "tbmq_test_client";
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);

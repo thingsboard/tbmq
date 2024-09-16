@@ -41,7 +41,7 @@ protocol = pahoMqtt.MQTTv311 # or MQTTv5, or MQTTv31
 
 # client credentials
 username = "tbmq_websockets_username"
-clientId = "tbmq_websockets_client_id"
+clientId = "tbmq_test_client"
 password = None
 
 # This function initializes and returns an MQTT client.

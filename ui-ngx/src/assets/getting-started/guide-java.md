@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 public class TBMQMain {
    public static void main(String[] args) throws Exception {
        final String serverURI = "tcp://{:mqttHost}:{:mqttPort}";
-       final String clientId = "testClient";
+       final String clientId = "tbmq_test_client";
        final String username = "tbmq_websockets_username";
        final String password = "";
 
