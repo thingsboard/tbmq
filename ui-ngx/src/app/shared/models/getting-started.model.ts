@@ -90,7 +90,7 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type'
   },
   {
-    img: '/assets/getting-started/configuration.svg',
+    img: '/assets/getting-started/monitoring.svg',
     title: 'Monitoring',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring'
   },
