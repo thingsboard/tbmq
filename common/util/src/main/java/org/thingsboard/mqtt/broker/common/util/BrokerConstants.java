@@ -161,6 +161,9 @@ public class BrokerConstants {
             BrokerConstants.RETAINED_MSG_CG_PREFIX
     );
 
+    public static final String SYSTEMS_TOPIC_PREFIX = "$SYS/tbmq/";
+    public static final String CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "cs/stats/cleanup";
+
     public static final int BLANK_PACKET_ID = -1;
     public static final int MAX_PACKET_ID = 0xffff;
 

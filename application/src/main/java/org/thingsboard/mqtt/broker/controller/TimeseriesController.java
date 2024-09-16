@@ -51,6 +51,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
+import org.thingsboard.mqtt.broker.util.SystemRetainedMsgUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -120,7 +121,7 @@ public class TimeseriesController extends BaseController {
                 public void onSuccess(Collection<String> keys) {
                     log.debug("[{}] Successfully deleted latest time series {}", entityId, keys);
                     if (deleteClientSessionCachedStats) {
-
+                        retainedMsgListenerService.distributeRequestUsingRetainedMsg(SystemRetainedMsgUtil.newClientSessionStatsCleanupMsg(entityId));
                     }
                     result.setResult(new ResponseEntity<>(HttpStatus.OK));
                 }
