@@ -51,7 +51,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +70,6 @@ import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_
 public class TimeseriesController extends BaseController {
 
     private final TimeseriesService timeseriesService;
-    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/{entityId}/latest", method = RequestMethod.GET)
@@ -103,7 +101,7 @@ public class TimeseriesController extends BaseController {
     public DeferredResult<ResponseEntity> deleteLatestTimeseries(
             @PathVariable("entityId") String entityId,
             @RequestParam(name = "keys", required = false) String keysStr,
-            @RequestParam(required = false) boolean deleteClientSessionStats) throws ThingsboardException {
+            @RequestParam(required = false) boolean deleteClientSessionCachedStats) throws ThingsboardException {
         try {
             checkParameter(ENTITY_ID, entityId);
 
@@ -121,8 +119,8 @@ public class TimeseriesController extends BaseController {
                 @Override
                 public void onSuccess(Collection<String> keys) {
                     log.debug("[{}] Successfully deleted latest time series {}", entityId, keys);
-                    if (deleteClientSessionStats) {
-                        tbMessageStatsReportClient.removeClient(entityId);
+                    if (deleteClientSessionCachedStats) {
+
                     }
                     result.setResult(new ResponseEntity<>(HttpStatus.OK));
                 }
