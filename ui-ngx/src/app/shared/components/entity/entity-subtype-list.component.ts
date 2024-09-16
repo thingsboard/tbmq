@@ -25,7 +25,7 @@ import { MatChipGrid, MatChipInputEvent } from '@angular/material/chips';
 import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
 import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
 import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
-import { ConfigService } from "@core/http/config.service";
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-entity-subtype-list',

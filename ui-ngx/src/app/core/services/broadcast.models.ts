@@ -14,24 +14,14 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SharedModule } from '@shared/shared.module';
-import { HomeComponentsModule } from '@home/components/home-components.module';
-import { UserComponent } from '@home/pages/users/user.component';
-import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
 
-@NgModule({
-  declarations: [
-    UserComponent,
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    UsersRoutingModule
-  ]
-})
-
-export class UsersModule {
+export interface BroadcastMessage {
+  name: string;
+  args?: Array<any>;
 }
+
+export interface BroadcastEvent {
+  name: string;
+}
+
+export type BroadcastListener = (event: BroadcastEvent, ...args: Array<any>) => void;

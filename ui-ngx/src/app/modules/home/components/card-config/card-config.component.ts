@@ -15,7 +15,11 @@
 ///
 
 import { Component } from '@angular/core';
-import { BrokerConfigTable, ConfigParams, ConfigParamsTranslationMap, } from '@shared/models/config.model';
+import {
+  BrokerConfigTable,
+  ConfigParams,
+  ConfigParamsTranslationMap,
+} from '@shared/models/config.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -38,24 +42,17 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
 
-  private hasBasicCredentials: boolean;
-  private hasX509AuthCredentials: boolean;
-
   fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
-    map((data) => {
-      data.data = data.data.filter(el => {
-        if (el.key === ConfigParams.existsBasicCredentials) {
-          this.hasBasicCredentials = el.value;
-        }
-        if (el.key === ConfigParams.existsX509Credentials) {
-          this.hasX509AuthCredentials = el.value;
-        }
-        return (el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials);
-      });
+    map(data => {
+      data.data = data.data.filter(
+        el => el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials
+      );
       return data;
     })
-  )
+  );
   tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
+
+  private config = this.configService.brokerConfig;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -107,7 +104,7 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
 
   showWarningIcon(entity: BrokerConfigTable, configParams: any): boolean {
     return !entity.value &&
-           ((entity.key === configParams.x509AuthEnabled && this.hasX509AuthCredentials) ||
-            (entity.key === configParams.basicAuthEnabled && this.hasBasicCredentials));
+           ((entity.key === configParams.x509AuthEnabled && this.config.existsX509Credentials) ||
+            (entity.key === configParams.basicAuthEnabled && this.config.existsBasicCredentials));
   }
 }

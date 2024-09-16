@@ -14,24 +14,18 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { SharedModule } from '@shared/shared.module';
-import { HomeComponentsModule } from '@home/components/home-components.module';
-import { UserComponent } from '@home/pages/users/user.component';
-import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
+import { BreadCrumbLabelFunction } from '@shared/components/breadcrumb';
+import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
+import { EntityType } from '@shared/models/entity-type.models';
 
-@NgModule({
-  declarations: [
-    UserComponent,
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    UsersRoutingModule
-  ]
-})
-
-export class UsersModule {
-}
+export const entityDetailsPageBreadcrumbLabelFunction: BreadCrumbLabelFunction<EntityDetailsPageComponent>
+  = ((route, translate, component) => {
+  switch (component.entitiesTableConfig.entityType) {
+    case EntityType.USER:
+      // @ts-ignore
+      return component.entity?.email;
+    default:
+      // @ts-ignore
+      return component.entity?.name;
+  }
+});

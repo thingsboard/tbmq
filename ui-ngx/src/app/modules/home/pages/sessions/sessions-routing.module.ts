@@ -16,8 +16,8 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { SessionsTableComponent } from "@home/pages/sessions/sessions-table.component";
-import { Authority } from "@shared/models/authority.enum";
+import { SessionsTableComponent } from '@home/pages/sessions/sessions-table.component';
+import { Authority } from '@shared/models/authority.enum';
 
 const routes: Routes = [
   {

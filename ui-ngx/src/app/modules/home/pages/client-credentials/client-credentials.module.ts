@@ -30,10 +30,9 @@ import { MqttCredentialsBasicComponent } from '@home/components/client-credentia
 import { AuthRulesComponent } from '@home/components/client-credentials-templates/ssl/auth-rules.component';
 import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
 import { ClientCredentialsFilterConfigComponent } from '@home/pages/client-credentials/client-credentials-filter-config.component';
-import { ClientCredentialsTableComponent } from '@home/pages/client-credentials/client-credentials-table.component';
 import {
   ClientCredentialsWizardDialogComponent
-} from "@home/components/wizard/client-credentials-wizard-dialog.component";
+} from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { CheckConnectivityDialogComponent } from '@home/pages/client-credentials/check-connectivity-dialog.component';
 
 @NgModule({
@@ -45,7 +44,6 @@ import { CheckConnectivityDialogComponent } from '@home/pages/client-credentials
     ChangeBasicPasswordDialogComponent,
     ClientCredentialsTableHeaderComponent,
     ClientCredentialsFilterConfigComponent,
-    ClientCredentialsTableComponent,
     ClientCredentialsWizardDialogComponent,
     CheckConnectivityDialogComponent
   ],

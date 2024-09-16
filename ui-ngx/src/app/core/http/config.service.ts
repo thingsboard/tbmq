@@ -16,10 +16,9 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
+import { mergeMap, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BrokerConfigTable, SystemVersionInfo } from '@shared/models/config.model';
-import { map } from 'rxjs/operators';
+import { BrokerConfig, BrokerConfigTable, SystemVersionInfo } from '@shared/models/config.model';
 import { PageData } from '@shared/models/page/page-data';
 
 @Injectable({
@@ -27,31 +26,25 @@ import { PageData } from '@shared/models/page/page-data';
 })
 export class ConfigService {
 
+  brokerConfig: BrokerConfig;
+
   constructor(private http: HttpClient) {
   }
 
-  public getBrokerConfig(config?: RequestConfig): Observable<BrokerConfigTable> {
-    return this.http.get<BrokerConfigTable>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
-  }
-
-  public getBrokerConfigPageData(config?: RequestConfig): Observable<PageData<BrokerConfigTable>> {
-    return this.getBrokerConfig(config).pipe(
-      map(brokerConfig => {
-        const data = [];
-        for (const [key, value] of Object.entries(brokerConfig)) {
-          data.push({
-            key,
-            value
-          });
-        }
-        return {
-          data: data,
-          totalPages: 1,
-          totalElements: data.length,
-          hasNext: false
-        };
-      })
-    );
+  public getBrokerConfigPageData(): Observable<PageData<BrokerConfigTable>> {
+    const data = [];
+    for (const [key, value] of Object.entries(this.brokerConfig)) {
+      data.push({
+        key,
+        value
+      });
+    }
+    return of({
+      data,
+      totalPages: 1,
+      totalElements: data.length,
+      hasNext: false
+    });
   }
 
   public getBrokerServiceIds(config?: RequestConfig): Observable<string[]> {
@@ -67,4 +60,16 @@ export class ConfigService {
     return this.http.get<any>(url, defaultHttpOptionsFromConfig(config));
   }
 
+  public fetchBrokerConfig(config?: RequestConfig): Observable<BrokerConfig> {
+    return this.getBrokerConfig(config).pipe(
+      mergeMap(brokerConfig => {
+        this.brokerConfig = brokerConfig;
+        return of(brokerConfig);
+      })
+    );
+  }
+
+  private getBrokerConfig(config?: RequestConfig): Observable<BrokerConfig> {
+    return this.http.get<BrokerConfig>(`/api/app/config`, defaultHttpOptionsFromConfig(config));
+  }
 }

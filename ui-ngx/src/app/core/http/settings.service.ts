@@ -32,7 +32,7 @@ import {
 })
 export class SettingsService {
 
-  private connectivitySettingsValue = {} as ConnectivitySettings;
+  connectivitySettings: ConnectivitySettings;
 
   constructor(private http: HttpClient) {
   }
@@ -56,19 +56,15 @@ export class SettingsService {
       defaultHttpOptionsFromConfig(config));
   }
 
-  public updateConnectivitySettings() {
+  public fetchConnectivitySettings(): Observable<ConnectivitySettings> {
     return this.getGeneralSettings(connectivitySettingsKey).pipe(
       mergeMap(connectivitySettings => {
-        this.connectivitySettingsValue = this.transformConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings);
+        this.connectivitySettings = this.transformConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings);
         // @ts-ignore
-        window.tbmqSettings = this.connectivitySettingsValue;
-        return of(this.connectivitySettingsValue);
+        window.tbmqSettings = this.connectivitySettings;
+        return of(this.connectivitySettings);
       })
     );
-  }
-
-  public getConnectivitySettings(): ConnectivitySettings {
-    return this.connectivitySettingsValue;
   }
 
   private transformConnectivitySettings(settings: ConnectivitySettings): ConnectivitySettings {

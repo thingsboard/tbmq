@@ -17,27 +17,64 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { ClientCredentialsTableComponent } from '@home/pages/client-credentials/client-credentials-table.component';
+import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
+import { BreadCrumbConfig } from '@shared/components/breadcrumb';
+import {
+  ClientCredentialsTableConfigResolver
+} from '@home/pages/client-credentials/client-credentials-table-config.resolver';
 
 const routes: Routes = [
   {
     path: 'client-credentials',
-    component: ClientCredentialsTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'mqtt-client-credentials.client-credentials',
       breadcrumb: {
         label: 'mqtt-client-credentials.client-credentials',
         icon: 'mdi:shield-lock'
       },
       isPage: true
-    }
+    },
+    children: [
+      {
+        path: '',
+        component: EntitiesTableComponent,
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'mqtt-client-credentials.client-credentials'
+        },
+        resolve: {
+          entitiesTableConfig: ClientCredentialsTableConfigResolver
+        }
+      },
+      {
+        path: ':entityId',
+        component: EntityDetailsPageComponent,
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          breadcrumb: {
+            labelFunction: entityDetailsPageBreadcrumbLabelFunction,
+            icon: 'mdi:shield-lock'
+          } as BreadCrumbConfig<EntityDetailsPageComponent>,
+          auth: [Authority.SYS_ADMIN],
+          title: 'mqtt-client-credentials.client-credentials',
+        },
+        resolve: {
+          entitiesTableConfig: ClientCredentialsTableConfigResolver
+        }
+      }
+    ]
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    ClientCredentialsTableConfigResolver
+  ]
 })
 
 export class ClientCredentialsRoutingModule {

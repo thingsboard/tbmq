@@ -19,7 +19,6 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { ClientCredentialsFilterConfig, ClientCredentials } from '@shared/models/credentials.model';
-import { ClientCredentialsTableConfig } from '@home/pages/client-credentials/client-credentials-table-config';
 
 @Component({
   selector: 'tb-client-credentials-table-header',
@@ -28,16 +27,12 @@ import { ClientCredentialsTableConfig } from '@home/pages/client-credentials/cli
 })
 export class ClientCredentialsTableHeaderComponent extends EntityTableHeaderComponent<ClientCredentials> {
 
-  get clientCredentialsTableConfig(): ClientCredentialsTableConfig {
-    return this.entitiesTableConfig as ClientCredentialsTableConfig;
-  }
-
   constructor(protected store: Store<AppState>) {
     super(store);
   }
 
   filterChanged(clientCredentialsFilterConfig: ClientCredentialsFilterConfig) {
-    this.clientCredentialsTableConfig.clientCredentialsFilterConfig = clientCredentialsFilterConfig;
-    this.clientCredentialsTableConfig.getTable().resetSortAndFilter(true, false);
+    this.entitiesTableConfig.componentsData.clientCredentialsFilterConfig = clientCredentialsFilterConfig;
+    this.entitiesTableConfig.getTable().resetSortAndFilter(true, false);
   }
 }

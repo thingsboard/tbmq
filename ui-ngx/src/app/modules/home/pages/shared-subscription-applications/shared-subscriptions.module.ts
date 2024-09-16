@@ -18,14 +18,12 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { SharedSubscriptionsRoutingModule } from "@home/pages/shared-subscription-applications/shared-subscriptions-routing.module";
-import { SharedSubscriptionComponent } from "@home/pages/shared-subscription-applications/shared-subscription.component";
-import { SharedSubsriptionsTableComponent } from '@home/pages/shared-subscription-applications/shared-subsriptions-table.component';
+import { SharedSubscriptionsRoutingModule } from '@home/pages/shared-subscription-applications/shared-subscriptions-routing.module';
+import { SharedSubscriptionComponent } from '@home/pages/shared-subscription-applications/shared-subscription.component';
 
 @NgModule({
   declarations: [
     SharedSubscriptionComponent,
-    SharedSubsriptionsTableComponent
   ],
   imports: [
     CommonModule,

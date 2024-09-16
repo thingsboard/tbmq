@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
@@ -25,13 +25,16 @@ import screenfull from 'screenfull';
 import { MatSidenav } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
 import { UntypedFormBuilder } from '@angular/forms';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { ActiveComponentService } from '@core/services/active-component.service';
 
 @Component({
   selector: 'tb-home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss']
 })
-export class HomeComponent extends PageComponent implements OnInit {
+export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   activeComponent: any;
 
@@ -47,9 +50,12 @@ export class HomeComponent extends PageComponent implements OnInit {
 
   fullscreenEnabled = screenfull.isEnabled;
 
+  private destroy$ = new Subject<void>();
+
   constructor(protected store: Store<AppState>,
-              private fb: UntypedFormBuilder,
               @Inject(WINDOW) private window: Window,
+              private activeComponentService: ActiveComponentService,
+              private fb: UntypedFormBuilder,
               public breakpointObserver: BreakpointObserver) {
     super(store);
   }
@@ -61,6 +67,7 @@ export class HomeComponent extends PageComponent implements OnInit {
 
     this.breakpointObserver
       .observe(MediaBreakpoints['gt-sm'])
+      .pipe(takeUntil(this.destroy$))
       .subscribe((state: BreakpointState) => {
           if (state.matches) {
             this.sidenavMode = 'side';
@@ -72,6 +79,11 @@ export class HomeComponent extends PageComponent implements OnInit {
         }
       );
     this.toggleFullscreenOnF11();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   sidenavClicked() {
@@ -91,7 +103,14 @@ export class HomeComponent extends PageComponent implements OnInit {
   }
 
   activeComponentChanged(activeComponent: any) {
-    this.activeComponent = activeComponent;
+    this.activeComponentService.setCurrentActiveComponent(activeComponent);
+    if (!this.activeComponent) {
+      setTimeout(() => {
+        this.updateActiveComponent(activeComponent);
+      }, 0);
+    } else {
+      this.updateActiveComponent(activeComponent);
+    }
   }
 
   private toggleFullscreenOnF11() {
@@ -102,5 +121,9 @@ export class HomeComponent extends PageComponent implements OnInit {
           this.toggleFullscreen();
         }
       });
+  }
+
+  private updateActiveComponent(activeComponent: any) {
+    this.activeComponent = activeComponent;
   }
 }
