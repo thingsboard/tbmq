@@ -52,7 +52,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     }
 
     @Override
-    public QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(SessionInfo sessionInfo) {
+    public QueueProtos.ClientSessionEventProto createClearSessionRequestEventProto(SessionInfo sessionInfo) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(sessionInfo))
                 .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
@@ -60,7 +60,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     }
 
     @Override
-    public QueueProtos.ClientSessionEventProto createTryClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
+    public QueueProtos.ClientSessionEventProto createClearSessionRequestEventProto(ClientSessionInfo clientSessionInfo) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setSessionInfo(ProtoConverter.convertToSessionInfoProto(clientSessionInfo))
                 .setEventType(ClientSessionEventType.CLEAR_SESSION_REQUEST.toString())
@@ -68,7 +68,7 @@ public class ClientSessionEventFactoryImpl implements ClientSessionEventFactory 
     }
 
     @Override
-    public QueueProtos.ClientSessionEventProto createApplicationTopicRemoveRequestProto(String clientId) {
+    public QueueProtos.ClientSessionEventProto createApplicationTopicRemoveRequestEventProto(String clientId) {
         return QueueProtos.ClientSessionEventProto.newBuilder()
                 .setEventType(ClientSessionEventType.REMOVE_APPLICATION_TOPIC_REQUEST.toString())
                 .build();

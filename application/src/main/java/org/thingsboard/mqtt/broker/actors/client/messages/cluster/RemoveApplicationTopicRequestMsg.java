@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 @Slf4j
 @Getter
 public class RemoveApplicationTopicRequestMsg extends CallbackMsg implements SessionClusterManagementMsg {
+
     public RemoveApplicationTopicRequestMsg(ClientCallback callback) {
         super(callback);
     }

@@ -21,5 +21,7 @@ import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ClientSessionCallbackMsgFactory {
+
     SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback);
+
 }

@@ -20,5 +20,7 @@ import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
 import java.util.List;
 
 public interface InsertGenericClientSessionCtxRepository {
+
     void saveOrUpdate(List<GenericClientSessionCtxEntity> genericClientSessionCtxEntities);
+
 }

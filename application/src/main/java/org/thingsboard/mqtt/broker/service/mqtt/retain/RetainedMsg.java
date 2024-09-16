@@ -29,6 +29,10 @@ public class RetainedMsg {
     private final MqttProperties properties;
     private final long createdTime;
 
+    public RetainedMsg(String topic, byte[] payload) {
+        this(topic, payload, 0);
+    }
+
     public RetainedMsg(String topic, byte[] payload, int qos) {
         this(topic, payload, qos, MqttProperties.NO_PROPERTIES, System.currentTimeMillis());
     }

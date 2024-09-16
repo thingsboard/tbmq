@@ -15,18 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.messages;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-
+@Getter
 @Slf4j
 public abstract class CallbackMsg extends AbstractTimedMsg {
+
     private final ClientCallback callback;
 
     public CallbackMsg(ClientCallback callback) {
         this.callback = callback;
     }
 
-    public ClientCallback getCallback() {
-        return callback;
-    }
 }

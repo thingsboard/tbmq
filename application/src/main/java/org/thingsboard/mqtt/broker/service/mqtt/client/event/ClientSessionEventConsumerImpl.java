@@ -90,10 +90,6 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
                         log.debug("Going to process {} client session events", msgs.size());
                     }
                 }
-                // TODO: Possible issues:
-                //          - if consumer gets disconnected from Kafka, partition will be rebalanced to different Node and therefore same Client may be concurrently processed
-                //          - failures (make sure method can be safely called multiple times)
-                //          - will block till timeout if message is lost in Actor System
                 long packProcessingStart = System.nanoTime();
                 processMessages(msgs);
                 stats.logPackProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
