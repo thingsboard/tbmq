@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
@@ -46,6 +47,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     private final RetainedMsgPersistenceService retainedMsgPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
+    private final RetainedMsgSystemRequestProcessor retainedMsgSystemRequestProcessor;
 
     private ConcurrentMap<String, RetainedMsg> retainedMessagesMap;
 
@@ -164,7 +166,23 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         return new ArrayList<>(collect);
     }
 
+    @Override
+    public void distributeRequestUsingRetainedMsg(RetainedMsg retainedMsg) {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing distributeRequestUsingRetainedMsg {}.", retainedMsg);
+        }
+        QueueProtos.RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        retainedMsgPersistenceService.persistRetainedMsgAsync(retainedMsg.getTopic(), retainedMsgProto, null);
+    }
+
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
+        if (topic.startsWith(BrokerConstants.SYSTEMS_TOPIC_PREFIX)) {
+            // No need to add switch case by topic to process different requests.
+            // Only one request is supported for now
+            retainedMsgSystemRequestProcessor.processClientSessionStatsCleanup(retainedMsg);
+            return;
+        }
+
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
             if (log.isTraceEnabled()) {
                 log.trace("[{}] Msg was already processed.", topic);

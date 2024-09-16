@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.sqlts;
 
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -42,14 +43,19 @@ import org.thingsboard.mqtt.broker.dao.sql.SqlQueueStatsManager;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlBlockingQueuePool;
 import org.thingsboard.mqtt.broker.dao.sql.TbSqlQueueParams;
 import org.thingsboard.mqtt.broker.dao.sqlts.insert.latest.InsertLatestTsRepository;
+import org.thingsboard.mqtt.broker.dao.sqlts.latest.SearchTsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.latest.TsKvLatestRepository;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesLatestDao;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static java.time.ZoneOffset.UTC;
 
 @Slf4j
 @Component
@@ -62,6 +68,9 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
 
     @Autowired
     protected AggregationTimeseriesDao aggregationTimeseriesDao;
+
+    @Autowired
+    private SearchTsKvLatestRepository searchTsKvLatestRepository;
 
     @Autowired
     private InsertLatestTsRepository insertLatestTsRepository;
@@ -150,9 +159,25 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
 
     @Override
     public ListenableFuture<List<TsKvEntry>> findAllLatest(String entityId) {
-        List<ListenableFuture<TsKvEntry>> futures = new ArrayList<>(BrokerConstants.HISTORICAL_KEYS.size());
-        for (String key : BrokerConstants.HISTORICAL_KEYS) {
-            futures.add(findLatest(entityId, key));
+        return service.submit(() ->
+                DaoUtil.convertDataList(Lists.newArrayList(
+                        searchTsKvLatestRepository.findAllByEntityId(entityId))));
+    }
+
+    @Override
+    public ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForNode(String entityId) {
+        return doFindAllLatest(BrokerConstants.HISTORICAL_KEYS, entityId);
+    }
+
+    @Override
+    public ListenableFuture<List<Optional<TsKvEntry>>> findAllLatestForClient(String entityId) {
+        return doFindAllLatest(BrokerConstants.CLIENT_SESSION_METRIC_KEYS, entityId);
+    }
+
+    private ListenableFuture<List<Optional<TsKvEntry>>> doFindAllLatest(List<String> keys, String entityId) {
+        List<ListenableFuture<Optional<TsKvEntry>>> futures = new ArrayList<>(keys.size());
+        for (String key : keys) {
+            futures.add(findLatestOpt(entityId, key));
         }
         return Futures.allAsList(futures);
     }
@@ -228,9 +253,13 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
     private TsKvEntry getLatestTsKvEntry(String entityId, String key) {
         TsKvEntry latest = doFindLatest(entityId, key);
         if (latest == null) {
-            latest = new BasicTsKvEntry(System.currentTimeMillis(), new LongDataEntry(key, null));
+            latest = new BasicTsKvEntry(getStartOfCurrentMinute(), new LongDataEntry(key, null));
         }
         return latest;
+    }
+
+    private long getStartOfCurrentMinute() {
+        return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
     }
 
 }

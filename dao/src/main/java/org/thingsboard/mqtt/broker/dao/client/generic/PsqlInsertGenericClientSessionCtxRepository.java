@@ -15,13 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.generic;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.GenericClientSessionCtxEntity;
-import org.thingsboard.mqtt.broker.dao.util.PsqlDao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -32,10 +31,11 @@ import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIEN
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY;
 import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY;
 
-@PsqlDao
 @Repository
 @Transactional
+@RequiredArgsConstructor
 public class PsqlInsertGenericClientSessionCtxRepository implements InsertGenericClientSessionCtxRepository {
+
     private static final String INSERT_OR_UPDATE = "INSERT INTO " + GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME + " (" +
             GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY + ", " +
             GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY + ", " +
@@ -45,9 +45,7 @@ public class PsqlInsertGenericClientSessionCtxRepository implements InsertGeneri
             "DO UPDATE SET " + GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY + " = ?, " +
             GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY + " = ?;";
 
-
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void saveOrUpdate(List<GenericClientSessionCtxEntity> entities) {

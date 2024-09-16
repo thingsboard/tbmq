@@ -120,10 +120,12 @@ public class BaseTimeseriesService implements TimeseriesService {
     }
 
     @Override
-    public ListenableFuture<TsKvLatestRemovingResult> removeLatest(String entityId, String key) {
+    public ListenableFuture<List<TsKvLatestRemovingResult>> removeLatestKeys(String entityId, Collection<String> keys) {
         validate(entityId);
-        validate(key);
-        return timeseriesLatestDao.removeLatest(entityId, key);
+        keys.forEach(key -> Validator.validateString(key, "Incorrect key " + key));
+        List<ListenableFuture<TsKvLatestRemovingResult>> futures = new ArrayList<>(keys.size());
+        keys.forEach(key -> futures.add(timeseriesLatestDao.removeLatest(entityId, key)));
+        return Futures.allAsList(futures);
     }
 
     @Override
@@ -144,6 +146,19 @@ public class BaseTimeseriesService implements TimeseriesService {
             if (!CollectionUtils.isEmpty(latest)) {
                 Collection<String> keys = latest.stream().map(TsKvEntry::getKey).collect(Collectors.toList());
                 return Futures.transform(this.removeLatest(entityId, keys), res -> keys, MoreExecutors.directExecutor());
+            } else {
+                return Futures.immediateFuture(Collections.emptyList());
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    @Override
+    public ListenableFuture<Collection<String>> removeAllLatestForClient(String entityId) {
+        validate(entityId);
+        return Futures.transformAsync(timeseriesLatestDao.findAllLatestForClient(entityId), latest -> {
+            if (!CollectionUtils.isEmpty(latest)) {
+                Collection<String> keys = latest.stream().filter(Optional::isPresent).map(tsKvEntry -> tsKvEntry.get().getKey()).collect(Collectors.toList());
+                return Futures.transform(this.removeLatestKeys(entityId, keys), res -> keys, MoreExecutors.directExecutor());
             } else {
                 return Futures.immediateFuture(Collections.emptyList());
             }

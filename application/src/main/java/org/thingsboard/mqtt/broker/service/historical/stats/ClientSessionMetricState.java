@@ -15,16 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.service.historical.stats;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-public interface TbMessageStatsReportClient {
+import java.util.concurrent.atomic.AtomicLong;
 
-    void reportStats(String key);
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+public class ClientSessionMetricState {
 
-    void reportTraffic(long bytes);
+    private AtomicLong counter;
+    private boolean valueChangedSinceLastUpdate;
 
-    void reportClientSendStats(String clientId, int qos);
-
-    void reportClientReceiveStats(String clientId, int qos);
-
-    void removeClient(String clientId);
+    public static ClientSessionMetricState newClientSessionMetricState() {
+        return new ClientSessionMetricState(new AtomicLong(0), true);
+    }
 }

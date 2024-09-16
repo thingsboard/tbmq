@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.historical.stats;
+package org.thingsboard.mqtt.broker.util;
 
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
-public interface TbMessageStatsReportClient {
+import java.nio.charset.StandardCharsets;
 
-    void reportStats(String key);
+import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME;
 
-    void reportTraffic(long bytes);
+public class SystemRetainedMsgUtil {
 
-    void reportClientSendStats(String clientId, int qos);
+    public static RetainedMsg newClientSessionStatsCleanupMsg(String clientId) {
+        return new RetainedMsg(CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME, clientId.getBytes(StandardCharsets.UTF_8));
+    }
 
-    void reportClientReceiveStats(String clientId, int qos);
-
-    void removeClient(String clientId);
 }

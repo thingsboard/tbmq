@@ -40,6 +40,35 @@ public class BrokerConstants {
 
     public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, PROCESSED_BYTES);
 
+    public static final String RECEIVED_PUBLISH_MSGS = "receivedPubMsgs";
+    public static final String QOS_0_RECEIVED_PUBLISH_MSGS = "qos0ReceivedPubMsgs";
+    public static final String QOS_1_RECEIVED_PUBLISH_MSGS = "qos1ReceivedPubMsgs";
+    public static final String QOS_2_RECEIVED_PUBLISH_MSGS = "qos2ReceivedPubMsgs";
+    public static final String SENT_PUBLISH_MSGS = "sentPubMsgs";
+    public static final String QOS_0_SENT_PUBLISH_MSGS = "qos0SentPubMsgs";
+    public static final String QOS_1_SENT_PUBLISH_MSGS = "qos1SentPubMsgs";
+    public static final String QOS_2_SENT_PUBLISH_MSGS = "qos2SentPubMsgs";
+
+    public static final List<String> CLIENT_SESSION_METRIC_KEYS = List.of(RECEIVED_PUBLISH_MSGS, QOS_0_RECEIVED_PUBLISH_MSGS,
+            QOS_1_RECEIVED_PUBLISH_MSGS, QOS_2_RECEIVED_PUBLISH_MSGS,
+            SENT_PUBLISH_MSGS, QOS_0_SENT_PUBLISH_MSGS, QOS_1_SENT_PUBLISH_MSGS, QOS_2_SENT_PUBLISH_MSGS);
+
+    public static String getQosReceivedStatsKey(int qos) {
+        return switch (qos) {
+            case 0 -> QOS_0_RECEIVED_PUBLISH_MSGS;
+            case 1 -> QOS_1_RECEIVED_PUBLISH_MSGS;
+            default -> QOS_2_RECEIVED_PUBLISH_MSGS;
+        };
+    }
+
+    public static String getQosSentStatsKey(int qos) {
+        return switch (qos) {
+            case 0 -> QOS_0_SENT_PUBLISH_MSGS;
+            case 1 -> QOS_1_SENT_PUBLISH_MSGS;
+            default -> QOS_2_SENT_PUBLISH_MSGS;
+        };
+    }
+
     public static final byte[] LOCAL_ADR;
 
     static {
@@ -131,6 +160,9 @@ public class BrokerConstants {
             BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX,
             BrokerConstants.RETAINED_MSG_CG_PREFIX
     );
+
+    public static final String SYSTEMS_TOPIC_PREFIX = "$SYS/tbmq/";
+    public static final String CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "cs/stats/cleanup";
 
     public static final int BLANK_PACKET_ID = -1;
     public static final int MAX_PACKET_ID = 0xffff;

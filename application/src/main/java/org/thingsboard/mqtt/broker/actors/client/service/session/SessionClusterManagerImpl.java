@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,8 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
+import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
@@ -55,6 +58,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.Ap
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -79,6 +83,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final ApplicationTopicService applicationTopicService;
     private final RateLimitCacheService rateLimitCacheService;
     private final CacheNameResolver cacheNameResolver;
+    private final TimeseriesService timeseriesService;
 
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
     private ExecutorService eventResponseSenderExecutor;
@@ -131,6 +136,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         boolean sessionPresent = currentSessionInfo != null;
         if (log.isTraceEnabled()) {
             log.trace("[{}] Updating client session.", clientInfo.getClientId());
+        }
+        if (sessionPresent) {
+            removeClientLatestTs(clientInfo.getClientId());
         }
 
         AtomicBoolean wasErrorProcessed = new AtomicBoolean(false);
@@ -232,6 +240,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                     evictEntryFromClientMqttVersionCache(clientId);
                     clearSessionAndSubscriptions(clientId);
                     clearPersistedMessages(clientSession.getSessionInfo().getClientInfo());
+                    removeClientLatestTs(clientId);
                 }
             }
         } catch (Exception e) {
@@ -275,7 +284,15 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
         evictEntryFromClientSessionCredentialsCache(clientId);
         evictEntryFromClientMqttVersionCache(clientId);
         clearSessionAndSubscriptions(clientId);
+        removeClientLatestTs(clientId);
         return true;
+    }
+
+    private void removeClientLatestTs(String clientId) {
+        ListenableFuture<Collection<String>> future = timeseriesService.removeAllLatestForClient(clientId);
+        DonAsynchron.withCallback(future,
+                keys -> log.debug("[{}] Removed all latest keys for client {}", clientId, keys),
+                throwable -> log.warn("[{}] Failed to removed all latest keys for client", clientId, throwable));
     }
 
     ClientSession markSessionDisconnected(ClientSession clientSession, int sessionExpiryInterval) {

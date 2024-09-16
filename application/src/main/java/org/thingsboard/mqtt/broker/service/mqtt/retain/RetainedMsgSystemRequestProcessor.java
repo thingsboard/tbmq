@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.historical.stats;
+package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+public interface RetainedMsgSystemRequestProcessor {
 
-public interface TbMessageStatsReportClient {
+    void processClientSessionStatsCleanup(RetainedMsg retainedMsg);
 
-    void reportStats(String key);
-
-    void reportTraffic(long bytes);
-
-    void reportClientSendStats(String clientId, int qos);
-
-    void reportClientReceiveStats(String clientId, int qos);
-
-    void removeClient(String clientId);
 }

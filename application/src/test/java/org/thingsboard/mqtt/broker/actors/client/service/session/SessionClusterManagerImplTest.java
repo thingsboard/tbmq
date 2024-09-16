@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.session;
 
+import com.google.common.util.concurrent.Futures;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -87,6 +89,8 @@ public class SessionClusterManagerImplTest {
     RateLimitCacheService rateLimitCacheService;
     @MockBean
     CacheNameResolver cacheNameResolver;
+    @MockBean
+    TimeseriesService timeseriesService;
 
     @SpyBean
     SessionClusterManagerImpl sessionClusterManager;
@@ -112,6 +116,7 @@ public class SessionClusterManagerImplTest {
             }
         };
         doReturn(eventResponseProducer).when(clientSessionEventQueueFactory).createEventResponseProducer(any());
+        when(timeseriesService.removeAllLatestForClient(anyString())).thenReturn(Futures.immediateFuture(null));
         sessionClusterManager.init();
     }
 

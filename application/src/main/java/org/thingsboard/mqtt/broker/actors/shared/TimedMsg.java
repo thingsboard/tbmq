@@ -16,5 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.shared;
 
 public interface TimedMsg {
+
     long getMsgCreatedTimeNanos();
+
 }

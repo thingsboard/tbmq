@@ -107,6 +107,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
+        tbMessageStatsReportClient.reportClientSendStats(sessionInfo.getClientId(), publishMsg.getQosLevel());
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
 
         DefaultTbQueueMsgHeaders headers = createHeaders(publishMsg);

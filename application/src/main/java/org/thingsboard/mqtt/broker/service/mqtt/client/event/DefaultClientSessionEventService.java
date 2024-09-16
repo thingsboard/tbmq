@@ -129,7 +129,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     public void requestSessionCleanup(SessionInfo sessionInfo) {
         sendEvent(
                 sessionInfo.getClientInfo().getClientId(),
-                eventFactory.createTryClearSessionRequestEventProto(sessionInfo),
+                eventFactory.createClearSessionRequestEventProto(sessionInfo),
                 false,
                 null);
     }
@@ -138,7 +138,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     public void requestClientSessionCleanup(ClientSessionInfo clientSessionInfo) {
         sendEvent(
                 clientSessionInfo.getClientId(),
-                eventFactory.createTryClearSessionRequestEventProto(clientSessionInfo),
+                eventFactory.createClearSessionRequestEventProto(clientSessionInfo),
                 false,
                 null);
     }
@@ -147,7 +147,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     public void requestApplicationTopicRemoved(String clientId) {
         sendEvent(
                 clientId,
-                eventFactory.createApplicationTopicRemoveRequestProto(clientId),
+                eventFactory.createApplicationTopicRemoveRequestEventProto(clientId),
                 false,
                 null);
     }

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import jakarta.annotation.PostConstruct;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +27,8 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -44,11 +47,13 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.PROCESSED_BYTES;
 
+@Data
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -67,16 +72,18 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
+    private ConcurrentMap<String, ConcurrentMap<String, ClientSessionMetricState>> clientSessionsStats;
     private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @PostConstruct
-    private void init() {
+    void init() {
         if (!enabled) return;
         validateIntervalAndThrowExceptionOnInvalid();
 
         serviceId = serviceInfoProvider.getServiceId();
         historicalStatsProducer = historicalDataQueueFactory.createProducer(serviceId);
         stats = new ConcurrentHashMap<>();
+        clientSessionsStats = new ConcurrentHashMap<>();
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             stats.put(key, new AtomicLong(0));
         }
@@ -85,11 +92,35 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
-            reportStats(getStartOfCurrentMinute());
+            long startOfCurrentMinute = getStartOfCurrentMinute();
+            reportAndPersistStats(startOfCurrentMinute);
+            reportClientSessionsStats(startOfCurrentMinute);
         }
     }
 
-    private void reportStats(long ts) {
+    void reportClientSessionsStats(long ts) {
+        List<ListenableFuture<List<Void>>> futures = new ArrayList<>();
+        clientSessionsStats.forEach((clientId, clientStatsMap) -> {
+
+            List<TsKvEntry> tsKvEntries = clientStatsMap
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> entry.getValue().isValueChangedSinceLastUpdate())
+                    .peek(entry -> entry.getValue().setValueChangedSinceLastUpdate(false))
+                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCounter().get())))
+                    .collect(Collectors.toList());
+
+            if (!tsKvEntries.isEmpty()) {
+                futures.add(timeseriesService.saveLatest(clientId, tsKvEntries));
+            }
+        });
+        if (futures.isEmpty()) return;
+        DonAsynchron.withCallback(Futures.allAsList(futures),
+                lists -> log.debug("Successfully persisted client sessions latest"),
+                throwable -> log.warn("Failed to persist client sessions latest", throwable));
+    }
+
+    void reportAndPersistStats(long ts) {
         List<ToUsageStatsMsgProto> report = new ArrayList<>();
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
@@ -155,7 +186,42 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
     }
 
-    private void validateIntervalAndThrowExceptionOnInvalid() {
+    @Override
+    public void reportClientSendStats(String clientId, int qos) {
+        if (enabled) {
+            reportClientStats(clientId, BrokerConstants.SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
+        }
+    }
+
+    @Override
+    public void reportClientReceiveStats(String clientId, int qos) {
+        if (enabled) {
+            reportClientStats(clientId, BrokerConstants.RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
+        }
+    }
+
+    @Override
+    public void removeClient(String clientId) {
+        clientSessionsStats.remove(clientId);
+    }
+
+    private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
+        var clientStatsMap = clientSessionsStats.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
+
+        ClientSessionMetricState metricState = clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState());
+        metricState.getCounter().incrementAndGet();
+        metricState.setValueChangedSinceLastUpdate(true);
+
+        ClientSessionMetricState qosMetricState = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState());
+        qosMetricState.getCounter().incrementAndGet();
+        qosMetricState.setValueChangedSinceLastUpdate(true);
+    }
+
+    private ClientSessionMetricState newClientSessionMetricState() {
+        return ClientSessionMetricState.newClientSessionMetricState();
+    }
+
+    void validateIntervalAndThrowExceptionOnInvalid() {
         if (interval < 1 || interval > 60) {
             String message = String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval);
             log.error(message);

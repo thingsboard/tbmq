@@ -13,11 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.util;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+:host {
+  .metrics {
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.12);
 
-@Retention(RetentionPolicy.RUNTIME)
-public @interface PsqlDao {
+    div {
+      span {
+        font-size: 20px;
+        color: rgba(0,0,0,0.87);
+      }
+
+      &:first-child {
+        padding: 4px 4px 4px 16px;
+      }
+    }
+  }
+}
+
+:host ::ng-deep {
+  .mat-mdc-cell {
+    color: rgba(0,0,0,0.76);
+    font-size: 14px;
+  }
+
+  .mat-mdc-row:not(.mat-row-select), .mat-mdc-header-row:not(.mat-row-select) {
+    .mat-mdc-cell:first-child, .mat-mdc-footer-cell:first-child, .mat-mdc-header-cell:first-child {
+      padding: 0 16px;
+    }
+  }
+
 }

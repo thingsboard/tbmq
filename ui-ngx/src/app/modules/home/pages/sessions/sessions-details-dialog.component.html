@@ -173,6 +173,12 @@
         </tb-session-subscriptions>
       </ng-template>
     </mat-tab>
+    <mat-tab [label]="'mqtt-client-session.metrics' | translate">
+      <ng-template matTabContent>
+        <tb-session-metrics [entity]="entity"></tb-session-metrics>
+      </ng-template>
+    </mat-tab>
+
   </mat-tab-group>
   <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
     <button mat-button color="primary"

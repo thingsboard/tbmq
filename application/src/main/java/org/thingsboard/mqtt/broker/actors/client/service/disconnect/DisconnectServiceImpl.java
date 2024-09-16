@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -59,6 +60,7 @@ public class DisconnectServiceImpl implements DisconnectService {
     private final AuthorizationRuleService authorizationRuleService;
     private final FlowControlService flowControlService;
     private final RateLimitCacheService rateLimitCacheService;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Override
     public void disconnect(ClientActorStateInfo actorState, MqttDisconnectMsg disconnectMsg) {
@@ -95,6 +97,7 @@ public class DisconnectServiceImpl implements DisconnectService {
         rateLimitService.remove(sessionCtx.getClientId());
         authorizationRuleService.evict(sessionCtx.getClientId());
         flowControlService.removeFromMap(sessionCtx.getClientId());
+        tbMessageStatsReportClient.removeClient(sessionCtx.getClientId());
         closeChannel(sessionCtx);
 
         if (log.isDebugEnabled()) {

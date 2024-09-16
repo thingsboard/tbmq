@@ -46,18 +46,23 @@ import org.thingsboard.mqtt.broker.common.data.kv.KvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsData;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvQuery;
 import org.thingsboard.mqtt.broker.common.util.JsonConverter;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
+import org.thingsboard.mqtt.broker.util.SystemRetainedMsgUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.ENTITY_ID;
 
 @RestController
 @RequestMapping("/api/timeseries")
@@ -75,7 +80,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "keys", required = false) String keysStr,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
 
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
             ListenableFuture<List<TsKvEntry>> future;
@@ -85,6 +90,48 @@ public class TimeseriesController extends BaseController {
                 future = timeseriesService.findLatest(entityId, toKeysList(keysStr));
             }
             Futures.addCallback(future, getTsKvListCallback(result, useStrictDataTypes), MoreExecutors.directExecutor());
+            return result;
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/{entityId}/latest", method = RequestMethod.DELETE)
+    @ResponseBody
+    public DeferredResult<ResponseEntity> deleteLatestTimeseries(
+            @PathVariable("entityId") String entityId,
+            @RequestParam(name = "keys", required = false) String keysStr,
+            @RequestParam(required = false) boolean deleteClientSessionCachedStats) throws ThingsboardException {
+        try {
+            checkParameter(ENTITY_ID, entityId);
+
+            DeferredResult<ResponseEntity> result = new DeferredResult<>();
+            ListenableFuture<Collection<String>> future;
+
+            if (StringUtils.isEmpty(keysStr)) {
+                future = timeseriesService.removeAllLatest(entityId);
+            } else {
+                future = Futures.transform(timeseriesService.removeLatestKeys(entityId, toKeysList(keysStr)),
+                        list -> list.stream().map(TsKvLatestRemovingResult::getKey).collect(Collectors.toList()),
+                        MoreExecutors.directExecutor());
+            }
+            Futures.addCallback(future, new FutureCallback<>() {
+                @Override
+                public void onSuccess(Collection<String> keys) {
+                    log.debug("[{}] Successfully deleted latest time series {}", entityId, keys);
+                    if (deleteClientSessionCachedStats) {
+                        retainedMsgListenerService.distributeRequestUsingRetainedMsg(SystemRetainedMsgUtil.newClientSessionStatsCleanupMsg(entityId));
+                    }
+                    result.setResult(new ResponseEntity<>(HttpStatus.OK));
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    log.warn("[{}] Failed to delete latest time series", entityId, t);
+                    result.setResult(new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR));
+                }
+            }, MoreExecutors.directExecutor());
             return result;
         } catch (Exception e) {
             throw handleException(e);
@@ -105,7 +152,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
 
             DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
@@ -183,7 +230,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "startTs", required = false) Long startTs,
             @RequestParam(name = "endTs", required = false) Long endTs) throws ThingsboardException {
         try {
-            checkEntityId(entityId);
+            checkParameter(ENTITY_ID, entityId);
             return deleteTimeseries(entityId, keysStr, deleteAllDataForKeys, startTs, endTs);
         } catch (Exception e) {
             throw handleException(e);
