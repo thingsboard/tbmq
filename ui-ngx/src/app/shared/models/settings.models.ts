@@ -72,3 +72,26 @@ export interface UserPasswordPolicy {
 export interface SecuritySettings {
   passwordPolicy: UserPasswordPolicy;
 }
+
+export const defaultConnectivitySettings = {
+  mqtt: {
+    enabled: false,
+    host: window.location.hostname,
+    port: 1883
+  },
+  mqtts: {
+    enabled: false,
+    host: window.location.hostname,
+    port: 8883
+  },
+  ws: {
+    enabled: false,
+    host: window.location.hostname,
+    port: 8084
+  },
+  wss: {
+    enabled: false,
+    host: window.location.hostname,
+    port: 8085
+  }
+};

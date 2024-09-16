@@ -14,13 +14,16 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { PageComponent } from '@shared/components/page.component';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
-import { gettingStartedGuides, GettingStartedLink } from '@shared/models/getting-started.model';
+import {
+  gettingStartedActions,
+  gettingStartedDocs,
+  gettingStartedGuides,
+  GettingStartedLink
+} from '@shared/models/getting-started.model';
+import { ConfigService } from '@core/http/config.service';
 
 @Component({
   selector: 'tb-getting-started',
@@ -28,21 +31,34 @@ import { gettingStartedGuides, GettingStartedLink } from '@shared/models/getting
   styleUrls: ['./getting-started.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GettingStartedComponent extends PageComponent implements OnDestroy {
+export class GettingStartedComponent implements OnInit {
+
+  currentReleaseVersion: string;
 
   guides = gettingStartedGuides;
+  docs = gettingStartedDocs;
+  actions = gettingStartedActions;
 
-  constructor(protected store: Store<AppState>,
+  constructor(private configService: ConfigService,
               private router: Router,
+              private cd: ChangeDetectorRef,
               public fb: UntypedFormBuilder) {
-    super(store);
   }
 
-  ngOnDestroy() {
-    super.ngOnDestroy();
+  ngOnInit() {
+    this.configService.getSystemVersion().subscribe(currentRelease => {
+      if (currentRelease) {
+        this.currentReleaseVersion = currentRelease.version.split('-')[0];
+        this.cd.detectChanges();
+      }
+    });
   }
 
   navigate(guide: GettingStartedLink) {
     this.router.navigateByUrl(guide.url);
+  }
+
+  navigateNewTab(guide: GettingStartedLink) {
+    window.open(guide.url, '_blank');
   }
 }

@@ -14,17 +14,16 @@
 /// limitations under the License.
 ///
 
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { JwtHelperService } from '@auth0/angular-jwt';
 import { HttpClient } from '@angular/common/http';
 
-import { Observable, of, ReplaySubject, throwError } from 'rxjs';
+import { forkJoin, Observable, of, ReplaySubject, throwError } from 'rxjs';
 import { catchError, mergeMap, tap } from 'rxjs/operators';
 
 import { LoginRequest, LoginResponse, PublicLoginRequest } from '@shared/models/login.models';
-import { ActivatedRoute, Router, UrlTree } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { defaultHttpOptions, defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
-import { UserService } from './user.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { Authority } from '@shared/models/authority.enum';
@@ -37,8 +36,8 @@ import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
 import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated } from '@core/auth/auth.actions';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
-import { ConfigService } from '@core/http/config.service';
-import { UserPasswordPolicy } from "@shared/models/settings.models";
+import { UserPasswordPolicy } from '@shared/models/settings.models';
+import { SettingsService } from '@core/http/settings.service';
 
 @Injectable({
   providedIn: 'root'
@@ -47,13 +46,10 @@ export class AuthService {
 
   constructor(private store: Store<AppState>,
               private http: HttpClient,
-              private adminService: UserService,
+              private settingsService: SettingsService,
               private router: Router,
-              private route: ActivatedRoute,
-              private zone: NgZone,
               private utils: UtilsService,
               private translate: TranslateService,
-              private configService: ConfigService,
               private dialog: MatDialog) {
   }
 
@@ -285,7 +281,10 @@ export class AuthService {
 
   private procceedJwtTokenValidate(doTokenRefresh?: boolean): Observable<AuthPayload> {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
-    this.validateJwtToken(doTokenRefresh).subscribe(
+    forkJoin([
+      this.validateJwtToken(doTokenRefresh),
+      this.settingsService.updateConnectivitySettings()
+    ]).subscribe(
       () => {
         const authPayload = {} as AuthPayload;
         const jwtToken = AuthService._storeGet('jwt_token');
@@ -294,18 +293,11 @@ export class AuthService {
           authPayload.authUser.authority = Authority[authPayload.authUser.scopes[0]];
         }
         if (authPayload.authUser.userId) {
-          let configValue = {};
-          this.configService.getBrokerConfig().pipe(
-            mergeMap((config) => {
-              configValue = config;
-              return this.getUser();
-            })
-          ).subscribe(
+          this.getUser().subscribe(
             (user) => {
               if (user) {
                 authPayload.userDetails = user;
                 let userLang;
-                authPayload.userDetails.additionalInfo.config = configValue;
                 if (authPayload.userDetails.additionalInfo && authPayload.userDetails.additionalInfo.lang) {
                   userLang = authPayload.userDetails.additionalInfo.lang;
                 } else {

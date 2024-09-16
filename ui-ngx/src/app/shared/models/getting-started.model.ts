@@ -18,18 +18,11 @@ export const gettingStartedGuideTitle = (id: string) => gettingStartedGuides.fin
 
 export const gettingStartedGuides: GettingStartedLink[] = [
   {
-    id: 'websocket',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'ws-client.ws-client',
-    subtitle: 'getting-started.guide.ws-client-subtitle',
-    url: '/ws-client'
-  },
-  {
-    id: 'guide-mosquitto',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'getting-started.guide.mosquitto-title',
-    subtitle: 'getting-started.guide.mosquitto-subtitle',
-    url: '/getting-started/guide-mosquitto'
+    id: 'guide-python',
+    img: '/assets/getting-started/python.png',
+    title: 'getting-started.guide.python-title',
+    subtitle: 'getting-started.guide.python-subtitle',
+    url: '/getting-started/guide-python'
   },
   {
     id: 'guide-javascript',
@@ -39,13 +32,6 @@ export const gettingStartedGuides: GettingStartedLink[] = [
     url: '/getting-started/guide-javascript'
   },
   {
-    id: 'guide-python',
-    img: '/assets/getting-started/python.png',
-    title: 'getting-started.guide.python-title',
-    subtitle: 'getting-started.guide.python-subtitle',
-    url: '/getting-started/guide-python'
-  },
-  {
     id: 'guide-arduino',
     img: '/assets/getting-started/arduino.png',
     title: 'getting-started.guide.arduino-title',
@@ -53,18 +39,100 @@ export const gettingStartedGuides: GettingStartedLink[] = [
     url: '/getting-started/guide-arduino'
   },
   {
-    id: 'github',
+    id: 'guide-mosquitto',
+    img: '/assets/getting-started/mosquitto.svg',
+    title: 'getting-started.guide.mosquitto-title',
+    subtitle: 'getting-started.guide.mosquitto-subtitle',
+    url: '/getting-started/guide-mosquitto'
+  },
+  {
+    id: 'guide-java',
+    img: '/assets/getting-started/java.webp',
+    title: 'getting-started.guide.java-title',
+    subtitle: 'getting-started.guide.java-subtitle',
+    url: '/getting-started/guide-java'
+  },
+  {
+    id: 'guide-java-ws',
+    img: '/assets/getting-started/java.webp',
+    title: 'getting-started.guide.java-ws-title',
+    subtitle: 'getting-started.guide.java-ws-subtitle',
+    url: '/getting-started/guide-java-ws'
+  },
+  /*{
+    id: 'websocket',
     img: '/assets/home/no_data_bg.svg',
-    title: 'Github',
-    subtitle: '',
-    url: ''
+    title: 'ws-client.ws-client',
+    subtitle: 'getting-started.guide.ws-client-subtitle',
+    url: '/ws-client'
+  },*/
+]
+
+export const gettingStartedDocs: GettingStartedLink[] = [
+  {
+    img: '/assets/getting-started/getting_started.svg',
+    title: 'Getting Started',
+    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
+  },
+  {
+    img: '/assets/getting-started/configuration.svg',
+    title: 'Configuration',
+    url: 'https://thingsboard.io/docs/mqtt-broker/install/config/'
+  },
+  {
+    img: '/assets/getting-started/security.svg',
+    title: 'Security',
+    url: 'https://thingsboard.io/docs/mqtt-broker/security'
+  },
+  {
+    img: '/assets/getting-started/client_type.svg',
+    title: 'Client Type',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type'
+  },
+  {
+    img: '/assets/getting-started/monitoring.svg',
+    title: 'Monitoring',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring'
+  },
+  {
+    img: '/assets/getting-started/websocket_client.svg',
+    title: 'WebSocket Client',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'
+  },
+  {
+    img: '/assets/getting-started/troubleshooting.svg',
+    title: 'Troubleshooting',
+    url: 'https://thingsboard.io/docs/mqtt-broker/troubleshooting'
   },
 ]
 
 export interface GettingStartedLink {
-  id: string;
+  title: string;
   url: string;
-  img: string;
-  title?: string;
+  id?: string;
+  img?: string;
   subtitle?: string;
 }
+
+export const gettingStartedActions: GettingStartedLink[] = [
+  {
+    title: 'getting-started.guide.releases',
+    url: 'https://github.com/thingsboard/tbmq/releases'
+  },
+  {
+    title: 'getting-started.guide.support',
+    url: 'https://thingsboard.io/docs/contact-us'
+  },
+  {
+    title: 'getting-started.guide.github',
+    url: 'https://github.com/thingsboard/tbmq'
+  },
+  {
+    title: 'getting-started.guide.docs',
+    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started/'
+  },
+  {
+    title: 'getting-started.guide.pricing',
+    url: 'https://thingsboard.io/pricing/?section=mqtt-broker-options'
+  }
+]

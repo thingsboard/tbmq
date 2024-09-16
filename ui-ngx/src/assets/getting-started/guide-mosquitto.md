@@ -16,21 +16,19 @@ sudo apt-get install mosquitto-clients{:copy-code}
 To subscribe client to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target="_blank">mosquitto_sub</a> MQTT client.
 Please copy and paste the following code into a terminal tab:
 
-<br>
-
 ```bash
-mosquitto_sub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
+mosquitto_sub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
 ```
 
 ##### Publish
 
 In order to publish a message on topic `tbmq/demo/topic`, open a new terminal tab and paste the following command:
 
-<br>
-
 ```bash
-mosquitto_pub -h {:hostname} -p {:port} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
+mosquitto_pub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
 ```
+
+<br>
 
 Once you run this command, you should see the published message in the terminal tab of the subscribed client:
 
@@ -44,6 +42,3 @@ Client tbmq received PUBLISH (d0, q1, r0, m3, 'tbmq/demo/topic', ... (11 bytes))
 Client tbmq sending PUBACK (m3, rc0)
 tbmq/demo/topic Hello World
 ```
-
-#### See also
-

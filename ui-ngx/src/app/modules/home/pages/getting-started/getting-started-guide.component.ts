@@ -14,10 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
-import { PageComponent } from '@shared/components/page.component';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InstructionsService } from '@core/http/instructions.service';
@@ -28,26 +25,20 @@ import { InstructionsService } from '@core/http/instructions.service';
   styleUrls: ['./getting-started-guide.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GettingStartedGuideComponent extends PageComponent implements OnInit, OnDestroy {
+export class GettingStartedGuideComponent implements OnInit {
 
   data: string;
 
-  constructor(protected store: Store<AppState>,
-              private route: ActivatedRoute,
+  constructor(private route: ActivatedRoute,
               private cd: ChangeDetectorRef,
               private instructionsService: InstructionsService,
               public fb: UntypedFormBuilder) {
-    super(store);
   }
 
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.init(params?.guideId);
     });
-  }
-
-  ngOnDestroy() {
-    super.ngOnDestroy();
   }
 
   private init(id: string) {

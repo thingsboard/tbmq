@@ -16,7 +16,7 @@
 
 import { Component, Inject, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormGroup, UntypedFormGroup, Validators } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
@@ -48,11 +48,10 @@ import {
   WsCredentialsGeneratortTypeTranslationMap,
   WsCredentialsGeneratorType
 } from '@shared/models/ws-client.model';
-import { getCurrentAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
-import { ConfigParams } from '@shared/models/config.model';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { BasicClientCredentials } from '@home/pages/client-credentials/client-credentials.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
-import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
+import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 
 export interface ConnectionDialogData {
@@ -102,20 +101,20 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   addressProtocol = WsAddressProtocolType.WS;
   displayUrlWarning: boolean;
 
+  private connectivitySettings: ConnectivitySettings = this.settingsService.getConnectivitySettings();
   private urlConfig = {
     [WsAddressProtocolType.WS]: {
-      port: 8084,
       protocol: 'ws://',
-      host: window.location.hostname
+      host: this.connectivitySettings.ws.host,
+      port: this.connectivitySettings.ws.port
     },
     [WsAddressProtocolType.WSS]: {
-      port: 8085,
       protocol: 'wss://',
-      host: window.location.hostname
+      host: this.connectivitySettings.wss.host,
+      port: this.connectivitySettings.wss.port
     }
   };
   private readonly urlPrefix: string = '/mqtt';
-  private webSocketSettings: ConnectivitySettings;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -137,14 +136,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       .pipe(map(({matches}) => matches ? 'horizontal' : 'vertical'));
     this.stepperLabelPosition = this.breakpointObserver.observe(MediaBreakpoints['gt-sm'])
       .pipe(map(({matches}) => matches ? 'end' : 'bottom'));
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => user?.additionalInfo?.config))
-      .pipe(map((data) => {
-        this.urlConfig[WsAddressProtocolType.WS].port = data[ConfigParams.wsPort];
-        this.urlConfig[WsAddressProtocolType.WSS].port = data[ConfigParams.wssPort];
-        return data;
-      })).subscribe();
     if (this.connection) {
       this.title = 'ws-client.connections.edit';
       if (isDefinedAndNotNull(this.connection.configuration.clientCredentialsId)) {
@@ -154,6 +145,9 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
         this.credentialsGeneratorType = WsCredentialsGeneratorType.CUSTOM;
         this.onCredentialsGeneratorChange(WsCredentialsGeneratorType.CUSTOM);
       }
+    } else {
+      const url = this.getUrl(this.addressProtocol, this.urlConfig[this.addressProtocol].host, this.urlConfig[this.addressProtocol].port);
+      this.setUrl(url);
     }
     this.checkUrl();
   }
@@ -163,7 +157,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     this.setConnectionAdvancedFormGroup();
     this.setLastWillFormGroup();
     this.setUserPropertiesFormGroup();
-    this.getWebSocketSettings();
   }
 
   private setConnectionFormGroup() {
@@ -522,30 +515,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
           return 256;
       }
     }
-  }
-
-  private getWebSocketSettings() {
-    this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
-      settings => {
-        if (settings?.jsonValue) {
-          // @ts-ignore
-          this.webSocketSettings = settings.jsonValue;
-          if (settings.jsonValue.ws?.enabled) {
-            this.urlConfig[WsAddressProtocolType.WS].host = this.webSocketSettings.ws.host;
-            this.urlConfig[WsAddressProtocolType.WS].port = this.webSocketSettings.ws.port;
-          }
-          if (settings.jsonValue.wss?.enabled) {
-            this.urlConfig[WsAddressProtocolType.WSS].host = this.webSocketSettings.wss.host;
-            this.urlConfig[WsAddressProtocolType.WSS].port = this.webSocketSettings.wss.port;
-          }
-          if (!this.connection) {
-            const url = this.getUrl(this.addressProtocol, this.urlConfig[this.addressProtocol].host, this.urlConfig[this.addressProtocol].port);
-            this.setUrl(url);
-          }
-        }
-      },
-      () => {}
-    );
   }
 
   private getUrl(type: WsAddressProtocolType, host: string, port: number | string): string {

@@ -115,7 +115,10 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     const connectivitySettings: AdminSettings<ConnectivitySettings> = JSON.parse(JSON.stringify(this.connectivitySettings));
     connectivitySettings.jsonValue = {...connectivitySettings.jsonValue, ...this.connectivitySettingsForm.value};
     this.settingsService.saveAdminSettings(connectivitySettings)
-      .subscribe(settings => this.processConnectivitySettings(settings));
+      .subscribe(settings => {
+        this.processConnectivitySettings(settings);
+        this.settingsService.updateConnectivitySettings().subscribe();
+      });
   }
 
   discardGeneralSettings(): void {

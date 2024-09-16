@@ -11,12 +11,12 @@ The Arduino source code was developed using [Arduino IDE](https://www.arduino.cc
 
 In order to start programming you will need Arduino IDE installed and all related software.
 
-###### Step 1. Arduino UNO and Arduino IDE setup.
+###### Step 1. Arduino UNO and Arduino IDE setup
 Download and install [Arduino IDE](https://www.arduino.cc/en/Main/Software).
 
 To learn how to connect your Uno board to the computer and upload your first sketch please follow this [guide](https://www.arduino.cc/en/Guide/ArduinoUno).
 
-###### Step 2. Install Arduino libraries.
+###### Step 2. Install Arduino libraries
 
 Open Arduino IDE and go to **Sketch -> Include Library -> Manage Libraries**.
 Find and install the following libraries:
@@ -29,20 +29,14 @@ Find and install the following libraries:
 - PubSubClient 2.6
 - ArduinoJson 5.8.0 
 
-##### Prepare and upload a sketch.
+##### Connect to the TBMQ
 
-The code snippet below provides an example on how to:
-1. connect to a TBMQ broker using default pre-configured client credentials _'TBMQ WebSockets MQTT Credentials'_
-2. subscribe for a topic
-3. publish a message
-4. handle received message
+The code snippet below provides an example on how to connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, publish a message, and handle received message.
 
-**Note** You need to edit following constants and variables in the sketch:
+Please do not forget to edit following constants and variables in the sketch:
 
-- WIFI_AP - name of your access point
-- WIFI_PASSWORD - access point password
-- MQTT_HOST - the address of the server
-- MQTT_PORT - the port to connect to
+- `WIFI_AP` - name of your access point
+- `WIFI_PASSWORD` - access point password
 
 ```bash
 #include <WiFi.h>
@@ -50,15 +44,15 @@ The code snippet below provides an example on how to:
 
 constexpr char WIFI_AP[] = "WIFI_AP";
 constexpr char WIFI_PASSWORD[] = "WIFI_PASSWORD";
-constexpr char MQTT_HOST[] = "MQTT_HOST"; // In case of working locally use you public IP address
-const int MQTT_PORT = MQTT_PORT; // default TBMQ port is 1883
+constexpr char MQTT_HOST[] = "{:mqttHost}";
+const int MQTT_PORT = {:mqttPort};
 
 constexpr uint32_t SERIAL_DEBUG_BAUD = 115200U;
 constexpr char TOPIC[] = "tbmq/demo";
 constexpr char MESSAGE[] = "Hello World";
 constexpr char USERNAME[] = "tbmq_websockets_username";
 constexpr char PASSWORD[] = "";
-String CLIENT_ID = "tbmq_websockets_client_id";
+String CLIENT_ID = "tbmq_test_client";
 
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
@@ -119,13 +113,13 @@ void pubSub() {
 {:copy-code}
 ```
 
-Connect your Arduino UNO device via USB cable and select "Arduino/Genuino Uno" port in Arduino IDE. Compile and Upload your sketch to the device using "Upload" button.
+Connect your Arduino UNO device via USB cable and select `Arduino/Genuino Uno` port in Arduino IDE. Compile and upload your sketch to the device using `Upload` button.
 
 After application will be uploaded and started it will try to connect MQTT client to the TBMQ broker, subscribe for a topic and publish a message.
 
 ##### Troubleshooting
 
-When the application is running you can select "Arduino/Genuino Uno" port in Arduino IDE and open "Serial Monitor" in order to view debug information produced by serial output.
+When the application is running you can select `Arduino/Genuino Uno` port in Arduino IDE and open `Serial Monitor` in order to view debug information produced by serial output.
 
 ##### See also
 

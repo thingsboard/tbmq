@@ -16,17 +16,14 @@
 
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { DialogComponent } from '@shared/components/dialog.component';
-import { select, Store } from '@ngrx/store';
+import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
-import { selectUserDetails } from '@core/auth/auth.selectors';
-import { map } from 'rxjs/operators';
-import { ConfigParams } from '@shared/models/config.model';
 import { getOS } from '@core/utils';
-import { ConnectivitySettings, connectivitySettingsKey } from '@shared/models/settings.models';
+import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 
 export interface CheckConnectivityDialogData {
@@ -37,15 +34,15 @@ export interface CheckConnectivityDialogData {
 export interface PublishTelemetryCommand {
   mqtt: {
     mqtt?: {
-      sub?: string,
-      pub?: string
+      sub?: string;
+      pub?: string;
     };
     mqtts?: string | Array<string>;
     docker?: {
       mqtt?: {
-        sub?: string,
-        pub?: string
-      },
+        sub?: string;
+        pub?: string;
+      };
       mqtts?: string | Array<string>;
     };
     sparkplug?: string;
@@ -89,7 +86,7 @@ export class CheckConnectivityDialogComponent extends
   notShowAgain = false;
   mqttTabIndex = 0;
 
-  private mqttPort: string;
+  private connectivitySettings = this.settingsService.getConnectivitySettings();
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
@@ -108,7 +105,7 @@ export class CheckConnectivityDialogComponent extends
   }
 
   ngOnInit() {
-    this.loadConfig();
+    this.loadCommands(this.connectivitySettings)
   }
 
   ngOnDestroy() {
@@ -152,30 +149,9 @@ export class CheckConnectivityDialogComponent extends
       '```';
   }
 
-  private loadConfig() {
-    this.store.pipe(
-      select(selectUserDetails),
-      map((user) => user?.additionalInfo?.config))
-      .pipe(
-        map((data) => {
-          this.mqttPort = data ? data[ConfigParams.tcpPort] : '1883';
-          this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(
-            settings => {
-              if (settings && settings.jsonValue) {
-                this.loadCommands(settings.jsonValue);
-              }
-            },
-            () => this.loadCommands()
-          );
-          return true;
-          }
-        ))
-      .subscribe();
-  }
-
-  private loadCommands(data: ConnectivitySettings = null) {
+  private loadCommands(data: ConnectivitySettings) {
     const config = this.setConfig(this.data.credentials);
-    if (data.mqtt?.enabled) {
+    if (data.mqtt.enabled) {
       config.hostname = data.mqtt.host.toString();
       config.mqttPort = data.mqtt.port.toString();
     }
@@ -254,8 +230,8 @@ export class CheckConnectivityDialogComponent extends
       password: this.setPassword(credentialsValue),
       subTopic: this.setTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+'),
       pubTopic: this.setTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic'),
-      hostname: window.location.hostname,
-      mqttPort: this.mqttPort,
+      hostname: this.connectivitySettings.mqtt.host,
+      mqttPort: this.connectivitySettings.mqtt.port.toString(),
       cleanSession: clientType === ClientType.APPLICATION,
       network: this.setNetworkCommand(window.location.hostname),
       message: "-m 'Hello World'",

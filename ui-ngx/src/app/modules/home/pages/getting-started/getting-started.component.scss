@@ -16,48 +16,75 @@
 @import "../../../../../scss/constants";
 
 :host {
+  .content {
+    font-size: 18px;
+    line-height: 28px;
+  }
 
-  .flex-container {
+  .info {
+    color: #75767C;
+    margin-bottom: 0 !important;
+  }
+
+  .info-container {
+    @media #{$mat-gt-xmd} {
+      width: 50%;
+    }
+  }
+
+  a {
+    width: max-content;
+  }
+
+  .version {
+    font-size: 20px;
+    line-height: 24px;
+    color: rgba(0,0,0,0.76);
+  }
+
+  .guides-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
     align-items: center;
 
-    .flex-item {
+    .guide {
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       gap: 16px;
-      height: 200px;
-      width: 200px;
+      height: 185px;
+      width: 185px;
       margin: 10px;
-      border: 1px solid #ddd;
       cursor: pointer;
       border-radius: 8px;
+      background: rgba(0,0,0,0.03);
 
       span {
+        font-size: 14px;
         color: rgba(0, 0, 0, 0.54);
       }
 
       img {
-        max-width: 50px;
-        max-height: 50px;
+        max-width: 64px;
+        max-height: 64px;
         object-fit: cover;
       }
 
-      section {
-        text-align: center;
+      .doc-title{
+        font-weight: 500;
+        color: rgba(0,0,0,0.76);
+      }
+
+      &:hover {
+        background: rgba(0,0,0,0.06);
+      }
+
+      &:active {
+        background: rgba(0,0,0,0.1);
       }
     }
-  }
-
-  @media #{$mat-md} {
-    width: 80%;
-  }
-
-  @media #{$mat-gt-md} {
-    width: 60%;
   }
 
   ::ng-deep{

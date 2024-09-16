@@ -21,6 +21,7 @@ import { DOCUMENT } from '@angular/common';
 import { WINDOW } from '@core/services/window.service';
 import { Tokenizer, marked } from 'marked';
 import { Clipboard } from '@angular/cdk/clipboard';
+import { ConnectivitySettings, defaultConnectivitySettings } from '@shared/models/settings.models';
 
 const copyCodeBlock = '{:copy-code}';
 const codeStyleRegex = '^{:code-style="(.*)"}\n';
@@ -207,11 +208,31 @@ function processCode(code: string): CodeContext {
     code
   };
   if (context.code.endsWith(copyCodeBlock)) {
-    if (code.includes('{:hostname}')) {
-      // @ts-ignore
-      context.code = context.code.replace('{:hostname}', window.tbmqSettings?.mqttHost || window.location.hostname);
-      // @ts-ignore
-      context.code = context.code.replace('{:port}', window.tbmqSettings?.mqttPort || 1883);
+    // @ts-ignore
+    const connectivitySettings: ConnectivitySettings = window.tbmqSettings || defaultConnectivitySettings;
+    if (code.includes('{:mqttHost}')) {
+      context.code = context.code.replace('{:mqttHost}', connectivitySettings.mqtt.host);
+    }
+    if (code.includes('{:mqttPort}')) {
+      context.code = context.code.replace('{:mqttPort}', connectivitySettings.mqtt.port.toString());
+    }
+    if (code.includes('{:mqttsHost}')) {
+      context.code = context.code.replace('{:mqttsHost}', connectivitySettings.mqtts.host);
+    }
+    if (code.includes('{:mqttsPort}')) {
+      context.code = context.code.replace('{:mqttsPort}', connectivitySettings.mqtts.port.toString());
+    }
+    if (code.includes('{:wsHost}')) {
+      context.code = context.code.replace('{:wsHost}', connectivitySettings.ws.host);
+    }
+    if (code.includes('{:wsPort}')) {
+      context.code = context.code.replace('{:wsPort}', connectivitySettings.ws.port.toString());
+    }
+    if (code.includes('{:wssHost}')) {
+      context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.host);
+    }
+    if (code.includes('{:wssHost}')) {
+      context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.port.toString());
     }
     context.code = context.code.substring(0, context.code.length - copyCodeBlock.length);
     context.copyCode = true;
