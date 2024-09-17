@@ -75,7 +75,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   constructor(public fb: FormBuilder,
               private cd: ChangeDetectorRef) {
     this.credentialsMqttFormGroup = this.fb.group({
-      clientId: [clientIdRandom()],
+      clientId: [null],
       userName: [null],
       password: [null],
       authRules: this.fb.group({
