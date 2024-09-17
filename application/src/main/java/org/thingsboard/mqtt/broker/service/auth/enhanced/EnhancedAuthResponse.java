@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,14 +27,30 @@ import java.util.List;
 @Getter
 @Builder
 @AllArgsConstructor
-public class AuthResponse {
+public class EnhancedAuthResponse {
 
     private final boolean success;
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
+    private final MqttConnectReturnCode failureReasonCode;
 
-    public static AuthResponse failure() {
-        return AuthResponse.builder().success(false).build();
+    public static EnhancedAuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+        return EnhancedAuthResponse.builder()
+                .success(true)
+                .clientType(clientType)
+                .authRulePatterns(authRulePatterns)
+                .build();
+    }
+
+    public static EnhancedAuthResponse failure() {
+        return failure(MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR);
+    }
+
+    public static EnhancedAuthResponse failure(MqttConnectReturnCode failureReturnCode) {
+        return EnhancedAuthResponse.builder()
+                .success(false)
+                .failureReasonCode(failureReturnCode)
+                .build();
     }
 
 }

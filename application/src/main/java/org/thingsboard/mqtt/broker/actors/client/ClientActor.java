@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
 import org.thingsboard.mqtt.broker.actors.TbActorException;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionDependentMsg;
@@ -32,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ClearSessionMs
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.ConnectionRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.RemoveApplicationTopicRequestMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
@@ -166,6 +168,22 @@ public class ClientActor extends ContextAwareActor {
 
                     case PUBREC_RESPONSE_MSG:
                         processPubRecResponseMsg((PubRecResponseMsg) msg);
+                        break;
+
+                    case ENHANCED_AUTH_INIT_MSG:
+                        actorProcessor.onEnhancedAuthInit(state, (EnhancedAuthInitMsg) msg);
+                        break;
+                    case MQTT_AUTH_MSG:
+                        MqttAuthMsg authMsg = (MqttAuthMsg) msg;
+                        switch (authMsg.getReasonCode()) {
+                            case CONTINUE_AUTHENTICATION -> actorProcessor.onEnhancedAuthContinue(state, authMsg);
+                            case REAUTHENTICATE -> actorProcessor.onEnhancedReAuth(state, authMsg);
+                            default -> {
+                                log.warn("[{}][{}] Received unexpected auth reason code - {}",
+                                        state.getClientId(), state.getCurrentSessionId(), authMsg.getReasonCode());
+                                success = false;
+                            }
+                        }
                         break;
                     default:
                         success = false;

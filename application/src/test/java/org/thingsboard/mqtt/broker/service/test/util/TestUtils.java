@@ -22,11 +22,16 @@ import org.eclipse.paho.mqttv5.common.MqttException;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
 import java.util.List;
 
@@ -90,6 +95,22 @@ public class TestUtils {
     public static MqttClientCredentials createDeviceClientCredentialsWithPubSubAuth(String clientId, String username, String password,
                                                                                     PubSubAuthorizationRules authorizationRules) {
         return newClientCredentials(new BasicMqttCredentials(clientId, username, password, authorizationRules), ClientType.DEVICE);
+    }
+
+    public static MqttClientCredentials updateScramDeviceClientCredentials(MqttClientCredentials mqttClientCredentials, String username, String password, ScramAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+        ScramMqttCredentials scramMqttCredentials = new ScramMqttCredentials(username, password, null, null, null, algorithm, PubSubAuthorizationRules.newInstance(ALLOW_ALL_LIST));
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
+        return mqttClientCredentials;
+    }
+
+    public static MqttClientCredentials createScramDeviceClientCredentials(String username, String password, ScramAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+        ScramMqttCredentials scramMqttCredentials = new ScramMqttCredentials(username, password, null, null, null, algorithm, PubSubAuthorizationRules.newInstance(ALLOW_ALL_LIST));
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setClientType(ClientType.DEVICE);
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.SCRAM);
+        mqttClientCredentials.setName("credentials");
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
+        return mqttClientCredentials;
     }
 
     private static MqttClientCredentials newClientCredentials(BasicMqttCredentials basicMqttCredentials, ClientType clientType) {

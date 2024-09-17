@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 public enum SessionState {
     INITIALIZED,
+    ENHANCED_AUTH_STARTED,
     CONNECTING,
     CONNECTED,
     DISCONNECTING,

@@ -24,9 +24,11 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
@@ -52,6 +54,27 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
             clientActorRef = createRootActor(clientId, isClientIdGenerated);
         }
         clientActorRef.tellWithHighPriority(sessionInitMsg);
+    }
+
+    @Override
+    public void initEnhancedAuth(String clientId, boolean isClientIdGenerated, EnhancedAuthInitMsg enhancedAuthInitMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            clientActorRef = createRootActor(clientId, isClientIdGenerated);
+        }
+        clientActorRef.tellWithHighPriority(enhancedAuthInitMsg);
+    }
+
+    @Override
+    public void processMqttMsg(String clientId, MqttAuthMsg mqttAuthMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Cannot find client actor for continue auth, sessionId - {}.", clientId, mqttAuthMsg.getSessionId());
+            }
+        } else {
+            clientActorRef.tellWithHighPriority(mqttAuthMsg);
+        }
     }
 
     @Override
