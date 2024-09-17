@@ -1,0 +1,126 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="credentialsMqttFormGroup">
+  <fieldset class="fields-group">
+    <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
+    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-scram' | translate }}"></div>
+    <div fxLayout="column">
+      <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
+        <mat-form-field fxFlex class="mat-block">
+          <mat-label translate>mqtt-client-credentials.username</mat-label>
+          <input matInput formControlName="userName" name="user-name">
+          <tb-copy-button #copyUsernameBtn
+                          (click)="onClickTbCopyButton('userName')"
+                          [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
+                          [copyText]="credentialsMqttFormGroup.get('userName').value">
+          </tb-copy-button>
+          <button mat-icon-button matSuffix
+                  [matTooltip]="'action.regenerate' | translate"
+                  matTooltipPosition="above"
+                  (click)="regenerate('userName')">
+            <mat-icon>
+              repeat
+            </mat-icon>
+          </button>
+          <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
+            {{ 'mqtt-client-credentials.user-name-required' | translate }}
+          </mat-error>
+        </mat-form-field>
+        <mat-form-field fxFlex class="mat-block" *ngIf="!entity?.id">
+          <mat-label translate>mqtt-client-credentials.password</mat-label>
+          <input matInput formControlName="password"
+                 autocomplete="new-password" name="new-password"
+                 type="password">
+          <tb-toggle-password matSuffix></tb-toggle-password>
+          <mat-error *ngIf="credentialsMqttFormGroup.get('password').hasError('required')">
+            {{ 'mqtt-client-credentials.password-required' | translate }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field fxFlex class="mat-block">
+        <mat-label translate>mqtt-client-credentials.select-sha</mat-label>
+        <mat-select formControlName="algorithm">
+          <mat-option *ngFor="let sha of shaTypes" [value]="sha">
+            <span>{{ shaTypeTranslations.get(sha) | translate }}</span>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </fieldset>
+  <mat-expansion-panel [expanded]="true">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <div translate>mqtt-client-credentials.authorization</div>
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+    <section>
+      <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
+      <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+    </section>
+    <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
+      <mat-form-field class="mat-block">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+        <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
+          <mat-chip-row
+            *ngFor="let rule of pubRulesSet" [value]="rule"
+            [editable]="!disabled"
+            [removable]="!disabled"
+            (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+            {{ rule }}
+            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-chip-row>
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputFor]="chipListPub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+        </mat-chip-grid>
+        <mat-icon [fxShow]="!pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+          warning
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block">
+        <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+        <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
+          <mat-chip-row
+            *ngFor="let rule of subRulesSet" [value]="rule"
+            [editable]="!disabled"
+            [removable]="!disabled"
+            (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+            {{ rule }}
+            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-chip-row>
+          <input matInput type="text"
+                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                 matChipInputAddOnBlur
+                 [matChipInputFor]="chipListSub"
+                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+        </mat-chip-grid>
+        <mat-icon [fxShow]="!subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+          warning
+        </mat-icon>
+      </mat-form-field>
+    </div>
+  </mat-expansion-panel>
+  <div fxLayout="row" style="padding-bottom: 16px;">
+  </div>
+</section>
