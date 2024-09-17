@@ -13,10 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security;
+package org.thingsboard.mqtt.broker.actors.client.messages.mqtt;
 
-public enum ClientCredentialsType {
-    MQTT_BASIC,
-    SSL,
-    SCRAM
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+
+public interface EnhancedAuthMsg extends TbActorMsg {
+
+    String getAuthMethod();
+
+    byte[] getAuthData();
 }

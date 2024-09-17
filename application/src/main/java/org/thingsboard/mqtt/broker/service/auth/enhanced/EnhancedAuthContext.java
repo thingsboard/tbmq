@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 
-@Getter
 @Builder
+@Getter
 @AllArgsConstructor
-public class AuthResponse {
+public class EnhancedAuthContext {
 
-    private final boolean success;
-    private final ClientType clientType;
-    private final List<AuthRulePatterns> authRulePatterns;
+    private final String clientId;
+    private final String authMethod;
+    private final byte[] authData;
 
-    public static AuthResponse failure() {
-        return AuthResponse.builder().success(false).build();
+    @Override
+    public String toString() {
+        return "EnhancedAuthContext{" +
+               "clientId='" + clientId + '\'' +
+               ", authMethod='" + authMethod + '\'' +
+               ", password=" + (authData == null ? "null" : new String(authData, StandardCharsets.UTF_8)) +
+               '}';
     }
 
 }

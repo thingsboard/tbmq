@@ -19,11 +19,15 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttReasonCodeAndPropertiesVariableHeader;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
@@ -36,12 +40,14 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -54,6 +60,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.session.SessionContext;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -99,13 +106,12 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         }
         clientSessionCtx.setChannel(ctx);
         try {
-            if (!(msg instanceof MqttMessage)) {
+            if (!(msg instanceof MqttMessage message)) {
                 log.warn("[{}][{}] Received unknown message", clientId, sessionId);
                 disconnect(new DisconnectReason(DisconnectReasonType.ON_PROTOCOL_ERROR, "Received unknown message"));
                 return;
             }
 
-            MqttMessage message = (MqttMessage) msg;
             if (!message.decoderResult().isSuccess()) {
                 log.warn("[{}][{}] Message decoding failed: {}", clientId, sessionId, message.decoderResult().cause().getMessage());
                 if (message.decoderResult().cause() instanceof TooLongFrameException) {
@@ -129,10 +135,32 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
 
         MqttMessageType msgType = msg.fixedHeader().messageType();
         if (StringUtils.isEmpty(clientId)) {
-            if (msgType == MqttMessageType.CONNECT) {
-                initSession((MqttConnectMessage) msg);
-            } else {
+            if (msgType != MqttMessageType.CONNECT) {
                 throw new ProtocolViolationException("Received " + msgType + " while session wasn't initialized");
+            }
+            var connectMessage = (MqttConnectMessage) msg;
+            MqttProperties properties = connectMessage.variableHeader().properties();
+            String authMethod = MqttPropertiesUtil.getAuthenticationMethodValue(properties);
+            if (authMethod == null) {
+                initSession(connectMessage);
+            } else {
+                var scramAlgorithmOpt = ScramAlgorithm.fromMqttName(authMethod);
+                if (scramAlgorithmOpt.isEmpty()) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}][{}] Unsupported authentication method: {}!", address, sessionId, authMethod);
+                    }
+                    connAckAndCloseCtx(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD);
+                    return;
+                }
+                byte[] authData = MqttPropertiesUtil.getAuthenticationDataValue(properties);
+                if (authData == null) {
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}][{}] No authentication data found!", address, sessionId);
+                    }
+                    connAckAndCloseCtx(MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR);
+                    return;
+                }
+                initEnhancedAuth(connectMessage, authMethod, authData);
             }
         }
 
@@ -143,8 +171,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 disconnect(NettyMqttConverter.createMqttDisconnectMsg(clientSessionCtx, msg));
                 break;
             case CONNECT:
-                reportTraffic(BrokerConstants.TLS_CONNECT_BYTES_OVERHEAD);
-                clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
+                if (clientSessionCtx.isDefaultAuth()) {
+                    reportTraffic(BrokerConstants.TLS_CONNECT_BYTES_OVERHEAD);
+                    clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
+                }
                 break;
             case SUBSCRIBE:
                 MqttSubscribeMsg mqttSubscribeMsg = NettyMqttConverter.createMqttSubscribeMsg(sessionId, (MqttSubscribeMessage) msg);
@@ -175,7 +205,16 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
             case PINGREQ:
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPingMsg(sessionId));
                 break;
+            case AUTH:
+                clientMqttActorManager.processMqttMsg(clientId,
+                        NettyMqttConverter.createMqttAuthMsg(sessionId, (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader()));
         }
+    }
+
+    private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
+        var mqttConnAckMessage = MqttMessageBuilders.connAck().returnCode(reasonCode).build();
+        clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
+        clientSessionCtx.getChannel().close();
     }
 
     private void processPublish(MqttMessage msg) {
@@ -218,14 +257,28 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void initSession(MqttConnectMessage connectMessage) {
-        clientId = connectMessage.payload().clientIdentifier();
-        boolean isClientIdGenerated = StringUtils.isEmpty(clientId);
-        clientId = isClientIdGenerated ? generateClientId() : clientId;
+        boolean generated = getClientIdOrElseGenerate(connectMessage);
         clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
-        clientMqttActorManager.initSession(clientId, isClientIdGenerated, new SessionInitMsg(
+        clientMqttActorManager.initSession(clientId, generated, new SessionInitMsg(
                 clientSessionCtx,
                 connectMessage.payload().userName(),
                 connectMessage.payload().passwordInBytes()));
+    }
+
+    private void initEnhancedAuth(MqttConnectMessage connectMessage, String authMethod, byte[] authData) {
+        boolean generated = getClientIdOrElseGenerate(connectMessage);
+        clientSessionCtx.setMqttVersion(getMqttVersion(connectMessage));
+        clientSessionCtx.setConnectMsgFromEnhancedAuth(connectMessage);
+        clientSessionCtx.setAuthMethod(authMethod);
+        clientMqttActorManager.initEnhancedAuth(clientId, generated, new EnhancedAuthInitMsg(
+                clientSessionCtx, authMethod, authData));
+    }
+
+    private boolean getClientIdOrElseGenerate(MqttConnectMessage connectMessage) {
+        clientId = connectMessage.payload().clientIdentifier();
+        boolean generated = StringUtils.isEmpty(clientId);
+        clientId = generated ? generateClientId() : clientId;
+        return generated;
     }
 
     private String generateClientId() {

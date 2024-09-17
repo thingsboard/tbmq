@@ -16,9 +16,11 @@
 package org.thingsboard.mqtt.broker.session;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
@@ -26,6 +28,10 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 public interface ClientMqttActorManager {
 
     void initSession(String clientId, boolean isClientIdGenerated, SessionInitMsg sessionInitMsg);
+
+    void initEnhancedAuth(String clientId, boolean isClientIdGenerated, EnhancedAuthInitMsg enhancedAuthInitMsg);
+
+    void processMqttMsg(String clientId, MqttAuthMsg mqttAuthMsg);
 
     void disconnect(String clientId, MqttDisconnectMsg disconnectMsg);
 

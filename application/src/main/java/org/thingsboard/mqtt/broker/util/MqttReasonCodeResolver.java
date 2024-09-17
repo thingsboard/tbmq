@@ -120,6 +120,7 @@ public final class MqttReasonCodeResolver {
             case ON_PACKET_TOO_LARGE -> MqttReasonCodes.Disconnect.PACKET_TOO_LARGE;
             case ON_RECEIVE_MAXIMUM_EXCEEDED -> MqttReasonCodes.Disconnect.RECEIVE_MAXIMUM_EXCEEDED;
             case ON_ADMINISTRATIVE_ACTION -> MqttReasonCodes.Disconnect.ADMINISTRATIVE_ACTION;
+            case NOT_AUTHORIZED -> MqttReasonCodes.Disconnect.NOT_AUTHORIZED;
             default -> MqttReasonCodes.Disconnect.UNSPECIFIED_ERROR;
         };
     }

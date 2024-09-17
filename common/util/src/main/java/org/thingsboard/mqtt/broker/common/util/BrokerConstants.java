@@ -133,6 +133,9 @@ public class BrokerConstants {
     public static final int SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID = 41;
     public static final int SHARED_SUBSCRIPTION_AVAILABLE_PROP_ID = 42;
 
+    public static final int AUTHENTICATION_METHOD_PROP_ID = 21;
+    public static final int AUTHENTICATION_DATA_PROP_ID = 22;
+
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
