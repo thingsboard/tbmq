@@ -143,9 +143,13 @@ export class ClientCredentialsTableConfigResolver implements Resolve<EntityTable
   }
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<ClientCredentials>> {
-    this.config.componentsData = {
-      clientCredentialsFilterConfig: {},
-    };
+    this.config.componentsData = {};
+    this.config.componentsData.clientCredentialsFilterConfig = {};
+    for (const key of Object.keys(route.queryParams)) {
+      if (route.queryParams[key] && route.queryParams[key].length) {
+        this.config.componentsData.clientCredentialsFilterConfig[key] = route.queryParams[key];
+      }
+    }
     return of(this.config);
   }
 
