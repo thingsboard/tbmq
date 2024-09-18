@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.client.unauthorized;
 
-import lombok.Builder;
-import lombok.Data;
+import org.thingsboard.mqtt.broker.dao.model.UnauthorizedClientEntity;
 
-import java.util.Set;
+import java.util.List;
 
-@Data
-@Builder(toBuilder = true)
-public class GenericClientSessionCtx {
+public interface InsertUnauthorizedClientRepository {
 
-    private String clientId;
-    private long lastUpdatedTime;
-    private Set<Integer> qos2PublishPacketIds;
+    void saveOrUpdate(List<UnauthorizedClientEntity> unauthorizedClients);
 
 }

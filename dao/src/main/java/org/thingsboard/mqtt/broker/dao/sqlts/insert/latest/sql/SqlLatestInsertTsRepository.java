@@ -21,7 +21,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.latest.TsKvLatestEntity;
-import org.thingsboard.mqtt.broker.dao.sqlts.insert.AbstractInsertRepository;
+import org.thingsboard.mqtt.broker.dao.sqlts.insert.AbstractInsertDeleteRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.insert.latest.InsertLatestTsRepository;
 
 import java.sql.PreparedStatement;
@@ -32,7 +32,7 @@ import java.util.List;
 
 @Repository
 @Transactional
-public class SqlLatestInsertTsRepository extends AbstractInsertRepository implements InsertLatestTsRepository {
+public class SqlLatestInsertTsRepository extends AbstractInsertDeleteRepository implements InsertLatestTsRepository {
 
     private static final String BATCH_UPDATE =
             "UPDATE ts_kv_latest SET ts = ?, long_v = ? WHERE entity_id = ? AND key = ?";

@@ -51,6 +51,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
     @Override
     public void init() {
         String queueName = params.getQueueName();
+        stats.updateQueueSize(queue::size);
         this.executor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("sql-queue-" + id + "-" + queueName.toLowerCase()));
         executor.execute(() -> processElementsQueue(queueName));
     }

@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class GenericClientSessionCtxDaoImpl extends JpaAbstractDaoListeningExecutorService implements GenericClientSessionCtxDao {
+
     private final GenericClientSessionCtxRepository genericClientSessionCtxRepository;
     private final InsertGenericClientSessionCtxRepository insertGenericClientSessionCtxRepository;
 

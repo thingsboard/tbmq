@@ -18,14 +18,16 @@ package org.thingsboard.mqtt.broker.common.data;
 import lombok.Builder;
 import lombok.Data;
 
-import java.util.Set;
-
 @Data
 @Builder(toBuilder = true)
-public class GenericClientSessionCtx {
+public class UnauthorizedClient {
 
     private String clientId;
-    private long lastUpdatedTime;
-    private Set<Integer> qos2PublishPacketIds;
+    private String ipAddress;
+    private Long ts;
+    private String username;
+    private boolean passwordProvided;
+    private boolean tlsUsed;
+    private String reason;
 
 }

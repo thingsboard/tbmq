@@ -48,4 +48,5 @@ public class StatsConstantNames {
     public static final String CLEARED_RETAINED_MSGS = "clearedRetainedMsgs";
 
     public static final String STATS_NAME_TAG = "statsName";
+    public static final String QUEUE_SIZE = "queueSize";
 }

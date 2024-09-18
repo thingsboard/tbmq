@@ -13,19 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.common.data.client.unauthorized;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-import java.util.Set;
+import java.util.List;
 
 @Data
-@Builder(toBuilder = true)
-public class GenericClientSessionCtx {
+@Builder
+@AllArgsConstructor
+public class UnauthorizedClientQuery {
 
+    private TimePageLink pageLink;
     private String clientId;
-    private long lastUpdatedTime;
-    private Set<Integer> qos2PublishPacketIds;
+    private String ipAddress;
+    private String username;
+    private String reason;
+    private List<Boolean> passwordProvidedList;
+    private List<Boolean> tlsUsedList;
 
 }

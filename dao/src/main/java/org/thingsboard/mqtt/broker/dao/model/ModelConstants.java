@@ -27,6 +27,7 @@ public class ModelConstants {
     public static final String CREATED_TIME_PROPERTY = "created_time";
     public static final String ADDITIONAL_INFO_PROPERTY = "additional_info";
     public static final String ENTITY_ID_COLUMN = "entity_id";
+    public static final String CLIENT_ID_COLUMN = "client_id";
 
     /**
      * Timeseries constants.
@@ -63,7 +64,6 @@ public class ModelConstants {
     public static final String USER_CREDENTIALS_ACTIVATE_TOKEN_PROPERTY = "activate_token";
     public static final String USER_CREDENTIALS_RESET_TOKEN_PROPERTY = "reset_token";
 
-
     /**
      * mqtt_client_credentials constants.
      */
@@ -76,30 +76,10 @@ public class ModelConstants {
     public static final String SEARCH_TEXT_PROPERTY = "search_text";
 
     /**
-     * device_publish_msg constants.
-     */
-    public static final String DEVICE_PUBLISH_MSG_COLUMN_FAMILY_NAME = "device_publish_msg";
-    public static final String DEVICE_PUBLISH_MSG_CLIENT_ID_PROPERTY = "client_id";
-    public static final String DEVICE_PUBLISH_MSG_TIME_PROPERTY = "time";
-    public static final String DEVICE_PUBLISH_MSG_TOPIC_PROPERTY = "topic";
-    public static final String DEVICE_PUBLISH_MSG_QOS_PROPERTY = "qos";
-    public static final String DEVICE_PUBLISH_MSG_PAYLOAD_PROPERTY = "payload";
-    public static final String DEVICE_PUBLISH_MSG_SERIAL_NUMBER_PROPERTY = "serial_number";
-    public static final String DEVICE_PUBLISH_MSG_PACKET_ID_PROPERTY = "packet_id";
-    public static final String DEVICE_PUBLISH_MSG_PACKET_TYPE_PROPERTY = "packet_type";
-    public static final String DEVICE_PUBLISH_MSG_USER_PROPERTIES_PROPERTY = "user_properties";
-    public static final String DEVICE_PUBLISH_MSG_RETAIN_PROPERTY = "retain";
-    public static final String DEVICE_PUBLISH_MSG_EXPIRY_INTERVAL_PROPERTY = "msg_expiry_interval";
-    public static final String DEVICE_PUBLISH_MSG_PAYLOAD_FORMAT_INDICATOR_PROPERTY = "payload_format_indicator";
-    public static final String DEVICE_PUBLISH_MSG_CONTENT_TYPE_PROPERTY = "content_type";
-    public static final String DEVICE_PUBLISH_MSG_RESPONSE_TOPIC_PROPERTY = "response_topic";
-    public static final String DEVICE_PUBLISH_MSG_CORRELATION_DATA_PROPERTY = "correlation_data";
-
-    /**
      * application_shared_subscription constants.
      */
     public static final String APPLICATION_SHARED_SUBSCRIPTION_COLUMN_FAMILY_NAME = "application_shared_subscription";
-    public static final String APPLICATION_SHARED_SUBSCRIPTION_TOPIC_PROPERTY = DEVICE_PUBLISH_MSG_TOPIC_PROPERTY;
+    public static final String APPLICATION_SHARED_SUBSCRIPTION_TOPIC_PROPERTY = "topic";
     public static final String APPLICATION_SHARED_SUBSCRIPTION_PARTITIONS_PROPERTY = "partitions";
     public static final String APPLICATION_SHARED_SUBSCRIPTION_NAME_PROPERTY = MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY;
 
@@ -122,7 +102,7 @@ public class ModelConstants {
      * device_session_ctx constants.
      */
     public static final String DEVICE_SESSION_CTX_COLUMN_FAMILY_NAME = "device_session_ctx";
-    public static final String DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String DEVICE_SESSION_CTX_CLIENT_ID_PROPERTY = CLIENT_ID_COLUMN;
     public static final String DEVICE_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String DEVICE_SESSION_CTX_LAST_SERIAL_NUMBER_PROPERTY = "last_serial_number";
     public static final String DEVICE_SESSION_CTX_LAST_PACKET_ID_PROPERTY = "last_packet_id";
@@ -131,7 +111,7 @@ public class ModelConstants {
      * application_session_ctx constants.
      */
     public static final String APPLICATION_SESSION_CTX_COLUMN_FAMILY_NAME = "application_session_ctx";
-    public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String APPLICATION_SESSION_CTX_CLIENT_ID_PROPERTY = CLIENT_ID_COLUMN;
     public static final String APPLICATION_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY = "publish_msg_infos";
     public static final String APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY = "pubrel_msg_infos";
@@ -140,8 +120,19 @@ public class ModelConstants {
      * generic_client_session_ctx constants.
      */
     public static final String GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME = "generic_client_session_ctx";
-    public static final String GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY = "client_id";
+    public static final String GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY = CLIENT_ID_COLUMN;
     public static final String GENERIC_CLIENT_SESSION_CTX_LAST_UPDATED_PROPERTY = "last_updated_time";
     public static final String GENERIC_CLIENT_SESSION_CTX_QOS2_PUBLISH_PACKET_IDS_PROPERTY = "qos2_publish_packet_ids";
 
+    /**
+     * unauthorized_client constants.
+     */
+    public static final String UNAUTHORIZED_CLIENT_COLUMN_FAMILY_NAME = "unauthorized_client";
+    public static final String UNAUTHORIZED_CLIENT_CLIENT_ID_PROPERTY = CLIENT_ID_COLUMN;
+    public static final String UNAUTHORIZED_CLIENT_IP_ADDRESS_PROPERTY = "ip_address";
+    public static final String UNAUTHORIZED_CLIENT_TS_PROPERTY = TS_COLUMN;
+    public static final String UNAUTHORIZED_CLIENT_USERNAME_PROPERTY = "username";
+    public static final String UNAUTHORIZED_CLIENT_PASSWORD_PROVIDED_PROPERTY = "password_provided";
+    public static final String UNAUTHORIZED_CLIENT_TLS_USED_PROPERTY = "tls_used";
+    public static final String UNAUTHORIZED_CLIENT_REASON_PROPERTY = "reason";
 }

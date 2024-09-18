@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.client.unauthorized;
 
-import lombok.Builder;
 import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-import java.util.Set;
-
+@Component
+@ConfigurationProperties(prefix = "sql.unauthorized-client.insert")
 @Data
-@Builder(toBuilder = true)
-public class GenericClientSessionCtx {
+public class InsertUnauthorizedClientQueueConfiguration {
 
-    private String clientId;
-    private long lastUpdatedTime;
-    private Set<Integer> qos2PublishPacketIds;
-
+    private int batchThreads;
+    private int batchSize;
+    private int batchMaxDelay;
 }

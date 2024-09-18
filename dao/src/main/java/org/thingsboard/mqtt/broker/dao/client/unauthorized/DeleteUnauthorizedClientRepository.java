@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.sqlts.insert;
+package org.thingsboard.mqtt.broker.dao.client.unauthorized;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.thingsboard.mqtt.broker.dao.model.UnauthorizedClientEntity;
 
-@Repository
-public abstract class AbstractInsertRepository {
+import java.util.List;
 
-    @Autowired
-    protected JdbcTemplate jdbcTemplate;
+public interface DeleteUnauthorizedClientRepository {
 
-    @Autowired
-    protected TransactionTemplate transactionTemplate;
+    void remove(List<UnauthorizedClientEntity> unauthorizedClients);
+
 }

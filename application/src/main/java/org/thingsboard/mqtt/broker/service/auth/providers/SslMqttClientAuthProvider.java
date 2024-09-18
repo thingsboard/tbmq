@@ -60,7 +60,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
             log.error("[{}] Could not authenticate client with SSL credentials since SSL handler is not constructed!", authContext);
-            return new AuthResponse(false, null, null);
+            return new AuthResponse(false, null, null, "ssl bad 1");
         }
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
@@ -68,7 +68,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (clientTypeSslMqttCredentials == null) {
             log.error("Failed to authenticate client with SSL credentials! No SSL credentials were found!");
-            return new AuthResponse(false, null, null);
+            return new AuthResponse(false, null, null, "ssl bad 2");
         }
         putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
         if (log.isTraceEnabled()) {

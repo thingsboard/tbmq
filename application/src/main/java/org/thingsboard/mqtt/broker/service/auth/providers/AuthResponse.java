@@ -31,5 +31,9 @@ public class AuthResponse {
     private final boolean success;
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
+    private final String reason;
 
+    public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+        this(success, clientType, authRulePatterns, null);
+    }
 }

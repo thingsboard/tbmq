@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data;
+package org.thingsboard.mqtt.broker.dao.sqlts.insert;
 
-import lombok.Builder;
-import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.Set;
+@Repository
+public abstract class AbstractInsertDeleteRepository {
 
-@Data
-@Builder(toBuilder = true)
-public class GenericClientSessionCtx {
+    @Autowired
+    protected JdbcTemplate jdbcTemplate;
 
-    private String clientId;
-    private long lastUpdatedTime;
-    private Set<Integer> qos2PublishPacketIds;
-
+    @Autowired
+    protected TransactionTemplate transactionTemplate;
 }

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -57,6 +58,7 @@ public class ActorProcessorImplTest {
     DisconnectService disconnectService;
     AuthenticationService authenticationService;
     MqttMessageGenerator mqttMessageGenerator;
+    UnauthorizedClientService unauthorizedClientService;
 
     ClientActorState clientActorState;
 
@@ -65,7 +67,8 @@ public class ActorProcessorImplTest {
         disconnectService = mock(DisconnectService.class);
         authenticationService = mock(AuthenticationService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
-        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, mqttMessageGenerator));
+        unauthorizedClientService = mock(UnauthorizedClientService.class);
+        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, mqttMessageGenerator, unauthorizedClientService));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }
