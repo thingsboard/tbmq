@@ -139,3 +139,13 @@ CREATE TABLE IF NOT EXISTS websocket_subscription (
     CONSTRAINT fk_websocket_connection_id
     FOREIGN KEY (websocket_connection_id) REFERENCES websocket_connection (id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS unauthorized_client (
+    client_id varchar(255) NOT NULL CONSTRAINT unauthorized_clients_pkey PRIMARY KEY,
+    ip_address varchar(255) NOT NULL,
+    ts bigint NOT NULL,
+    username varchar(255),
+    password_provided boolean,
+    tls_used boolean,
+    reason varchar
+);
