@@ -47,6 +47,10 @@ public enum MsgType {
     DISCONNECT_MSG,
     CONNECTION_ACCEPTED_MSG,
 
+    // Client Enhanced Authentication Msg Types
+    ENHANCED_AUTH_INIT_MSG,
+    MQTT_AUTH_MSG,
+
     // Client Actor Management Msg Types
     STOP_ACTOR_COMMAND_MSG,
 

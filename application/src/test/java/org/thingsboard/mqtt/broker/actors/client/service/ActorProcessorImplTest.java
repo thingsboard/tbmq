@@ -28,9 +28,11 @@ import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
+import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -42,6 +44,7 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -56,7 +59,9 @@ public class ActorProcessorImplTest {
     ActorProcessorImpl actorProcessor;
     DisconnectService disconnectService;
     AuthenticationService authenticationService;
+    EnhancedAuthenticationService enhancedAuthenticationService;
     MqttMessageGenerator mqttMessageGenerator;
+    ClientMqttActorManager clientMqttActorManager;
 
     ClientActorState clientActorState;
 
@@ -65,7 +70,7 @@ public class ActorProcessorImplTest {
         disconnectService = mock(DisconnectService.class);
         authenticationService = mock(AuthenticationService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
-        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, mqttMessageGenerator));
+        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, enhancedAuthenticationService, mqttMessageGenerator, clientMqttActorManager));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }
@@ -133,14 +138,14 @@ public class ActorProcessorImplTest {
         AuthResponse authResponse = getAuthResponse(false);
         doReturn(authResponse).when(authenticationService).authenticate(any());
 
-        doNothing().when(actorProcessor).sendConnectionRefusedMsgAndCloseChannel(any());
+        doNothing().when(actorProcessor).sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(any());
 
         SessionInitMsg sessionInitMsg = getSessionInitMsg(getClientSessionCtx());
         actorProcessor.onInit(clientActorState, sessionInitMsg);
 
         assertEquals(SessionState.DISCONNECTED, clientActorState.getCurrentSessionState());
-        verify(actorProcessor, never()).updateClientActorState(any(), any());
-        verify(actorProcessor, times(1)).sendConnectionRefusedMsgAndCloseChannel(any());
+        verify(actorProcessor, never()).updateClientActorState(any(), eq(SessionState.INITIALIZED), any());
+        verify(actorProcessor, times(1)).sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(any());
     }
 
     private AuthResponse getAuthResponse(boolean success) {

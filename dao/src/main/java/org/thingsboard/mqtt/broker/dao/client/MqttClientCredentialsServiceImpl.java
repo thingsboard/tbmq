@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
@@ -70,6 +71,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         switch (mqttClientCredentials.getCredentialsType()) {
             case MQTT_BASIC -> preprocessBasicMqttCredentials(mqttClientCredentials);
             case SSL -> preprocessSslMqttCredentials(mqttClientCredentials);
+            case SCRAM -> preprocessScramMqttCredentials(mqttClientCredentials);
             default -> throw new DataValidationException("Unknown credentials type!");
         }
         if (mqttClientCredentials.getClientType() == null) {
@@ -283,6 +285,21 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
         mqttClientCredentials.setCredentialsId(credentialsId);
+    }
+
+
+    private void preprocessScramMqttCredentials(MqttClientCredentials mqttClientCredentials) {
+        ScramMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, ScramMqttCredentials.class);
+        if (StringUtils.isEmpty(mqttCredentials.getUserName())) {
+            throw new DataValidationException("User name is empty!");
+        }
+        mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
+        PubSubAuthorizationRules authRules = mqttCredentials.getAuthRules();
+        if (authRules == null) {
+            throw new DataValidationException("AuthRules are null!");
+        }
+        compileAuthRules(authRules);
     }
 
     private void compileAuthRules(PubSubAuthorizationRules authRules) {
