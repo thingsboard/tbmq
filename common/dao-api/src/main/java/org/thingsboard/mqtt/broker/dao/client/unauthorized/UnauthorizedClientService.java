@@ -31,6 +31,8 @@ public interface UnauthorizedClientService {
 
     void deleteUnauthorizedClient(String clientId);
 
+    void deleteAllUnauthorizedClients();
+
     Optional<UnauthorizedClient> findUnauthorizedClient(String clientId);
 
     PageData<UnauthorizedClient> findUnauthorizedClients(UnauthorizedClientQuery query);

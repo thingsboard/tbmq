@@ -53,35 +53,82 @@ public class DefaultAuthenticationService implements AuthenticationService {
         }
         try {
             if (AuthStrategy.BOTH == authStrategy) {
+                String basicAuthFailureReason = null;
                 for (var authProviderType : AuthProviderType.values()) {
                     var authResponse = authenticate(authProviderType, authContext);
-                    if (authResponse != null) {
-                        return authResponse;
+
+                    if (authProviderType.equals(AuthProviderType.BASIC)) {
+                        basicAuthFailureReason = getBasicAuthFailureReason(authResponse);
+                        if (authResponse != null && authResponse.isSuccess()) {
+                            return authResponse;
+                        }
+                    } else {
+                        return authenticateBySslAuthOnBothAuthStrategy(authResponse, basicAuthFailureReason);
                     }
                 }
             } else {
-                var authResponse = authContext.getSslHandler() != null ?
-                        authenticate(AuthProviderType.X_509_CERTIFICATE_CHAIN, authContext) :
-                        authenticate(AuthProviderType.BASIC, authContext);
+                var authResponse = authenticateBySingleAuthProvider(authContext);
                 if (authResponse != null) {
                     return authResponse;
+                } else {
+                    prepareAndThrowSingleAuthException(authContext);
                 }
             }
         } catch (Exception e) {
-            log.warn("[{}] Failed to authenticate client.", authContext.getClientId(), e);
-            throw new AuthenticationException("Exception on client authentication");
+            log.warn("[{}] Failed to authenticate client", authContext.getClientId(), e);
+            String errorMsg = "Exception on client authentication: " + e.getMessage();
+            throw new AuthenticationException(errorMsg);
         }
         throw new AuthenticationException("Failed to authenticate client");
+    }
+
+    private String getBasicAuthFailureReason(AuthResponse authResponse) {
+        if (authResponse == null) {
+            return "BASIC authentication is disabled";
+        } else {
+            if (authResponse.isSuccess()) {
+                return null;
+            } else {
+                return authResponse.getReason();
+            }
+        }
+    }
+
+    private AuthResponse authenticateBySslAuthOnBothAuthStrategy(AuthResponse authResponse, String basicAuthFailureReason) throws AuthenticationException {
+        if (authResponse == null) {
+            String errorMsg = basicAuthFailureReason + ". X_509_CERTIFICATE_CHAIN authentication is disabled!";
+            throw new AuthenticationException(errorMsg);
+        } else {
+            if (authResponse.isSuccess()) {
+                return authResponse;
+            } else {
+                String errorMsg = basicAuthFailureReason + ". " + authResponse.getReason();
+                return authResponse.toBuilder().reason(errorMsg).build();
+            }
+        }
+    }
+
+    private AuthResponse authenticateBySingleAuthProvider(AuthContext authContext) throws AuthenticationException {
+        return authContext.isTlsEnabled() ?
+                authenticate(AuthProviderType.X_509_CERTIFICATE_CHAIN, authContext) :
+                authenticate(AuthProviderType.BASIC, authContext);
+    }
+
+    private void prepareAndThrowSingleAuthException(AuthContext authContext) throws AuthenticationException {
+        String providerType = getAuthProviderType(authContext);
+        String errorMsg = String.format("Failed to authenticate client, %s authentication is disabled!", providerType);
+        throw new AuthenticationException(errorMsg);
     }
 
     private AuthResponse authenticate(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
         var authProvider = authProviders.get(type);
         if (authProvider != null) {
-            var authResponse = authProvider.authenticate(authContext);
-            if (authResponse.isSuccess()) {
-                return authResponse;
-            }
+            return authProvider.authenticate(authContext);
         }
         return null;
+    }
+
+    private String getAuthProviderType(AuthContext authContext) {
+        return authContext.isTlsEnabled() ? AuthProviderType.X_509_CERTIFICATE_CHAIN.name() : AuthProviderType.BASIC.name();
     }
 }

@@ -62,4 +62,9 @@ public interface UnauthorizedClientRepository extends JpaRepository<Unauthorized
             "(:expirationTime IS NULL OR c.ts < :expirationTime)"
     )
     void cleanupUnauthorizedClients(@Param("expirationTime") Long expirationTime);
+
+    @Transactional
+    @Modifying
+    @Query(value = "TRUNCATE unauthorized_client", nativeQuery = true)
+    void deleteAll();
 }

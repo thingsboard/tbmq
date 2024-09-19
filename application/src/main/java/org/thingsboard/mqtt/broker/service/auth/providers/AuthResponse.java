@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import java.util.List;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class AuthResponse {
 

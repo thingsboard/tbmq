@@ -78,6 +78,18 @@ public class UnauthorizedClientServiceImpl implements UnauthorizedClientService 
     }
 
     @Override
+    public void deleteAllUnauthorizedClients() {
+        if (log.isTraceEnabled()) {
+            log.trace("Executing deleteAllUnauthorizedClients");
+        }
+        try {
+            unauthorizedClientDao.deleteAll();
+        } catch (Exception e) {
+            log.warn("Failed to delete all unauthorized clients.", e);
+        }
+    }
+
+    @Override
     public Optional<UnauthorizedClient> findUnauthorizedClient(String clientId) {
         if (log.isTraceEnabled()) {
             log.trace("Executing findUnauthorizedClient [{}]", clientId);

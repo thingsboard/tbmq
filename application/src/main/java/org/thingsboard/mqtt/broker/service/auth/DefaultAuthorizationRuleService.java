@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -37,15 +38,16 @@ import java.util.stream.Stream;
 
 @Service
 @Slf4j
+@Getter
 public class DefaultAuthorizationRuleService implements AuthorizationRuleService {
 
-    @Getter
     private final ConcurrentMap<String, ConcurrentMap<String, Boolean>> publishAuthMap = new ConcurrentHashMap<>();
 
     @Override
-    public List<AuthRulePatterns> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException {
+    public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {
+        SslMqttCredentials credentials = clientTypeSslMqttCredentials.getSslMqttCredentials();
         if (credentials == null) {
-            throw new AuthenticationException("Cannot parse SslMqttCredentials.");
+            throw new AuthenticationException("Cannot parse SslMqttCredentials");
         }
 
         List<AuthRulePatterns> authRulePatterns = credentials.getAuthRulesMapping().entrySet().stream()
@@ -60,8 +62,9 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                 .collect(Collectors.toList());
 
         if (authRulePatterns.isEmpty()) {
-            log.warn("[{}] Cannot find authorization rules for common name {}", clientCommonName, credentials);
-            throw new AuthenticationException("Cannot find authorization rules for common name");
+            String errorMsg = String.format("Cannot find authorization rules for common name %s from credentials %s", clientCommonName, clientTypeSslMqttCredentials.getName());
+            log.warn(errorMsg);
+            throw new AuthenticationException(errorMsg);
         }
 
         return authRulePatterns;
@@ -70,7 +73,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     @Override
     public AuthRulePatterns parseBasicAuthorizationRule(BasicMqttCredentials credentials) throws AuthenticationException {
         if (credentials == null) {
-            throw new AuthenticationException("Cannot parse BasicMqttCredentials.");
+            throw new AuthenticationException("Cannot parse BasicMqttCredentials");
         }
         return newAuthRulePatterns(credentials.getAuthRules());
     }

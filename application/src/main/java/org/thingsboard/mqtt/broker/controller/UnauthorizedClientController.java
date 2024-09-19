@@ -77,6 +77,16 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "", method = RequestMethod.DELETE)
+    public void deleteAllUnauthorizedClients() throws ThingsboardException {
+        try {
+            unauthorizedClientService.deleteAllUnauthorizedClients();
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/v2", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
     public PageData<UnauthorizedClient> getCredentialsV2(@RequestParam int pageSize,

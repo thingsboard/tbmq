@@ -36,4 +36,6 @@ public interface UnauthorizedClientDao {
     PageData<UnauthorizedClient> findAll(UnauthorizedClientQuery query);
 
     void cleanupUnauthorizedClients(long ttl);
+
+    void deleteAll();
 }

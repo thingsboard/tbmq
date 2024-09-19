@@ -131,6 +131,11 @@ public class UnauthorizedClientDaoImpl extends JpaAbstractDaoListeningExecutorSe
         unauthorizedClientRepository.cleanupUnauthorizedClients(getExpirationTime(ttl));
     }
 
+    @Override
+    public void deleteAll() {
+        unauthorizedClientRepository.deleteAll();
+    }
+
     private long getExpirationTime(long ttl) {
         return System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(ttl);
     }

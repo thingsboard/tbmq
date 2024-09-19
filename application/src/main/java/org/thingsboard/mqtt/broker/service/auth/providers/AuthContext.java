@@ -32,6 +32,10 @@ public class AuthContext {
     private final byte[] passwordBytes;
     private final SslHandler sslHandler;
 
+    public boolean isTlsEnabled() {
+        return sslHandler != null;
+    }
+
     @Override
     public String toString() {
         return "AuthContext{" +

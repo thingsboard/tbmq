@@ -187,7 +187,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Authentication failed.", authContext.getClientId(), e);
             }
-            return AuthResponse.builder().success(false).reason("something else bad").build();
+            return AuthResponse.builder().success(false).reason(e.getMessage()).build();
         }
     }
 
