@@ -86,7 +86,10 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
       authRules: this.fb.group({
         pubAuthRulePatterns: [[ANY_CHARACTERS], []],
         subAuthRulePatterns: [[ANY_CHARACTERS], []]
-      })
+      }),
+      salt: [null, []],
+      serverKey: [null, []],
+      storedKey: [null, []]
     });
     this.credentialsMqttFormGroup.valueChanges.pipe(
       takeUntil(this.destroy$)
@@ -98,6 +101,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   ngAfterViewInit() {
     this.addValueToAuthRulesSet('pubAuthRulePatterns');
     this.addValueToAuthRulesSet('subAuthRulePatterns');
+    this.clearPasswordValidators();
     this.cd.detectChanges();
   }
 
@@ -138,20 +142,15 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
           }
         }
       }
+      valueJson.password = null;
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
     }
   }
 
-  private clearRuleSets() {
-    this.pubRulesSet.clear();
-    this.subRulesSet.clear();
-  }
-
   updateView(value: ScramCredentials) {
-    delete value.salt;
-    delete value.serverKey;
-    delete value.storedKey;
-    if (!this.credentialsMqttFormGroup.get('password').value) {
+    if (this.credentialsMqttFormGroup.get('password').value?.length) {
+      value.password = this.credentialsMqttFormGroup.get('password').value
+    } else {
       delete value.password;
     }
     const formValue = JSON.stringify(value);
@@ -178,17 +177,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
     }
   }
 
-  addValueToAuthRulesSet(type: string, value: string = ANY_CHARACTERS) {
-    switch (type) {
-      case 'subAuthRulePatterns':
-        this.subRulesSet.add(value);
-        break;
-      case 'pubAuthRulePatterns':
-        this.pubRulesSet.add(value);
-        break;
-    }
-  }
-
   removeTopicRule(rule: string, type: AuthRulePatternsType) {
     switch (type) {
       case AuthRulePatternsType.PUBLISH:
@@ -198,18 +186,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
       case AuthRulePatternsType.SUBSCRIBE:
         this.subRulesSet.delete(rule);
         this.setAuthRulePatternsControl(this.subRulesSet, type);
-        break;
-    }
-  }
-
-  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
-    const rulesArray = [Array.from(set).join(',')];
-    switch (type) {
-      case AuthRulePatternsType.PUBLISH:
-        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
-        break;
-      case AuthRulePatternsType.SUBSCRIBE:
-        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
         break;
     }
   }
@@ -227,6 +203,41 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
           userName: clientUserNameRandom()
         });
         break;
+    }
+  }
+
+  private clearRuleSets() {
+    this.pubRulesSet.clear();
+    this.subRulesSet.clear();
+  }
+
+  private addValueToAuthRulesSet(type: string, value: string = ANY_CHARACTERS) {
+    switch (type) {
+      case 'subAuthRulePatterns':
+        this.subRulesSet.add(value);
+        break;
+      case 'pubAuthRulePatterns':
+        this.pubRulesSet.add(value);
+        break;
+    }
+  }
+
+  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
+    const rulesArray = [Array.from(set).join(',')];
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
+    }
+  }
+
+  private clearPasswordValidators() {
+    if (this.entity?.id) {
+      this.credentialsMqttFormGroup.get('password').clearValidators();
+      this.credentialsMqttFormGroup.get('password').updateValueAndValidity({onlySelf: true});
     }
   }
 }

@@ -41,7 +41,7 @@
             {{ 'mqtt-client-credentials.user-name-required' | translate }}
           </mat-error>
         </mat-form-field>
-        <mat-form-field fxFlex class="mat-block" *ngIf="!entity?.id">
+        <mat-form-field fxFlex class="mat-block">
           <mat-label translate>mqtt-client-credentials.password</mat-label>
           <input matInput formControlName="password"
                  autocomplete="new-password" name="new-password"
