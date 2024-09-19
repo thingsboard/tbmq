@@ -40,9 +40,9 @@ public class UnauthorizedClientServiceImpl implements UnauthorizedClientService 
     public static final String RANDOM_DELAY_INTERVAL_MS_EXPRESSION =
             "#{T(org.apache.commons.lang3.RandomUtils).nextLong(0, ${sql.ttl.unauthorized_client.execution_interval_ms})}";
 
-    @Value("${sql.ttl.unauthorized_client.ttl}")
+    @Value("${sql.ttl.unauthorized_client.ttl:259200}")
     private long ttlInSec;
-    @Value("${sql.ttl.unauthorized_client.enabled}")
+    @Value("${sql.ttl.unauthorized_client.enabled:true}")
     private boolean ttlTaskExecutionEnabled;
 
     private final UnauthorizedClientDao unauthorizedClientDao;
