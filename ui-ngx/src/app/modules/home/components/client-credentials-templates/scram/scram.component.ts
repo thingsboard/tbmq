@@ -101,7 +101,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   ngAfterViewInit() {
     this.addValueToAuthRulesSet('pubAuthRulePatterns');
     this.addValueToAuthRulesSet('subAuthRulePatterns');
-    this.clearPasswordValidators();
     this.cd.detectChanges();
   }
 
@@ -134,6 +133,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   writeValue(value: string) {
     if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
       this.clearRuleSets();
+      this.clearPasswordValidators();
       const valueJson = JSON.parse(value);
       if (valueJson.authRules) {
         for (const rule of Object.keys(valueJson.authRules)) {
@@ -149,7 +149,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
 
   updateView(value: ScramCredentials) {
     if (this.credentialsMqttFormGroup.get('password').value?.length) {
-      value.password = this.credentialsMqttFormGroup.get('password').value
+      value.password = this.credentialsMqttFormGroup.get('password').value;
     } else {
       delete value.password;
     }
