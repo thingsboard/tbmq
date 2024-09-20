@@ -54,11 +54,12 @@
       </div>
       <mat-form-field fxFlex class="mat-block">
         <mat-label translate>mqtt-client-credentials.select-sha</mat-label>
-        <mat-select formControlName="algorithm">
+        <mat-select formControlName="algorithm" (selectionChange)="algorithmChanged()">
           <mat-option *ngFor="let sha of shaTypes" [value]="sha">
             <span>{{ shaTypeTranslations.get(sha) | translate }}</span>
           </mat-option>
         </mat-select>
+        <mat-hint [innerHtml]="'mqtt-client-credentials.hint-credentials-scram-sha' | translate"></mat-hint>
       </mat-form-field>
     </div>
   </fieldset>
@@ -68,7 +69,7 @@
         <div translate>mqtt-client-credentials.authorization</div>
       </mat-panel-title>
     </mat-expansion-panel-header>
-    <section>
+    <section class="auth-hint">
       <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
       <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
     </section>
@@ -121,6 +122,4 @@
       </mat-form-field>
     </div>
   </mat-expansion-panel>
-  <div fxLayout="row" style="padding-bottom: 16px;">
-  </div>
 </section>

@@ -74,6 +74,8 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   shaTypes = Object.values(ShaType);
   shaTypeTranslations = shaTypeTranslationMap;
 
+  private maskedPassword = '********';
+  private newPassword: string;
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
 
@@ -95,6 +97,11 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
       takeUntil(this.destroy$)
     ).subscribe((value) => {
       this.updateView(value);
+    });
+    this.credentialsMqttFormGroup.get('password').valueChanges.subscribe(value => {
+      if (value !== this.maskedPassword) {
+        this.newPassword = value;
+      }
     });
   }
 
@@ -133,7 +140,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   writeValue(value: string) {
     if (isDefinedAndNotNull(value) && !isEmptyStr(value)) {
       this.clearRuleSets();
-      this.clearPasswordValidators();
       const valueJson = JSON.parse(value);
       if (valueJson.authRules) {
         for (const rule of Object.keys(valueJson.authRules)) {
@@ -142,14 +148,15 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
           }
         }
       }
-      valueJson.password = null;
+      valueJson.password = this.maskedPassword;
       this.credentialsMqttFormGroup.patchValue(valueJson, {emitEvent: false});
+      this.newPassword = null;
     }
   }
 
   updateView(value: ScramCredentials) {
-    if (this.credentialsMqttFormGroup.get('password').value?.length) {
-      value.password = this.credentialsMqttFormGroup.get('password').value;
+    if (this.newPassword) {
+      value.password = this.newPassword;
     } else {
       delete value.password;
     }
@@ -206,6 +213,13 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
     }
   }
 
+  algorithmChanged() {
+    if (this.entity?.id) {
+      this.newPassword = null;
+      this.credentialsMqttFormGroup.get('password').patchValue(null);
+    }
+  }
+
   private clearRuleSets() {
     this.pubRulesSet.clear();
     this.subRulesSet.clear();
@@ -231,13 +245,6 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
       case AuthRulePatternsType.SUBSCRIBE:
         this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
         break;
-    }
-  }
-
-  private clearPasswordValidators() {
-    if (this.entity?.id) {
-      this.credentialsMqttFormGroup.get('password').clearValidators();
-      this.credentialsMqttFormGroup.get('password').updateValueAndValidity({onlySelf: true});
     }
   }
 }
