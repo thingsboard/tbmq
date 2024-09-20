@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data.client.unauthorized;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.List;
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class UnauthorizedClientQuery {
 
     private TimePageLink pageLink;

@@ -33,7 +33,7 @@ public interface UnauthorizedClientRepository extends JpaRepository<Unauthorized
     @Query("SELECT c FROM UnauthorizedClientEntity c WHERE " +
             "(LOWER(c.clientId) LIKE LOWER(CONCAT('%', :clientId, '%'))) " +
             "AND (LOWER(c.ipAddress) LIKE LOWER(CONCAT('%', :ipAddress, '%'))) " +
-            "AND (LOWER(c.username) LIKE LOWER(CONCAT('%', :username, '%'))) " +
+            "AND ((:username = '' AND c.username IS NULL) OR LOWER(c.username) LIKE LOWER(CONCAT('%', :username, '%'))) " +
             "AND (LOWER(c.reason) LIKE LOWER(CONCAT('%', :reason, '%'))) " +
             "AND ((:startTime) IS NULL OR c.ts >= :startTime) " +
             "AND ((:endTime) IS NULL OR c.ts <= :endTime) " +

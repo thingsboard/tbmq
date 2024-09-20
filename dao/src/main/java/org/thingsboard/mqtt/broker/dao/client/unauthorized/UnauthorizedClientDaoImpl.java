@@ -111,7 +111,7 @@ public class UnauthorizedClientDaoImpl extends JpaAbstractDaoListeningExecutorSe
             log.trace("Trying to find unauthorized clients by query {}", query);
         }
         List<Boolean> passwordProvidedList = CollectionUtils.isEmpty(query.getPasswordProvidedList()) ? null : query.getPasswordProvidedList();
-        List<Boolean> tslUsedList = CollectionUtils.isEmpty(query.getTlsUsedList()) ? null : query.getTlsUsedList();
+        List<Boolean> tlsUsedList = CollectionUtils.isEmpty(query.getTlsUsedList()) ? null : query.getTlsUsedList();
 
         return DaoUtil.toPageData(unauthorizedClientRepository.findAllV2(
                 Objects.toString(query.getClientId(), ""),
@@ -121,7 +121,7 @@ public class UnauthorizedClientDaoImpl extends JpaAbstractDaoListeningExecutorSe
                 query.getPageLink().getStartTime(),
                 query.getPageLink().getEndTime(),
                 passwordProvidedList,
-                tslUsedList,
+                tlsUsedList,
                 Objects.toString(query.getPageLink().getTextSearch(), ""),
                 DaoUtil.toPageable(query.getPageLink())));
     }
