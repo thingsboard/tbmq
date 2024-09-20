@@ -18,7 +18,7 @@ import { Component } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
-import { SessionsTableConfig } from "@home/pages/sessions/sessions-table-config";
+import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { DetailedClientSessionInfo, SessionFilterConfig } from '@shared/models/session.model';
 
 @Component({

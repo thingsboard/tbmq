@@ -16,9 +16,9 @@
 
 import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { mergeMap, Observable, of } from 'rxjs';
+import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { PageLink, TimePageLink } from '@shared/models/page/page-link';
+import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { ClientCredentialsInfo, ClientCredentials, ClientCredentialsQuery } from '@shared/models/credentials.model';
 
@@ -62,17 +62,7 @@ export class ClientCredentialsService {
     return this.http.get<ClientCredentialsInfo>(`/api/mqtt/client/credentials/info`, defaultHttpOptionsFromConfig(config));
   }
 
-  public findClientCredentialsByName(name: string): Observable<ClientCredentials> {
-    const pageLink = new TimePageLink(1, 0, name);
-    const query = new ClientCredentialsQuery(pageLink, {name});
-    return this.getClientCredentialsV2(query, {ignoreErrors: true}).pipe(
-      mergeMap(credentials => {
-        if (credentials.data.length) {
-          return of(credentials.data[0]);
-        } else {
-          return of(null);
-        }
-      })
-    );
+  public getClientCredentialsByName(name: string, config?: RequestConfig): Observable<ClientCredentials> {
+    return this.http.get<ClientCredentials>(`/api/mqtt/client/credentials?name=${name}`, defaultHttpOptionsFromConfig(config));
   }
 }
