@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 
 @Slf4j
@@ -80,6 +81,9 @@ public class ActorProcessorImpl implements ActorProcessor {
             persistClientUnauthorized(state, sessionInitMsg, authResponse);
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx);
             return;
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Connection is authenticated: {}", state.getClientId(), CONNECTION_ACCEPTED);
         }
 
         removeClientUnauthorized(state);

@@ -62,7 +62,8 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                 .collect(Collectors.toList());
 
         if (authRulePatterns.isEmpty()) {
-            String errorMsg = String.format("Cannot find authorization rules for common name %s from credentials %s", clientCommonName, clientTypeSslMqttCredentials.getName());
+            String errorMsg = String.format("Cannot find authorization rules for common name [%s] from credentials [%s]",
+                    clientCommonName, clientTypeSslMqttCredentials.getName());
             log.warn(errorMsg);
             throw new AuthenticationException(errorMsg);
         }

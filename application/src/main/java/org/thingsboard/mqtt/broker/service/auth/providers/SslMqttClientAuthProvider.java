@@ -70,13 +70,13 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (clientTypeSslMqttCredentials == null) {
             String errorMsg = "Failed to authenticate client using X_509_CERTIFICATE_CHAIN credentials! No X_509_CERTIFICATE_CHAIN matching credentials were found!";
-            log.error(errorMsg);
+            log.warn(errorMsg);
             return new AuthResponse(false, null, null, errorMsg);
         }
         putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
-        if (log.isTraceEnabled()) {
+        if (log.isDebugEnabled()) {
             String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
-            log.trace("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
+            log.debug("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
                     authContext.getClientId(), clientTypeSslMqttCredentials.getType(), protocol);
         }
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
