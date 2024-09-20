@@ -28,7 +28,8 @@ export enum EntityType {
   KAFKA_BROKER = 'KAFKA_BROKER',
   WS_CONNECTION = 'WS_CONNECTION',
   WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
-  WS_MESSAGE = 'WS_MESSAGE'
+  WS_MESSAGE = 'WS_MESSAGE',
+  UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
 }
 
 export interface EntityTypeTranslation {
@@ -216,7 +217,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         search: 'ws-client.messages.search-message',
         selectedEntities: 'ws-client.messages.selected-messages'
       }
-    ]
+    ],
+    [
+      EntityType.UNAUTHORIZED_CLIENT,
+      {
+        type: 'unauthorized-client.unauthorized-client',
+        typePlural: 'unauthorized-client.unauthorized-clients',
+        list: 'unauthorized-client.list-of-unauthorized-clients',
+        nameStartsWith: 'unauthorized-client.unauthorized-client-name-starts-with',
+        details: 'unauthorized-client.details',
+        noEntities: 'unauthorized-client.no-unauthorized-clients-text',
+        search: 'unauthorized-client.search',
+        selectedEntities: 'unauthorized-client.selected-unauthorized-clients'
+      }
+    ],
   ]
 );
 
@@ -262,6 +276,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.WS_MESSAGE,
       {
         helpLinkId: 'wsMessage'
+      }
+    ],
+    [
+      EntityType.UNAUTHORIZED_CLIENT,
+      {
+        helpLinkId: 'unauthorizedClient'
       }
     ]
   ]

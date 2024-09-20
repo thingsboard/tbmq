@@ -1094,5 +1094,25 @@
         "uppercase-letter": "{ count, plural, =1 {1 uppercase letter} other {# uppercase letters} }",
         "at-most": "At most:"
     }
+  },
+  "unauthorized-client": {
+    "details": "Unauthorized client details",
+    "delete-unauthorized-client-title": "Are you sure you want to delete the unauthorized client '{{clientId}}'?",
+    "delete-unauthorized-client-text": "Be careful, after the confirmation the unauthorized client and all related data will become unrecoverable.",
+    "delete-unauthorized-clients-title": "Are you sure you want to delete { count, plural, =1 {1 unauthorized client} other {# unauthorized clients} }?",
+    "delete-unauthorized-clients-action-title": "Delete { count, plural, =1 {1 unauthorized client} other {# unauthorized clients} }",
+    "delete-unauthorized-clients-text": "Be careful, after the confirmation all selected unauthorized clients will be removed and all related data will become unrecoverable.",
+    "filter-title": "Filter",
+    "list-of-unauthorized-clients": "{ count, plural, =1 {One unauthorized client} other {List of # unauthorized clients} }",
+    "no-unauthorized-clients-text": "No unauthorized clients found",
+    "password-provided": "Password provided",
+    "reason": "Reason",
+    "tls-used": "TLS used",
+    "search": "Search by client ID",
+    "selected-unauthorized-clients": "{ count, plural, =1 {1 Unauthorized client} other {# Unauthorized clients} } selected",
+    "show-reason": "Show reason",
+    "unauthorized-client": "Unauthorized Client",
+    "unauthorized-clients": "Unauthorized Clients",
+    "unauthorized-client-name-starts-with": "Unauthorized clients whose client ID start with '{{prefix}}'"
   }
 }
