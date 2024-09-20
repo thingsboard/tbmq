@@ -58,7 +58,7 @@ public class DefaultAuthenticationServiceTest {
         Assert.assertNull(authResponse.getAuthRulePatterns());
     }
 
-    @Test(expected = AuthenticationException.class)
+    @Test
     public void testAuthenticateFailureUsingBasic() throws AuthenticationException {
         mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
@@ -71,10 +71,14 @@ public class DefaultAuthenticationServiceTest {
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(null);
-        authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext);
+
+        Assert.assertFalse(authResponse.isSuccess());
+        Assert.assertNull(authResponse.getClientType());
+        Assert.assertNull(authResponse.getAuthRulePatterns());
     }
 
-    @Test(expected = AuthenticationException.class)
+    @Test
     public void testAuthenticateFailureUsingSsl() throws AuthenticationException {
         SslHandler sslHandler = mock(SslHandler.class);
         mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
@@ -88,7 +92,11 @@ public class DefaultAuthenticationServiceTest {
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
-        authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext);
+
+        Assert.assertFalse(authResponse.isSuccess());
+        Assert.assertNull(authResponse.getClientType());
+        Assert.assertNull(authResponse.getAuthRulePatterns());
     }
 
     @Test

@@ -63,7 +63,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
                             return authResponse;
                         }
                     } else {
-                        return authenticateBySslAuthOnBothAuthStrategy(authResponse, basicAuthFailureReason);
+                        return processSslAuthResponseOnBothAuthStrategy(authResponse, basicAuthFailureReason);
                     }
                 }
             } else {
@@ -71,7 +71,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
                 if (authResponse != null) {
                     return authResponse;
                 } else {
-                    prepareAndThrowSingleAuthException(authContext);
+                    prepareAndThrowSingleStrategyAuthException(authContext);
                 }
             }
         } catch (Exception e) {
@@ -94,7 +94,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
         }
     }
 
-    private AuthResponse authenticateBySslAuthOnBothAuthStrategy(AuthResponse authResponse, String basicAuthFailureReason) throws AuthenticationException {
+    private AuthResponse processSslAuthResponseOnBothAuthStrategy(AuthResponse authResponse, String basicAuthFailureReason) throws AuthenticationException {
         if (authResponse == null) {
             String errorMsg = basicAuthFailureReason + ". X_509_CERTIFICATE_CHAIN authentication is disabled!";
             throw new AuthenticationException(errorMsg);
@@ -114,7 +114,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
                 authenticate(AuthProviderType.BASIC, authContext);
     }
 
-    private void prepareAndThrowSingleAuthException(AuthContext authContext) throws AuthenticationException {
+    private void prepareAndThrowSingleStrategyAuthException(AuthContext authContext) throws AuthenticationException {
         String providerType = getAuthProviderType(authContext);
         String errorMsg = String.format("Failed to authenticate client, %s authentication is disabled!", providerType);
         throw new AuthenticationException(errorMsg);
