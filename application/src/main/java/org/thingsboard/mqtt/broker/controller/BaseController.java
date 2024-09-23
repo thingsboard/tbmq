@@ -52,8 +52,11 @@ import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
@@ -254,5 +257,29 @@ public abstract class BaseController {
                                     String sortProperty, String sortOrder, Long startTime, Long endTime) throws ThingsboardException {
         PageLink pageLink = this.createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
         return new TimePageLink(pageLink, startTime, endTime);
+    }
+
+    Set<Integer> collectIntegerQueryParams(String[] array) {
+        Set<Integer> resultSet = new HashSet<>();
+        if (array != null) {
+            for (String strValue : array) {
+                if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+                    resultSet.add(Integer.valueOf(strValue));
+                }
+            }
+        }
+        return resultSet;
+    }
+
+    List<Boolean> collectBooleanQueryParams(String[] array) {
+        List<Boolean> resultList = new ArrayList<>();
+        if (array != null) {
+            for (String strValue : array) {
+                if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+                    resultList.add(Boolean.valueOf(strValue));
+                }
+            }
+        }
+        return resultList;
     }
 }

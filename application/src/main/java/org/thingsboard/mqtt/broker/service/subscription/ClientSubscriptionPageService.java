@@ -15,18 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
+import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 
-import java.util.Map;
-import java.util.Set;
+public interface ClientSubscriptionPageService {
 
-public interface ClientSubscriptionCache {
-
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
-
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
-
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
+    PageData<ClientSubscriptionInfoDto> getClientSubscriptions(ClientSubscriptionQuery query);
 
 }

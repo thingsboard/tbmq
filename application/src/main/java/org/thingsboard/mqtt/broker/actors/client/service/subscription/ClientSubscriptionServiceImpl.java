@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -209,6 +210,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
                 .filter(TopicSubscription::isSharedSubscription)
                 .map(this::topicSubscriptionToTopicSharedSubscription)
                 .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Map<String, Set<TopicSubscription>> getAllClientSubscriptions() {
+        return new HashMap<>(clientSubscriptionsMap == null ? Map.of() : clientSubscriptionsMap);
     }
 
     private void processSharedUnsubscribe(String clientId, TopicSubscription topicSubscription) {
