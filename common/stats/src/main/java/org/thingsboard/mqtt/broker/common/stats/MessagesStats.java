@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.stats;
 
+import java.util.function.Supplier;
+
 public interface MessagesStats {
+
     String getName();
 
     default void incrementTotal() {
@@ -43,4 +46,8 @@ public interface MessagesStats {
     int getFailed();
 
     void reset();
+
+    void updateQueueSize(Supplier<Integer> queueSizeSupplier);
+
+    int getCurrentQueueSize();
 }

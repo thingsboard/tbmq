@@ -35,6 +35,7 @@ import java.util.Set;
 @Entity
 @Table(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_COLUMN_FAMILY_NAME)
 public class GenericClientSessionCtxEntity implements ToData<GenericClientSessionCtx> {
+
     @Id
     @Column(name = ModelConstants.GENERIC_CLIENT_SESSION_CTX_CLIENT_ID_PROPERTY)
     private String clientId;

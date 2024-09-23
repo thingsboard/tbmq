@@ -1,0 +1,100 @@
+<!--
+
+    Copyright © 2016-2024 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<ng-container *ngIf="panelMode; else componentMode">
+  <ng-container *ngTemplateOutlet="unauthorizedClientFilterPanel"></ng-container>
+</ng-container>
+<ng-template #componentMode>
+  <ng-container *ngIf="buttonMode; else unauthorizedClientFilter">
+    <button color="primary"
+            matTooltip="{{buttonDisplayValue}}"
+            matTooltipPosition="above"
+            mat-stroked-button
+            (click)="toggleFilterPanel($event)">
+      <mat-icon>filter_list</mat-icon>{{buttonDisplayValue}}
+    </button>
+  </ng-container>
+</ng-template>
+<ng-template #unauthorizedClientPanel>
+  <form fxLayout="column" class="mat-content mat-padding" (ngSubmit)="update()">
+    <ng-container *ngTemplateOutlet="unauthorizedClientFilter"></ng-container>
+    <div fxLayout="row" class="tb-panel-actions" fxLayoutAlign="end center">
+      <button type="button"
+              mat-button
+              color="primary"
+              (click)="reset()">
+        {{ 'action.reset' | translate }}
+      </button>
+      <span fxFlex></span>
+      <button type="button"
+              mat-button
+              (click)="cancel()">
+        {{ 'action.cancel' | translate }}
+      </button>
+      <button type="submit"
+              mat-raised-button
+              color="primary"
+              [disabled]="unauthorizedClientFilterConfigForm.invalid || !unauthorizedClientFilterConfigForm.dirty">
+        {{ 'action.update' | translate }}
+      </button>
+    </div>
+  </form>
+</ng-template>
+<ng-template #unauthorizedClientFilter>
+  <div class="tb-form-panel tb-unauthorized-client-filter-config-component no-padding no-border" [formGroup]="unauthorizedClientFilterConfigForm">
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>mqtt-client.client-id</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="clientId">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>common.username</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="username">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>mqtt-client-session.client-ip</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="ipAddress">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>unauthorized-client.reason</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="reason">
+      </mat-form-field>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>unauthorized-client.password-provided</div>
+      <mat-chip-listbox multiple formControlName="passwordProvidedList">
+        <mat-chip-option *ngFor="let value of passwordProvidedList" [value]="value">
+          {{ value }}
+        </mat-chip-option>
+      </mat-chip-listbox>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>unauthorized-client.tls-used</div>
+      <mat-chip-listbox multiple formControlName="tlsUsedList">
+        <mat-chip-option *ngFor="let value of tlsUsedList" [value]="value">
+          {{ value }}
+        </mat-chip-option>
+      </mat-chip-listbox>
+    </div>
+  </div>
+</ng-template>

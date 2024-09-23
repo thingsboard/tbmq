@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.TsKvEntity;
-import org.thingsboard.mqtt.broker.dao.sqlts.insert.AbstractInsertRepository;
+import org.thingsboard.mqtt.broker.dao.sqlts.insert.AbstractInsertDeleteRepository;
 import org.thingsboard.mqtt.broker.dao.sqlts.insert.InsertTsRepository;
 
 import java.sql.PreparedStatement;
@@ -28,7 +28,7 @@ import java.util.List;
 
 @Repository
 @Transactional
-public class SqlInsertTsRepository extends AbstractInsertRepository implements InsertTsRepository<TsKvEntity> {
+public class SqlInsertTsRepository extends AbstractInsertDeleteRepository implements InsertTsRepository<TsKvEntity> {
 
     private static final String INSERT_ON_CONFLICT_DO_UPDATE = "INSERT INTO ts_kv (entity_id, key, ts, long_v) VALUES (?, ?, ?, ?) " +
             "ON CONFLICT (entity_id, key, ts) DO UPDATE SET long_v = ?;";

@@ -52,3 +52,13 @@ CREATE TABLE IF NOT EXISTS ts_kv_latest (
     long_v bigint,
     CONSTRAINT ts_kv_latest_pkey PRIMARY KEY (entity_id, key)
 );
+
+CREATE TABLE IF NOT EXISTS unauthorized_client (
+    client_id varchar(255) NOT NULL CONSTRAINT unauthorized_clients_pkey PRIMARY KEY,
+    ip_address varchar(255) NOT NULL,
+    ts bigint NOT NULL,
+    username varchar(255),
+    password_provided boolean,
+    tls_used boolean,
+    reason varchar
+);

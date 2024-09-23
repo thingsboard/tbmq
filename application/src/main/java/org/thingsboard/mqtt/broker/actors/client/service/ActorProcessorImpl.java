@@ -26,6 +26,9 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectService;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
+import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
@@ -35,6 +38,7 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
+import org.thingsboard.mqtt.broker.util.BytesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
@@ -44,6 +48,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 
 @Slf4j
@@ -54,6 +59,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final DisconnectService disconnectService;
     private final AuthenticationService authenticationService;
     private final MqttMessageGenerator mqttMessageGenerator;
+    private final UnauthorizedClientService unauthorizedClientService;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -72,10 +78,15 @@ public class ActorProcessorImpl implements ActorProcessor {
 
         if (!authResponse.isSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
+            persistClientUnauthorized(state, sessionInitMsg, authResponse);
             sendConnectionRefusedMsgAndCloseChannel(sessionCtx);
             return;
         }
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Connection is authenticated: {}", state.getClientId(), CONNECTION_ACCEPTED);
+        }
 
+        removeClientUnauthorized(state);
         finishSessionAuth(state.getClientId(), sessionCtx, authResponse);
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
@@ -180,7 +191,7 @@ public class ActorProcessorImpl implements ActorProcessor {
             if (log.isDebugEnabled()) {
                 log.debug("[{}] Authentication failed.", authContext.getClientId(), e);
             }
-            return AuthResponse.builder().success(false).build();
+            return AuthResponse.builder().success(false).reason(e.getMessage()).build();
         }
     }
 
@@ -195,5 +206,29 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId, DisconnectReason reason) {
         return new MqttDisconnectMsg(sessionId, reason);
+    }
+
+    private void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, AuthResponse authResponse) {
+        UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
+                .clientId(state.getClientId())
+                .ipAddress(BytesUtil.toHostAddress(sessionInitMsg.getClientSessionCtx().getAddressBytes()))
+                .ts(System.currentTimeMillis())
+                .username(sessionInitMsg.getUsername())
+                .passwordProvided(sessionInitMsg.getPasswordBytes() != null)
+                .tlsUsed(sessionInitMsg.getClientSessionCtx().getSslHandler() != null)
+                .reason(authResponse.getReason())
+                .build();
+        DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
+                v -> log.debug("[{}] Unauthorized Client saved successfully! {}", state.getClientId(), unauthorizedClient),
+                throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", state.getClientId(), unauthorizedClient, throwable));
+    }
+
+    private void removeClientUnauthorized(ClientActorState state) {
+        UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
+                .clientId(state.getClientId())
+                .build();
+        DonAsynchron.withCallback(unauthorizedClientService.remove(unauthorizedClient),
+                v -> log.debug("[{}] Unauthorized Client removed successfully!", state.getClientId()),
+                throwable -> log.warn("[{}] Failed to removed unauthorized client!", state.getClientId(), throwable));
     }
 }

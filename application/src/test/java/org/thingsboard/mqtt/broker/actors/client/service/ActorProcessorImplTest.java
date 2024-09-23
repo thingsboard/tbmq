@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
+import com.google.common.util.concurrent.Futures;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -35,6 +37,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -49,14 +52,17 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ActorProcessorImplTest {
 
     ActorProcessorImpl actorProcessor;
+
     DisconnectService disconnectService;
     AuthenticationService authenticationService;
     MqttMessageGenerator mqttMessageGenerator;
+    UnauthorizedClientService unauthorizedClientService;
 
     ClientActorState clientActorState;
 
@@ -65,7 +71,8 @@ public class ActorProcessorImplTest {
         disconnectService = mock(DisconnectService.class);
         authenticationService = mock(AuthenticationService.class);
         mqttMessageGenerator = mock(MqttMessageGenerator.class);
-        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, mqttMessageGenerator));
+        unauthorizedClientService = mock(UnauthorizedClientService.class);
+        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, mqttMessageGenerator, unauthorizedClientService));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }
@@ -92,11 +99,22 @@ public class ActorProcessorImplTest {
     }
 
     @Test
+    public void givenDisconnectingSession_whenOnDisconnect_thenOk() {
+        updateSessionState(SessionState.DISCONNECTING);
+
+        actorProcessor.onDisconnect(clientActorState, getDisconnectMsg());
+
+        assertEquals(SessionState.DISCONNECTING, clientActorState.getCurrentSessionState());
+        verify(disconnectService, never()).disconnect(any(), any());
+    }
+
+    @Test
     public void givenDisconnectedSession_whenOnInit_thenOk() throws AuthenticationException {
         updateSessionState(SessionState.DISCONNECTED);
 
         AuthResponse authResponse = getAuthResponse(true);
         doReturn(authResponse).when(authenticationService).authenticate(any());
+        when(unauthorizedClientService.remove(any())).thenReturn(Futures.immediateFuture(null));
 
         SessionInitMsg sessionInitMsg = getSessionInitMsg(getClientSessionCtx());
         actorProcessor.onInit(clientActorState, sessionInitMsg);
@@ -132,6 +150,7 @@ public class ActorProcessorImplTest {
 
         AuthResponse authResponse = getAuthResponse(false);
         doReturn(authResponse).when(authenticationService).authenticate(any());
+        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
 
         doNothing().when(actorProcessor).sendConnectionRefusedMsgAndCloseChannel(any());
 
@@ -160,7 +179,9 @@ public class ActorProcessorImplTest {
     }
 
     private ClientSessionCtx getClientSessionCtx() {
-        return new ClientSessionCtx();
+        ClientSessionCtx clientSessionCtx = new ClientSessionCtx();
+        clientSessionCtx.setAddress(new InetSocketAddress("localhost", 1883));
+        return clientSessionCtx;
     }
 
     private void updateSessionState(SessionState state) {

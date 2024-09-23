@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface GenericClientSessionCtxDao {
+
     GenericClientSessionCtx save(GenericClientSessionCtx genericClientSessionCtx);
 
     GenericClientSessionCtx findByClientId(String clientId);

@@ -15,7 +15,7 @@
 ///
 
 import { InjectionToken } from '@angular/core';
-import { MatFormFieldDefaultOptions } from "@angular/material/form-field";
+import { MatFormFieldDefaultOptions } from '@angular/material/form-field';
 
 export const Constants = {
   serverErrorCode: {
@@ -67,6 +67,7 @@ export const HelpLinks = {
     sessions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/sessions',
     sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
     connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/websocket-client',
+    unauthorizedClient: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/unauthorized-client',
   }
 };
 

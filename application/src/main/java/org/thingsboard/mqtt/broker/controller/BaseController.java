@@ -28,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -37,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
@@ -77,6 +79,8 @@ public abstract class BaseController {
     protected ClientSessionCleanUpService clientSessionCleanUpService;
     @Autowired
     protected SystemSecurityService systemSecurityService;
+    @Autowired
+    protected UnauthorizedClientService unauthorizedClientService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -165,6 +169,12 @@ public abstract class BaseController {
         validateId(clientCredentialsId, "Incorrect clientCredentialsId " + clientCredentialsId);
         Optional<MqttClientCredentials> credentials = mqttClientCredentialsService.getCredentialsById(clientCredentialsId);
         return checkNotNull(credentials);
+    }
+
+    UnauthorizedClient checkUnauthorizedClient(String clientId) throws ThingsboardException {
+        validateString(clientId, "Incorrect clientId " + clientId);
+        Optional<UnauthorizedClient> client = unauthorizedClientService.findUnauthorizedClient(clientId);
+        return checkNotNull(client);
     }
 
     RetainedMsgDto checkRetainedMsg(String topicName) throws ThingsboardException {
