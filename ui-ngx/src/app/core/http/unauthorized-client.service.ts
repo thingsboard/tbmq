@@ -42,6 +42,10 @@ export class UnauthorizedClientService {
     return this.http.delete<void>(`/api/unauthorized/client/${clientId}`, defaultHttpOptionsFromConfig(config));
   }
 
+  public deleteAllUnauthorizedClients(config?: RequestConfig): Observable<void> {
+    return this.http.delete<void>(`/api/unauthorized/client`, defaultHttpOptionsFromConfig(config));
+  }
+
   public getUnauthorizedClientV2(query: UnauthorizedClientQuery, config?: RequestConfig): Observable<PageData<UnauthorizedClient>> {
     return this.http.get<PageData<UnauthorizedClient>>(`/api/unauthorized/client/v2${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }

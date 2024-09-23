@@ -15,7 +15,7 @@
 ///
 
 import {
-  CellActionDescriptor,
+  CellActionDescriptor, checkBoxCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
@@ -72,9 +72,20 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
     this.defaultCursor = true;
+    this.rowPointer = true;
     this.defaultSortOrder = {property: 'ts', direction: Direction.DESC};
 
     this.detailsReadonly = () => true;
+    this.handleRowClick = ($event, entity) => this.showReason($event, entity.reason);
+
+    this.headerActionDescriptors.push({
+      name: this.translate.instant('unauthorized-client.delete-unauthorized-clients-all'),
+      icon: 'delete_forever',
+      isEnabled: () => true,
+      onAction: ($event) => {
+        this.deleteAllUnauthorizedClients($event);
+      }
+    });
 
     this.groupActionDescriptors = this.configureGroupActions();
     this.cellActionDescriptors = this.configureCellActions();
@@ -85,9 +96,13 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     this.defaultTimewindowInterval = forAllTimeInterval();
 
     this.columns.push(
-      new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.created-time', this.datePipe, '150px'),
+      new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.update-time', this.datePipe, '150px'),
       new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id'),
       new EntityTableColumn<UnauthorizedClient>('username', 'common.username'),
+      new EntityTableColumn<UnauthorizedClient>('passwordProvided', 'unauthorized-client.password-provided', '120px',
+          entity => checkBoxCell(entity?.passwordProvided)),
+      new EntityTableColumn<UnauthorizedClient>('tlsUsed', 'unauthorized-client.tls-used', '60px',
+        entity => checkBoxCell(entity?.tlsUsed)),
       new EntityTableColumn<UnauthorizedClient>('ipAddress', 'mqtt-client-session.client-ip'),
       new EntityTableColumn<UnauthorizedClient>('reason', 'unauthorized-client.reason', undefined, (entity) => {
         const content = entity.reason;
@@ -95,7 +110,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
           return content.substring(0, 50) + '...';
         }
         return content;
-      }, undefined, undefined, undefined, (entity) => entity.reason)
+      }, undefined, undefined, undefined, (entity) => entity.reason),
     );
 
     this.entitiesFetchFunction = pageLink => this.fetchUnauthorizedClients(pageLink as TimePageLink);
@@ -121,7 +136,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
         name: this.translate.instant('unauthorized-client.show-reason'),
         icon: 'error_outline',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.showReason($event, entity.reason, 'unauthorized-client.reason')
+        onAction: ($event, entity) => this.showReason($event, entity.reason)
       },
       {
         name: this.translate.instant('action.delete'),
@@ -239,7 +254,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     return unauthorizedClientFilter;
   }
 
-  private showReason($event: MouseEvent, content: string, title: string): void {
+  private showReason($event: Event, content: string): boolean {
     if ($event) {
       $event.stopPropagation();
     }
@@ -248,8 +263,30 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         content,
-        title,
+        title: 'unauthorized-client.reason',
         contentType: ContentType.TEXT
+      }
+    });
+    return false;
+  }
+
+  private deleteAllUnauthorizedClients($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialogService.confirm(
+      this.translate.instant('unauthorized-client.delete-unauthorized-clients-all-title'),
+      this.translate.instant('unauthorized-client.delete-unauthorized-clients-all-text'),
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((result) => {
+      if (result) {
+        this.unauthorizedClientService.deleteAllUnauthorizedClients().subscribe(
+          () => {
+            this.getTable().updateData();
+          }
+        );
       }
     });
   }

@@ -1097,6 +1097,9 @@
   },
   "unauthorized-client": {
     "details": "Unauthorized client details",
+    "delete-unauthorized-clients-all": "Delete all unauthorized clients",
+    "delete-unauthorized-clients-all-title": "Delete all unauthorized clients?",
+    "delete-unauthorized-clients-all-text": "Be careful, after the confirmation all unauthorized clients and all related data will become unrecoverable.",
     "delete-unauthorized-client-title": "Are you sure you want to delete the unauthorized client '{{clientId}}'?",
     "delete-unauthorized-client-text": "Be careful, after the confirmation the unauthorized client and all related data will become unrecoverable.",
     "delete-unauthorized-clients-title": "Are you sure you want to delete { count, plural, =1 {1 unauthorized client} other {# unauthorized clients} }?",
@@ -1108,7 +1111,7 @@
     "password-provided": "Password provided",
     "reason": "Reason",
     "tls-used": "TLS used",
-    "search": "Search by client ID",
+    "search": "Search by Client ID",
     "selected-unauthorized-clients": "{ count, plural, =1 {1 Unauthorized client} other {# Unauthorized clients} } selected",
     "show-reason": "Show reason",
     "unauthorized-client": "Unauthorized Client",
