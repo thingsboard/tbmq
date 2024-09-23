@@ -97,13 +97,15 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
 
     this.columns.push(
       new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.update-time', this.datePipe, '150px'),
-      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id'),
-      new EntityTableColumn<UnauthorizedClient>('username', 'common.username'),
-      new EntityTableColumn<UnauthorizedClient>('passwordProvided', 'unauthorized-client.password-provided', '120px',
-          entity => checkBoxCell(entity?.passwordProvided)),
-      new EntityTableColumn<UnauthorizedClient>('tlsUsed', 'unauthorized-client.tls-used', '60px',
-        entity => checkBoxCell(entity?.tlsUsed)),
-      new EntityTableColumn<UnauthorizedClient>('ipAddress', 'mqtt-client-session.client-ip'),
+      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '40%'),
+      new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '40%'),
+      new EntityTableColumn<UnauthorizedClient>('passwordProvided', 'unauthorized-client.password', '60px',
+          entity => checkBoxCell(entity?.passwordProvided), undefined, undefined, undefined,
+        (entity) => this.passwordProvidedTooltip(entity)),
+      new EntityTableColumn<UnauthorizedClient>('tlsUsed', 'unauthorized-client.tls', '60px',
+        entity => checkBoxCell(entity?.tlsUsed), undefined, undefined, undefined,
+        (entity) => this.tlsUsedTooltip(entity)),
+      new EntityTableColumn<UnauthorizedClient>('ipAddress', 'mqtt-client-session.client-ip', '20%'),
       new EntityTableColumn<UnauthorizedClient>('reason', 'unauthorized-client.reason', undefined, (entity) => {
         const content = entity.reason;
         if (content.length) {
@@ -289,5 +291,15 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
         );
       }
     });
+  }
+
+  private passwordProvidedTooltip(entity: UnauthorizedClient): string {
+    const tooltip = entity.passwordProvided ? 'unauthorized-client.password-provided-true' : 'unauthorized-client.password-provided-false';
+    return this.translate.instant(tooltip);
+  }
+
+  private tlsUsedTooltip(entity: UnauthorizedClient): string {
+    const tooltip = entity.tlsUsed ? 'unauthorized-client.tls-used-true' : 'unauthorized-client.tls-used-false';
+    return this.translate.instant(tooltip);
   }
 }
