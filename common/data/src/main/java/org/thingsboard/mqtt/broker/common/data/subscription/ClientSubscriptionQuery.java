@@ -33,10 +33,10 @@ public class ClientSubscriptionQuery {
     private PageLink pageLink;
     private String clientId;
     private String topicFilter;
-    private Set<Integer> qosList;
+    private Set<Integer> qosSet;
     private List<Boolean> noLocalList;
     private List<Boolean> retainAsPublishList;
-    private Set<Integer> retainHandlingList;
+    private Set<Integer> retainHandlingSet;
     private Integer subscriptionId;
 
 }

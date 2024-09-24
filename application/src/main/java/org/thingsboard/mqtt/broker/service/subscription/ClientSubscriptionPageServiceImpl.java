@@ -42,29 +42,19 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
 
     @Override
     public PageData<ClientSubscriptionInfoDto> getClientSubscriptions(ClientSubscriptionQuery query) {
-
         Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionCache.getAllClientSubscriptions();
-
-        PageLink pageLink = query.getPageLink();
-        Set<Integer> qosSet = query.getQosList();
-        List<Boolean> noLocalList = query.getNoLocalList();
-        List<Boolean> retainAsPublishList = query.getRetainAsPublishList();
-        Set<Integer> retainHandlingSet = query.getRetainHandlingList();
-        Integer subscriptionId = query.getSubscriptionId();
-
-        List<ClientSubscriptionInfoDto> filteredSubscriptions = new ArrayList<>(allClientSubscriptions.size());
-
-        List<ClientSubscriptionInfoDto> filteredByClientId = new ArrayList<>();
-        for (var subscritionsEntry : allClientSubscriptions.entrySet()) {
-            if (!filterClientSubscriptionsByTextSearch(pageLink.getTextSearch(), subscritionsEntry.getKey())) {
-                continue;
-            }
-            if (!filterClientSubscriptionsByClientId(query, subscritionsEntry.getKey())) {
-                continue;
-            }
-            filteredByClientId.addAll(convertToClientSubscriptionInfoDtoList(subscritionsEntry));
+        if (CollectionUtils.isEmpty(allClientSubscriptions)) {
+            return PageData.emptyPageData();
         }
 
+        Set<Integer> qosSet = query.getQosSet();
+        List<Boolean> noLocalList = query.getNoLocalList();
+        List<Boolean> retainAsPublishList = query.getRetainAsPublishList();
+        Set<Integer> retainHandlingSet = query.getRetainHandlingSet();
+
+        List<ClientSubscriptionInfoDto> filteredSubscriptions = new ArrayList<>();
+
+        List<ClientSubscriptionInfoDto> filteredByClientId = filterByClientId(query, allClientSubscriptions);
         for (var subscriptionInfoDto : filteredByClientId) {
             if (!filterClientSubscriptionByTopicFilter(query, subscriptionInfoDto)) {
                 continue;
@@ -89,8 +79,8 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
                     continue;
                 }
             }
-            if (subscriptionId != null) {
-                if (!subscriptionId.equals(subscriptionInfoDto.getSubscription().getSubscriptionId())) {
+            if (query.getSubscriptionId() != null) {
+                if (!query.getSubscriptionId().equals(subscriptionInfoDto.getSubscription().getSubscriptionId())) {
                     continue;
                 }
             }
@@ -98,7 +88,21 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
             filteredSubscriptions.add(subscriptionInfoDto);
         }
 
-        return mapToPageDataResponse(filteredSubscriptions, pageLink);
+        return mapToPageDataResponse(filteredSubscriptions, query.getPageLink());
+    }
+
+    private List<ClientSubscriptionInfoDto> filterByClientId(ClientSubscriptionQuery query, Map<String, Set<TopicSubscription>> allClientSubscriptions) {
+        List<ClientSubscriptionInfoDto> filteredByClientId = new ArrayList<>();
+        for (var subscritionsEntry : allClientSubscriptions.entrySet()) {
+            if (!filterClientSubscriptionsByTextSearch(query.getPageLink().getTextSearch(), subscritionsEntry.getKey())) {
+                continue;
+            }
+            if (!filterClientSubscriptionsByClientId(query, subscritionsEntry.getKey())) {
+                continue;
+            }
+            filteredByClientId.addAll(convertToClientSubscriptionInfoDtoList(subscritionsEntry));
+        }
+        return filteredByClientId;
     }
 
     private PageData<ClientSubscriptionInfoDto> mapToPageDataResponse(List<ClientSubscriptionInfoDto> filteredClientSubscriptions, PageLink pageLink) {

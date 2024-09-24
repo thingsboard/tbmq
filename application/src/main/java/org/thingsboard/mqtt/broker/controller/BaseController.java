@@ -260,24 +260,26 @@ public abstract class BaseController {
     }
 
     Set<Integer> collectIntegerQueryParams(String[] array) {
+        if (array == null || array.length == 0) {
+            return Set.of();
+        }
         Set<Integer> resultSet = new HashSet<>();
-        if (array != null) {
-            for (String strValue : array) {
-                if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
-                    resultSet.add(Integer.valueOf(strValue));
-                }
+        for (String strValue : array) {
+            if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+                resultSet.add(Integer.valueOf(strValue));
             }
         }
         return resultSet;
     }
 
     List<Boolean> collectBooleanQueryParams(String[] array) {
+        if (array == null || array.length == 0) {
+            return List.of();
+        }
         List<Boolean> resultList = new ArrayList<>();
-        if (array != null) {
-            for (String strValue : array) {
-                if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
-                    resultList.add(Boolean.valueOf(strValue));
-                }
+        for (String strValue : array) {
+            if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+                resultList.add(Boolean.valueOf(strValue));
             }
         }
         return resultList;
