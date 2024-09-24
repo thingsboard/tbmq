@@ -20,7 +20,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionState;
@@ -54,11 +53,16 @@ public class SharedSubscriptionPaginationServiceImplTest {
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
         clientSessionCache = mock(ClientSessionCache.class);
         sharedSubscriptionPaginationService = spy(new SharedSubscriptionPaginationServiceImpl(sharedSubscriptionCacheService, clientSessionCache));
+
+        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
+        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
+        when(clientSessionCache.getClientSessionInfo("clientTest")).thenReturn(getClientSessionInfo("clientTest", ClientType.DEVICE, true));
     }
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(sharedSubscriptionCacheService, clientSessionCache);
     }
 
     @Test
@@ -90,9 +94,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(100, 0, "another");
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -120,7 +121,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
         when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(null);
 
         PageLink pageLink = new PageLink(100, 0);
@@ -183,10 +183,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(2, 0);
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -217,10 +213,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("topicFilter", SortOrder.Direction.ASC));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -254,10 +246,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("shareName", SortOrder.Direction.DESC));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink));
@@ -291,10 +279,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("client")).thenReturn(getClientSessionInfo("client", ClientType.DEVICE, true));
-        when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("c2")).thenReturn(getClientSessionInfo("c2", ClientType.APPLICATION, true));
 
         PageLink pageLink = new PageLink(3, 0, null, new SortOrder("shareName"));
         PageData<SharedSubscriptionDto> pageData = sharedSubscriptionPaginationService.getSharedSubscriptions(getSharedSubscriptionQuery(pageLink, "p1", null));
@@ -332,8 +316,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("clientTest")).thenReturn(getClientSessionInfo("clientTest", ClientType.DEVICE, true));
         when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, false));
         when(clientSessionCache.getClientSessionInfo("test")).thenReturn(getClientSessionInfo("test", ClientType.APPLICATION, false));
 
@@ -403,8 +385,6 @@ public class SharedSubscriptionPaginationServiceImplTest {
                 )
         );
         when(sharedSubscriptionCacheService.getAllSharedSubscriptions()).thenReturn(map);
-        when(clientSessionCache.getClientSessionInfo("c0")).thenReturn(getClientSessionInfo("c0", ClientType.APPLICATION, true));
-        when(clientSessionCache.getClientSessionInfo("clientTest")).thenReturn(getClientSessionInfo("clientTest", ClientType.DEVICE, true));
         when(clientSessionCache.getClientSessionInfo("c1")).thenReturn(getClientSessionInfo("c1", ClientType.APPLICATION, false));
         when(clientSessionCache.getClientSessionInfo("test")).thenReturn(getClientSessionInfo("test", ClientType.APPLICATION, false));
 

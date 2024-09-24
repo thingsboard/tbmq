@@ -43,6 +43,10 @@ public class PageData<T> {
         this.hasNext = hasNext;
     }
 
+    public static <T> PageData<T> emptyPageData() {
+        return new PageData<>();
+    }
+
     public List<T> getData() {
         return data;
     }

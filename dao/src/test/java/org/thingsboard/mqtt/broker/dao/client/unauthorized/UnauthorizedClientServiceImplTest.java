@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.dao.client.unauthorized;
 
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
@@ -140,9 +142,12 @@ public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
     @Test
     public void givenUnauthorizedClients_whenGetUnauthorizedClients_thenSuccess() throws ExecutionException, InterruptedException, TimeoutException {
         int count = 152;
+        List<ListenableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            unauthorizedClientService.save(getUnauthorizedClient()).get(5, TimeUnit.SECONDS);
+            ListenableFuture<Void> future = unauthorizedClientService.save(getUnauthorizedClient());
+            futures.add(future);
         }
+        Futures.allAsList(futures).get(5, TimeUnit.SECONDS);
 
         List<UnauthorizedClient> loadedUnauthorizedClientList = new ArrayList<>();
         PageLink pageLink = new PageLink(23);
@@ -169,9 +174,12 @@ public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
     @Test
     public void givenUnauthorizedClients_whenDeleteAllUnauthorizedClients_thenSuccess() throws ExecutionException, InterruptedException, TimeoutException {
         int count = 152;
+        List<ListenableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            unauthorizedClientService.save(getUnauthorizedClient()).get(5, TimeUnit.SECONDS);
+            ListenableFuture<Void> future = unauthorizedClientService.save(getUnauthorizedClient());
+            futures.add(future);
         }
+        Futures.allAsList(futures).get(5, TimeUnit.SECONDS);
 
         PageLink pageLink = new PageLink(23);
         PageData<UnauthorizedClient> pageData = unauthorizedClientService.findUnauthorizedClients(pageLink);
@@ -189,19 +197,26 @@ public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
     public void givenUnauthorizedClients_whenRemoveUnauthorizedClients_thenSuccess() throws ExecutionException, InterruptedException, TimeoutException {
         int count = 152;
         List<UnauthorizedClient> unauthorizedClientList = new ArrayList<>();
+
+        List<ListenableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             UnauthorizedClient unauthorizedClient = getUnauthorizedClient();
             unauthorizedClientList.add(unauthorizedClient);
-            unauthorizedClientService.save(unauthorizedClient).get(5, TimeUnit.SECONDS);
+            ListenableFuture<Void> future = unauthorizedClientService.save(unauthorizedClient);
+            futures.add(future);
         }
+        Futures.allAsList(futures).get(5, TimeUnit.SECONDS);
 
         PageLink pageLink = new PageLink(23);
         PageData<UnauthorizedClient> pageData = unauthorizedClientService.findUnauthorizedClients(pageLink);
         Assert.assertFalse(pageData.getData().isEmpty());
 
+        futures = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            unauthorizedClientService.remove(unauthorizedClientList.get(i)).get(5, TimeUnit.SECONDS);
+            ListenableFuture<Void> future = unauthorizedClientService.remove(unauthorizedClientList.get(i));
+            futures.add(future);
         }
+        Futures.allAsList(futures).get(5, TimeUnit.SECONDS);
         unauthorizedClientService.deleteUnauthorizedClient(savedUnauthorizedClient.getClientId());
 
         pageLink = new PageLink(33);
@@ -214,14 +229,17 @@ public class UnauthorizedClientServiceImplTest extends AbstractServiceTest {
     public void givenUnauthorizedClients_whenFindByQuery_thenSuccess() throws ExecutionException, InterruptedException, TimeoutException {
         unauthorizedClientService.deleteUnauthorizedClient(savedUnauthorizedClient.getClientId());
 
+        List<ListenableFuture<Void>> futures = new ArrayList<>();
         for (int i = 0; i < 15; i++) {
             UnauthorizedClient unauthorizedClient = getUnauthorizedClient();
-            unauthorizedClientService.save(unauthorizedClient).get(5, TimeUnit.SECONDS);
+            ListenableFuture<Void> future = unauthorizedClientService.save(unauthorizedClient);
+            futures.add(future);
         }
+        Futures.allAsList(futures).get(5, TimeUnit.SECONDS);
 
         TimePageLink pageLink = new TimePageLink(23);
 
-        UnauthorizedClientQuery query = UnauthorizedClientQuery.builder().pageLink(pageLink).clientId("aaa").build();
+        UnauthorizedClientQuery query = UnauthorizedClientQuery.builder().pageLink(pageLink).clientId("aaaaaaaaaaa").build();
         PageData<UnauthorizedClient> pageData = unauthorizedClientService.findUnauthorizedClients(query);
         Assert.assertTrue(pageData.getData().isEmpty());
 

@@ -20,7 +20,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
@@ -99,8 +98,6 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @After
     public void tearDown() {
-        Mockito.reset(deviceMsgService, publishMsgDeliveryService, clientMqttActorManager,
-                clientLogger, deviceActorConfig, sharedSubscriptionCacheService);
     }
 
     @Test
