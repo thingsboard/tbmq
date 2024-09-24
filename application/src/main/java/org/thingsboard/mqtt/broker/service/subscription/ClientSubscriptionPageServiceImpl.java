@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -52,57 +51,31 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
         List<Boolean> retainAsPublishList = query.getRetainAsPublishList();
         Set<Integer> retainHandlingSet = query.getRetainHandlingSet();
 
-        List<ClientSubscriptionInfoDto> filteredSubscriptions = new ArrayList<>();
-
-        List<ClientSubscriptionInfoDto> filteredByClientId = filterByClientId(query, allClientSubscriptions);
-        for (var subscriptionInfoDto : filteredByClientId) {
-            if (!filterClientSubscriptionByTopicFilter(query, subscriptionInfoDto)) {
-                continue;
-            }
-            if (!CollectionUtils.isEmpty(qosSet)) {
-                if (!qosSet.contains(subscriptionInfoDto.getSubscription().getQos().value())) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(noLocalList) && noLocalList.size() == 1) {
-                if (subscriptionInfoDto.getSubscription().getOptions().isNoLocal() != noLocalList.get(0)) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(retainAsPublishList) && retainAsPublishList.size() == 1) {
-                if (subscriptionInfoDto.getSubscription().getOptions().isRetainAsPublish() != retainAsPublishList.get(0)) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(retainHandlingSet)) {
-                if (!retainHandlingSet.contains(subscriptionInfoDto.getSubscription().getOptions().getRetainHandling())) {
-                    continue;
-                }
-            }
-            if (query.getSubscriptionId() != null) {
-                if (!query.getSubscriptionId().equals(subscriptionInfoDto.getSubscription().getSubscriptionId())) {
-                    continue;
-                }
-            }
-
-            filteredSubscriptions.add(subscriptionInfoDto);
-        }
+        List<ClientSubscriptionInfoDto> filteredSubscriptions = filterByClientId(query, allClientSubscriptions)
+                .parallelStream()
+                .filter(subscriptionInfoDto -> filterClientSubscriptionByTopicFilter(query, subscriptionInfoDto))
+                .filter(subscriptionInfoDto -> filterClientSubscriptionByQos(qosSet, subscriptionInfoDto))
+                .filter(subscriptionInfoDto -> filterClientSubscriptionBySubOption(noLocalList, subscriptionInfoDto.getSubscription().getOptions().isNoLocal()))
+                .filter(subscriptionInfoDto -> filterClientSubscriptionBySubOption(retainAsPublishList, subscriptionInfoDto.getSubscription().getOptions().isRetainAsPublish()))
+                .filter(subscriptionInfoDto -> filterClientSubscriptionByRetainHandling(retainHandlingSet, subscriptionInfoDto))
+                .filter(subscriptionInfoDto -> filterBySubscriptionId(query, subscriptionInfoDto))
+                .collect(Collectors.toList());
 
         return mapToPageDataResponse(filteredSubscriptions, query.getPageLink());
     }
 
     private List<ClientSubscriptionInfoDto> filterByClientId(ClientSubscriptionQuery query, Map<String, Set<TopicSubscription>> allClientSubscriptions) {
-        List<ClientSubscriptionInfoDto> filteredByClientId = new ArrayList<>();
-        for (var subscritionsEntry : allClientSubscriptions.entrySet()) {
-            if (!filterClientSubscriptionsByTextSearch(query.getPageLink().getTextSearch(), subscritionsEntry.getKey())) {
-                continue;
-            }
-            if (!filterClientSubscriptionsByClientId(query, subscritionsEntry.getKey())) {
-                continue;
-            }
-            filteredByClientId.addAll(convertToClientSubscriptionInfoDtoList(subscritionsEntry));
-        }
-        return filteredByClientId;
+        return allClientSubscriptions
+                .entrySet()
+                .parallelStream()
+                .filter(subscritionsEntry -> filterClientSubscriptionsByTextSearch(query.getPageLink().getTextSearch(), subscritionsEntry.getKey()))
+                .filter(subscritionsEntry -> filterClientSubscriptionsByClientId(query, subscritionsEntry.getKey()))
+                .flatMap(subscritionsEntry ->
+                        subscritionsEntry
+                                .getValue()
+                                .stream()
+                                .map(topicSubscription -> newClientSubscriptionInfoDto(subscritionsEntry.getKey(), topicSubscription)))
+                .collect(Collectors.toList());
     }
 
     private PageData<ClientSubscriptionInfoDto> mapToPageDataResponse(List<ClientSubscriptionInfoDto> filteredClientSubscriptions, PageLink pageLink) {
@@ -145,12 +118,20 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
         return true;
     }
 
-    public List<ClientSubscriptionInfoDto> convertToClientSubscriptionInfoDtoList(Map.Entry<String, Set<TopicSubscription>> entry) {
-        List<ClientSubscriptionInfoDto> result = new ArrayList<>();
-        for (TopicSubscription topicSubscription : entry.getValue()) {
-            result.add(newClientSubscriptionInfoDto(entry.getKey(), topicSubscription));
-        }
-        return result;
+    private boolean filterClientSubscriptionByQos(Set<Integer> qosSet, ClientSubscriptionInfoDto subscriptionInfoDto) {
+        return CollectionUtils.isEmpty(qosSet) || qosSet.contains(subscriptionInfoDto.getSubscription().getQos().value());
+    }
+
+    private boolean filterClientSubscriptionBySubOption(List<Boolean> subOptionsList, boolean value) {
+        return CollectionUtils.isEmpty(subOptionsList) || subOptionsList.size() != 1 || value == subOptionsList.get(0);
+    }
+
+    private boolean filterClientSubscriptionByRetainHandling(Set<Integer> retainHandlingSet, ClientSubscriptionInfoDto subscriptionInfoDto) {
+        return CollectionUtils.isEmpty(retainHandlingSet) || retainHandlingSet.contains(subscriptionInfoDto.getSubscription().getOptions().getRetainHandling());
+    }
+
+    private boolean filterBySubscriptionId(ClientSubscriptionQuery query, ClientSubscriptionInfoDto subscriptionInfoDto) {
+        return query.getSubscriptionId() == null || query.getSubscriptionId().equals(subscriptionInfoDto.getSubscription().getSubscriptionId());
     }
 
     private ClientSubscriptionInfoDto newClientSubscriptionInfoDto(String clientId, TopicSubscription topicSubscription) {

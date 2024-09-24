@@ -250,9 +250,11 @@ public class ClientSubscriptionPageServiceImplTest {
         PageData<ClientSubscriptionInfoDto> result = clientSubscriptionPageService.getClientSubscriptions(query);
         long end = System.nanoTime();
 
-        System.out.println("Took " + TimeUnit.NANOSECONDS.toMillis(end - start) + " ms to process getClientSubscriptions by query");
+        long ms = TimeUnit.NANOSECONDS.toMillis(end - start);
+        System.out.println("Took " + ms + " ms to process getClientSubscriptions by query");
 
         assertEquals(1, result.getData().size());
+//        assertTrue(ms < 3000);
     }
 
     private Map<String, Set<TopicSubscription>> getRandomSubscriptionsMap() {
