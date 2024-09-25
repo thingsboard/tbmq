@@ -21,6 +21,7 @@ import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
@@ -31,7 +32,7 @@ public class ClientSessionQuery {
     private List<ConnectionState> connectedStatusList;
     private List<ClientType> clientTypeList;
     private List<Boolean> cleanStartList;
-    private List<String> nodeIdList;
+    private Set<String> nodeIdSet;
     private Integer subscriptions;
 
 }

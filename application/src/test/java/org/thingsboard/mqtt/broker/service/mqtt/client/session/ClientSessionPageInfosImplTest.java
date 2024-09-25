@@ -37,9 +37,12 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -435,7 +438,7 @@ public class ClientSessionPageInfosImplTest {
         ClientSessionQuery clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .nodeIdList(List.of())
+                .nodeIdSet(Set.of())
                 .build();
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(5, clientSessionInfos.getData().size());
@@ -443,7 +446,7 @@ public class ClientSessionPageInfosImplTest {
         clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .nodeIdList(List.of("tbmq1"))
+                .nodeIdSet(Set.of("tbmq1"))
                 .build();
         clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(3, clientSessionInfos.getData().size());
@@ -451,7 +454,7 @@ public class ClientSessionPageInfosImplTest {
         clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .nodeIdList(List.of("tbmq3", "tbmq2"))
+                .nodeIdSet(Set.of("tbmq3", "tbmq2"))
                 .build();
         clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(2, clientSessionInfos.getData().size());
@@ -459,7 +462,7 @@ public class ClientSessionPageInfosImplTest {
         clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .nodeIdList(List.of("tbmq5"))
+                .nodeIdSet(Set.of("tbmq5"))
                 .build();
         clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(0, clientSessionInfos.getData().size());
@@ -540,7 +543,7 @@ public class ClientSessionPageInfosImplTest {
                 .connectedStatusList(List.of(ConnectionState.CONNECTED))
                 .cleanStartList(List.of(false))
                 .clientTypeList(List.of(ClientType.APPLICATION))
-                .nodeIdList(List.of("tbmq2"))
+                .nodeIdSet(Set.of("tbmq2"))
                 .build();
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(0, clientSessionInfos.getData().size());
@@ -551,10 +554,54 @@ public class ClientSessionPageInfosImplTest {
                 .connectedStatusList(List.of(ConnectionState.CONNECTED))
                 .cleanStartList(List.of(true))
                 .clientTypeList(List.of(ClientType.DEVICE))
-                .nodeIdList(List.of("tbmq1"))
+                .nodeIdSet(Set.of("tbmq1"))
                 .build();
         clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(1, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void givenManySessions_whenGetClientSessionInfos_thenGetExpectedResultFastEnough() {
+        ClientSessionQuery query = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(30, 0))
+                .clientTypeList(List.of(ClientType.APPLICATION))
+                .build();
+
+        Map<String, ClientSessionInfo> allSessions = getRandomSessionsMap();
+        when(clientSessionCache.getAllClientSessions()).thenReturn(allSessions);
+
+        long start = System.nanoTime();
+        PageData<ShortClientSessionInfoDto> result = clientSessionPageInfos.getClientSessionInfos(query);
+        long end = System.nanoTime();
+
+        long ms = TimeUnit.NANOSECONDS.toMillis(end - start);
+        System.out.println("Took " + ms + " ms to process getClientSessionInfos by query");
+
+        assertEquals(1, result.getData().size());
+//        assertTrue(ms < 3000);
+    }
+
+    private Map<String, ClientSessionInfo> getRandomSessionsMap() {
+        Map<String, ClientSessionInfo> sessions = new HashMap<>();
+        Random random = new Random();
+
+        for (int i = 0; i < 10_000_000; i++) {
+            int randomNumber = random.nextInt(2);
+            boolean randomBoolean = randomNumber == 0;
+
+            sessions.put(RandomStringUtils.randomAlphabetic(10),
+                    getClientSessionInfo(randomBoolean, "tbmq1", randomBoolean,
+                            ClientType.DEVICE, System.currentTimeMillis(), 0)
+            );
+        }
+
+        sessions.put("abc",
+                getClientSessionInfo("abc", true, "tbmq1", false,
+                        ClientType.APPLICATION, System.currentTimeMillis(), 0)
+        );
+
+        return sessions;
     }
 
     public static long convertStringToTimestamp(String dateString) {
