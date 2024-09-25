@@ -40,9 +40,9 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPage
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -145,12 +145,12 @@ public class ClientSessionController extends BaseController {
                 }
             }
 
-            List<String> brokerNodeIdList = nodeIdList != null ? Arrays.asList(nodeIdList) : Collections.emptyList();
+            Set<String> brokerNodeIdSet = nodeIdList != null ? Set.of(nodeIdList) : Collections.emptySet();
 
             TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
 
             return checkNotNull(clientSessionPageInfos.getClientSessionInfos(
-                    new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts, brokerNodeIdList, subscriptions)
+                    new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts, brokerNodeIdSet, subscriptions)
             ));
         } catch (Exception e) {
             throw handleException(e);

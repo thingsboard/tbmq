@@ -21,7 +21,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -47,13 +49,15 @@ public class AuthRulePatternsServiceSuiteTest {
         this.authorizationRuleService = new DefaultAuthorizationRuleService();
     }
 
-    /*
-        parseSslAuthorizationRule tests
+    /**
+     * parseSslAuthorizationRule tests
      */
+
     @Test
     public void testSuccessfulCredentialsParse_Ssl1() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parent.com", ".*abc-123.*", List.of("test/.*"));
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
@@ -64,7 +68,8 @@ public class AuthRulePatternsServiceSuiteTest {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of(
                 ".*abc-123.*", new PubSubAuthorizationRules(List.of("test1/.*"), List.of("test2/.*"))
         ));
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("test1/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("test2/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
@@ -75,12 +80,13 @@ public class AuthRulePatternsServiceSuiteTest {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of(
                 ".*", new PubSubAuthorizationRules(List.of("all/.*"), List.of("all/.*"))
         ));
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456abc-1234321.ab.abc");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "123456abc-1234321.ab.abc");
         Assert.assertEquals(1, authRulePatterns.size());
         Assert.assertEquals("all/.*", authRulePatterns.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("all/.*", authRulePatterns.get(0).getSubPatterns().get(0).pattern());
 
-        List<AuthRulePatterns> authRulePatterns1 = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "test.test-12345678999.qwerty");
+        List<AuthRulePatterns> authRulePatterns1 = authorizationRuleService.parseSslAuthorizationRule(credentials, "test.test-12345678999.qwerty");
         Assert.assertEquals(1, authRulePatterns1.size());
         Assert.assertEquals("all/.*", authRulePatterns1.get(0).getPubPatterns().get(0).pattern());
         Assert.assertEquals("all/.*", authRulePatterns1.get(0).getSubPatterns().get(0).pattern());
@@ -97,7 +103,8 @@ public class AuthRulePatternsServiceSuiteTest {
                         ".*nonexistent.*", PubSubAuthorizationRules.newInstance(List.of("4/.*"))
                 )
         );
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "qwer1234-abc-p01.4321.ab.abc");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(credentials, "qwer1234-abc-p01.4321.ab.abc");
         Set<String> patterns = authRulePatterns.stream()
                 .map(AuthRulePatterns::getPubPatterns).toList()
                 .stream().flatMap(List::stream)
@@ -110,18 +117,21 @@ public class AuthRulePatternsServiceSuiteTest {
     @Test(expected = AuthenticationException.class)
     public void testEmptyRules() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = new SslMqttCredentials("parent.com", Map.of());
-        authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456789");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789");
     }
 
     @Test(expected = AuthenticationException.class)
     public void testPatternDontMatch_Ssl() throws AuthenticationException {
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance("parent.com", "key", List.of("test/.*"));
-        authorizationRuleService.parseSslAuthorizationRule(sslMqttCredentials, "123456789");
+        ClientTypeSslMqttCredentials credentials = newClientTypeSslMqttCredentials(sslMqttCredentials);
+        authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789");
     }
 
-    /*
-        parseBasicAuthorizationRule tests
+    /**
+     * parseBasicAuthorizationRule tests
      */
+
     @Test
     public void testSuccessfulCredentialsParse_Basic1() throws AuthenticationException {
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance("test", "test", null, List.of("test/.*"));
@@ -231,5 +241,9 @@ public class AuthRulePatternsServiceSuiteTest {
         authorizationRuleService.evict(CLIENT_ID);
 
         Assert.assertEquals(0, authorizationRuleService.getPublishAuthMap().size());
+    }
+
+    private ClientTypeSslMqttCredentials newClientTypeSslMqttCredentials(SslMqttCredentials sslMqttCredentials) {
+        return new ClientTypeSslMqttCredentials(ClientType.DEVICE, sslMqttCredentials, "credentialsName");
     }
 }

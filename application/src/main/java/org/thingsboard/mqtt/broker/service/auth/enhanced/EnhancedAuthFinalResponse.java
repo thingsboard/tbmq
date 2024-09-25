@@ -22,14 +22,14 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import java.util.List;
 
 @Builder
-public record EnhancedAuthResponse(boolean success,
-                                   byte[] response,
-                                   ClientType clientType,
-                                   List<AuthRulePatterns> authRulePatterns,
-                                   EnhancedAuthFailureReason enhancedAuthFailureReason) {
+public record EnhancedAuthFinalResponse(boolean success,
+                                        byte[] response,
+                                        ClientType clientType,
+                                        List<AuthRulePatterns> authRulePatterns,
+                                        EnhancedAuthFailureReason enhancedAuthFailureReason) {
 
-    public static EnhancedAuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, byte[] response) {
-        return EnhancedAuthResponse.builder()
+    public static EnhancedAuthFinalResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, byte[] response) {
+        return EnhancedAuthFinalResponse.builder()
                 .success(true)
                 .response(response)
                 .clientType(clientType)
@@ -37,8 +37,8 @@ public record EnhancedAuthResponse(boolean success,
                 .build();
     }
 
-    public static EnhancedAuthResponse failure(EnhancedAuthFailureReason enhancedAuthFailureReason) {
-        return EnhancedAuthResponse.builder()
+    public static EnhancedAuthFinalResponse failure(EnhancedAuthFailureReason enhancedAuthFailureReason) {
+        return EnhancedAuthFinalResponse.builder()
                 .success(false)
                 .enhancedAuthFailureReason(enhancedAuthFailureReason)
                 .build();

@@ -15,11 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.common.stats;
 
+import java.util.function.Supplier;
+
 public class DefaultMessagesStats implements MessagesStats {
+
     private final String name;
     private final StatsCounter totalCounter;
     private final StatsCounter successfulCounter;
     private final StatsCounter failedCounter;
+
+    private Supplier<Integer> queueSizeSupplier;
 
     public DefaultMessagesStats(String name, StatsCounter totalCounter, StatsCounter successfulCounter, StatsCounter failedCounter) {
         this.name = name;
@@ -68,5 +73,14 @@ public class DefaultMessagesStats implements MessagesStats {
         totalCounter.clear();
         successfulCounter.clear();
         failedCounter.clear();
+    }
+
+    @Override
+    public void updateQueueSize(Supplier<Integer> queueSizeSupplier) {
+        this.queueSizeSupplier = queueSizeSupplier;
+    }
+
+    public int getCurrentQueueSize() {
+        return queueSizeSupplier != null ? queueSizeSupplier.get() : 0;
     }
 }

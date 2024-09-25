@@ -28,7 +28,6 @@ import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
 import { base64toString, isLiteralObject } from '@core/utils';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 
 export interface EventContentDialogData {
@@ -130,7 +129,7 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
         getAce().subscribe(
           (ace) => {
             this.aceEditor = ace.edit(editorElement, editorOptions);
-            this.aceEditor.session.setUseWrapMode(false);
+            this.aceEditor.session.setUseWrapMode(this.contentType === ContentType.TEXT);
             this.aceEditor.setValue(processedContent, -1);
             this.updateEditorSize(editorElement, processedContent, this.aceEditor);
           }
@@ -153,22 +152,10 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
       });
       newWidth = 8 * maxLineLength + 16;
     }
-    // newHeight = Math.min(400, newHeight);
     this.renderer.setStyle(editorElement, 'minHeight', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'height', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'width', newWidth.toString() + 'px');
+    this.renderer.setStyle(editorElement, 'minHeight', '100px');
     editor.resize();
   }
-
-  onCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('action.on-copied'),
-        type: 'success',
-        duration: 1000,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      }));
-  }
-
 }

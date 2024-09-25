@@ -24,16 +24,20 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import java.util.List;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 public class AuthResponse {
 
     private final boolean success;
     private final ClientType clientType;
     private final List<AuthRulePatterns> authRulePatterns;
+    private final String reason;
 
-    public static AuthResponse failure() {
-        return AuthResponse.builder().success(false).build();
+    public static AuthResponse failure(String reason) {
+        return AuthResponse.builder().success(false).reason(reason).build();
     }
 
+    public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+        this(success, clientType, authRulePatterns, null);
+    }
 }

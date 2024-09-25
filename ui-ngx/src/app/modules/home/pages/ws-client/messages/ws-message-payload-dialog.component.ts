@@ -28,7 +28,6 @@ import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
 import { base64toString, isLiteralObject } from '@core/utils';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
 
 export interface WsMessageContentDialogComponentDialogData {
@@ -162,16 +161,4 @@ export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageCo
     this.renderer.setStyle(editorElement, 'width', newWidth.toString() + 'px');
     editor.resize();
   }
-
-  onCopied() {
-    this.store.dispatch(new ActionNotificationShow(
-      {
-        message: this.translate.instant('action.on-copied'),
-        type: 'success',
-        duration: 1000,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
-      }));
-  }
-
 }

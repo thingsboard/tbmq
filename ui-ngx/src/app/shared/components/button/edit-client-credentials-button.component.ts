@@ -54,7 +54,7 @@ export class EditClientCredentialsButtonComponent {
     if ($event) {
       $event.stopPropagation();
     }
-    this.clientCredentialsService.findClientCredentialsByName(this.name).subscribe(
+    this.clientCredentialsService.getClientCredentialsByName(this.name).subscribe(
       credentials => {
         if (credentials) {
           this.router.navigate(['client-credentials', credentials.id]);

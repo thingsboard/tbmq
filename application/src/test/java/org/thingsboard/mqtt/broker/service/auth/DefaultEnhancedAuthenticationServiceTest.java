@@ -15,22 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
 import org.apache.kafka.common.security.scram.internals.ScramSaslServer;
 import org.apache.kafka.common.security.scram.internals.ScramSaslServerProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramSaslServerWithCallback;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -88,29 +84,20 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         var scramSaslServer = mock(ScramSaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
-        var channelHandlerContextMock = mock(ChannelHandlerContext.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
         when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
-        when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerContextMock);
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isTrue();
+        assertThat(enhancedAuthContinueResponse.success()).isTrue();
         verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
         verify(clientSessionCtxMock).getScramSaslServerWithCallback();
-        verify(clientSessionCtxMock).getChannel();
         verifyNoMoreInteractions(clientSessionCtxMock);
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
-
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerContextMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
     }
 
     @Test
@@ -127,10 +114,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doThrow(SaslException.class).when(scramSaslServerWithCallbackMock).evaluateResponse(any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
         verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
         verify(clientSessionCtxMock).getScramSaslServerWithCallback();
@@ -146,10 +133,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verifyNoInteractions(clientSessionCtxMock);
     }
 
@@ -163,10 +150,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(saslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verifyNoInteractions(clientSessionCtxMock);
     }
 
@@ -179,10 +166,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doThrow(SaslException.class).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onClientConnectMsg(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verifyNoInteractions(clientSessionCtxMock);
     }
 
@@ -203,15 +190,15 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.getClientType()).thenReturn(ClientType.DEVICE);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isNull();
-        assertThat(enhancedAuthResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
-        assertThat(enhancedAuthResponse.clientType()).isEqualTo(ClientType.DEVICE);
-        assertThat(enhancedAuthResponse.success()).isTrue();
-        assertThat(enhancedAuthResponse.response()).isEqualTo(response);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isNull();
+        assertThat(enhancedAuthFinalResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
+        assertThat(enhancedAuthFinalResponse.clientType()).isEqualTo(ClientType.DEVICE);
+        assertThat(enhancedAuthFinalResponse.success()).isTrue();
+        assertThat(enhancedAuthFinalResponse.response()).isEqualTo(response);
     }
 
     @Test
@@ -223,29 +210,29 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(null);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
     }
 
     @Test
     public void givenAuthMethodMismatch_whenOnAuthContinue_thenVerifyFailure() {
         // GIVEN
-        var enhancedAuthContext = getEnhancedAuthContext(ScramAlgorithm.SHA_512);
+        var enhancedAuthContext = getEnhancedAuthContextWithSha512();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
     }
 
     @Test
@@ -257,12 +244,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
     }
 
     @Test
@@ -275,12 +262,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(null);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
     }
 
     @Test
@@ -295,12 +282,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.EVALUATION_ERROR);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
     }
 
     @Test
@@ -315,12 +302,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(false);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
     }
 
     @Test
@@ -328,12 +315,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var channelHandlerCtxMock = mock(ChannelHandlerContext.class);
         var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
-        when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerCtxMock);
         byte[] response = "server-final-data".getBytes(StandardCharsets.UTF_8);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(response);
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(true);
@@ -342,23 +327,15 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.getClientType()).thenReturn(ClientType.DEVICE);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isNull();
-        assertThat(enhancedAuthResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
-        assertThat(enhancedAuthResponse.clientType()).isEqualTo(ClientType.DEVICE);
-        assertThat(enhancedAuthResponse.success()).isTrue();
-        assertThat(enhancedAuthResponse.response()).isEqualTo(response);
-
-        verify(clientSessionCtxMock).getChannel();
-
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isNull();
+        assertThat(enhancedAuthFinalResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
+        assertThat(enhancedAuthFinalResponse.clientType()).isEqualTo(ClientType.DEVICE);
+        assertThat(enhancedAuthFinalResponse.success()).isTrue();
+        assertThat(enhancedAuthFinalResponse.response()).isEqualTo(response);
     }
 
     @Test
@@ -370,29 +347,29 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(null);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
     }
 
     @Test
     public void givenAuthMethodMismatch_whenOnReAuthContinue_thenVerifyFailure() {
         // GIVEN
-        var enhancedAuthContext = getEnhancedAuthContext(ScramAlgorithm.SHA_512);
+        var enhancedAuthContext = getEnhancedAuthContextWithSha512();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
     }
 
     @Test
@@ -404,12 +381,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
     }
 
     @Test
@@ -422,12 +399,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(null);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
     }
 
     @Test
@@ -442,12 +419,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException());
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.EVALUATION_ERROR);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
     }
 
     @Test
@@ -462,12 +439,12 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(false);
 
         // WHEN
-        EnhancedAuthResponse enhancedAuthResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
+        EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(enhancedAuthResponse).isNotNull();
-        assertThat(enhancedAuthResponse.success()).isFalse();
-        assertThat(enhancedAuthResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        assertThat(enhancedAuthFinalResponse).isNotNull();
+        assertThat(enhancedAuthFinalResponse.success()).isFalse();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
     }
 
     @Test
@@ -480,10 +457,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(authMethodFromConnect);
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(clientSessionCtxMock).getAuthMethod();
         verifyNoMoreInteractions(clientSessionCtxMock);
     }
@@ -498,10 +475,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(clientSessionCtxMock).getAuthMethod();
         verifyNoMoreInteractions(clientSessionCtxMock);
     }
@@ -520,10 +497,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException("Evaluation failed"));
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isFalse();
+        assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(clientSessionCtxMock).getAuthMethod();
         verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
         verify(clientSessionCtxMock).getScramSaslServerWithCallback();
@@ -537,7 +514,6 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var scramSaslServer = mock(ScramSaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var channelHandlerCtxMock = mock(ChannelHandlerContext.class);
         var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
 
         byte[] challenge = "server-initial-request".getBytes(StandardCharsets.UTF_8);
@@ -545,34 +521,26 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
         when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
-        when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerCtxMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(challenge);
 
         // WHEN
-        boolean result = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
+        var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
         // THEN
-        assertThat(result).isTrue();
+        assertThat(enhancedAuthContinueResponse.success()).isTrue();
         verify(clientSessionCtxMock).getAuthMethod();
         verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
         verify(clientSessionCtxMock).getScramSaslServerWithCallback();
-        verify(clientSessionCtxMock).getChannel();
         verifyNoMoreInteractions(clientSessionCtxMock);
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
-
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
     }
 
     private AuthRulePatterns getAuthRulePatterns() {
         return AuthRulePatterns.newInstance(List.of(Pattern.compile("test")));
     }
 
-    private EnhancedAuthContext getEnhancedAuthContext(ScramAlgorithm algorithm) {
-        return getEnhancedAuthContext(algorithm, "client-first-data".getBytes(StandardCharsets.UTF_8));
+    private EnhancedAuthContext getEnhancedAuthContextWithSha512() {
+        return getEnhancedAuthContext(ScramAlgorithm.SHA_512, "client-first-data".getBytes(StandardCharsets.UTF_8));
     }
 
     private EnhancedAuthContext getEnhancedAuthContext() {

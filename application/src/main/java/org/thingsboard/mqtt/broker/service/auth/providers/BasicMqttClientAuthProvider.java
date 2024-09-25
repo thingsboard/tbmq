@@ -72,12 +72,14 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         MqttClientCredentials basicCredentials = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
         if (basicCredentials == null) {
-            log.error("Failed to authenticate client with Basic credentials matching clientId: [{}] username: [{}]", authContext.getClientId(), authContext.getUsername());
-            return new AuthResponse(false, null, null);
+            String errorMsg = String.format("Failed to authenticate client using Basic credentials matching clientId: " +
+                    "%s, username: %s", authContext.getClientId(), authContext.getUsername());
+            log.warn(errorMsg);
+            return new AuthResponse(false, null, null, errorMsg);
         }
         putIntoClientSessionCredsCache(authContext, basicCredentials);
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
+        if (log.isDebugEnabled()) {
+            log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
         }
         BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);

@@ -31,10 +31,10 @@ import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -52,8 +52,6 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         return mapToPageDataResponse(filteredClientSessionInfos, pageLink);
     }
 
-    // TODO: 26.09.23 improve the performance of this two methods (do mapping toShortSessionInfo at the end, mb use parallel processing)
-
     @Override
     public PageData<ShortClientSessionInfoDto> getClientSessionInfos(ClientSessionQuery query) {
         var allClientSessions = clientSessionCache.getAllClientSessions();
@@ -64,48 +62,21 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<ConnectionState> connectedStatusList = query.getConnectedStatusList();
         List<ClientType> clientTypeList = query.getClientTypeList();
         List<Boolean> cleanStartList = query.getCleanStartList();
-        List<String> nodeIdList = query.getNodeIdList();
+        Set<String> nodeIdSet = query.getNodeIdSet();
         Integer subscriptions = query.getSubscriptions();
 
-        List<ClientSessionInfo> filteredClientSessionInfos = new ArrayList<>(allClientSessions.size());
-        for (ClientSessionInfo clientSessionInfo : allClientSessions.values()) {
-            if (!filterClientSessionByTextSearch(pageLink.getTextSearch(), clientSessionInfo)) {
-                continue;
-            }
-            if (!CollectionUtils.isEmpty(connectedStatusList) && connectedStatusList.size() == 1) {
-                if (getSessionConnectionState(clientSessionInfo) != connectedStatusList.get(0)) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(clientTypeList) && clientTypeList.size() == 1) {
-                if (clientSessionInfo.getType() != clientTypeList.get(0)) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(cleanStartList) && cleanStartList.size() == 1) {
-                if (clientSessionInfo.isCleanStart() != cleanStartList.get(0)) {
-                    continue;
-                }
-            }
-            if (subscriptions != null) {
-                if (subscriptions != getSubscriptionsCount(clientSessionInfo)) {
-                    continue;
-                }
-            }
-            if (!CollectionUtils.isEmpty(nodeIdList)) {
-                if (!nodeIdList.contains(clientSessionInfo.getServiceId())) {
-                    continue;
-                }
-            }
-            if (startTime != null && endTime != null) {
-                if (clientSessionInfo.isConnected()) {
-                    if (isOutOfTimeRange(clientSessionInfo.getConnectedAt(), startTime, endTime)) continue;
-                } else {
-                    if (isOutOfTimeRange(clientSessionInfo.getDisconnectedAt(), startTime, endTime)) continue;
-                }
-            }
-            filteredClientSessionInfos.add(clientSessionInfo);
-        }
+        List<ClientSessionInfo> filteredClientSessionInfos = allClientSessions
+                .values()
+                .parallelStream()
+                .filter(clientSessionInfo -> filterClientSessionByTextSearch(pageLink.getTextSearch(), clientSessionInfo))
+                .filter(clientSessionInfo -> filterByConnectedStatus(connectedStatusList, clientSessionInfo))
+                .filter(clientSessionInfo -> filterByClientType(clientTypeList, clientSessionInfo))
+                .filter(clientSessionInfo -> filterByCleanStart(cleanStartList, clientSessionInfo))
+                .filter(clientSessionInfo -> filterBySubscriptions(subscriptions, clientSessionInfo))
+                .filter(clientSessionInfo -> filterByNodeId(nodeIdSet, clientSessionInfo))
+                .filter(clientSessionInfo -> filterByTimeRange(startTime, endTime, clientSessionInfo))
+                .toList();
+
         return mapToPageDataResponse(filteredClientSessionInfos, pageLink);
     }
 
@@ -124,8 +95,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 pageLink.getPage() < totalPages - 1);
     }
 
-    private static boolean isOutOfTimeRange(long ts, long startTime, long endTime) {
-        return ts < startTime || ts > endTime;
+    private static boolean isInTimeRange(long ts, long startTime, long endTime) {
+        return ts >= startTime && ts <= endTime;
     }
 
     @Override
@@ -175,6 +146,35 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
     private boolean filterClientSessionByTextSearch(String textSearch, ClientSessionInfo clientSessionInfo) {
         if (textSearch != null) {
             return clientSessionInfo.getClientId().toLowerCase().contains(textSearch.toLowerCase());
+        }
+        return true;
+    }
+
+    private boolean filterByConnectedStatus(List<ConnectionState> connectedStatusList, ClientSessionInfo clientSessionInfo) {
+        return CollectionUtils.isEmpty(connectedStatusList) || connectedStatusList.size() != 1 || getSessionConnectionState(clientSessionInfo) == connectedStatusList.get(0);
+    }
+
+    private boolean filterByClientType(List<ClientType> clientTypeList, ClientSessionInfo clientSessionInfo) {
+        return CollectionUtils.isEmpty(clientTypeList) || clientTypeList.size() != 1 || clientSessionInfo.getType() == clientTypeList.get(0);
+    }
+
+    private boolean filterByCleanStart(List<Boolean> cleanStartList, ClientSessionInfo clientSessionInfo) {
+        return CollectionUtils.isEmpty(cleanStartList) || cleanStartList.size() != 1 || clientSessionInfo.isCleanStart() == cleanStartList.get(0);
+    }
+
+    private boolean filterBySubscriptions(Integer subscriptions, ClientSessionInfo clientSessionInfo) {
+        return subscriptions == null || subscriptions == getSubscriptionsCount(clientSessionInfo);
+    }
+
+    private boolean filterByNodeId(Set<String> nodeIdSet, ClientSessionInfo clientSessionInfo) {
+        return CollectionUtils.isEmpty(nodeIdSet) || nodeIdSet.contains(clientSessionInfo.getServiceId());
+    }
+
+    private boolean filterByTimeRange(Long startTime, Long endTime, ClientSessionInfo clientSessionInfo) {
+        if (startTime != null && endTime != null) {
+            return clientSessionInfo.isConnected() ?
+                    isInTimeRange(clientSessionInfo.getConnectedAt(), startTime, endTime) :
+                    isInTimeRange(clientSessionInfo.getDisconnectedAt(), startTime, endTime);
         }
         return true;
     }

@@ -91,6 +91,10 @@ public class ClientSessionCtx implements SessionContext {
         this.pendingPublishes = initPendingPublishes(mqttHandlerCtx);
     }
 
+    public byte[] getAddressBytes() {
+        return this.address.getAddress().getAddress();
+    }
+
     private int getMaxAwaitingQueueSize(MqttHandlerCtx mqttHandlerCtx) {
         return mqttHandlerCtx == null ? BrokerConstants.MAX_IN_FLIGHT_MESSAGES : mqttHandlerCtx.getMaxInFlightMsgs();
     }

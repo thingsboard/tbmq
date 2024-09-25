@@ -557,7 +557,7 @@ sql:
   ts_key_value_partitioning: "${SQL_TS_KV_PARTITIONING:DAYS}"
   ts:
     # Batch size for persisting time series inserts
-    batch_size: "${SQL_TS_BATCH_SIZE:10000}"
+    batch_size: "${SQL_TS_BATCH_SIZE:1000}"
     # Max timeout for time series entries queue polling. Value set in milliseconds
     batch_max_delay: "${SQL_TS_BATCH_MAX_DELAY_MS:100}"
     # Number of threads that execute batch insert/update statements for time series data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
@@ -569,6 +569,21 @@ sql:
     batch_max_delay: "${SQL_TS_LATEST_BATCH_MAX_DELAY_MS:50}"
     # Number of threads that execute batch insert/update statements for latest time series data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
     batch_threads: "${SQL_TS_LATEST_BATCH_THREADS:3}"
+  unauthorized-client:
+    insert:
+      # Batch size for persisting unauthorized client inserts
+      batch_size: "${SQL_UNAUTHORIZED_CLIENT_INSERT_BATCH_SIZE:1000}"
+      # Max timeout for unauthorized client insert entries queue polling. Value set in milliseconds
+      batch_max_delay: "${SQL_UNAUTHORIZED_CLIENT_INSERT_BATCH_MAX_DELAY_MS:50}"
+      # Number of threads that execute batch insert/update statements for unauthorized client data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+      batch_threads: "${SQL_UNAUTHORIZED_CLIENT_INSERT_BATCH_THREADS:3}"
+    delete:
+      # Batch size for processing unauthorized client deletes
+      batch_size: "${SQL_UNAUTHORIZED_CLIENT_DELETE_BATCH_SIZE:1000}"
+      # Max timeout for unauthorized client delete entries queue polling. Value set in milliseconds
+      batch_max_delay: "${SQL_UNAUTHORIZED_CLIENT_DELETE_BATCH_MAX_DELAY_MS:50}"
+      # Number of threads that execute batch delete statements for unauthorized client data. Batch thread count have to be a prime number like 3 or 5 to gain perfect hash distribution
+      batch_threads: "${SQL_UNAUTHORIZED_CLIENT_DELETE_BATCH_THREADS:3}"
   ttl:
     ts:
       # The parameter to specify whether to use TTL (Time To Live) for time series records
@@ -577,6 +592,13 @@ sql:
       execution_interval_ms: "${SQL_TTL_TS_EXECUTION_INTERVAL_MS:86400000}"
       # The parameter to specify system TTL(Time To Live) value for time series records. Value set in seconds. 0 - records are never expired. Default value corresponds to seven days
       ts_key_value_ttl: "${SQL_TTL_TS_KEY_VALUE_TTL:604800}"
+    unauthorized_client:
+      # The parameter to specify whether to use TTL (Time To Live) for unauthorized clients
+      enabled: "${SQL_TTL_UNAUTHORIZED_CLIENT_ENABLED:true}"
+      # The parameter to specify the period of execution TTL task for unauthorized clients. Value set in milliseconds. Default value corresponds to one day
+      execution_interval_ms: "${SQL_TTL_UNAUTHORIZED_CLIENT_EXECUTION_INTERVAL_MS:86400000}"
+      # The parameter to specify system TTL(Time To Live) value for unauthorized clients. Value set in seconds. 0 - records are never expired. Default value corresponds to three days
+      ttl: "${SQL_TTL_UNAUTHORIZED_CLIENT_TTL:259200}"
 
 # SQL DAO configuration parameters
 spring:

@@ -28,11 +28,12 @@ import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-management.module';
 import {
   SharedSubscriptionGroupsModule
-} from "@home/pages/shared-subscription-groups/shared-subscription-groups.module";
+} from '@home/pages/shared-subscription-groups/shared-subscription-groups.module';
 import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
 import { GettingStartedModule } from '@home/pages/getting-started/getting-started.module';
-import { SecurityModule } from "@home/pages/security/security.module";
-import { AccountModule } from "@home/pages/account/account.module";
+import { SecurityModule } from '@home/pages/security/security.module';
+import { AccountModule } from '@home/pages/account/account.module';
+import { UnauthorizedClientModule } from '@home/pages/unauthorized-client/unauthorized-client.module';
 
 @NgModule({
   exports: [
@@ -50,7 +51,8 @@ import { AccountModule } from "@home/pages/account/account.module";
     WsClientModule,
     GettingStartedModule,
     AccountModule,
-    SecurityModule
+    SecurityModule,
+    UnauthorizedClientModule
   ]
 })
 export class HomePagesModule {

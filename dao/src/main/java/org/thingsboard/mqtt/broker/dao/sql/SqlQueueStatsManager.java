@@ -15,9 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.dao.sql;
 
-
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 
 public interface SqlQueueStatsManager {
+
     MessagesStats createSqlQueueStats(String queueName, int queueIndex);
+
 }

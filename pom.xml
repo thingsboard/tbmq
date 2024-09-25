@@ -71,7 +71,7 @@
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
         <commons-csv.version>1.11.0</commons-csv.version>
-        <jackson.version>2.17.0</jackson.version>
+        <jackson.version>2.17.2</jackson.version>
         <awaitility.version>4.2.1</awaitility.version>
         <jaxb.version>4.0.2</jaxb.version>
         <jjwt.version>0.12.5</jjwt.version>

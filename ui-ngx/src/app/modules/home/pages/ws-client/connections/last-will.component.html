@@ -22,7 +22,7 @@
       <input matInput formControlName="topic">
       <tb-copy-button matSuffix
                       [fxShow]="formGroup.get('topic')?.value?.length"
-                      [copyText]="formGroup.get('topic')?.value?.length">
+                      [copyText]="formGroup.get('topic')?.value">
       </tb-copy-button>
     </mat-form-field>
     <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">

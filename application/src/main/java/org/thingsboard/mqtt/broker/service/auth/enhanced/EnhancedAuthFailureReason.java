@@ -24,8 +24,12 @@ public enum EnhancedAuthFailureReason {
     AUTH_METHOD_MISMATCH("Received AUTH message while authentication method mismatch with value from the session ctx!"),
     MISSING_AUTH_DATA("No authentication data found!"),
     MISSING_SCRAM_SERVER("Received AUTH continue message while saslServer is null!"),
-    AUTH_CHALLENGE_FAILED("Client's proof of password knowledge was evaluated, but the authentication challenge failed!"),
-    EVALUATION_ERROR("Failed to verify the client's proof of password knowledge!");
+    FAILED_TO_INIT_SCRAM_SERVER("Failed to initialize SCRAM Server!"),
+    AUTH_CHALLENGE_FAILED("Client's proof of password knowledge was evaluated, but the authentication challenge wasn't completed successfully!"),
+    CLIENT_FIRST_MESSAGE_EVALUATION_ERROR("Failed to evaluate client first message!"),
+    CLIENT_FINAL_MESSAGE_EVALUATION_ERROR("Failed to verify the client's proof of password knowledge!"),
+    CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR("Failed to evaluate client re-AUTH message!"),
+    INVALID_CLIENT_STATE_FOR_AUTH_PACKET("Received AUTH continue message while client is in wrong state!");
 
     private final String reasonLog;
 

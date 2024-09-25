@@ -48,7 +48,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
               public entityId: string = null) {
     super();
 
-    this.entityType = EntityType.MQTT_CLIENT_CREDENTIALS;
+    this.entityType = EntityType.RETAINED_MESSAGE;
     this.entityComponent = null;
 
     this.detailsPanelEnabled = false;

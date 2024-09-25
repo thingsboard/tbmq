@@ -16,17 +16,18 @@
 package org.thingsboard.mqtt.broker.service.auth;
 
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface EnhancedAuthenticationService {
 
-    boolean onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+    EnhancedAuthContinueResponse onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
-    boolean onReAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+    EnhancedAuthContinueResponse onReAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
-    EnhancedAuthResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+    EnhancedAuthFinalResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
-    EnhancedAuthResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+    EnhancedAuthFinalResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
 }

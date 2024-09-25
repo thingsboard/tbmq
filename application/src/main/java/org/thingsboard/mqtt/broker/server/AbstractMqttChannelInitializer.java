@@ -24,6 +24,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.thingsboard.mqtt.broker.server.ip.IpAddressHandler;
 import org.thingsboard.mqtt.broker.server.traffic.DuplexTrafficHandler;
 
 @Slf4j
@@ -44,6 +45,8 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
+        pipeline.addLast(new IpAddressHandler());
+
         SslHandler sslHandler = getSslHandler();
         if (sslHandler != null) {
             pipeline.addLast(sslHandler);

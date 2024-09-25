@@ -15,7 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.common.stats;
 
+import java.util.function.Supplier;
+
 public class StubMessagesStats implements MessagesStats {
+
     public static MessagesStats STUB_MESSAGE_STATS = new StubMessagesStats();
 
     private StubMessagesStats(){}
@@ -51,4 +54,14 @@ public class StubMessagesStats implements MessagesStats {
 
     @Override
     public void reset() {}
+
+    @Override
+    public void updateQueueSize(Supplier<Integer> queueSizeSupplier) {
+
+    }
+
+    @Override
+    public int getCurrentQueueSize() {
+        return 0;
+    }
 }

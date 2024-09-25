@@ -90,11 +90,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     }));
     this.subRulesArray.push([ANY_CHARACTERS]);
     this.pubRulesArray.push([ANY_CHARACTERS]);
-    this.rulesMappingFormGroup.valueChanges.subscribe((value) => {
-      setTimeout(() => {
-        this.updateView(value);
-      }, 0)
-    });
+    this.rulesMappingFormGroup.valueChanges.subscribe(value =>  this.updateView(value));
   }
 
   ngAfterViewInit() {
@@ -190,7 +186,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
         rulesControls.push(rulesControl);
         index++;
       }
-      this.rulesMappingFormGroup.setControl('authRulesMapping', this.fb.array(rulesControls));
+      this.rulesMappingFormGroup.setControl('authRulesMapping', this.fb.array(rulesControls), {emitEvent: false});
     }
   }
 

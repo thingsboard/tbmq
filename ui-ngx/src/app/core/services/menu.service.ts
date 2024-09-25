@@ -82,6 +82,13 @@ export class MenuService {
         icon: 'mdi:shield-lock'
       },
       {
+        id: 'unauthorized-clients',
+        name: 'unauthorized-client.unauthorized-clients',
+        type: 'link',
+        path: '/unauthorized-clients',
+        icon: 'no_accounts'
+      },
+      {
         id: 'web_socket_client',
         name: 'ws-client.ws-client',
         type: 'link',

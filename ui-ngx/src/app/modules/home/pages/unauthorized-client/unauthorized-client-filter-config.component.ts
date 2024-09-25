@@ -1,0 +1,302 @@
+///
+/// Copyright © 2016-2024 The Thingsboard Authors
+///
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
+///
+///     http://www.apache.org/licenses/LICENSE-2.0
+///
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
+///
+
+import {
+  Component,
+  ElementRef,
+  forwardRef,
+  Inject,
+  InjectionToken,
+  Input,
+  OnDestroy,
+  OnInit,
+  Optional,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef
+} from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { coerceBoolean } from '@shared/decorators/coercion';
+import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
+import { TemplatePortal } from '@angular/cdk/portal';
+
+import { TranslateService } from '@ngx-translate/core';
+import { deepClone } from '@core/utils';
+import { EntityType } from '@shared/models/entity-type.models';
+import { fromEvent, Subscription } from 'rxjs';
+import { POSITION_MAP } from '@app/shared/models/overlay.models';
+import {
+  UnauthorizedClientFilterConfig,
+  unauthorizedClientFilterConfigEquals
+} from '@shared/models/unauthorized-client.model';
+
+export const UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA = new InjectionToken<any>('UnauthorizedClientFilterConfigData');
+
+export interface UnauthorizedClientFilterConfigData {
+  panelMode: boolean;
+  unauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
+  initialUnauthorizedClientFilterConfig?: UnauthorizedClientFilterConfig;
+}
+
+// @dynamic
+@Component({
+  selector: 'tb-unauthorized-client-filter-config',
+  templateUrl: './unauthorized-client-filter-config.component.html',
+  styleUrls: ['./unauthorized-client-filter-config.component.scss'],
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => UnauthorizedClientFilterConfigComponent),
+      multi: true
+    }
+  ]
+})
+export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
+
+  @ViewChild('unauthorizedClientPanel')
+  unauthorizedClientFilterPanel: TemplateRef<any>;
+
+  @Input() disabled: boolean;
+
+  @coerceBoolean()
+  @Input()
+  buttonMode = true;
+
+  @coerceBoolean()
+  @Input()
+  propagatedFilter = true;
+
+  @Input()
+  initialUnauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
+
+  passwordProvidedList = [true, false];
+  tlsUsedList = [true, false];
+
+  panelMode = false;
+
+  buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title');
+
+  unauthorizedClientFilterConfigForm: UntypedFormGroup;
+
+  unauthorizedClientFilterOverlayRef: OverlayRef;
+
+  panelResult: UnauthorizedClientFilterConfig = null;
+
+  entityType = EntityType;
+
+  private unauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
+  private resizeWindows: Subscription;
+
+  private propagateChange = (_: any) => {};
+
+  constructor(@Optional() @Inject(UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA)
+              private data: UnauthorizedClientFilterConfigData | undefined,
+              @Optional()
+              private overlayRef: OverlayRef,
+              private fb: UntypedFormBuilder,
+              private translate: TranslateService,
+              private overlay: Overlay,
+              private nativeElement: ElementRef,
+              private viewContainerRef: ViewContainerRef) {
+  }
+
+  ngOnInit(): void {
+    if (this.data) {
+      this.panelMode = this.data.panelMode;
+      this.unauthorizedClientFilterConfig = this.data.unauthorizedClientFilterConfig;
+      this.initialUnauthorizedClientFilterConfig = this.data.initialUnauthorizedClientFilterConfig;
+      if (this.panelMode && !this.initialUnauthorizedClientFilterConfig) {
+        this.initialUnauthorizedClientFilterConfig = deepClone(this.unauthorizedClientFilterConfig);
+      }
+    }
+    this.unauthorizedClientFilterConfigForm = this.fb.group({
+      passwordProvidedList: [null, []],
+      tlsUsedList: [null, []],
+      clientId: [null, []],
+      ipAddress: [null, []],
+      username: [null, []],
+      reason: [null, []],
+    });
+    this.unauthorizedClientFilterConfigForm.valueChanges.subscribe(
+      () => {
+        if (!this.buttonMode) {
+          this.unauthorizedClientConfigUpdated(this.unauthorizedClientFilterConfigForm.value);
+        }
+      }
+    );
+    if (this.panelMode) {
+      this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
+    }
+    this.initialUnauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigForm.getRawValue();
+  }
+
+  ngOnDestroy(): void {
+  }
+
+  registerOnChange(fn: any): void {
+    this.propagateChange = fn;
+  }
+
+  registerOnTouched(fn: any): void {
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+    if (this.disabled) {
+      this.unauthorizedClientFilterConfigForm.disable({emitEvent: false});
+    } else {
+      this.unauthorizedClientFilterConfigForm.enable({emitEvent: false});
+    }
+  }
+
+  writeValue(unauthorizedClientFilterConfig?: UnauthorizedClientFilterConfig): void {
+    this.unauthorizedClientFilterConfig = unauthorizedClientFilterConfig;
+    if (!this.initialUnauthorizedClientFilterConfig && unauthorizedClientFilterConfig) {
+      this.initialUnauthorizedClientFilterConfig = deepClone(unauthorizedClientFilterConfig);
+    }
+    this.updateButtonDisplayValue();
+    this.updateUnauthorizedClientConfigForm(unauthorizedClientFilterConfig);
+  }
+
+  toggleFilterPanel($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    const config = new OverlayConfig({
+      panelClass: 'tb-filter-panel',
+      backdropClass: 'cdk-overlay-transparent-backdrop',
+      hasBackdrop: true,
+      maxHeight: '80vh',
+      height: 'min-content',
+      minWidth: ''
+    });
+    config.hasBackdrop = true;
+    config.positionStrategy = this.overlay.position()
+      .flexibleConnectedTo(this.nativeElement)
+      .withPositions([POSITION_MAP.bottomLeft]);
+
+    this.unauthorizedClientFilterOverlayRef = this.overlay.create(config);
+    this.unauthorizedClientFilterOverlayRef.backdropClick().subscribe(() => {
+      this.unauthorizedClientFilterOverlayRef.dispose();
+    });
+    this.unauthorizedClientFilterOverlayRef.attach(new TemplatePortal(this.unauthorizedClientFilterPanel,
+      this.viewContainerRef));
+    this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
+      this.unauthorizedClientFilterOverlayRef.updatePosition();
+    });
+  }
+
+  cancel() {
+    this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+    } else {
+      this.resizeWindows.unsubscribe();
+      this.unauthorizedClientFilterOverlayRef.dispose();
+    }
+  }
+
+  update() {
+    this.unauthorizedClientConfigUpdated(this.unauthorizedClientFilterConfigForm.value);
+    this.unauthorizedClientFilterConfigForm.markAsPristine();
+    if (this.panelMode) {
+      this.panelResult = this.unauthorizedClientFilterConfig;
+    }
+    if (this.overlayRef) {
+      this.overlayRef.dispose();
+    } else {
+      this.resizeWindows.unsubscribe();
+      this.unauthorizedClientFilterOverlayRef.dispose();
+    }
+  }
+
+  reset() {
+    if (this.initialUnauthorizedClientFilterConfig) {
+      if (this.buttonMode || this.panelMode) {
+        const unauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigFromFormValue(this.unauthorizedClientFilterConfigForm.value);
+        if (!unauthorizedClientFilterConfigEquals(unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
+          this.updateUnauthorizedClientConfigForm(this.initialUnauthorizedClientFilterConfig);
+          this.unauthorizedClientFilterConfigForm.markAsDirty();
+        }
+      } else {
+        if (!unauthorizedClientFilterConfigEquals(this.unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
+          this.unauthorizedClientFilterConfig = this.initialUnauthorizedClientFilterConfig;
+          this.updateButtonDisplayValue();
+          this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
+          this.propagateChange(this.unauthorizedClientFilterConfig);
+        }
+      }
+    }
+  }
+
+  private updateUnauthorizedClientConfigForm(unauthorizedClientFilterConfig?: UnauthorizedClientFilterConfig) {
+    this.unauthorizedClientFilterConfigForm.patchValue({
+      clientId: unauthorizedClientFilterConfig?.clientId,
+      ipAddress: unauthorizedClientFilterConfig?.ipAddress,
+      username: unauthorizedClientFilterConfig?.username,
+      reason: unauthorizedClientFilterConfig?.reason,
+      passwordProvidedList: unauthorizedClientFilterConfig?.passwordProvidedList,
+      tlsUsedList: unauthorizedClientFilterConfig?.tlsUsedList,
+    }, {emitEvent: false});
+  }
+
+  private unauthorizedClientConfigUpdated(formValue: any) {
+    this.unauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigFromFormValue(formValue);
+    this.updateButtonDisplayValue();
+    this.propagateChange(this.unauthorizedClientFilterConfig);
+  }
+
+  private unauthorizedClientFilterConfigFromFormValue(formValue: any): UnauthorizedClientFilterConfig {
+    return {
+      clientId: formValue.clientId,
+      ipAddress: formValue.ipAddress,
+      username: formValue.username,
+      reason: formValue.reason,
+      passwordProvidedList: formValue.passwordProvidedList,
+      tlsUsedList: formValue.tlsUsedList
+    };
+  }
+
+  private updateButtonDisplayValue() {
+    if (this.buttonMode) {
+      const filterTextParts: string[] = [];
+      if (this.unauthorizedClientFilterConfig?.clientId?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.clientId);
+      }
+      if (this.unauthorizedClientFilterConfig?.username?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.username);
+      }
+      if (this.unauthorizedClientFilterConfig?.ipAddress?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.ipAddress);
+      }
+      if (this.unauthorizedClientFilterConfig?.reason?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.reason);
+      }
+      if (this.unauthorizedClientFilterConfig?.passwordProvidedList?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.passwordProvidedList.join(', '));
+      }
+      if (this.unauthorizedClientFilterConfig?.tlsUsedList?.length) {
+        filterTextParts.push(this.unauthorizedClientFilterConfig.tlsUsedList.join(', '));
+      }
+      if (!filterTextParts.length) {
+        this.buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title');
+      } else {
+        this.buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title') + `: ${filterTextParts.join('; ')}`;
+      }
+    }
+  }
+
+}

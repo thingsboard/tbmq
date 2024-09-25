@@ -15,8 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.HasSinglePubSubAutorizationRules;
-import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
@@ -24,7 +24,7 @@ import java.util.List;
 
 public interface AuthorizationRuleService {
 
-    List<AuthRulePatterns> parseSslAuthorizationRule(SslMqttCredentials credentials, String clientCommonName) throws AuthenticationException;
+    List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException;
 
     AuthRulePatterns parseAuthorizationRule(HasSinglePubSubAutorizationRules credentials) throws AuthenticationException;
 
