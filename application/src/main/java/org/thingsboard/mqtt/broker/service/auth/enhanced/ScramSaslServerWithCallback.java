@@ -15,18 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
-import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-@Data
-public class ScramSaslServerWithCallback {
-
-    private final SaslServer saslServer;
-    private final ScramAuthCallbackHandler callbackHandler;
+public record ScramSaslServerWithCallback(SaslServer saslServer, ScramAuthCallbackHandler callbackHandler) {
 
     public byte[] evaluateResponse(byte[] authData) throws SaslException {
         return saslServer.evaluateResponse(authData);

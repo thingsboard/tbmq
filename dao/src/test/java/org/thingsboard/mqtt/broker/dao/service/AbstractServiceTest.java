@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.runner.RunWith;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -26,7 +24,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import org.thingsboard.mqtt.broker.common.data.id.HasId;
 
-import java.io.IOException;
 import java.util.Comparator;
 
 @RunWith(SpringRunner.class)
@@ -35,12 +32,6 @@ import java.util.Comparator;
 @Configuration
 @ComponentScan("org.thingsboard.mqtt.broker")
 public abstract class AbstractServiceTest {
-
-    protected ObjectMapper mapper = new ObjectMapper();
-
-    public JsonNode readFromResource(String resourceName) throws IOException {
-        return mapper.readTree(this.getClass().getClassLoader().getResourceAsStream(resourceName));
-    }
 
     public static class IdComparator<D extends HasId> implements Comparator<D> {
         @Override

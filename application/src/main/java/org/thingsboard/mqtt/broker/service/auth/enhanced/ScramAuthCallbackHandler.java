@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.security.scram.ScramCredential;
 import org.apache.kafka.common.security.scram.ScramCredentialCallback;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -34,6 +35,7 @@ import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials.ITERATIONS_COUNT;
@@ -44,7 +46,6 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
 
-    private String username;
     @Getter
     private ClientType clientType;
     @Getter
@@ -57,36 +58,45 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
 
     @Override
     public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
-        for (Callback callback : callbacks) {
-            if (callback instanceof NameCallback nameCallback) {
-                username = nameCallback.getDefaultName();
-                if (username.isEmpty()) {
-                    throw new RuntimeException("Failed to process SCRAM enhanced authentication due to missing username!");
-                }
-            } else if (callback instanceof ScramCredentialCallback scramCallback) {
-                String credentialsId = ProtocolUtil.usernameCredentialsId(username);
-                List<MqttClientCredentials> matchingCredentials = credentialsService.findMatchingCredentials(List.of(credentialsId));
-                if (matchingCredentials.isEmpty()) {
-                    throw new RuntimeException("Failed to find credentials for given username: " + username);
-                }
-                MqttClientCredentials credentials = matchingCredentials.get(0);
-                if (!ClientCredentialsType.SCRAM.equals(credentials.getCredentialsType())) {
-                    throw new RuntimeException("Failed to find SCRAM credentials for given username: " + username);
-                }
-                clientType = credentials.getClientType();
-                var scramMqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(credentials, ScramMqttCredentials.class);
-                try {
-                    authRulePatterns = authorizationRuleService.parseAuthorizationRule(scramMqttCredentials);
-                } catch (AuthenticationException e) {
-                    throw new RuntimeException("Failed to parse authorization rule for SCRAM credentials: " + credentialsId, e);
-                }
-                var scramCredential = new ScramCredential(scramMqttCredentials.getSalt(),
-                        scramMqttCredentials.getStoredKey(), scramMqttCredentials.getServerKey(), ITERATIONS_COUNT);
-                scramCallback.scramCredential(scramCredential);
-            } else {
-                throw new UnsupportedCallbackException(callback);
-            }
+        var nameCallback = Arrays.stream(callbacks)
+                .filter(callback -> callback instanceof NameCallback)
+                .map(callback -> (NameCallback) callback)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Failed to process SCRAM enhanced authentication due to missing NameCallback!"));
+
+        String username = nameCallback.getDefaultName();
+        if (StringUtils.isEmpty(username)) {
+            throw new RuntimeException("Failed to process SCRAM enhanced authentication due to missing username!");
         }
+
+        var scramCallback = Arrays.stream(callbacks)
+                .filter(callback -> callback instanceof ScramCredentialCallback)
+                .map(callback -> (ScramCredentialCallback) callback)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Failed to process SCRAM enhanced authentication due to missing ScramCredentialCallback!"));
+
+        String credentialsId = ProtocolUtil.usernameCredentialsId(username);
+        List<MqttClientCredentials> matchingCredentials = credentialsService.findMatchingCredentials(List.of(credentialsId));
+        if (matchingCredentials.isEmpty()) {
+            throw new RuntimeException("Failed to find credentials for given credentialsId: " + credentialsId);
+        }
+
+        MqttClientCredentials credentials = matchingCredentials.get(0);
+        if (!ClientCredentialsType.SCRAM.equals(credentials.getCredentialsType())) {
+            throw new RuntimeException("Failed to find SCRAM credentials for given credentialsId: " + credentialsId);
+        }
+
+        clientType = credentials.getClientType();
+        var scramMqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(credentials, ScramMqttCredentials.class);
+        try {
+            authRulePatterns = authorizationRuleService.parseAuthorizationRule(scramMqttCredentials);
+        } catch (AuthenticationException e) {
+            throw new RuntimeException("Failed to parse authorization rule for SCRAM credentials: " + credentialsId, e);
+        }
+
+        var scramCredential = new ScramCredential(scramMqttCredentials.getSalt(),
+                scramMqttCredentials.getStoredKey(), scramMqttCredentials.getServerKey(), ITERATIONS_COUNT);
+        scramCallback.scramCredential(scramCredential);
     }
 
 }

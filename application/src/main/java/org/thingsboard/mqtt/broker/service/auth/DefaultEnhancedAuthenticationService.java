@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -30,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandler;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramSaslServerWithCallback;
@@ -62,7 +62,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     public boolean onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
         String clientId = authContext.getClientId();
         String authMethod = authContext.getAuthMethod();
-        boolean initiated = initiateScrumServerWithCallback(clientId, authMethod, sessionCtx);
+        boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);
         if (!initiated) {
             return false;
         }
@@ -78,60 +78,46 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     }
 
     @Override
-    public EnhancedAuthResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext, boolean reAuth) {
-        String clientId = authContext.getClientId();
-        String authMethod = authContext.getAuthMethod();
-        String authMethodFromCtx = sessionCtx.getAuthMethod();
-
-        if (authMethodFromCtx == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Received AUTH message while authentication method is not set in the session ctx!", clientId);
-            }
-            return EnhancedAuthResponse.failure();
-        }
-
-        if (!authMethodFromCtx.equals(authMethod)) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Received AUTH message while authentication method {} mismatch with value from the session ctx {}",
-                        clientId, authMethod, authMethodFromCtx);
-            }
-            return EnhancedAuthResponse.failure(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD);
-        }
-
-        byte[] authData = authContext.getAuthData();
-        if (authData == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] No authentication data found!", clientId);
-            }
-            return EnhancedAuthResponse.failure();
-        }
-        var server = sessionCtx.getScramSaslServerWithCallback();
-        if (server == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Received AUTH continue message while saslServer is null!", clientId);
-            }
-            return EnhancedAuthResponse.failure();
-        }
+    public EnhancedAuthResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
         try {
-            byte[] response = server.evaluateResponse(authContext.getAuthData());
-            if (!server.isComplete()) {
+            var enhancedAuthResponse = processAuth(sessionCtx, authContext);
+            if (enhancedAuthResponse.success()) {
                 if (log.isDebugEnabled()) {
-                    log.debug("[{}] Enhanced auth failed!", clientId);
+                    log.debug("[{}] Enhanced auth completed successfully!", authContext.getClientId());
                 }
-                return EnhancedAuthResponse.failure();
+                return enhancedAuthResponse;
             }
-            List<AuthRulePatterns> authRulePatterns = List.of(server.getAuthRulePatterns());
-            ClientType clientType = server.getClientType();
-            if (reAuth) {
-                sendAuthChallengeToClient(sessionCtx, authMethod, response, MqttReasonCodes.Auth.SUCCESS);
-            }
+            var enhancedAuthFailureReason = enhancedAuthResponse.enhancedAuthFailureReason();
             if (log.isDebugEnabled()) {
-                log.debug("[{}] Enhanced auth completed successfully!", clientId);
+                log.debug("[{}] {}", authContext.getClientId(), enhancedAuthFailureReason.getReasonLog());
             }
-            return EnhancedAuthResponse.success(clientType, authRulePatterns);
+            return enhancedAuthResponse;
         } catch (SaslException e) {
-            log.warn("Failed to verify the client's proof of password knowledge: ", e);
-            return EnhancedAuthResponse.failure();
+            log.warn("[{}] {}", authContext.getClientId(), EnhancedAuthFailureReason.EVALUATION_ERROR.getReasonLog(), e);
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.EVALUATION_ERROR);
+        }
+    }
+
+    @Override
+    public EnhancedAuthResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        try {
+            var enhancedAuthResponse = processAuth(sessionCtx, authContext);
+            if (enhancedAuthResponse.success()) {
+                sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
+                        enhancedAuthResponse.response(), MqttReasonCodes.Auth.SUCCESS);
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Enhanced re-auth completed successfully!", authContext.getClientId());
+                }
+                return enhancedAuthResponse;
+            }
+            var enhancedAuthFailureReason = enhancedAuthResponse.enhancedAuthFailureReason();
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] {}", authContext.getClientId(), enhancedAuthFailureReason.getReasonLog());
+            }
+            return enhancedAuthResponse;
+        } catch (SaslException e) {
+            log.warn("[{}] {}", authContext.getClientId(), EnhancedAuthFailureReason.EVALUATION_ERROR.getReasonLog(), e);
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.EVALUATION_ERROR);
         }
     }
 
@@ -148,7 +134,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
             }
             return false;
         }
-        boolean initiated = initiateScrumServerWithCallback(clientId, authMethod, sessionCtx);
+        boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);
         if (!initiated) {
             return false;
         }
@@ -164,7 +150,30 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
         return true;
     }
 
-    private boolean initiateScrumServerWithCallback(String clientId, String authMethod, ClientSessionCtx sessionCtx) {
+    private EnhancedAuthResponse processAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) throws SaslException {
+        if (sessionCtx.getAuthMethod() == null) {
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+        }
+        if (!sessionCtx.getAuthMethod().equals(authContext.getAuthMethod())) {
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+        }
+        if (authContext.getAuthData() == null) {
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+        }
+        if (sessionCtx.getScramSaslServerWithCallback() == null) {
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        }
+        var server = sessionCtx.getScramSaslServerWithCallback();
+        byte[] response = server.evaluateResponse(authContext.getAuthData());
+        if (!server.isComplete()) {
+            return EnhancedAuthResponse.failure(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        }
+        List<AuthRulePatterns> authRulePatterns = List.of(server.getAuthRulePatterns());
+        ClientType clientType = server.getClientType();
+        return EnhancedAuthResponse.success(clientType, authRulePatterns, response);
+    }
+
+    private boolean initiateScramServerWithCallback(String clientId, String authMethod, ClientSessionCtx sessionCtx) {
         var callbackHandler = new ScramAuthCallbackHandler(credentialsService, authorizationRuleService);
         SaslServer saslServer;
         try {
@@ -189,7 +198,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
         return true;
     }
 
-    private SaslServer createSaslServer(String authMethod, ScramAuthCallbackHandler callbackHandler) throws SaslException {
+    SaslServer createSaslServer(String authMethod, ScramAuthCallbackHandler callbackHandler) throws SaslException {
         return Sasl.createSaslServer(authMethod, SCRAM_SASL_PROTOCOL, null, SCRAM_SASL_PROPS, callbackHandler);
     }
 
