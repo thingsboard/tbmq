@@ -21,10 +21,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -42,6 +46,8 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
     private final ClientSessionCache clientSessionCache;
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientMqttActorManager clientMqttActorManager;
+    private final TopicValidationService topicValidationService;
+    private final ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
 
     @Override
     public void updateSubscriptions(String clientId, List<SubscriptionInfoDto> subscriptions) throws ThingsboardException {
@@ -49,6 +55,17 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
         if (clientSession == null) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
+
+        for (var subscriptionInfoDto : subscriptions) {
+            topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter());
+
+            if (subscriptionInfoDto.isSharedSubscription() && clientSession.isPersistentAppClient()) {
+                if (findSharedSubscriptionByTopicFilter(subscriptionInfoDto) == null) {
+                    throw new ThingsboardException("Failed to subscribe to a non-existent Application shared subscription topic filter!", ThingsboardErrorCode.INVALID_ARGUMENTS);
+                }
+            }
+        }
+
         Set<TopicSubscription> currentSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
 
         Set<TopicSubscription> newSubscriptions = collectNewSubscriptions(subscriptions);
@@ -85,4 +102,8 @@ public class ClientSubscriptionAdminServiceImpl implements ClientSubscriptionAdm
                 .collect(Collectors.toSet());
     }
 
+    private ApplicationSharedSubscription findSharedSubscriptionByTopicFilter(SubscriptionInfoDto subscriptionInfoDto) {
+        String topicFilter = NettyMqttConverter.getTopicFilter(subscriptionInfoDto.getTopicFilter());
+        return applicationSharedSubscriptionService.findSharedSubscriptionByTopic(topicFilter);
+    }
 }

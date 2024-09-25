@@ -60,9 +60,6 @@ public class SubscriptionController extends BaseController {
         checkNotNull(clientIdSubscriptionInfoDto.getSubscriptions());
 
         try {
-            clientIdSubscriptionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
-                    topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter()));
-
             subscriptionAdminService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), clientIdSubscriptionInfoDto.getSubscriptions());
             return clientIdSubscriptionInfoDto;
         } catch (Exception e) {

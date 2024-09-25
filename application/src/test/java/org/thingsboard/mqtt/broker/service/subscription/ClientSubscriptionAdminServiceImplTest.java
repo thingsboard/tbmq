@@ -31,6 +31,9 @@ import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
+import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.dao.service.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -41,9 +44,11 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -60,6 +65,10 @@ public class ClientSubscriptionAdminServiceImplTest {
     ClientSubscriptionCache clientSubscriptionCache;
     @MockBean
     ClientMqttActorManager clientMqttActorManager;
+    @MockBean
+    DefaultTopicValidationService topicValidationService;
+    @MockBean
+    ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
 
     @SpyBean
     ClientSubscriptionAdminServiceImpl clientSubscriptionAdminService;
@@ -67,6 +76,75 @@ public class ClientSubscriptionAdminServiceImplTest {
     @Before
     public void setUp() throws Exception {
 
+    }
+
+    @Test
+    public void testUpdateSubscriptions_ValidationMultiLvlWildcardFailed() {
+        ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
+        when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
+        doCallRealMethod().when(topicValidationService).validateTopicFilter(anyString());
+
+        DataValidationException exception = assertThrows(DataValidationException.class, () ->
+                clientSubscriptionAdminService.updateSubscriptions("clientId",
+                        List.of(
+                                new SubscriptionInfoDto("#/1", MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null)
+                        )
+                ));
+
+        assertTrue(exception.getMessage().contains("Multi-level wildcard must be the last character"));
+    }
+
+    @Test
+    public void testUpdateSubscriptions_ValidationSingleLvlWildcardFailed() {
+        ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
+        when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
+        doCallRealMethod().when(topicValidationService).validateTopicFilter(anyString());
+
+        DataValidationException exception = assertThrows(DataValidationException.class, () ->
+                clientSubscriptionAdminService.updateSubscriptions("clientId",
+                        List.of(
+                                new SubscriptionInfoDto("a+/1", MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null)
+                        )
+                ));
+
+        assertTrue(exception.getMessage().contains("Single-level wildcard cannot have any character before it"));
+    }
+
+    @Test
+    public void testUpdateSubscriptions_ApplicationSharedSubscriptionTopicFilterValidationFailed() {
+        String topicFilter = "$share/s/test/topic";
+
+        ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
+        when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
+        when(clientSessionInfo.isPersistentAppClient()).thenReturn(true);
+        when(applicationSharedSubscriptionService.findSharedSubscriptionByTopic(eq(topicFilter))).thenReturn(null);
+
+        ThingsboardException exception = assertThrows(ThingsboardException.class, () ->
+                clientSubscriptionAdminService.updateSubscriptions("clientId",
+                        List.of(
+                                new SubscriptionInfoDto(topicFilter, MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null)
+                        )
+                ));
+
+        assertTrue(exception.getMessage().contains("non-existent Application shared subscription"));
+    }
+
+    @Test
+    public void testUpdateSubscriptions_DeviceSharedSubscriptionTopicFilterValidationOk() throws ThingsboardException {
+        String topicFilter = "$share/s/test/topic";
+
+        ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
+        when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
+        when(clientSessionInfo.isPersistentAppClient()).thenReturn(false);
+        when(clientSubscriptionCache.getClientSubscriptions("clientId")).thenReturn(Collections.emptySet());
+
+        clientSubscriptionAdminService.updateSubscriptions("clientId",
+                List.of(
+                        new SubscriptionInfoDto(topicFilter, MqttQoS.AT_LEAST_ONCE, SubscriptionOptionsDto.newInstance(), null)
+                )
+        );
+
+        verify(clientMqttActorManager).subscribe(eq("clientId"), any(SubscribeCommandMsg.class));
     }
 
     @Test

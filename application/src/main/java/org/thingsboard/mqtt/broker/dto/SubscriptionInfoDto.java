@@ -81,6 +81,6 @@ public class SubscriptionInfoDto {
 
     @JsonIgnore
     public boolean isSharedSubscription() {
-        return topicFilter.startsWith(BrokerConstants.SHARED_SUBSCRIPTION_PREFIX);
+        return NettyMqttConverter.isSharedTopic(topicFilter);
     }
 }
