@@ -16,6 +16,7 @@
 
 import {
   CellActionDescriptor,
+  CellActionDescriptorType,
   checkBoxCell,
   EntityTableColumn,
   EntityTableConfig,
@@ -74,8 +75,40 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.defaultSortOrder = {property: 'clientId', direction: Direction.DESC};
 
     this.columns.push(
-      new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%'),
-      new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '50%', entity => entity.subscription.topicFilter),
+      new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%',
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientId,
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: () => true,
+          onAction: ($event, entity) => entity.clientId,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
+      new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '50%',
+        entity => entity.subscription.topicFilter, () => undefined, true, () => ({}), () => undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.subscription.topicFilter,
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: () => true,
+          onAction: ($event, entity) => entity.subscription.topicFilter,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }),
       new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px', entity => {
         const qos = mqttQoSTypes.find(el => el.value === entity.subscription.qos).name;
         return this.translate.instant(qos);
