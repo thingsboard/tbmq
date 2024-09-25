@@ -76,7 +76,7 @@ export class MenuService {
       },
       {
         id: 'subscriptions',
-        name: 'ws-client.subscriptions.subscriptions',
+        name: 'subscription.subscriptions',
         type: 'link',
         path: '/subscriptions',
         icon: 'mdi:filter-outline'

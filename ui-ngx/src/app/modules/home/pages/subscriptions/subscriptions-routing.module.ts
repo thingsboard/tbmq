@@ -25,9 +25,9 @@ const routes: Routes = [
     component: SubscriptionsTableComponent,
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'ws-client.subscriptions.subscriptions',
+      title: 'subscription.subscriptions',
       breadcrumb: {
-        label: 'ws-client.subscriptions.subscriptions',
+        label: 'subscription.subscriptions',
         icon: 'mdi:filter-outline'
       }
     }

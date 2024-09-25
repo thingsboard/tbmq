@@ -16,10 +16,10 @@
 
 -->
 <section class="tb-ws-client-title-toolbar" style="padding: 2px 16px 8px 16px;">
-  <span class="tb-ws-client-title" translate>ws-client.subscriptions.subscriptions</span>
+  <span class="tb-ws-client-title" translate>subscription.subscriptions</span>
   <button mat-icon-button
           (click)="addSubscription($event)"
-          [matTooltip]="'ws-client.subscriptions.add-subscription' | translate"
+          [matTooltip]="'subscription.add-subscription' | translate"
           aria-label="Add subscription">
     <mat-icon class="material-icons home-page-material-icons">add</mat-icon>
   </button>
@@ -43,13 +43,13 @@
 <ng-template #emptySubscriptions>
   <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px" style="height: 100%;">
     <img src="../../../../../../assets/home/no_data_bg.svg">
-    <span style="color: rgba(0, 0, 0, 0.38)" translate>ws-client.subscriptions.no-subscriptions</span>
+    <span style="color: rgba(0, 0, 0, 0.38)" translate>subscription.no-subscriptions</span>
   </section>
 </ng-template>
 <ng-template #loadingSubscriptions>
   <div class="tb-no-data-available" style="margin: 20px; gap: 16px;">
     <mat-spinner color="accent" diameter="65" strokeWidth="4"></mat-spinner>
-    <div class="tb-no-data-text" translate>ws-client.subscriptions.loading-subscriptions</div>
+    <div class="tb-no-data-text" translate>subscription.loading-subscriptions</div>
   </div>
 </ng-template>
 

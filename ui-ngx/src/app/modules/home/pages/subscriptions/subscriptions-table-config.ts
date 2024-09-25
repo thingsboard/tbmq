@@ -68,31 +68,31 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.detailsPanelEnabled = false;
     this.entityTranslations = entityTypeTranslations.get(EntityType.SUBSCRIPTION);
     this.entityResources = entityTypeResources.get(EntityType.SUBSCRIPTION);
-    this.tableTitle = this.translate.instant('ws-client.subscriptions.subscriptions');
+    this.tableTitle = this.translate.instant('subscription.subscriptions');
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
     this.defaultSortOrder = {property: 'clientId', direction: Direction.DESC};
 
     this.columns.push(
       new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%'),
-      new EntityTableColumn<ClientSubscription>('topicFilter', 'ws-client.subscriptions.topic-filter', '50%', entity => entity.subscription.topicFilter),
+      new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '50%', entity => entity.subscription.topicFilter),
       new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px', entity => {
         const qos = mqttQoSTypes.find(el => el.value === entity.subscription.qos).name;
         return this.translate.instant(qos);
       }),
-      new EntityTableColumn<ClientSubscription>('noLocal', 'ws-client.subscriptions.nl', '120px', entity => checkBoxCell(entity.subscription?.options?.noLocal)),
-      new EntityTableColumn<ClientSubscription>('retainAsPublish', 'ws-client.subscriptions.rap', '120px', entity => checkBoxCell(entity.subscription?.options?.retainAsPublish)),
-      new EntityTableColumn<ClientSubscription>('retainHandling', 'ws-client.subscriptions.rh', '120px', entity => entity.subscription?.options?.retainHandling.toString(),
+      new EntityTableColumn<ClientSubscription>('noLocal', 'subscription.nl', '120px', entity => checkBoxCell(entity.subscription?.options?.noLocal)),
+      new EntityTableColumn<ClientSubscription>('retainAsPublish', 'subscription.rap', '120px', entity => checkBoxCell(entity.subscription?.options?.retainAsPublish)),
+      new EntityTableColumn<ClientSubscription>('retainHandling', 'subscription.rh', '120px', entity => entity.subscription?.options?.retainHandling.toString(),
         undefined, undefined, undefined, entity => {
           const rh = this.rhOptions.find(el => el.value === entity.subscription?.options.retainHandling).name;
           return this.translate.instant(rh);
         }),
-      new EntityTableColumn<ClientSubscription>('subscriptionId', 'ws-client.subscriptions.subscription-id', '120px',
+      new EntityTableColumn<ClientSubscription>('subscriptionId', 'subscription.subscription-id', '120px',
           entity => entity.subscription.subscriptionId ? entity.subscription.subscriptionId.toString() : ''),
     );
 
     this.headerActionDescriptors.push({
-      name: this.translate.instant('ws-client.subscriptions.clear-empty-subscription-nodes'),
+      name: this.translate.instant('subscription.clear-empty-subscription-nodes'),
       icon: 'delete_forever',
       isEnabled: () => true,
       onAction: ($event) => {
@@ -170,8 +170,8 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('ws-client.subscriptions.clear-empty-subscription-nodes-title'),
-      this.translate.instant('ws-client.subscriptions.clear-empty-subscription-nodes-text'),
+      this.translate.instant('subscription.clear-empty-subscription-nodes-title'),
+      this.translate.instant('subscription.clear-empty-subscription-nodes-text'),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true

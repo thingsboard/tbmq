@@ -47,7 +47,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   qoSTypes = WsQoSTypes;
   qoSTranslationMap = WsQoSTranslationMap;
 
-  title = 'ws-client.subscriptions.add-subscription';
+  title = 'subscription.add-subscription';
   actionButtonLabel = 'action.add';
   entity: WebSocketSubscription;
   topicFilterDuplicate: boolean;
@@ -67,7 +67,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   ngOnInit(): void {
     this.entity = this.data?.subscription;
     if (this.entity) {
-      this.title = 'ws-client.subscriptions.edit-subscription';
+      this.title = 'subscription.edit-subscription';
       this.actionButtonLabel = 'action.save';
     }
     this.buildForm();
@@ -115,7 +115,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     } else {
       this.store.dispatch(new ActionNotificationShow(
         {
-          message: this.translate.instant('ws-client.subscriptions.topic-filter-duplicate'),
+          message: this.translate.instant('subscription.topic-filter-duplicate'),
           type: 'error',
           duration: 2000,
           verticalPosition: 'top',

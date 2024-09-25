@@ -33,9 +33,9 @@
 </form>
 <ng-template #subscriptionOptions>
   <div class="tb-form-panel tb-session-filter-config-component no-padding no-border" [formGroup]="subscriptionOptionsForm">
-    <div class="tb-form-panel-title" translate>ws-client.subscriptions.mqtt-5-features</div>
+    <div class="tb-form-panel-title" translate>subscription.mqtt-5-features</div>
     <div class="tb-form-row space-between column-xs" style="height: 56px;">
-      <div class="fixed-title-width" translate>ws-client.subscriptions.rh</div>
+      <div class="fixed-title-width" translate>subscription.rh</div>
       <mat-form-field fxFlex class="mat-block" appearance="outline" subscriptSizing="dynamic">
         <mat-select formControlName="retainHandling">
           <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
@@ -47,9 +47,9 @@
     <div class="tb-form-row space-between column-xs" style="height: 56px">
       <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
         <mat-slide-toggle formControlName="noLocal"></mat-slide-toggle>
-        <div translate>ws-client.subscriptions.nl</div>
+        <div translate>subscription.nl</div>
         <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18);"
-                  [matTooltip]="'ws-client.subscriptions.nl-hint' | translate"
+                  [matTooltip]="'subscription.nl-hint' | translate"
                   matTooltipPosition="right">
           info</mat-icon>
       </div>
@@ -57,25 +57,25 @@
     <div class="tb-form-row space-between column-xs" style="height: 56px">
       <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
         <mat-slide-toggle formControlName="retainAsPublish"></mat-slide-toggle>
-        <div translate>ws-client.subscriptions.rap</div>
+        <div translate>subscription.rap</div>
         <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                  [matTooltip]="'ws-client.subscriptions.rap-hint' | translate"
+                  [matTooltip]="'subscription.rap-hint' | translate"
                   matTooltipPosition="right">
           info</mat-icon>
       </div>
     </div>
     <div class="tb-form-row space-between column-xs" style="height: 56px">
-      <div class="fixed-title-width" translate>ws-client.subscriptions.subscription-identifier</div>
+      <div class="fixed-title-width" translate>subscription.subscription-identifier</div>
       <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
         <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
-        <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate">
+        <mat-icon matSuffix [matTooltip]="'subscription.subscription-identifier-hint' | translate">
           info
         </mat-icon>
         <mat-error *ngIf="subscriptionOptionsForm.get('subscriptionId').hasError('min')">
-          {{ 'ws-client.subscriptions.subscription-identifier-min' | translate }}
+          {{ 'subscription.subscription-identifier-min' | translate }}
         </mat-error>
         <mat-error *ngIf="subscriptionOptionsForm.get('subscriptionId').hasError('max')">
-          {{ 'ws-client.subscriptions.subscription-identifier-max' | translate }}
+          {{ 'subscription.subscription-identifier-max' | translate }}
         </mat-error>
       </mat-form-field>
     </div>

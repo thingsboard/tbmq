@@ -33,14 +33,14 @@
   <div mat-dialog-content>
     <section fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center">
       <mat-form-field fxFlex class="mat-block">
-        <mat-label translate>ws-client.subscriptions.topic-filter</mat-label>
-        <input matInput required formControlName="topicFilter" placeholder="{{ 'ws-client.subscriptions.topic-filter' | translate }}">
+        <mat-label translate>subscription.topic-filter</mat-label>
+        <input matInput required formControlName="topicFilter" placeholder="{{ 'subscription.topic-filter' | translate }}">
         <tb-copy-button matSuffix
                         [fxShow]="formGroup.get('topicFilter')?.value?.length"
                         [copyText]="formGroup.get('topicFilter')?.value">
         </tb-copy-button>
         <mat-error *ngIf="formGroup.get('topicFilter').hasError('required')">
-          {{ 'ws-client.subscriptions.topic-filter-required' | translate }}
+          {{ 'subscription.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
       <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
@@ -59,13 +59,13 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              {{ 'ws-client.subscriptions.mqtt-5-features' | translate }}
+              {{ 'subscription.mqtt-5-features' | translate }}
             </mat-panel-title>
           </mat-expansion-panel-header>
           <ng-template matExpansionPanelContent>
             <div fxLayout="column" fxLayoutGap="16px">
               <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
-                <mat-label translate>ws-client.subscriptions.rh</mat-label>
+                <mat-label translate>subscription.rh</mat-label>
                 <mat-select formControlName="retainHandling">
                   <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
                     {{ rh.name }}
@@ -74,33 +74,33 @@
               </mat-form-field>
               <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
                 <mat-slide-toggle formControlName="noLocal">
-                  {{ 'ws-client.subscriptions.nl' | translate }}
+                  {{ 'subscription.nl' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                          [matTooltip]="'ws-client.subscriptions.nl-hint' | translate"
+                          [matTooltip]="'subscription.nl-hint' | translate"
                           matTooltipPosition="right">
                   info</mat-icon>
               </section>
               <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
                 <mat-slide-toggle formControlName="retainAsPublish">
-                  {{ 'ws-client.subscriptions.rap' | translate }}
+                  {{ 'subscription.rap' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                          [matTooltip]="'ws-client.subscriptions.rap-hint' | translate"
+                          [matTooltip]="'subscription.rap-hint' | translate"
                           matTooltipPosition="right">
                   info</mat-icon>
               </section>
               <mat-form-field class="mat-block">
-                <mat-label translate>ws-client.subscriptions.subscription-identifier</mat-label>
+                <mat-label translate>subscription.subscription-identifier</mat-label>
                 <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
-                <mat-icon matSuffix [matTooltip]="'ws-client.subscriptions.subscription-identifier-hint' | translate">
+                <mat-icon matSuffix [matTooltip]="'subscription.subscription-identifier-hint' | translate">
                   info
                 </mat-icon>
                 <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('min')">
-                  {{ 'ws-client.subscriptions.subscription-identifier-min' | translate }}
+                  {{ 'subscription.subscription-identifier-min' | translate }}
                 </mat-error>
                 <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('max')">
-                  {{ 'ws-client.subscriptions.subscription-identifier-max' | translate }}
+                  {{ 'subscription.subscription-identifier-max' | translate }}
                 </mat-error>
               </mat-form-field>
             </div>

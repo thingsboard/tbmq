@@ -82,7 +82,7 @@ export class SubscriptionComponent implements OnInit {
     const actions: Array<CellActionDescriptor<WebSocketSubscription>> = [];
     actions.push(
       {
-        name: this.translate.instant('ws-client.subscriptions.copy-topic'),
+        name: this.translate.instant('subscription.copy-topic'),
         icon: 'mdi:content-copy',
         isEnabled: () => true,
         onAction: ($event, entity) => this.copyContent($event, entity),
@@ -133,8 +133,8 @@ export class SubscriptionComponent implements OnInit {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('ws-client.subscriptions.delete-subscription-title', {topic: this.subscription.configuration.topicFilter}),
-      this.translate.instant('ws-client.subscriptions.delete-subscription-text', {topic: this.subscription.configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-title', {topic: this.subscription.configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-text', {topic: this.subscription.configuration.topicFilter}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
