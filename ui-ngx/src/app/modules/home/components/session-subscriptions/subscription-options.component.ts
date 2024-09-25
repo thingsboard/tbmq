@@ -15,7 +15,7 @@
 ///
 
 import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
-import { WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
+import { TopicSubscription } from '@shared/models/ws-client.model';
 import { MatButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import {
@@ -34,7 +34,7 @@ export class SubscriptionOptionsComponent {
   subscriptionOptions: AbstractControl;
 
   @Output()
-  subscriptionOptionsValue = new EventEmitter<WebSocketSubscriptionConfiguration>();
+  subscriptionOptionsValue = new EventEmitter<TopicSubscription>();
 
   constructor(private renderer: Renderer2,
               private popoverService: TbPopoverService,

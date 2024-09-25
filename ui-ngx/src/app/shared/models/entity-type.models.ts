@@ -27,7 +27,7 @@ export enum EntityType {
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
   KAFKA_BROKER = 'KAFKA_BROKER',
   WS_CONNECTION = 'WS_CONNECTION',
-  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
+  SUBSCRIPTION = 'SUBSCRIPTION',
   WS_MESSAGE = 'WS_MESSAGE',
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
 }
@@ -191,7 +191,7 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
       }
     ],
     [
-      EntityType.WS_SUBSCRIPTION,
+      EntityType.SUBSCRIPTION,
       {
         type: 'ws-client.subscriptions.subscription',
         typePlural: 'ws-client.subscriptions.subscription',

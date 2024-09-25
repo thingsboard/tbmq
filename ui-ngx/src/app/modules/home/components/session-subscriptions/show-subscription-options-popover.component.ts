@@ -16,7 +16,7 @@
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { RhOptions, WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
+import { RhOptions, TopicSubscription } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-show-subscription-options',
@@ -29,10 +29,10 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
   onClose: () => void;
 
   @Output()
-  subscriptionOptionsApplied = new EventEmitter<WebSocketSubscriptionConfiguration>();
+  subscriptionOptionsApplied = new EventEmitter<TopicSubscription>();
 
   @Input()
-  data: WebSocketSubscriptionConfiguration;
+  data: TopicSubscription;
 
   subscriptionOptionsForm: UntypedFormGroup;
   rhOptions = RhOptions;
