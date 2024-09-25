@@ -32,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.List;
 
 @Data
 public class ScramMqttCredentials implements HasSinglePubSubAutorizationRules {
@@ -72,6 +73,15 @@ public class ScramMqttCredentials implements HasSinglePubSubAutorizationRules {
             this.serverKey = Base64.getDecoder().decode(serverKey);
             this.storedKey = Base64.getDecoder().decode(storedKey);
         }
+    }
+
+    public static ScramMqttCredentials newInstance(
+            String username,
+            String password,
+            ScramAlgorithm algorithm,
+            List<String> authorizationRulePatterns) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException {
+        var authRules = PubSubAuthorizationRules.newInstance(authorizationRulePatterns);
+        return new ScramMqttCredentials(username, password, null, null, null, algorithm, authRules);
     }
 
     @JsonGetter("salt")

@@ -23,7 +23,10 @@ public interface EnhancedAuthenticationService {
 
     boolean onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
-    EnhancedAuthResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext, boolean reAuth);
-
     boolean onReAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+
+    EnhancedAuthResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+
+    EnhancedAuthResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
+
 }

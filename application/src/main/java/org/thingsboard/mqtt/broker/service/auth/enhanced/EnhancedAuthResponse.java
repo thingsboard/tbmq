@@ -15,41 +15,32 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
-import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
 
-@Getter
 @Builder
-@AllArgsConstructor
-public class EnhancedAuthResponse {
+public record EnhancedAuthResponse(boolean success,
+                                   byte[] response,
+                                   ClientType clientType,
+                                   List<AuthRulePatterns> authRulePatterns,
+                                   EnhancedAuthFailureReason enhancedAuthFailureReason) {
 
-    private final boolean success;
-    private final ClientType clientType;
-    private final List<AuthRulePatterns> authRulePatterns;
-    private final MqttConnectReturnCode failureReasonCode;
-
-    public static EnhancedAuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+    public static EnhancedAuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, byte[] response) {
         return EnhancedAuthResponse.builder()
                 .success(true)
+                .response(response)
                 .clientType(clientType)
                 .authRulePatterns(authRulePatterns)
                 .build();
     }
 
-    public static EnhancedAuthResponse failure() {
-        return failure(MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR);
-    }
-
-    public static EnhancedAuthResponse failure(MqttConnectReturnCode failureReturnCode) {
+    public static EnhancedAuthResponse failure(EnhancedAuthFailureReason enhancedAuthFailureReason) {
         return EnhancedAuthResponse.builder()
                 .success(false)
-                .failureReasonCode(failureReturnCode)
+                .enhancedAuthFailureReason(enhancedAuthFailureReason)
                 .build();
     }
 

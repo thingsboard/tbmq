@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -52,7 +53,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
 
 @Slf4j
@@ -132,13 +135,41 @@ public class ActorProcessorImpl implements ActorProcessor {
 
         boolean reAuth = SessionState.CONNECTED.equals(state.getCurrentSessionState());
         if (reAuth) {
-            onEnhancedReAuth(state, authMsg, sessionCtx);
+            EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
+            EnhancedAuthResponse authResponse = enhancedAuthenticationService.onReAuthContinue(sessionCtx, authContext);
+            if (!authResponse.success()) {
+                clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
+                        new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED)));
+                return;
+            }
+            finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
+            sessionCtx.clearScramServer();
             return;
         }
 
         boolean auth = SessionState.ENHANCED_AUTH_STARTED.equals(state.getCurrentSessionState());
         if (auth) {
-            onEnhancedAuth(state, authMsg, sessionCtx);
+            EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
+            EnhancedAuthResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext);
+            if (!authResponse.success()) {
+                updateClientActorState(state, SessionState.DISCONNECTED, sessionCtx);
+                if (EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH.equals(authResponse.enhancedAuthFailureReason())) {
+                    sendConnectionRefusedMsgAndCloseChannel(sessionCtx, CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD);
+                    return;
+                }
+                if (EnhancedAuthFailureReason.EVALUATION_ERROR.equals(authResponse.enhancedAuthFailureReason())) {
+                    sendConnectionRefusedMsgAndCloseChannel(sessionCtx, CONNECTION_REFUSED_NOT_AUTHORIZED_5);
+                    return;
+                }
+                sendConnectionRefusedUnspecifiedErrorAndCloseChannel(sessionCtx);
+                return;
+            }
+            finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
+            updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
+            clientMqttActorManager.connect(state.getClientId(),
+                    NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
+            sessionCtx.clearScramServer();
+            sessionCtx.clearConnectMsg();
             return;
         }
 
@@ -148,36 +179,6 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
         updateClientActorState(state, SessionState.DISCONNECTED, sessionCtx);
         sendConnectionRefusedUnspecifiedErrorAndCloseChannel(sessionCtx);
-    }
-
-    private void onEnhancedAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
-        EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
-        EnhancedAuthResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext, false);
-        if (!authResponse.isSuccess()) {
-            updateClientActorState(state, SessionState.DISCONNECTED, sessionCtx);
-            sendConnectionRefusedMsgAndCloseChannel(sessionCtx, authResponse.getFailureReasonCode());
-            return;
-        }
-
-        finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
-
-        updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
-        clientMqttActorManager.connect(state.getClientId(),
-                NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
-        sessionCtx.clearScramServer();
-        sessionCtx.clearConnectMsg();
-    }
-
-    private void onEnhancedReAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
-        EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
-        EnhancedAuthResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext, true);
-        if (!authResponse.isSuccess()) {
-            clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED)));
-            return;
-        }
-        finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
-        sessionCtx.clearScramServer();
     }
 
     @Override
@@ -257,12 +258,12 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void finishEnhancedSessionAuth(String clientId, ClientSessionCtx sessionCtx, EnhancedAuthResponse authResponse) {
-        List<AuthRulePatterns> authRulePatterns = authResponse.getAuthRulePatterns();
+        List<AuthRulePatterns> authRulePatterns = authResponse.authRulePatterns();
         if (!CollectionUtils.isEmpty(authRulePatterns)) {
             logAuthRules(clientId, authRulePatterns);
             sessionCtx.setAuthRulePatterns(authRulePatterns);
         }
-        sessionCtx.setClientType(authResponse.getClientType());
+        sessionCtx.setClientType(authResponse.clientType());
     }
 
     private void logAuthRules(String clientId, List<AuthRulePatterns> authRulePatterns) {

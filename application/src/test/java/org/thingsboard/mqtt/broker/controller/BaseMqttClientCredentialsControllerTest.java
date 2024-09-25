@@ -23,6 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -79,6 +81,14 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         saveMqttClientCredentialsAndAssertResult(mqttClientCredentials);
     }
 
+    @Test
+    public void saveScramMqttClientCredentialsTest() throws Exception {
+        ScramMqttCredentials scramMqttCredentials = newScramMqttCredentials();
+        MqttClientCredentials mqttClientCredentials = newScramMqttClientCredentials(scramMqttCredentials);
+
+        saveMqttClientCredentialsAndAssertResult(mqttClientCredentials);
+    }
+
     private void saveMqttClientCredentialsAndAssertResult(MqttClientCredentials mqttClientCredentials) throws Exception {
         MqttClientCredentials savedMqttCredentials = doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
 
@@ -91,6 +101,7 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         MqttClientCredentials foundMqttCredentials = doGet("/api/mqtt/client/credentials/" + savedMqttCredentials.getId().toString(), MqttClientCredentials.class);
         Assert.assertEquals(foundMqttCredentials.getName(), savedMqttCredentials.getName());
         Assert.assertEquals(foundMqttCredentials.getCredentialsId(), savedMqttCredentials.getCredentialsId());
+        Assert.assertEquals(foundMqttCredentials.getCredentialsValue(), savedMqttCredentials.getCredentialsValue());
     }
 
     @Test
@@ -456,6 +467,14 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
         return mqttClientCredentials;
     }
 
+    private MqttClientCredentials newScramMqttClientCredentials(ScramMqttCredentials scramMqttCredentials) {
+        MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.SCRAM);
+        mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
+        mqttClientCredentials.setName("name");
+        return mqttClientCredentials;
+    }
+
     private BasicMqttCredentials newBasicMqttCredentials(List<String> authorizationRulePatterns) {
         return newBasicMqttCredentials("clientId", "username", "password", authorizationRulePatterns);
     }
@@ -467,4 +486,9 @@ public abstract class BaseMqttClientCredentialsControllerTest extends AbstractCo
     private SslMqttCredentials newSslMqttCredentials(String parentCertCn) {
         return SslMqttCredentials.newInstance(parentCertCn, "sigfox", List.of("storegateway/.*"));
     }
+
+    private ScramMqttCredentials newScramMqttCredentials() throws Exception {
+        return ScramMqttCredentials.newInstance("username", "password", ScramAlgorithm.SHA_256, null);
+    }
+
 }
