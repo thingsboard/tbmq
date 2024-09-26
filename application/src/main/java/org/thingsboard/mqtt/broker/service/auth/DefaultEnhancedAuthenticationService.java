@@ -104,7 +104,6 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
             return EnhancedAuthContinueResponse.success(server.getUsername(), challenge);
         } catch (SaslException e) {
             log.warn("[{}] Failed to evaluate client re-AUTH request due to: ", clientId, e);
-            sessionCtx.clearScramServer();
             return EnhancedAuthContinueResponse.failure(server.getUsername(), CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
         }
     }

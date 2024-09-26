@@ -375,7 +375,6 @@ public class ActorProcessorImpl implements ActorProcessor {
         ctx.getChannel().writeAndFlush(message);
     }
 
-
     private MqttDisconnectMsg newDisconnectMsg(UUID sessionId, DisconnectReason reason) {
         return new MqttDisconnectMsg(sessionId, reason);
     }
@@ -387,12 +386,12 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthContinueResponse authResponse) {
         persistClientUnauthorized(state, clientSessionCtx, authResponse.username(),
-                false, authResponse.enhancedAuthFailure().getReasonLog());
+                true, authResponse.enhancedAuthFailure().getReasonLog());
     }
 
     private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthFinalResponse authResponse) {
         persistClientUnauthorized(state, clientSessionCtx, authResponse.username(),
-                false, authResponse.enhancedAuthFailure().getReasonLog());
+                true, authResponse.enhancedAuthFailure().getReasonLog());
     }
 
     private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx,
