@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramSaslServerWithCallback;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
@@ -73,7 +73,7 @@ public class ClientSessionCtx implements SessionContext {
     @Setter
     private volatile String authMethod;
     @Setter
-    private volatile ScramSaslServerWithCallback scramSaslServerWithCallback;
+    private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
 
     @Setter
     private ChannelHandlerContext channel;
@@ -145,7 +145,7 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public void clearScramServer() {
-        scramSaslServerWithCallback = null;
+        scramServerWithCallbackHandler = null;
     }
 
     public void clearConnectMsg() {

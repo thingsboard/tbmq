@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.actors.client.service;
 import io.netty.handler.codec.mqtt.MqttConnAckMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +33,8 @@ import org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectSe
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
@@ -43,7 +42,6 @@ import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -54,6 +52,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import org.thingsboard.mqtt.broker.util.BytesUtil;
+import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
@@ -68,6 +67,7 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUS
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.INVALID_CLIENT_STATE_FOR_AUTH_PACKET;
 
 @Slf4j
 @Service
@@ -107,7 +107,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         removeClientUnauthorized(state);
-        finishDefaultSessionAuth(state.getClientId(), sessionCtx, authResponse);
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.getAuthRulePatterns(), authResponse.getClientType());
 
         if (state.getCurrentSessionState() != SessionState.DISCONNECTED) {
             disconnectCurrentSession(state, sessionCtx);
@@ -131,7 +131,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         EnhancedAuthContext authContext = buildEnhancedAuthContext(state, enhancedAuthInitMsg);
         EnhancedAuthContinueResponse authResponse = enhancedAuthenticationService.onClientConnectMsg(sessionCtx, authContext);
         if (!authResponse.success()) {
-            persistClientUnauthorized(state, enhancedAuthInitMsg.getClientSessionCtx(), authResponse.enhancedAuthFailureReason());
+            persistClientUnauthorized(state, sessionCtx, authResponse);
             sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
             return;
         }
@@ -154,54 +154,20 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
         var sessionCtx = state.getCurrentSessionCtx();
 
-        boolean reAuth = SessionState.CONNECTED.equals(state.getCurrentSessionState());
-        if (reAuth) {
-            EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
-            EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onReAuthContinue(sessionCtx, authContext);
-            if (!authResponse.success()) {
-                clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
-                        new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED)));
-                return;
+        switch (state.getCurrentSessionState()) {
+            case ENHANCED_AUTH_STARTED -> processAuth(state, authMsg, sessionCtx);
+            case CONNECTED -> processReAuth(state, authMsg, sessionCtx);
+            default -> {
+                if (log.isDebugEnabled()) {
+                    log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
+                            state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
+                }
+                resetStateToDisconnected(state);
+                sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
+                persistClientUnauthorized(state, sessionCtx, null, false,
+                        INVALID_CLIENT_STATE_FOR_AUTH_PACKET.getReasonLog());
             }
-            sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
-                    authResponse.response(), MqttReasonCodes.Auth.SUCCESS);
-            finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
-            sessionCtx.clearScramServer();
-            return;
         }
-
-        boolean auth = SessionState.ENHANCED_AUTH_STARTED.equals(state.getCurrentSessionState());
-        if (auth) {
-            EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
-            EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext);
-            if (!authResponse.success()) {
-                updateClientActorState(state, SessionState.DISCONNECTED, sessionCtx);
-                MqttConnectReturnCode returnCode = switch (authResponse.enhancedAuthFailureReason()) {
-                    case AUTH_METHOD_MISMATCH -> CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD;
-                    case CLIENT_FINAL_MESSAGE_EVALUATION_ERROR -> CONNECTION_REFUSED_NOT_AUTHORIZED_5;
-                    default -> CONNECTION_REFUSED_UNSPECIFIED_ERROR;
-                };
-                persistClientUnauthorized(state, sessionCtx, authResponse.enhancedAuthFailureReason());
-                sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
-                return;
-            }
-            removeClientUnauthorized(state);
-            finishEnhancedSessionAuth(state.getClientId(), sessionCtx, authResponse);
-            updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
-            clientMqttActorManager.connect(state.getClientId(),
-                    NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
-            sessionCtx.clearScramServer();
-            sessionCtx.clearConnectMsg();
-            return;
-        }
-
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Session was in {} state while Actor received enhanced auth continue message, prev sessionId - {}, new sessionId - {}.",
-                    state.getClientId(), state.getCurrentSessionState(), state.getCurrentSessionId(), sessionCtx.getSessionId());
-        }
-        updateClientActorState(state, SessionState.DISCONNECTED, sessionCtx);
-        sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(sessionCtx);
-        persistClientUnauthorized(state, sessionCtx, EnhancedAuthFailureReason.INVALID_CLIENT_STATE_FOR_AUTH_PACKET);
     }
 
     @Override
@@ -227,12 +193,55 @@ public class ActorProcessorImpl implements ActorProcessor {
         EnhancedAuthContinueResponse authResponse = enhancedAuthenticationService.onReAuth(sessionCtx, authContext);
         if (!authResponse.success()) {
             clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED, authResponse.enhancedAuthFailureReason().getReasonLog())));
+                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED, authResponse.enhancedAuthFailure().getReasonLog())));
+            persistClientUnauthorized(state, sessionCtx, authResponse);
             return;
         }
 
         sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
                 authResponse.response(), MqttReasonCodes.Auth.CONTINUE_AUTHENTICATION);
+    }
+
+    private void processAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
+        EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
+        EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onAuthContinue(sessionCtx, authContext);
+        if (!authResponse.success()) {
+            resetStateToDisconnected(state);
+            MqttConnectReturnCode returnCode = getFailureReturnCode(authResponse);
+            persistClientUnauthorized(state, sessionCtx, authResponse);
+            sendConnectionRefusedMsgAndCloseChannel(sessionCtx, returnCode);
+            return;
+        }
+        removeClientUnauthorized(state);
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
+        updateClientActorState(state, SessionState.INITIALIZED, sessionCtx);
+        clientMqttActorManager.connect(state.getClientId(),
+                NettyMqttConverter.createMqttConnectMsg(sessionCtx.getSessionId(), sessionCtx.getConnectMsgFromEnhancedAuth()));
+        sessionCtx.clearScramServer();
+        sessionCtx.clearConnectMsg();
+    }
+
+    private void processReAuth(ClientActorState state, MqttAuthMsg authMsg, ClientSessionCtx sessionCtx) {
+        EnhancedAuthContext authContext = buildEnhancedAuthContext(state, authMsg);
+        EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onReAuthContinue(sessionCtx, authContext);
+        if (!authResponse.success()) {
+            clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
+                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED)));
+            persistClientUnauthorized(state, sessionCtx, authResponse);
+            return;
+        }
+        sendAuthChallengeToClient(sessionCtx, authContext.getAuthMethod(),
+                authResponse.response(), MqttReasonCodes.Auth.SUCCESS);
+        finishSessionAuth(state.getClientId(), sessionCtx, authResponse.authRulePatterns(), authResponse.clientType());
+        sessionCtx.clearScramServer();
+    }
+
+    private MqttConnectReturnCode getFailureReturnCode(EnhancedAuthFinalResponse authResponse) {
+        return switch (authResponse.enhancedAuthFailure()) {
+            case AUTH_METHOD_MISMATCH -> CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD;
+            case CLIENT_FINAL_MESSAGE_EVALUATION_ERROR -> CONNECTION_REFUSED_NOT_AUTHORIZED_5;
+            default -> CONNECTION_REFUSED_UNSPECIFIED_ERROR;
+        };
     }
 
     private void tryDisconnectSameSession(ClientActorState state, ClientSessionCtx sessionCtx) {
@@ -271,22 +280,16 @@ public class ActorProcessorImpl implements ActorProcessor {
         state.clearStopActorCommandId();
     }
 
-    private void finishDefaultSessionAuth(String clientId, ClientSessionCtx sessionCtx, AuthResponse authResponse) {
-        List<AuthRulePatterns> authRulePatterns = authResponse.getAuthRulePatterns();
-        if (!CollectionUtils.isEmpty(authRulePatterns)) {
-            logAuthRules(clientId, authRulePatterns);
-            sessionCtx.setAuthRulePatterns(authRulePatterns);
-        }
-        sessionCtx.setClientType(authResponse.getClientType());
+    void resetStateToDisconnected(ClientActorState state) {
+        state.updateSessionState(SessionState.DISCONNECTED);
     }
 
-    private void finishEnhancedSessionAuth(String clientId, ClientSessionCtx sessionCtx, EnhancedAuthFinalResponse authResponse) {
-        List<AuthRulePatterns> authRulePatterns = authResponse.authRulePatterns();
+    private void finishSessionAuth(String clientId, ClientSessionCtx sessionCtx, List<AuthRulePatterns> authRulePatterns, ClientType clientType) {
         if (!CollectionUtils.isEmpty(authRulePatterns)) {
             logAuthRules(clientId, authRulePatterns);
             sessionCtx.setAuthRulePatterns(authRulePatterns);
         }
-        sessionCtx.setClientType(authResponse.clientType());
+        sessionCtx.setClientType(clientType);
     }
 
     private void logAuthRules(String clientId, List<AuthRulePatterns> authRulePatterns) {
@@ -364,16 +367,11 @@ public class ActorProcessorImpl implements ActorProcessor {
                 .build();
     }
 
-    private void sendAuthChallengeToClient(ClientSessionCtx ctx, String authMethod, byte[] response, MqttReasonCodes.Auth authReasonCode) {
+    private void sendAuthChallengeToClient(ClientSessionCtx ctx, String authMethod, byte[] authData, MqttReasonCodes.Auth authReasonCode) {
         var properties = new MqttProperties();
-        var methodProperty = new MqttProperties.StringProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID, authMethod);
-        var dataProperty = new MqttProperties.BinaryProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID, response);
-        properties.add(methodProperty);
-        properties.add(dataProperty);
-        MqttMessage message = MqttMessageBuilders.auth()
-                .properties(properties)
-                .reasonCode(authReasonCode.byteValue())
-                .build();
+        MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
+        MqttPropertiesUtil.addAuthDataToProps(properties, authData);
+        MqttMessage message = mqttMessageGenerator.createMqttAuthMsg(authReasonCode, properties);
         ctx.getChannel().writeAndFlush(message);
     }
 
@@ -383,28 +381,30 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, AuthResponse authResponse) {
-        UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
-                .clientId(state.getClientId())
-                .ipAddress(BytesUtil.toHostAddress(sessionInitMsg.getClientSessionCtx().getAddressBytes()))
-                .ts(System.currentTimeMillis())
-                .username(sessionInitMsg.getUsername())
-                .passwordProvided(sessionInitMsg.getPasswordBytes() != null)
-                .tlsUsed(sessionInitMsg.getClientSessionCtx().getSslHandler() != null)
-                .reason(authResponse.getReason())
-                .build();
-        DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
-                v -> log.debug("[{}] Unauthorized Client saved successfully! {}", state.getClientId(), unauthorizedClient),
-                throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", state.getClientId(), unauthorizedClient, throwable));
+        persistClientUnauthorized(state, sessionInitMsg.getClientSessionCtx(), sessionInitMsg.getUsername(),
+                sessionInitMsg.getPasswordBytes() != null, authResponse.getReason());
     }
 
-    private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx sessionCtx, EnhancedAuthFailureReason reason) {
+    private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthContinueResponse authResponse) {
+        persistClientUnauthorized(state, clientSessionCtx, authResponse.username(),
+                false, authResponse.enhancedAuthFailure().getReasonLog());
+    }
+
+    private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthFinalResponse authResponse) {
+        persistClientUnauthorized(state, clientSessionCtx, authResponse.username(),
+                false, authResponse.enhancedAuthFailure().getReasonLog());
+    }
+
+    private void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx,
+                                           String username, boolean passwordProvided, String reason) {
         UnauthorizedClient unauthorizedClient = UnauthorizedClient.builder()
                 .clientId(state.getClientId())
-                .ipAddress(BytesUtil.toHostAddress(sessionCtx.getAddressBytes()))
+                .ipAddress(BytesUtil.toHostAddress(clientSessionCtx.getAddressBytes()))
                 .ts(System.currentTimeMillis())
-                .passwordProvided(true)
-                .tlsUsed(sessionCtx.getSslHandler() != null)
-                .reason(reason.getReasonLog())
+                .username(username)
+                .passwordProvided(passwordProvided)
+                .tlsUsed(clientSessionCtx.getSslHandler() != null)
+                .reason(reason)
                 .build();
         DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
                 v -> log.debug("[{}] Unauthorized Client saved successfully! {}", state.getClientId(), unauthorizedClient),

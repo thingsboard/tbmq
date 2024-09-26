@@ -25,10 +25,9 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandler;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramSaslServerWithCallback;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -37,6 +36,16 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.util.List;
 import java.util.Map;
+
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_CHALLENGE_FAILED;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_METHOD_MISMATCH;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.FAILED_TO_INIT_SCRAM_SERVER;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_DATA;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_METHOD;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_SCRAM_SERVER;
 
 @Slf4j
 @Service
@@ -60,56 +69,15 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
         String authMethod = authContext.getAuthMethod();
         boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);
         if (!initiated) {
-            return EnhancedAuthContinueResponse.failure(EnhancedAuthFailureReason.FAILED_TO_INIT_SCRAM_SERVER);
+            return EnhancedAuthContinueResponse.failure(FAILED_TO_INIT_SCRAM_SERVER);
         }
+        ScramServerWithCallbackHandler server = sessionCtx.getScramServerWithCallbackHandler();
         try {
-            byte[] challenge = sessionCtx.getScramSaslServerWithCallback().evaluateResponse(authContext.getAuthData());
-            return EnhancedAuthContinueResponse.success(challenge);
+            byte[] challenge = server.evaluateResponse(authContext.getAuthData());
+            return EnhancedAuthContinueResponse.success(server.getUsername(), challenge);
         } catch (SaslException e) {
             log.warn("[{}] Failed to evaluate client initial request due to: ", clientId, e);
-            return EnhancedAuthContinueResponse.failure(EnhancedAuthFailureReason.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR);
-        }
-    }
-
-    @Override
-    public EnhancedAuthFinalResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
-        try {
-            var enhancedAuthResponse = processAuth(sessionCtx, authContext);
-            if (enhancedAuthResponse.success()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Enhanced auth completed successfully!", authContext.getClientId());
-                }
-                return enhancedAuthResponse;
-            }
-            var enhancedAuthFailureReason = enhancedAuthResponse.enhancedAuthFailureReason();
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] {}", authContext.getClientId(), enhancedAuthFailureReason.getReasonLog());
-            }
-            return enhancedAuthResponse;
-        } catch (SaslException e) {
-            log.warn("[{}] {}", authContext.getClientId(), EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR.getReasonLog(), e);
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
-        }
-    }
-
-    @Override
-    public EnhancedAuthFinalResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
-        try {
-            var enhancedAuthResponse = processAuth(sessionCtx, authContext);
-            if (enhancedAuthResponse.success()) {
-                if (log.isDebugEnabled()) {
-                    log.debug("[{}] Enhanced re-auth completed successfully!", authContext.getClientId());
-                }
-                return enhancedAuthResponse;
-            }
-            var enhancedAuthFailureReason = enhancedAuthResponse.enhancedAuthFailureReason();
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] {}", authContext.getClientId(), enhancedAuthFailureReason.getReasonLog());
-            }
-            return enhancedAuthResponse;
-        } catch (SaslException e) {
-            log.warn("[{}] {}", authContext.getClientId(), EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR.getReasonLog(), e);
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
+            return EnhancedAuthContinueResponse.failure(server.getUsername(), CLIENT_FIRST_MESSAGE_EVALUATION_ERROR);
         }
     }
 
@@ -124,43 +92,64 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
                 log.debug("[{}] Received AUTH message while authentication method {} mismatch with value from the session ctx {}",
                         clientId, authMethod, authMethodFromConnect);
             }
-            return EnhancedAuthContinueResponse.failure(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+            return EnhancedAuthContinueResponse.failure(AUTH_METHOD_MISMATCH);
         }
         boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);
         if (!initiated) {
-            return EnhancedAuthContinueResponse.failure(EnhancedAuthFailureReason.FAILED_TO_INIT_SCRAM_SERVER);
+            return EnhancedAuthContinueResponse.failure(FAILED_TO_INIT_SCRAM_SERVER);
         }
+        ScramServerWithCallbackHandler server = sessionCtx.getScramServerWithCallbackHandler();
         try {
-            byte[] challenge = sessionCtx.getScramSaslServerWithCallback().evaluateResponse(authContext.getAuthData());
-            return EnhancedAuthContinueResponse.success(challenge);
+            byte[] challenge = server.evaluateResponse(authContext.getAuthData());
+            return EnhancedAuthContinueResponse.success(server.getUsername(), challenge);
         } catch (SaslException e) {
             log.warn("[{}] Failed to evaluate client re-AUTH request due to: ", clientId, e);
             sessionCtx.clearScramServer();
-            return EnhancedAuthContinueResponse.failure(EnhancedAuthFailureReason.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
+            return EnhancedAuthContinueResponse.failure(server.getUsername(), CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
         }
     }
 
-    private EnhancedAuthFinalResponse processAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) throws SaslException {
+    @Override
+    public EnhancedAuthFinalResponse onAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        var response = processAuthContinue(sessionCtx, authContext);
+        logFinalResponse(authContext, response, false);
+        return response;
+    }
+
+    @Override
+    public EnhancedAuthFinalResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        var response = processAuthContinue(sessionCtx, authContext);
+        logFinalResponse(authContext, response, true);
+        return response;
+    }
+
+    private EnhancedAuthFinalResponse processAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
         if (sessionCtx.getAuthMethod() == null) {
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+            return EnhancedAuthFinalResponse.failure(MISSING_AUTH_METHOD);
         }
         if (!sessionCtx.getAuthMethod().equals(authContext.getAuthMethod())) {
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+            return EnhancedAuthFinalResponse.failure(AUTH_METHOD_MISMATCH);
         }
         if (authContext.getAuthData() == null) {
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+            return EnhancedAuthFinalResponse.failure(MISSING_AUTH_DATA);
         }
-        if (sessionCtx.getScramSaslServerWithCallback() == null) {
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        if (sessionCtx.getScramServerWithCallbackHandler() == null) {
+            return EnhancedAuthFinalResponse.failure(MISSING_SCRAM_SERVER);
         }
-        var server = sessionCtx.getScramSaslServerWithCallback();
-        byte[] response = server.evaluateResponse(authContext.getAuthData());
-        if (!server.isComplete()) {
-            return EnhancedAuthFinalResponse.failure(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        var server = sessionCtx.getScramServerWithCallbackHandler();
+        try {
+            byte[] response = server.evaluateResponse(authContext.getAuthData());
+            String username = server.getUsername();
+            if (!server.isComplete()) {
+                return EnhancedAuthFinalResponse.failure(username, AUTH_CHALLENGE_FAILED);
+            }
+            List<AuthRulePatterns> authRulePatterns = List.of(server.getAuthRulePatterns());
+            ClientType clientType = server.getClientType();
+            return EnhancedAuthFinalResponse.success(username, clientType, authRulePatterns, response);
+        } catch (SaslException e) {
+            log.warn("[{}] {}", authContext.getClientId(), CLIENT_FINAL_MESSAGE_EVALUATION_ERROR.getReasonLog(), e);
+            return EnhancedAuthFinalResponse.failure(server.getUsername(), CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
         }
-        List<AuthRulePatterns> authRulePatterns = List.of(server.getAuthRulePatterns());
-        ClientType clientType = server.getClientType();
-        return EnhancedAuthFinalResponse.success(clientType, authRulePatterns, response);
     }
 
     private boolean initiateScramServerWithCallback(String clientId, String authMethod, ClientSessionCtx sessionCtx) {
@@ -184,12 +173,25 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
             log.warn("[{}] Failed to initialize SASL server due to: ", clientId, e);
             return false;
         }
-        sessionCtx.setScramSaslServerWithCallback(new ScramSaslServerWithCallback(saslServer, callbackHandler));
+        sessionCtx.setScramServerWithCallbackHandler(new ScramServerWithCallbackHandler(saslServer, callbackHandler));
         return true;
     }
 
     SaslServer createSaslServer(String authMethod, ScramAuthCallbackHandler callbackHandler) throws SaslException {
         return Sasl.createSaslServer(authMethod, SCRAM_SASL_PROTOCOL, null, SCRAM_SASL_PROPS, callbackHandler);
+    }
+
+    private void logFinalResponse(EnhancedAuthContext authContext, EnhancedAuthFinalResponse response, boolean reAuth) {
+        if (!log.isDebugEnabled()) {
+            return;
+        }
+        if (response.success()) {
+            log.debug(reAuth ?
+                    "[{}] Enhanced re-auth completed successfully!" :
+                    "[{}] Enhanced auth completed successfully!", authContext.getClientId());
+            return;
+        }
+        log.debug("[{}] {}", authContext.getClientId(), response.enhancedAuthFailure().getReasonLog());
     }
 
 }

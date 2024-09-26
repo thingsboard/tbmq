@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.security.scram.ScramCredential;
 import org.apache.kafka.common.security.scram.ScramCredentialCallback;
@@ -41,20 +42,18 @@ import java.util.List;
 import static org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials.ITERATIONS_COUNT;
 
 @Slf4j
+@RequiredArgsConstructor
 public class ScramAuthCallbackHandler implements CallbackHandler {
 
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
 
     @Getter
+    private String username;
+    @Getter
     private ClientType clientType;
     @Getter
     private AuthRulePatterns authRulePatterns;
-
-    public ScramAuthCallbackHandler(MqttClientCredentialsService credentialsService, AuthorizationRuleService authorizationRuleService) {
-        this.credentialsService = credentialsService;
-        this.authorizationRuleService = authorizationRuleService;
-    }
 
     @Override
     public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
@@ -64,7 +63,7 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Failed to process SCRAM enhanced authentication due to missing NameCallback!"));
 
-        String username = nameCallback.getDefaultName();
+        username = nameCallback.getDefaultName();
         if (StringUtils.isEmpty(username)) {
             throw new RuntimeException("Failed to process SCRAM enhanced authentication due to missing username!");
         }

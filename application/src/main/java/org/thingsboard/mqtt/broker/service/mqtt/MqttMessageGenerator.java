@@ -57,4 +57,6 @@ public interface MqttMessageGenerator {
     MqttMessage createPingRespMsg();
 
     MqttMessage createDisconnectMsg(MqttReasonCodes.Disconnect code);
+
+    MqttMessage createMqttAuthMsg(MqttReasonCodes.Auth authReasonCode, MqttProperties properties);
 }

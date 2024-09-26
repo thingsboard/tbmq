@@ -24,23 +24,30 @@ import java.util.List;
 @Builder
 public record EnhancedAuthFinalResponse(boolean success,
                                         byte[] response,
+                                        String username,
                                         ClientType clientType,
                                         List<AuthRulePatterns> authRulePatterns,
-                                        EnhancedAuthFailureReason enhancedAuthFailureReason) {
+                                        EnhancedAuthFailure enhancedAuthFailure) {
 
-    public static EnhancedAuthFinalResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns, byte[] response) {
+    public static EnhancedAuthFinalResponse success(String username, ClientType clientType, List<AuthRulePatterns> authRulePatterns, byte[] response) {
         return EnhancedAuthFinalResponse.builder()
                 .success(true)
+                .username(username)
                 .response(response)
                 .clientType(clientType)
                 .authRulePatterns(authRulePatterns)
                 .build();
     }
 
-    public static EnhancedAuthFinalResponse failure(EnhancedAuthFailureReason enhancedAuthFailureReason) {
+    public static EnhancedAuthFinalResponse failure(EnhancedAuthFailure enhancedAuthFailure) {
+        return EnhancedAuthFinalResponse.failure(null, enhancedAuthFailure);
+    }
+
+    public static EnhancedAuthFinalResponse failure(String username, EnhancedAuthFailure enhancedAuthFailure) {
         return EnhancedAuthFinalResponse.builder()
                 .success(false)
-                .enhancedAuthFailureReason(enhancedAuthFailureReason)
+                .username(username)
+                .enhancedAuthFailure(enhancedAuthFailure)
                 .build();
     }
 

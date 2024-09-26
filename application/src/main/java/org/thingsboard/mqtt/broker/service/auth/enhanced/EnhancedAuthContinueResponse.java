@@ -16,29 +16,30 @@
 package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
 import lombok.Builder;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
-
-import java.util.List;
 
 @Builder
 public record EnhancedAuthContinueResponse(boolean success,
+                                           String username,
                                            byte[] response,
-                                           ClientType clientType,
-                                           List<AuthRulePatterns> authRulePatterns,
-                                           EnhancedAuthFailureReason enhancedAuthFailureReason) {
+                                           EnhancedAuthFailure enhancedAuthFailure) {
 
-    public static EnhancedAuthContinueResponse success(byte[] response) {
+    public static EnhancedAuthContinueResponse success(String username, byte[] response) {
         return EnhancedAuthContinueResponse.builder()
                 .success(true)
+                .username(username)
                 .response(response)
                 .build();
     }
 
-    public static EnhancedAuthContinueResponse failure(EnhancedAuthFailureReason enhancedAuthFailureReason) {
+    public static EnhancedAuthContinueResponse failure(EnhancedAuthFailure enhancedAuthFailure) {
+        return EnhancedAuthContinueResponse.failure(null, enhancedAuthFailure);
+    }
+
+    public static EnhancedAuthContinueResponse failure(String username, EnhancedAuthFailure enhancedAuthFailure) {
         return EnhancedAuthContinueResponse.builder()
                 .success(false)
-                .enhancedAuthFailureReason(enhancedAuthFailureReason)
+                .username(username)
+                .enhancedAuthFailure(enhancedAuthFailure)
                 .build();
     }
 

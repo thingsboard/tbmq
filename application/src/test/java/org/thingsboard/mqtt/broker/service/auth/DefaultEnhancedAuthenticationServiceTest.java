@@ -25,9 +25,9 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
-import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramSaslServerWithCallback;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -83,10 +83,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
 
         var scramSaslServer = mock(ScramSaslServer.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
         // WHEN
@@ -94,8 +94,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         // THEN
         assertThat(enhancedAuthContinueResponse.success()).isTrue();
-        verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
-        verify(clientSessionCtxMock).getScramSaslServerWithCallback();
+        verify(clientSessionCtxMock).setScramServerWithCallbackHandler(any());
+        verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
         verifyNoMoreInteractions(clientSessionCtxMock);
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
     }
@@ -106,10 +106,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
 
         var scramSaslServer = mock(ScramSaslServer.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
         doThrow(SaslException.class).when(scramSaslServerWithCallbackMock).evaluateResponse(any());
 
@@ -119,8 +119,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
-        verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
-        verify(clientSessionCtxMock).getScramSaslServerWithCallback();
+        verify(clientSessionCtxMock).setScramServerWithCallbackHandler(any());
+        verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
         verifyNoMoreInteractions(clientSessionCtxMock);
     }
 
@@ -178,10 +178,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         byte[] response = "server-final-data".getBytes(StandardCharsets.UTF_8);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(response);
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(true);
@@ -194,7 +194,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isNull();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isNull();
         assertThat(enhancedAuthFinalResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
         assertThat(enhancedAuthFinalResponse.clientType()).isEqualTo(ClientType.DEVICE);
         assertThat(enhancedAuthFinalResponse.success()).isTrue();
@@ -215,7 +215,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_AUTH_METHOD);
     }
 
     @Test
@@ -232,7 +232,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.AUTH_METHOD_MISMATCH);
     }
 
     @Test
@@ -249,7 +249,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_AUTH_DATA);
     }
 
     @Test
@@ -259,7 +259,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(null);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(null);
 
         // WHEN
         EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onAuthContinue(clientSessionCtxMock, enhancedAuthContext);
@@ -267,7 +267,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_SCRAM_SERVER);
     }
 
     @Test
@@ -275,10 +275,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException());
 
         // WHEN
@@ -287,7 +287,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
     }
 
     @Test
@@ -295,10 +295,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(false);
 
         // WHEN
@@ -307,7 +307,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.AUTH_CHALLENGE_FAILED);
     }
 
     @Test
@@ -315,10 +315,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         byte[] response = "server-final-data".getBytes(StandardCharsets.UTF_8);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(response);
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(true);
@@ -331,7 +331,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isNull();
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isNull();
         assertThat(enhancedAuthFinalResponse.authRulePatterns()).isEqualTo(List.of(authRulePatterns));
         assertThat(enhancedAuthFinalResponse.clientType()).isEqualTo(ClientType.DEVICE);
         assertThat(enhancedAuthFinalResponse.success()).isTrue();
@@ -352,7 +352,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_METHOD);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_AUTH_METHOD);
     }
 
     @Test
@@ -369,7 +369,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.AUTH_METHOD_MISMATCH);
     }
 
     @Test
@@ -386,7 +386,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_AUTH_DATA);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_AUTH_DATA);
     }
 
     @Test
@@ -396,7 +396,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(null);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(null);
 
         // WHEN
         EnhancedAuthFinalResponse enhancedAuthFinalResponse = enhancedAuthenticationService.onReAuthContinue(clientSessionCtxMock, enhancedAuthContext);
@@ -404,7 +404,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.MISSING_SCRAM_SERVER);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.MISSING_SCRAM_SERVER);
     }
 
     @Test
@@ -412,10 +412,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException());
 
         // WHEN
@@ -424,7 +424,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
     }
 
     @Test
@@ -432,10 +432,10 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.isComplete()).thenReturn(false);
 
         // WHEN
@@ -444,7 +444,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthFinalResponse).isNotNull();
         assertThat(enhancedAuthFinalResponse.success()).isFalse();
-        assertThat(enhancedAuthFinalResponse.enhancedAuthFailureReason()).isEqualTo(EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED);
+        assertThat(enhancedAuthFinalResponse.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.AUTH_CHALLENGE_FAILED);
     }
 
     @Test
@@ -489,11 +489,11 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var scramSaslServer = mock(ScramSaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException("Evaluation failed"));
 
         // WHEN
@@ -502,8 +502,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthContinueResponse.success()).isFalse();
         verify(clientSessionCtxMock).getAuthMethod();
-        verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
-        verify(clientSessionCtxMock).getScramSaslServerWithCallback();
+        verify(clientSessionCtxMock).setScramServerWithCallbackHandler(any());
+        verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
         verify(clientSessionCtxMock).clearScramServer();
         verifyNoMoreInteractions(clientSessionCtxMock);
     }
@@ -514,13 +514,13 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var scramSaslServer = mock(ScramSaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
-        var scramSaslServerWithCallbackMock = mock(ScramSaslServerWithCallback.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
         byte[] challenge = "server-initial-request".getBytes(StandardCharsets.UTF_8);
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
-        when(clientSessionCtxMock.getScramSaslServerWithCallback()).thenReturn(scramSaslServerWithCallbackMock);
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(challenge);
 
         // WHEN
@@ -529,8 +529,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // THEN
         assertThat(enhancedAuthContinueResponse.success()).isTrue();
         verify(clientSessionCtxMock).getAuthMethod();
-        verify(clientSessionCtxMock).setScramSaslServerWithCallback(any());
-        verify(clientSessionCtxMock).getScramSaslServerWithCallback();
+        verify(clientSessionCtxMock).setScramServerWithCallbackHandler(any());
+        verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
         verifyNoMoreInteractions(clientSessionCtxMock);
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
     }

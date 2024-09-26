@@ -21,7 +21,6 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttPubReplyMessageVariableHeader;
@@ -171,8 +170,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 disconnect(NettyMqttConverter.createMqttDisconnectMsg(clientSessionCtx, msg));
                 break;
             case CONNECT:
+                reportTraffic(BrokerConstants.TLS_CONNECT_BYTES_OVERHEAD);
                 if (clientSessionCtx.isDefaultAuth()) {
-                    reportTraffic(BrokerConstants.TLS_CONNECT_BYTES_OVERHEAD);
                     clientMqttActorManager.connect(clientId, NettyMqttConverter.createMqttConnectMsg(sessionId, (MqttConnectMessage) msg));
                 }
                 break;
@@ -212,7 +211,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private void connAckAndCloseCtx(MqttConnectReturnCode reasonCode) {
-        var mqttConnAckMessage = MqttMessageBuilders.connAck().returnCode(reasonCode).build();
+        var mqttConnAckMessage = mqttMessageGenerator.createMqttConnAckMsg(reasonCode);
         clientSessionCtx.getChannel().writeAndFlush(mqttConnAckMessage);
         clientSessionCtx.getChannel().close();
     }

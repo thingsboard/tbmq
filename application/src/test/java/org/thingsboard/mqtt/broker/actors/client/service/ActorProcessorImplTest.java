@@ -21,7 +21,7 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
 import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import org.junit.Before;
@@ -79,10 +79,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason.AUTH_CHALLENGE_FAILED;
-import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason.AUTH_METHOD_MISMATCH;
-import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
-import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailureReason.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_CHALLENGE_FAILED;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_METHOD_MISMATCH;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ActorProcessorImplTest {
@@ -102,7 +103,7 @@ public class ActorProcessorImplTest {
     public void setUp() {
         disconnectService = mock(DisconnectService.class);
         authenticationService = mock(AuthenticationService.class);
-        mqttMessageGenerator = mock(MqttMessageGenerator.class);
+        mqttMessageGenerator = spy(MqttMessageGenerator.class);
         enhancedAuthenticationService = mock(EnhancedAuthenticationService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         unauthorizedClientService = mock(UnauthorizedClientService.class);
@@ -203,24 +204,23 @@ public class ActorProcessorImplTest {
 
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
         var channelHandlerCtxMock = mock(ChannelHandlerContext.class);
+        var mqttMessageMock = mock(MqttMessage.class);
 
         when(clientSessionCtxMock.getSessionId()).thenReturn(UUID.fromString("93db435c-8059-43ae-b41f-22776404039e"));
         when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerCtxMock);
 
-        var success = EnhancedAuthContinueResponse.success("server-first-data".getBytes(StandardCharsets.UTF_8));
+        doReturn(mqttMessageMock).when(mqttMessageGenerator).createMqttAuthMsg(any(MqttReasonCodes.Auth.class), any(MqttProperties.class));
+
+        var success = EnhancedAuthContinueResponse.success("username", "server-first-data".getBytes(StandardCharsets.UTF_8));
         doReturn(success).when(enhancedAuthenticationService)
                 .onClientConnectMsg(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
 
         EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(clientSessionCtxMock);
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
 
+        verify(mqttMessageGenerator).createMqttAuthMsg(eq(MqttReasonCodes.Auth.CONTINUE_AUTHENTICATION), any(MqttProperties.class));
         verify(clientSessionCtxMock).getChannel();
-
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
+        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageMock);
 
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.ENHANCED_AUTH_STARTED);
 
@@ -291,8 +291,10 @@ public class ActorProcessorImplTest {
         UUID currentSessionId = currentClientSessionCtx.getSessionId();
         clientActorState.setClientSessionCtx(currentClientSessionCtx);
 
-        var enhancedAuthContinueResponse = EnhancedAuthContinueResponse.success("server-first-data".getBytes(StandardCharsets.UTF_8));
+        var mqttMessageMock = mock(MqttMessage.class);
+        doReturn(mqttMessageMock).when(mqttMessageGenerator).createMqttAuthMsg(any(MqttReasonCodes.Auth.class), any(MqttProperties.class));
 
+        var enhancedAuthContinueResponse = EnhancedAuthContinueResponse.success("username", "server-first-data".getBytes(StandardCharsets.UTF_8));
         doReturn(enhancedAuthContinueResponse).when(enhancedAuthenticationService)
                 .onClientConnectMsg(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
 
@@ -303,11 +305,8 @@ public class ActorProcessorImplTest {
         EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(ctxFromEnhancedMsgMock);
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
 
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
+        verify(mqttMessageGenerator).createMqttAuthMsg(eq(MqttReasonCodes.Auth.CONTINUE_AUTHENTICATION), any(MqttProperties.class));
+        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageMock);
 
         var mqttDisconnectMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
         verify(disconnectService).disconnect(eq(clientActorState), mqttDisconnectMsgCaptor.capture());
@@ -333,6 +332,9 @@ public class ActorProcessorImplTest {
 
         clientActorState.setClientSessionCtx(sessionCtxMock);
 
+        var mqttMessageMock = mock(MqttMessage.class);
+        doReturn(mqttMessageMock).when(mqttMessageGenerator).createMqttAuthMsg(any(MqttReasonCodes.Auth.class), any(MqttProperties.class));
+
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         List<AuthRulePatterns> authorizationRules = getAuthorizationRules();
@@ -352,11 +354,8 @@ public class ActorProcessorImplTest {
         verifyNoMoreInteractions(sessionCtxMock);
         verifyNoInteractions(clientMqttActorManager);
 
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
+        verify(mqttMessageGenerator).createMqttAuthMsg(eq(MqttReasonCodes.Auth.SUCCESS), any(MqttProperties.class));
+        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageMock);
     }
 
     @Test
@@ -372,6 +371,9 @@ public class ActorProcessorImplTest {
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
+        when(authResponse.enhancedAuthFailure()).thenReturn(CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
+
+        when(unauthorizedClientService.save(any(UnauthorizedClient.class))).thenReturn(Futures.immediateFuture(null));
 
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onReAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
@@ -384,6 +386,8 @@ public class ActorProcessorImplTest {
         assertThat(mqttDisconnectMsg.getSessionId()).isEqualTo(sessionId);
         assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
         verify(sessionCtxMock).getSessionId();
+        verify(sessionCtxMock).getAddressBytes();
+        verify(sessionCtxMock).getSslHandler();
         verifyNoMoreInteractions(sessionCtxMock);
     }
 
@@ -451,7 +455,7 @@ public class ActorProcessorImplTest {
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
-        when(authResponse.enhancedAuthFailureReason()).thenReturn(AUTH_METHOD_MISMATCH);
+        when(authResponse.enhancedAuthFailure()).thenReturn(AUTH_METHOD_MISMATCH);
 
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
@@ -487,7 +491,7 @@ public class ActorProcessorImplTest {
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
-        when(authResponse.enhancedAuthFailureReason()).thenReturn(AUTH_CHALLENGE_FAILED);
+        when(authResponse.enhancedAuthFailure()).thenReturn(AUTH_CHALLENGE_FAILED);
 
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
@@ -537,6 +541,9 @@ public class ActorProcessorImplTest {
     public void givenConnectedSession_whenOnEnhancedReAuthAndReAuthSucceeds_thenNoDisconnect() {
         updateSessionState(SessionState.CONNECTED);
 
+        var mqttMessageMock = mock(MqttMessage.class);
+        doReturn(mqttMessageMock).when(mqttMessageGenerator).createMqttAuthMsg(any(MqttReasonCodes.Auth.class), any(MqttProperties.class));
+
         var channelHandlerCtxMock = mock(ChannelHandlerContext.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
         when(clientSessionCtxMock.getChannel()).thenReturn(channelHandlerCtxMock);
@@ -544,7 +551,7 @@ public class ActorProcessorImplTest {
         clientActorState.setClientSessionCtx(clientSessionCtxMock);
 
         when(enhancedAuthenticationService.onReAuth(any(ClientSessionCtx.class), any(EnhancedAuthContext.class)))
-                .thenReturn(EnhancedAuthContinueResponse.success("server-first-data".getBytes(StandardCharsets.UTF_8)));
+                .thenReturn(EnhancedAuthContinueResponse.success("username", "server-first-data".getBytes(StandardCharsets.UTF_8)));
 
         actorProcessor.onEnhancedReAuth(clientActorState, mock(MqttAuthMsg.class));
 
@@ -552,11 +559,8 @@ public class ActorProcessorImplTest {
         verifyNoInteractions(clientMqttActorManager);
         verify(clientSessionCtxMock).getChannel();
 
-        var mqttMessageCaptor = ArgumentCaptor.forClass(MqttMessage.class);
-        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageCaptor.capture());
-        var mqttMessage = mqttMessageCaptor.getValue();
-        assertThat(mqttMessage).isNotNull();
-        assertThat(mqttMessage.fixedHeader().messageType()).isEqualTo(MqttMessageType.AUTH);
+        verify(mqttMessageGenerator).createMqttAuthMsg(eq(MqttReasonCodes.Auth.CONTINUE_AUTHENTICATION), any(MqttProperties.class));
+        verify(channelHandlerCtxMock).writeAndFlush(mqttMessageMock);
     }
 
     @Test
@@ -569,8 +573,9 @@ public class ActorProcessorImplTest {
 
         clientActorState.setClientSessionCtx(sessionCtxMock);
 
-        var enhancedAuthContinueResponse = EnhancedAuthContinueResponse.failure(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
+        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
 
+        var enhancedAuthContinueResponse = EnhancedAuthContinueResponse.failure(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
         when(enhancedAuthenticationService.onReAuth(any(ClientSessionCtx.class), any(EnhancedAuthContext.class)))
                 .thenReturn(enhancedAuthContinueResponse);
 
@@ -583,6 +588,7 @@ public class ActorProcessorImplTest {
         assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
         assertThat(mqttDisconnectMsg.getReason().getMessage()).isEqualTo(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR.getReasonLog());
         verifyNoMoreInteractions(clientMqttActorManager);
+        verify(unauthorizedClientService).save(any(UnauthorizedClient.class));
     }
 
     @Test

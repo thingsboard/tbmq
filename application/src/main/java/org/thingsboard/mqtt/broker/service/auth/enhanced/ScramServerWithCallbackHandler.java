@@ -21,27 +21,25 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
-public record ScramSaslServerWithCallback(SaslServer saslServer, ScramAuthCallbackHandler callbackHandler) {
+public record ScramServerWithCallbackHandler(SaslServer scramServer, ScramAuthCallbackHandler callbackHandler) {
 
     public byte[] evaluateResponse(byte[] authData) throws SaslException {
-        return saslServer.evaluateResponse(authData);
+        return scramServer.evaluateResponse(authData);
     }
 
     public boolean isComplete() {
-        return saslServer.isComplete();
+        return scramServer.isComplete();
+    }
+
+    public String getUsername() {
+        return callbackHandler.getUsername();
     }
 
     public ClientType getClientType() {
-        if (!isComplete()) {
-            return null;
-        }
         return callbackHandler.getClientType();
     }
 
     public AuthRulePatterns getAuthRulePatterns() {
-        if (!isComplete()) {
-            return null;
-        }
         return callbackHandler.getAuthRulePatterns();
     }
 

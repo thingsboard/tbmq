@@ -429,19 +429,19 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
                     SCRAM_SASL_PROTOCOL,
                     null,
                     SCRAM_SASL_PROPS,
-                    new ScramSaslClientCallbackHandler(username, password)
+                    new ScramClientCallbackHandler(username, password)
             );
         } catch (SaslException e) {
             throw new RuntimeException("Failed to initialize Sasl client", e);
         }
     }
 
-    private static class ScramSaslClientCallbackHandler implements CallbackHandler {
+    private static class ScramClientCallbackHandler implements CallbackHandler {
 
         private final String username;
         private final char[] password;
 
-        public ScramSaslClientCallbackHandler(String username, String password) {
+        public ScramClientCallbackHandler(String username, String password) {
             this.username = username;
             this.password = password.toCharArray();
         }

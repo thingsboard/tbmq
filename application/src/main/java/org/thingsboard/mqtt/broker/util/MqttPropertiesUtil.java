@@ -276,8 +276,12 @@ public class MqttPropertiesUtil {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.RECEIVE_MAXIMUM_PROP_ID, receiveMax));
     }
 
-    public static void addAuthMethodToProps(MqttProperties properties, String authenticationMethodValue) {
-        properties.add(new MqttProperties.StringProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID, authenticationMethodValue));
+    public static void addAuthMethodToProps(MqttProperties properties, String authMethod) {
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID, authMethod));
+    }
+
+    public static void addAuthDataToProps(MqttProperties properties, byte[] authData) {
+        properties.add(new MqttProperties.BinaryProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID, authData));
     }
 
     /**

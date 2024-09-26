@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth.enhanced;
 import lombok.Getter;
 
 @Getter
-public enum EnhancedAuthFailureReason {
+public enum EnhancedAuthFailure {
 
     MISSING_AUTH_METHOD("Received AUTH message while authentication method is not set in the client session ctx!"),
     AUTH_METHOD_MISMATCH("Received AUTH message while authentication method mismatch with value from the client session ctx!"),
@@ -33,7 +33,7 @@ public enum EnhancedAuthFailureReason {
 
     private final String reasonLog;
 
-    EnhancedAuthFailureReason(String reasonLog) {
+    EnhancedAuthFailure(String reasonLog) {
         this.reasonLog = reasonLog;
     }
 

@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
+
+// TODO: move BytesUtil class to the same package with StringUtils and move generateSafeTokenBytes method to the BytesUtil.
 @Slf4j
 public class BytesUtil {
 
