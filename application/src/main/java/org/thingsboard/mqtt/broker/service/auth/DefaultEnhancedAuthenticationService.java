@@ -124,22 +124,22 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     }
 
     private EnhancedAuthFinalResponse processAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
-        if (sessionCtx.getAuthMethod() == null) {
-            return EnhancedAuthFinalResponse.failure(MISSING_AUTH_METHOD);
-        }
-        if (!sessionCtx.getAuthMethod().equals(authContext.getAuthMethod())) {
-            return EnhancedAuthFinalResponse.failure(AUTH_METHOD_MISMATCH);
-        }
-        if (authContext.getAuthData() == null) {
-            return EnhancedAuthFinalResponse.failure(MISSING_AUTH_DATA);
-        }
-        if (sessionCtx.getScramServerWithCallbackHandler() == null) {
+        var server = sessionCtx.getScramServerWithCallbackHandler();
+        if (server == null) {
             return EnhancedAuthFinalResponse.failure(MISSING_SCRAM_SERVER);
         }
-        var server = sessionCtx.getScramServerWithCallbackHandler();
+        var username = server.getUsername();
+        if (sessionCtx.getAuthMethod() == null) {
+            return EnhancedAuthFinalResponse.failure(username, MISSING_AUTH_METHOD);
+        }
+        if (!sessionCtx.getAuthMethod().equals(authContext.getAuthMethod())) {
+            return EnhancedAuthFinalResponse.failure(username, AUTH_METHOD_MISMATCH);
+        }
+        if (authContext.getAuthData() == null) {
+            return EnhancedAuthFinalResponse.failure(username, MISSING_AUTH_DATA);
+        }
         try {
             byte[] response = server.evaluateResponse(authContext.getAuthData());
-            String username = server.getUsername();
             if (!server.isComplete()) {
                 return EnhancedAuthFinalResponse.failure(username, AUTH_CHALLENGE_FAILED);
             }
@@ -148,7 +148,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
             return EnhancedAuthFinalResponse.success(username, clientType, authRulePatterns, response);
         } catch (SaslException e) {
             log.warn("[{}] {}", authContext.getClientId(), CLIENT_FINAL_MESSAGE_EVALUATION_ERROR.getReasonLog(), e);
-            return EnhancedAuthFinalResponse.failure(server.getUsername(), CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
+            return EnhancedAuthFinalResponse.failure(username, CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
         }
     }
 
