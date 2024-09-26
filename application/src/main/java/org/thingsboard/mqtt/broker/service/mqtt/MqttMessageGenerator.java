@@ -58,5 +58,5 @@ public interface MqttMessageGenerator {
 
     MqttMessage createDisconnectMsg(MqttReasonCodes.Disconnect code);
 
-    MqttMessage createMqttAuthMsg(MqttReasonCodes.Auth authReasonCode, MqttProperties properties);
+    MqttMessage createMqttAuthMsg(String authMethod, byte[] authData, MqttReasonCodes.Auth authReasonCode);
 }

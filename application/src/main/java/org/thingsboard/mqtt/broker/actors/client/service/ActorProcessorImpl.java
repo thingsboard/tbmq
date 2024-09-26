@@ -368,10 +368,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     }
 
     private void sendAuthChallengeToClient(ClientSessionCtx ctx, String authMethod, byte[] authData, MqttReasonCodes.Auth authReasonCode) {
-        var properties = new MqttProperties();
-        MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
-        MqttPropertiesUtil.addAuthDataToProps(properties, authData);
-        MqttMessage message = mqttMessageGenerator.createMqttAuthMsg(authReasonCode, properties);
+        MqttMessage message = mqttMessageGenerator.createMqttAuthMsg(authMethod, authData, authReasonCode);
         ctx.getChannel().writeAndFlush(message);
     }
 

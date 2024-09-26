@@ -252,7 +252,10 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
     }
 
     @Override
-    public MqttMessage createMqttAuthMsg(MqttReasonCodes.Auth authReasonCode, MqttProperties properties) {
+    public MqttMessage createMqttAuthMsg(String authMethod, byte[] authData, MqttReasonCodes.Auth authReasonCode) {
+        var properties = new MqttProperties();
+        MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
+        MqttPropertiesUtil.addAuthDataToProps(properties, authData);
         return MqttMessageBuilders.auth().reasonCode(authReasonCode.byteValue()).properties(properties).build();
     }
 

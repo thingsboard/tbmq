@@ -206,7 +206,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(null);
 
         // WHEN
@@ -223,7 +225,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContextWithSha512();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
@@ -240,7 +244,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext(ScramAlgorithm.SHA_256, null);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
@@ -258,7 +264,6 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
-        when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(null);
 
         // WHEN
@@ -343,7 +348,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(null);
 
         // WHEN
@@ -360,7 +367,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContextWithSha512();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
@@ -377,7 +386,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext(ScramAlgorithm.SHA_256, null);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
 
+        when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
 
         // WHEN
@@ -395,7 +406,6 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
 
-        when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(null);
 
         // WHEN
@@ -504,7 +514,6 @@ public class DefaultEnhancedAuthenticationServiceTest {
         verify(clientSessionCtxMock).getAuthMethod();
         verify(clientSessionCtxMock).setScramServerWithCallbackHandler(any());
         verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
-        verify(clientSessionCtxMock).clearScramServer();
         verifyNoMoreInteractions(clientSessionCtxMock);
     }
 
