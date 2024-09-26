@@ -20,8 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.client.credentials.HasSinglePubSubAutorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SinglePubSubAuthRulesAware;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
@@ -72,9 +72,9 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     }
 
     @Override
-    public AuthRulePatterns parseAuthorizationRule(HasSinglePubSubAutorizationRules credentials) throws AuthenticationException {
+    public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException {
         if (credentials == null) {
-            throw new AuthenticationException("Cannot parse BasicMqttCredentials");
+            throw new AuthenticationException("Cannot parse SinglePubSubAuthRulesAware credentials!");
         }
         return newAuthRulePatterns(credentials.getAuthRules());
     }

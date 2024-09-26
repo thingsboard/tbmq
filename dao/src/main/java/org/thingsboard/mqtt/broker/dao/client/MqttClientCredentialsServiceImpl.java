@@ -247,12 +247,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         } else {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
-
-        PubSubAuthorizationRules authRules = mqttCredentials.getAuthRules();
-        if (authRules == null) {
-            throw new DataValidationException("AuthRules are null!");
-        }
-        compileAuthRules(authRules);
+        validateAndCompileAuthRules(mqttCredentials.getAuthRules());
     }
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -277,16 +272,12 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
-            if (authRules == null) {
-                throw new DataValidationException("AuthRules are null!");
-            }
-            compileAuthRules(authRules);
+            validateAndCompileAuthRules(authRules);
         });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
         mqttClientCredentials.setCredentialsId(credentialsId);
     }
-
 
     private void preprocessScramMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         ScramMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, ScramMqttCredentials.class);
@@ -295,14 +286,13 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
         mqttClientCredentials.setCredentialsId(ProtocolUtil.usernameCredentialsId(mqttCredentials.getUserName()));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
-        PubSubAuthorizationRules authRules = mqttCredentials.getAuthRules();
+        validateAndCompileAuthRules(mqttCredentials.getAuthRules());
+    }
+
+    private void validateAndCompileAuthRules(PubSubAuthorizationRules authRules) {
         if (authRules == null) {
             throw new DataValidationException("AuthRules are null!");
         }
-        compileAuthRules(authRules);
-    }
-
-    private void compileAuthRules(PubSubAuthorizationRules authRules) {
         compileAuthRules(authRules.getPubAuthRulePatterns(), "Publish auth rule patterns should be a valid regexes!");
         compileAuthRules(authRules.getSubAuthRulePatterns(), "Subscribe auth rule patterns should be a valid regexes!");
     }

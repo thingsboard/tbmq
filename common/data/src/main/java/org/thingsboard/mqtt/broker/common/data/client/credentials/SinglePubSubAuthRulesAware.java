@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.client.credentials;
 
-public interface HasSinglePubSubAutorizationRules {
+public interface SinglePubSubAuthRulesAware {
 
     PubSubAuthorizationRules getAuthRules();
 

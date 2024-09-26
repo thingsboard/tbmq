@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import javax.crypto.Mac;
@@ -29,13 +30,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
 import java.util.List;
 
 @Data
-public class ScramMqttCredentials implements HasSinglePubSubAutorizationRules {
+public class ScramMqttCredentials implements SinglePubSubAuthRulesAware {
 
     public static final int ITERATIONS_COUNT = 4096;
 
@@ -100,10 +100,7 @@ public class ScramMqttCredentials implements HasSinglePubSubAutorizationRules {
     }
 
     private static byte[] generateRandomSalt() {
-        byte[] salt = new byte[SALT_LENGTH];
-        SecureRandom random = new SecureRandom();
-        random.nextBytes(salt);
-        return salt;
+        return StringUtils.generateSafeTokenBytes(SALT_LENGTH);
     }
 
     private static byte[] pbkdf2(String password, byte[] salt, ScramAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {

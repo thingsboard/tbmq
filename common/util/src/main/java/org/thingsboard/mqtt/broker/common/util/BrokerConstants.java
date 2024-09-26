@@ -118,6 +118,8 @@ public class BrokerConstants {
     public static final int SESSION_EXPIRY_INTERVAL_PROP_ID = 17;
     public static final int ASSIGNED_CLIENT_IDENTIFIER_PROP_ID = 18;
     public static final int SERVER_KEEP_ALIVE_PROP_ID = 19;
+    public static final int AUTHENTICATION_METHOD_PROP_ID = 21;
+    public static final int AUTHENTICATION_DATA_PROP_ID = 22;
     public static final int REQUEST_PROBLEM_INFORMATION_PROP_ID = 23;
     public static final int WILL_DELAY_INTERVAL_PROP_ID = 24;
     public static final int REQUEST_RESPONSE_INFO_PROP_ID = 25;
@@ -132,9 +134,6 @@ public class BrokerConstants {
     public static final int WILDCARD_SUBSCRIPTION_AVAILABLE_PROP_ID = 40;
     public static final int SUBSCRIPTION_IDENTIFIER_AVAILABLE_PROP_ID = 41;
     public static final int SHARED_SUBSCRIPTION_AVAILABLE_PROP_ID = 42;
-
-    public static final int AUTHENTICATION_METHOD_PROP_ID = 21;
-    public static final int AUTHENTICATION_DATA_PROP_ID = 22;
 
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";

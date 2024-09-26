@@ -206,7 +206,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 clientMqttActorManager.processMqttMsg(clientId, NettyMqttConverter.createMqttPingMsg(sessionId));
                 break;
             case AUTH:
-                clientMqttActorManager.processMqttMsg(clientId,
+                clientMqttActorManager.processMqttAuthMsg(clientId,
                         NettyMqttConverter.createMqttAuthMsg(sessionId, (MqttReasonCodeAndPropertiesVariableHeader) msg.variableHeader()));
         }
     }

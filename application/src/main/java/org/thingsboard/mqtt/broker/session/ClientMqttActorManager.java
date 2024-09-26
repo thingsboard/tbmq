@@ -31,7 +31,7 @@ public interface ClientMqttActorManager {
 
     void initEnhancedAuth(String clientId, boolean isClientIdGenerated, EnhancedAuthInitMsg enhancedAuthInitMsg);
 
-    void processMqttMsg(String clientId, MqttAuthMsg mqttAuthMsg);
+    void processMqttAuthMsg(String clientId, MqttAuthMsg mqttAuthMsg);
 
     void disconnect(String clientId, MqttDisconnectMsg disconnectMsg);
 

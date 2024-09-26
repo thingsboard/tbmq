@@ -35,7 +35,7 @@ public class EnhancedAuthContext {
         return "EnhancedAuthContext{" +
                "clientId='" + clientId + '\'' +
                ", authMethod='" + authMethod + '\'' +
-               ", password=" + (authData == null ? "null" : new String(authData, StandardCharsets.UTF_8)) +
+               ", authData=" + (authData == null ? "null" : new String(authData, StandardCharsets.UTF_8)) +
                '}';
     }
 

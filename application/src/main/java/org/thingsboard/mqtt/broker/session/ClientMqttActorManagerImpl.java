@@ -66,11 +66,11 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     }
 
     @Override
-    public void processMqttMsg(String clientId, MqttAuthMsg mqttAuthMsg) {
+    public void processMqttAuthMsg(String clientId, MqttAuthMsg mqttAuthMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
             if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find client actor for continue auth, sessionId - {}.", clientId, mqttAuthMsg.getSessionId());
+                log.debug("[{}] Cannot find client actor for auth, sessionId - {}.", clientId, mqttAuthMsg.getSessionId());
             }
         } else {
             clientActorRef.tellWithHighPriority(mqttAuthMsg);
