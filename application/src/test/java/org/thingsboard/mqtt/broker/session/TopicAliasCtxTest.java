@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.session;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Assert;
 import org.junit.Test;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;

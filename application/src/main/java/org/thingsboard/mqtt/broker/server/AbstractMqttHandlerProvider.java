@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 
 import javax.net.ssl.KeyManager;

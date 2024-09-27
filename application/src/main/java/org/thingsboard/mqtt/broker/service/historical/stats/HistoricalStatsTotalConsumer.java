@@ -51,10 +51,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static java.time.ZoneOffset.UTC;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.ENTITY_ID_TOTAL;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SESSIONS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SUBSCRIPTIONS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ENTITY_ID_TOTAL;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SESSIONS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTIONS;
 
 @Slf4j
 @Component

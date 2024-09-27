@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.controller;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -36,7 +35,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
@@ -265,7 +265,7 @@ public abstract class BaseController {
         }
         Set<Integer> resultSet = new HashSet<>();
         for (String strValue : array) {
-            if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+            if (!StringUtils.isEmpty(strValue)) {
                 resultSet.add(Integer.valueOf(strValue));
             }
         }
@@ -278,7 +278,7 @@ public abstract class BaseController {
         }
         List<Boolean> resultList = new ArrayList<>();
         for (String strValue : array) {
-            if (!org.thingsboard.mqtt.broker.common.data.StringUtils.isEmpty(strValue)) {
+            if (!StringUtils.isEmpty(strValue)) {
                 resultList.add(Boolean.valueOf(strValue));
             }
         }

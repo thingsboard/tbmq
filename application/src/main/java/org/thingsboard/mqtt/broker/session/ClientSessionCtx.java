@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;

@@ -25,7 +25,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -40,7 +40,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.thingsboard.mqtt.broker.common.data.StringUtils.generateSafeToken;
+import static org.thingsboard.mqtt.broker.common.data.util.StringUtils.generateSafeToken;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validatePageLink;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;

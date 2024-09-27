@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.dto;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MAX_PACKET_ID;
 
 public class PacketIdDto {
 

@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.install;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

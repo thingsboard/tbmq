@@ -25,9 +25,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MAX_PACKET_ID;
 
 @Slf4j
 public class DevicePackProcessingContext {

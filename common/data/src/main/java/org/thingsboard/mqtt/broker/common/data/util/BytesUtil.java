@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.util;
+package org.thingsboard.mqtt.broker.common.data.util;
 
 import io.netty.buffer.ByteBuf;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -25,8 +25,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-
-// TODO: move BytesUtil class to the same package with StringUtils and move generateSafeTokenBytes method to the BytesUtil.
 @Slf4j
 public class BytesUtil {
 
@@ -88,4 +86,11 @@ public class BytesUtil {
     public static int getPacketOverhead(boolean isTlsConnection) {
         return isTlsConnection ? BrokerConstants.TLS_PACKET_BYTES_OVERHEAD : BrokerConstants.TCP_PACKET_BYTES_OVERHEAD;
     }
+
+    public static byte[] generateSafeTokenBytes(int length) {
+        byte[] bytes = new byte[length];
+        StringUtils.RANDOM.nextBytes(bytes);
+        return bytes;
+    }
+
 }
