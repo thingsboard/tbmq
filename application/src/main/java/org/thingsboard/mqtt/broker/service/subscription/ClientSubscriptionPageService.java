@@ -13,34 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  display: flex;
-  max-width: 100%;
-  .mdc-button {
-    max-width: 100%;
-  }
-}
+package org.thingsboard.mqtt.broker.service.subscription;
 
-:host ::ng-deep {
-  .mdc-button {
-    .mat-icon {
-      min-width: 24px;
-    }
-    .mdc-button__label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-}
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
+import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 
-::ng-deep {
-  .tb-unauthorized-client-filter-config-component {
-    flex: 1;
+public interface ClientSubscriptionPageService {
 
-    .mat-mdc-chip {
-      .mdc-evolution-chip__cell, .mat-mdc-chip-action, .mat-mdc-chip-action-label {
-        overflow: hidden;
-      }
-    }
-  }
+    PageData<ClientSubscriptionInfoDto> getClientSubscriptions(ClientSubscriptionQuery query);
+
 }

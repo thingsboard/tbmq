@@ -13,34 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import '../../../../../scss/constants';
+
 :host {
-  display: flex;
+  padding-right: 8px;
+  overflow: hidden;
   max-width: 100%;
-  .mdc-button {
-    max-width: 100%;
-  }
-}
-
-:host ::ng-deep {
-  .mdc-button {
-    .mat-icon {
-      min-width: 24px;
-    }
-    .mdc-button__label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-  }
-}
-
-::ng-deep {
-  .tb-unauthorized-client-filter-config-component {
-    flex: 1;
-
-    .mat-mdc-chip {
-      .mdc-evolution-chip__cell, .mat-mdc-chip-action, .mat-mdc-chip-action-label {
-        overflow: hidden;
-      }
-    }
-  }
 }

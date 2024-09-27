@@ -27,14 +27,18 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.ClientIdSubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionPageService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionQuery;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -46,6 +50,7 @@ public class SubscriptionController extends BaseController {
     private final ClientSubscriptionCache clientSubscriptionCache;
     private final ClientSubscriptionAdminService subscriptionAdminService;
     private final TopicValidationService topicValidationService;
+    private final ClientSubscriptionPageService clientSubscriptionPageService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(method = RequestMethod.POST)
@@ -55,9 +60,6 @@ public class SubscriptionController extends BaseController {
         checkNotNull(clientIdSubscriptionInfoDto.getSubscriptions());
 
         try {
-            clientIdSubscriptionInfoDto.getSubscriptions().forEach(subscriptionInfoDto ->
-                    topicValidationService.validateTopicFilter(subscriptionInfoDto.getTopicFilter()));
-
             subscriptionAdminService.updateSubscriptions(clientIdSubscriptionInfoDto.getClientId(), clientIdSubscriptionInfoDto.getSubscriptions());
             return clientIdSubscriptionInfoDto;
         } catch (Exception e) {
@@ -101,6 +103,37 @@ public class SubscriptionController extends BaseController {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(sharedSubscriptionPaginationService.getSharedSubscriptions(
                     new SharedSubscriptionQuery(pageLink, shareNameSearch, clientIdSearch)
+            ));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/all", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<ClientSubscriptionInfoDto> getAllClientSubscriptions(@RequestParam int pageSize,
+                                                                         @RequestParam int page,
+                                                                         @RequestParam(required = false) String textSearch,
+                                                                         @RequestParam(required = false) String sortProperty,
+                                                                         @RequestParam(required = false) String sortOrder,
+                                                                         @RequestParam(required = false) String clientId,
+                                                                         @RequestParam(required = false) String topicFilter,
+                                                                         @RequestParam(required = false) String[] qosList,
+                                                                         @RequestParam(required = false) String[] noLocalList,
+                                                                         @RequestParam(required = false) String[] retainAsPublishList,
+                                                                         @RequestParam(required = false) String[] retainHandlingList,
+                                                                         @RequestParam(required = false) Integer subscriptionId) throws ThingsboardException {
+        try {
+            Set<Integer> allQos = collectIntegerQueryParams(qosList);
+            List<Boolean> allNoLocal = collectBooleanQueryParams(noLocalList);
+            List<Boolean> allRetainAsPublish = collectBooleanQueryParams(retainAsPublishList);
+            Set<Integer> allRetainHandling = collectIntegerQueryParams(retainHandlingList);
+
+            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+
+            return checkNotNull(clientSubscriptionPageService.getClientSubscriptions(
+                    new ClientSubscriptionQuery(pageLink, clientId, topicFilter, allQos, allNoLocal, allRetainAsPublish, allRetainHandling, subscriptionId)
             ));
         } catch (Exception e) {
             throw handleException(e);

@@ -75,6 +75,13 @@ export class MenuService {
         icon: 'mdi:book-multiple'
       },
       {
+        id: 'subscriptions',
+        name: 'subscription.subscriptions',
+        type: 'link',
+        path: '/subscriptions',
+        icon: 'mdi:filter-outline'
+      },
+      {
         id: 'client_credentials',
         name: 'mqtt-client-credentials.credentials',
         type: 'link',

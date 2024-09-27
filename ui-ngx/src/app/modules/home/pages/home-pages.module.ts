@@ -34,6 +34,7 @@ import { GettingStartedModule } from '@home/pages/getting-started/getting-starte
 import { SecurityModule } from '@home/pages/security/security.module';
 import { AccountModule } from '@home/pages/account/account.module';
 import { UnauthorizedClientModule } from '@home/pages/unauthorized-client/unauthorized-client.module';
+import { SubscriptionsModule } from '@home/pages/subscriptions/subscriptions.module';
 
 @NgModule({
   exports: [
@@ -52,7 +53,8 @@ import { UnauthorizedClientModule } from '@home/pages/unauthorized-client/unauth
     GettingStartedModule,
     AccountModule,
     SecurityModule,
-    UnauthorizedClientModule
+    UnauthorizedClientModule,
+    SubscriptionsModule
   ]
 })
 export class HomePagesModule {

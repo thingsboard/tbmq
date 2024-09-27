@@ -15,10 +15,7 @@
     limitations under the License.
 
 -->
-<button #showSubsctiptionOptionsButton
-        (click)="toggleSubscriptionOptionsPopover($event, showSubsctiptionOptionsButton)"
-        mat-icon-button
-        matTooltip="{{ 'subscription.mqtt-5-features' | translate }}"
-        matTooltipPosition="above">
-  <mat-icon>settings</mat-icon>
-</button>
+<tb-subscriptions-filter-config [ngModel]="subscriptionsTableConfig.subscriptionsFilterConfig"
+                        (ngModelChange)="filterChanged($event)"
+                        propagatedFilter="false">
+</tb-subscriptions-filter-config>

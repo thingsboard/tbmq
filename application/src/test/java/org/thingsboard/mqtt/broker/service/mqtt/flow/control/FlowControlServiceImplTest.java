@@ -19,7 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
@@ -50,7 +49,6 @@ public class FlowControlServiceImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(publishedInFlightCtx);
         flowControlService.destroy();
     }
 

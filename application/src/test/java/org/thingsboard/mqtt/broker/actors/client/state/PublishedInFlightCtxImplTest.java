@@ -21,7 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
 import org.thingsboard.mqtt.broker.service.mqtt.DefaultMqttMessageCreator;
@@ -59,7 +58,6 @@ public class PublishedInFlightCtxImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(flowControlService, clientSessionCtx);
     }
 
     @Test

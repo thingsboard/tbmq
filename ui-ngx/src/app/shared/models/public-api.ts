@@ -27,3 +27,4 @@ export * from './kafka.model';
 export * from './chart.model';
 export * from './home-page.model';
 export * from './getting-started.model';
+export * from './subscription.model';

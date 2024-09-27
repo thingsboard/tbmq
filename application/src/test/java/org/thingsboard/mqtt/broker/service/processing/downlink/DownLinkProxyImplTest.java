@@ -19,7 +19,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
@@ -58,7 +57,6 @@ public class DownLinkProxyImplTest {
 
     @After
     public void tearDown() throws Exception {
-        Mockito.reset(serviceInfoProvider, queuePublisher, basicDownLinkProcessor, persistentDownLinkProcessor);
     }
 
     @Test

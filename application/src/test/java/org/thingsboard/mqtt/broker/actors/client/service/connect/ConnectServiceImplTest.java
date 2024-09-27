@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cache.Cache;
@@ -141,9 +140,6 @@ public class ConnectServiceImplTest {
 
     @After
     public void tearDown() {
-        Mockito.reset(clientMqttActorManager, mqttMessageGenerator, clientSessionEventService, keepAliveService,
-                serviceInfoProvider, lastWillService, clientSessionCtxService, msgPersistenceManager,
-                messageHandler, clientSubscriptionCache, rateLimitService);
     }
 
     @Test

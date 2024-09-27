@@ -27,7 +27,7 @@ export enum EntityType {
   KAFKA_CONSUMER_GROUP = 'KAFKA_CONSUMER_GROUP',
   KAFKA_BROKER = 'KAFKA_BROKER',
   WS_CONNECTION = 'WS_CONNECTION',
-  WS_SUBSCRIPTION = 'WS_SUBSCRIPTION',
+  SUBSCRIPTION = 'SUBSCRIPTION',
   WS_MESSAGE = 'WS_MESSAGE',
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
 }
@@ -191,17 +191,17 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
       }
     ],
     [
-      EntityType.WS_SUBSCRIPTION,
+      EntityType.SUBSCRIPTION,
       {
-        type: 'ws-client.subscriptions.subscription',
-        typePlural: 'ws-client.subscriptions.subscription',
-        list: 'ws-client.subscriptions.list-of-subscriptions',
-        nameStartsWith: 'ws-client.subscriptions.subscription-starts-with',
-        details: 'ws-client.subscriptions.details',
-        add: 'ws-client.subscriptions.add-subscription',
-        noEntities: 'ws-client.subscriptions.no-subscriptions-text',
-        search: 'ws-client.subscriptions.search-subscription',
-        selectedEntities: 'ws-client.subscriptions.selected-subscriptions'
+        type: 'subscription.subscription',
+        typePlural: 'subscription.subscription',
+        list: 'subscription.list-of-subscriptions',
+        nameStartsWith: 'subscription.subscription-starts-with',
+        details: 'subscription.details',
+        add: 'subscription.add-subscription',
+        noEntities: 'subscription.no-subscriptions-text',
+        search: 'subscription.search-subscription',
+        selectedEntities: 'subscription.selected-subscriptions'
       }
     ],
     [

@@ -30,9 +30,9 @@ import { PageComponent } from '@shared/components/page.component';
 import { Subscription } from 'rxjs';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import { MqttQoS, MqttQoSType, mqttQoSTypes, TopicSubscription } from '@shared/models/session.model';
+import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
-import { WebSocketSubscriptionConfiguration } from '@shared/models/ws-client.model';
+import { TopicSubscription } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-session-subscriptions',
@@ -133,7 +133,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return this.translate.instant(mqttQoSValue.name);
   }
 
-  subscriptionOptionsChanged(value: WebSocketSubscriptionConfiguration, topicFilter: AbstractControl<WebSocketSubscriptionConfiguration>) {
+  subscriptionOptionsChanged(value: TopicSubscription, topicFilter: AbstractControl<TopicSubscription>) {
     topicFilter.patchValue(value);
   }
 

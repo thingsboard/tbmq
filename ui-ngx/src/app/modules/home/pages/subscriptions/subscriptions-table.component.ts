@@ -17,18 +17,18 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
 import { DialogService } from '@core/services/dialog.service';
 import { MatDialog } from '@angular/material/dialog';
-import { UnauthorizedClientTableConfig } from '@home/pages/unauthorized-client/unauthorized-client-table-config';
-import { UnauthorizedClientService } from '@core/http/unauthorized-client.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
+import { SubscriptionService } from '@core/http/subscription.service';
+import { ClientSessionService } from '@core/http/client-session.service';
 
 @Component({
-  selector: 'tb-unauthorized-client-table',
-  templateUrl: './unauthorized-client-table.component.html'
+  selector: 'tb-subscriptions-table',
+  templateUrl: './subscriptions-table.component.html'
 })
-export class UnauthorizedClientTableComponent implements OnInit {
+export class SubscriptionsTableComponent implements OnInit {
 
   @Input()
   detailsMode: boolean;
@@ -36,7 +36,6 @@ export class UnauthorizedClientTableComponent implements OnInit {
   activeValue = false;
   dirtyValue = false;
   entityIdValue: string;
-
   @Input()
   set active(active: boolean) {
     if (this.activeValue !== active) {
@@ -51,8 +50,8 @@ export class UnauthorizedClientTableComponent implements OnInit {
   @Input()
   set entityId(entityId: string) {
     this.entityIdValue = entityId;
-    if (this.unauthorizedClientsTableConfig && this.unauthorizedClientsTableConfig.entityId !== entityId) {
-      this.unauthorizedClientsTableConfig.entityId = entityId;
+    if (this.subscriptionsTableConfig && this.subscriptionsTableConfig.entityId !== entityId) {
+      this.subscriptionsTableConfig.entityId = entityId;
       this.entitiesTable.resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
@@ -62,25 +61,25 @@ export class UnauthorizedClientTableComponent implements OnInit {
 
   @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
 
-  unauthorizedClientsTableConfig: UnauthorizedClientTableConfig;
+  subscriptionsTableConfig: SubscriptionsTableConfig;
 
   constructor(private dialogService: DialogService,
-              private unauthorizedClientService: UnauthorizedClientService,
+              private subscriptionService: SubscriptionService,
+              private clientSessionService: ClientSessionService,
               private translate: TranslateService,
               private dialog: MatDialog,
               private route: ActivatedRoute,
-              private router: Router,
-              private datePipe: DatePipe) {
+              private router: Router) {
   }
 
   ngOnInit(): void {
     this.dirtyValue = !this.activeValue;
-    this.unauthorizedClientsTableConfig = new UnauthorizedClientTableConfig(
+    this.subscriptionsTableConfig = new SubscriptionsTableConfig(
       this.dialogService,
-      this.unauthorizedClientService,
+      this.subscriptionService,
+      this.clientSessionService,
       this.translate,
       this.dialog,
-      this.datePipe,
       this.entityIdValue,
       this.route,
       this.router

@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -112,9 +111,6 @@ public class MqttSubscribeHandlerTest {
 
     @After
     public void tearDown() {
-        Mockito.reset(ctx, mqttMessageGenerator, clientSubscriptionService, topicValidationService,
-                authorizationRuleService, retainedMsgService, publishMsgDeliveryService, clientMqttActorManager,
-                applicationSharedSubscriptionService, msgPersistenceManager, applicationPersistenceProcessor);
     }
 
     @Test

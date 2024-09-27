@@ -20,7 +20,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
@@ -73,7 +72,6 @@ public class ClientSessionPageInfosImplTest {
 
     @After
     public void destroy() {
-        Mockito.reset(clientSessionCache, clientSubscriptionCache);
     }
 
     private Map<String, ClientSessionInfo> getClientSessionInfoMap() {

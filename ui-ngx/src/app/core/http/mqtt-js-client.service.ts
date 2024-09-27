@@ -26,6 +26,7 @@ import {
   MessageCounters,
   MessageFilterConfig,
   MessageFilterDefaultConfigAll,
+  QoS,
   transformObjectToProps,
   transformPropsToObject,
   WebSocketConnection,
@@ -569,7 +570,7 @@ export class MqttJsClientService {
 
   private subscriptionOptions(subscription: WebSocketSubscription): IClientSubscribeOptions {
     const options = {} as IClientSubscribeOptions;
-    options.qos = subscription.configuration.qos;
+    options.qos = subscription.configuration.qos as QoS;
     options.nl = subscription.configuration?.options?.noLocal;
     options.rap = subscription.configuration?.options?.retainAsPublish;
     options.rh = subscription.configuration?.options?.retainHandling;
