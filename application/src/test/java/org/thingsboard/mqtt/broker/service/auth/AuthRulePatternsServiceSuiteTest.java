@@ -135,7 +135,7 @@ public class AuthRulePatternsServiceSuiteTest {
     @Test
     public void testSuccessfulCredentialsParse_Basic1() throws AuthenticationException {
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance("test", "test", null, List.of("test/.*"));
-        AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
+        AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(basicMqttCredentials);
         Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).toList().contains("test/.*"));
         Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).toList().contains("test/.*"));
     }
@@ -145,7 +145,7 @@ public class AuthRulePatternsServiceSuiteTest {
         BasicMqttCredentials basicMqttCredentials = new BasicMqttCredentials("test", "test", null, new PubSubAuthorizationRules(
                 List.of("test1/.*"), List.of("test2/.*")
         ));
-        AuthRulePatterns authRulePatterns = authorizationRuleService.parseBasicAuthorizationRule(basicMqttCredentials);
+        AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(basicMqttCredentials);
         Assert.assertTrue(authRulePatterns.getPubPatterns().stream().map(Pattern::pattern).toList().contains("test1/.*"));
         Assert.assertTrue(authRulePatterns.getSubPatterns().stream().map(Pattern::pattern).toList().contains("test2/.*"));
     }

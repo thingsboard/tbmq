@@ -23,6 +23,7 @@ import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import io.netty.handler.codec.mqtt.MqttFixedHeader;
 import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageBuilders;
 import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -101,11 +102,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
 
     @Override
     public MqttConnAckMessage createMqttConnAckMsg(MqttConnectReturnCode returnCode) {
-        MqttFixedHeader mqttFixedHeader =
-                new MqttFixedHeader(CONNACK, false, AT_MOST_ONCE, false, 0);
-        MqttConnAckVariableHeader mqttConnAckVariableHeader =
-                new MqttConnAckVariableHeader(returnCode, false);
-        return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
+        return MqttMessageBuilders.connAck().returnCode(returnCode).build();
     }
 
     @Override
@@ -134,7 +131,7 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
             MqttPropertiesUtil.addResponseInfoToProps(properties, responseInfo);
         }
         MqttPropertiesUtil.addReceiveMaxToProps(properties, maxInFlightMessages);
-
+        MqttPropertiesUtil.addAuthMethodToProps(properties, MqttPropertiesUtil.getAuthenticationMethodValue(msg.getProperties()));
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
                 new MqttConnAckVariableHeader(CONNECTION_ACCEPTED, sessionPresent, properties);
         return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
@@ -252,6 +249,14 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
         MqttReasonCodeAndPropertiesVariableHeader variableHeader =
                 new MqttReasonCodeAndPropertiesVariableHeader(code.byteValue(), null);
         return new MqttMessage(mqttFixedHeader, variableHeader);
+    }
+
+    @Override
+    public MqttMessage createMqttAuthMsg(String authMethod, byte[] authData, MqttReasonCodes.Auth authReasonCode) {
+        var properties = new MqttProperties();
+        MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
+        MqttPropertiesUtil.addAuthDataToProps(properties, authData);
+        return MqttMessageBuilders.auth().reasonCode(authReasonCode.byteValue()).properties(properties).build();
     }
 
     private MqttMessage createMqtt3PubReplyMsg(MqttMessageType type, MqttQoS mqttQoS, int msgId) {

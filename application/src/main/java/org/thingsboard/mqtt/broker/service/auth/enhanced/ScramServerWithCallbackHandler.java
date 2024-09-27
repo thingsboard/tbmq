@@ -13,31 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth.enhanced;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
-import java.util.List;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
-@Getter
-@Builder(toBuilder = true)
-@AllArgsConstructor
-public class AuthResponse {
+public record ScramServerWithCallbackHandler(SaslServer scramServer, ScramAuthCallbackHandler callbackHandler) {
 
-    private final boolean success;
-    private final ClientType clientType;
-    private final List<AuthRulePatterns> authRulePatterns;
-    private final String reason;
-
-    public static AuthResponse failure(String reason) {
-        return AuthResponse.builder().success(false).reason(reason).build();
+    public byte[] evaluateResponse(byte[] authData) throws SaslException {
+        return scramServer.evaluateResponse(authData);
     }
 
-    public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
-        this(success, clientType, authRulePatterns, null);
+    public boolean isComplete() {
+        return scramServer.isComplete();
     }
+
+    public String getUsername() {
+        return callbackHandler.getUsername();
+    }
+
+    public ClientType getClientType() {
+        return callbackHandler.getClientType();
+    }
+
+    public AuthRulePatterns getAuthRulePatterns() {
+        return callbackHandler.getAuthRulePatterns();
+    }
+
 }

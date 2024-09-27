@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
@@ -29,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.MqttPendingPublish;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
@@ -66,6 +68,12 @@ public class ClientSessionCtx implements SessionContext {
     private volatile TopicAliasCtx topicAliasCtx;
     @Setter
     private volatile PublishedInFlightCtx publishedInFlightCtx;
+    @Setter
+    private volatile MqttConnectMessage connectMsgFromEnhancedAuth;
+    @Setter
+    private volatile String authMethod;
+    @Setter
+    private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
 
     @Setter
     private ChannelHandlerContext channel;
@@ -130,5 +138,17 @@ public class ClientSessionCtx implements SessionContext {
             this.pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
             this.pendingPublishes.clear();
         }
+    }
+
+    public boolean isDefaultAuth() {
+        return connectMsgFromEnhancedAuth == null;
+    }
+
+    public void clearScramServer() {
+        scramServerWithCallbackHandler = null;
+    }
+
+    public void clearConnectMsg() {
+        connectMsgFromEnhancedAuth = null;
     }
 }

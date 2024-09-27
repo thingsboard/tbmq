@@ -28,6 +28,7 @@ import io.netty.handler.codec.mqtt.MqttSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttUnsubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPingMsg;
@@ -168,6 +169,15 @@ public class NettyMqttConverter {
 
     public static MqttPingMsg createMqttPingMsg(UUID sessionId) {
         return new MqttPingMsg(sessionId);
+    }
+
+
+    public static MqttAuthMsg createMqttAuthMsg(UUID sessionId, MqttReasonCodeAndPropertiesVariableHeader variableHeader) {
+        MqttReasonCodes.Auth authReasonCode = MqttReasonCodes.Auth.valueOf(variableHeader.reasonCode());
+        MqttProperties properties = variableHeader.properties();
+        String authMethod = MqttPropertiesUtil.getAuthenticationMethodValue(properties);
+        byte[] authData = MqttPropertiesUtil.getAuthenticationDataValue(properties);
+        return new MqttAuthMsg(sessionId, authMethod, authData, authReasonCode);
     }
 
     private static PublishMsg extractPublishMsg(MqttPublishMessage mqttPublishMessage) {

@@ -168,6 +168,26 @@ public class MqttPropertiesUtil {
         return (MqttProperties.UserProperties) properties.getProperty(BrokerConstants.USER_PROPERTY_PROP_ID);
     }
 
+    /*Auth properties*/
+
+    private static MqttProperties.StringProperty getAuthenticationMethodProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.StringProperty) mqttProperties.getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID);
+    }
+
+    private static MqttProperties.BinaryProperty getAuthenticationDataProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.BinaryProperty) mqttProperties.getProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID);
+    }
+
+    public static String getAuthenticationMethodValue(MqttProperties mqttProperties) {
+        MqttProperties.StringProperty property = getAuthenticationMethodProperty(mqttProperties);
+        return property == null ? null : property.value();
+    }
+
+    public static byte[] getAuthenticationDataValue(MqttProperties mqttProperties) {
+        MqttProperties.BinaryProperty property = getAuthenticationDataProperty(mqttProperties);
+        return property == null ? null : property.value();
+    }
+
     /**
      * Add properties
      */
@@ -254,6 +274,14 @@ public class MqttPropertiesUtil {
 
     public static void addReceiveMaxToProps(MqttProperties properties, int receiveMax) {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.RECEIVE_MAXIMUM_PROP_ID, receiveMax));
+    }
+
+    public static void addAuthMethodToProps(MqttProperties properties, String authMethod) {
+        properties.add(new MqttProperties.StringProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID, authMethod));
+    }
+
+    public static void addAuthDataToProps(MqttProperties properties, byte[] authData) {
+        properties.add(new MqttProperties.BinaryProperty(BrokerConstants.AUTHENTICATION_DATA_PROP_ID, authData));
     }
 
     /**

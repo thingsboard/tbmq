@@ -28,6 +28,8 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -152,6 +154,11 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     @Test
     public void testCreateValidCredentials() throws JsonProcessingException {
         mqttClientCredentialsService.saveCredentials(validMqttClientCredentials("test", "client", "user", null));
+    }
+
+    @Test
+    public void testCreateValidScramCredentials() throws Exception {
+        mqttClientCredentialsService.saveCredentials(validScramMqttClientCredentials());
     }
 
     @Test(expected = DataValidationException.class)
@@ -558,7 +565,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         clientCredentials.setName(credentialsName);
         clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance(clientId, username, password, null);
-        clientCredentials.setCredentialsValue(mapper.writeValueAsString(basicMqttCredentials));
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return clientCredentials;
     }
 
@@ -572,7 +579,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
                 RandomStringUtils.randomAlphabetic(5),
                 RandomStringUtils.randomAlphabetic(5),
                 null);
-        clientCredentials.setCredentialsValue(mapper.writeValueAsString(basicMqttCredentials));
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return clientCredentials;
     }
 
@@ -585,7 +592,16 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
                 RandomStringUtils.randomAlphabetic(5),
                 RandomStringUtils.randomAlphabetic(5),
                 null);
-        clientCredentials.setCredentialsValue(mapper.writeValueAsString(sslMqttCredentials));
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(sslMqttCredentials));
+        return clientCredentials;
+    }
+
+    private MqttClientCredentials validScramMqttClientCredentials() throws Exception {
+        MqttClientCredentials clientCredentials = new MqttClientCredentials();
+        clientCredentials.setName("valid scram credentials");
+        clientCredentials.setCredentialsType(ClientCredentialsType.SCRAM);
+        ScramMqttCredentials scramMqttCredentials = ScramMqttCredentials.newInstance("username", "password", ScramAlgorithm.SHA_512, null);
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(scramMqttCredentials));
         return clientCredentials;
     }
 }

@@ -28,7 +28,8 @@ import { TimePageLink } from '@shared/models/page/page-link';
 
 export enum CredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
-  SSL = 'SSL'
+  SSL = 'SSL',
+  SCRAM = 'SCRAM',
 }
 
 export const ANY_CHARACTERS = '.*';
@@ -37,7 +38,8 @@ export const wsSystemCredentialsName = 'TBMQ WebSockets MQTT Credentials';
 export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
-    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl']
+    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl'],
+    [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram']
   ]
 );
 
@@ -45,6 +47,18 @@ export const credentialsWarningTranslations = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
     [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
+  ]
+);
+
+export enum ShaType {
+  SHA_256 = 'SHA_256',
+  SHA_512 = 'SHA_512'
+}
+
+export const shaTypeTranslationMap = new Map<ShaType, string>(
+  [
+    [ShaType.SHA_256, 'mqtt-client-credentials.sha-256'],
+    [ShaType.SHA_512, 'mqtt-client-credentials.sha-512']
   ]
 );
 
@@ -75,6 +89,15 @@ export interface BasicCredentials {
   userName: string;
   password: string;
   authRules: AuthRules;
+}
+
+export interface ScramCredentials {
+  userName: string;
+  password: string;
+  authRules: AuthRules;
+  salt: string;
+  serverKey: string;
+  storedKey: string;
 }
 
 export interface AuthRules {

@@ -85,11 +85,10 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   @Input()
   initialClientCredentialsFilterConfig: ClientCredentialsFilterConfig;
 
-  ClientType = ClientType;
-  clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
+  clientTypes = Object.values(ClientType);
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
-  clientCredentialsTypes = [CredentialsType.MQTT_BASIC, CredentialsType.SSL];
+  clientCredentialsTypes = Object.values(CredentialsType);
   clientCredentialsTypeTranslationMap = credentialsTypeTranslationMap;
 
   panelMode = false;

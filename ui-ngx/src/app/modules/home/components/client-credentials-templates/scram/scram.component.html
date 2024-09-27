@@ -18,27 +18,7 @@
 <section [formGroup]="credentialsMqttFormGroup">
   <fieldset class="fields-group">
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
-    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-basic' | translate }}"></div>
-    <mat-form-field class="mat-block">
-      <mat-label translate>mqtt-client.client-id</mat-label>
-      <input matInput formControlName="clientId">
-      <tb-copy-button #copyClientIdBtn
-                      (click)="onClickTbCopyButton('clientId')"
-                      [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
-                      [copyText]="credentialsMqttFormGroup.get('clientId').value">
-      </tb-copy-button>
-      <button mat-icon-button matSuffix
-              [matTooltip]="'action.regenerate' | translate"
-              matTooltipPosition="above"
-              (click)="regenerate('clientId')">
-        <mat-icon>
-          repeat
-        </mat-icon>
-      </button>
-      <mat-error *ngIf="credentialsMqttFormGroup.get('clientId').hasError('pattern')">
-        {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
-      </mat-error>
-    </mat-form-field>
+    <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-scram' | translate }}"></div>
     <div fxLayout="column">
       <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
         <mat-form-field fxFlex class="mat-block">
@@ -61,18 +41,26 @@
             {{ 'mqtt-client-credentials.user-name-required' | translate }}
           </mat-error>
         </mat-form-field>
-        <mat-form-field fxFlex class="mat-block" *ngIf="!entity?.id">
+        <mat-form-field fxFlex class="mat-block">
           <mat-label translate>mqtt-client-credentials.password</mat-label>
           <input matInput formControlName="password"
                  autocomplete="new-password" name="new-password"
                  type="password">
           <tb-toggle-password matSuffix></tb-toggle-password>
+          <mat-error *ngIf="credentialsMqttFormGroup.get('password').hasError('required')">
+            {{ 'mqtt-client-credentials.password-required' | translate }}
+          </mat-error>
         </mat-form-field>
       </div>
-      <tb-error *ngIf="credentialsMqttFormGroup.hasError('atLeastOne')"
-                [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
-                ('mqtt-client-credentials.client-id-or-user-name-required' | translate) : ''">
-      </tb-error>
+      <mat-form-field fxFlex class="mat-block">
+        <mat-label translate>mqtt-client-credentials.select-sha</mat-label>
+        <mat-select formControlName="algorithm" (selectionChange)="algorithmChanged()">
+          <mat-option *ngFor="let sha of shaTypes" [value]="sha">
+            <span>{{ shaTypeTranslations.get(sha) | translate }}</span>
+          </mat-option>
+        </mat-select>
+        <mat-hint [innerHtml]="'mqtt-client-credentials.hint-credentials-scram-sha' | translate"></mat-hint>
+      </mat-form-field>
     </div>
   </fieldset>
   <mat-expansion-panel [expanded]="true">
@@ -81,7 +69,7 @@
         <div translate>mqtt-client-credentials.authorization</div>
       </mat-panel-title>
     </mat-expansion-panel-header>
-    <section>
+    <section class="auth-hint">
       <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
       <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
     </section>

@@ -188,10 +188,16 @@ public class StringUtils {
     }
 
     public static String generateSafeToken(int length) {
-        byte[] bytes = new byte[length];
-        RANDOM.nextBytes(bytes);
+        byte[] bytes = generateSafeTokenBytes(length);
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
         return encoder.encodeToString(bytes);
     }
+
+    public static byte[] generateSafeTokenBytes(int length) {
+        byte[] bytes = new byte[length];
+        RANDOM.nextBytes(bytes);
+        return bytes;
+    }
+
 }
 

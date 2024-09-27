@@ -34,12 +34,14 @@ import {
   ClientCredentialsWizardDialogComponent
 } from '@home/components/wizard/client-credentials-wizard-dialog.component';
 import { CheckConnectivityDialogComponent } from '@home/pages/client-credentials/check-connectivity-dialog.component';
+import { MqttCredentialsScramComponent } from '@home/components/client-credentials-templates/scram/scram.component';
 
 @NgModule({
   declarations: [
     ClientCredentialsComponent,
     MqttCredentialsSslComponent,
     MqttCredentialsBasicComponent,
+    MqttCredentialsScramComponent,
     AuthRulesComponent,
     ChangeBasicPasswordDialogComponent,
     ClientCredentialsTableHeaderComponent,

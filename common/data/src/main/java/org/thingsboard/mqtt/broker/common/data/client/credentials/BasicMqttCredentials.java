@@ -25,7 +25,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class BasicMqttCredentials {
+public class BasicMqttCredentials implements SinglePubSubAuthRulesAware {
 
     @NoXss
     private String clientId;
