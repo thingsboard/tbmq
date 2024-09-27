@@ -25,7 +25,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;

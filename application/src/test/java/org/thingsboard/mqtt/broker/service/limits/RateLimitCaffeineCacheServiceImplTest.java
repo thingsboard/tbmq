@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.testcontainers.shaded.org.awaitility.Awaitility;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;

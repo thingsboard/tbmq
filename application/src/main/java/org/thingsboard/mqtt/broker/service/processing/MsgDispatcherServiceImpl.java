@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
@@ -69,8 +69,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.INCOMING_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
 
 @Service
 @Slf4j

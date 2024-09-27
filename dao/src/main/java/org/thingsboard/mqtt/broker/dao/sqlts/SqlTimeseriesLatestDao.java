@@ -33,7 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;

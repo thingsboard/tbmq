@@ -41,8 +41,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 
 @Slf4j
 @Service

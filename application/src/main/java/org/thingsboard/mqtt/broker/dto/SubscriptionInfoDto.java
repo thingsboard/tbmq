@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 @Data
 @Builder

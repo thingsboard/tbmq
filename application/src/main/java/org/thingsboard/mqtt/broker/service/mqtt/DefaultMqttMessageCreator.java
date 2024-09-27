@@ -44,7 +44,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -67,10 +67,10 @@ import static io.netty.handler.codec.mqtt.MqttMessageType.SUBACK;
 import static io.netty.handler.codec.mqtt.MqttMessageType.UNSUBACK;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
 import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.SSL;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.TCP;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.WS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.WSS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SSL;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TCP;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.WS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.WSS;
 
 @Service
 public class DefaultMqttMessageCreator implements MqttMessageGenerator {

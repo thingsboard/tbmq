@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;

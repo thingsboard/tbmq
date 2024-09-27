@@ -46,7 +46,7 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;

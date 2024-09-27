@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.ssl.config;
 
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;

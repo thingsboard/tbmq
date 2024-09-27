@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.io.Serial;
 import java.io.Serializable;

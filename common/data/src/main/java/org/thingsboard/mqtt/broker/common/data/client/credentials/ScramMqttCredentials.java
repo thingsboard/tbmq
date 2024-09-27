@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import javax.crypto.Mac;
@@ -100,7 +100,7 @@ public class ScramMqttCredentials implements SinglePubSubAuthRulesAware {
     }
 
     private static byte[] generateRandomSalt() {
-        return StringUtils.generateSafeTokenBytes(SALT_LENGTH);
+        return BytesUtil.generateSafeTokenBytes(SALT_LENGTH);
     }
 
     private static byte[] pbkdf2(String password, byte[] salt, ScramAlgorithm algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.util;
+package org.thingsboard.mqtt.broker.common.data;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;

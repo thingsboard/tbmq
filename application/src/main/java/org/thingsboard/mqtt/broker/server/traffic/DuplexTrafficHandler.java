@@ -22,7 +22,7 @@ import io.netty.channel.ChannelPromise;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-import org.thingsboard.mqtt.broker.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 @Slf4j
 @RequiredArgsConstructor

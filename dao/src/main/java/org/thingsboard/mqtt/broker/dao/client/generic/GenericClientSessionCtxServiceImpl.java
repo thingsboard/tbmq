@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 

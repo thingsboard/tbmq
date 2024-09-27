@@ -19,7 +19,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME;
 
 public class SystemRetainedMsgUtil {
 

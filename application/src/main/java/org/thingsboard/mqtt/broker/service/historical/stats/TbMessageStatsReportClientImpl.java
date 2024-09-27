@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -50,8 +50,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
 
 @Data
 @Component

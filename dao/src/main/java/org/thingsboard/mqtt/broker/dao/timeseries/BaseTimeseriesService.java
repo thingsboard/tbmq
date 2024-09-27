@@ -23,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseDeleteTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.CleanUpResult;

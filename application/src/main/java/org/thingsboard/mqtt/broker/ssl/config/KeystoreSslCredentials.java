@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.ssl.config;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.ResourceUtils;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;

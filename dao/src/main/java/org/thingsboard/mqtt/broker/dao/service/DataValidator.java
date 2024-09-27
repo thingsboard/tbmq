@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.dao.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
 import java.util.regex.Matcher;

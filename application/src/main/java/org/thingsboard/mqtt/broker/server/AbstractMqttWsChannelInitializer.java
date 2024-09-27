@@ -21,7 +21,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.wshandler.WsBinaryFrameHandler;
 import org.thingsboard.mqtt.broker.server.wshandler.WsByteBufEncoder;
 import org.thingsboard.mqtt.broker.server.wshandler.WsContinuationFrameHandler;

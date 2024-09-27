@@ -38,10 +38,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.DROPPED_MSGS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.INCOMING_MSGS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.OUTGOING_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.OUTGOING_MSGS;
 
 
 @Slf4j

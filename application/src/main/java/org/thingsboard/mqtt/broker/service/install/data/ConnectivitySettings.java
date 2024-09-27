@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.install.data;
 
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.util.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 

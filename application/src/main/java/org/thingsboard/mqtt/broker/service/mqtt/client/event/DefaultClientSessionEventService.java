@@ -39,7 +39,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
-import org.thingsboard.mqtt.broker.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.List;
 import java.util.UUID;
@@ -52,9 +52,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.REQUEST_ID_HEADER;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.REQUEST_TIME;
-import static org.thingsboard.mqtt.broker.common.util.BrokerConstants.RESPONSE_TOPIC_HEADER;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.REQUEST_ID_HEADER;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.REQUEST_TIME;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RESPONSE_TOPIC_HEADER;
 
 @Slf4j
 @Service

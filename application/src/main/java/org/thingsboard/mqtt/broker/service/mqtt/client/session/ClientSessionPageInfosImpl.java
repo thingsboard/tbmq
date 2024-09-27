@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
-import org.thingsboard.mqtt.broker.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.Comparator;
 import java.util.List;

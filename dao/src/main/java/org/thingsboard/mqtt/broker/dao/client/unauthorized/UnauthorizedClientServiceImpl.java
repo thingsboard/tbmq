@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
