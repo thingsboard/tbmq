@@ -29,12 +29,26 @@ We wanted our broker to support high-throughput and guarantee low-latency delive
 durability and replication was crucial in our design. We aimed for a system where once the broker acknowledges receiving
 a message, it remains safe and won’t be lost.
 
-TBMQ provides compatibility with both MQTT v3.x and v5.0 protocols.
+TBMQ provides full compatibility with both MQTT v3.x and v5.0 protocols.
 Last but not least, it had been running in production for more than a year before being open-sourced.
 
 [![TBMQ Home](./img/tbmq-home.png "TBMQ Home")](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring/)
 
 [![TBMQ Sessions](./img/tbmq-sessions.png "TBMQ Sessions")](https://thingsboard.io/docs/mqtt-broker/user-guide/ui/sessions/)
+
+## Supported features:
+
+- All MQTT v3.x features
+- All MQTT v5.0 features
+- Multi-node cluster support
+- X.509 certificate chain authentication support
+- Access control (ACL) based on client ID, username, or X.509 certificate chain
+- REST query support for clients’ sessions and subscriptions
+- Rate limits of message processing
+- Cluster and clients' metrics monitoring
+- Unauthorized clients
+- MQTT WebSocket client
+- Kafka topics and consumer groups monitoring
 
 ## Documentation
 
@@ -53,29 +67,3 @@ following [this link](https://thingsboard.io/docs/mqtt-broker/install/installati
 ## Licenses
 
 This project is released under [Apache 2.0 License](./LICENSE).
-
-## MQTT 5 supported features:
-
-- User Properties
-- Reason Codes for MQTT packets
-- Session Clean Start
-- New Data Type: UTF-8 String pairs
-- Bi-directional DISCONNECT packets
-- Using passwords without usernames
-- Session expiry feature
-- Message expiry feature
-- Shared subscriptions
-- Subscription options
-- Topic aliases
-- Maximum Packet Size
-- Will delay
-- Server Keep-Alive
-- Assigned ClientID
-- Server reference
-- The payload format and content types
-- Request / Response & Correlation Data
-- Flow Control
-
-## MQTT 5 features in active development:
-
-- AUTH packet & Enhanced Authentication
