@@ -30,6 +30,11 @@ import {
 } from '@shared/models/session.model';
 import { StatsService } from '@core/http/stats.service';
 import { map } from 'rxjs/operators';
+import {
+  SessionsDetailsDialogComponent,
+  SessionsDetailsDialogData
+} from '@home/pages/sessions/sessions-details-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +42,7 @@ import { map } from 'rxjs/operators';
 export class ClientSessionService {
 
   constructor(private http: HttpClient,
+              private dialog: MatDialog,
               private statsService: StatsService) {
   }
 
@@ -95,5 +101,22 @@ export class ClientSessionService {
 
   public deleteSessionMetrics(clientId: string, config?: RequestConfig) {
     return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
+  }
+
+  public openSessionDetailsDialog($event: Event, clientId: string) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.getDetailedClientSessionInfo(clientId).subscribe(
+      session => {
+        this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
+          disableClose: true,
+          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+          data: {
+            session
+          }
+        }).afterClosed().subscribe();
+      }
+    );
   }
 }

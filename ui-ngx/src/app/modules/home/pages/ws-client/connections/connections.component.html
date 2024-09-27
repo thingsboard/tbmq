@@ -22,5 +22,13 @@
       {{'mqtt-client.client-id' | translate }}: {{ (connection | async)?.configuration?.clientId }}
     </span>
   </section>
-  <tb-select-connection></tb-select-connection>
+  <div fxLayout="row" fxLayoutGap="4px">
+    <button mat-icon-button
+            [disabled]="!isConnected"
+            (click)="openSessions($event)"
+            [matTooltip]="'mqtt-client-session.session-details' | translate">
+      <mat-icon svgIcon="mdi:book-multiple"></mat-icon>
+    </button>
+    <tb-select-connection></tb-select-connection>
+  </div>
 </section>

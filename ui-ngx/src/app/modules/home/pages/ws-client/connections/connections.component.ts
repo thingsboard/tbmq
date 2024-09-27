@@ -16,8 +16,9 @@
 
 import { Component } from '@angular/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { WebSocketConnection } from '@shared/models/ws-client.model';
+import { ConnectionStatus, WebSocketConnection } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
+import { ClientSessionService } from '@core/http/client-session.service';
 
 @Component({
   selector: 'tb-connections',
@@ -27,7 +28,23 @@ import { Observable } from 'rxjs';
 export class ConnectionsComponent {
 
   connection: Observable<WebSocketConnection> = this.mqttJsClientService.connection$;
+  isConnected: boolean;
 
-  constructor(private mqttJsClientService: MqttJsClientService) {
+  private connectionValue: WebSocketConnection;
+
+  constructor(private mqttJsClientService: MqttJsClientService,
+              private clientSessionService: ClientSessionService) {
+    this.connection.subscribe(connection => {
+      this.connectionValue = connection;
+      this.updateConnectionStatus();
+    });
+  }
+
+  openSessions($event: Event) {
+    this.clientSessionService.openSessionDetailsDialog($event, this.connectionValue.configuration.clientId);
+  }
+
+  updateConnectionStatus() {
+    this.mqttJsClientService.connectionStatus$.subscribe(value => this.isConnected = value?.status === ConnectionStatus.CONNECTED);
   }
 }

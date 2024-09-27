@@ -23,6 +23,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
+import { ClientSessionService } from '@core/http/client-session.service';
 
 @Component({
   selector: 'tb-connection',
@@ -45,6 +46,7 @@ export class ConnectionComponent implements OnInit {
               private webSocketConnectionService: WebSocketConnectionService,
               private dialog: MatDialog,
               private dialogService: DialogService,
+              private clientSessionService: ClientSessionService,
               private translate: TranslateService) {
 
   }
@@ -84,6 +86,15 @@ export class ConnectionComponent implements OnInit {
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketConnectionDto>> {
     const actions: Array<CellActionDescriptor<WebSocketConnectionDto>> = [];
     actions.push(
+      {
+        name: this.translate.instant('mqtt-client-session.session-details'),
+        icon: 'mdi:book-multiple',
+        isEnabled: () => this.isConnectionConnected(),
+        onAction: ($event, entity) => this.openSessions($event, entity),
+        style: {
+          paddingTop: '3px'
+        }
+      },
       {
         name: this.translate.instant('action.edit'),
         icon: 'edit',
@@ -140,6 +151,10 @@ export class ConnectionComponent implements OnInit {
           }
         });
     });
+  }
+
+  openSessions($event: Event, entity: WebSocketConnectionDto) {
+    this.clientSessionService.openSessionDetailsDialog($event, entity.clientId);
   }
 
   private connectAndSelect(connection: WebSocketConnection) {
