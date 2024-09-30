@@ -62,11 +62,11 @@ public class ClientSubscriptionInfoDto {
 
     private static Comparator<ClientSubscriptionInfoDto> getIntComparator(SortOrder.Direction direction,
                                                                           Function<ClientSubscriptionInfoDto, Integer> func) {
+        Comparator<ClientSubscriptionInfoDto> comparator = Comparator.comparing(func, Comparator.nullsLast(Integer::compareTo));
         if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
+            return comparator.reversed();
         }
+        return comparator;
     }
 
     private static Comparator<ClientSubscriptionInfoDto> getBoolComparator(SortOrder.Direction direction,
