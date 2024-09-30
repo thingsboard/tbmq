@@ -29,7 +29,6 @@ import {
 } from '@shared/models/shared-subscription.model';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
 import { ConnectionState, connectionStateColor, connectionStateTranslationMap } from '@shared/models/session.model';
-import { SessionsDetailsDialogComponent, SessionsDetailsDialogData } from '@home/pages/sessions/sessions-details-dialog.component';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { MatDialog } from '@angular/material/dialog';
 import { clientTypeColor, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
@@ -161,22 +160,15 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
   }
 
   private showSessionDetails(clientId: string) {
-    this.clientSessionService.getDetailedClientSessionInfo(clientId).subscribe(
-      session => {
-        this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
-          disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-          data: {
-            session
+    this.clientSessionService.openSessionDetailsDialog(null, clientId).subscribe(
+      (dialog) => {
+        dialog.afterClosed().subscribe((res) => {
+          if (res) {
+            setTimeout(() => {
+              this.getTable().updateData();
+            }, 500)
           }
-        }).afterClosed()
-          .subscribe((res) => {
-            if (res) {
-              setTimeout(() => {
-                this.getTable().updateData();
-              }, 1000)
-            }
-          });
+        });
       }
     );
   }

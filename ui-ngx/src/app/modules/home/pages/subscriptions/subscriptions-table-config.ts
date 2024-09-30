@@ -40,10 +40,6 @@ import { SubscriptionService } from '@core/http/subscription.service';
 import { SubscriptionsTableHeaderComponent } from '@home/pages/subscriptions/subscriptions-table-header.component';
 import { mqttQoSTypes } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
-import {
-  SessionsDetailsDialogComponent,
-  SessionsDetailsDialogData
-} from '@home/pages/sessions/sessions-details-dialog.component';
 import { ClientSessionService } from '@core/http/client-session.service';
 
 export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscription, TimePageLink> {
@@ -233,27 +229,16 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
   }
 
   private showSessionDetails($event: Event, clientId: string) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.clientSessionService.getDetailedClientSessionInfo(clientId).subscribe(
-      session => {
-        this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
-          disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-          data: {
-            session
+    this.clientSessionService.openSessionDetailsDialog($event, clientId).subscribe(
+      (dialog) => {
+        dialog.afterClosed().subscribe((res) => {
+          if (res) {
+            setTimeout(() => {
+              this.getTable().updateData();
+            }, 500)
           }
-        }).afterClosed()
-          .subscribe((res) => {
-            if (res) {
-              setTimeout(() => {
-                this.getTable().updateData();
-              }, 1000)
-            }
-          });
+        });
       }
     );
   }
-
 }

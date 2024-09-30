@@ -20,7 +20,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { ClientSessionService } from '@core/http/client-session.service';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -67,7 +66,6 @@ export class SessionsTableComponent implements OnInit {
   constructor(private clientSessionService: ClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
-              private dialog: MatDialog,
               private dialogService: DialogService,
               private route: ActivatedRoute,
               private router: Router) {
@@ -79,7 +77,6 @@ export class SessionsTableComponent implements OnInit {
       this.clientSessionService,
       this.translate,
       this.datePipe,
-      this.dialog,
       this.dialogService,
       this.entityIdValue,
       this.route,

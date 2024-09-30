@@ -154,7 +154,11 @@ export class ConnectionComponent implements OnInit {
   }
 
   openSessions($event: Event, entity: WebSocketConnectionDto) {
-    this.clientSessionService.openSessionDetailsDialog($event, entity.clientId);
+    this.clientSessionService.openSessionDetailsDialog($event, entity.clientId).subscribe(
+      (dialog) => {
+        dialog.afterClosed().subscribe();
+      }
+    );
   }
 
   private connectAndSelect(connection: WebSocketConnection) {

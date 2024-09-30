@@ -34,7 +34,7 @@ import {
   SessionsDetailsDialogComponent,
   SessionsDetailsDialogData
 } from '@home/pages/sessions/sessions-details-dialog.component';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -103,20 +103,20 @@ export class ClientSessionService {
     return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
   }
 
-  public openSessionDetailsDialog($event: Event, clientId: string) {
+  public openSessionDetailsDialog($event: Event, clientId: string): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {
     if ($event) {
       $event.stopPropagation();
     }
-    this.getDetailedClientSessionInfo(clientId).subscribe(
-      session => {
-        this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
+    return this.getDetailedClientSessionInfo(clientId).pipe(
+      map(session => this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(
+        SessionsDetailsDialogComponent, {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
             session
           }
-        }).afterClosed().subscribe();
-      }
+        }
+      ))
     );
   }
 }

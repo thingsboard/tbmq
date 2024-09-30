@@ -26,12 +26,10 @@ import {
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { MatDialog } from '@angular/material/dialog';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { forkJoin, Observable } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { SessionsDetailsDialogComponent, SessionsDetailsDialogData } from '@home/pages/sessions/sessions-details-dialog.component';
 import {
   ConnectionState,
   connectionStateColor,
@@ -58,7 +56,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   constructor(private clientSessionService: ClientSessionService,
               private translate: TranslateService,
               private datePipe: DatePipe,
-              private dialog: MatDialog,
               private dialogService: DialogService,
               public entityId: string = null,
               private route: ActivatedRoute,
@@ -193,25 +190,15 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
   }
 
   private showSessionDetails($event: Event, entity: DetailedClientSessionInfo) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.clientSessionService.getDetailedClientSessionInfo(entity.clientId).subscribe(
-      session => {
-        this.dialog.open<SessionsDetailsDialogComponent, SessionsDetailsDialogData>(SessionsDetailsDialogComponent, {
-          disableClose: true,
-          panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
-          data: {
-            session
+    this.clientSessionService.openSessionDetailsDialog($event, entity.clientId).subscribe(
+      (dialog) => {
+        dialog.afterClosed().subscribe((res) => {
+          if (res) {
+            setTimeout(() => {
+              this.getTable().updateData();
+            }, 500)
           }
-        }).afterClosed()
-          .subscribe((res) => {
-            if (res) {
-              setTimeout(() => {
-                this.updateTable();
-              }, 500);
-            }
-          });
+        });
       }
     );
     return false;

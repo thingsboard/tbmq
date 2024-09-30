@@ -41,7 +41,11 @@ export class ConnectionsComponent {
   }
 
   openSessions($event: Event) {
-    this.clientSessionService.openSessionDetailsDialog($event, this.connectionValue.configuration.clientId);
+    this.clientSessionService.openSessionDetailsDialog($event, this.connectionValue.configuration.clientId).subscribe(
+      (dialog) => {
+        dialog.afterClosed().subscribe();
+      }
+    );
   }
 
   updateConnectionStatus() {
