@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
+import org.thingsboard.mqtt.broker.dto.SharedSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 

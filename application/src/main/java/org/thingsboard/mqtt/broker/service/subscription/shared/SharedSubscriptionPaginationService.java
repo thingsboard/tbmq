@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.dto.SharedSubscriptionDto;
 
 public interface SharedSubscriptionPaginationService {
 

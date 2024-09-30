@@ -32,10 +32,10 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.dto.ClientIdSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.dto.SharedSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionAdminService;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionPageService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionDto;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionQuery;
 
 import java.util.List;
