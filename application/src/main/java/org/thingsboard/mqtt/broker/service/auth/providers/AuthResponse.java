@@ -37,7 +37,15 @@ public class AuthResponse {
         return AuthResponse.builder().success(false).reason(reason).build();
     }
 
+    public static AuthResponse defaultAuthResponse() {
+        return new AuthResponse(true, ClientType.DEVICE, null);
+    }
+
     public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
         this(success, clientType, authRulePatterns, null);
+    }
+
+    public boolean isFailure() {
+        return !success;
     }
 }

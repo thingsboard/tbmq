@@ -36,6 +36,10 @@ public class AuthContext {
         return sslHandler != null;
     }
 
+    public boolean isTlsDisabled() {
+        return !isTlsEnabled();
+    }
+
     @Override
     public String toString() {
         return "AuthContext{" +
