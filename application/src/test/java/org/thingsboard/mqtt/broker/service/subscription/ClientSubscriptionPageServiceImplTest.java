@@ -23,6 +23,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
@@ -38,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -233,6 +235,22 @@ public class ClientSubscriptionPageServiceImplTest {
         PageData<ClientSubscriptionInfoDto> result = clientSubscriptionPageService.getClientSubscriptions(query);
 
         assertEquals(2, result.getData().size());
+    }
+
+    @Test
+    public void givenSubscriptions_whenGetClientSubscriptionsWithPageLinkAndSubscriptionIdSorting_thenGetExpectedResult() {
+        ClientSubscriptionQuery query = ClientSubscriptionQuery
+                .builder()
+                .pageLink(new PageLink(10, 0, null, new SortOrder("subscriptionId", SortOrder.Direction.DESC)))
+                .build();
+
+        Map<String, Set<TopicSubscription>> allSubscriptions = getSubscriptionsMap();
+        when(clientSubscriptionCache.getAllClientSubscriptions()).thenReturn(allSubscriptions);
+
+        PageData<ClientSubscriptionInfoDto> result = clientSubscriptionPageService.getClientSubscriptions(query);
+
+        assertEquals(3, result.getData().size());
+        assertNull(result.getData().get(0).getSubscription().getSubscriptionId());
     }
 
     @Test
