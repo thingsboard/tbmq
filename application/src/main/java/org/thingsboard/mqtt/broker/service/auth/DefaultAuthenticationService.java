@@ -66,22 +66,18 @@ public class DefaultAuthenticationService implements AuthenticationService {
     }
 
     private AuthResponse authenticateWithBothStrategies(AuthContext authContext) throws AuthenticationException {
-        String basicAuthFailureReason = null;
-
-        for (var authProviderType : AuthProviderType.values()) {
-            var authResponse = authenticate(authProviderType, authContext);
-
-            if (AuthProviderType.BASIC.equals(authProviderType)) {
-                basicAuthFailureReason = getBasicAuthFailureReason(authResponse);
-                if (isAuthSuccessful(authResponse)) {
-                    return authResponse;
-                }
-            } else {
-                return processSslAuthResponse(authResponse, basicAuthFailureReason);
-            }
+        var basicAuthResponse = authenticate(AuthProviderType.BASIC, authContext);
+        if (isAuthSuccessful(basicAuthResponse)) {
+            return basicAuthResponse;
         }
 
-        throw new AuthenticationException("Failed to authenticate client");
+        String basicAuthFailureReason = getBasicAuthFailureReason(basicAuthResponse);
+        if (authContext.isTlsDisabled()) {
+            return AuthResponse.failure(basicAuthFailureReason);
+        }
+
+        var sslAuthResponse = authenticate(AuthProviderType.X_509_CERTIFICATE_CHAIN, authContext);
+        return processSslAuthResponse(sslAuthResponse, basicAuthFailureReason);
     }
 
     private AuthResponse authenticateWithSingleStrategy(AuthContext authContext) throws AuthenticationException {
@@ -119,11 +115,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
     }
 
     private String getBasicAuthFailureReason(AuthResponse authResponse) {
-        if (authResponse == null) {
-            return "BASIC authentication is disabled";
-        }
-
-        return authResponse.isSuccess() ? null : authResponse.getReason();
+        return authResponse == null ? "BASIC authentication is disabled" : authResponse.getReason();
     }
 
     private AuthResponse authenticate(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
