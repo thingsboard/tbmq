@@ -22,7 +22,8 @@ import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
 import java.util.Comparator;
-import java.util.function.Function;
+
+import static org.thingsboard.mqtt.broker.common.data.util.ComparableUtil.getComparatorBy;
 
 @Data
 @Builder
@@ -35,46 +36,15 @@ public class ClientSubscriptionInfoDto {
 
     public static Comparator<ClientSubscriptionInfoDto> getComparator(SortOrder sortOrder) {
         return switch (sortOrder.getProperty()) {
-            case "clientId" -> getStrComparator(sortOrder.getDirection(), ClientSubscriptionInfoDto::getClientId);
-            case "topicFilter" ->
-                    getStrComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getTopicFilter());
-            case "qos" -> getIntComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getQos().value());
-            case "noLocal" ->
-                    getBoolComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getOptions().isNoLocal());
-            case "retainAsPublish" ->
-                    getBoolComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getOptions().isRetainAsPublish());
-            case "retainHandling" ->
-                    getIntComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getOptions().getRetainHandling());
-            case "subscriptionId" ->
-                    getIntComparator(sortOrder.getDirection(), csi -> csi.getSubscription().getSubscriptionId());
+            case "clientId" -> getComparatorBy(sortOrder, ClientSubscriptionInfoDto::getClientId);
+            case "topicFilter" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().getTopicFilter());
+            case "qos" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().getQos().value());
+            case "noLocal" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().isNoLocal());
+            case "retainAsPublish" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().isRetainAsPublish());
+            case "retainHandling" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().getRetainHandling());
+            case "subscriptionId" -> getComparatorBy(sortOrder, csi -> csi.getSubscription().getSubscriptionId());
             default -> null;
         };
     }
 
-    private static Comparator<ClientSubscriptionInfoDto> getStrComparator(SortOrder.Direction direction,
-                                                                          Function<ClientSubscriptionInfoDto, String> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
-
-    private static Comparator<ClientSubscriptionInfoDto> getIntComparator(SortOrder.Direction direction,
-                                                                          Function<ClientSubscriptionInfoDto, Integer> func) {
-        Comparator<ClientSubscriptionInfoDto> comparator = Comparator.comparing(func, Comparator.nullsLast(Integer::compareTo));
-        if (direction == SortOrder.Direction.DESC) {
-            return comparator.reversed();
-        }
-        return comparator;
-    }
-
-    private static Comparator<ClientSubscriptionInfoDto> getBoolComparator(SortOrder.Direction direction,
-                                                                           Function<ClientSubscriptionInfoDto, Boolean> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
 }

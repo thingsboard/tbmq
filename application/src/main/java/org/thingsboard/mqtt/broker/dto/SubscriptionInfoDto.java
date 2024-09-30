@@ -21,11 +21,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 @Data
 @Builder
@@ -72,6 +72,21 @@ public class SubscriptionInfoDto {
 
     private static int getSubscriptionId(SubscriptionInfoDto subscriptionInfoDto) {
         return subscriptionInfoDto.getSubscriptionId() == null ? -1 : subscriptionInfoDto.getSubscriptionId();
+    }
+
+    @JsonIgnore
+    public boolean isNoLocal() {
+        return options.isNoLocal();
+    }
+
+    @JsonIgnore
+    public boolean isRetainAsPublish() {
+        return options.isRetainAsPublish();
+    }
+
+    @JsonIgnore
+    public int getRetainHandling() {
+        return options.getRetainHandling();
     }
 
     @JsonIgnore

@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
 import java.util.Comparator;
@@ -46,11 +47,7 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
                 .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
-        int totalPages = (int) Math.ceil((double) filteredByTextSearch.size() / pageLink.getPageSize());
-        return new PageData<>(data,
-                totalPages,
-                filteredByTextSearch.size(),
-                pageLink.getPage() < totalPages - 1);
+        return PageData.of(data, filteredByTextSearch.size(), pageLink);
     }
 
     private RetainedMsgDto toRetainedMsgDto(RetainedMsg retainedMsg) {
@@ -58,8 +55,7 @@ public class RetainedMsgPageServiceImpl implements RetainedMsgPageService {
     }
 
     private Comparator<? super RetainedMsgDto> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(RetainedMsgDto.getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, RetainedMsgDto::getComparator);
     }
 
     private List<RetainedMsg> filterRetainedMessages(List<RetainedMsg> retainedMessages, PageLink pageLink) {

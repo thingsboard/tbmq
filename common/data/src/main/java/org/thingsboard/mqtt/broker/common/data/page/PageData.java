@@ -17,10 +17,12 @@ package org.thingsboard.mqtt.broker.common.data.page;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
 import java.util.Collections;
 import java.util.List;
 
+@Getter
 public class PageData<T> {
 
     private final List<T> data;
@@ -47,16 +49,12 @@ public class PageData<T> {
         return new PageData<>();
     }
 
-    public List<T> getData() {
-        return data;
-    }
-
-    public int getTotalPages() {
-        return totalPages;
-    }
-
-    public long getTotalElements() {
-        return totalElements;
+    public static <T> PageData<T> of(List<T> data, int size, PageLink pageLink) {
+        int totalPages = (int) Math.ceil((double) size / pageLink.getPageSize());
+        return new PageData<>(data,
+                totalPages,
+                size,
+                pageLink.getPage() < totalPages - 1);
     }
 
     @JsonProperty("hasNext")

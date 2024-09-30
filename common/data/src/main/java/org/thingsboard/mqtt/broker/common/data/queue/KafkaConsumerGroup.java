@@ -18,9 +18,11 @@ package org.thingsboard.mqtt.broker.common.data.queue;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 
 import java.util.Comparator;
-import java.util.function.Function;
+
+import static org.thingsboard.mqtt.broker.common.data.util.ComparableUtil.getComparatorBy;
 
 @Data
 public class KafkaConsumerGroup {
@@ -31,49 +33,17 @@ public class KafkaConsumerGroup {
     private long lag;
 
     public static Comparator<? super KafkaConsumerGroup> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, KafkaConsumerGroup::getComparator);
     }
 
     public static Comparator<KafkaConsumerGroup> getComparator(SortOrder sortOrder) {
-        switch (sortOrder.getProperty()) {
-            case "state":
-                return getStrComparator(sortOrder.getDirection(), kafkaConsumerGroup -> kafkaConsumerGroup.getState().getName());
-            case "groupId":
-                return getStrComparator(sortOrder.getDirection(), KafkaConsumerGroup::getGroupId);
-            case "members":
-                return getIntComparator(sortOrder.getDirection(), KafkaConsumerGroup::getMembers);
-            case "lag":
-                return getLongComparator(sortOrder.getDirection(), KafkaConsumerGroup::getLag);
-            default:
-                return null;
-        }
+        return switch (sortOrder.getProperty()) {
+            case "state" -> getComparatorBy(sortOrder, kafkaConsumerGroup -> kafkaConsumerGroup.getState().getName());
+            case "groupId" -> getComparatorBy(sortOrder, KafkaConsumerGroup::getGroupId);
+            case "members" -> getComparatorBy(sortOrder, KafkaConsumerGroup::getMembers);
+            case "lag" -> getComparatorBy(sortOrder, KafkaConsumerGroup::getLag);
+            default -> null;
+        };
     }
 
-    private static Comparator<KafkaConsumerGroup> getStrComparator(SortOrder.Direction direction,
-                                                                   Function<KafkaConsumerGroup, String> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
-
-    private static Comparator<KafkaConsumerGroup> getIntComparator(SortOrder.Direction direction,
-                                                                   Function<KafkaConsumerGroup, Integer> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
-
-    private static Comparator<KafkaConsumerGroup> getLongComparator(SortOrder.Direction direction,
-                                                                    Function<KafkaConsumerGroup, Long> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
 }

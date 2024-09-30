@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
@@ -86,11 +87,7 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
                 .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
-        int totalPages = (int) Math.ceil((double) filteredSubscriptions.size() / pageLink.getPageSize());
-        return new PageData<>(data,
-                totalPages,
-                filteredSubscriptions.size(),
-                pageLink.getPage() < totalPages - 1);
+        return PageData.of(data, filteredSubscriptions.size(), pageLink);
     }
 
     private boolean isFieldValueDoesNotMatchFilter(String searchStr, String value) {
@@ -126,8 +123,7 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
     }
 
     private Comparator<? super SharedSubscriptionDto> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(SharedSubscriptionDto.getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, SharedSubscriptionDto::getComparator);
     }
 
 }

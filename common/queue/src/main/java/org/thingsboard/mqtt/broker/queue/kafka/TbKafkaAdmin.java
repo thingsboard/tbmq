@@ -40,13 +40,13 @@ import org.apache.kafka.common.errors.TopicExistsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroupState;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.HomePageConsumerKafkaSettings;
@@ -289,11 +289,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     .limit(pageLink.getPageSize())
                     .collect(Collectors.toList());
 
-            int totalPages = (int) Math.ceil((double) kafkaTopics.size() / pageLink.getPageSize());
-            return new PageData<>(data,
-                    totalPages,
-                    kafkaTopics.size(),
-                    pageLink.getPage() < totalPages - 1);
+            return PageData.of(data, kafkaTopics.size(), pageLink);
         } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
             throw new RuntimeException(e);
@@ -359,11 +355,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     .limit(pageLink.getPageSize())
                     .collect(Collectors.toList());
 
-            int totalPages = (int) Math.ceil((double) kafkaConsumerGroups.size() / pageLink.getPageSize());
-            return new PageData<>(data,
-                    totalPages,
-                    kafkaConsumerGroups.size(),
-                    pageLink.getPage() < totalPages - 1);
+            return PageData.of(data, kafkaConsumerGroups.size(), pageLink);
         } catch (Exception e) {
             log.warn("Failed to get Kafka consumer groups", e);
             throw new RuntimeException(e);

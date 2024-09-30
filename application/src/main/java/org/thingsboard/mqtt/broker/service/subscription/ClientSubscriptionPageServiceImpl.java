@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 
@@ -85,16 +86,11 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
                 .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
-        int totalPages = (int) Math.ceil((double) filteredClientSubscriptions.size() / pageLink.getPageSize());
-        return new PageData<>(data,
-                totalPages,
-                filteredClientSubscriptions.size(),
-                pageLink.getPage() < totalPages - 1);
+        return PageData.of(data, filteredClientSubscriptions.size(), pageLink);
     }
 
     private Comparator<? super ClientSubscriptionInfoDto> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(ClientSubscriptionInfoDto.getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, ClientSubscriptionInfoDto::getComparator);
     }
 
     private boolean filterClientSubscriptionsByTextSearch(String textSearch, String clientId) {

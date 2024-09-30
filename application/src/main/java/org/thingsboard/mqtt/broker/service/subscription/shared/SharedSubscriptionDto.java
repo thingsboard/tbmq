@@ -21,7 +21,8 @@ import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Function;
+
+import static org.thingsboard.mqtt.broker.common.data.util.ComparableUtil.getComparatorBy;
 
 @Data
 public class SharedSubscriptionDto {
@@ -32,15 +33,10 @@ public class SharedSubscriptionDto {
 
     public static Comparator<SharedSubscriptionDto> getComparator(SortOrder sortOrder) {
         return switch (sortOrder.getProperty()) {
-            case "topicFilter" -> getStrComparator(sortOrder.getDirection(), SharedSubscriptionDto::getTopicFilter);
-            case "shareName" -> getStrComparator(sortOrder.getDirection(), SharedSubscriptionDto::getShareName);
+            case "topicFilter" -> getComparatorBy(sortOrder, SharedSubscriptionDto::getTopicFilter);
+            case "shareName" -> getComparatorBy(sortOrder, SharedSubscriptionDto::getShareName);
             default -> null;
         };
-    }
-
-    private static Comparator<SharedSubscriptionDto> getStrComparator(SortOrder.Direction direction,
-                                                                      Function<SharedSubscriptionDto, String> func) {
-        return direction == SortOrder.Direction.DESC ? Comparator.comparing(func, Comparator.reverseOrder()) : Comparator.comparing(func);
     }
 
 }

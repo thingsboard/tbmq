@@ -18,9 +18,11 @@ package org.thingsboard.mqtt.broker.common.data.queue;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 
 import java.util.Comparator;
-import java.util.function.Function;
+
+import static org.thingsboard.mqtt.broker.common.data.util.ComparableUtil.getComparatorBy;
 
 @Data
 public class KafkaTopic {
@@ -31,49 +33,17 @@ public class KafkaTopic {
     private long size; // in bytes
 
     public static Comparator<? super KafkaTopic> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, KafkaTopic::getComparator);
     }
 
     public static Comparator<KafkaTopic> getComparator(SortOrder sortOrder) {
-        switch (sortOrder.getProperty()) {
-            case "name":
-                return getStrComparator(sortOrder.getDirection(), KafkaTopic::getName);
-            case "partitions":
-                return getIntComparator(sortOrder.getDirection(), KafkaTopic::getPartitions);
-            case "replicationFactor":
-                return getIntComparator(sortOrder.getDirection(), KafkaTopic::getReplicationFactor);
-            case "size":
-                return getLongComparator(sortOrder.getDirection(), KafkaTopic::getSize);
-            default:
-                return null;
-        }
+        return switch (sortOrder.getProperty()) {
+            case "name" -> getComparatorBy(sortOrder, KafkaTopic::getName);
+            case "partitions" -> getComparatorBy(sortOrder, KafkaTopic::getPartitions);
+            case "replicationFactor" -> getComparatorBy(sortOrder, KafkaTopic::getReplicationFactor);
+            case "size" -> getComparatorBy(sortOrder, KafkaTopic::getSize);
+            default -> null;
+        };
     }
 
-    private static Comparator<KafkaTopic> getStrComparator(SortOrder.Direction direction,
-                                                           Function<KafkaTopic, String> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
-
-    private static Comparator<KafkaTopic> getIntComparator(SortOrder.Direction direction,
-                                                           Function<KafkaTopic, Integer> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
-
-    private static Comparator<KafkaTopic> getLongComparator(SortOrder.Direction direction,
-                                                            Function<KafkaTopic, Long> func) {
-        if (direction == SortOrder.Direction.DESC) {
-            return Comparator.comparing(func, Comparator.reverseOrder());
-        } else {
-            return Comparator.comparing(func);
-        }
-    }
 }

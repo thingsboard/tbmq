@@ -26,10 +26,11 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionState;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.Comparator;
 import java.util.List;
@@ -88,11 +89,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .limit(pageLink.getPageSize())
                 .collect(Collectors.toList());
 
-        int totalPages = (int) Math.ceil((double) filteredClientSessionInfos.size() / pageLink.getPageSize());
-        return new PageData<>(data,
-                totalPages,
-                filteredClientSessionInfos.size(),
-                pageLink.getPage() < totalPages - 1);
+        return PageData.of(data, filteredClientSessionInfos.size(), pageLink);
     }
 
     private static boolean isInTimeRange(long ts, long startTime, long endTime) {
@@ -133,8 +130,7 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
     }
 
     private Comparator<? super ShortClientSessionInfoDto> sorted(PageLink pageLink) {
-        return pageLink.getSortOrder() == null ? (o1, o2) -> 0 :
-                Comparator.nullsLast(ShortClientSessionInfoDto.getComparator(pageLink.getSortOrder()));
+        return ComparableUtil.sorted(pageLink, ShortClientSessionInfoDto::getComparator);
     }
 
     private List<ClientSessionInfo> filterClientSessionInfos(Map<String, ClientSessionInfo> allClientSessions, String textSearch) {
