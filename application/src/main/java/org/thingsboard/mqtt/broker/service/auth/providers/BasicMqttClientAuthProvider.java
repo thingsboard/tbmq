@@ -26,9 +26,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -70,13 +71,12 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());
         }
-        MqttClientCredentials basicCredentials = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
-        if (basicCredentials == null) {
-            String errorMsg = String.format("Failed to authenticate client using Basic credentials matching clientId: " +
-                    "%s, username: %s", authContext.getClientId(), authContext.getUsername());
-            log.warn(errorMsg);
-            return new AuthResponse(false, null, null, errorMsg);
+        BasicAuthResponse basicAuthResponse = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
+        if (basicAuthResponse.isFailure()) {
+            log.warn(basicAuthResponse.getErrorMsg());
+            return new AuthResponse(false, null, null, basicAuthResponse.getErrorMsg());
         }
+        MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
         putIntoClientSessionCredsCache(authContext, basicCredentials);
         if (log.isDebugEnabled()) {
             log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
@@ -86,9 +86,12 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         return new AuthResponse(true, basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
     }
 
-    private MqttClientCredentials authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {
+    private BasicAuthResponse authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {
         List<String> credentialIds = getCredentialIds(clientId, username);
         List<MqttClientCredentials> matchingCredentialsList = clientCredentialsService.findMatchingCredentials(credentialIds);
+        if (matchingCredentialsList.isEmpty()) {
+            return BasicAuthResponse.failure(formatErrorMsg(BasicAuthFailure.NO_CREDENTIALS_FOUND, clientId, username));
+        }
         if (log.isDebugEnabled()) {
             log.debug("Found credentials {} for credentialIds {}", matchingCredentialsList, credentialIds);
         }
@@ -96,7 +99,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         if (password != null) {
             MqttClientCredentials credentialsFromCache = getBasicCredsPwCache().get(toHashString(password), MqttClientCredentials.class);
             if (credentialsFromCache != null && matchingCredentialsList.contains(credentialsFromCache)) {
-                return credentialsFromCache;
+                return BasicAuthResponse.success(credentialsFromCache);
             }
         }
 
@@ -106,10 +109,20 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
                 if (password != null && basicMqttCredentials.getPassword() != null) {
                     getBasicCredsPwCache().put(toHashString(password), credentials);
                 }
-                return credentials;
+                return BasicAuthResponse.success(credentials);
             }
         }
-        return null;
+        return BasicAuthResponse.failure(getBasicAuthPasswordErrorMsg(clientId, username, password));
+    }
+
+    private String getBasicAuthPasswordErrorMsg(String clientId, String username, String password) {
+        return password != null ?
+                formatErrorMsg(BasicAuthFailure.PASSWORD_NOT_MATCH, clientId, username) :
+                formatErrorMsg(BasicAuthFailure.NO_PASSWORD_PROVIDED, clientId, username);
+    }
+
+    private String formatErrorMsg(BasicAuthFailure basicAuthFailure, String clientId, String username) {
+        return String.format(basicAuthFailure.getErrorMsg(), clientId, username);
     }
 
     private List<String> getCredentialIds(String clientId, String username) {
