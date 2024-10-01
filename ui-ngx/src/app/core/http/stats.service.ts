@@ -37,7 +37,7 @@ export class StatsService {
   public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeysTotal,
                              limit: number = timeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
                              orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
-    let url = `/api/timeseries/${entityId}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
+    let url = `/api/timeseries/${encodeURIComponent(entityId)}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;
     }
@@ -62,7 +62,7 @@ export class StatsService {
 
   public getLatestTimeseries(entityId: string, keys: Array<string> = chartKeysTotal,
                              useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
-    let url = `/api/timeseries/${entityId}/latest?keys=${keys.join(',')}`;
+    let url = `/api/timeseries/${encodeURIComponent(entityId)}/latest?keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
@@ -79,7 +79,7 @@ export class StatsService {
   }
 
   public deleteLatestTimeseries(clientId: string, keys: string[], deleteClientSessionCachedStats: boolean, config?: RequestConfig) {
-    let url = `/api/timeseries/${clientId}/latest`;
+    let url = `/api/timeseries/${encodeURIComponent(clientId)}/latest`;
     if (keys && keys.length) {
       url += `?keys=${keys.join(',')}`;
     }

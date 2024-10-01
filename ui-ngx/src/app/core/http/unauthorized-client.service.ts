@@ -35,7 +35,7 @@ export class UnauthorizedClientService {
   }
 
   public getUnauthorizedClient(clientId: string, config?: RequestConfig): Observable<UnauthorizedClient> {
-    return this.http.get<UnauthorizedClient>(`/api/unauthorized/client/${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<UnauthorizedClient>(`/api/unauthorized/client/${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteUnauthorizedClient(clientId: string, config?: RequestConfig): Observable<void> {

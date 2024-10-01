@@ -39,7 +39,7 @@ export class SubscriptionService {
   }
 
   public getClientSubscriptions(clientId: string, config?: RequestConfig): Observable<TopicSubscription[]> {
-    return this.http.get<TopicSubscription[]>(`/api/subscription/${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<TopicSubscription[]>(`/api/subscription/${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getSharedSubscriptions(query: SharedSubscriptionQuery, config?: RequestConfig): Observable<PageData<TopicSubscription>> {
