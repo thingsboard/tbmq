@@ -22,7 +22,8 @@ public enum BasicAuthFailure {
 
     NO_CREDENTIALS_FOUND("Basic authentication failed: no credentials found matching clientId: %s, username: %s"),
     PASSWORD_NOT_MATCH("Basic authentication failed: provided password does not match the credentials found by clientId: %s, username: %s"),
-    NO_PASSWORD_PROVIDED("Basic authentication failed: password not provided to match the credentials found by clientId: %s, username: %s");
+    NO_PASSWORD_PROVIDED("Basic authentication failed: password not provided to match the credentials found by clientId: %s, username: %s"),
+    CAN_NOT_PARSE_BASIC_CREDS("Cannot parse SinglePubSubAuthRulesAware credentials!");
 
     private final String errorMsg;
 

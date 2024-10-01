@@ -44,6 +44,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.FAILED_TO_GET_CERT_CN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.FAILED_TO_GET_CLIENT_CERT_CN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_CERTS_IN_CHAIN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_X_509_CREDS_FOUND;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.PEER_IDENTITY_NOT_VERIFIED;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.SSL_HANDLER_NOT_CONSTRUCTED;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.X_509_AUTH_FAILURE;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -59,7 +67,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         if (authContext.getSslHandler() == null) {
-            String errorMsg = "Could not authenticate client using X_509_CERTIFICATE_CHAIN credentials since SSL handler is not constructed!";
+            String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
             log.error(logErrorMsg, authContext);
             return new AuthResponse(false, null, null, errorMsg);
@@ -69,7 +77,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         }
         ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
         if (clientTypeSslMqttCredentials == null) {
-            String errorMsg = "Failed to authenticate client using X_509_CERTIFICATE_CHAIN credentials! No X_509_CERTIFICATE_CHAIN matching credentials were found!";
+            String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
             log.warn(errorMsg);
             return new AuthResponse(false, null, null, errorMsg);
         }
@@ -90,13 +98,13 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
             if (log.isDebugEnabled()) {
-                log.debug("Peer's identity has not been verified", e);
+                log.debug(PEER_IDENTITY_NOT_VERIFIED.getErrorMsg(), e);
             }
-            throw new AuthenticationException("Peer's identity has not been verified");
+            throw new AuthenticationException(PEER_IDENTITY_NOT_VERIFIED.getErrorMsg());
         }
         if (certificates.length == 0) {
-            log.warn("There are no certificates in the chain.");
-            throw new AuthenticationException("There are no certificates in the chain");
+            log.warn(NO_CERTS_IN_CHAIN.getErrorMsg());
+            throw new AuthenticationException(NO_CERTS_IN_CHAIN.getErrorMsg());
         }
 
         SslCredentialsCacheValue sslCredentialsCacheValue = getSslRegexBasedCredentials();
@@ -111,7 +119,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             try {
                 commonName = SslUtil.parseCommonName(certificate);
             } catch (CertificateEncodingException e) {
-                throw new AuthenticationException("Could not get Common Name from certificate", e);
+                throw new AuthenticationException(FAILED_TO_GET_CERT_CN.getErrorMsg(), e);
             }
             if (log.isTraceEnabled()) {
                 log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
@@ -168,7 +176,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             if (log.isTraceEnabled()) {
                 log.trace("[{}] X509 auth failure.", clientId, e);
             }
-            String errorMsg = "X509 auth failure: " + e.getMessage();
+            String errorMsg = String.format(X_509_AUTH_FAILURE.getErrorMsg(), e.getMessage());
             throw new AuthenticationException(errorMsg, e);
         }
     }
@@ -179,8 +187,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
             return SslUtil.parseCommonName(certificates[0]);
         } catch (Exception e) {
-            log.error("Failed to get client's certificate common name", e);
-            throw new AuthenticationException("Failed to get client's certificate common name", e);
+            log.error(FAILED_TO_GET_CLIENT_CERT_CN.getErrorMsg(), e);
+            throw new AuthenticationException(FAILED_TO_GET_CLIENT_CERT_CN.getErrorMsg(), e);
         }
     }
 

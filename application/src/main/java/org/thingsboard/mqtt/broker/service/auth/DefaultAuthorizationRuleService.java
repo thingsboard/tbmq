@@ -36,6 +36,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.thingsboard.mqtt.broker.service.auth.providers.BasicAuthFailure.CAN_NOT_PARSE_BASIC_CREDS;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.CAN_NOT_PARSE_SSL_CREDS;
+import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_AUTH_RULES_FOR_CN_IN_CREDS;
+
 @Service
 @Slf4j
 @Getter
@@ -47,7 +51,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     public List<AuthRulePatterns> parseSslAuthorizationRule(ClientTypeSslMqttCredentials clientTypeSslMqttCredentials, String clientCommonName) throws AuthenticationException {
         SslMqttCredentials credentials = clientTypeSslMqttCredentials.getSslMqttCredentials();
         if (credentials == null) {
-            throw new AuthenticationException("Cannot parse SslMqttCredentials");
+            throw new AuthenticationException(CAN_NOT_PARSE_SSL_CREDS.getErrorMsg());
         }
 
         List<AuthRulePatterns> authRulePatterns = credentials.getAuthRulesMapping().entrySet().stream()
@@ -62,7 +66,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                 .collect(Collectors.toList());
 
         if (authRulePatterns.isEmpty()) {
-            String errorMsg = String.format("Cannot find authorization rules for common name [%s] from credentials [%s]",
+            String errorMsg = String.format(NO_AUTH_RULES_FOR_CN_IN_CREDS.getErrorMsg(),
                     clientCommonName, clientTypeSslMqttCredentials.getName());
             log.warn(errorMsg);
             throw new AuthenticationException(errorMsg);
@@ -74,7 +78,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     @Override
     public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException {
         if (credentials == null) {
-            throw new AuthenticationException("Cannot parse SinglePubSubAuthRulesAware credentials!");
+            throw new AuthenticationException(CAN_NOT_PARSE_BASIC_CREDS.getErrorMsg());
         }
         return newAuthRulePatterns(credentials.getAuthRules());
     }
@@ -116,7 +120,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     }
 
     private boolean isAuthorized(String topic, Stream<List<Pattern>> stream) {
-        List<Pattern> patterns = stream.flatMap(List::stream).collect(Collectors.toList());
+        List<Pattern> patterns = stream.flatMap(List::stream).toList();
         if (CollectionUtils.isEmpty(patterns)) {
             return false;
         }
