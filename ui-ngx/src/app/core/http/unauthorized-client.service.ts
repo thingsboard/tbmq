@@ -39,7 +39,7 @@ export class UnauthorizedClientService {
   }
 
   public deleteUnauthorizedClient(clientId: string, config?: RequestConfig): Observable<void> {
-    return this.http.delete<void>(`/api/unauthorized/client/${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete<void>(`/api/unauthorized/client/${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteAllUnauthorizedClients(config?: RequestConfig): Observable<void> {
