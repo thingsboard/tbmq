@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
+import {BaseData} from '@shared/models/base-data';
 
 export interface KafkaBroker extends BaseData {
   brokerId: string;
@@ -44,8 +44,8 @@ export const KafkaTopicsTooltipMap = {
   'tbmq.msg.retained': 'Retained messages',
   'tbmq.client.subscriptions': 'Client subscriptions',
   'tbmq.client.session': 'Client sessions',
-  'tbmq.client.session.event.request': 'Processing client session events like request session connection,  request session cleanup, notify client disconnected, etc',
-  'tbmq.client.session.event.response': 'Responses to client session events of the previous topic sent to specific broker node where target client is connected',
+  'tbmq.client.session.event.request': 'Processing client session events like CONNECTION_REQUEST, CLEAR_SESSION_REQUEST, DISCONNECTION_REQUEST, etc',
+  'tbmq.client.session.event.response': 'Responses to client session events (e.g. CONNECTION_REQUEST, DISCONNECTION_REQUEST) sent to the broker node where the target client is connected',
   'tbmq.client.disconnect': 'Force client disconnections (by admin request from UI/API or on sessions conflicts)',
   'tbmq.msg.downlink.basic': 'Send messages from one Broker node to another to which the DEVICE subscriber is connected',
   'tbmq.msg.downlink.persisted': 'Send messages from one Broker node to another to which the DEVICE persistent subscriber is connected',
