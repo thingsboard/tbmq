@@ -50,6 +50,8 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   statChartTypeTranslationMap = StatsChartTypeTranslationMap;
   chartWidth: string;
   chartHeight: string;
+  chartsCarouselIndex = 0;
+  items = 5;
 
   private stopPolling$ = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -164,8 +166,11 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
     const resizeObserver = new ResizeObserver((entries) => {
       const containerWidth = entries[0].contentRect.width;
       let chartWidthPx = (containerWidth / 5) - 16;
-      if (containerWidth < 500) chartWidthPx = containerWidth / 2; // Mobile
-      if (window.innerHeight > window.innerWidth) chartWidthPx = containerWidth / 2; // Portrait
+      this.items = 5;
+      if (containerWidth < 500 || window.innerHeight > window.innerWidth) { // mobile or portrait
+        chartWidthPx = containerWidth / 2;
+        this.items = 2;
+      }
       this.chartWidth = chartWidthPx + 'px';
       this.chartHeight = (chartWidthPx * 0.5) + 'px';
     });

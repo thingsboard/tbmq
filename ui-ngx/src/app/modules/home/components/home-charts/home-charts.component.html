@@ -15,21 +15,40 @@
     limitations under the License.
 
 -->
-<div #homeChartsContainer class="tb-home-card-container tb-home-padding" style="overflow: auto;">
-  <section fxLayoutAlign="space-between" fxLayoutGap="12px">
-    <div *ngFor="let chart of statsCharts">
-      <div class="chart-container" fxLayout="column">
-        <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
-          <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
-          <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
-                    [matTooltip]="chartTooltip(chart)">
-            info_outline
-          </mat-icon>
-        </section>
-        <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
-          <canvas [id]="chart+chartPage"></canvas>
-        </section>
-      </div>
+<div #homeChartsContainer class="tb-home-card-container" style="overflow: auto; padding: 18px 8px 18px 18px">
+  <div class="tb-card-header">
+    <tb-card-title-button [cardType]="cardType" [disabled]="false"></tb-card-title-button>
+    <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px">
+      <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex === 0" (click)="chartsCarouselIndex = chartsCarouselIndex - 1"><mat-icon>keyboard_arrow_left</mat-icon></button>
+      <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex >= statsCharts?.length - items" (click)="chartsCarouselIndex = chartsCarouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
     </div>
-  </section>
+  </div>
+  <div fxFlex class="tb-home-charts">
+    <ngx-hm-carousel #carousel
+                     align="left"
+                     [(ngModel)]="chartsCarouselIndex"
+                     [drag-many]="true"
+                     [show-num]="items"
+                     [data]="statsCharts"
+                     class="carousel c-accent">
+      <section ngx-hm-carousel-container class="content">
+        <article class="item cursor-pointer"
+                 ngx-hm-carousel-item
+                 *ngFor="let chart of statsCharts">
+          <div class="chart-container" fxLayout="column">
+            <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
+              <span>{{ statChartTypeTranslationMap.get(chart) | translate }}</span>
+              <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
+                        [matTooltip]="chartTooltip(chart)">
+                info_outline
+              </mat-icon>
+            </section>
+            <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
+              <canvas [id]="chart+chartPage"></canvas>
+            </section>
+          </div>
+        </article>
+      </section>
+    </ngx-hm-carousel>
+  </div>
 </div>
