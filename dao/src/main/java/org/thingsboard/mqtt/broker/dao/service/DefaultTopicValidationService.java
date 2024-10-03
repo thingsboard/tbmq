@@ -42,7 +42,10 @@ public class DefaultTopicValidationService implements TopicValidationService {
 
         if (topic.contains(MULTI_LEVEL_WILDCARD)
                 || topic.contains(SINGLE_LEVEL_WILDCARD)) {
-            throw new DataValidationException("Topic cannot contain wildcard characters!");
+            throw new DataValidationException("Topic name cannot contain wildcard characters!");
+        }
+        if (topic.startsWith("$")) {
+            throw new DataValidationException("Topic name cannot start with $ character!");
         }
     }
 

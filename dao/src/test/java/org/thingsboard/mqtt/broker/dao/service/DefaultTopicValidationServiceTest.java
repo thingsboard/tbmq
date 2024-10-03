@@ -32,6 +32,11 @@ public class DefaultTopicValidationServiceTest {
     }
 
     @Test(expected = DataValidationException.class)
+    public void test$InTopic() {
+        topicValidationService.validateTopic("$/test/#");
+    }
+
+    @Test(expected = DataValidationException.class)
     public void testMultiWildcardsInTopic() {
         topicValidationService.validateTopic("1/test/#");
     }
