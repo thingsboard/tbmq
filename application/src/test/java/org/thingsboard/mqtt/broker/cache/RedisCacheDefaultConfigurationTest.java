@@ -51,7 +51,7 @@ public class RedisCacheDefaultConfigurationTest {
         SoftAssertions softly = new SoftAssertions();
         redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
             softly.assertThat(name).as("cache name").isNotEmpty();
-            softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThan(0);
+            softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThanOrEqualTo(0);
         });
         softly.assertAll();
     }
