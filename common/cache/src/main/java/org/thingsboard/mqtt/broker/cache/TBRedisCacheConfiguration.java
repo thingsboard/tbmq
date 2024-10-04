@@ -129,7 +129,7 @@ public abstract class TBRedisCacheConfiguration {
     }
 
     private RedisCacheConfiguration createRedisCacheConfigWithTtl(DefaultFormattingConversionService redisConversionService, int ttlInMinutes) {
-        return createRedisCacheConfig(redisConversionService).entryTtl(Duration.ofMinutes(ttlInMinutes));
+        return createRedisCacheConfig(redisConversionService).entryTtl(getDuration(ttlInMinutes));
     }
 
     private RedisCacheConfiguration createRedisCacheConfig(DefaultFormattingConversionService redisConversionService) {
@@ -195,5 +195,10 @@ public abstract class TBRedisCacheConfiguration {
 
     private HostAndPort getHostAndPort(RedisNode redisNode) {
         return new HostAndPort(redisNode.getHost(), redisNode.getPort());
+    }
+
+    private Duration getDuration(int ttlInMinutes) {
+        // Duration.ofMinutes(0) will return Duration.ZERO, but this code is written to make this obvious
+        return ttlInMinutes <= 0 ? Duration.ZERO : Duration.ofMinutes(ttlInMinutes);
     }
 }

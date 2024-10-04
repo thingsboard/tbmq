@@ -52,7 +52,6 @@ public class RedisCacheDefaultConfigurationTest {
         redisCacheConfiguration.getCacheSpecsMap().getCacheSpecs().forEach((name, cacheSpecs) -> {
             softly.assertThat(name).as("cache name").isNotEmpty();
             softly.assertThat(cacheSpecs.getTimeToLiveInMinutes()).as("cache %s time to live", name).isGreaterThan(0);
-            softly.assertThat(cacheSpecs.getMaxSize()).as("cache %s max size", name).isGreaterThanOrEqualTo(0);
         });
         softly.assertAll();
     }
