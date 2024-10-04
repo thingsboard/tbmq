@@ -77,7 +77,6 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     ).subscribe((value) => {
       this.updateView(value);
     });
-    this.credentialsMqttFormGroup.get('certCnIsRegex').valueChanges.subscribe(value => this.updateCertificateCnView(value));
   }
 
   ngOnDestroy(): void {
@@ -111,6 +110,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   writeValue(mqttSsl: string) {
     if (isDefinedAndNotNull(mqttSsl) && !isEmptyStr(mqttSsl)) {
       const value = JSON.parse(mqttSsl);
+      this.updateCertificateCnView(value?.certCnIsRegex);
       this.credentialsMqttFormGroup.patchValue(value, {emitEvent: false});
     }
   }
