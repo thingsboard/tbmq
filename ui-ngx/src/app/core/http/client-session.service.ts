@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {PageLink} from '@shared/models/page/page-link';
-import {PageData} from '@shared/models/page/page-data';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { PageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
 import {
   ClientSessionCredentials,
   ClientSessionStatsInfo,
@@ -28,13 +28,13 @@ import {
   SessionMetricsList,
   SessionQuery
 } from '@shared/models/session.model';
-import {StatsService} from '@core/http/stats.service';
-import {map} from 'rxjs/operators';
+import { StatsService } from '@core/http/stats.service';
+import { map } from 'rxjs/operators';
 import {
   SessionsDetailsDialogComponent,
   SessionsDetailsDialogData
 } from '@home/pages/sessions/sessions-details-dialog.component';
-import {MatDialog, MatDialogRef} from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root'
