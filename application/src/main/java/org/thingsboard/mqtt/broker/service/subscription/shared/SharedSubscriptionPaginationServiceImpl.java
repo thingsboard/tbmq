@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -68,18 +69,8 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
                 continue;
             }
 
-            List<Subscription> allSubscriptions = sharedSubscriptionsEntry.getValue().getAllSubscriptions();
-
-            if (allClientsDoNotMatchFilter(sharedSubscriptionQuery.getClientIdSearch(), allSubscriptions)) {
-                continue;
-            }
-
-            filteredSubscriptions.add(
-                    new SharedSubscriptionDto(
-                            shareName,
-                            topicFilter,
-                            toClientSessionStates(allSubscriptions))
-            );
+            filterSubscriptionsByClientId(filteredSubscriptions, sharedSubscriptionQuery, sharedSubscriptionsEntry.getValue().getDeviceSubscriptions(), shareName, topicFilter);
+            filterSubscriptionsByClientId(filteredSubscriptions, sharedSubscriptionQuery, sharedSubscriptionsEntry.getValue().getApplicationSubscriptions(), shareName, topicFilter);
         }
 
         List<SharedSubscriptionDto> data = filteredSubscriptions.stream()
@@ -91,11 +82,23 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
         return PageData.of(data, filteredSubscriptions.size(), pageLink);
     }
 
+    private void filterSubscriptionsByClientId(List<SharedSubscriptionDto> filteredSubscriptions, SharedSubscriptionQuery sharedSubscriptionQuery,
+                                               Set<Subscription> subscriptions, String shareName, String topicFilter) {
+        if (anyClientMatchFilter(sharedSubscriptionQuery.getClientIdSearch(), subscriptions)) {
+            filteredSubscriptions.add(
+                    new SharedSubscriptionDto(
+                            shareName,
+                            topicFilter,
+                            toClientSessionStates(subscriptions))
+            );
+        }
+    }
+
     private boolean isFieldValueDoesNotMatchFilter(String searchStr, String value) {
         return searchStr != null && !StringUtils.containsIgnoreCase(value, searchStr);
     }
 
-    private List<ClientSessionState> toClientSessionStates(List<Subscription> allSubscriptions) {
+    private List<ClientSessionState> toClientSessionStates(Set<Subscription> allSubscriptions) {
         return allSubscriptions
                 .stream()
                 .map(this::getClientSessionState)
@@ -103,23 +106,27 @@ public class SharedSubscriptionPaginationServiceImpl implements SharedSubscripti
                 .toList();
     }
 
-    private boolean allClientsDoNotMatchFilter(String clientIdSearch, List<Subscription> allSubscriptions) {
-        if (clientIdSearch == null) {
+    private boolean anyClientMatchFilter(String clientIdSearch, Set<Subscription> subscriptions) {
+        if (CollectionUtils.isEmpty(subscriptions)) {
             return false;
         }
-        Subscription anySubscription = allSubscriptions
+        if (clientIdSearch == null) {
+            return true;
+        }
+        Subscription anySubscription = subscriptions
                 .stream()
                 .filter(sub -> StringUtils.containsIgnoreCase(sub.getClientId(), clientIdSearch))
                 .findAny()
                 .orElse(null);
-        return anySubscription == null;
+        return anySubscription != null;
     }
 
     private ClientSessionState getClientSessionState(Subscription subscription) {
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(subscription.getClientId());
-        if (clientSessionInfo == null) {
-            return null;
-        }
+        return clientSessionInfo == null ? null : newClientSessionState(clientSessionInfo);
+    }
+
+    private ClientSessionState newClientSessionState(ClientSessionInfo clientSessionInfo) {
         return new ClientSessionState(clientSessionInfo.getClientId(), clientSessionInfo.getType(), clientSessionInfo.isConnected());
     }
 
