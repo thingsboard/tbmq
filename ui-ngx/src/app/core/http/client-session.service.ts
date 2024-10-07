@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
+import {Injectable} from '@angular/core';
+import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
+import {Observable} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {PageLink} from '@shared/models/page/page-link';
+import {PageData} from '@shared/models/page/page-data';
 import {
   ClientSessionCredentials,
   ClientSessionStatsInfo,
@@ -28,13 +28,13 @@ import {
   SessionMetricsList,
   SessionQuery
 } from '@shared/models/session.model';
-import { StatsService } from '@core/http/stats.service';
-import { map } from 'rxjs/operators';
+import {StatsService} from '@core/http/stats.service';
+import {map} from 'rxjs/operators';
 import {
   SessionsDetailsDialogComponent,
   SessionsDetailsDialogData
 } from '@home/pages/sessions/sessions-details-dialog.component';
-import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import {MatDialog, MatDialogRef} from '@angular/material/dialog';
 
 @Injectable({
   providedIn: 'root'
@@ -47,7 +47,7 @@ export class ClientSessionService {
   }
 
   public getDetailedClientSessionInfo(clientId: string, config?: RequestConfig): Observable<DetailedClientSessionInfo> {
-    return this.http.get<DetailedClientSessionInfo>(`/api/client-session?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<DetailedClientSessionInfo>(`/api/client-session?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getShortClientSessionInfos(pageLink: PageLink, config?: RequestConfig): Observable<PageData<DetailedClientSessionInfo>> {
@@ -63,11 +63,11 @@ export class ClientSessionService {
   }
 
   public removeClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/client-session/remove?clientId=${clientId}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete(`/api/client-session/remove?clientId=${encodeURIComponent(clientId)}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public disconnectClientSession(clientId: string, sessionId: string, config?: RequestConfig) {
-    return this.http.delete(`/api/client-session/disconnect?clientId=${clientId}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete(`/api/client-session/disconnect?clientId=${encodeURIComponent(clientId)}&sessionId=${sessionId}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getClientSessionsStats(config?: RequestConfig): Observable<ClientSessionStatsInfo> {
@@ -75,7 +75,7 @@ export class ClientSessionService {
   }
 
   public getClientSessionDetails(clientId: string, config?: RequestConfig): Observable<ClientSessionCredentials> {
-    return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${clientId}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getSessionMetrics(clientId: string, config?: RequestConfig): Observable<PageData<SessionMetrics>> {
