@@ -85,7 +85,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         client = AdminClient.create(adminSettings.toProps());
-        deleteOldConsumerGroups();
+//        deleteOldConsumerGroups(); TODO: think about the correct way of deleting old CGs since some of them are doing assign and essentially are empty
         try {
             topics.addAll(client.listTopics().names().get());
         } catch (InterruptedException | ExecutionException e) {
@@ -447,7 +447,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         if (consumerGroupId == null) {
             throw new IllegalArgumentException("Consumer group ID cannot be null");
         }
-        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().map(prefix -> kafkaPrefix + prefix).anyMatch(consumerGroupId::startsWith);
+        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().map(prefix -> kafkaPrefix != null ? kafkaPrefix + prefix : prefix).anyMatch(consumerGroupId::startsWith);
     }
 
     @PreDestroy
