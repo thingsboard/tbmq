@@ -23,11 +23,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.client.state.OrderedProcessingQueue;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
@@ -108,11 +110,13 @@ public class MqttPublishHandler {
             return;
         }
 
+        MqttMsgWrapper mqttMsgWrapper = null; // for QoS 0
         try {
             if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQosLevel()) {
-                if (processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, msgId)) return;
+                mqttMsgWrapper = processExactlyOnce(ctx, msgId);
+                if (ensureMsgPersistedAwaitingPubRel(ctx, actorRef, mqttMsgWrapper)) return;
             } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQosLevel()) {
-                processAtLeastOnce(ctx, msgId);
+                mqttMsgWrapper = processAtLeastOnce(ctx, msgId);
             }
         } catch (FullMsgQueueException e) {
             log.warn("[{}][{}] Failed to process publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), e);
@@ -128,7 +132,7 @@ public class MqttPublishHandler {
         }
 
         clientLogger.logEvent(ctx.getClientId(), this.getClass(), "Sending PUBLISH");
-        persistPubMsg(ctx, publishMsg, actorRef);
+        persistPubMsg(ctx, publishMsg, actorRef, mqttMsgWrapper);
     }
 
     boolean validatePubMsg(ClientSessionCtx ctx, PublishMsg publishMsg) {
@@ -175,6 +179,20 @@ public class MqttPublishHandler {
         }
     }
 
+    private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg) {
+        if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
+            if (publishMsg.getQosLevel() == 2) {
+                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecError());
+            } else if (publishMsg.getQosLevel() == 1) {
+                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckError());
+            } else {
+                // QoS=0 - do nothing
+            }
+        } else {
+            disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
+        }
+    }
+
     private void pushPubAckErrorResponseWithReasonCode(ClientSessionCtx ctx, PublishMsg publishMsg, MqttReasonCodes.PubAck code) {
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubAckMsg(publishMsg.getPacketId(), code));
     }
@@ -183,20 +201,19 @@ public class MqttPublishHandler {
         ctx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(publishMsg.getPacketId(), code));
     }
 
-    boolean processExactlyOnceAndCheckIfAlreadyPublished(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages(), msgId);
-        return prepareForPubRelPacketAndCheckIfAlreadyProcessed(ctx, actorRef, msgId);
+    MqttMsgWrapper processExactlyOnce(ClientSessionCtx ctx, int msgId) {
+        return addMsgToQueue(ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages(), msgId);
     }
 
-    void processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
-        addAwaiting(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages(), msgId);
+    MqttMsgWrapper processAtLeastOnce(ClientSessionCtx ctx, int msgId) {
+        return addMsgToQueue(ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages(), msgId);
     }
 
-    private void addAwaiting(OrderedProcessingQueue qosPublishResponseMessages, int msgId) {
-        qosPublishResponseMessages.addAwaiting(msgId);
+    private MqttMsgWrapper addMsgToQueue(OrderedProcessingQueue qosPublishResponseMessages, int msgId) {
+        return qosPublishResponseMessages.addMsgId(msgId);
     }
 
-    void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef) {
+    void persistPubMsg(ClientSessionCtx ctx, PublishMsg publishMsg, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
         msgDispatcherService.persistPublishMsg(ctx.getSessionInfo(), publishMsg, new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -205,7 +222,7 @@ public class MqttPublishHandler {
                     if (isTraceEnabled) {
                         log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
                     }
-                    sendPubResponseEventToActor(actorRef, ctx.getSessionId(), publishMsg.getPacketId(), MqttQoS.valueOf(publishMsg.getQosLevel()));
+                    sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQosLevel()));
                 });
             }
 
@@ -213,30 +230,36 @@ public class MqttPublishHandler {
             public void onFailure(Throwable t) {
                 callbackProcessor.submit(() -> {
                     log.warn("[{}][{}] Failed to publish msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId(), t);
-                    disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg");
+                    handleMsgPersistenceFailure(ctx, publishMsg);
                 });
             }
         });
     }
 
-    public void processPubAckResponse(ClientSessionCtx ctx, int msgId) {
+    public void processPubAckResponse(ClientSessionCtx ctx, PubAckResponseMsg msg) {
         MqttReasonCodes.PubAck code = MqttReasonCodeResolver.pubAckSuccess(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().finish(msgId);
-        for (var finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(finishedMsgId, code));
+        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos1PubAckResponseMessages().ack(msg.getMqttMsgWrapper());
+        if (CollectionUtils.isEmpty(ackMsgIds)) {
+            return;
+        }
+        for (var ackMsgId : ackMsgIds) {
+            ctx.getChannel().write(mqttMessageGenerator.createPubAckMsg(ackMsgId, code));
         }
         ctx.getChannel().flush();
     }
 
-    public void processPubRecResponse(ClientSessionCtx ctx, int msgId) {
+    public void processPubRecResponse(ClientSessionCtx ctx, PubRecResponseMsg msg) {
         MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(ctx);
-        List<Integer> finishedMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().finishAll(msgId);
-        for (var finishedMsgId : finishedMsgIds) {
-            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(finishedMsgId, code));
+        List<Integer> ackMsgIds = ctx.getPubResponseProcessingCtx().getQos2PubRecResponseMessages().ack(msg.getMqttMsgWrapper());
+        if (CollectionUtils.isEmpty(ackMsgIds)) {
+            return;
+        }
+        for (var ackMsgId : ackMsgIds) {
+            ctx.getChannel().write(mqttMessageGenerator.createPubRecMsg(ackMsgId, code));
         }
         ctx.getChannel().flush();
 
-        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
+        AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msg.getMessageId());
         if (isNotPersisted(awaitingPacketInfo)) {
             awaitingPacketInfo.setPersisted(true);
         }
@@ -247,7 +270,8 @@ public class MqttPublishHandler {
     }
 
     // need this logic to ensure message was stored in Kafka before PUBREC response (and not duplicate processing of message)
-    private boolean prepareForPubRelPacketAndCheckIfAlreadyProcessed(ClientSessionCtx ctx, TbActorRef actorRef, int msgId) {
+    private boolean ensureMsgPersistedAwaitingPubRel(ClientSessionCtx ctx, TbActorRef actorRef, MqttMsgWrapper mqttMsgWrapper) {
+        int msgId = mqttMsgWrapper.getMsgId();
         String clientId = ctx.getClientId();
         UUID sessionId = ctx.getSessionId();
         AwaitingPubRelPacketsCtx.QoS2PubRelPacketInfo awaitingPacketInfo = ctx.getAwaitingPubRelPacketsCtx().getAwaitingPacket(msgId);
@@ -261,21 +285,21 @@ public class MqttPublishHandler {
             if (isTraceEnabled) {
                 log.trace("[{}][{}] Message {} is awaiting for PUBREL packet.", clientId, sessionId, msgId);
             }
-            sendPubResponseEventToActor(actorRef, sessionId, msgId, MqttQoS.EXACTLY_ONCE);
+            sendPubResponseEventToActor(actorRef, sessionId, mqttMsgWrapper, MqttQoS.EXACTLY_ONCE);
         }
         return awaitingPacketInfo != null;
     }
 
-    private void sendPubResponseEventToActor(TbActorRef actorRef, UUID sessionId, int packetId, MqttQoS mqttQoS) {
+    private void sendPubResponseEventToActor(TbActorRef actorRef, UUID sessionId, MqttMsgWrapper mqttMsgWrapper, MqttQoS mqttQoS) {
         try {
             switch (mqttQoS) {
                 case AT_MOST_ONCE:
                     break;
                 case AT_LEAST_ONCE:
-                    actorRef.tell(new PubAckResponseMsg(sessionId, packetId));
+                    actorRef.tell(new PubAckResponseMsg(sessionId, mqttMsgWrapper));
                     break;
                 case EXACTLY_ONCE:
-                    actorRef.tell(new PubRecResponseMsg(sessionId, packetId));
+                    actorRef.tell(new PubRecResponseMsg(sessionId, mqttMsgWrapper));
                     break;
                 default:
                     throw new NotSupportedQoSLevelException("QoS level " + mqttQoS + " is not supported.");

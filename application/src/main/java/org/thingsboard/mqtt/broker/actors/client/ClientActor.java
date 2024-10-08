@@ -205,7 +205,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processPubRecResponseMsg(PubRecResponseMsg msg) {
         try {
-            mqttMessageHandler.processPubRecResponse(state.getCurrentSessionCtx(), msg.getMessageId());
+            mqttMessageHandler.processPubRecResponse(state.getCurrentSessionCtx(), msg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process PUBREC response for message {}.",
                     state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(), e);
@@ -216,7 +216,7 @@ public class ClientActor extends ContextAwareActor {
 
     private void processPubAckResponseMsg(PubAckResponseMsg msg) {
         try {
-            mqttMessageHandler.processPubAckResponse(state.getCurrentSessionCtx(), msg.getMessageId());
+            mqttMessageHandler.processPubAckResponse(state.getCurrentSessionCtx(), msg);
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process PUBACK response for message {}.",
                     state.getClientId(), state.getCurrentSessionId(), msg.getMessageId(), e);

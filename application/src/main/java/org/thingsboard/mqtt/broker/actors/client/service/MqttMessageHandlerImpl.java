@@ -19,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubAckMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubCompMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
@@ -77,12 +79,12 @@ public class MqttMessageHandlerImpl implements MqttMessageHandler {
     }
 
     @Override
-    public void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId) {
-        messageHandlers.getPublishHandler().processPubAckResponse(clientSessionCtx, msgId);
+    public void processPubAckResponse(ClientSessionCtx clientSessionCtx, PubAckResponseMsg msg) {
+        messageHandlers.getPublishHandler().processPubAckResponse(clientSessionCtx, msg);
     }
 
     @Override
-    public void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId) {
-        messageHandlers.getPublishHandler().processPubRecResponse(clientSessionCtx, msgId);
+    public void processPubRecResponse(ClientSessionCtx clientSessionCtx, PubRecResponseMsg msg) {
+        messageHandlers.getPublishHandler().processPubRecResponse(clientSessionCtx, msg);
     }
 }

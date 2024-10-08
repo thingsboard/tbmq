@@ -27,8 +27,11 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.MqttException;
@@ -96,9 +99,9 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void givenProcessedQos1Msg_whenProcessPubAckResponse_thenSendPubAckMsg() {
-        mqttPublishHandler.processAtLeastOnce(ctx, 1);
+        MqttMsgWrapper mqttMsgWrapper = mqttPublishHandler.processAtLeastOnce(ctx, 1);
 
-        mqttPublishHandler.processPubAckResponse(ctx, 1);
+        mqttPublishHandler.processPubAckResponse(ctx, new PubAckResponseMsg(UUID.randomUUID(), mqttMsgWrapper));
 
         verify(mqttMessageGenerator, times(1)).createPubAckMsg(1, null);
         verify(ctx, times(2)).getChannel();
@@ -106,9 +109,9 @@ public class MqttPublishHandlerTest {
 
     @Test
     public void givenProcessedQos2Msg_whenProcessPubRecResponse_thenSendPubRecMsg() {
-        mqttPublishHandler.processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
+        MqttMsgWrapper mqttMsgWrapper = mqttPublishHandler.processExactlyOnce(ctx, 1);
 
-        mqttPublishHandler.processPubRecResponse(ctx, 1);
+        mqttPublishHandler.processPubRecResponse(ctx, new PubRecResponseMsg(UUID.randomUUID(), mqttMsgWrapper));
 
         verify(mqttMessageGenerator, times(1)).createPubRecMsg(1, null);
         verify(ctx, times(2)).getChannel();
@@ -292,13 +295,13 @@ public class MqttPublishHandlerTest {
         PublishMsg publishMsg = getPublishMsg(1, 2);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
-        verify(mqttPublishHandler, times(1)).processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
+        verify(mqttPublishHandler, times(1)).processExactlyOnce(ctx, 1);
 
         publishMsg = getPublishMsg(2, 1);
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
 
         verify(mqttPublishHandler, times(1)).processAtLeastOnce(eq(ctx), eq(2));
-        verify(mqttPublishHandler, times(2)).persistPubMsg(eq(ctx), any(), eq(actorRef));
+        verify(mqttPublishHandler, times(2)).persistPubMsg(eq(ctx), any(), eq(actorRef), any());
     }
 
     @Test
@@ -308,9 +311,9 @@ public class MqttPublishHandlerTest {
         PublishMsg publishMsg = getPublishMsg(1, 2, true);
 
         mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
-        verify(mqttPublishHandler, times(1)).processExactlyOnceAndCheckIfAlreadyPublished(ctx, actorRef, 1);
+        verify(mqttPublishHandler, times(1)).processExactlyOnce(ctx, 1);
 
-        verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), any(), eq(actorRef));
+        verify(mqttPublishHandler, times(1)).persistPubMsg(eq(ctx), any(), eq(actorRef), any());
         verify(retainedMsgProcessor, times(1)).process(eq(publishMsg));
     }
 

@@ -44,77 +44,84 @@ public class OrderedProcessingQueueImplTest {
     public void givenEmptyQueue_whenAddMoreThanLimitAwaiting_thenThrowException() {
         for (int i = 0; i < 10; i++) {
             final int msgId = i;
-            assertDoesNotThrow(() -> orderedProcessingQueue.addAwaiting(msgId));
+            assertDoesNotThrow(() -> orderedProcessingQueue.addMsgId(msgId));
         }
-        assertThrows(FullMsgQueueException.class, () -> orderedProcessingQueue.addAwaiting(10));
-    }
-
-    @Test
-    public void givenEmptyAwaitingQueue_whenTryAcknowledgeMsg_thenThrowException() {
-        assertThrows(FullMsgQueueException.class, () -> orderedProcessingQueue.finish(0));
+        assertThrows(FullMsgQueueException.class, () -> orderedProcessingQueue.addMsgId(10));
     }
 
     @Test
     public void givenNonEmptyQueue_whenFinishMessages_thenReturnExpectedResult() {
-        orderedProcessingQueue.addAwaiting(1);
-        orderedProcessingQueue.addAwaiting(2);
-        orderedProcessingQueue.addAwaiting(3);
+        MqttMsgWrapper mqttMsgWrapper1 = orderedProcessingQueue.addMsgId(1);
+        MqttMsgWrapper mqttMsgWrapper2 = orderedProcessingQueue.addMsgId(2);
+        MqttMsgWrapper mqttMsgWrapper3 = orderedProcessingQueue.addMsgId(3);
 
-        List<Integer> finished = orderedProcessingQueue.finish(5);
+        List<Integer> finished = orderedProcessingQueue.ack(createMsgWrapper(5));
         assertTrue(CollectionUtils.isEmpty(finished));
-        finished = orderedProcessingQueue.finish(4);
+        finished = orderedProcessingQueue.ack(createMsgWrapper(4));
         assertTrue(CollectionUtils.isEmpty(finished));
-        finished = orderedProcessingQueue.finish(3);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper3);
         assertTrue(CollectionUtils.isEmpty(finished));
-        assertThrows(FullMsgQueueException.class, () -> orderedProcessingQueue.finish(2));
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper2);
+        assertTrue(CollectionUtils.isEmpty(finished));
 
-        finished = orderedProcessingQueue.finish(1);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper1);
         assertEquals(List.of(1, 2, 3), finished);
 
-        assertTrue(orderedProcessingQueue.getAwaitingMsgIds().isEmpty());
-        assertEquals(2, orderedProcessingQueue.getFinishedMsgIds().size()); // msgIds = 4,5
+        assertQueueIsEmpty();
     }
 
     @Test
     public void givenNonEmptyQueue_whenFinishMsgInOrder_thenReturnResult() {
-        orderedProcessingQueue.addAwaiting(1);
-        List<Integer> finished = orderedProcessingQueue.finish(1);
+        MqttMsgWrapper mqttMsgWrapper1 = orderedProcessingQueue.addMsgId(1);
+        List<Integer> finished = orderedProcessingQueue.ack(mqttMsgWrapper1);
         assertEquals(List.of(1), finished);
 
-        orderedProcessingQueue.addAwaiting(2);
-        finished = orderedProcessingQueue.finish(2);
+        MqttMsgWrapper mqttMsgWrapper2 = orderedProcessingQueue.addMsgId(2);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper2);
         assertEquals(List.of(2), finished);
 
-        orderedProcessingQueue.addAwaiting(3);
-        finished = orderedProcessingQueue.finish(3);
+        MqttMsgWrapper mqttMsgWrapper3 = orderedProcessingQueue.addMsgId(3);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper3);
         assertEquals(List.of(3), finished);
 
-        assertQueuesAreEmpty();
+        assertQueueIsEmpty();
     }
 
     @Test
     public void givenNonEmptyQueue_whenFinishAllMessages_thenReturnExpectedResult() {
-        orderedProcessingQueue.addAwaiting(1);
-        orderedProcessingQueue.addAwaiting(1);
-        orderedProcessingQueue.addAwaiting(2);
-        orderedProcessingQueue.addAwaiting(2);
-        orderedProcessingQueue.addAwaiting(3);
-        orderedProcessingQueue.addAwaiting(3);
+        MqttMsgWrapper mqttMsgWrapper1_0 = orderedProcessingQueue.addMsgId(1);
+        MqttMsgWrapper mqttMsgWrapper1_1 = orderedProcessingQueue.addMsgId(1);
+        MqttMsgWrapper mqttMsgWrapper2_0 = orderedProcessingQueue.addMsgId(2);
+        MqttMsgWrapper mqttMsgWrapper2_1 = orderedProcessingQueue.addMsgId(2);
+        MqttMsgWrapper mqttMsgWrapper3_0 = orderedProcessingQueue.addMsgId(3);
+        MqttMsgWrapper mqttMsgWrapper3_1 = orderedProcessingQueue.addMsgId(3);
 
-        List<Integer> finished = orderedProcessingQueue.finishAll(3);
+        List<Integer> finished = orderedProcessingQueue.ack(mqttMsgWrapper3_0);
         assertTrue(CollectionUtils.isEmpty(finished));
 
-        finished = orderedProcessingQueue.finishAll(1);
-        assertEquals(List.of(1, 1), finished);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper3_1);
+        assertTrue(CollectionUtils.isEmpty(finished));
 
-        finished = orderedProcessingQueue.finishAll(2);
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper1_0);
+        assertEquals(List.of(1), finished);
+
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper1_1);
+        assertEquals(List.of(1), finished);
+
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper2_1);
+        assertTrue(CollectionUtils.isEmpty(finished));
+
+        finished = orderedProcessingQueue.ack(mqttMsgWrapper2_0);
         assertEquals(List.of(2, 2, 3, 3), finished);
 
-        assertQueuesAreEmpty();
+        assertQueueIsEmpty();
     }
 
-    private void assertQueuesAreEmpty() {
-        assertTrue(orderedProcessingQueue.getAwaitingMsgIds().isEmpty());
-        assertTrue(orderedProcessingQueue.getFinishedMsgIds().isEmpty());
+    private void assertQueueIsEmpty() {
+        assertEquals(0, orderedProcessingQueue.getQueueSize().get());
+    }
+
+    private MqttMsgWrapper createMsgWrapper(int msgId) {
+        return MqttMsgWrapper.newInstance(msgId);
     }
 }
