@@ -19,83 +19,69 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * Not thread-safe
- */
 @RequiredArgsConstructor
 @Getter
 public class OrderedProcessingQueueImpl implements OrderedProcessingQueue {
 
-    private final Queue<Integer> awaitingMsgIds = new LinkedList<>();
-    private final Queue<Integer> finishedMsgIds = new LinkedList<>();
+    private final Queue<MqttMsgWrapper> receivedMsgQueue = new ConcurrentLinkedQueue<>();
+    private final AtomicInteger queueSize = new AtomicInteger();
+    private final Lock lock = new ReentrantLock();
 
     private final int maxAwaitingQueueSize;
 
     @Override
-    public void addAwaiting(int msgId) throws FullMsgQueueException {
-        if (awaitingMsgIds.size() >= maxAwaitingQueueSize) {
-            throw new FullMsgQueueException("In-flight queue size is already " + awaitingMsgIds.size());
+    public MqttMsgWrapper addMsgId(int msgId) throws FullMsgQueueException {
+        if (queueSize.get() >= maxAwaitingQueueSize) {
+            throw new FullMsgQueueException("In-flight queue size is already " + queueSize.get());
         }
-        awaitingMsgIds.add(msgId);
+
+        MqttMsgWrapper msgStatus = MqttMsgWrapper.newInstance(msgId);
+        receivedMsgQueue.add(msgStatus);
+        queueSize.incrementAndGet();
+        return msgStatus;
     }
 
     @Override
-    public List<Integer> finish(int msgId) throws FullMsgQueueException {
-        if (awaitingMsgIds.isEmpty()) {
-            throw new FullMsgQueueException("In-flight messages queue is empty, nothing to acknowledge");
-        }
-        if (awaitingMsgIds.peek() != msgId) {
-            finishedMsgIds.add(msgId);
-            if (awaitingMsgIds.size() < finishedMsgIds.size()) {
-                throw new FullMsgQueueException("In-flight messages - " + awaitingMsgIds.size() + ", finished messages - " + finishedMsgIds.size());
-            }
+    public List<Integer> ack(MqttMsgWrapper msgWrapper) {
+        if (msgWrapper == null) {
             return Collections.emptyList();
         }
-        awaitingMsgIds.poll();
-        LinkedList<Integer> orderedFinishedMessages = getOrderedFinishedMessages();
-        orderedFinishedMessages.addFirst(msgId);
-        return orderedFinishedMessages;
+        msgWrapper.setAck(true);
+
+        return tryProcess();
     }
 
-    @Override
-    public List<Integer> finishAll(int msgId) throws FullMsgQueueException {
-        long numberOfAwaitingMessages = getCountOfAwaitingMessagesById(msgId);
-        LinkedList<Integer> orderedFinishedMessages = new LinkedList<>();
-        for (int i = 0; i < numberOfAwaitingMessages; i++) {
-            orderedFinishedMessages.addAll(finish(msgId));
-        }
-        return orderedFinishedMessages;
-    }
+    private List<Integer> tryProcess() {
+        List<Integer> list = new ArrayList<>();
 
-    private LinkedList<Integer> getOrderedFinishedMessages() {
-        LinkedList<Integer> orderedFinishedMessages = new LinkedList<>();
-        boolean isSequenceBroken = false;
-        while (!awaitingMsgIds.isEmpty() && !isSequenceBroken) {
-            int firstAwaitingMsg = awaitingMsgIds.peek();
-            if (finishedMsgIds.contains(firstAwaitingMsg)) {
-                finishedMsgIds.remove(firstAwaitingMsg);
-                awaitingMsgIds.poll();
-                orderedFinishedMessages.add(firstAwaitingMsg);
-            } else {
-                isSequenceBroken = true;
+        MqttMsgWrapper head;
+        while ((head = receivedMsgQueue.peek()) != null && head.isAck()) {
+            if (!lock.tryLock()) {
+                return Collections.emptyList();
+            }
+            try {
+                while ((head = receivedMsgQueue.peek()) != null && head.isAck()) {
+                    final MqttMsgWrapper polled = receivedMsgQueue.poll();
+                    queueSize.decrementAndGet();
+                    if (head != polled) {  // double-check
+                        throw new RuntimeException("Polled head [" + polled + "] is not the same as peeked head [" + head + "]. Msg order is broken");
+                    }
+                    list.add(polled.getMsgId());
+                }
+            } finally {
+                lock.unlock();
             }
         }
-        return orderedFinishedMessages;
-    }
-
-    private long getCountOfAwaitingMessagesById(int msgId) {
-        int count = 0;
-        for (int i : awaitingMsgIds) {
-            if (i == msgId) {
-                count++;
-            }
-        }
-        return count;
+        return list;
     }
 
 }

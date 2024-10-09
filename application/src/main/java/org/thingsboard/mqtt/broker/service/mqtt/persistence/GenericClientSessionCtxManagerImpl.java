@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
@@ -47,13 +48,17 @@ public class GenericClientSessionCtxManagerImpl implements GenericClientSessionC
     @Override
     public void resendPersistedPubRelMessages(ClientSessionCtx clientSessionCtx) {
         Set<Integer> awaitingQoS2PacketIds = getAwaitingQoS2PacketIds(clientSessionCtx);
+        if (CollectionUtils.isEmpty(awaitingQoS2PacketIds)) {
+            return;
+        }
 
         AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = clientSessionCtx.getAwaitingPubRelPacketsCtx();
         awaitingPubRelPacketsCtx.loadPersistedPackets(awaitingQoS2PacketIds);
 
         MqttReasonCodes.PubRec code = MqttReasonCodeResolver.pubRecSuccess(clientSessionCtx);
         awaitingQoS2PacketIds.forEach(packetId ->
-                clientSessionCtx.getChannel().writeAndFlush(mqttMessageGenerator.createPubRecMsg(packetId, code)));
+                clientSessionCtx.getChannel().write(mqttMessageGenerator.createPubRecMsg(packetId, code)));
+        clientSessionCtx.getChannel().flush();
     }
 
     private Set<Integer> getAwaitingQoS2PacketIds(ClientSessionCtx clientSessionCtx) {
