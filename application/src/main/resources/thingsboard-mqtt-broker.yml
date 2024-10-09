@@ -244,9 +244,9 @@ queue:
     shared-topic-validation: "${TB_APP_PERSISTED_MSG_SHARED_TOPIC_VALIDATION:true}"
   device-persisted-msg:
     # Number of parallel consumers for 'tbmq.msg.persisted' topic. Should not be more than the number of partitions in topic
-    consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:2}"
+    consumers-count: "${TB_DEVICE_PERSISTED_MSG_CONSUMERS_COUNT:3}"
     # Number of threads in the pool to process consumers tasks
-    threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:2}"
+    threads-count: "${TB_DEVICE_PERSISTED_MSG_THREADS_COUNT:3}"
     # Interval in milliseconds to poll messages from 'tbmq.msg.persisted' topic
     poll-interval: "${TB_DEVICE_PERSISTED_MSG_POLL_INTERVAL:100}"
     # Timeout in milliseconds for processing the pack of messages from 'tbmq.msg.persisted' topic
@@ -528,7 +528,7 @@ actors:
     disconnect-wait-timeout-ms: "${ACTORS_SYSTEM_DISCONNECT_WAIT_TIMEOUT_MS:2000}"
   persisted-device:
     # Number of threads processing the Device actor's messages
-    dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:4}"
+    dispatcher-pool-size: "${ACTORS_SYSTEM_PERSISTED_DEVICE_DISPATCHER_POOL_SIZE:8}"
     # Minutes to wait before deleting Device actor after disconnect
     wait-before-actor-stop-minutes: "${ACTORS_SYSTEM_PERSISTED_DEVICE_WAIT_BEFORE_ACTOR_STOP_MINUTES:5}"
   client:
@@ -708,7 +708,7 @@ mqtt:
     initial-delay: "${MQTT_RETRANSMISSION_INITIAL_DELAY:10}"
     # Increment period for the subsequent retransmissions of the msg in seconds (retransmission interval is increased by period for each run)
     period: "${MQTT_RETRANSMISSION_PERIOD:5}"
-  # If enabled, each message is published to subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
+  # If enabled, each message is published to non-persistent subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
   write-and-flush: "${MQTT_MSG_WRITE_AND_FLUSH:true}"
   # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false
   buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
@@ -765,9 +765,13 @@ mqtt:
     device:
       persisted-messages:
         # Maximum number of PUBLISH messages stored for each persisted DEVICE client
-        limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:1000}"
+        limit: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT:10000}"
         # TTL of persisted DEVICE messages in seconds. The current value corresponds to one week
         ttl: "${MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_TTL:604800}"
+        # If enabled, each message is published to persistent DEVICE client subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
+        write-and-flush: "${MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH:true}"
+        # Number of messages buffered in the channel before the flush is made. Used when `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` = false
+        buffered-msg-count: "${MQTT_PERSISTENT_BUFFERED_MSG_COUNT:5}"
   rate-limits:
     # The number of parallel threads dedicated to processing total rate limit checks for incoming messages
     threads-count: "${MQTT_RATE_LIMITS_THREADS_COUNT:1}"

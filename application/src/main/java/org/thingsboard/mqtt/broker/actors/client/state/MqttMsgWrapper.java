@@ -15,11 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import java.util.List;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-public interface OrderedProcessingQueue {
+@Builder
+@Getter
+@ToString
+public class MqttMsgWrapper {
 
-    MqttMsgWrapper addMsgId(int msgId);
+    private final int msgId;
+    @Setter
+    private volatile boolean ack;
 
-    List<Integer> ack(MqttMsgWrapper msgWrapper);
+    public static MqttMsgWrapper newInstance(int msgId) {
+        return MqttMsgWrapper.builder().msgId(msgId).build();
+    }
 }

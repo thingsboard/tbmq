@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.messages;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.client.state.MqttMsgWrapper;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 
 import java.util.UUID;
@@ -25,15 +26,19 @@ import java.util.UUID;
 @Getter
 public class PubRecResponseMsg extends SessionDependentMsg {
 
-    private final int messageId;
+    private final MqttMsgWrapper mqttMsgWrapper;
 
-    public PubRecResponseMsg(UUID sessionId, int messageId) {
+    public PubRecResponseMsg(UUID sessionId, MqttMsgWrapper mqttMsgWrapper) {
         super(sessionId);
-        this.messageId = messageId;
+        this.mqttMsgWrapper = mqttMsgWrapper;
     }
 
     @Override
     public MsgType getMsgType() {
         return MsgType.PUBREC_RESPONSE_MSG;
+    }
+
+    public int getMessageId() {
+        return mqttMsgWrapper.getMsgId();
     }
 }
