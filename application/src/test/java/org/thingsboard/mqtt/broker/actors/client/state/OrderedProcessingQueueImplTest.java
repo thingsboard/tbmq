@@ -15,27 +15,31 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.exception.FullMsgQueueException;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.spy;
 
-@RunWith(MockitoJUnitRunner.class)
 public class OrderedProcessingQueueImplTest {
 
     OrderedProcessingQueueImpl orderedProcessingQueue;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         orderedProcessingQueue = spy(new OrderedProcessingQueueImpl(10));
     }
@@ -50,7 +54,13 @@ public class OrderedProcessingQueueImplTest {
     }
 
     @Test
-    public void givenNonEmptyQueue_whenFinishMessages_thenReturnExpectedResult() {
+    public void givenNoMessages_whenAckMsgThatIsNull_thenReturnEmptyList() {
+        List<Integer> ack = orderedProcessingQueue.ack(null);
+        assertThat(ack).isEmpty();
+    }
+
+    @Test
+    public void givenNonEmptyQueue_whenAckMessages_thenReturnExpectedResult() {
         MqttMsgWrapper mqttMsgWrapper1 = orderedProcessingQueue.addMsgId(1);
         MqttMsgWrapper mqttMsgWrapper2 = orderedProcessingQueue.addMsgId(2);
         MqttMsgWrapper mqttMsgWrapper3 = orderedProcessingQueue.addMsgId(3);
@@ -71,7 +81,7 @@ public class OrderedProcessingQueueImplTest {
     }
 
     @Test
-    public void givenNonEmptyQueue_whenFinishMsgInOrder_thenReturnResult() {
+    public void givenNonEmptyQueue_whenAckMsgInOrder_thenReturnResult() {
         MqttMsgWrapper mqttMsgWrapper1 = orderedProcessingQueue.addMsgId(1);
         List<Integer> finished = orderedProcessingQueue.ack(mqttMsgWrapper1);
         assertEquals(List.of(1), finished);
@@ -88,7 +98,7 @@ public class OrderedProcessingQueueImplTest {
     }
 
     @Test
-    public void givenNonEmptyQueue_whenFinishAllMessages_thenReturnExpectedResult() {
+    public void givenNonEmptyQueue_whenAckSameMessages_thenReturnExpectedResult() {
         MqttMsgWrapper mqttMsgWrapper1_0 = orderedProcessingQueue.addMsgId(1);
         MqttMsgWrapper mqttMsgWrapper1_1 = orderedProcessingQueue.addMsgId(1);
         MqttMsgWrapper mqttMsgWrapper2_0 = orderedProcessingQueue.addMsgId(2);
@@ -117,8 +127,28 @@ public class OrderedProcessingQueueImplTest {
         assertQueueIsEmpty();
     }
 
+    @ParameterizedTest
+    @MethodSource("givenAddedMsgs_whenAckMsgsShuffled_thenAllSucceed")
+    public void givenAddedMsgs_whenAckMsgsShuffled_thenAllSucceed(List<Integer> addMsgIds) {
+        List<MqttMsgWrapper> added = addMsgIds.stream()
+                .map(id -> orderedProcessingQueue.addMsgId(id)).collect(Collectors.toList());
+        Collections.shuffle(added);
+        added.forEach(msgWrapper -> orderedProcessingQueue.ack(msgWrapper));
+        assertQueueIsEmpty();
+    }
+
+    private static Stream<Arguments> givenAddedMsgs_whenAckMsgsShuffled_thenAllSucceed() {
+        return Stream.of(
+                Arguments.of(List.of(1, 2, 3, 4, 5)),
+                Arguments.of(List.of(1, 2, 3, 4, 5, 6)),
+                Arguments.of(List.of(1, 2, 3, 4, 5, 6, 7)),
+                Arguments.of(List.of(1, 3, 3, 5, 5, 5, 10000))
+        );
+    }
+
     private void assertQueueIsEmpty() {
-        assertEquals(0, orderedProcessingQueue.getQueueSize().get());
+        assertThat(orderedProcessingQueue.getQueueSize().get()).isEqualTo(0);
+        assertThat(orderedProcessingQueue.getReceivedMsgQueue().size()).isZero();
     }
 
     private MqttMsgWrapper createMsgWrapper(int msgId) {
