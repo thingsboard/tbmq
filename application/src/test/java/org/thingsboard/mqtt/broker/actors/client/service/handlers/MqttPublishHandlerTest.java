@@ -51,6 +51,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -83,6 +84,7 @@ public class MqttPublishHandlerTest {
 
     ClientSessionCtx ctx;
     TbActorRef actorRef;
+    AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx;
 
     @Before
     public void setUp() {
@@ -93,7 +95,8 @@ public class MqttPublishHandlerTest {
         when(ctx.getChannel()).thenReturn(channelHandlerContext);
 
         when(ctx.getPubResponseProcessingCtx()).thenReturn(new PubResponseProcessingCtx(MAX_AWAITING_QUEUE_SIZE));
-        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(new AwaitingPubRelPacketsCtx());
+        awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
+        when(ctx.getAwaitingPubRelPacketsCtx()).thenReturn(awaitingPubRelPacketsCtx);
         when(ctx.getTopicAliasCtx()).thenReturn(new TopicAliasCtx(false, 0));
     }
 
@@ -108,6 +111,16 @@ public class MqttPublishHandlerTest {
     }
 
     @Test
+    public void givenProcessedQos1Msg_whenProcessPubAckResponseInWrongOrder_thenDoNotSendPubAckMsg() {
+        mqttPublishHandler.processAtLeastOnce(ctx, 1);
+
+        mqttPublishHandler.processPubAckResponse(ctx, new PubAckResponseMsg(UUID.randomUUID(), MqttMsgWrapper.newInstance(2)));
+
+        verify(mqttMessageGenerator, never()).createPubAckMsg(anyInt(), any());
+        verify(ctx, never()).getChannel();
+    }
+
+    @Test
     public void givenProcessedQos2Msg_whenProcessPubRecResponse_thenSendPubRecMsg() {
         MqttMsgWrapper mqttMsgWrapper = mqttPublishHandler.processExactlyOnce(ctx, 1);
 
@@ -115,6 +128,16 @@ public class MqttPublishHandlerTest {
 
         verify(mqttMessageGenerator, times(1)).createPubRecMsg(1, null);
         verify(ctx, times(2)).getChannel();
+    }
+
+    @Test
+    public void givenProcessedQos2Msg_whenProcessPubRecResponseInWrongOrder_thenDoNotSendPubRecMsg() {
+        mqttPublishHandler.processExactlyOnce(ctx, 1);
+
+        mqttPublishHandler.processPubRecResponse(ctx, new PubRecResponseMsg(UUID.randomUUID(), MqttMsgWrapper.newInstance(2)));
+
+        verify(mqttMessageGenerator, never()).createPubRecMsg(anyInt(), any());
+        verify(ctx, never()).getChannel();
     }
 
     @Test(expected = MqttException.class)
@@ -286,6 +309,57 @@ public class MqttPublishHandlerTest {
         assertThat(result).isFalse();
 
         verify(mqttMessageGenerator, times(1)).createPubRecMsg(eq(2), eq(MqttReasonCodes.PubRec.TOPIC_NAME_INVALID));
+    }
+
+    @Test
+    public void givenPublishMsg_whenProcessPubMsgWithErrorInTopicAliasExecution_thenDisconnectClient() {
+        PublishMsg publishMsg = getPublishMsg(2, "test/+", 2);
+
+        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
+        when(ctx.getTopicAliasCtx()).thenReturn(topicAliasCtx);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(topicAliasCtx.getTopicNameByAlias(publishMsg)).thenThrow(MqttException.class);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        ArgumentCaptor<MqttDisconnectMsg> newMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, times(1)).disconnect(eq("clientId"), newMsgCaptor.capture());
+
+        MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
+        assertThat(disconnectMsg).isNotNull();
+        assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_TOPIC_ALIAS_INVALID);
+    }
+
+    @Test
+    public void givenPublishMsg_whenProcessPubMsgWithUnknownTopicAlias_thenDisconnectClient() {
+        PublishMsg publishMsg = getPublishMsg(1, "test/+", 1);
+
+        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
+        when(ctx.getTopicAliasCtx()).thenReturn(topicAliasCtx);
+        when(ctx.getClientId()).thenReturn("clientId");
+        when(topicAliasCtx.getTopicNameByAlias(publishMsg)).thenThrow(new MqttException(TopicAliasCtx.UNKNOWN_TOPIC_ALIAS_MSG));
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        ArgumentCaptor<MqttDisconnectMsg> newMsgCaptor = ArgumentCaptor.forClass(MqttDisconnectMsg.class);
+        verify(clientMqttActorManager, times(1)).disconnect(eq("clientId"), newMsgCaptor.capture());
+
+        MqttDisconnectMsg disconnectMsg = newMsgCaptor.getValue();
+        assertThat(disconnectMsg).isNotNull();
+        assertThat(disconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_PROTOCOL_ERROR);
+    }
+
+    @Test
+    public void givenSamePublishMsg_whenProcessPubMsgTwice_thenPersistMsgOnlyOnce() {
+        when(publishMsgValidationService.validatePubMsg(any(), any())).thenReturn(true);
+
+        PublishMsg publishMsg = getPublishMsg(1, 2);
+
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+        mqttPublishHandler.process(ctx, createMqttPubMsg(publishMsg), actorRef);
+
+        verify(mqttPublishHandler, times(2)).processExactlyOnce(eq(ctx), eq(1));
+        verify(mqttPublishHandler).persistPubMsg(eq(ctx), any(), eq(actorRef), any()); // second process will not cause to persist a duplicate msg into Kafka
     }
 
     @Test
