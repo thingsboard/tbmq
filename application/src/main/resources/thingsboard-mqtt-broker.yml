@@ -980,9 +980,9 @@ swagger:
   description: "${SWAGGER_DESCRIPTION:TBMQ open-source REST API documentation}"
   contact:
     # The contact name on the API doc UI page
-    name: "${SWAGGER_CONTACT_NAME:ThingsBoard team}"
+    name: "${SWAGGER_CONTACT_NAME:TBMQ team}"
     # The contact URL on the API doc UI page
-    url: "${SWAGGER_CONTACT_URL:https://thingsboard.io}"
+    url: "${SWAGGER_CONTACT_URL:https://thingsboard.io/products/mqtt-broker/}"
     # The contact email on the API doc UI page
     email: "${SWAGGER_CONTACT_EMAIL:info@thingsboard.io}"
   license:
