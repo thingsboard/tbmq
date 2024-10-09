@@ -22,9 +22,7 @@ import {
   ElementRef,
   EventEmitter,
   Input,
-  OnChanges,
   OnInit,
-  SimpleChanges,
   ViewChild,
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
@@ -35,9 +33,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
-import { catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
-import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
+import { merge, Observable, Subscription } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
@@ -53,13 +51,10 @@ import {
 } from '@home/models/entity/entities-table-config.models';
 import { EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
-import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
-import { BreakpointObserver } from '@angular/cdk/layout';
-import { MediaBreakpoints } from '@shared/models/constants';
-import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page.model";
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 
 @Component({
   selector: 'tb-entities-table-ws',
@@ -67,7 +62,7 @@ import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page
   styleUrls: ['./entities-table-ws.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
+export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
 
   @Input()
   entitiesTableConfig: EntityTableConfig<BaseData>;
@@ -105,7 +100,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
   isFullscreen = false;
-  hidePageSize: Observable<boolean>;
+  hidePageSize = false;
 
   @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
 
@@ -116,7 +111,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
-  private homePageTitleResources = homePageTitleConfig;
 
   constructor(protected store: Store<AppState>,
               public route: ActivatedRoute,
@@ -124,7 +118,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
               public dialog: MatDialog,
               private dialogService: DialogService,
               private domSanitizer: DomSanitizer,
-              private breakpointObserver: BreakpointObserver,
+              private mqttJsClientService: MqttJsClientService,
               private router: Router,
               private componentFactoryResolver: ComponentFactoryResolver) {
     super(store);
@@ -135,17 +129,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.init(this.entitiesTableConfig);
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
-    }
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName of Object.keys(changes)) {
-      const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'entitiesTableConfig' && change.currentValue) {
-          this.init(change.currentValue);
-        }
-      }
     }
   }
 
@@ -169,25 +152,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
     this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
 
-    if (this.entitiesTableConfig.entitiesDeleteEnabled) {
-      this.cellActionDescriptors.push(
-        {
-          name: this.translate.instant('action.delete'),
-          icon: 'mdi:trash-can-outline',
-          isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
-          onAction: ($event, entity) => this.deleteEntity($event, entity)
-        }
-      );
-      this.groupActionDescriptors.push(
-        {
-          name: this.translate.instant('action.delete'),
-          icon: 'mdi:trash-can-outline',
-          isEnabled: true,
-          onAction: ($event, entities) => this.deleteEntities($event, entities)
-        }
-      );
-    }
-
     const enabledGroupActionDescriptors =
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
@@ -204,9 +168,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     }
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.hidePageSize = this.breakpointObserver.observe(MediaBreakpoints['xs']).pipe(map(({matches}) => matches));
-    this.defaultPageSize = this.calcDefaultPageSize();
-    this.pageSizeOptions = [5, 10, 15, 20];
+    this.defaultPageSize = 10;
+    this.pageSizeOptions = [3, 10, 20, 50];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
@@ -224,18 +187,12 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   ngAfterViewInit() {
-    /*fromEvent(this.searchInputField.nativeElement, 'keyup')
-      .pipe(
-        debounceTime(150),
-        distinctUntilChanged(),
-        tap(() => {
-          if (this.displayPagination) {
-            this.paginator.pageIndex = 0;
-          }
-          this.updateData();
-        })
-      )
-      .subscribe();*/
+    this.mqttJsClientService.connection$.subscribe(
+      () => {
+        this.paginator.pageIndex = 0;
+        this.init(this.entitiesTableConfig);
+      }
+    );
     this.updatePaginationSubscriptions();
     this.updateData();
     this.viewInited = true;
@@ -259,10 +216,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
         tap(() => this.updateData())
       )
       .subscribe();
-  }
-
-  addEnabled() {
-    return this.entitiesTableConfig.addEnabled;
   }
 
   updateData(closeDetails: boolean = true) {
@@ -313,109 +266,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.isDetailsOpen = !this.isDetailsOpen;
     }
     this.detailsPanelOpened.emit(this.isDetailsOpen);
-  }
-
-  addEntity($event: Event) {
-
-  }
-
-  onEntityUpdated(entity: BaseData) {
-    this.updateData(false);
-    this.entitiesTableConfig.entityUpdated(entity);
-  }
-
-  onEntityAction(action: EntityAction<BaseData>) {
-    if (action.action === 'delete') {
-      this.deleteEntity(action.event, action.entity);
-    }
-  }
-
-  deleteEntity($event: Event, entity: BaseData) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntityTitle(entity),
-      this.entitiesTableConfig.deleteEntityContent(entity),
-      this.translate.instant('action.no'),
-      this.translate.instant('action.yes'),
-      true
-    ).subscribe((result) => {
-      if (result) {
-        this.entitiesTableConfig.deleteEntity(entity.id).subscribe(
-          () => {
-            this.updateData();
-            this.entitiesTableConfig.entitiesDeleted([entity.id]);
-          }
-        );
-      }
-    });
-  }
-
-  deleteEntities($event: Event, entities: BaseData[]) {
-    if ($event) {
-      $event.stopPropagation();
-    }
-    this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntitiesTitle(entities.length),
-      this.entitiesTableConfig.deleteEntitiesContent(entities.length),
-      this.translate.instant('action.no'),
-      this.translate.instant('action.yes'),
-      true
-    ).subscribe((result) => {
-      if (result) {
-        const tasks: Observable<string>[] = [];
-        entities.forEach((entity) => {
-          if (this.entitiesTableConfig.deleteEnabled(entity)) {
-            tasks.push(this.entitiesTableConfig.deleteEntity(entity.id).pipe(
-              map(() => entity.id),
-              catchError(() => of(null)
-              )));
-          }
-        });
-        forkJoin(tasks).subscribe(
-          (ids) => {
-            this.updateData();
-            this.entitiesTableConfig.entitiesDeleted(ids.filter(id => id !== null));
-          }
-        );
-      }
-    });
-  }
-
-  enterFilterMode() {
-    this.textSearchMode = true;
-    this.pageLink.textSearch = '';
-    setTimeout(() => {
-      this.searchInputField.nativeElement.focus();
-      this.searchInputField.nativeElement.setSelectionRange(0, 0);
-    }, 10);
-  }
-
-  exitFilterMode() {
-    const updateData = this.pageLink.textSearch.length;
-    this.textSearchMode = false;
-    this.pageLink.textSearch = null;
-    if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
-    }
-    if (updateData) {
-      this.updateData();
-    }
-  }
-
-  resetSortAndFilter(update: boolean = true, preserveTimewindow: boolean = false) {
-    this.textSearchMode = false;
-    this.pageLink.textSearch = null;
-    if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
-    }
-    const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
-    this.sort.active = sortable.id;
-    this.sort.direction = this.entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
-    if (update) {
-      this.updatedRouterParamsAndData({}, '');
-    }
   }
 
   protected updatedRouterParamsAndData(queryParams: object, queryParamsHandling: QueryParamsHandling = 'merge') {
@@ -545,13 +395,5 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   trackByEntityId(index: number, entity: any) {
     return entity.id;
-  }
-
-  calcTableHeight(): string {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
-  }
-
-  private calcDefaultPageSize(): number {
-    return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? 15 : 5;
   }
 }

@@ -127,6 +127,24 @@
                          'tb-current-entity': dataSource.isCurrentEntity(entity)}"
            *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
 </table>
-<section [fxShow]="!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading" style="width: 100%; height: 100%">
-  <span class="no-data-found" fxLayoutAlign="center center">{{ translations.noEntities | translate }}</span>
-</section>
+
+<ng-container *ngIf="!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading; else hasData">
+  <ng-container *ngTemplateOutlet="isEmpty"></ng-container>
+</ng-container>
+
+<mat-paginator *ngIf="displayPagination"
+               [length]="dataSource.total() | async"
+               [pageIndex]="pageLink.page"
+               [pageSize]="pageLink.pageSize"
+               [pageSizeOptions]="pageSizeOptions"
+               [hidePageSize]="hidePageSize"
+               showFirstLastButtons>
+</mat-paginator>
+
+<ng-template #isEmpty>
+  <span class="no-data-found" fxLayoutAlign="center center" translate>{{translations.noEntities}}</span>
+</ng-template>
+
+<ng-template #hasData>
+  <span fxFlex></span>
+</ng-template>

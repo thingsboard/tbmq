@@ -65,7 +65,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
     this.defaultCursor = true;
-    this.displayPagination = false;
+    this.displayPagination = true;
     this.selectionEnabled = false;
 
     this.entityTitle = (message) => message ? message.topic : '';

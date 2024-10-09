@@ -76,7 +76,7 @@ export class MqttJsClientService {
   private mqttClientConnectionMap = new Map<string, WebSocketConnection>();
   private connectionMessagesMap = new Map<string, WsTableMessage[]>();
 
-  private messagesLimit = 50;
+  private messagesLimit = 10000;
   private publishMsgDelay = 200;
   private publishMsgStartTs = null;
   private publishMsgTimeout = null;
@@ -228,7 +228,6 @@ export class MqttJsClientService {
         return typeMatch && topicMatch && qosMatch && retainMatch;
       }).slice(0, this.messagesLimit);
     }
-    const pageData = emptyPageData<WsTableMessage>();
     filteredMessages.sort(function(objA, objB) {
       const sortKey = sortOrder.property;
       if (isNumber(objA[sortKey]) || typeof (objA[sortKey]) === 'boolean') {
@@ -259,7 +258,7 @@ export class MqttJsClientService {
         }
       }
     });
-    pageData.data = [...filteredMessages];
+    const pageData = pageLink.filterData(filteredMessages);
     this.updateMessageCounter(data);
     return of(pageData);
   }
