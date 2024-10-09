@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -33,7 +35,6 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.RetainedMsgConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.Collections;
@@ -51,17 +52,18 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("retained-msg-listener"));
 
+    private final RetainedMsgQueueFactory retainedMsgQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final RetainedMsgPersistenceService persistenceService;
-    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgConsumer;
     private final TbQueueAdmin queueAdmin;
     private final RetainedMsgConsumerStats stats;
 
     public RetainedMsgConsumerImpl(RetainedMsgQueueFactory retainedMsgQueueFactory, ServiceInfoProvider serviceInfoProvider,
                                    RetainedMsgPersistenceService persistenceService, TbQueueAdmin queueAdmin, StatsManager statsManager) {
-        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
-        this.retainedMsgConsumer = retainedMsgQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
-        this.queueAdmin = queueAdmin;
+        this.retainedMsgQueueFactory = retainedMsgQueueFactory;
+        this.serviceInfoProvider = serviceInfoProvider;
         this.persistenceService = persistenceService;
+        this.queueAdmin = queueAdmin;
         this.stats = statsManager.getRetainedMsgConsumerStats();
     }
 
@@ -70,6 +72,16 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
 
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgConsumer;
+
+    @PostConstruct
+    public void init() {
+        long currentCgSuffix = System.currentTimeMillis();
+        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
+        this.retainedMsgConsumer = retainedMsgQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
+        queueAdmin.deleteOldConsumerGroups(BrokerConstants.RETAINED_MSG_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
+    }
 
     @Override
     public Map<String, RetainedMsg> initLoad() throws QueuePersistenceException {

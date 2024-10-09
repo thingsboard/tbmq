@@ -89,7 +89,8 @@ public class GenericClientSessionCtxManagerImplTest {
                         awaitingPacketIds.contains(getQos2PacketInfo(3))
         );
 
-        verify(channelHandlerContext, times(3)).writeAndFlush(any());
+        verify(channelHandlerContext, times(3)).write(any());
+        verify(channelHandlerContext).flush();
     }
 
     @Test

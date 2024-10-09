@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.actors.client.service;
 
 import org.thingsboard.mqtt.broker.actors.TbActorRef;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubAckResponseMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.PubRecResponseMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -23,7 +25,7 @@ public interface MqttMessageHandler {
 
     boolean process(ClientSessionCtx clientSessionCtx, QueueableMqttMsg msg, TbActorRef actorRef);
 
-    void processPubAckResponse(ClientSessionCtx clientSessionCtx, int msgId);
+    void processPubAckResponse(ClientSessionCtx clientSessionCtx, PubAckResponseMsg msg);
 
-    void processPubRecResponse(ClientSessionCtx clientSessionCtx, int msgId);
+    void processPubRecResponse(ClientSessionCtx clientSessionCtx, PubRecResponseMsg msg);
 }

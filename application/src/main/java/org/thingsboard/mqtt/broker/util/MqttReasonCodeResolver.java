@@ -84,12 +84,20 @@ public final class MqttReasonCodeResolver {
         return MqttReasonCodes.PubAck.NOT_AUTHORIZED;
     }
 
+    public static MqttReasonCodes.PubAck pubAckError() {
+        return MqttReasonCodes.PubAck.UNSPECIFIED_ERROR;
+    }
+
     public static MqttReasonCodes.PubRec pubRecTopicNameInvalid() {
         return MqttReasonCodes.PubRec.TOPIC_NAME_INVALID;
     }
 
     public static MqttReasonCodes.PubRec pubRecNotAuthorized() {
         return MqttReasonCodes.PubRec.NOT_AUTHORIZED;
+    }
+
+    public static MqttReasonCodes.PubRec pubRecError() {
+        return MqttReasonCodes.PubRec.UNSPECIFIED_ERROR;
     }
 
     public static MqttReasonCodes.SubAck notAuthorizedSubscribe(ClientSessionCtx ctx) {
