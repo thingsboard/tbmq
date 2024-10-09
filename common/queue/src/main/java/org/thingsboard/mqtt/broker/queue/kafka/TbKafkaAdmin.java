@@ -24,6 +24,7 @@ import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.ListConsumerGroupsOptions;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.ReplicaInfo;
@@ -39,8 +40,8 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaBroker;
@@ -85,7 +86,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
         client = AdminClient.create(adminSettings.toProps());
-//        deleteOldConsumerGroups(); TODO: think about the correct way of deleting old CGs since some of them are doing assign and essentially are empty
         try {
             topics.addAll(client.listTopics().names().get());
         } catch (InterruptedException | ExecutionException e) {
@@ -411,43 +411,57 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
-    private void deleteOldConsumerGroups() {
+    @Override
+    public void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix) {
         long start = System.nanoTime();
-        KafkaFuture<Collection<ConsumerGroupListing>> allCgsFuture = client.listConsumerGroups().all();
-        allCgsFuture.whenComplete((consumerGroupListings, throwable) -> {
-            if (throwable == null) {
-                List<String> groupIdsToDelete = consumerGroupListings
-                        .stream()
-                        .filter(cg -> cg.state().orElse(ConsumerGroupState.UNKNOWN).equals(ConsumerGroupState.EMPTY))
-                        .map(ConsumerGroupListing::groupId)
-                        .filter(this::isConsumerGroupToDelete)
-                        .toList();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
-                }
-                KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
-                deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
-                    if (deleteThrowable == null) {
-                        long end = System.nanoTime();
-                        if (log.isDebugEnabled()) {
-                            log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
-                        }
-                    } else {
-                        log.warn("Failed to delete old consumer groups!", deleteThrowable);
-                    }
-                });
-            } else {
+        ListConsumerGroupsOptions emptyConsumerGroups = new ListConsumerGroupsOptions()
+                .inStates(Set.of(ConsumerGroupState.EMPTY));
+
+        KafkaFuture<Collection<ConsumerGroupListing>> emptyCgsFuture = client.listConsumerGroups(emptyConsumerGroups).all();
+        emptyCgsFuture.whenComplete((consumerGroupListings, throwable) -> {
+            if (throwable != null) {
                 log.warn("Failed to get old consumer groups!", throwable);
+                return;
             }
+            List<String> groupIdsToDelete = consumerGroupListings
+                    .stream()
+                    .map(ConsumerGroupListing::groupId)
+                    .filter(consumerGroupId -> isConsumerGroupToDelete(consumerGroupPrefix, serviceId, currentCgSuffix, consumerGroupId))
+                    .toList();
+
+            if (CollectionUtils.isEmpty(groupIdsToDelete)) {
+                if (log.isDebugEnabled()) {
+                    log.debug("No old consumer groups found for deletion.");
+                }
+                return;
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+            }
+            KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
+            deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
+                if (deleteThrowable == null) {
+                    long end = System.nanoTime();
+                    if (log.isDebugEnabled()) {
+                        log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
+                    }
+                } else {
+                    log.warn("Failed to delete old consumer groups!", deleteThrowable);
+                }
+            });
         });
     }
 
-    private boolean isConsumerGroupToDelete(String consumerGroupId) {
-        if (consumerGroupId == null) {
-            throw new IllegalArgumentException("Consumer group ID cannot be null");
-        }
-        return BrokerConstants.CG_TO_DELETE_PREFIXES.stream().map(prefix -> kafkaPrefix != null ? kafkaPrefix + prefix : prefix).anyMatch(consumerGroupId::startsWith);
+    private boolean isConsumerGroupToDelete(String consumerGroupPrefix, String serviceId, long currentCgSuffix, String consumerGroupId) {
+        String prefix = getPrefix(consumerGroupPrefix);
+        String cgSuffix = Long.toString(currentCgSuffix);
+        return consumerGroupId.startsWith(prefix) && consumerGroupId.contains(serviceId) && !consumerGroupId.contains(cgSuffix);
+    }
+
+    private String getPrefix(String consumerGroupPrefix) {
+        return kafkaPrefix != null ? kafkaPrefix + consumerGroupPrefix : consumerGroupPrefix;
     }
 
     @PreDestroy

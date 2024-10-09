@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -70,7 +71,8 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
     @Override
     public void startConsuming() {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(serviceInfoProvider.getServiceId());
-        String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
+        long currentCgSuffix = System.currentTimeMillis();
+        String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
@@ -79,6 +81,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
         }
+        queueAdmin.deleteOldConsumerGroups(BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
     }
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer) {

@@ -15,14 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -50,15 +51,16 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private final ExecutorService consumerExecutor = Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName("client-subscriptions-listener"));
 
-    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private final ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
     private final SubscriptionPersistenceService persistenceService;
     private final TbQueueAdmin queueAdmin;
     private final ClientSubscriptionConsumerStats stats;
 
     public ClientSubscriptionConsumerImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider,
                                           SubscriptionPersistenceService persistenceService, TbQueueAdmin queueAdmin, StatsManager statsManager) {
-        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
-        this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
+        this.clientSubscriptionsQueueFactory = clientSubscriptionsQueueFactory;
+        this.serviceInfoProvider = serviceInfoProvider;
         this.persistenceService = persistenceService;
         this.queueAdmin = queueAdmin;
         this.stats = statsManager.getClientSubscriptionConsumerStats();
@@ -69,6 +71,16 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+
+    @PostConstruct
+    public void init() {
+        long currentCgSuffix = System.currentTimeMillis();
+        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
+        this.clientSubscriptionsConsumer = clientSubscriptionsQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
+        queueAdmin.deleteOldConsumerGroups(BrokerConstants.CLIENT_SUBSCRIPTIONS_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
+    }
 
     @Override
     public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {

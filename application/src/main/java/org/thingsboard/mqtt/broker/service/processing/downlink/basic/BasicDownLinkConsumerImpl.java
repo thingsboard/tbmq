@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
@@ -67,7 +68,8 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
     @Override
     public void startConsuming() {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(serviceInfoProvider.getServiceId());
-        String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
+        long currentCgSuffix = System.currentTimeMillis();
+        String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
             TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
@@ -75,6 +77,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
         }
+        queueAdmin.deleteOldConsumerGroups(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
     }
 
     private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer) {

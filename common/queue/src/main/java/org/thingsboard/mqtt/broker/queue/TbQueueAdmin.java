@@ -48,4 +48,6 @@ public interface TbQueueAdmin {
 
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
 
+    void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix);
+
 }

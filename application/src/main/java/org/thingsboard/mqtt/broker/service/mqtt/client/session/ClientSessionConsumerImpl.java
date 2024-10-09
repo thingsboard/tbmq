@@ -23,8 +23,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -67,8 +67,10 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
 
     @PostConstruct
     public void init() {
-        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + System.currentTimeMillis();
+        long currentCgSuffix = System.currentTimeMillis();
+        String uniqueConsumerGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
         this.clientSessionConsumer = clientSessionQueueFactory.createConsumer(serviceInfoProvider.getServiceId(), uniqueConsumerGroupId);
+        queueAdmin.deleteOldConsumerGroups(BrokerConstants.CLIENT_SESSION_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
     }
 
     @Override
