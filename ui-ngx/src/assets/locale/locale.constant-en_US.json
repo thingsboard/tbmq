@@ -830,8 +830,10 @@
       "java-subtitle": "Eclipse Paho",
       "java-ws-title": "Java using WebSocket",
       "java-ws-subtitle": "Eclipse Paho",
-      "docs-title": "TBMQ docs",
-      "docs-text": "Browse the documentation to explore articles on the fundamentals of TBMQ and MQTT."
+      "docs-title": "TBMQ fundamentals",
+      "docs-text": "Browse the documentation to explore articles on the fundamentals of TBMQ and MQTT.",
+      "mqtt-features-title": "MQTT features",
+      "mqtt-features-text": "Explore the core MQTT features with TBMQ."
     }
   },
   "value": {

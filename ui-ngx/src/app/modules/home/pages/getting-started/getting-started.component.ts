@@ -20,6 +20,7 @@ import { Router } from '@angular/router';
 import {
   gettingStartedActions,
   gettingStartedDocs,
+  gettingStartedFeatures,
   gettingStartedGuides,
   GettingStartedLink
 } from '@shared/models/getting-started.model';
@@ -38,6 +39,7 @@ export class GettingStartedComponent implements OnInit {
   guides = gettingStartedGuides;
   docs = gettingStartedDocs;
   actions = gettingStartedActions;
+  features = gettingStartedFeatures;
 
   constructor(private configService: ConfigService,
               private router: Router,
