@@ -1075,7 +1075,7 @@
   "subscription": {
     "add-subscription": "Add Subscription",
     "clear-empty-subscription-nodes": "Clear empty subscription nodes",
-    "clear-empty-subscription-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/'>subscription nodes</a>.",
+    "clear-empty-subscription-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions'>subscription</a> nodes.",
     "clear-empty-subscription-nodes-title": "Clear empty subscription nodes?",
     "color": "Color",
     "copy-topic": "Copy Topic Filter",

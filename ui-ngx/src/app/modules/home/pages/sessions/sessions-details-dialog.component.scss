@@ -60,6 +60,8 @@
 
       .mat-mdc-tab-group {
         width: 1000px;
+        max-height: 80vh;
+        overflow: auto;
       }
     }
   }
