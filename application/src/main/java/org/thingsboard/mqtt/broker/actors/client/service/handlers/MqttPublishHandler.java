@@ -151,13 +151,8 @@ public class MqttPublishHandler {
 
     private boolean handleTopicValidationException(ClientSessionCtx ctx, PublishMsg publishMsg, DataValidationException e) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            if (publishMsg.getQosLevel() == 2) {
-                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecTopicNameInvalid());
-            } else if (publishMsg.getQosLevel() == 1) {
-                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckTopicNameInvalid());
-            } else {
-                // QoS=0 - do nothing
-            }
+            handleMqtt5ErrorResponse(ctx, publishMsg,
+                    MqttReasonCodeResolver.pubRecTopicNameInvalid(), MqttReasonCodeResolver.pubAckTopicNameInvalid());
             return false;
         } else {
             throw e;
@@ -166,13 +161,8 @@ public class MqttPublishHandler {
 
     private boolean handleClientNotAuthException(ClientSessionCtx ctx, PublishMsg publishMsg) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            if (publishMsg.getQosLevel() == 2) {
-                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecNotAuthorized());
-            } else if (publishMsg.getQosLevel() == 1) {
-                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckNotAuthorized());
-            } else {
-                // QoS=0 - do nothing
-            }
+            handleMqtt5ErrorResponse(ctx, publishMsg,
+                    MqttReasonCodeResolver.pubRecNotAuthorized(), MqttReasonCodeResolver.pubAckNotAuthorized());
             return false;
         } else {
             throw new MqttException("Client is not authorized to publish to the topic");
@@ -181,15 +171,21 @@ public class MqttPublishHandler {
 
     private void handleMsgPersistenceFailure(ClientSessionCtx ctx, PublishMsg publishMsg) {
         if (MqttVersion.MQTT_5 == ctx.getMqttVersion()) {
-            if (publishMsg.getQosLevel() == 2) {
-                pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubRecError());
-            } else if (publishMsg.getQosLevel() == 1) {
-                pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, MqttReasonCodeResolver.pubAckError());
-            } else {
-                // QoS=0 - do nothing
-            }
+            handleMqtt5ErrorResponse(ctx, publishMsg,
+                    MqttReasonCodeResolver.pubRecError(), MqttReasonCodeResolver.pubAckError());
         } else {
             disconnectClient(ctx, DisconnectReasonType.ON_ERROR, "Failed to publish msg to Kafka");
+        }
+    }
+
+    private void handleMqtt5ErrorResponse(ClientSessionCtx ctx, PublishMsg publishMsg,
+                                          MqttReasonCodes.PubRec pubRecCode, MqttReasonCodes.PubAck pubAckCode) {
+        if (publishMsg.getQosLevel() == 2) {
+            pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, pubRecCode);
+        } else if (publishMsg.getQosLevel() == 1) {
+            pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, pubAckCode);
+        } else {
+            // QoS=0 - do nothing
         }
     }
 
