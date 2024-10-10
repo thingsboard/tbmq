@@ -91,8 +91,21 @@
         <input matInput type="text" style="max-width: 200px;" formControlName="clientId">
       </mat-form-field>
     </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>mqtt-client-session.client-ip</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" style="max-width: 200px;" formControlName="clientIpAddress">
+      </mat-form-field>
+    </div>
     <div class="tb-form-row column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.subscriptions</div>
+      <mat-form-field appearance="outline" class="flex" subscriptSizing="dynamic">
+        <mat-select formControlName="subscriptionOperation" placeholder="{{'filter.operation.operation' | translate}}">
+          <mat-option *ngFor="let operation of numericOperations" [value]="operation">
+            <span style="font-size: 14px">{{numericOperationTranslations.get(numericOperationEnum[operation]) | translate}}</span>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
       <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
         <input matInput type="number" min="0" formControlName="subscriptions">
       </mat-form-field>

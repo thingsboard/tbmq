@@ -153,7 +153,9 @@ export interface SessionFilterConfig {
   nodeIdList?: string[];
   cleanStartList?: boolean[];
   subscriptions?: number;
+  subscriptionOperation?: string;
   clientId?: string;
+  clientIpAddress?: string;
   openSession?: boolean;
 }
 
@@ -184,7 +186,13 @@ export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2
     if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
       return false;
     }
+    if (!isEqualIgnoreUndefined(filter1.clientIpAddress, filter2.clientIpAddress)) {
+      return false;
+    }
     if (!isEqualIgnoreUndefined(filter1.subscriptions, filter2.subscriptions)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.subscriptionOperation, filter2.subscriptionOperation)) {
       return false;
     }
     return true;
@@ -201,6 +209,8 @@ export class SessionQuery {
   cleanStartList: boolean[];
   nodeIdList: string[];
   subscriptions: number;
+  subscriptionOperation: string;
+  clientIpAddress: string;
 
   constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
     this.pageLink = pageLink;
@@ -209,6 +219,8 @@ export class SessionQuery {
     this.cleanStartList = sessionFilter?.cleanStartList;
     this.nodeIdList = sessionFilter?.nodeIdList;
     this.subscriptions = sessionFilter?.subscriptions;
+    this.subscriptionOperation = sessionFilter?.subscriptionOperation;
+    this.clientIpAddress = sessionFilter?.clientIpAddress;
     if (isNotEmptyStr(sessionFilter?.clientId)) {
       this.pageLink.textSearch = sessionFilter.clientId;
     }
@@ -230,6 +242,12 @@ export class SessionQuery {
     }
     if (typeof this.subscriptions !== 'undefined' && this.subscriptions !== null) {
       query += `&subscriptions=${this.subscriptions}`;
+    }
+    if (typeof this.subscriptionOperation !== 'undefined' && this.subscriptionOperation !== null) {
+      query += `&subscriptionOperation=${this.subscriptionOperation}`;
+    }
+    if (typeof this.clientIpAddress !== 'undefined' && this.clientIpAddress !== null) {
+      query += `&clientIpAddress=${this.clientIpAddress}`;
     }
     return query;
   }
