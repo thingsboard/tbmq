@@ -50,11 +50,12 @@ import {
   HeaderActionDescriptor
 } from '@home/models/entity/entities-table-config.models';
 import { EntityTypeTranslation } from '@shared/models/entity-type.models';
-import { DialogService } from '@core/services/dialog.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { MediaBreakpoints } from '@shared/models/constants';
 
 @Component({
   selector: 'tb-entities-table-ws',
@@ -116,7 +117,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
               public route: ActivatedRoute,
               public translate: TranslateService,
               public dialog: MatDialog,
-              private dialogService: DialogService,
+              private breakpointObserver: BreakpointObserver,
               private domSanitizer: DomSanitizer,
               private mqttJsClientService: MqttJsClientService,
               private router: Router,
@@ -168,8 +169,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     }
 
     this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.defaultPageSize = 10;
-    this.pageSizeOptions = [3, 10, 20, 50];
+    this.defaultPageSize = this.calcDefaultPageSize();
+    this.pageSizeOptions = [3, 10, 15, 30];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
     this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
@@ -395,5 +396,15 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   trackByEntityId(index: number, entity: any) {
     return entity.id;
+  }
+
+  private calcDefaultPageSize(): number {
+    if (this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl'])) {
+      return 15;
+    }
+    if (this.breakpointObserver.isMatched(MediaBreakpoints['gt-md'])) {
+      return 10;
+    }
+    return 3;
   }
 }

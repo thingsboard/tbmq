@@ -76,7 +76,7 @@ export class MqttJsClientService {
   private mqttClientConnectionMap = new Map<string, WebSocketConnection>();
   private connectionMessagesMap = new Map<string, WsTableMessage[]>();
 
-  private messagesLimit = 10000;
+  private maxMessages = 1000;
   private publishMsgDelay = 200;
   private publishMsgStartTs = null;
   private publishMsgTimeout = null;
@@ -226,7 +226,7 @@ export class MqttJsClientService {
         let qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
         let retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
         return typeMatch && topicMatch && qosMatch && retainMatch;
-      }).slice(0, this.messagesLimit);
+      }).slice(0, this.websocketSettings.maxMessages || this.maxMessages);
     }
     filteredMessages.sort(function(objA, objB) {
       const sortKey = sortOrder.property;

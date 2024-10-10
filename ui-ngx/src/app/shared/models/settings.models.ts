@@ -45,6 +45,7 @@ export interface MailServerSettings {
 
 export interface WebsocketSettings {
   isLoggingEnabled: boolean;
+  maxMessages: number;
 }
 
 export type ConnectivityProtocol = 'mqtt' | 'mqtts' | 'ws' | 'wss';

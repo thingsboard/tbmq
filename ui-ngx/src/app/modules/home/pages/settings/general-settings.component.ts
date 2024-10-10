@@ -46,7 +46,8 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private generalSettings: AdminSettings<WebsocketSettings>;
   private destroy$ = new Subject<void>();
   private defaultWebsocketSettings: WebsocketSettings = {
-    isLoggingEnabled: false
+    isLoggingEnabled: false,
+    maxMessages: 1000
   }
 
   constructor(protected store: Store<AppState>,
@@ -94,7 +95,8 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   private buildWebsocketSettingsForm() {
     this.generalSettingsForm = this.fb.group({
-      isLoggingEnabled: [null, []]
+      isLoggingEnabled: [null, []],
+      maxMessages: [null, []]
     });
   }
 

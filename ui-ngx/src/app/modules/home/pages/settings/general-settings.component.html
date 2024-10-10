@@ -38,6 +38,15 @@
                       matTooltipPosition="right">
               info</mat-icon>
           </section>
+          <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+            <mat-form-field fxFlex subscriptSizing="dynamic">
+              <mat-label translate>ws-client.messages.max-messages</mat-label>
+              <input matInput type="number" min="1" formControlName="maxMessages" placeholder="1000"/>
+              <mat-error *ngIf="generalSettingsForm.get('maxMessages').hasError('min')">
+                {{ 'ws-client.messages.max-messages-min' | translate }}
+              </mat-error>
+            </mat-form-field>
+          </section>
         </div>
       </fieldset>
       <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">

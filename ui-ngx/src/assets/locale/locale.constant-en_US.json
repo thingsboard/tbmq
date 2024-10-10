@@ -873,7 +873,9 @@
       "received": "Received",
       "published": "Published",
       "no-messages-text": "No messages yet",
-      "filter": "Filter messages"
+      "filter": "Filter messages",
+      "max-messages": "Maximum messages in WebSocket Client table",
+      "max-messages-min": "Minimum value is 1"
     },
     "connections": {
       "add-connection": "Add new connection",
