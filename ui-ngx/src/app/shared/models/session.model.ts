@@ -228,25 +228,23 @@ export class SessionQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.connectedStatusList && this.connectedStatusList.length) {
+    if (this.connectedStatusList?.length) {
       query += `&connectedStatusList=${this.connectedStatusList.join(',')}`;
     }
-    if (this.clientTypeList && this.clientTypeList.length) {
+    if (this.clientTypeList?.length) {
       query += `&clientTypeList=${this.clientTypeList.join(',')}`;
     }
-    if (this.cleanStartList && this.cleanStartList.length) {
+    if (this.cleanStartList?.length) {
       query += `&cleanStartList=${this.cleanStartList.join(',')}`;
     }
-    if (this.nodeIdList && this.nodeIdList.length) {
+    if (this.nodeIdList?.length) {
       query += `&nodeIdList=${this.nodeIdList.join(',')}`;
     }
-    if (typeof this.subscriptions !== 'undefined' && this.subscriptions !== null) {
+    if (isDefinedAndNotNull(this.subscriptions)) {
+      query += `&subscriptionOperation=${this.subscriptionOperation}`;
       query += `&subscriptions=${this.subscriptions}`;
     }
-    if (typeof this.subscriptionOperation !== 'undefined' && this.subscriptionOperation !== null) {
-      query += `&subscriptionOperation=${this.subscriptionOperation}`;
-    }
-    if (typeof this.clientIpAddress !== 'undefined' && this.clientIpAddress !== null) {
+    if (this.clientIpAddress?.length) {
       query += `&clientIpAddress=${this.clientIpAddress}`;
     }
     return query;

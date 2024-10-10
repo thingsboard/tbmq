@@ -34,7 +34,7 @@ import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 import { TranslateService } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
+import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
 import {
@@ -303,7 +303,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       if (this.sessionFilterConfig?.clientIpAddress?.length) {
         filterTextParts.push(this.sessionFilterConfig.clientIpAddress);
       }
-      if (this.sessionFilterConfig?.subscriptions) {
+      if (isDefinedAndNotNull(this.sessionFilterConfig?.subscriptions)) {
         filterTextParts.push(`${this.translate.instant('mqtt-client-session.subscriptions-short')}: ${this.sessionFilterConfig.subscriptions}`);
       }
       if (!filterTextParts.length) {
