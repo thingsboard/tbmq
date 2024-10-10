@@ -72,25 +72,25 @@ export class ClientSubscriptionsQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.clientId && this.clientId.length) {
+    if (this.clientId?.length) {
       query += `&clientId=${this.clientId}`;
     }
-    if (this.topicFilter && this.topicFilter.length) {
+    if (this.topicFilter?.length) {
       query += `&topicFilter=${this.topicFilter}`;
     }
     if (this.subscriptionId) {
       query += `&subscriptionId=${this.subscriptionId}`;
     }
-    if (this.qosList && this.qosList.length) {
+    if (this.qosList?.length) {
       query += `&qosList=${this.qosList.join(',')}`;
     }
-    if (this.noLocalList && this.noLocalList.length) {
+    if (this.noLocalList?.length) {
       query += `&noLocalList=${this.noLocalList.join(',')}`;
     }
-    if (this.retainAsPublishList && this.retainAsPublishList.length) {
+    if (this.retainAsPublishList?.length) {
       query += `&retainAsPublishList=${this.retainAsPublishList.join(',')}`;
     }
-    if (this.retainHandlingList && this.retainHandlingList.length) {
+    if (this.retainHandlingList?.length) {
       query += `&retainHandlingList=${this.retainHandlingList.join(',')}`;
     }
     return query;

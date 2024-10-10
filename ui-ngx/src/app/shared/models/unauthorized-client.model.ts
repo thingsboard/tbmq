@@ -66,19 +66,19 @@ export class UnauthorizedClientQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.ipAddress && this.ipAddress.length) {
+    if (this.ipAddress?.length) {
       query += `&ipAddress=${this.ipAddress}`;
     }
-    if (this.username && this.username.length) {
+    if (this.username?.length) {
       query += `&username=${this.username}`;
     }
-    if (this.reason && this.reason.length) {
+    if (this.reason?.length) {
       query += `&reason=${this.reason}`;
     }
-    if (this.passwordProvidedList && this.passwordProvidedList.length) {
+    if (this.passwordProvidedList?.length) {
       query += `&passwordProvidedList=${this.passwordProvidedList.join(',')}`;
     }
-    if (this.tlsUsedList && this.tlsUsedList.length) {
+    if (this.tlsUsedList?.length) {
       query += `&tlsUsedList=${this.tlsUsedList.join(',')}`;
     }
     return query;

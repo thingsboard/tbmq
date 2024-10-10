@@ -81,10 +81,10 @@ export class SharedSubscriptionQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (typeof this.shareNameSearch !== 'undefined' && this.shareNameSearch !== null) {
+    if (this.shareNameSearch?.length) {
       query += `&shareNameSearch=${this.shareNameSearch}`;
     }
-    if (typeof this.clientIdSearch !== 'undefined' && this.clientIdSearch !== null) {
+    if (this.clientIdSearch?.length) {
       query += `&clientIdSearch=${this.clientIdSearch}`;
     }
     return query;
