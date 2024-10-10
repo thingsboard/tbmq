@@ -27,11 +27,12 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
@@ -118,7 +119,9 @@ public class ClientSessionController extends BaseController {
                                                                             @RequestParam(required = false) String[] clientTypeList,
                                                                             @RequestParam(required = false) String[] cleanStartList,
                                                                             @RequestParam(required = false) String[] nodeIdList,
-                                                                            @RequestParam(required = false) Integer subscriptions) throws ThingsboardException {
+                                                                            @RequestParam(required = false) Integer subscriptions,
+                                                                            @RequestParam(required = false) String subscriptionOperation,
+                                                                            @RequestParam(required = false) String clientIpAddress) throws ThingsboardException {
         try {
             List<ConnectionState> connectedStatuses = new ArrayList<>();
             if (connectedStatusList != null) {
@@ -147,10 +150,13 @@ public class ClientSessionController extends BaseController {
 
             Set<String> brokerNodeIdSet = nodeIdList != null ? Set.of(nodeIdList) : Collections.emptySet();
 
+            SubscriptionOperation operation = subscriptionOperation == null ? SubscriptionOperation.EQUAL : SubscriptionOperation.valueOf(subscriptionOperation);
+
             TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
 
             return checkNotNull(clientSessionPageInfos.getClientSessionInfos(
-                    new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts, brokerNodeIdSet, subscriptions)
+                    new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts,
+                            brokerNodeIdSet, subscriptions, operation, clientIpAddress)
             ));
         } catch (Exception e) {
             throw handleException(e);
