@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 @DaoSqlTest
 public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
@@ -394,6 +395,133 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     }
 
     @Test
+    public void testFindMqttClientCredentialsByQueryWithUsername() throws JsonProcessingException {
+        String searchString = "zzzz";
+
+        for (int i = 0; i < 5; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, null, searchString + i, null));
+        }
+        for (int i = 0; i < 4; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        }
+        for (int i = 0; i < 3; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        }
+        for (int i = 0; i < 2; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        }
+
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, searchString, null, null);
+        PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
+        Assert.assertEquals(5, pageData.getData().size());
+    }
+
+    @Test
+    public void testFindMqttClientCredentialsByQueryWithClientId() throws JsonProcessingException {
+        String searchString = "zzzz";
+
+        for (int i = 0; i < 5; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, searchString + i, null, null));
+        }
+        for (int i = 0; i < 4; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        }
+        for (int i = 0; i < 3; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
+        }
+        for (int i = 0; i < 2; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        }
+
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, null, searchString, null);
+        PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
+        Assert.assertEquals(5, pageData.getData().size());
+    }
+
+    @Test
+    public void testFindMqttClientCredentialsByQueryWithCertificateCn() throws JsonProcessingException {
+        String searchString = "zzzz";
+
+        for (int i = 0; i < 5; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, null, null, null));
+        }
+        for (int i = 0; i < 4; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        }
+        for (int i = 0; i < 3; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(searchString + i));
+        }
+        for (int i = 0; i < 2; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        }
+
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, null, null, searchString);
+        PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
+        Assert.assertEquals(3, pageData.getData().size());
+    }
+
+    @Test
+    public void testFindMqttClientCredentialsByQueryWithCertificateCnAndUsername() throws JsonProcessingException {
+        String searchString = "zzzz";
+
+        for (int i = 0; i < 5; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, null, searchString + i, null));
+        }
+        for (int i = 0; i < 4; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
+        }
+        for (int i = 0; i < 3; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(searchString + i));
+        }
+        for (int i = 0; i < 2; i++) {
+            mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
+        }
+
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, searchString, null, searchString);
+        PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
+        Assert.assertEquals(0, pageData.getData().size());
+    }
+
+    // Commented out to allow independent testing without running it in every build
+//    @Test
+    public void testPerformanceOfGetCredentialsV2() throws JsonProcessingException {
+        List<MqttClientCredentials> credentials = saveRandomCredentials();
+
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(10), null, null, null, "clientIdPerf", null);
+        testPerformanceByFilteringOneField(query, "using clientId", 1);
+
+        query = new ClientCredentialsQuery(new PageLink(10), null, null, "usernamePerf", null, null);
+        testPerformanceByFilteringOneField(query, "using username", 1);
+
+        query = new ClientCredentialsQuery(new PageLink(10), null, null, "usernamePerf", null, "abc");
+        testPerformanceByFilteringOneField(query, "using username and certificate CN", 0);
+
+        credentials.forEach(creds -> mqttClientCredentialsService.deleteCredentials(creds.getId()));
+    }
+
+    private void testPerformanceByFilteringOneField(ClientCredentialsQuery query, String details, int expected) {
+        long start = System.nanoTime();
+        PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
+        long end = System.nanoTime();
+
+        long ms = TimeUnit.NANOSECONDS.toMillis(end - start);
+        System.out.println("Took " + ms + " ms to process getCredentialsV2 by query " + details);
+
+        Assert.assertEquals(expected, pageData.getData().size());
+    }
+
+    private List<MqttClientCredentials> saveRandomCredentials() throws JsonProcessingException {
+        int size = 100_000;
+        List<MqttClientCredentials> credentialsList = new ArrayList<>(size + 1);
+        for (int i = 0; i < size; i++) {
+            credentialsList.add(mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE)));
+        }
+        credentialsList.add(mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(
+                "name", "clientIdPerf", "usernamePerf", "password")));
+        return credentialsList;
+    }
+
+    @Test
     public void givenCachedBasicCredentials_whenSaveOtherCredentials_thenCachedDataPresent() throws JsonProcessingException {
         String cacheKey = RandomStringUtils.randomAlphabetic(10);
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.DEVICE));
@@ -560,6 +688,27 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         Assert.assertEquals(expected, pageData.getData().size());
     }
 
+    private MqttClientCredentials validMqttClientCredentialsWithNulls(String credentialsName, String clientId, String username, String password) throws JsonProcessingException {
+        if (credentialsName == null) {
+            credentialsName = RandomStringUtils.randomAlphabetic(5);
+        }
+        if (clientId == null) {
+            clientId = RandomStringUtils.randomAlphabetic(5);
+        }
+        if (username == null) {
+            username = RandomStringUtils.randomAlphabetic(5);
+        }
+        if (password == null) {
+            password = RandomStringUtils.randomAlphabetic(5);
+        }
+        MqttClientCredentials clientCredentials = new MqttClientCredentials();
+        clientCredentials.setName(credentialsName);
+        clientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        BasicMqttCredentials basicMqttCredentials = BasicMqttCredentials.newInstance(clientId, username, password, null);
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
+        return clientCredentials;
+    }
+
     private MqttClientCredentials validMqttClientCredentials(String credentialsName, String clientId, String username, String password) throws JsonProcessingException {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName(credentialsName);
@@ -590,6 +739,19 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         clientCredentials.setClientType(clientType);
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance(
                 RandomStringUtils.randomAlphabetic(5),
+                RandomStringUtils.randomAlphabetic(5),
+                null);
+        clientCredentials.setCredentialsValue(JacksonUtil.toString(sslMqttCredentials));
+        return clientCredentials;
+    }
+
+    private MqttClientCredentials validMqttSslClientCredentials(String certificateCn) throws JsonProcessingException {
+        MqttClientCredentials clientCredentials = new MqttClientCredentials();
+        clientCredentials.setName(RandomStringUtils.randomAlphabetic(5));
+        clientCredentials.setCredentialsType(ClientCredentialsType.SSL);
+        clientCredentials.setClientType(ClientType.DEVICE);
+        SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance(
+                certificateCn,
                 RandomStringUtils.randomAlphabetic(5),
                 null);
         clientCredentials.setCredentialsValue(JacksonUtil.toString(sslMqttCredentials));
