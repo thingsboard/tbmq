@@ -620,7 +620,7 @@ public class ClientSessionPageInfosImplTest {
         ClientSessionQuery clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .clientIpAddress("127.0")
+                .clientIpAddress(".")
                 .build();
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(1, clientSessionInfos.getData().size());
