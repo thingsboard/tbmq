@@ -23,11 +23,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgService;
+
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -82,6 +86,32 @@ public class RetainedMsgController extends BaseController {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
             return checkNotNull(retainedMsgPageService.getRetainedMessages(pageLink));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/v2", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @ResponseBody
+    public PageData<RetainedMsgDto> getRetainedMessagesV2(@RequestParam int pageSize,
+                                                          @RequestParam int page,
+                                                          @RequestParam(required = false) String textSearch,
+                                                          @RequestParam(required = false) String sortProperty,
+                                                          @RequestParam(required = false) String sortOrder,
+                                                          @RequestParam(required = false) Long startTime,
+                                                          @RequestParam(required = false) Long endTime,
+                                                          @RequestParam(required = false) String topicName,
+                                                          @RequestParam(required = false) String[] qosList,
+                                                          @RequestParam(required = false) String payload) throws ThingsboardException {
+        try {
+            Set<Integer> allQos = collectIntegerQueryParams(qosList);
+
+            TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
+
+            return checkNotNull(retainedMsgPageService.getRetainedMessages(
+                    new RetainedMsgQuery(pageLink, topicName, allQos, payload)
+            ));
         } catch (Exception e) {
             throw handleException(e);
         }
