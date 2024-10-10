@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
@@ -36,7 +37,6 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
@@ -335,7 +335,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
         List<ShortMqttClientCredentials> loadedMqttClientCredentialsList = new ArrayList<>();
         PageLink pageLink = new PageLink(13);
-        ClientCredentialsQuery query = new ClientCredentialsQuery(pageLink, List.of(), null);
+        ClientCredentialsQuery query = new ClientCredentialsQuery(pageLink, List.of(), null, null, null, null);
 
         PageData<ShortMqttClientCredentials> pageData;
         do {
@@ -555,7 +555,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     }
 
     private void findByQueryAndVerifyResult(List<ClientType> clientTypes, List<ClientCredentialsType> clientCredentialsTypes, int expected) {
-        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), clientTypes, clientCredentialsTypes);
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), clientTypes, clientCredentialsTypes, null, null, null);
         PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
         Assert.assertEquals(expected, pageData.getData().size());
     }

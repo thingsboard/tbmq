@@ -45,10 +45,21 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
             "((:clientTypes) IS NULL OR c.clientType IN (:clientTypes)) " +
             "AND ((:clientCredentialsTypes) IS NULL OR c.credentialsType IN (:clientCredentialsTypes)) " +
-            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%')) " +
+            "AND (" +
+            "    (c.credentialsType = 'SSL' AND (:certificateCn = '' OR LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"certCnPattern\":\"', :certificateCn, '%')))) " +
+            "    OR " +
+            "    (c.credentialsType = 'MQTT_BASIC' " +
+            "        AND (:username = '' OR LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"userName\":\"', :username, '%'))) " +
+            "        AND (:clientId = '' OR LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"clientId\":\"', :clientId, '%'))) " +
+            "    )" +
+            ")")
     Page<MqttClientCredentialsEntity> findAllV2(@Param("clientTypes") List<ClientType> clientTypes,
                                                 @Param("clientCredentialsTypes") List<ClientCredentialsType> clientCredentialsTypes,
                                                 @Param("textSearch") String textSearch,
+                                                @Param("username") String username,
+                                                @Param("clientId") String clientId,
+                                                @Param("certificateCn") String certificateCn,
                                                 Pageable pageable);
 
     List<MqttClientCredentialsEntity> findByCredentialsType(ClientCredentialsType credentialsType);

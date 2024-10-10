@@ -20,13 +20,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientCredentialsEntity;
@@ -110,6 +110,9 @@ public class DefaultMqttClientCredentialsDao extends AbstractSearchTextDao<MqttC
                 clientTypes,
                 clientCredentialsTypes,
                 Objects.toString(query.getPageLink().getTextSearch(), ""),
+                Objects.toString(query.getUsername(), ""),
+                Objects.toString(query.getClientId(), ""),
+                Objects.toString(query.getCertificateCn(), ""),
                 DaoUtil.toPageable(query.getPageLink())));
     }
 
