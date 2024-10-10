@@ -42,13 +42,41 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
     Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,
                                               Pageable pageable);
 
+    // TODO: improve performance of this method. Change credentialsValue to JSONB and add GIN index(es)?
+    // Not very accurate search because of "%param% :searchString %" - second % makes the substring to search not within the actual value
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
             "((:clientTypes) IS NULL OR c.clientType IN (:clientTypes)) " +
             "AND ((:clientCredentialsTypes) IS NULL OR c.credentialsType IN (:clientCredentialsTypes)) " +
-            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%')) " +
+            "AND (" +
+            // Return all credentials if all parameters are empty
+            "    (:certificateCn = '' AND :username = '' AND :clientId = '') " +
+            // Return nothing if all parameters are provided
+            "    OR (:certificateCn <> '' AND :username <> '' AND :clientId <> '' AND 1 = 0) " +
+            // Search within MQTT_BASIC using username
+            "    OR (:username <> '' AND :certificateCn = '' AND :clientId = '' AND (c.credentialsType = 'MQTT_BASIC' OR c.credentialsType = 'SCRAM') " +
+            "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"userName\":\"%', :username, '%'))) " +
+            // Search within MQTT_BASIC using clientId
+            "    OR (:clientId <> '' AND :certificateCn = '' AND :username = '' AND c.credentialsType = 'MQTT_BASIC' " +
+            "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"clientId\":\"%', :clientId, '%'))) " +
+            // Search within SSL using certificateCn
+            "    OR (:certificateCn <> '' AND :username = '' AND :clientId = '' AND c.credentialsType = 'SSL' " +
+            "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"certCnPattern\":\"%', :certificateCn, '%'))) " +
+            // Return nothing if certificateCn and username are both provided
+            "    OR (:certificateCn <> '' AND :username <> '' AND 1 = 0) " +
+            // Return nothing if certificateCn and clientId are both provided
+            "    OR (:certificateCn <> '' AND :clientId <> '' AND 1 = 0) " +
+            // Search within MQTT_BASIC using both clientId and username
+            "    OR (:username <> '' AND :clientId <> '' AND :certificateCn = '' AND c.credentialsType = 'MQTT_BASIC' " +
+            "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"userName\":\"%', :username, '%')) " +
+            "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"clientId\":\"%', :clientId, '%'))) " +
+            ")")
     Page<MqttClientCredentialsEntity> findAllV2(@Param("clientTypes") List<ClientType> clientTypes,
                                                 @Param("clientCredentialsTypes") List<ClientCredentialsType> clientCredentialsTypes,
                                                 @Param("textSearch") String textSearch,
+                                                @Param("username") String username,
+                                                @Param("clientId") String clientId,
+                                                @Param("certificateCn") String certificateCn,
                                                 Pageable pageable);
 
     List<MqttClientCredentialsEntity> findByCredentialsType(ClientCredentialsType credentialsType);

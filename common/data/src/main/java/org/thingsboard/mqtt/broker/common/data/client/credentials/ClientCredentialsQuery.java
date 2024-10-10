@@ -32,5 +32,8 @@ public class ClientCredentialsQuery {
     private PageLink pageLink;
     private List<ClientType> clientTypeList;
     private List<ClientCredentialsType> credentialsTypeList;
+    private String username;
+    private String clientId;
+    private String certificateCn;
 
 }

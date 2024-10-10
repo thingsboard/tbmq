@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
 import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -157,7 +157,10 @@ public class MqttClientCredentialsController extends BaseController {
                                                                  @RequestParam(required = false) String sortProperty,
                                                                  @RequestParam(required = false) String sortOrder,
                                                                  @RequestParam(required = false) String[] clientTypeList,
-                                                                 @RequestParam(required = false) String[] credentialsTypeList) throws ThingsboardException {
+                                                                 @RequestParam(required = false) String[] credentialsTypeList,
+                                                                 @RequestParam(required = false) String username,
+                                                                 @RequestParam(required = false) String clientId,
+                                                                 @RequestParam(required = false) String certificateCn) throws ThingsboardException {
         try {
             List<ClientType> clientTypes = new ArrayList<>();
             if (clientTypeList != null) {
@@ -177,7 +180,9 @@ public class MqttClientCredentialsController extends BaseController {
             }
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
 
-            return checkNotNull(mqttClientCredentialsService.getCredentialsV2(new ClientCredentialsQuery(pageLink, clientTypes, credentialsTypes)));
+            ClientCredentialsQuery query = new ClientCredentialsQuery(pageLink, clientTypes, credentialsTypes,
+                    username, clientId, certificateCn);
+            return checkNotNull(mqttClientCredentialsService.getCredentialsV2(query));
         } catch (Exception e) {
             throw handleException(e);
         }
