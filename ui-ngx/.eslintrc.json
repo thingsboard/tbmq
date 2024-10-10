@@ -51,7 +51,16 @@
                 "import/order": "off",
                 "@typescript-eslint/member-ordering": "off",
                 "no-underscore-dangle": "off",
-                "@typescript-eslint/naming-convention": "off"
+                "@typescript-eslint/naming-convention": "off",
+                "max-len": "off",
+                "curly": "off",
+                "prefer-arrow/prefer-arrow-functions": "off",
+                "@typescript-eslint/no-shadow": "off",
+                "eqeqeq": "off",
+                "prefer-const": "off",
+                "object-shorthand": "off",
+                "@typescript-eslint/semi": "off",
+                "guard-for-in": "off"
             }
         },
         {
