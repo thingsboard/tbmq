@@ -238,6 +238,33 @@
     "exit": "Exit",
     "expand": "Expand"
   },
+  "filter": {
+    "operation": {
+      "operation": "Operation",
+      "equal": "equal",
+      "not-equal": "not equal",
+      "starts-with": "starts with",
+      "ends-with": "ends with",
+      "contains": "contains",
+      "not-contains": "not contains",
+      "greater": "greater than",
+      "less": "less than",
+      "greater-or-equal": "greater or equal",
+      "less-or-equal": "less or equal",
+      "and": "and",
+      "or": "or",
+      "in": "in",
+      "not-in": "not in"
+    },
+    "ignore-case": "ignore case",
+    "value-type": {
+      "value-type": "Value type",
+      "string": "String",
+      "numeric": "Numeric",
+      "boolean": "Boolean",
+      "date-time": "Datetime"
+    }
+  },
   "help": {
     "goto-help-page": "Go to help page",
     "goto-docs": "Go to docs",

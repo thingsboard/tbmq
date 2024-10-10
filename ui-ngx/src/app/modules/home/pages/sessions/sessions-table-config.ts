@@ -369,6 +369,8 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       sessionFilter.cleanStartList = sessionFilterConfig.cleanStartList;
       sessionFilter.nodeIdList = sessionFilterConfig.nodeIdList;
       sessionFilter.subscriptions = sessionFilterConfig.subscriptions;
+      sessionFilter.subscriptionOperation = sessionFilterConfig.subscriptionOperation;
+      sessionFilter.clientIpAddress = sessionFilterConfig.clientIpAddress;
     }
     return sessionFilter;
   }

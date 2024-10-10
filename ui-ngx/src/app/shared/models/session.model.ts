@@ -153,7 +153,9 @@ export interface SessionFilterConfig {
   nodeIdList?: string[];
   cleanStartList?: boolean[];
   subscriptions?: number;
+  subscriptionOperation?: string;
   clientId?: string;
+  clientIpAddress?: string;
   openSession?: boolean;
 }
 
@@ -184,7 +186,13 @@ export const sessionFilterConfigEquals = (filter1?: SessionFilterConfig, filter2
     if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
       return false;
     }
+    if (!isEqualIgnoreUndefined(filter1.clientIpAddress, filter2.clientIpAddress)) {
+      return false;
+    }
     if (!isEqualIgnoreUndefined(filter1.subscriptions, filter2.subscriptions)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.subscriptionOperation, filter2.subscriptionOperation)) {
       return false;
     }
     return true;
@@ -201,6 +209,8 @@ export class SessionQuery {
   cleanStartList: boolean[];
   nodeIdList: string[];
   subscriptions: number;
+  subscriptionOperation: string;
+  clientIpAddress: string;
 
   constructor(pageLink: TimePageLink, sessionFilter: SessionFilterConfig) {
     this.pageLink = pageLink;
@@ -209,6 +219,8 @@ export class SessionQuery {
     this.cleanStartList = sessionFilter?.cleanStartList;
     this.nodeIdList = sessionFilter?.nodeIdList;
     this.subscriptions = sessionFilter?.subscriptions;
+    this.subscriptionOperation = sessionFilter?.subscriptionOperation;
+    this.clientIpAddress = sessionFilter?.clientIpAddress;
     if (isNotEmptyStr(sessionFilter?.clientId)) {
       this.pageLink.textSearch = sessionFilter.clientId;
     }
@@ -216,20 +228,24 @@ export class SessionQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.connectedStatusList && this.connectedStatusList.length) {
+    if (this.connectedStatusList?.length) {
       query += `&connectedStatusList=${this.connectedStatusList.join(',')}`;
     }
-    if (this.clientTypeList && this.clientTypeList.length) {
+    if (this.clientTypeList?.length) {
       query += `&clientTypeList=${this.clientTypeList.join(',')}`;
     }
-    if (this.cleanStartList && this.cleanStartList.length) {
+    if (this.cleanStartList?.length) {
       query += `&cleanStartList=${this.cleanStartList.join(',')}`;
     }
-    if (this.nodeIdList && this.nodeIdList.length) {
+    if (this.nodeIdList?.length) {
       query += `&nodeIdList=${this.nodeIdList.join(',')}`;
     }
-    if (typeof this.subscriptions !== 'undefined' && this.subscriptions !== null) {
+    if (isDefinedAndNotNull(this.subscriptions)) {
+      query += `&subscriptionOperation=${this.subscriptionOperation}`;
       query += `&subscriptions=${this.subscriptions}`;
+    }
+    if (this.clientIpAddress?.length) {
+      query += `&clientIpAddress=${this.clientIpAddress}`;
     }
     return query;
   }

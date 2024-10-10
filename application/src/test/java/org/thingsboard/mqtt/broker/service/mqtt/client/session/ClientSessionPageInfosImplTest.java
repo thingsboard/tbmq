@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
@@ -467,7 +468,91 @@ public class ClientSessionPageInfosImplTest {
     }
 
     @Test
-    public void testGetClientSessionInfosWithSubscriptions() {
+    public void testGetClientSessionInfosWithSubscriptionsEqual() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.EQUAL)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(1, clientSessionInfos.getData().size());
+        assertEquals("clientId4", clientSessionInfos.getData().get(0).getClientId());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptionsNotEqual() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.NOT_EQUAL)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(4, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptionsGreater() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.GREATER)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(1, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptionsLess() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.LESS)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(3, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptionsLessOrEqual() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.LESS_OR_EQUAL)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(4, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithSubscriptionsGreaterOrEqual() {
+        prepareClientSessionsForSubscriptionsFilter();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .subscriptions(2)
+                .operation(SubscriptionOperation.GREATER_OR_EQUAL)
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(2, clientSessionInfos.getData().size());
+    }
+
+    private void prepareClientSessionsForSubscriptionsFilter() {
         ClientSessionInfo clientSessionInfo1 = getClientSessionInfo("clientId1", true, "tbmq1", true,
                 ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
         ClientSessionInfo clientSessionInfo5 = getClientSessionInfo("clientId5", false, "tbmq1", true,
@@ -501,15 +586,44 @@ public class ClientSessionPageInfosImplTest {
                 new TopicSubscription("tf55", 0),
                 new TopicSubscription("tf555", 2)
         ));
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithNotPresentIpAddress() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
 
         ClientSessionQuery clientSessionQuery = ClientSessionQuery
                 .builder()
                 .pageLink(new TimePageLink(100, 0))
-                .subscriptions(2)
+                .clientIpAddress("10.10.10.10")
+                .build();
+        PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
+        assertEquals(0, clientSessionInfos.getData().size());
+    }
+
+    @Test
+    public void testGetClientSessionInfosWithIpAddress() {
+        ClientSessionInfo clientSessionInfo1 = getClientSessionInfo(true, "tbmq1", true,
+                ClientType.DEVICE, convertStringToTimestamp("2023-10-10 13:00:00"), 0);
+
+        Map<String, ClientSessionInfo> map = Map.of(
+                "clientId1", clientSessionInfo1
+        );
+        doReturn(map).when(clientSessionCache).getAllClientSessions();
+
+        ClientSessionQuery clientSessionQuery = ClientSessionQuery
+                .builder()
+                .pageLink(new TimePageLink(100, 0))
+                .clientIpAddress(".")
                 .build();
         PageData<ShortClientSessionInfoDto> clientSessionInfos = clientSessionPageInfos.getClientSessionInfos(clientSessionQuery);
         assertEquals(1, clientSessionInfos.getData().size());
-        assertEquals("clientId4", clientSessionInfos.getData().get(0).getClientId());
     }
 
     @Test
