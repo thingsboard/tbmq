@@ -19,13 +19,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -111,6 +114,46 @@ public class RetainedMsgPageServiceImplTest {
 
         assertEquals("home/temp", data.get(0).getTopic());
         assertEquals("topic/test3", data.get(4).getTopic());
+    }
+
+    @Test
+    public void testGetRetainedMessagesByQueryWithTopicName() {
+        TimePageLink pageLink = new TimePageLink(10);
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, "topic/", Set.of(), null));
+
+        assertEquals(3, retainedMessages.getData().size());
+    }
+
+    @Test
+    public void testGetRetainedMessagesByQueryWithPayload() {
+        TimePageLink pageLink = new TimePageLink(10);
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "ylo"));
+
+        assertEquals(5, retainedMessages.getData().size());
+    }
+
+    @Test
+    public void testGetRetainedMessagesByQueryWithWrongPayload() {
+        TimePageLink pageLink = new TimePageLink(10);
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(), "aaaayloddddd"));
+
+        assertEquals(0, retainedMessages.getData().size());
+    }
+
+    @Test
+    public void testGetRetainedMessagesByQueryWithWrongQosSet() {
+        TimePageLink pageLink = new TimePageLink(10);
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(0, 2), null));
+
+        assertEquals(0, retainedMessages.getData().size());
+    }
+
+    @Test
+    public void testGetRetainedMessagesByQueryWithQosSet() {
+        TimePageLink pageLink = new TimePageLink(10);
+        PageData<RetainedMsgDto> retainedMessages = retainedMsgPageService.getRetainedMessages(new RetainedMsgQuery(pageLink, null, Set.of(1), null));
+
+        assertEquals(5, retainedMessages.getData().size());
     }
 
     private static RetainedMsg getRetainedMsg(String topic) {
