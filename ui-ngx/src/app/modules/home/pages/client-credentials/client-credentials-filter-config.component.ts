@@ -90,22 +90,15 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   clientTypeIcon = clientTypeIcon;
   clientCredentialsTypes = Object.values(CredentialsType);
   clientCredentialsTypeTranslationMap = credentialsTypeTranslationMap;
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
-
   clientCredentialsFilterConfigForm: UntypedFormGroup;
-
   clientCredentialsFilterOverlayRef: OverlayRef;
-
   panelResult: ClientCredentialsFilterConfig = null;
-
   entityType = EntityType;
 
   private clientCredentialsFilterConfig: ClientCredentialsFilterConfig;
   private resizeWindows: Subscription;
-
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(CLIENT_CREDENTIALS_FILTER_CONFIG_DATA)
@@ -131,7 +124,10 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     this.clientCredentialsFilterConfigForm = this.fb.group({
       clientTypeList: [null, []],
       credentialsTypeList: [null, []],
-      name: [null, []]
+      name: [null, []],
+      clientId: [null, []],
+      username: [null, []],
+      certificateCn: [null, []]
     });
     this.clientCredentialsFilterConfigForm.valueChanges.subscribe(
       () => {
@@ -249,7 +245,10 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     this.clientCredentialsFilterConfigForm.patchValue({
       clientTypeList: clientCredentialsFilterConfig?.clientTypeList,
       credentialsTypeList: clientCredentialsFilterConfig?.credentialsTypeList,
-      name: clientCredentialsFilterConfig?.name
+      name: clientCredentialsFilterConfig?.name,
+      clientId: clientCredentialsFilterConfig?.clientId,
+      username: clientCredentialsFilterConfig?.username,
+      certificateCn: clientCredentialsFilterConfig?.certificateCn
     }, {emitEvent: false});
   }
 
@@ -263,7 +262,10 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     return {
       clientTypeList: formValue.clientTypeList,
       credentialsTypeList: formValue.credentialsTypeList,
-      name: formValue.name
+      name: formValue.name,
+      clientId: formValue.clientId,
+      username: formValue.username,
+      certificateCn: formValue.certificateCn,
     };
   }
 
@@ -280,6 +282,15 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
       }
       if (isNotEmptyStr(this.clientCredentialsFilterConfig?.name)) {
         filterTextParts.push(this.clientCredentialsFilterConfig.name);
+      }
+      if (isNotEmptyStr(this.clientCredentialsFilterConfig?.clientId)) {
+        filterTextParts.push(this.clientCredentialsFilterConfig.clientId);
+      }
+      if (isNotEmptyStr(this.clientCredentialsFilterConfig?.username)) {
+        filterTextParts.push(this.clientCredentialsFilterConfig.username);
+      }
+      if (isNotEmptyStr(this.clientCredentialsFilterConfig?.certificateCn)) {
+        filterTextParts.push(this.clientCredentialsFilterConfig.certificateCn);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');

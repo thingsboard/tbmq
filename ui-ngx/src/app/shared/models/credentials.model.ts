@@ -123,6 +123,9 @@ export interface ClientCredentialsInfo {
 export interface ClientCredentialsFilterConfig {
   credentialsTypeList?: CredentialsType[];
   clientTypeList?: ClientType[];
+  clientId?: string;
+  username?: string;
+  certificateCn?: string;
   name?: string;
 }
 
@@ -139,6 +142,15 @@ export const clientCredentialsFilterConfigEquals = (filter1?: ClientCredentialsF
     if (!isArraysEqualIgnoreUndefined(filter1.clientTypeList, filter2.clientTypeList)) {
       return false;
     }
+    if (!isEqualIgnoreUndefined(filter1.clientId, filter2.clientId)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.username, filter2.username)) {
+      return false;
+    }
+    if (!isEqualIgnoreUndefined(filter1.certificateCn, filter2.certificateCn)) {
+      return false;
+    }
     if (!isEqualIgnoreUndefined(filter1.name, filter2.name)) {
       return false;
     }
@@ -153,11 +165,17 @@ export class ClientCredentialsQuery {
   credentialsTypeList: CredentialsType[];
   clientTypeList: ClientType[];
   name: string;
+  clientId: string;
+  username: string;
+  certificateCn: string;
 
   constructor(pageLink: TimePageLink, clientCredentialsFilter: ClientCredentialsFilterConfig) {
     this.pageLink = pageLink;
     this.credentialsTypeList = clientCredentialsFilter?.credentialsTypeList;
     this.clientTypeList = clientCredentialsFilter?.clientTypeList;
+    this.clientId = clientCredentialsFilter?.clientId;
+    this.username = clientCredentialsFilter?.username;
+    this.certificateCn = clientCredentialsFilter?.certificateCn;
     if (isNotEmptyStr(clientCredentialsFilter?.name)) {
       this.pageLink.textSearch = clientCredentialsFilter?.name;
     }
@@ -165,11 +183,20 @@ export class ClientCredentialsQuery {
 
   public toQuery(): string {
     let query = this.pageLink.toQuery();
-    if (this.credentialsTypeList && this.credentialsTypeList.length) {
+    if (this.credentialsTypeList?.length) {
       query += `&credentialsTypeList=${this.credentialsTypeList.join(',')}`;
     }
-    if (this.clientTypeList && this.clientTypeList.length) {
+    if (this.clientTypeList?.length) {
       query += `&clientTypeList=${this.clientTypeList.join(',')}`;
+    }
+    if (this.clientId?.length) {
+      query += `&clientId=${this.clientId}`;
+    }
+    if (this.username?.length) {
+      query += `&username=${this.username}`;
+    }
+    if (this.certificateCn?.length) {
+      query += `&certificateCn=${this.certificateCn}`;
     }
     return query;
   }
