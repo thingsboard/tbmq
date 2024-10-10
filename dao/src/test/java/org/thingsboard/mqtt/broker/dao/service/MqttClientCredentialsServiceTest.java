@@ -418,10 +418,8 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindMqttClientCredentialsByQueryWithClientId() throws JsonProcessingException {
-        String searchString = "zzzz";
-
         for (int i = 0; i < 5; i++) {
-            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, searchString + i, null, null));
+            mqttClientCredentialsService.saveCredentials(validMqttClientCredentialsWithNulls(null, "zzzzxxxxcccc" + i, null, null));
         }
         for (int i = 0; i < 4; i++) {
             mqttClientCredentialsService.saveCredentials(validMqttBasicClientCredentials(ClientType.APPLICATION));
@@ -433,7 +431,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
             mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
         }
 
-        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, null, searchString, null);
+        ClientCredentialsQuery query = new ClientCredentialsQuery(new PageLink(130), null, null, null, "zxx", null);
         PageData<ShortMqttClientCredentials> pageData = mqttClientCredentialsService.getCredentialsV2(query);
         Assert.assertEquals(5, pageData.getData().size());
     }
