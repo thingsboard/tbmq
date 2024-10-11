@@ -641,7 +641,8 @@
     "payload": "Payload",
     "metadata": "Metadata",
     "show-data": "Payload",
-    "user-properties": "User Properties"
+    "user-properties": "User Properties",
+    "filter-title": "Filter"
   },
   "overview": {
     "overview": "Overview",
