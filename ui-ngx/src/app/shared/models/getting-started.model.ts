@@ -108,37 +108,37 @@ export const gettingStartedDocs: GettingStartedLink[] = [
 
 export const gettingStartedFeatures: GettingStartedLink[] = [
   {
-    img: '/assets/getting-started/getting_started.svg',
+    img: '/assets/getting-started/mqtt-protocol.svg',
     title: 'MQTT Protocol',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-protocol'
   },
   {
-    img: '/assets/getting-started/getting_started.svg',
+    img: '/assets/getting-started/topics.svg',
     title: 'Topics & Wildcards',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/topics'
   },
   {
-    img: '/assets/getting-started/configuration.svg',
+    img: '/assets/getting-started/qos.svg',
     title: 'Quality of Service (QoS)',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/qos'
   },
   {
-    img: '/assets/getting-started/security.svg',
+    img: '/assets/getting-started/keep-alive.svg',
     title: 'Keep Alive',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/keep-alive'
   },
   {
-    img: '/assets/getting-started/client_type.svg',
+    img: '/assets/getting-started/last-will.svg',
     title: 'Last Will & Testament',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/last-will'
   },
   {
-    img: '/assets/getting-started/monitoring.svg',
+    img: '/assets/getting-started/retained-messages.svg',
     title: 'Retained Messages',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages'
   },
   {
-    img: '/assets/getting-started/websocket_client.svg',
+    img: '/assets/getting-started/shared-subscriptions.svg',
     title: 'Shared Subscriptions',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/shared-subscriptions'
   },
