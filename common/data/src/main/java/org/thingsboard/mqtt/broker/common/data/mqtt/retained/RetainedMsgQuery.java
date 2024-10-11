@@ -13,17 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.common.data.mqtt.retained;
 
-import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-public interface RetainedMsgPageService {
+import java.util.Set;
 
-    PageData<RetainedMsgDto> getRetainedMessages(PageLink pageLink);
+@Data
+@Builder
+@AllArgsConstructor
+public class RetainedMsgQuery {
 
-    PageData<RetainedMsgDto> getRetainedMessages(RetainedMsgQuery query);
+    private TimePageLink pageLink;
+    private String topicName;
+    private Set<Integer> qosSet;
+    private String payload;
 
 }
