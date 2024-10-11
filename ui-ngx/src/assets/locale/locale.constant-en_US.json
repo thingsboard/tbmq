@@ -278,7 +278,7 @@
     "avatar": "Avatar",
     "open-user-menu": "Open user menu",
     "config": "Config",
-    "quick-links": "Quick links",
+    "quick-links": "Quick Links",
     "rest-api": "Rest API",
     "total": "Total",
     "security": "Security",
@@ -822,7 +822,7 @@
     "selected-consumer-groups-remove-with-members": "Selected Consumer Groups have Members."
   },
   "getting-started": {
-    "getting-started": "Getting started",
+    "getting-started": "Getting Started",
     "step-subscribe": "Subscribe to Topic",
     "step-publish": "Publish Message",
     "step-session": "View Session Details",

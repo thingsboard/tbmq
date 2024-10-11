@@ -35,7 +35,7 @@ const routes: Routes = [
     data: {
       breadcrumb: {
         label: 'getting-started.getting-started',
-        icon: 'rocket_launch'
+        icon: 'school'
       }
     },
     children: [
