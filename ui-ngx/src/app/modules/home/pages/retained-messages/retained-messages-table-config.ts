@@ -26,7 +26,11 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
-import { RetainedMessage } from '@shared/models/retained-message.model';
+import {
+  RetainedMessage,
+  RetainedMessagesFilterConfig,
+  RetainedMessagesQuery
+} from '@shared/models/retained-message.model';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { forkJoin, Observable } from 'rxjs';
 import {
@@ -36,20 +40,34 @@ import {
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
-import { isDefinedAndNotNull } from '@core/utils';
+import { deepClone, isDefinedAndNotNull } from '@core/utils';
+import { TimePageLink } from '@shared/models/page/page-link';
+import { PageData } from '@shared/models/page/page-data';
+import { ActivatedRoute } from '@angular/router';
+import {
+  RetainedMessagesTableHeaderComponent
+} from '@home/pages/retained-messages/retained-messages-table-header.component';
+import { forAllTimeInterval } from '@shared/models/time/time.models';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
+
+  retainedMessagesFilterConfig: RetainedMessagesFilterConfig = {};
 
   constructor(private dialogService: DialogService,
               private retainedMsgService: RetainedMsgService,
               private translate: TranslateService,
               private dialog: MatDialog,
               private datePipe: DatePipe,
-              public entityId: string = null) {
+              public entityId: string = null,
+              private route: ActivatedRoute) {
     super();
 
     this.entityType = EntityType.RETAINED_MESSAGE;
     this.entityComponent = null;
+    this.headerComponent = RetainedMessagesTableHeaderComponent;
+    this.useTimePageLink = true;
+    this.forAllTimeEnabled = true;
+    this.defaultTimewindowInterval = forAllTimeInterval();
 
     this.detailsPanelEnabled = false;
     this.entityTranslations = entityTypeTranslations.get(EntityType.RETAINED_MESSAGE);
@@ -99,7 +117,39 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
       )
     );
 
-    this.entitiesFetchFunction = pageLink => this.retainedMsgService.getRetainedMessages(pageLink)
+    this.entitiesFetchFunction = pageLink => this.fetchRetainedMessages(pageLink as TimePageLink);
+  }
+
+  private fetchRetainedMessages(pageLink: TimePageLink): Observable<PageData<RetainedMessage>> {
+    const routerQueryParams: RetainedMessagesFilterConfig = this.route.snapshot.queryParams;
+    if (routerQueryParams) {
+      const queryParams = deepClone(routerQueryParams);
+      if (routerQueryParams?.topicName) {
+        this.retainedMessagesFilterConfig.topicName = routerQueryParams?.topicName;
+        delete queryParams.topicName;
+      }
+      if (routerQueryParams?.payload) {
+        this.retainedMessagesFilterConfig.payload = routerQueryParams?.payload;
+        delete queryParams.payload;
+      }
+      if (routerQueryParams?.qosList) {
+        this.retainedMessagesFilterConfig.qosList = routerQueryParams?.qosList;
+        delete queryParams.qosList;
+      }
+    }
+    const filter = this.resolveSubscriptionsFilter(this.retainedMessagesFilterConfig);
+    const query = new RetainedMessagesQuery(pageLink, filter);
+    return this.retainedMsgService.getRetainedMessagesV2(query);
+  }
+
+  private resolveSubscriptionsFilter(subscriptionsFilterConfig?: RetainedMessagesFilterConfig): RetainedMessagesFilterConfig {
+    const filter: RetainedMessagesFilterConfig = {};
+    if (subscriptionsFilterConfig) {
+      filter.topicName = subscriptionsFilterConfig.topicName;
+      filter.payload = subscriptionsFilterConfig.payload;
+      filter.qosList = subscriptionsFilterConfig.qosList;
+    }
+    return filter;
   }
 
   private configureGroupActions(): Array<GroupActionDescriptor<RetainedMessage>> {

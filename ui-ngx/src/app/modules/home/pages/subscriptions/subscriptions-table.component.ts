@@ -18,7 +18,6 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
 import { SubscriptionService } from '@core/http/subscription.service';
@@ -67,7 +66,6 @@ export class SubscriptionsTableComponent implements OnInit {
               private subscriptionService: SubscriptionService,
               private clientSessionService: ClientSessionService,
               private translate: TranslateService,
-              private dialog: MatDialog,
               private route: ActivatedRoute,
               private router: Router) {
   }
@@ -79,7 +77,6 @@ export class SubscriptionsTableComponent implements OnInit {
       this.subscriptionService,
       this.clientSessionService,
       this.translate,
-      this.dialog,
       this.entityIdValue,
       this.route,
       this.router

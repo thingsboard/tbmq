@@ -22,6 +22,7 @@ import { RetainedMessagesTableConfig } from '@home/pages/retained-messages/retai
 import { DialogService } from '@core/services/dialog.service';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'tb-retained-messages-table',
@@ -67,7 +68,8 @@ export class RetainedMessagesTableComponent implements OnInit {
               private retainedMsgService: RetainedMsgService,
               private translate: TranslateService,
               private dialog: MatDialog,
-              private datePipe: DatePipe) {
+              private datePipe: DatePipe,
+              private route: ActivatedRoute) {
   }
 
   ngOnInit(): void {
@@ -78,7 +80,8 @@ export class RetainedMessagesTableComponent implements OnInit {
       this.translate,
       this.dialog,
       this.datePipe,
-      this.entityIdValue
+      this.entityIdValue,
+      this.route
     );
   }
 

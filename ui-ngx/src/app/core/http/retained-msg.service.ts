@@ -20,7 +20,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { PageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
-import { RetainedMessage } from '@shared/models/retained-message.model';
+import { RetainedMessage, RetainedMessagesQuery } from '@shared/models/retained-message.model';
 
 @Injectable({
   providedIn: 'root'
@@ -47,4 +47,7 @@ export class RetainedMsgService {
     return this.http.delete<void>(`/api/retained-msg/topic-trie/clear`, defaultHttpOptionsFromConfig(config));
   }
 
+  public getRetainedMessagesV2(query: RetainedMessagesQuery, config?: RequestConfig): Observable<PageData<RetainedMessage>> {
+    return this.http.get<PageData<RetainedMessage>>(`/api/retained-msg/v2${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
+  }
 }

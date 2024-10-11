@@ -19,7 +19,8 @@ import { TimePageLink } from '@shared/models/page/page-link';
 import {
   isArraysEqualIgnoreUndefined,
   isDefinedAndNotNull,
-  isEmpty, isEqualIgnoreUndefined,
+  isEmpty,
+  isEqualIgnoreUndefined,
   isNotEmptyStr,
   isUndefinedOrNull
 } from '@core/utils';

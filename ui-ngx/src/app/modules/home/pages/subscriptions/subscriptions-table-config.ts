@@ -25,7 +25,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
 import { Observable } from 'rxjs';
-import { MatDialog } from '@angular/material/dialog';
 import { PageLink, TimePageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
 import { deepClone } from '@core/utils';
@@ -52,7 +51,6 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
               private subscriptionService: SubscriptionService,
               private clientSessionService: ClientSessionService,
               private translate: TranslateService,
-              private dialog: MatDialog,
               public entityId: string = null,
               private route: ActivatedRoute,
               private router: Router) {
@@ -177,7 +175,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     }
     const filter = this.resolveSubscriptionsFilter(this.subscriptionsFilterConfig);
     const query = new ClientSubscriptionsQuery(pageLink, filter);
-    return this.subscriptionService.getAllClientSubscriptions(query);
+    return this.subscriptionService.getClientSubscriptionsV2(query);
   }
 
   private resolveSubscriptionsFilter(subscriptionsFilterConfig?: ClientSubscriptionFilterConfig): ClientSubscriptionFilterConfig {

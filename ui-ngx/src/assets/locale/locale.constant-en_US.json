@@ -443,6 +443,7 @@
     "password": "Password",
     "password-changed": "Password successfully changed",
     "certificate-common-name": "Certificate common name",
+    "certificate-common-name-filter": "Certificate CN",
     "certificate-common-name-required": "Certificate common name is required.",
     "certificate-common-name-regex-label": "Certificate common name regex",
     "certificate-common-name-regex": "Use certificate CN regex",

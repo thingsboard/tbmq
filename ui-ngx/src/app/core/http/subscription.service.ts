@@ -46,7 +46,7 @@ export class SubscriptionService {
     return this.http.get<PageData<TopicSubscription>>(`/api/subscription${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getAllClientSubscriptions(query: ClientSubscriptionsQuery, config?: RequestConfig): Observable<PageData<ClientSubscription>> {
+  public getClientSubscriptionsV2(query: ClientSubscriptionsQuery, config?: RequestConfig): Observable<PageData<ClientSubscription>> {
     return this.http.get<PageData<ClientSubscription>>(`/api/subscription/all${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
 

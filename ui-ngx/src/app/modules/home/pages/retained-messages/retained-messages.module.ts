@@ -18,12 +18,20 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { RetainedMessagesRoutingModule } from "@home/pages/retained-messages/retained-messages-routing.module";
+import { RetainedMessagesRoutingModule } from '@home/pages/retained-messages/retained-messages-routing.module';
 import { RetainedMessagesTableComponent } from '@home/pages/retained-messages/retained-messages-table.component';
+import {
+  RetainedMessagesFilterConfigComponent
+} from '@home/pages/retained-messages/retained-messages-filter-config.component';
+import {
+  RetainedMessagesTableHeaderComponent
+} from '@home/pages/retained-messages/retained-messages-table-header.component';
 
 @NgModule({
   declarations: [
-    RetainedMessagesTableComponent
+    RetainedMessagesTableComponent,
+    RetainedMessagesFilterConfigComponent,
+    RetainedMessagesTableHeaderComponent
   ],
   imports: [
     CommonModule,

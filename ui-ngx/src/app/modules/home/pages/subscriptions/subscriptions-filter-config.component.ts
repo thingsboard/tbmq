@@ -39,7 +39,7 @@ import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 import { ClientSubscriptionFilterConfig, subscriptionsFilterConfigEquals } from '@shared/models/subscription.model';
-import { mqttQoSTypes, mqttQoSValuesMap, WsQoSTranslationMap } from '@shared/models/session.model';
+import { mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
 
 export const SUBSCRIPTIONS_FILTER_CONFIG_DATA = new InjectionToken<any>('SubscriptionsFilterConfigData');
@@ -84,7 +84,6 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   booleanList = [true, false];
   qosList = mqttQoSTypes;
   qoSValuesMap = mqttQoSValuesMap;
-  qoSTranslationMap = WsQoSTranslationMap;
   rhOptions = RhOptions;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
