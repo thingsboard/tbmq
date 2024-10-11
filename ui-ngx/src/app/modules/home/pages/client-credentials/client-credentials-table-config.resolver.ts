@@ -184,6 +184,9 @@ export class ClientCredentialsTableConfigResolver implements Resolve<EntityTable
       filter.name = clientCredentialsFilterConfig.name;
       filter.clientTypeList = clientCredentialsFilterConfig.clientTypeList;
       filter.credentialsTypeList = clientCredentialsFilterConfig.credentialsTypeList;
+      filter.clientId = clientCredentialsFilterConfig.clientId;
+      filter.username = clientCredentialsFilterConfig.username;
+      filter.certificateCn = clientCredentialsFilterConfig.certificateCn;
     }
     return filter;
   }
