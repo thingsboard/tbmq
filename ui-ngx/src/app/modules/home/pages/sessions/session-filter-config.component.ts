@@ -34,7 +34,7 @@ import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 import { TranslateService } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
+import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
 import {
@@ -45,6 +45,7 @@ import {
 } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
+import { NumericOperation, numericOperationTranslationMap } from '@shared/models/query/query.models';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 
@@ -92,22 +93,18 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
-
   sessionFilterConfigForm: UntypedFormGroup;
-
   sessionFilterOverlayRef: OverlayRef;
-
   panelResult: SessionFilterConfig = null;
-
   entityType = EntityType;
+  numericOperations = Object.keys(NumericOperation);
+  numericOperationEnum = NumericOperation;
+  numericOperationTranslations = numericOperationTranslationMap;
 
   private sessionFilterConfig: SessionFilterConfig;
   private resizeWindows: Subscription;
-
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SESSION_FILTER_CONFIG_DATA)
@@ -137,6 +134,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       nodeIdList: [null, []],
       clientId: [null, []],
       subscriptions: [null, []],
+      subscriptionOperation: [null, []],
+      clientIpAddress: [null, []],
     });
     this.sessionFilterConfigForm.valueChanges.subscribe(
       () => {
@@ -258,6 +257,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       nodeIdList: sessiohFilterConfig?.nodeIdList,
       clientId: sessiohFilterConfig?.clientId,
       subscriptions: sessiohFilterConfig?.subscriptions,
+      subscriptionOperation: sessiohFilterConfig?.subscriptionOperation || NumericOperation.EQUAL,
+      clientIpAddress: sessiohFilterConfig?.clientIpAddress,
     }, {emitEvent: false});
   }
 
@@ -275,7 +276,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       nodeIdList: formValue.nodeIdList,
       clientId: formValue.clientId,
       subscriptions: formValue.subscriptions,
-    };
+      subscriptionOperation: formValue.subscriptionOperation,
+      clientIpAddress: formValue.clientIpAddress,};
   }
 
   private updateButtonDisplayValue() {
@@ -298,7 +300,10 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       if (this.sessionFilterConfig?.cleanStartList?.length) {
         filterTextParts.push(`${this.translate.instant('mqtt-client-session.clean-start')}: ${this.sessionFilterConfig.cleanStartList.join(', ')}`);
       }
-      if (this.sessionFilterConfig?.subscriptions) {
+      if (this.sessionFilterConfig?.clientIpAddress?.length) {
+        filterTextParts.push(this.sessionFilterConfig.clientIpAddress);
+      }
+      if (isDefinedAndNotNull(this.sessionFilterConfig?.subscriptions)) {
         filterTextParts.push(`${this.translate.instant('mqtt-client-session.subscriptions-short')}: ${this.sessionFilterConfig.subscriptions}`);
       }
       if (!filterTextParts.length) {

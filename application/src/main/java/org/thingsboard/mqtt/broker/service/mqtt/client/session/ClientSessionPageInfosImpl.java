@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionQuery;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionState;
+import org.thingsboard.mqtt.broker.common.data.client.session.SubscriptionOperation;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
@@ -65,6 +66,8 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         List<Boolean> cleanStartList = query.getCleanStartList();
         Set<String> nodeIdSet = query.getNodeIdSet();
         Integer subscriptions = query.getSubscriptions();
+        SubscriptionOperation operation = query.getOperation();
+        String ipAddress = query.getClientIpAddress();
 
         List<ClientSessionInfo> filteredClientSessionInfos = allClientSessions
                 .values()
@@ -73,8 +76,9 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
                 .filter(clientSessionInfo -> filterByConnectedStatus(connectedStatusList, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByClientType(clientTypeList, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByCleanStart(cleanStartList, clientSessionInfo))
-                .filter(clientSessionInfo -> filterBySubscriptions(subscriptions, clientSessionInfo))
+                .filter(clientSessionInfo -> filterBySubscriptions(subscriptions, operation, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByNodeId(nodeIdSet, clientSessionInfo))
+                .filter(clientSessionInfo -> filterByClientIpAddress(ipAddress, clientSessionInfo))
                 .filter(clientSessionInfo -> filterByTimeRange(startTime, endTime, clientSessionInfo))
                 .toList();
 
@@ -158,12 +162,31 @@ public class ClientSessionPageInfosImpl implements ClientSessionPageInfos {
         return CollectionUtils.isEmpty(cleanStartList) || cleanStartList.size() != 1 || clientSessionInfo.isCleanStart() == cleanStartList.get(0);
     }
 
-    private boolean filterBySubscriptions(Integer subscriptions, ClientSessionInfo clientSessionInfo) {
-        return subscriptions == null || subscriptions == getSubscriptionsCount(clientSessionInfo);
+    private boolean filterBySubscriptions(Integer subscriptionsValue, SubscriptionOperation operation, ClientSessionInfo clientSessionInfo) {
+        if (subscriptionsValue == null) {
+            return true;
+        }
+        int sessionSubscriptionsCount = getSubscriptionsCount(clientSessionInfo);
+        return switch (operation) {
+            case EQUAL -> sessionSubscriptionsCount == subscriptionsValue;
+            case NOT_EQUAL -> sessionSubscriptionsCount != subscriptionsValue;
+            case GREATER -> sessionSubscriptionsCount > subscriptionsValue;
+            case LESS -> sessionSubscriptionsCount < subscriptionsValue;
+            case GREATER_OR_EQUAL -> sessionSubscriptionsCount >= subscriptionsValue;
+            case LESS_OR_EQUAL -> sessionSubscriptionsCount <= subscriptionsValue;
+        };
     }
 
     private boolean filterByNodeId(Set<String> nodeIdSet, ClientSessionInfo clientSessionInfo) {
         return CollectionUtils.isEmpty(nodeIdSet) || nodeIdSet.contains(clientSessionInfo.getServiceId());
+    }
+
+    private boolean filterByClientIpAddress(String ipAddress, ClientSessionInfo clientSessionInfo) {
+        if (ipAddress == null) {
+            return true;
+        }
+        String hostAddress = BytesUtil.toHostAddress(clientSessionInfo.getClientIpAdr());
+        return hostAddress.toLowerCase().contains(ipAddress.toLowerCase());
     }
 
     private boolean filterByTimeRange(Long startTime, Long endTime, ClientSessionInfo clientSessionInfo) {
