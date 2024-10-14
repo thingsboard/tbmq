@@ -140,7 +140,7 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
   {
     img: '/assets/getting-started/shared-subscriptions.svg',
     title: 'Shared Subscriptions',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/shared-subscriptions'
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions'
   },
 ]
 
