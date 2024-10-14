@@ -27,7 +27,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 
 @Hidden
 @RestController
@@ -53,13 +55,19 @@ public class SystemInfoController extends BaseController {
 
     private JsonNode buildInfoObject() {
         ObjectNode infoObject = JacksonUtil.newObjectNode();
+        infoObject.put("newestVersion", getLatestVersionAvailable());
         if (buildProperties != null) {
             infoObject.put("version", buildProperties.getVersion());
             infoObject.put("artifact", buildProperties.getArtifact());
             infoObject.put("name", buildProperties.getName());
         } else {
-            infoObject.put("version", "unknown");
+            infoObject.put("version", BrokerConstants.UNKNOWN);
         }
         return infoObject;
+    }
+
+    private String getLatestVersionAvailable() {
+        RetainedMsgDto retainedMsgDto = retainedMsgListenerService.getRetainedMsgForTopic(BrokerConstants.LATEST_VERSION_AVAILABLE_TOPIC_NAME);
+        return retainedMsgDto == null ? BrokerConstants.UNKNOWN : retainedMsgDto.getPayload();
     }
 }

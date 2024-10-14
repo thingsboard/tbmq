@@ -144,6 +144,9 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         if (log.isTraceEnabled()) {
             log.trace("[{}] Executing getRetainedMsgForTopic", topic);
         }
+        if (retainedMessagesMap == null) {
+            return null;
+        }
         RetainedMsg retainedMsg = retainedMessagesMap.getOrDefault(topic, null);
         if (retainedMsg != null) {
             return MqttPropertiesUtil
@@ -176,9 +179,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     }
 
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
-        if (topic.startsWith(BrokerConstants.SYSTEMS_TOPIC_PREFIX)) {
-            // No need to add switch case by topic to process different requests.
-            // Only one request is supported for now
+        if (topic.equals(BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME)) {
             retainedMsgSystemRequestProcessor.processClientSessionStatsCleanup(retainedMsg);
             return;
         }
