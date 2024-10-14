@@ -28,7 +28,6 @@ import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
 import { base64toString, isLiteralObject } from '@core/utils';
-import { TranslateService } from '@ngx-translate/core';
 
 export interface EventContentDialogData {
   content: string;
@@ -55,8 +54,7 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
               protected router: Router,
               @Inject(MAT_DIALOG_DATA) public data: EventContentDialogData,
               public dialogRef: MatDialogRef<EventContentDialogComponent>,
-              private renderer: Renderer2,
-              private translate: TranslateService) {
+              private renderer: Renderer2) {
     super(store, router, dialogRef);
   }
 

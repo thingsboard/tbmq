@@ -37,7 +37,6 @@ import { WsJsonObjectEditComponent } from '@home/pages/ws-client/messages/ws-jso
 import { LastWillComponent } from '@home/pages/ws-client/connections/last-will.component';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/message-filter-config.component';
-import { WsMessagePayloadDialogComponent } from '@home/pages/ws-client/messages/ws-message-payload-dialog.component';
 import { WsMessagePropertiesDialogComponent } from '@home/pages/ws-client/messages/ws-message-properties-dialog.component';
 
 @NgModule({
@@ -60,7 +59,6 @@ import { WsMessagePropertiesDialogComponent } from '@home/pages/ws-client/messag
     WsJsonObjectEditComponent,
     LastWillComponent,
     MessageFilterConfigComponent,
-    WsMessagePayloadDialogComponent,
     WsMessagePropertiesDialogComponent
   ],
   imports: [

@@ -33,11 +33,6 @@ import {
 } from '@shared/models/retained-message.model';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { forkJoin, Observable } from 'rxjs';
-import {
-  EventContentDialogComponent,
-  EventContentDialogData
-} from '@home/components/event/event-content-dialog.component';
-import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
@@ -48,6 +43,10 @@ import {
   RetainedMessagesTableHeaderComponent
 } from '@home/pages/retained-messages/retained-messages-table-header.component';
 import { forAllTimeInterval } from '@shared/models/time/time.models';
+import {
+  EventContentDialogV2ComponentDialogData,
+  EventContentDialogV2Component
+} from '@home/components/event/event-content-dialog-v2.component';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
 
@@ -172,13 +171,13 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
         name: this.translate.instant('retained-message.show-data'),
         icon: 'mdi:code-braces',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data')
+        onAction: ($event, entity) => this.showPayload($event, entity.payload, 'retained-message.show-data', 'mdi:code-braces')
       },
       {
         name: this.translate.instant('retained-message.user-properties'),
         icon: 'mdi:code-brackets',
         isEnabled: (entity) => isDefinedAndNotNull(entity.userProperties),
-        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.user-properties')
+        onAction: ($event, entity) => this.showPayload($event, JSON.stringify(entity.userProperties), 'retained-message.user-properties', 'mdi:code-brackets')
       },
       {
         name: this.translate.instant('action.delete'),
@@ -260,17 +259,17 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     });
   }
 
-  private showPayload($event: MouseEvent, content: string, title: string): void {
+  private showPayload($event: MouseEvent, content: string, title: string, icon: string): void {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogComponent, EventContentDialogData>(EventContentDialogComponent, {
+    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         content,
         title,
-        contentType: ContentType.JSON
+        icon,
       }
     });
   }

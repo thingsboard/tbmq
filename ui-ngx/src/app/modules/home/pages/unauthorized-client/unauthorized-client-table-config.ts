@@ -26,10 +26,6 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { DialogService } from '@core/services/dialog.service';
 import { forkJoin, Observable } from 'rxjs';
-import {
-  EventContentDialogComponent,
-  EventContentDialogData
-} from '@home/components/event/event-content-dialog.component';
 import { ContentType } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import {
@@ -47,6 +43,10 @@ import { forAllTimeInterval } from '@shared/models/time/time.models';
 import {
   UnauthorizedClientTableHeaderComponent
 } from '@home/pages/unauthorized-client/unauthorized-client-table-header.component';
+import {
+  EventContentDialogV2ComponentDialogData,
+  EventContentDialogV2Component
+} from '@home/components/event/event-content-dialog-v2.component';
 
 export class UnauthorizedClientTableConfig extends EntityTableConfig<UnauthorizedClient, TimePageLink> {
 
@@ -294,13 +294,14 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogComponent, EventContentDialogData>(EventContentDialogComponent, {
+    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         content,
         title: 'unauthorized-client.reason',
-        contentType: ContentType.TEXT
+        contentType: ContentType.TEXT,
+        icon: 'error_outline'
       }
     });
     return false;

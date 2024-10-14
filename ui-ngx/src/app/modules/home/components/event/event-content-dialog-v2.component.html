@@ -18,7 +18,7 @@
 <div mat-dialog-content fxLayout="column" fxLayoutGap="24px">
   <section fxLayout="row" fxLayoutAlign="flex-start">
     <div fxLayout="row" fxLayoutGap="8px">
-      <mat-icon [svgIcon]="icon" class="material-icons"></mat-icon>
+      <tb-icon *ngIf="icon">{{ icon }}</tb-icon>
       <span class="title" translate>{{ title }}</span>
     </div>
     <span fxFlex></span>

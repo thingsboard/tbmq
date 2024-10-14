@@ -27,22 +27,21 @@ import { getAce } from '@shared/models/ace/ace.models';
 import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
-import { base64toString, isLiteralObject } from '@core/utils';
-import { TranslateService } from '@ngx-translate/core';
+import { base64toString, isLiteralObject, isValidObjectString } from '@core/utils';
 
-export interface WsMessageContentDialogComponentDialogData {
+export interface EventContentDialogV2ComponentDialogData {
   content: string;
   title: string;
   icon?: string;
-  contentType: ContentType;
+  contentType?: ContentType;
 }
 
 @Component({
-  selector: 'tb-ws-message-content-dialog',
-  templateUrl: './ws-message-payload-dialog.component.html',
-  styleUrls: ['./ws-message-payload-dialog.component.scss']
+  selector: 'tb-event-content-dialog-v2',
+  templateUrl: './event-content-dialog-v2.component.html',
+  styleUrls: ['./event-content-dialog-v2.component.scss']
 })
-export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageContentDialogComponentDialogData> implements OnInit, OnDestroy {
+export class EventContentDialogV2Component extends DialogComponent<EventContentDialogV2ComponentDialogData> implements OnInit, OnDestroy {
 
   @ViewChild('eventContentEditor', {static: true})
   eventContentEditorElmRef: ElementRef;
@@ -55,10 +54,9 @@ export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageCo
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
-              @Inject(MAT_DIALOG_DATA) public data: WsMessageContentDialogComponentDialogData,
-              public dialogRef: MatDialogRef<WsMessagePayloadDialogComponent>,
-              private renderer: Renderer2,
-              private translate: TranslateService) {
+              @Inject(MAT_DIALOG_DATA) public data: EventContentDialogV2ComponentDialogData,
+              public dialogRef: MatDialogRef<EventContentDialogV2Component>,
+              private renderer: Renderer2) {
     super(store, router, dialogRef);
   }
 
@@ -66,8 +64,12 @@ export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageCo
     this.content = this.data.content;
     this.title = this.data.title;
     this.icon = this.data.icon;
-    this.contentType = this.data.contentType;
-
+    if (this.data.contentType) {
+      this.contentType = this.data.contentType;
+    } else {
+      const isJson = isValidObjectString(this.content);
+      this.contentType = isJson ? ContentType.JSON : ContentType.TEXT;
+    }
     this.createEditor(this.eventContentEditorElmRef, this.content);
   }
 
@@ -146,7 +148,7 @@ export class WsMessagePayloadDialogComponent extends DialogComponent<WsMessageCo
     let newWidth = 400;
     if (content && content.length > 0) {
       const lines = content.split('\n');
-      newHeight = 16 * lines.length + 16;
+      newHeight = 16 * lines.length + 24;
       let maxLineLength = 0;
       lines.forEach((row) => {
         const line = row.replace(/\t/g, '    ').replace(/\n/g, '');

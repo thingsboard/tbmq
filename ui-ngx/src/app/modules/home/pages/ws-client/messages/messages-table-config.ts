@@ -25,7 +25,7 @@ import {
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
-import { ContentType, MediaBreakpoints } from '@shared/models/constants';
+import { MediaBreakpoints } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
 import { WsQoSTranslationMap } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -37,9 +37,9 @@ import {
 } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import {
-  WsMessageContentDialogComponentDialogData,
-  WsMessagePayloadDialogComponent
-} from '@home/pages/ws-client/messages/ws-message-payload-dialog.component';
+  EventContentDialogV2ComponentDialogData,
+  EventContentDialogV2Component
+} from '@home/components/event/event-content-dialog-v2.component';
 import {
   WsMessagePropertiesDialogComponent,
   WsMessagePropertiesDialogData
@@ -131,14 +131,13 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<WsMessagePayloadDialogComponent, WsMessageContentDialogComponentDialogData>(WsMessagePayloadDialogComponent, {
+    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
       disableClose: false,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {
         content,
         title,
         icon: 'mdi:code-braces',
-        contentType: ContentType.JSON
       }
     });
   }
