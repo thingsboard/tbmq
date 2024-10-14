@@ -200,8 +200,8 @@ export class MessangerComponent implements OnInit {
 
   private topicValidator(control: FormControl): {[key: string]: boolean} | null {
     const invalidChars = /[+#]/;
-    const isValid = !invalidChars.test(control.value);
-    return isValid ? null : { 'invalidTopic': true };
+    const isValid = !invalidChars.test(control.value) && control.value[0] !== '$';
+    return isValid ? null : { invalidTopic: true };
   }
 
   private resetFilterConfig() {
