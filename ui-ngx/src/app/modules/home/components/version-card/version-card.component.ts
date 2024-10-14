@@ -35,17 +35,14 @@ export class VersionCardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    forkJoin([this.configService.getSystemVersion(), this.configService.getGithubSystemVersion()])
-      .subscribe(
-        res => {
-          if (res) {
-            const currentRelease = res[0];
-            const latestRelease = res[1];
-            this.currentReleaseVersion = currentRelease.version.split('-')[0];
-            this.latestReleaseVersion = latestRelease.tag_name.slice(1);
-            this.updatesAvailable = this.latestReleaseVersion !== this.currentReleaseVersion;
-          }
-        });
+    this.configService.getSystemVersion().subscribe(
+      res => {
+        if (res) {
+          this.currentReleaseVersion = res.version.split('-')[0];
+          this.latestReleaseVersion = res.newestVersion;
+          this.updatesAvailable = this.latestReleaseVersion !== this.currentReleaseVersion;
+        }
+      });
     }
 
   gotoDocs(page: string){

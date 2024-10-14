@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.ttl;
+package org.thingsboard.mqtt.broker.service.provider;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,24 +22,33 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractCleanUpService {
+public abstract class AbstractServiceProvider {
 
     private final TbQueueAdmin tbQueueAdmin;
     private final ServiceInfoProvider serviceInfoProvider;
 
     protected boolean isCurrentNodeShouldCleanUp() {
-        String serviceId = serviceInfoProvider.getServiceId();
+        return isThisNodeResponsibleForTask(getServiceId(), "ts cleanup");
+    }
 
-        List<String> brokerServiceIds = tbQueueAdmin.getBrokerServiceIds().stream().sorted().collect(Collectors.toList());
+    protected boolean isCurrentNodeShouldCheckAvailableVersion() {
+        return isThisNodeResponsibleForTask(getServiceId(), "check latest available version");
+    }
+
+    private String getServiceId() {
+        return serviceInfoProvider.getServiceId();
+    }
+
+    private boolean isThisNodeResponsibleForTask(String serviceId, String logMsg) {
+        List<String> brokerServiceIds = tbQueueAdmin.getBrokerServiceIds().stream().sorted().toList();
         if (!CollectionUtils.isEmpty(brokerServiceIds)) {
             String firstServiceId = brokerServiceIds.get(0);
             return serviceId.equals(firstServiceId);
         }
-        log.info("[{}] Could not find all service ids, proceeding with clean up!", serviceId);
+        log.info("[{}] Could not find all service ids, proceeding with {} task!", serviceId, logMsg);
         return true;
     }
 }
