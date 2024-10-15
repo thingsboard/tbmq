@@ -714,7 +714,7 @@ mqtt:
   buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
   keep-alive:
     # Time in milliseconds between subsequent checks for the non-active clients
-    monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:100}"
+    monitoring-delay-ms: "${MQTT_KEEP_ALIVE_MONITORING_DELAY_MS:1000}"
     # Max value in seconds allowed by the server for keep-alive that can be used by clients. Defaults to 10 minutes, used for MQTT v5 clients
     max-keep-alive: "${MQTT_KEEP_ALIVE_MAX_KEEP_ALIVE_SEC:600}"
   topic:
