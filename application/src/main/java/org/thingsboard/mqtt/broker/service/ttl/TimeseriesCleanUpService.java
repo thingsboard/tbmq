@@ -22,10 +22,11 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
 
 @Slf4j
 @Service
-public class TimeseriesCleanUpService extends AbstractCleanUpService {
+public class TimeseriesCleanUpService extends AbstractServiceProvider {
 
     @Value("${sql.ttl.ts.ts_key_value_ttl}")
     protected long systemTtl;

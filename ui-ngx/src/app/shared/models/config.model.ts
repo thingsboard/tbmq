@@ -82,4 +82,5 @@ export interface SystemVersionInfo {
   version: string;
   artifact: string;
   name: string;
+  newestVersion: string;
 }

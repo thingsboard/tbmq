@@ -90,7 +90,7 @@ public class DefaultTopicValidationService implements TopicValidationService {
         if (topic.contains(BrokerConstants.NULL_CHAR_STR)) {
             throw new DataValidationException("Topic Names and Topic Filters must not include the null character (Unicod U+0000).");
         }
-        if (topic.length() > MAX_SIZE_BYTES) {
+        if (topic.length() > MAX_SIZE_BYTES) { // topic.getBytes(StandardCharsets.UTF_8).length
             throw new DataValidationException("Topic Names and Topic Filters must not encode to more than " + MAX_SIZE_BYTES + " bytes.");
         }
         if (maxSegmentsCount > 0) {

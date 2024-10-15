@@ -75,7 +75,7 @@ public class BytesUtil {
             return InetAddress.getByAddress(ipAddr).getHostAddress();
         } catch (UnknownHostException e) {
             log.warn("Failed to convert IP address [{}] to textual form", ipAddr);
-            return "unknown";
+            return BrokerConstants.UNKNOWN;
         }
     }
 

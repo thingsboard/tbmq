@@ -15,10 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 public class DefaultTopicValidationServiceTest {
@@ -111,7 +113,6 @@ public class DefaultTopicValidationServiceTest {
         return builder.toString();
     }
 
-
     @Test(expected = DataValidationException.class)
     public void testTooManySegmentsTopic() {
         int maxSegmentsSize = 10;
@@ -142,6 +143,7 @@ public class DefaultTopicValidationServiceTest {
     public void testValidFilterSize() {
         String largeTopic = generateLargeTopic();
         String normalTopic = largeTopic.substring(0, DefaultTopicValidationService.MAX_SIZE_BYTES);
+        Assert.assertTrue(normalTopic.getBytes(StandardCharsets.UTF_8).length <= DefaultTopicValidationService.MAX_SIZE_BYTES);
         topicValidationService.validateTopicFilter(normalTopic);
     }
 
