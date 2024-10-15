@@ -35,7 +35,14 @@ import {
   WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
-import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IDisconnectPacket, IPublishPacket, MqttClient } from 'mqtt';
+import mqtt, {
+  IClientOptions,
+  IClientPublishOptions,
+  IConnackPacket,
+  IPublishPacket,
+  MqttClient,
+  Packet
+} from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
 import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber, isUndefined } from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
@@ -195,9 +202,12 @@ export class MqttJsClientService {
       console.log(`Unknown error on publish message with topic '${topic}' \n${JSON.stringify(options)}`);
     }, 3000);
     this.getSelectedMqttJsClient().publish(topic, payload, options, (error, packet) => {
-      if (!isUndefined(error) || error !== null) {
+      if (!error || !error?.message?.length) {
         clearTimeout(logUnknownPubErrorTimeout);
         this.addMessage(message, this.getSelectedConnectionId());
+      }
+      if (error?.message?.length) {
+        console.log(`Unexpected error on publish message \nTopic: '${topic}' \nError: ${error.message}`);
       }
     });
   }
@@ -379,7 +389,7 @@ export class MqttJsClientService {
       }
       this.logMqttClienEvent('end', [mqttClient]);
     });
-    mqttClient.on('packetreceive', (packet: IDisconnectPacket) => {
+    mqttClient.on('packetreceive', (packet: Packet) => {
       if (packet.cmd == 'disconnect') {
         const reason = DisconnectReasonCodes[packet.reasonCode];
         this.updateConnectionStatusLog(connection, ConnectionStatus.CONNECTION_FAILED, reason);
@@ -504,9 +514,6 @@ export class MqttJsClientService {
       this.connectionMessagesMap.set(clientId, []);
     }
     const clientMessages = this.connectionMessagesMap.get(clientId);
-    /*if (clientMessages.length >= 50) {
-      clientMessages.pop();
-    }*/
     clientMessages.unshift(message);
     if (message.type === 'received') {
       if (!this.publishMsgStartTs) {
