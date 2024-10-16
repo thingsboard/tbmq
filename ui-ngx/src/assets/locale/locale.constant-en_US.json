@@ -559,6 +559,8 @@
     "topic": "Topic",
     "topic-filter": "Topic Filter",
     "topic-filter-required": "Topic Filter is required.",
+    "topic-name-required": "Topic name is required.",
+    "topic-name-invalid": "Topic name is invalid.",
     "type-session": "Session",
     "type-sessions": "Sessions",
     "remove-session": "Remove session",

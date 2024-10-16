@@ -17,7 +17,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, FormControl, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -74,7 +74,7 @@ export class MessangerComponent implements OnInit {
   ngOnInit() {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
-      topic: [defaultPublishTopic, [this.topicValidator]],
+      topic: [defaultPublishTopic, [this.topicValidator, Validators.required]],
       qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
@@ -178,6 +178,12 @@ export class MessangerComponent implements OnInit {
           this.messangerFormGroup.patchValue({
             properties: properties
           });
+          if (this.applyTopicAlias) {
+            this.messangerFormGroup.get('topic').setValidators([this.topicValidator]);
+          } else {
+            this.messangerFormGroup.get('topic').setValidators([this.topicValidator, Validators.required]);
+          }
+          this.messangerFormGroup.updateValueAndValidity();
         }
       });
   }
