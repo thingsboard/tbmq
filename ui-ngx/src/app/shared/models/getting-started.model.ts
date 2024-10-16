@@ -59,13 +59,6 @@ export const gettingStartedGuides: GettingStartedLink[] = [
     subtitle: 'getting-started.guide.java-ws-subtitle',
     url: '/getting-started/guide-java-ws'
   },
-  /*{
-    id: 'websocket',
-    img: '/assets/home/no_data_bg.svg',
-    title: 'ws-client.ws-client',
-    subtitle: 'getting-started.guide.ws-client-subtitle',
-    url: '/ws-client'
-  },*/
 ]
 
 export const gettingStartedDocs: GettingStartedLink[] = [
@@ -75,9 +68,14 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
   },
   {
+    img: '/assets/getting-started/architecture.svg',
+    title: 'Architecture',
+    url: 'https://thingsboard.io/docs/mqtt-broker/architecture'
+  },
+  {
     img: '/assets/getting-started/configuration.svg',
     title: 'Configuration',
-    url: 'https://thingsboard.io/docs/mqtt-broker/install/config/'
+    url: 'https://thingsboard.io/docs/mqtt-broker/install/config'
   },
   {
     img: '/assets/getting-started/security.svg',
@@ -98,6 +96,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     img: '/assets/getting-started/websocket_client.svg',
     title: 'WebSocket Client',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'
+  },
+  {
+    img: '/assets/getting-started/unauthorized-clients.svg',
+      title: 'Unauthorized Clients',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/unauthorized-clients'
   },
   {
     img: '/assets/getting-started/troubleshooting.svg',
@@ -141,6 +144,11 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
     img: '/assets/getting-started/shared-subscriptions.svg',
     title: 'Shared Subscriptions',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions'
+  },
+  {
+    img: '/assets/getting-started/mqtt-over-ws.svg',
+    title: 'MQTT over WebSocket',
+    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/'
   },
 ]
 

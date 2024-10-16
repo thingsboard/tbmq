@@ -411,6 +411,7 @@
     "certificate-matcher-regex-not-unique": "Client certificate CN matcher regex should be unique.",
     "client-credentials": "Client Credentials",
     "client-id-or-user-name-required": "Client ID and/or User Name is required.",
+    "client-id-search-hint": "Search by Client ID is supported only for 'Basic' credentials type.",
     "client-credentials-details": "Client Credentials details",
     "credentials": "Credentials",
     "credentials-required": "Select Client Credentials.",
@@ -447,7 +448,9 @@
     "certificate-common-name-required": "Certificate common name is required.",
     "certificate-common-name-regex-label": "Certificate common name regex",
     "certificate-common-name-regex": "Use certificate CN regex",
+    "certificate-common-name-search-hint": "Search by Certificate CN is supported only for 'X.509 Certificate Chain' credentials type.",
     "username": "Username",
+    "username-search-hint": "Search by Username is available for both 'Basic' and 'SCRAM' credentials types.",
     "user-name-required": "User Name is required.",
     "hint-allow-self-signed-certificates": "hint-allow-self-signed-certificates",
     "hint-client-type-application": "Use 'Application' type for clients that usually subscribe to topics with high message rates and with the requirement to persist messages when the client is offline, i.e. <b>IoT applications</b>.",
@@ -906,7 +909,8 @@
       "no-messages-text": "No messages yet",
       "filter": "Filter messages",
       "max-messages": "Maximum messages in WebSocket Client table",
-      "max-messages-min": "Minimum value is 1"
+      "max-messages-min": "Minimum value is 1",
+      "max-messages-hint": "Messages are stored in the browser's memory."
     },
     "connections": {
       "add-connection": "Add new connection",

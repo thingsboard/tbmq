@@ -53,9 +53,9 @@ export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<Sessi
   getColumns() {
     const columns: Array<EntityColumn<SessionMetricsTable>> = [];
     columns.push(
+      new EntityTableColumn<SessionMetricsTable>('ts', 'common.update-time', '170px'),
       new EntityTableColumn<SessionMetricsTable>('key', 'config.key', '50%'),
       new EntityTableColumn<SessionMetricsTable>('value', 'config.value', '30%'),
-      new EntityTableColumn<SessionMetricsTable>('ts', 'common.update-time', '150px'),
     );
     return columns;
   }

@@ -42,6 +42,9 @@
             <mat-form-field fxFlex subscriptSizing="dynamic">
               <mat-label translate>ws-client.messages.max-messages</mat-label>
               <input matInput type="number" min="1" formControlName="maxMessages" placeholder="1000"/>
+              <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
+                info
+              </mat-icon>
               <mat-error *ngIf="generalSettingsForm.get('maxMessages').hasError('min')">
                 {{ 'ws-client.messages.max-messages-min' | translate }}
               </mat-error>

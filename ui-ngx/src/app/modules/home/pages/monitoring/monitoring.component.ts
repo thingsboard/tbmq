@@ -16,7 +16,7 @@
 
 // @ts-nocheck
 
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
@@ -43,8 +43,8 @@ import Zoom from 'chartjs-plugin-zoom';
 import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { DataSizeUnitType, DataSizeUnitTypeTranslationMap, } from "@shared/models/ws-client.model";
-import { convertDataSizeUnits } from "@core/utils";
+import { DataSizeUnitType, DataSizeUnitTypeTranslationMap, } from '@shared/models/ws-client.model';
+import { convertDataSizeUnits } from '@core/utils';
 
 Chart.register([Zoom]);
 
@@ -53,7 +53,7 @@ Chart.register([Zoom]);
   templateUrl: './monitoring.component.html',
   styleUrls: ['./monitoring.component.scss']
 })
-export class MonitoringComponent extends PageComponent {
+export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   chartPage: ChartPage = 'monitoring';
   charts = {};
