@@ -56,6 +56,17 @@ postgres:15 \
 sh -c 'pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump'
 ```
 
+#### Command for Windows PowerShell:
+
+```bash
+docker run --rm --network <network_name> `
+-v tbmq-postgres-data:/var/lib/postgresql/data `
+-v ${PWD}/backups:/backups `
+-e PGPASSWORD=postgres `
+postgres:15 `
+sh -c "pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump"
+```
+
 #### Explanation:
 
 - `docker run --rm`: Runs a one-time Docker container that will be removed after it completes the backup.
@@ -84,6 +95,17 @@ docker run --rm --network <network_name> \
 -e PGPASSWORD=postgres \
 postgres:15 \
 sh -c 'pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /backups/tbmq_backup.dump'
+```
+
+#### Command for Windows PowerShell:
+
+```bash
+docker run --rm --network <network_name> `
+-v tbmq-postgres-data:/var/lib/postgresql/data `
+-v ${PWD}/backups:/backups `
+-e PGPASSWORD=postgres `
+postgres:15 `
+sh -c "pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /backups/tbmq_backup.dump"
 ```
 
 #### Explanation:
