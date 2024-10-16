@@ -1,19 +1,20 @@
 ## Backup and Restore Guide for TBMQ Using Docker Compose
 
-### 1. Stop the TBMQ Service
+### 1. Stop the TBMQ Services
 
-Before performing a backup of the PostgreSQL database, it’s a good practice to stop the TBMQ service to avoid any
+Before performing a backup of the PostgreSQL database, it’s a good practice to stop the TBMQ services to avoid any
 interruptions or data inconsistencies.
 
 #### Command:
 
 ```bash
-docker compose stop tbmq
+docker compose stop tbmq1 tbmq2
 ```
 
 #### Explanation:
 
-- `docker compose stop tbmq`: This command stops the TBMQ container while keeping other services (like PostgreSQL and
+- `docker compose stop tbmq1 tbmq2`: This command stops the TBMQ containers while keeping other services (like
+  PostgreSQL and
   Kafka) running. It ensures that no new data is written to the database during the backup process.
 
 ---
@@ -34,7 +35,7 @@ docker network inspect <network_name>
 
 - `docker network ls`: Lists all available Docker networks, including those created by Docker Compose.
     - Identify the network associated with your TBMQ project. It is typically named `<project_name>_default`, where
-      `<project_name>` is the name of the directory containing your `docker-compose.yml` file.
+      `<project_name>` is the name of the directory containing your `docker-compose.yml` file (e.g., `docker_default`).
 - `docker network inspect <network_name>`: Replace `<network_name>` with the name identified from the previous command.
   This will show you the details of the network, including the IP addresses and containers connected to it.
 
@@ -71,7 +72,7 @@ sh -c "pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /back
 
 - `docker run --rm`: Runs a one-time Docker container that will be removed after it completes the backup.
 - `--network <network_name>`: Connects the container to the Docker Compose network where PostgreSQL is running. Replace
-  `<network_name>` with the name of the Docker network identified earlier (e.g., `tbmq_default`).
+  `<network_name>` with the name of the Docker network identified earlier (e.g., `docker_default`).
 - `-v tbmq-postgres-data:/var/lib/postgresql/data`: Mounts the PostgreSQL data volume.
 - `-v $(pwd)/backups:/backups`: Mounts a local directory (`./backups`) to store the backup file.
 - `-e PGPASSWORD=postgres`: Provides the PostgreSQL password as an environment variable.
@@ -123,16 +124,17 @@ sh -c "pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /back
 
 ---
 
-### 5. Start the TBMQ Service
+### 5. Start the TBMQ Services
 
-Once the upgrade, backup or restore process is completed, you can start the TBMQ service again.
+Once the upgrade, backup or restore process is completed, you can start the TBMQ services again.
 
 #### Command:
 
 ```bash
-docker compose start tbmq
+docker compose start tbmq1 tbmq2
 ```
 
 #### Explanation:
 
-- `docker compose start tbmq`: This starts the previously stopped TBMQ service, allowing it to resume normal operation.
+- `docker compose start tbmq1 tbmq2`: This starts the previously stopped TBMQ services, allowing it to resume normal
+  operation.
