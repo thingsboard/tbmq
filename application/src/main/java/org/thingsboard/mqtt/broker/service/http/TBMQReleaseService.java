@@ -45,6 +45,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.LATEST_VER
 public class TBMQReleaseService extends AbstractServiceProvider {
 
     private static final String TBMQ_GITHUB_API_URL = "https://api.github.com/repos/thingsboard/tbmq/releases/latest";
+    private static final int VERSION_CHECK_INTERVAL = 3 * 60 * 60;
 
     private final RetainedMsgListenerService retainedMsgListenerService;
 
@@ -64,12 +65,12 @@ public class TBMQReleaseService extends AbstractServiceProvider {
         client = HttpClient.newHttpClient();
         request = HttpRequest.newBuilder()
                 .uri(URI.create(TBMQ_GITHUB_API_URL))
-                .timeout(Duration.of(10, SECONDS))
+                .timeout(Duration.of(30, SECONDS))
                 .GET()
                 .build();
     }
 
-    @Scheduled(initialDelay = 1, fixedRate = 3 * 60 * 60, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(initialDelay = 1, fixedRate = VERSION_CHECK_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void scheduleVersionCheck() {
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
@@ -85,7 +86,7 @@ public class TBMQReleaseService extends AbstractServiceProvider {
             } else {
                 log.error("Failed to get the latest release version, reason: {} {}", response.statusCode(), response.body());
             }
-        } catch (Throwable e) {
+        } catch (IOException | InterruptedException e) {
             log.error("Failed to get the latest release version", e);
         }
     }
