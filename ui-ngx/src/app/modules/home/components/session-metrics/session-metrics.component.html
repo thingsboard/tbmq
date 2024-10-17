@@ -34,7 +34,7 @@
             </button>
         </section>
     </div>
-    <table mat-table matSort [dataSource]="dataSource">
+    <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
         <mat-header-cell mat-sort-header *matHeaderCellDef>
           {{ column.title | translate }}

@@ -18,7 +18,7 @@
 <div fxFlex class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section fxFlex class="tb-config-table" fxFlex.lt-lg="auto">
-    <table mat-table matSort [dataSource]="dataSource">
+    <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
       <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
         <mat-header-cell mat-sort-header *matHeaderCellDef>
           {{ column.title | translate }}
