@@ -87,6 +87,7 @@
         <antisamy.version>1.7.5</antisamy.version>
         <spring-data-redis.version>3.2.10</spring-data-redis.version>
         <jedis.version>5.1.2</jedis.version>
+        <lettuce.version>6.3.2.RELEASE</lettuce.version>
         <hivemq-mqtt-client>1.3.3</hivemq-mqtt-client>
     </properties>
 
@@ -1104,6 +1105,11 @@
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>${jedis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${lettuce.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.data</groupId>
