@@ -21,7 +21,7 @@
 <ng-template #componentMode>
   <ng-container *ngIf="buttonMode; else sessionFilter">
     <button color="primary"
-            matTooltip="{{buttonDisplayValue}}"
+            [matTooltip]="buttonDisplayTooltip"
             matTooltipPosition="above"
             mat-stroked-button
             (click)="toggleSessionFilterPanel($event)">

@@ -95,6 +95,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   cleanStartList = [true, false];
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
+  buttonDisplayTooltip: string;
   sessionFilterConfigForm: UntypedFormGroup;
   sessionFilterOverlayRef: OverlayRef;
   panelResult: SessionFilterConfig = null;
@@ -283,33 +284,50 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.sessionFilterConfig?.connectedStatusList?.length) {
-        filterTextParts.push(this.sessionFilterConfig.connectedStatusList.map(s =>
-          this.translate.instant(connectionStateTranslationMap.get(s))).join(', '));
+        const connectedStatusList = this.sessionFilterConfig.connectedStatusList.map(s =>
+          this.translate.instant(connectionStateTranslationMap.get(s))).join(', ');
+        filterTextParts.push(connectedStatusList);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.connected-status')}: ${connectedStatusList}`);
       }
       if (this.sessionFilterConfig?.clientTypeList?.length) {
-        filterTextParts.push(this.sessionFilterConfig.clientTypeList.map(s =>
-          this.translate.instant(clientTypeTranslationMap.get(s))).join(', '));
-      }
-      if (this.sessionFilterConfig?.clientId?.length) {
-        filterTextParts.push(this.sessionFilterConfig.clientId);
-      }
-      if (this.sessionFilterConfig?.nodeIdList?.length) {
-        filterTextParts.push(this.sessionFilterConfig.nodeIdList.join(', '));
+        const clientTypeList = this.sessionFilterConfig.clientTypeList.map(s =>
+          this.translate.instant(clientTypeTranslationMap.get(s))).join(', ');
+        filterTextParts.push(clientTypeList);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-type')}: ${clientTypeList}`);
       }
       if (this.sessionFilterConfig?.cleanStartList?.length) {
-        filterTextParts.push(`${this.translate.instant('mqtt-client-session.clean-start')}: ${this.sessionFilterConfig.cleanStartList.join(', ')}`);
+        const cleanStartList = `${this.translate.instant('mqtt-client-session.clean-start')}: ${this.sessionFilterConfig.cleanStartList.join(', ')}`;
+        filterTextParts.push(cleanStartList);
+        filterTooltipParts.push(cleanStartList);
+      }
+      if (this.sessionFilterConfig?.clientId?.length) {
+        const clientId = this.sessionFilterConfig.clientId;
+        filterTextParts.push(clientId);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
       }
       if (this.sessionFilterConfig?.clientIpAddress?.length) {
-        filterTextParts.push(this.sessionFilterConfig.clientIpAddress);
+        const clientIpAddress = this.sessionFilterConfig.clientIpAddress;
+        filterTextParts.push(clientIpAddress);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.client-ip')}: ${clientIpAddress}`);
       }
       if (isDefinedAndNotNull(this.sessionFilterConfig?.subscriptions)) {
-        filterTextParts.push(`${this.translate.instant('mqtt-client-session.subscriptions-short')}: ${this.sessionFilterConfig.subscriptions}`);
+        const subscriptions = this.sessionFilterConfig.subscriptions;
+        filterTextParts.push(`SUBS: ${subscriptions}`);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.subscriptions')}: ${subscriptions}`);
+      }
+      if (this.sessionFilterConfig?.nodeIdList?.length) {
+        const nodeIdList = this.sessionFilterConfig.nodeIdList.join(', ');
+        filterTextParts.push(nodeIdList);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.node-id')}: ${nodeIdList}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join('; ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

@@ -18,6 +18,7 @@ import _ from 'lodash';
 import {Observable, Subject} from 'rxjs';
 import {finalize, share} from 'rxjs/operators';
 import {DataSizeUnitType, WebSocketTimeUnit} from '@shared/models/ws-client.model';
+import RandExp from 'randexp';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -609,4 +610,10 @@ const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
     default:
       throw new Error(`Unsupported unit: ${valueUnit}. Expected 'bytes', 'kilobytes', 'megabytes', 'gigabytes'`);
   }
+}
+
+export const randomStringFromRegex = (pattern: string): string => {
+  const randexp = new RandExp(pattern);
+  randexp.max = 5;
+  return randexp.gen().replace(/[$"]/g, '');
 }

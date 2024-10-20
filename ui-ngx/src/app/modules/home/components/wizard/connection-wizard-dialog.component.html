@@ -117,7 +117,7 @@
                 </button>
               </mat-form-field>
               <mat-form-field class="mat-block">
-                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <mat-label translate>mqtt-client.client-id</mat-label>
                 <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
@@ -152,7 +152,7 @@
 
             <ng-template [ngSwitchCase]="wsCredentialsGeneratorType.CUSTOM">
               <mat-form-field class="mat-block">
-                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <mat-label translate>mqtt-client.client-id</mat-label>
                 <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"
@@ -185,7 +185,7 @@
                 </tb-client-credentials-autocomplete>
               </section>
               <mat-form-field class="mat-block">
-                <mat-label translate>ws-client.connections.client-id</mat-label>
+                <mat-label translate>mqtt-client.client-id</mat-label>
                 <input matInput formControlName="clientId">
                 <tb-copy-button matSuffix
                                 [fxShow]="connectionFormGroup.get('clientId')?.value?.length"

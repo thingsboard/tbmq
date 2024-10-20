@@ -92,6 +92,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   clientCredentialsTypeTranslationMap = credentialsTypeTranslationMap;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
+  buttonDisplayTooltip: string;
   clientCredentialsFilterConfigForm: UntypedFormGroup;
   clientCredentialsFilterOverlayRef: OverlayRef;
   panelResult: ClientCredentialsFilterConfig = null;
@@ -272,30 +273,45 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.clientCredentialsFilterConfig?.clientTypeList?.length) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.clientTypeList.map(s =>
-          this.translate.instant(clientTypeTranslationMap.get(s))).join(', '));
+        const clientTypeList = this.clientCredentialsFilterConfig.clientTypeList.map(s =>
+          this.translate.instant(clientTypeTranslationMap.get(s))).join(', ');
+        filterTextParts.push(clientTypeList);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-type')}: ${clientTypeList}`)
       }
       if (this.clientCredentialsFilterConfig?.credentialsTypeList?.length) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.credentialsTypeList.map(s =>
-          this.translate.instant(this.clientCredentialsTypeTranslationMap.get(s))).join(', '));
+        const credentialsTypeList = this.clientCredentialsFilterConfig.credentialsTypeList.map(s =>
+          this.translate.instant(this.clientCredentialsTypeTranslationMap.get(s))).join(', ');
+        filterTextParts.push(credentialsTypeList);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-credentials.client-credentials')}: ${credentialsTypeList}`);
       }
       if (isNotEmptyStr(this.clientCredentialsFilterConfig?.name)) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.name);
+        const name = this.clientCredentialsFilterConfig.name;
+        filterTextParts.push(name);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-credentials.name')}: ${name}`);
       }
       if (isNotEmptyStr(this.clientCredentialsFilterConfig?.clientId)) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.clientId);
+        const clientId = this.clientCredentialsFilterConfig.clientId;
+        filterTextParts.push(clientId);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
       }
       if (isNotEmptyStr(this.clientCredentialsFilterConfig?.username)) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.username);
+        const username = this.clientCredentialsFilterConfig.username;
+        filterTextParts.push(username);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-credentials.username')}: ${username}`);
       }
       if (isNotEmptyStr(this.clientCredentialsFilterConfig?.certificateCn)) {
-        filterTextParts.push(this.clientCredentialsFilterConfig.certificateCn);
+        const certificateCn = this.clientCredentialsFilterConfig.certificateCn;
+        filterTextParts.push(certificateCn);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-credentials.certificate-common-name-filter')}: ${certificateCn}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title') + `: ${filterTextParts.join(', ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

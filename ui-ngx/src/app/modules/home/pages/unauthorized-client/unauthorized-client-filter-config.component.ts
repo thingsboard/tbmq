@@ -84,22 +84,16 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
 
   passwordProvidedList = [true, false];
   tlsUsedList = [true, false];
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title');
-
+  buttonDisplayTooltip: string;
   unauthorizedClientFilterConfigForm: UntypedFormGroup;
-
   unauthorizedClientFilterOverlayRef: OverlayRef;
-
   panelResult: UnauthorizedClientFilterConfig = null;
-
   entityType = EntityType;
 
   private unauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
   private resizeWindows: Subscription;
-
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA)
@@ -273,28 +267,43 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.unauthorizedClientFilterConfig?.clientId?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.clientId);
+        const clientId = this.unauthorizedClientFilterConfig.clientId;
+        filterTextParts.push(clientId);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
       }
       if (this.unauthorizedClientFilterConfig?.username?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.username);
+        const username = this.unauthorizedClientFilterConfig.username;
+        filterTextParts.push(username);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-credentials.username')}: ${username}`);
       }
       if (this.unauthorizedClientFilterConfig?.ipAddress?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.ipAddress);
+        const ipAddress = this.unauthorizedClientFilterConfig.ipAddress;
+        filterTextParts.push(ipAddress);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client-session.client-ip')}: ${ipAddress}`);
       }
       if (this.unauthorizedClientFilterConfig?.reason?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.reason);
+        const reason = this.unauthorizedClientFilterConfig.reason;
+        filterTextParts.push(reason);
+        filterTooltipParts.push(`${this.translate.instant('unauthorized-client.reason')}: ${reason}`);
       }
       if (this.unauthorizedClientFilterConfig?.passwordProvidedList?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.passwordProvidedList.join(', '));
+        const passwordProvidedList = this.unauthorizedClientFilterConfig.passwordProvidedList.join(', ');
+        filterTextParts.push(`PASS: ${passwordProvidedList}`);
+        filterTooltipParts.push(`${this.translate.instant('unauthorized-client.password-provided')}: ${passwordProvidedList}`);
       }
       if (this.unauthorizedClientFilterConfig?.tlsUsedList?.length) {
-        filterTextParts.push(this.unauthorizedClientFilterConfig.tlsUsedList.join(', '));
+        const tlsUsedList = this.unauthorizedClientFilterConfig.tlsUsedList.join(', ');
+        filterTextParts.push(`TLS: ${tlsUsedList}`);
+        filterTooltipParts.push(`${this.translate.instant('unauthorized-client.tls-used')}: ${tlsUsedList}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('unauthorized-client.filter-title') + `: ${filterTextParts.join('; ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

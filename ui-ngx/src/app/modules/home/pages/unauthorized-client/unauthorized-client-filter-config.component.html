@@ -21,7 +21,7 @@
 <ng-template #componentMode>
   <ng-container *ngIf="buttonMode; else unauthorizedClientFilter">
     <button color="primary"
-            matTooltip="{{buttonDisplayValue}}"
+            matTooltip="{{buttonDisplayTooltip}}"
             matTooltipPosition="above"
             mat-stroked-button
             (click)="toggleFilterPanel($event)">
@@ -63,7 +63,7 @@
       </mat-form-field>
     </div>
     <div class="tb-form-row space-between column-xs">
-      <div class="fixed-title-width" translate>common.username</div>
+      <div class="fixed-title-width" translate>mqtt-client-credentials.username</div>
       <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
         <input matInput type="text" style="max-width: 200px;" formControlName="username">
       </mat-form-field>

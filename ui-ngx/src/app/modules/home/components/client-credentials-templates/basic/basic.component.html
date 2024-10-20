@@ -44,9 +44,9 @@
         <mat-form-field fxFlex class="mat-block">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
-          <tb-copy-button #copyUsernameBtn
+          <tb-copy-button matSuffix #copyUsernameBtn
                           (click)="onClickTbCopyButton('userName')"
-                          [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
+                          [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length"
                           [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <button mat-icon-button matSuffix
