@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.install.data.ConnectivitySettings;
+import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.ArrayList;
@@ -99,6 +100,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         adminSettingsService.saveAdminSettings(mailSettings);
 
         adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
+        adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
     }
 
     @Override

@@ -22,13 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.service.install.data.ConnectivitySettings;
+import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 
 import java.util.List;
 
@@ -50,6 +51,10 @@ public class DefaultDataUpdateService implements DataUpdateService {
                 log.info("Updating data from version 1.3.0 to 1.4.0 ...");
                 updateSslMqttClientCredentials();
                 createConnectivitySettings();
+                break;
+            case "1.4.0":
+                log.info("Updating data from version 1.4.0 to 2.0.0 ...");
+                createWsClientSettings();
                 break;
             default:
                 throw new RuntimeException("Unable to update data, unsupported fromVersion: " + fromVersion);
@@ -99,6 +104,14 @@ public class DefaultDataUpdateService implements DataUpdateService {
             log.info("Creating connectivity settings ...");
             adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
             log.info("Connectivity settings created!");
+        }
+    }
+
+    private void createWsClientSettings() {
+        if (adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY) == null) {
+            log.info("Creating WebSocket client settings ...");
+            adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
+            log.info("WebSocket client settings created!");
         }
     }
 
