@@ -167,7 +167,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
         mqttClientCredentialsService.saveCredentials(validMqttClientCredentials(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME, "client", "user", null));
     }
 
-    @Test(expected = DataValidationException.class)
+    @Test
     public void testUpdateSystemWebSocketCredentials() throws JsonProcessingException {
         MqttClientCredentials systemMqttClientCredentials = mqttClientCredentialsService.saveSystemWebSocketCredentials();
 
