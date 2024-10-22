@@ -365,6 +365,11 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     if (byId == null) {
                         throw new DataValidationException("Unable to update non-existent MQTT Client credentials!");
                     }
+                    if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(byId.getName())) {
+                        if (!BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
+                            throw new DataValidationException("It is forbidden to update System WebSocket MQTT client credentials name!");
+                        }
+                    }
                     MqttClientCredentials existingCredentials = mqttClientCredentialsDao.findByCredentialsId(mqttClientCredentials.getCredentialsId());
                     if (existingCredentials != null && !existingCredentials.getId().equals(mqttClientCredentials.getId())) {
                         throw new DataValidationException("New MQTT Client credentials are already created!");
