@@ -39,4 +39,9 @@ public class ProtocolUtilTest {
     public void testSslCredentialsId() {
         Assert.assertEquals("ssl|myCN", ProtocolUtil.sslCredentialsId("myCN"));
     }
+
+    @Test
+    public void testScramCredentialsId() {
+        Assert.assertEquals("scram|myCN", ProtocolUtil.scramCredentialsId("myCN"));
+    }
 }

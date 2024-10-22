@@ -21,6 +21,7 @@ public class ProtocolUtil {
     private static final String CLIENT_ID_CREDENTIALS_ID_PREFIX = "client_id";
     private static final String MIXED_CREDENTIALS_ID_PREFIX = "mixed";
     private static final String SSL_CREDENTIALS_ID_PREFIX = "ssl";
+    private static final String SCRAM_CREDENTIALS_ID_PREFIX = "scram";
     private static final String SEPARATOR = "|";
 
     public static String usernameCredentialsId(String username) {
@@ -39,4 +40,7 @@ public class ProtocolUtil {
         return SSL_CREDENTIALS_ID_PREFIX + SEPARATOR + commonName;
     }
 
+    public static String scramCredentialsId(String username) {
+        return SCRAM_CREDENTIALS_ID_PREFIX + SEPARATOR + username;
+    }
 }
