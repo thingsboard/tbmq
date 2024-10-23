@@ -134,7 +134,11 @@ export class EventContentDialogV2Component extends DialogComponent<EventContentD
         getAce().subscribe(
           (ace) => {
             this.aceEditor = ace.edit(editorElement, editorOptions);
-            this.aceEditor.session.setUseWrapMode(false);
+            this.aceEditor.session.setUseWrapMode(this.contentType === ContentType.TEXT);
+            if (this.contentType === ContentType.TEXT) {
+              this.aceEditor.session.setWrapLimitRange(0, 100);
+              this.aceEditor.setOption('indentedSoftWrap', false);
+            }
             this.aceEditor.setValue(processedContent, -1);
             this.updateEditorSize(editorElement, processedContent, this.aceEditor);
           }
