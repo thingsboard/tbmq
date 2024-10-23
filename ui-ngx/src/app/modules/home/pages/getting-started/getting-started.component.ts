@@ -60,7 +60,7 @@ export class GettingStartedComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
     const tbMainContentElement = document.querySelector('.tb-main-content') as HTMLElement;
     if (tbMainContentElement) {
-      animatedScroll(tbMainContentElement, 0, 200);
+      animatedScroll(tbMainContentElement, 0, 0);
     }
   }
 
