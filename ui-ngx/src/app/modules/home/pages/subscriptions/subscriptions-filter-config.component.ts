@@ -278,7 +278,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
         filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
       }
       if (this.subscriptionsFilterConfig?.topicFilter?.length) {
-        const topicFilter = this.subscriptionsFilterConfig.clientId;
+        const topicFilter = this.subscriptionsFilterConfig.topicFilter;
         filterTextParts.push(topicFilter);
         filterTooltipParts.push(`${this.translate.instant('shared-subscription.topic-filter')}: ${topicFilter}`);
       }
@@ -298,7 +298,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
         filterTooltipParts.push(`${this.translate.instant('subscription.rap')}: ${retainAsPublishList}`);
       }
       if (this.subscriptionsFilterConfig?.retainHandlingList?.length) {
-        const retainHandlingList = this.subscriptionsFilterConfig.noLocalList.join(', ');
+        const retainHandlingList = this.subscriptionsFilterConfig.retainHandlingList.join(', ');
         filterTextParts.push(`RH: ${retainHandlingList}`);
         filterTooltipParts.push(`${this.translate.instant('subscription.rh')}: ${retainHandlingList}`);
       }
