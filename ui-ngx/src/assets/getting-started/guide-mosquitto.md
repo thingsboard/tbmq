@@ -13,11 +13,15 @@ sudo apt-get install mosquitto-clients{:copy-code}
 ```
 
 ##### Subscribe
-To subscribe client to the MQTT topic `tbmq/demo/+` we will use the <a href='https://mosquitto.org/man/mosquitto_sub-1.html' target="_blank">mosquitto_sub</a> MQTT client.
+
+In this guide we will use the default TBMQ credentials `TBMQ WebSockets MQTT Credentials` to subscribe to the MQTT topic `tbmq/demo/+`.
+
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID (`-i`), username (`-u`), and password (`-P`) in the commands below.
+
 Please copy and paste the following code into a terminal tab:
 
 ```bash
-mosquitto_sub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/+ -q 1 -c -i tbmq -v -V mqttv5{:copy-code}
+mosquitto_sub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/+ -i tbmq -u tbmq_websockets_username -c -v{:copy-code}
 ```
 
 ##### Publish
@@ -25,7 +29,7 @@ mosquitto_sub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tb
 In order to publish a message on topic `tbmq/demo/topic`, open a new terminal tab and paste the following command:
 
 ```bash
-mosquitto_pub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_websockets_username -t tbmq/demo/topic -m 'Hello World' -q 1 -V mqttv5{:copy-code}
+mosquitto_pub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/topic -u tbmq_websockets_username -m 'Hello World'{:copy-code}
 ```
 
 <br>

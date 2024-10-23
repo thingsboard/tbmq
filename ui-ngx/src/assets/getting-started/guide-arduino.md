@@ -33,6 +33,8 @@ Find and install the following libraries:
 
 The code snippet below provides an example on how to connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, publish a message, and handle received message.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 Please do not forget to edit following constants and variables in the sketch:
 
 - `WIFI_AP` - name of your access point

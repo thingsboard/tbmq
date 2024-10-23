@@ -23,6 +23,8 @@ pip3 show paho-mqtt{:copy-code}
 ##### Connect to the TBMQ
 The script below sets up a Paho MQTT client to connect to the TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, handles basic MQTT operations such as publishing a message and subscribing to a topic.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 You can paste this code into a new file in your project `tbmq-python.py`.
 
 ```bash

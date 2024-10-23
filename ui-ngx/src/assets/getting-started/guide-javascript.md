@@ -36,6 +36,8 @@ MQTT.js version: 5.9.1
 ##### Connect to the TBMQ
 The code snippet below provides a demonstration on how to connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, publish a message, handle received messages and some MQTT client events.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 You may paste this code into a new JavaScript file in your project, e.g. `tbmq_js_example.js`. 
 
 ```bash

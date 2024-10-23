@@ -20,6 +20,8 @@ In order to use Paho library in your Maven project, please make sure you have ad
 
 The Java code below is an example of how to establish a connection to the TBMQ using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, and publish a message.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 ```bash
 import org.eclipse.paho.mqttv5.client.IMqttMessageListener;
 import org.eclipse.paho.mqttv5.client.MqttClient;
