@@ -155,7 +155,7 @@ export class MessangerComponent implements OnInit {
   }
 
   clearHistory() {
-    this.mqttJsClientService.clearHistory();
+    this.mqttJsClientService.clearMessages();
   }
 
   filterChanged(value: MessageFilterConfig) {

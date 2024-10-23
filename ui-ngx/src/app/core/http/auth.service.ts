@@ -38,7 +38,6 @@ import { ActionAuthAuthenticated, ActionAuthLoadUser, ActionAuthUnauthenticated 
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
-import { ConfigService } from '@core/http/config.service';
 
 @Injectable({
   providedIn: 'root'
@@ -48,7 +47,6 @@ export class AuthService {
   constructor(private store: Store<AppState>,
               private http: HttpClient,
               private settingsService: SettingsService,
-              private configService: ConfigService,
               private router: Router,
               private utils: UtilsService,
               private translate: TranslateService,
@@ -277,8 +275,7 @@ export class AuthService {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
     forkJoin([
       this.validateJwtToken(doTokenRefresh),
-      this.settingsService.fetchConnectivitySettings(),
-      this.configService.fetchBrokerConfig()
+      this.settingsService.fetchConnectivitySettings()
     ]).subscribe(
       () => {
         const authPayload = {} as AuthPayload;

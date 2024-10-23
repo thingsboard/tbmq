@@ -909,7 +909,7 @@
       "filter": "Filter messages",
       "max-messages": "Maximum messages in WebSocket Client table",
       "max-messages-min": "Minimum value is 1",
-      "max-messages-hint": "Messages are stored in the browser's memory."
+      "max-messages-hint": "Messages are stored in the browser's memory. Changing this value will clear messages of all WebSocket Clients."
     },
     "connections": {
       "add-connection": "Add new connection",

@@ -24,12 +24,13 @@ import {
   AdminSettings,
   ConnectivitySettings,
   connectivitySettingsKey,
-  WebsocketSettings,
-  websocketSettingsKey
+  WebSocketSettings,
+  webSocketSettingsKey
 } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { takeUntil } from 'rxjs/operators';
 import { isUndefined } from '@core/utils';
+import { MqttJsClientService } from "@core/http/mqtt-js-client.service";
 
 @Component({
   selector: 'tb-general-settings',
@@ -43,19 +44,16 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   protocol = 'mqtt';
 
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
-  private generalSettings: AdminSettings<WebsocketSettings>;
+  private generalSettings: AdminSettings<WebSocketSettings>;
   private destroy$ = new Subject<void>();
-  private defaultWebsocketSettings: WebsocketSettings = {
-    isLoggingEnabled: false,
-    maxMessages: 1000
-  }
 
   constructor(protected store: Store<AppState>,
               private settingsService: SettingsService,
+              private mqttJsClientService: MqttJsClientService,
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildConnectivitySettingsForm();
-    this.buildWebsocketSettingsForm();
+    this.buildWebSocketSettingsForm();
     this.getSettings();
   }
 
@@ -93,7 +91,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     return formGroup;
   }
 
-  private buildWebsocketSettingsForm() {
+  private buildWebSocketSettingsForm() {
     this.generalSettingsForm = this.fb.group({
       isLoggingEnabled: [null, []],
       maxMessages: [null, []]
@@ -101,16 +99,22 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   saveGeneralSettings() {
-    let generalSettings: AdminSettings<WebsocketSettings> = JSON.parse(JSON.stringify(this.generalSettings));
+    let generalSettings: AdminSettings<WebSocketSettings> = JSON.parse(JSON.stringify(this.generalSettings));
+    const maxMessagesChanged = this.generalSettings.jsonValue.maxMessages !== this.generalSettingsForm.value.maxMessages;
     if (isUndefined(this.generalSettings)) {
       generalSettings = {
-        key: websocketSettingsKey,
+        key: webSocketSettingsKey,
         jsonValue: this.generalSettingsForm.value
       };
     }
     generalSettings.jsonValue = {...generalSettings.jsonValue, ...this.generalSettingsForm.value};
     this.settingsService.saveAdminSettings(generalSettings)
-      .subscribe(settings => this.processGeneralSettings(settings));
+      .subscribe(settings => {
+        this.processGeneralSettings(settings);
+        if (maxMessagesChanged) {
+          this.mqttJsClientService.clearAllMessages();
+        }
+      });
   }
 
   saveConnectivitySettings() {
@@ -124,7 +128,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   discardGeneralSettings(): void {
-    const generalSettings = this.generalSettings ? this.generalSettings.jsonValue : this.defaultWebsocketSettings;
+    const generalSettings = this.generalSettings.jsonValue;
     this.generalSettingsForm.reset(generalSettings);
   }
 
@@ -137,39 +141,21 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
   }
 
-  private processGeneralSettings(settings: AdminSettings<WebsocketSettings>): void {
+  private processGeneralSettings(settings: AdminSettings<WebSocketSettings>): void {
     this.generalSettings = settings;
     this.generalSettingsForm.reset(this.generalSettings.jsonValue);
   }
 
   private getSettings() {
     this.getConnectivitySettings();
-    this.getWebsocketGeneralSettings();
+    this.getWebSocketGeneralSettings();
   }
 
   private getConnectivitySettings() {
-    this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey)
-      .subscribe(settings => this.processConnectivitySettings(settings));
+    this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(settings => this.processConnectivitySettings(settings));
   }
 
-  private getWebsocketGeneralSettings() {
-    this.settingsService.getGeneralSettings<WebsocketSettings>(websocketSettingsKey)
-      .subscribe(
-        settings => this.processGeneralSettings(settings),
-        error => {
-          if (error.status === 404) {
-            this.saveDefaultWebsocketGeneralSettings();
-          }
-        }
-      );
+  private getWebSocketGeneralSettings() {
+    this.settingsService.getWebSocketSettings().subscribe(settings => this.processGeneralSettings(settings));
   }
-
-  private saveDefaultWebsocketGeneralSettings() {
-    const settings: AdminSettings<WebsocketSettings> = {
-      key: websocketSettingsKey,
-      jsonValue: this.defaultWebsocketSettings
-    }
-    this.settingsService.saveAdminSettings(settings).subscribe(() => this.getWebsocketGeneralSettings());
-  }
-
 }

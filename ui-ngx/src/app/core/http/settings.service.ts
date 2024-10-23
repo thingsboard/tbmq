@@ -24,8 +24,10 @@ import {
   ConnectivitySettings,
   connectivitySettingsKey,
   defaultConnectivitySettings,
-  SecuritySettings
+  SecuritySettings, WebSocketSettings, webSocketSettingsKey
 } from '@shared/models/settings.models';
+import { ConfigService } from "@core/http/config.service";
+import { BrokerConfig } from "@shared/models/config.model";
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +36,8 @@ export class SettingsService {
 
   connectivitySettings: ConnectivitySettings;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,
+              private configService: ConfigService) {
   }
 
   public getGeneralSettings<T>(key: string): Observable<AdminSettings<T>> {
@@ -56,19 +59,31 @@ export class SettingsService {
       defaultHttpOptionsFromConfig(config));
   }
 
-  public fetchConnectivitySettings(): Observable<ConnectivitySettings> {
-    return this.getGeneralSettings(connectivitySettingsKey).pipe(
-      mergeMap(connectivitySettings => {
-        this.connectivitySettings = this.transformConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings);
-        // @ts-ignore
-        window.tbmqSettings = this.connectivitySettings;
-        return of(this.connectivitySettings);
-      })
-    );
+  public getWebSocketSettings(): Observable<any> {
+    return this.getGeneralSettings<WebSocketSettings>(webSocketSettingsKey);
   }
 
-  private transformConnectivitySettings(settings: ConnectivitySettings): ConnectivitySettings {
+  public fetchConnectivitySettings(): Observable<ConnectivitySettings> {
+    return this.configService.fetchBrokerConfig().pipe(
+      mergeMap((brokerConfig) => {
+        return this.getGeneralSettings(connectivitySettingsKey).pipe(
+          mergeMap(connectivitySettings => {
+            this.connectivitySettings = this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
+            // @ts-ignore
+            window.tbmqSettings = this.connectivitySettings;
+            return of(this.connectivitySettings);
+          })
+        );
+      })
+    )
+  }
+
+  private buildConnectivitySettings(settings: ConnectivitySettings, brokerConfig: BrokerConfig): ConnectivitySettings {
     const connectivitySettings = JSON.parse(JSON.stringify(defaultConnectivitySettings));
+    connectivitySettings.mqtt.port = brokerConfig.tcpPort;
+    connectivitySettings.mqtts.port = brokerConfig.tlsPort;
+    connectivitySettings.ws.port = brokerConfig.wsPort;
+    connectivitySettings.wss.port = brokerConfig.wssPort;
     for (const prop of Object.keys(settings)) {
       if (settings[prop]?.enabled) {
         connectivitySettings[prop].enabled = true;

@@ -234,7 +234,7 @@ export interface MessageFilterConfig {
   type?: string;
 }
 
-export interface MessageCounters {
+export interface MessageCounter {
   all: number;
   received: number;
   published: number;
@@ -377,11 +377,8 @@ export const RhOptions = [
     name: '2 - Do not send retained messages at the time of the subscribe'
   }
 ];
+export const MessageCounterEmpty = {all: 0, published: 0, received: 0};
 
-export const WsAddressProtocolTypeValueMap = new Map<WsAddressProtocolType, MqttJsProtocolSecurity>([
-  [WsAddressProtocolType.WS, 'ws://'],
-  [WsAddressProtocolType.WSS, 'wss://']
-]);
 export const WsCredentialsGeneratortTypeTranslationMap = new Map<WsCredentialsGeneratorType, string>([
     [WsCredentialsGeneratorType.AUTO, 'ws-client.connections.credentials-auto-generated'],
     [WsCredentialsGeneratorType.CUSTOM, 'ws-client.connections.credentials-custom'],
@@ -413,7 +410,6 @@ export const WsClientMessageTypeTranslationMap = new Map<boolean, string>([
     [true, 'ws-client.messages.received'],
     [false, 'ws-client.messages.published']
   ]);
-
 export const DisconnectReasonCodes = {
   0: 'Normal disconnection',
   4: 'Disconnect with Will Message',

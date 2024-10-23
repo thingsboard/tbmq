@@ -4,7 +4,7 @@ client to the topic `tbmq/demo/topic` open a new tab in the terminal and paste t
 <br>
 
 ```bash
-mosquitto_pub -h {:mqttHost} -p {:mqttPort} -d -u tbmq_dev -P tbmq_dev -t tbmq/demo/topic -m "Hello World" -q 1 -V mqttv5{:copy-code}
+mosquitto_pub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/topic -u tbmq_dev -P tbmq_dev -m "Hello World"{:copy-code}
 ```
 
 <br>
