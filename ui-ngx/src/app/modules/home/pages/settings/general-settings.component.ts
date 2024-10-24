@@ -94,7 +94,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   private buildWebSocketSettingsForm() {
     this.generalSettingsForm = this.fb.group({
       isLoggingEnabled: [null, []],
-      maxMessages: [null, []]
+      maxMessages: [null, [Validators.required]]
     });
   }
 

@@ -40,9 +40,12 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
-      padding: 8px 0 16px;
+      padding-top: 8px;
     }
 
+    .fields-group {
+      padding: 0 16px 8px !important;
+    }
   }
 
   ::ng-deep{
