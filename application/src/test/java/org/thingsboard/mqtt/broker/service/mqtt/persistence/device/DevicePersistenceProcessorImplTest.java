@@ -24,11 +24,14 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DevicePersistenceProcessorImplTest {
@@ -50,6 +53,7 @@ public class DevicePersistenceProcessorImplTest {
 
     @Test
     public void clearPersistedMsgsTest() {
+        when(deviceMsgService.removePersistedMessages(any())).thenReturn(CompletableFuture.completedStage("OK"));
         devicePersistenceProcessor.clearPersistedMsgs(clientId);
         verify(deviceMsgService).removePersistedMessages(eq(clientId));
     }

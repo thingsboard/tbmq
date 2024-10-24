@@ -15,14 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-
-import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 public interface DeviceMsgProcessor {
 
-    void persistClientDeviceMessages(ClientIdMessagesPack clientIdMessagesPack, DefaultClientIdPersistedMsgsCallback defaultPersistMsgCallback);
+    CompletionStage<Integer> persistClientDeviceMessages(ClientIdMessagesPack clientIdMessagesPack);
 
-    void deliverClientDeviceMessages(String clientId, List<DevicePublishMsg> devicePublishMessages);
+    void deliverClientDeviceMessages(String clientId, DevicePublishMsgListAndPrevPacketId devicePublishMessages);
 
 }

@@ -19,25 +19,26 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 public interface DeviceMsgService {
 
     // TODO: failOnConflict, kafka rebalancing issue. Need to be tested.
-    int saveAndReturnPreviousPacketId(String clientId, List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
+    CompletionStage<Integer> saveAndReturnPreviousPacketId(String clientId, List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict);
 
-    List<DevicePublishMsg> findPersistedMessages(String clientId);
+    CompletionStage<List<DevicePublishMsg>> findPersistedMessages(String clientId);
 
-    void removePersistedMessages(String clientId);
+    CompletionStage<String> removePersistedMessages(String clientId);
 
-    void removePersistedMessage(String clientId, int packetId);
+    CompletionStage<String> removePersistedMessage(String clientId, int packetId);
 
-    void updatePacketReceived(String clientId, int packetId);
+    CompletionStage<String> updatePacketReceived(String clientId, int packetId);
 
-    int getLastPacketId(String clientId);
+    CompletionStage<Integer> getLastPacketId(String clientId);
 
-    void removeLastPacketId(String clientId);
+    CompletionStage<Long> removeLastPacketId(String clientId);
 
-    void saveLastPacketId(String clientId, int lastPacketId);
+    CompletionStage<String> saveLastPacketId(String clientId, int lastPacketId);
 
     /**
      * Imports data from the CSV file.

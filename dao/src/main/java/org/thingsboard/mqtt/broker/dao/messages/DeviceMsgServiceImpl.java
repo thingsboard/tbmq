@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.messages;
 
+import io.lettuce.core.RedisFuture;
+import io.lettuce.core.RedisNoScriptException;
+import io.lettuce.core.ScriptOutputType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.DecoderException;
@@ -23,21 +26,11 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
-import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.ReturnType;
-import org.springframework.data.redis.connection.jedis.JedisClusterConnection;
-import org.springframework.data.redis.connection.jedis.JedisConnection;
-import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.cache.LettuceConnectionManager;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.util.DevicePublishMsgUtil;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.util.JedisClusterCRC16;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -47,8 +40,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,31 +53,28 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     private static final int IMPORT_TO_REDIS_BATCH_SIZE = 1000;
 
-    private static final JedisPool MOCK_POOL = new JedisPool(); //non-null pool required for JedisConnection to trigger closing jedis connection
-
-    private static final RedisSerializer<String> stringSerializer = StringRedisSerializer.UTF_8;
-
     private static final CSVFormat IMPORT_CSV_FORMAT = CSVFormat.Builder.create()
             .setHeader().setSkipHeaderRecord(true).build();
 
-    private static final byte[] ADD_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("1a36112b30eda656ff34629a18d4890499a79256");
-    private static final byte[] GET_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("e083e5645a5f268448aca2ec1d3150ee6de510ef");
-    private static final byte[] REMOVE_MESSAGES_SCRIPT_SHA = stringSerializer.serialize("a619f42eb693ea732763d878dd59dff513a295c7");
-    private static final byte[] REMOVE_MESSAGE_SCRIPT_SHA = stringSerializer.serialize("038e09c6e313eab0d5be4f31361250f4179bc38c");
-    private static final byte[] UPDATE_PACKET_TYPE_SCRIPT_SHA = stringSerializer.serialize("958139aa4015911c82ddd423ff408b6638805081");
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA = stringSerializer.serialize("c67a939d71d127455883af90edbc578f0ce22b48");
+    private static final String ADD_MESSAGES_SCRIPT_SHA = "b871298e156d1e8490eef02fdc96cc28d4442e36";
+    private static final String GET_MESSAGES_SCRIPT_SHA = "e083e5645a5f268448aca2ec1d3150ee6de510ef";
+    private static final String REMOVE_MESSAGES_SCRIPT_SHA = "efd7dd0e8b3ba4862b53691798fd5ff1f8f6e629";
+    private static final String REMOVE_MESSAGE_SCRIPT_SHA = "af40a579a941a140cace4e5243fc0921a4c7b4b0";
+    private static final String UPDATE_PACKET_TYPE_SCRIPT_SHA = "86164ab58880b91c4aee396bb5701fd6af1b0258";
+    private static final String MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA = "76ea84e42d6ab98e646ef8f88b99efd568721926";
 
-    private static final byte[] ADD_MESSAGES_SCRIPT = stringSerializer.serialize("""
+    private static final String ADD_MESSAGES_SCRIPT = """
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]
             local maxMessagesSize = tonumber(ARGV[1])
             local messages = cjson.decode(ARGV[2])
+            local defaultTtl = tonumber(ARGV[3])
             -- Fetch the last packetId from the key-value store
             local lastPacketId = tonumber(redis.call('GET', lastPacketIdKey)) or 0
-            
+                        
             -- Get the current maximum score in the sorted set
             local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
-            
+                        
             -- Check if the maxScoreElement is non-empty
             local score
             if #maxScoreElement > 0 then
@@ -88,10 +82,10 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             else
                score = lastPacketId
             end
-            
+                        
             -- Track the first packet ID
             local previousPacketId = lastPacketId
-            
+                        
             -- Add each message to the sorted set and as a separate key
             for _, msg in ipairs(messages) do
                 lastPacketId = lastPacketId + 1
@@ -102,8 +96,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 score = score + 1
                 local msgKey = messagesKey .. "_" .. lastPacketId
                 local msgJson = cjson.encode(msg)
+                local msgExpiryInterval = msg.msgExpiryInterval or defaultTtl
                 -- Store the message as a separate key with TTL
-                redis.call('SET', msgKey, msgJson, 'EX', msg.msgExpiryInterval)
+                redis.call('SET', msgKey, msgJson, 'EX', msgExpiryInterval)
                 -- Add the key to the sorted set using packetId as the score
                 redis.call('ZADD', messagesKey, score, msgKey)
             end
@@ -119,8 +114,8 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 end
             end
             return previousPacketId
-            """);
-    private static final byte[] GET_MESSAGES_SCRIPT = stringSerializer.serialize("""
+            """;
+    private static final String GET_MESSAGES_SCRIPT = """
             local messagesKey = KEYS[1]
             local maxMessagesSize = tonumber(ARGV[1])
             -- Get the range of elements from the sorted set
@@ -137,8 +132,8 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 end
             end
             return messages
-            """);
-    private static final byte[] REMOVE_MESSAGES_SCRIPT = stringSerializer.serialize("""
+            """;
+    private static final String REMOVE_MESSAGES_SCRIPT = """
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]
             -- Get all elements from the sorted set
@@ -151,9 +146,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             redis.call('DEL', messagesKey)
             -- Delete the last packet id key
             redis.call('DEL', lastPacketIdKey)
-            return nil
-            """);
-    private static final byte[] REMOVE_MESSAGE_SCRIPT = stringSerializer.serialize("""
+            return "OK"
+            """;
+    private static final String REMOVE_MESSAGE_SCRIPT = """
             local messagesKey = KEYS[1]
             local packetId = ARGV[1]
             -- Construct the message key
@@ -162,9 +157,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             redis.call('ZREM', messagesKey, msgKey)
             -- Delete the message key
             redis.call('DEL', msgKey)
-            return nil
-            """);
-    private static final byte[] UPDATE_PACKET_TYPE_SCRIPT = stringSerializer.serialize("""
+            return "OK"
+            """;
+    private static final String UPDATE_PACKET_TYPE_SCRIPT = """
             local messagesKey = KEYS[1]
             local packetId = ARGV[1]
             -- Construct the message key
@@ -172,7 +167,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             -- Fetch the message from the key-value store
             local msgJson = redis.call('GET', msgKey)
             if not msgJson then
-                return nil -- Message not found
+                return "OK" -- Message not found
             end
             -- Decode the JSON message
             local msg = cjson.decode(msgJson)
@@ -182,14 +177,15 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             local updatedMsgJson = cjson.encode(msg)
             -- Save the updated message back to the key-value store
             redis.call('SET', msgKey, updatedMsgJson)
-            return nil
-            """);
-    private static final byte[] MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT = stringSerializer.serialize("""
+            return "OK"
+            """;
+    private static final String MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT = """
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]
             local messages = cjson.decode(ARGV[1])
+            local defaultTtl = tonumber(ARGV[2])
             local lastPacketId = 0
-            
+                        
             -- Get the current maximum score in the sorted set
             local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
             -- Check if the maxScoreElement is non-empty
@@ -199,13 +195,14 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             else
                score = 0
             end
-            
+                        
             -- Add each message to the sorted set using packetId as the score
             for _, msg in ipairs(messages) do
                 local msgKey = messagesKey .. "_" .. msg.packetId
                 local msgJson = cjson.encode(msg)
+                local msgExpiryInterval = msg.msgExpiryInterval or defaultTtl
                 -- Store the message as a separate key with TTL
-                redis.call('SET', msgKey, msgJson, 'EX', msg.msgExpiryInterval)
+                redis.call('SET', msgKey, msgJson, 'EX', msgExpiryInterval)
                 -- increase the score
                 score = score + 1
                 redis.call('ZADD', messagesKey, score, msgKey)
@@ -215,9 +212,9 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
             -- Update the last packetId in the key-value store
             redis.call('SET', lastPacketIdKey, lastPacketId)
-            
-            return nil
-            """);
+                        
+            return "OK"
+            """;
 
     @Value("${mqtt.persistent-session.device.persisted-messages.ttl}")
     private int defaultTtl;
@@ -228,14 +225,14 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     @Value("${cache.cache-prefix:}")
     protected String cachePrefix;
 
-    private byte[] messagesLimitBytes;
-
-    private final JedisConnectionFactory connectionFactory;
+    private final LettuceConnectionManager connectionManager;
     private final boolean installProfileActive;
+    private final ConcurrentMap<String, CompletableFuture<Void>> scriptLoadingMap;
 
-    public DeviceMsgServiceImpl(RedisConnectionFactory redisConnectionFactory, Environment environment) {
-        this.connectionFactory = (JedisConnectionFactory) redisConnectionFactory;
+    public DeviceMsgServiceImpl(LettuceConnectionManager connectionManager, Environment environment) {
+        this.connectionManager = connectionManager;
         this.installProfileActive = Arrays.asList(environment.getActiveProfiles()).contains("install");
+        this.scriptLoadingMap = new ConcurrentHashMap<>();
     }
 
     @PostConstruct
@@ -243,279 +240,174 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         if (messagesLimit > 0xffff) {
             throw new IllegalArgumentException("Persisted messages limit can't be greater than 65535!");
         }
-        messagesLimitBytes = intToBytes(messagesLimit);
-        try (var connection = connectionFactory.getConnection()) {
-            loadScript(connection, ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
-            loadScript(connection, GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
-            loadScript(connection, REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
-            loadScript(connection, REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
-            loadScript(connection, UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
+        try {
+            loadScript(ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
+            loadScript(GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
+            loadScript(REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
+            loadScript(REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
+            loadScript(UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
             if (!installProfileActive) {
                 return;
             }
-            loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA,
-                    MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
-        } catch (Throwable t) {
-            throw new RuntimeException("Failed to init persisted device messages cache service!", t);
+            loadScript(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to init persisted device messages cache service!", e);
         }
     }
 
     @Override
-    public int saveAndReturnPreviousPacketId(String clientId, List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
+    public CompletionStage<Integer> saveAndReturnPreviousPacketId(String clientId, List<DevicePublishMsg> devicePublishMessages, boolean failOnConflict) {
         if (log.isTraceEnabled()) {
             log.trace("Save persisted messages, clientId - {}, devicePublishMessages size - {}", clientId, devicePublishMessages.size());
         }
-        var messages = devicePublishMessages.stream()
-                .map(devicePublishMsg -> new DevicePublishMsgEntity(devicePublishMsg, defaultTtl))
-                .collect(Collectors.toCollection(ArrayList::new));
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
-        try (var connection = getConnection(rawMessagesKey)) {
-            Long prevPacketId;
-            try {
-                prevPacketId = connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(ADD_MESSAGES_SCRIPT_SHA),
-                        ReturnType.INTEGER,
-                        2,
-                        rawMessagesKey,
-                        rawLastPacketIdKey,
-                        messagesLimitBytes,
-                        messagesBytes
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
-                try {
-                    prevPacketId = connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(ADD_MESSAGES_SCRIPT_SHA),
-                            ReturnType.INTEGER,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey,
-                            messagesLimitBytes,
-                            messagesBytes
-                    );
-                } catch (InvalidDataAccessApiUsageException ignored) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    prevPacketId = connection.scriptingCommands().eval(
-                            Objects.requireNonNull(ADD_MESSAGES_SCRIPT),
-                            ReturnType.INTEGER,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey,
-                            messagesLimitBytes,
-                            messagesBytes
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        String messagesStr = JacksonUtil.toString(devicePublishMessages);
+        String messagesLimitStr = String.valueOf(messagesLimit);
+        String defaultTtlStr = String.valueOf(defaultTtl);
+        RedisFuture<Long> prevPacketIdFuture = connectionManager.evalShaAsync(ADD_MESSAGES_SCRIPT_SHA, ScriptOutputType.INTEGER,
+                new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesLimitStr, messagesStr, defaultTtlStr);
+        return prevPacketIdFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, ADD_MESSAGES_SCRIPT_SHA, ADD_MESSAGES_SCRIPT);
+                CompletableFuture<Long> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(ADD_MESSAGES_SCRIPT_SHA, ScriptOutputType.INTEGER,
+                                new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesLimitStr, messagesStr, defaultTtlStr));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalShaAsync(ADD_MESSAGES_SCRIPT, ScriptOutputType.INTEGER,
+                            new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesLimitStr, messagesStr, defaultTtlStr);
+                });
             }
-            return prevPacketId != null ? prevPacketId.intValue() : 0;
-        }
+            throw new CompletionException(throwable);
+        }).thenApply(prevPacketId -> prevPacketId != null ? prevPacketId.intValue() : 0);
     }
 
     @Override
-    public List<DevicePublishMsg> findPersistedMessages(String clientId) {
+    public CompletionStage<List<DevicePublishMsg>> findPersistedMessages(String clientId) {
         if (log.isTraceEnabled()) {
             log.trace("Find persisted messages, clientId - {}", clientId);
         }
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        try (var connection = getConnection(rawMessagesKey)) {
-            List<byte[]> messagesBytes;
-            try {
-                messagesBytes = connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(GET_MESSAGES_SCRIPT_SHA),
-                        ReturnType.MULTI,
-                        1,
-                        rawMessagesKey,
-                        messagesLimitBytes
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
-                try {
-                    messagesBytes = connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(GET_MESSAGES_SCRIPT_SHA),
-                            ReturnType.MULTI,
-                            1,
-                            rawMessagesKey,
-                            messagesLimitBytes
-                    );
-                } catch (InvalidDataAccessApiUsageException ignored) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    messagesBytes = connection.scriptingCommands().eval(
-                            Objects.requireNonNull(GET_MESSAGES_SCRIPT),
-                            ReturnType.MULTI,
-                            1,
-                            rawMessagesKey,
-                            messagesLimitBytes
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        RedisFuture<List<String>> messagesFuture = connectionManager.evalShaAsync(GET_MESSAGES_SCRIPT_SHA, ScriptOutputType.MULTI,
+                new String[]{messagesCacheKeyStr}, String.valueOf(messagesLimit));
+        return messagesFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, GET_MESSAGES_SCRIPT_SHA, GET_MESSAGES_SCRIPT);
+                CompletableFuture<List<String>> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(GET_MESSAGES_SCRIPT_SHA, ScriptOutputType.MULTI,
+                                new String[]{messagesCacheKeyStr}, String.valueOf(messagesLimit)));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalShaAsync(GET_MESSAGES_SCRIPT, ScriptOutputType.MULTI,
+                            new String[]{messagesCacheKeyStr}, String.valueOf(messagesLimit));
+                });
             }
-            return Objects.requireNonNull(messagesBytes)
-                    .stream().map(DevicePublishMsgEntity::fromBytes)
-                    .toList();
-        }
+            throw new CompletionException(throwable);
+        }).thenApply(messages ->
+                messages.stream()
+                        .map(messageStr -> JacksonUtil.fromString(messageStr, DevicePublishMsg.class))
+                        .toList());
     }
 
     @Override
-    public void removePersistedMessages(String clientId) {
+    public CompletionStage<String> removePersistedMessages(String clientId) {
         if (log.isTraceEnabled()) {
             log.trace("Removing persisted messages, clientId - {}", clientId);
         }
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        try (var connection = getConnection(rawMessagesKey)) {
-            try {
-                connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT_SHA),
-                        ReturnType.VALUE,
-                        2,
-                        rawMessagesKey,
-                        rawLastPacketIdKey
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
-                try {
-                    connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT_SHA),
-                            ReturnType.VALUE,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey
-                    );
-                } catch (InvalidDataAccessApiUsageException ignored) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    connection.scriptingCommands().eval(
-                            Objects.requireNonNull(REMOVE_MESSAGES_SCRIPT),
-                            ReturnType.VALUE,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        RedisFuture<String> removeFuture = connectionManager.evalShaAsync(REMOVE_MESSAGES_SCRIPT_SHA, ScriptOutputType.STATUS, messagesCacheKeyStr, lastPacketIdKeyStr);
+        return removeFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
+                CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(REMOVE_MESSAGES_SCRIPT_SHA, ScriptOutputType.STATUS, messagesCacheKeyStr, lastPacketIdKeyStr));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalAsync(REMOVE_MESSAGES_SCRIPT, ScriptOutputType.STATUS, messagesCacheKeyStr, lastPacketIdKeyStr);
+                });
             }
-        } catch (Exception e) {
-            log.error("Failed to remove persisted messages, clientId - {}", clientId, e);
-        }
+            throw new CompletionException(throwable);
+        });
     }
 
     @Override
-    public void removePersistedMessage(String clientId, int packetId) {
+    public CompletionStage<String> removePersistedMessage(String clientId, int packetId) {
         if (log.isTraceEnabled()) {
             log.trace("Removing persisted message, clientId - {}, packetId - {}", clientId, packetId);
         }
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        byte[] packetIdBytes = intToBytes(packetId);
-        try (var connection = getConnection(rawMessagesKey)) {
-            try {
-                connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT_SHA),
-                        ReturnType.VALUE,
-                        1,
-                        rawMessagesKey,
-                        packetIdBytes
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
-                try {
-                    connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT_SHA),
-                            ReturnType.VALUE,
-                            1,
-                            rawMessagesKey,
-                            packetIdBytes
-                    );
-                } catch (InvalidDataAccessApiUsageException ignored) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    connection.scriptingCommands().eval(
-                            Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT),
-                            ReturnType.VALUE,
-                            1,
-                            rawMessagesKey,
-                            packetIdBytes
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        String packetIdStr = String.valueOf(packetId);
+        RedisFuture<String> removeFuture = connectionManager.evalShaAsync(REMOVE_MESSAGE_SCRIPT_SHA, ScriptOutputType.STATUS,
+                new String[]{messagesCacheKeyStr}, packetIdStr);
+        return removeFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
+                CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(REMOVE_MESSAGE_SCRIPT_SHA, ScriptOutputType.STATUS,
+                                new String[]{messagesCacheKeyStr}, packetIdStr));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalAsync(Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT), ScriptOutputType.STATUS,
+                            new String[]{messagesCacheKeyStr}, packetIdStr);
+                });
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to remove persisted message, clientId - " + clientId + " packetId - " + packetId, e);
-        }
+            throw new CompletionException(throwable);
+        });
     }
 
     @Override
-    public void updatePacketReceived(String clientId, int packetId) {
+    public CompletionStage<String> updatePacketReceived(String clientId, int packetId) {
         if (log.isTraceEnabled()) {
             log.trace("Update packet received, clientId - {}, packetId - {}", clientId, packetId);
         }
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        byte[] packetIdBytes = intToBytes(packetId);
-        try (var connection = getConnection(rawMessagesKey)) {
-            try {
-                connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT_SHA),
-                        ReturnType.VALUE,
-                        1,
-                        rawMessagesKey,
-                        packetIdBytes
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
-                try {
-                    connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT_SHA),
-                            ReturnType.VALUE,
-                            1,
-                            rawMessagesKey,
-                            packetIdBytes
-                    );
-                } catch (InvalidDataAccessApiUsageException ingored) {
-                    connection.scriptingCommands().eval(
-                            Objects.requireNonNull(UPDATE_PACKET_TYPE_SCRIPT),
-                            ReturnType.VALUE,
-                            1,
-                            rawMessagesKey,
-                            packetIdBytes
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        String packetIdStr = String.valueOf(packetId);
+        RedisFuture<String> updateFuture = connectionManager.evalShaAsync(UPDATE_PACKET_TYPE_SCRIPT_SHA, ScriptOutputType.STATUS,
+                new String[]{messagesCacheKeyStr}, packetIdStr);
+        return updateFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
+                CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(UPDATE_PACKET_TYPE_SCRIPT_SHA, ScriptOutputType.STATUS,
+                                new String[]{messagesCacheKeyStr}, packetIdStr));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalAsync(UPDATE_PACKET_TYPE_SCRIPT, ScriptOutputType.STATUS,
+                            new String[]{messagesCacheKeyStr}, packetIdStr);
+                });
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to update packet type, clientId - " + clientId + " packetId - " + packetId, e);
-        }
+            throw new CompletionException(throwable);
+        });
     }
 
     @Override
-    public int getLastPacketId(String clientId) {
+    public CompletionStage<Integer> getLastPacketId(String clientId) {
         if (log.isTraceEnabled()) {
             log.trace("Get last packet id, clientId - {}", clientId);
         }
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        try (var connection = getConnection(rawLastPacketIdKey)) {
-            byte[] rawValue = connection.stringCommands().get(rawLastPacketIdKey);
-            if (rawValue == null) {
-                return 0;
-            }
-            return Integer.parseInt(Objects.requireNonNull(stringSerializer.deserialize(rawValue)));
-        }
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        RedisFuture<String> future = connectionManager.getAsync(lastPacketIdKeyStr);
+        return future.thenApply(value -> value == null ? 0 : Integer.parseInt(value));
     }
 
     @Override
-    public void removeLastPacketId(String clientId) {
+    public CompletionStage<Long> removeLastPacketId(String clientId) {
         if (log.isTraceEnabled()) {
             log.trace("Remove last packet id, clientId - {}", clientId);
         }
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        try (var connection = getConnection(rawLastPacketIdKey)) {
-            connection.keyCommands().del(rawLastPacketIdKey);
-        }
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        return connectionManager.delAsync(lastPacketIdKeyStr);
     }
 
     @Override
-    public void saveLastPacketId(String clientId, int lastPacketId) {
+    public CompletionStage<String> saveLastPacketId(String clientId, int lastPacketId) {
         if (log.isTraceEnabled()) {
             log.trace("Save last packet id, clientId - {}", clientId);
         }
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        byte[] rawLastPacketIdValue = intToBytes(lastPacketId);
-        try (var connection = getConnection(rawLastPacketIdKey)) {
-            connection.stringCommands().set(rawLastPacketIdKey, rawLastPacketIdValue);
-        }
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        return connectionManager.setAsync(lastPacketIdKeyStr, String.valueOf(lastPacketId));
     }
 
     @Override
@@ -530,12 +422,12 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     }
 
     private void migrateMessagesToRedis(Path filePath) {
-        var clientIdToMsgMap = new HashMap<String, List<DevicePublishMsgEntity>>();
+        var clientIdToMsgMap = new HashMap<String, List<DevicePublishMsg>>();
         consumeCsvRecords(filePath, record -> {
             String clientId = record.get("client_id");
             try {
                 var messages = clientIdToMsgMap.computeIfAbsent(clientId, k -> new ArrayList<>());
-                messages.add(DevicePublishMsgEntity.fromCsvRecord(record, defaultTtl));
+                messages.add(DevicePublishMsgUtil.fromCsvRecord(record, defaultTtl));
                 if (messages.size() >= IMPORT_TO_REDIS_BATCH_SIZE) {
                     writeBatchToRedis(clientId, messages);
                     messages.clear();
@@ -552,48 +444,34 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         });
     }
 
-    private void writeBatchToRedis(String clientId, List<DevicePublishMsgEntity> messages) {
+    private void writeBatchToRedis(String clientId, List<DevicePublishMsg> messages) {
         log.info("[{}] Adding {} messages to Redis ...", clientId, messages.size());
-        byte[] rawMessagesKey = toMessagesCacheKey(clientId);
-        byte[] rawLastPacketIdKey = toLastPacketIdKey(clientId);
-        byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
-        try (var connection = getConnection(rawMessagesKey)) {
-            try {
-                connection.scriptingCommands().evalSha(
-                        Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA),
-                        ReturnType.VALUE,
-                        2,
-                        rawMessagesKey,
-                        rawLastPacketIdKey,
-                        messagesBytes
-                );
-            } catch (InvalidDataAccessApiUsageException e) {
-                loadScript(connection, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
-                try {
-                    connection.scriptingCommands().evalSha(
-                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA),
-                            ReturnType.VALUE,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey,
-                            messagesBytes
-                    );
-                } catch (InvalidDataAccessApiUsageException ignored) {
-                    log.debug("Slowly executing eval instead of fast evalSha [{}] due to exception throwing on sha evaluation: ", connection, e);
-                    connection.scriptingCommands().eval(
-                            Objects.requireNonNull(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT),
-                            ReturnType.VALUE,
-                            2,
-                            rawMessagesKey,
-                            rawLastPacketIdKey,
-                            messagesBytes
-                    );
-                }
+        String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
+        String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
+        String messagesStr = JacksonUtil.toString(messages);
+        String defaultTtlStr = String.valueOf(defaultTtl);
+        RedisFuture<String> migrateFuture = connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
+                new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr);
+        migrateFuture.exceptionallyCompose(throwable -> {
+            if (throwable instanceof RedisNoScriptException) {
+                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
+                CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
+                        connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
+                                new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr));
+                return retryFuture.exceptionallyCompose(retryThrowable -> {
+                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    return connectionManager.evalAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT, ScriptOutputType.STATUS,
+                            new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr);
+                });
+            }
+            throw new CompletionException(throwable);
+        }).whenComplete((s, throwable) -> {
+            if (throwable != null) {
+                log.error("Failed to migrate {} messages for client {}", messages.size(), clientId, throwable);
+                return;
             }
             log.info("[{}] Successfully added {} messages to Redis!", clientId, messages.size());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to migrate messages to Redis for client: " + clientId, e);
-        }
+        });
     }
 
     private void consumeCsvRecords(Path filePath, Consumer<CSVRecord> csvRecordConsumer) {
@@ -606,65 +484,37 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         }
     }
 
-    private byte[] toMessagesCacheKey(String clientId) {
-        ClientIdMessagesCacheKey clientIdMessagesCacheKey = new ClientIdMessagesCacheKey(clientId, cachePrefix);
-        String stringValue = clientIdMessagesCacheKey.toString();
-        byte[] rawKey;
-        try {
-            rawKey = stringSerializer.serialize(stringValue);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private CompletableFuture<Void> processLoadScriptAsync(Throwable throwable, String scriptSha, String script) {
+        if (log.isDebugEnabled()) {
+            log.debug("evalSha failed due to missing script, attempting to load the script: {}", scriptSha, throwable);
         }
-        if (rawKey == null) {
-            throw new IllegalArgumentException("Failed to serialize the messages cache key, clientId - " + clientId);
-        }
-        return rawKey;
+        return scriptLoadingMap.computeIfAbsent(scriptSha, sha -> {
+            CompletableFuture<Void> loadingFuture = new CompletableFuture<>();
+            loadScriptAsync(scriptSha, script).handle((scriptLoadResult, loadThrowable) -> {
+                if (loadThrowable == null) {
+                    loadingFuture.complete(null);
+                } else {
+                    loadingFuture.completeExceptionally(loadThrowable);
+                }
+                return null;
+            });
+            loadingFuture.whenComplete((result, ex) -> scriptLoadingMap.remove(scriptSha));
+            return loadingFuture;
+        });
     }
 
-    private byte[] toLastPacketIdKey(String clientId) {
-        ClientIdLastPacketIdCacheKey clientIdLastPacketIdCacheKey = new ClientIdLastPacketIdCacheKey(clientId, cachePrefix);
-        String stringValue = clientIdLastPacketIdCacheKey.toString();
-        byte[] rawKey;
-        try {
-            rawKey = stringSerializer.serialize(stringValue);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+    private RedisFuture<String> loadScriptAsync(String scriptSha, String script) {
+        if (log.isDebugEnabled()) {
+            log.debug("Loading LUA script async with expected SHA [{}], connection [{}]", scriptSha, connectionManager);
         }
-        if (rawKey == null) {
-            throw new IllegalArgumentException("Failed to serialize the last packet id cache key, clientId - " + clientId);
-        }
-        return rawKey;
+        return connectionManager.scriptLoadAsync(script);
     }
 
-    private byte[] intToBytes(int value) {
-        return stringSerializer.serialize(Integer.toString(value));
-    }
-
-    private RedisConnection getConnection(byte[] rawKey) {
-        if (!connectionFactory.isRedisClusterAware()) {
-            return connectionFactory.getConnection();
-        }
-        RedisConnection connection = connectionFactory.getClusterConnection();
-
-        int slotNum = JedisClusterCRC16.getSlot(rawKey);
-        Jedis jedis = new Jedis((((JedisClusterConnection) connection).getNativeConnection().getConnectionFromSlot(slotNum)));
-
-        JedisConnection jedisConnection = new JedisConnection(jedis, MOCK_POOL, jedis.getDB());
-        jedisConnection.setConvertPipelineAndTxResults(connectionFactory.getConvertPipelineAndTxResults());
-
-        return jedisConnection;
-    }
-
-    private void loadScript(RedisConnection connection, byte[] scriptSha, byte[] script) {
-        String scriptShaStr = new String(Objects.requireNonNull(scriptSha));
-        log.debug("Loading LUA with expected SHA [{}], connection [{}]", scriptShaStr, connection.getNativeConnection());
-        String actualScriptSha = connection.scriptingCommands().scriptLoad(Objects.requireNonNull(script));
-        validateSha(scriptSha, scriptShaStr, actualScriptSha, connection);
-    }
-
-    private void validateSha(byte[] expectedSha, String expectedShaStr, String actualScriptSha, RedisConnection connection) {
-        if (!Arrays.equals(expectedSha, stringSerializer.serialize(actualScriptSha))) {
-            log.error("SHA for script is wrong! Expected [{}] actual [{}] connection [{}]", expectedShaStr, actualScriptSha, connection.getNativeConnection());
+    private void loadScript(String scriptSha, String script) {
+        log.debug("Loading LUA script with expected SHA [{}], connection [{}]", scriptSha, connectionManager);
+        String actualScriptSha = connectionManager.scriptLoad(script);
+        if (!scriptSha.equals(actualScriptSha)) {
+            log.error("SHA for script is wrong! Expected [{}] actual [{}] connection [{}]", scriptSha, actualScriptSha, connectionManager);
         }
     }
 

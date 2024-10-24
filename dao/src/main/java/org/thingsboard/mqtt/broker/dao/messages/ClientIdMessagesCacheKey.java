@@ -31,4 +31,8 @@ public record ClientIdMessagesCacheKey(String clientId, String cachePrefix) impl
         return StringUtils.isBlank(cachePrefix) ? keyBase : cachePrefix + keyBase;
     }
 
+    public static String toStringKey(String clientId, String cachePrefix) {
+        return new ClientIdMessagesCacheKey(clientId, cachePrefix).toString();
+    }
+
 }

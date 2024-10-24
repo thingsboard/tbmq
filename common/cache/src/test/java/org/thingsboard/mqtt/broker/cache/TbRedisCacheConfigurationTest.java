@@ -20,10 +20,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -40,6 +42,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 @Slf4j
 public class TbRedisCacheConfigurationTest {
+
+    @MockBean
+    private LettuceConnectionFactory lettuceConnectionFactory;
+
+    @MockBean
+    private LettuceConnectionManager lettuceConnectionManager;
 
     @Autowired
     CacheManager cacheManager;

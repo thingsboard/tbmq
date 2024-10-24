@@ -17,10 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -34,7 +31,7 @@ public class DevicePackProcessingContext {
     @Getter
     private final ConcurrentMap<String, ClientIdMessagesPack> failedMap = new ConcurrentHashMap<>();
     @Getter
-    private final ConcurrentMap<String, List<DevicePublishMsg>> successMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DevicePublishMsgListAndPrevPacketId> successMap = new ConcurrentHashMap<>();
 
     private final CountDownLatch processingTimeoutLatch;
 
@@ -50,7 +47,7 @@ public class DevicePackProcessingContext {
     public void onSuccess(String clientId, int previousPacketId) {
         ClientIdMessagesPack pack = pendingMap.remove(clientId);
         if (pack != null) {
-            successMap.put(clientId, updatePacketIds(previousPacketId, pack));
+            successMap.put(clientId, new DevicePublishMsgListAndPrevPacketId(pack.messages(), previousPacketId));
             processingTimeoutLatch.countDown();
         } else {
             if (log.isDebugEnabled()) {
@@ -74,15 +71,6 @@ public class DevicePackProcessingContext {
     public void cleanup() {
         pendingMap.clear();
         successMap.clear();
-    }
-
-    List<DevicePublishMsg> updatePacketIds(int previousPacketId, ClientIdMessagesPack pack) {
-        List<DevicePublishMsg> messages = pack.messages();
-        var packetIdDto = new PacketIdDto(previousPacketId);
-        for (var msg : messages) {
-            msg.setPacketId(packetIdDto.getNextPacketId());
-        }
-        return messages;
     }
 
 }

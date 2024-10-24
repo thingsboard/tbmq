@@ -27,7 +27,7 @@ import redis.clients.jedis.UnifiedJedis;
 
 @Configuration
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
-public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration {
+public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<RedisClusterConfiguration> {
 
     public TBRedisClusterConfiguration(CacheSpecsMap cacheSpecsMap) {
         super(cacheSpecsMap);
@@ -52,15 +52,25 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration {
         return new JedisCluster(toHostAndPort(clusterNodes), jedisClientConfig, JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
     }
 
-    public JedisConnectionFactory loadFactory() {
-        RedisClusterConfiguration clusterConfiguration = new RedisClusterConfiguration();
+    @Override
+    protected JedisConnectionFactory loadFactory() {
+        return useDefaultPoolConfig ?
+                new JedisConnectionFactory(getRedisConfiguration()) :
+                new JedisConnectionFactory(getRedisConfiguration(), buildPoolConfig());
+    }
+
+    @Override
+    protected boolean useDefaultPoolConfig() {
+        return useDefaultPoolConfig;
+    }
+
+    @Override
+    protected RedisClusterConfiguration getRedisConfiguration() {
+        var clusterConfiguration = new RedisClusterConfiguration();
         clusterConfiguration.setClusterNodes(getNodes(clusterNodes));
         clusterConfiguration.setMaxRedirects(maxRedirects);
         clusterConfiguration.setPassword(password);
-        if (useDefaultPoolConfig) {
-            return new JedisConnectionFactory(clusterConfiguration);
-        } else {
-            return new JedisConnectionFactory(clusterConfiguration, buildPoolConfig());
-        }
+        return clusterConfiguration;
     }
+
 }

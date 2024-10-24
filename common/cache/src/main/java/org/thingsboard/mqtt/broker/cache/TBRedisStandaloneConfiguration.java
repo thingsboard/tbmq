@@ -31,7 +31,7 @@ import java.time.Duration;
 
 @Configuration
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "standalone")
-public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration {
+public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration<RedisStandaloneConfiguration> {
 
     public TBRedisStandaloneConfiguration(CacheSpecsMap cacheSpecsMap) {
         super(cacheSpecsMap);
@@ -74,17 +74,26 @@ public class TBRedisStandaloneConfiguration extends TBRedisCacheConfiguration {
         }
     }
 
-    public JedisConnectionFactory loadFactory() {
-        RedisStandaloneConfiguration standaloneConfiguration = new RedisStandaloneConfiguration();
+    @Override
+    protected JedisConnectionFactory loadFactory() {
+        return useDefaultClientConfig ?
+                new JedisConnectionFactory(getRedisConfiguration()) :
+                new JedisConnectionFactory(getRedisConfiguration(), buildClientConfig());
+    }
+
+    @Override
+    protected boolean useDefaultPoolConfig() {
+        return useDefaultClientConfig;
+    }
+
+    @Override
+    protected RedisStandaloneConfiguration getRedisConfiguration() {
+        var standaloneConfiguration = new RedisStandaloneConfiguration();
         standaloneConfiguration.setHostName(host);
         standaloneConfiguration.setPort(port);
         standaloneConfiguration.setDatabase(db);
         standaloneConfiguration.setPassword(password);
-        if (useDefaultClientConfig) {
-            return new JedisConnectionFactory(standaloneConfiguration);
-        } else {
-            return new JedisConnectionFactory(standaloneConfiguration, buildClientConfig());
-        }
+        return standaloneConfiguration;
     }
 
     private JedisClientConfiguration buildClientConfig() {

@@ -600,6 +600,15 @@ sql:
       # The parameter to specify system TTL(Time To Live) value for unauthorized clients. Value set in seconds. 0 - records are never expired. Default value corresponds to three days
       ttl: "${SQL_TTL_UNAUTHORIZED_CLIENT_TTL:259200}"
 
+# Redis lettuce configuration parameters
+lettuce:
+  # Enable/disable auto-flush. If disabled, commands are buffered and flushed based on cmd count or time interval
+  auto-flush: "${REDIS_LETTUCE_CMDS_AUTO_FLUSH_ENABLED:true}"
+  # Number of buffered commands before flush is triggered. Used when auto-flush is disabled.
+  buffered-cmd-count: "${REDIS_LETTUCE_BUFFERED_CMDS_COUNT:5}"
+  # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count.
+  flush-interval-ms: "${REDIS_LETTUCE_FLUSH_INTERVAL_MS:5}"
+
 # SQL DAO configuration parameters
 spring:
   data:
