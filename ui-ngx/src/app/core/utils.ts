@@ -614,6 +614,8 @@ const convertToBytes = (value: number, valueUnit: DataSizeUnitType): number => {
 
 export const randomStringFromRegex = (pattern: string): string => {
   const randexp = new RandExp(pattern);
-  randexp.max = 5;
-  return randexp.gen().replace(/[$"]/g, '');
+  randexp.defaultRange.add(48, 57); // 0-9
+  randexp.defaultRange.add(97, 122); // a-z
+  randexp.max = 10;
+  return randexp.gen().replace(/[!'#$%^&*()+\-=?:;"№`ʼ~,<>|{}]/g, '');
 }
