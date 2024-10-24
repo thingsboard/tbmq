@@ -23,7 +23,8 @@ import {
   ConnectionStatusLog,
   DataSizeUnitType,
   DisconnectReasonCodes,
-  MessageCounter, MessageCounterEmpty,
+  MessageCounter,
+  MessageCounterEmpty,
   MessageFilterConfig,
   MessageFilterDefaultConfigAll,
   QoS,
@@ -35,16 +36,16 @@ import {
   WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
-import mqtt, {
-  IClientOptions,
-  IClientPublishOptions,
-  IConnackPacket,
-  IPublishPacket,
-  MqttClient,
-  Packet
-} from 'mqtt';
+import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient, Packet } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber, isUndefined } from '@core/utils';
+import {
+  convertDataSizeUnits,
+  convertTimeUnits,
+  guid,
+  isDefinedAndNotNull,
+  isNotEmptyStr,
+  isNumber
+} from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
@@ -52,6 +53,10 @@ import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
 import { WebSocketSettings } from '@shared/models/settings.models';
 import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
+import { ActionNotificationShow } from "@core/notification/notification.actions";
+import { Store } from "@ngrx/store";
+import { AppState } from "@core/core.state";
+import { TranslateService } from "@ngx-translate/core";
 
 @Injectable({
   providedIn: 'root'
@@ -92,7 +97,9 @@ export class MqttJsClientService {
   private webSocketSettings: WebSocketSettings;
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
-              private clientSessionService: ClientSessionService) {
+              private clientSessionService: ClientSessionService,
+              private translate: TranslateService,
+              private store: Store<AppState>) {
   }
 
   public onConnectionsUpdated(selectFirst: boolean = true) {
@@ -198,8 +205,8 @@ export class MqttJsClientService {
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
-    const logUnknownPubErrorTimeout = setTimeout(function() {
-      console.log(`Unknown error on publish message with topic '${topic}' \n${JSON.stringify(options)}`);
+    const logUnknownPubErrorTimeout = setTimeout(() => {
+      this.notifyError(this.translate.instant('ws-client.messages.publish-message-unknown-error'));
     }, 3000);
     this.getSelectedMqttJsClient().publish(topic, payload, options, (error, packet) => {
       if (!error || !error?.message?.length) {
@@ -207,7 +214,7 @@ export class MqttJsClientService {
         this.addMessage(message, this.getSelectedConnectionId());
       }
       if (error?.message?.length) {
-        console.log(`Unexpected error on publish message \nTopic: '${topic}' \nError: ${error.message}`);
+        this.notifyError(error.message);
       }
     });
   }
@@ -482,7 +489,7 @@ export class MqttJsClientService {
       details
     };
     if (this.connectionStatusLogMap.has(connection.id)) {
-      this.connectionStatusLogMap.get(connection.id)?.push(log);
+      this.connectionStatusLogMap.get(connection.id)?.unshift(log);
     } else {
       this.connectionStatusLogMap.set(connection.id, [log]);
     }
@@ -614,5 +621,12 @@ export class MqttJsClientService {
       options.properties.subscriptionIdentifier = subscription.configuration.subscriptionId;
     }
     return options;
+  }
+
+  private notifyError(message: string) {
+    this.store.dispatch(new ActionNotificationShow({
+      message,
+      type: 'error'
+    }));
   }
 }

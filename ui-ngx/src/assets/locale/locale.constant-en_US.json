@@ -903,6 +903,7 @@
     "messages": {
       "retained": "Retain",
       "publish-message": "Publish message",
+      "publish-message-unknown-error": "Failed to publish message due to an unknown reason.",
       "received": "Received",
       "published": "Published",
       "no-messages-text": "No messages yet",
