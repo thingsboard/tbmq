@@ -33,6 +33,7 @@ RUN apt-get update \
     && mkdir -p $DATA_FOLDER \
     && chown -R ${pkg.user}:${pkg.user} $DATA_FOLDER \
     && chown -R ${pkg.user}:${pkg.user} /var/log/${pkg.name} \
+    && chown -R ${pkg.user}:${pkg.user} /tmp \
     && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar
 
 USER ${pkg.user}
