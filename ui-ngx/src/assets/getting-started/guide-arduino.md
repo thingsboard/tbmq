@@ -51,7 +51,7 @@ const int MQTT_PORT = {:mqttPort};
 
 constexpr uint32_t SERIAL_DEBUG_BAUD = 115200U;
 constexpr char TOPIC[] = "tbmq/demo";
-constexpr char MESSAGE[] = "Hello World";
+constexpr char MESSAGE[] = "Hello, TBMQ!";
 constexpr char USERNAME[] = "tbmq_websockets_username";
 constexpr char PASSWORD[] = "";
 String CLIENT_ID = "tbmq_test_client";
