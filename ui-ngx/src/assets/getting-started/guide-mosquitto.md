@@ -29,7 +29,7 @@ mosquitto_sub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/+ -i tbmq -u tb
 In order to publish a message on topic `tbmq/demo/topic`, open a new terminal tab and paste the following command:
 
 ```bash
-mosquitto_pub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/topic -u tbmq_websockets_username -m 'Hello World'{:copy-code}
+mosquitto_pub -d -q 1 -h {:mqttHost} -p {:mqttPort} -t tbmq/demo/topic -u tbmq_websockets_username -m 'Hello, TBMQ!'{:copy-code}
 ```
 
 <br>
@@ -44,5 +44,5 @@ Client tbmq received SUBACK
 Subscribed (mid: 1): 1
 Client tbmq received PUBLISH (d0, q1, r0, m3, 'tbmq/demo/topic', ... (11 bytes))
 Client tbmq sending PUBACK (m3, rc0)
-tbmq/demo/topic Hello World
+tbmq/demo/topic Hello, TBMQ!
 ```

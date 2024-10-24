@@ -152,7 +152,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
         try (Connection conn = DriverManager.getConnection(dbUrl, dbUserName, dbPassword)) {
             log.info("Updating schema ...");
             if (isOldSchema(conn, oldVersion)) {
-                Path schemaUpdateFile = Paths.get(installScripts.getDataDir(), "upgrade", oldVersionStr, SCHEMA_UPDATE_SQL);
+                Path schemaUpdateFile = Paths.get(installScripts.getUpgradeDataDir(), "upgrade", oldVersionStr, SCHEMA_UPDATE_SQL);
                 if (Files.exists(schemaUpdateFile)) {
                     loadSql(schemaUpdateFile, conn);
                 }
