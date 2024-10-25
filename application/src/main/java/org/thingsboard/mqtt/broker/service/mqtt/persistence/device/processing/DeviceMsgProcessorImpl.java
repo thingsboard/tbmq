@@ -40,7 +40,7 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     }
 
     @Override
-    public void deliverClientDeviceMessages(String clientId, DevicePublishMsgListAndPrevPacketId devicePublishMessages) {
+    public void deliverClientDeviceMessages(String clientId, DevicePublishMsgListAndPrevPacketId devicePubMsgsAndPrevId) {
         var clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
             if (log.isDebugEnabled()) {
@@ -55,8 +55,8 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
             return;
         }
         String targetServiceId = clientSessionInfo.getServiceId();
-        var packetIdDto = new PacketIdDto(devicePublishMessages.previousPacketId());
-        for (var devicePublishMsg : devicePublishMessages.messages()) {
+        var packetIdDto = new PacketIdDto(devicePubMsgsAndPrevId.previousPacketId());
+        for (var devicePublishMsg : devicePubMsgsAndPrevId.messages()) {
             devicePublishMsg.setPacketId(packetIdDto.getNextPacketId());
             downLinkProxy.sendPersistentMsg(
                     targetServiceId,

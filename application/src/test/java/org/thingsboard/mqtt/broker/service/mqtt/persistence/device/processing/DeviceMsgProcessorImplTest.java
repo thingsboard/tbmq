@@ -54,8 +54,6 @@ public class DeviceMsgProcessorImplTest {
     @MockBean
     DownLinkProxy downLinkProxy;
     @MockBean
-    DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
-    @MockBean
     DeviceMsgService deviceMsgService;
 
     @SpyBean
