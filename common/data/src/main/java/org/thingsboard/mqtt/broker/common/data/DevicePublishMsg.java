@@ -23,6 +23,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.props.UserProperties;
 
 import java.util.ArrayList;
@@ -129,11 +130,13 @@ public class DevicePublishMsg {
     }
 
     public void setSubscriptionIds(List<Integer> subscriptionIds) {
-        subscriptionIds.forEach(subscriptionId -> {
-            if (subscriptionId > 0) {
-                properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
-            }
-        });
+        if (!CollectionUtils.isEmpty(subscriptionIds)) {
+            subscriptionIds.forEach(subscriptionId -> {
+                if (subscriptionId > 0) {
+                    properties.add(new MqttProperties.IntegerProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID, subscriptionId));
+                }
+            });
+        }
     }
 
 }

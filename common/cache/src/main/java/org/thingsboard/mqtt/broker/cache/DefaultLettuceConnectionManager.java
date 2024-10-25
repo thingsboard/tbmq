@@ -46,7 +46,6 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
         }
         connection = client.connect();
         connection.setAutoFlushCommands(autoFlush);
-
     }
 
     @Override
@@ -54,7 +53,7 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
     public String scriptLoad(String script) {
         RedisFuture<String> scriptLoadFuture = connection.async().scriptLoad(script);
         forceFlush();
-        return scriptLoadFuture.get(5, TimeUnit.SECONDS);
+        return scriptLoadFuture.get(10, TimeUnit.SECONDS);
     }
 
     @Override

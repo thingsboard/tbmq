@@ -53,7 +53,7 @@ public class ClusterAwareLettuceConnectionManager extends AbstractLettuceConnect
     public String scriptLoad(String script) {
         RedisFuture<String> scriptLoadFuture = connection.async().scriptLoad(script);
         forceFlush();
-        return scriptLoadFuture.get(5, TimeUnit.SECONDS);
+        return scriptLoadFuture.get(10, TimeUnit.SECONDS);
     }
 
     @Override
