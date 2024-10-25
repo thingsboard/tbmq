@@ -30,7 +30,7 @@ import {
   Validators
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
 import {
   ANY_CHARACTERS,
   AuthRulePatternsType,
@@ -39,6 +39,7 @@ import {
   SslAuthRulesMapping,
   SslCredentialsAuthRules
 } from '@shared/models/credentials.model';
+import { ENTER, TAB } from "@angular/cdk/keycodes";
 
 @Component({
   selector: 'tb-auth-rules',
@@ -69,6 +70,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
 
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
+  separatorKeysCodes = [ENTER, TAB];
 
   private valueChangeSubscription: Subscription = null;
   private destroy$ = new Subject<void>();
@@ -190,24 +192,6 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
     }
   }
 
-  private updateView(value: SslAuthRulesMapping) {
-    this.rulesMappingFormGroup.patchValue(value, {emitEvent: false});
-    this.propagateChange(this.prepareValues(value.authRulesMapping));
-  }
-
-  private prepareValues(authRulesMapping: AuthRulesMapping[]): SslCredentialsAuthRules {
-    const result = {};
-    authRulesMapping.map((obj, index) => {
-      const key = obj?.certificateMatcherRegex;
-      if (key) {
-        result[key] = {};
-        result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns ? this.pubRulesArray[index] : null;
-        result[key].subAuthRulePatterns = obj?.subAuthRulePatterns ? this.subRulesArray[index] : null;
-      }
-    });
-    return result;
-  }
-
   addTopicRule(event: MatChipInputEvent, index: number, type: AuthRulePatternsType) {
     const input = event.input;
     const value = event.value;
@@ -248,6 +232,45 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
         break;
     }
     this.updateTopicRuleControl(index, type);
+  }
+
+  editTopicRule(event: MatChipEditedEvent, index: number, type: AuthRulePatternsType): void {
+    let optIndex: number;
+    const oldRule = event.chip.value;
+    const newRule = event.value;
+    switch (type) {
+      case AuthRulePatternsType.SUBSCRIBE:
+        optIndex = this.subRulesArray[index].indexOf(oldRule);
+        if (optIndex !== -1) {
+          this.subRulesArray[index].splice(optIndex, 1, newRule);
+        }
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        optIndex = this.pubRulesArray[index].indexOf(oldRule);
+        if (optIndex !== -1) {
+          this.pubRulesArray[index].splice(optIndex, 1, newRule);
+        }
+        break;
+    }
+    this.updateTopicRuleControl(index, type);
+  }
+
+  private updateView(value: SslAuthRulesMapping) {
+    this.rulesMappingFormGroup.patchValue(value, {emitEvent: false});
+    this.propagateChange(this.prepareValues(value.authRulesMapping));
+  }
+
+  private prepareValues(authRulesMapping: AuthRulesMapping[]): SslCredentialsAuthRules {
+    const result = {};
+    authRulesMapping.map((obj, index) => {
+      const key = obj?.certificateMatcherRegex;
+      if (key) {
+        result[key] = {};
+        result[key].pubAuthRulePatterns = obj?.pubAuthRulePatterns ? this.pubRulesArray[index] : null;
+        result[key].subAuthRulePatterns = obj?.subAuthRulePatterns ? this.subRulesArray[index] : null;
+      }
+    });
+    return result;
   }
 
   private updateTopicRuleControl(index: number, type: AuthRulePatternsType) {

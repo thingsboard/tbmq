@@ -30,9 +30,10 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ANY_CHARACTERS, AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientIdRandom, clientUserNameRandom } from '@shared/models/ws-client.model';
+import { ENTER, TAB } from "@angular/cdk/keycodes";
 
 @Component({
   selector: 'tb-mqtt-credentials-basic',
@@ -68,6 +69,7 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   credentialsMqttFormGroup: UntypedFormGroup;
   pubRulesSet: Set<string> = new Set();
   subRulesSet: Set<string> = new Set();
+  separatorKeysCodes = [ENTER, TAB];
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => {};
@@ -191,26 +193,31 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
     }
   }
 
-  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
-    const rulesArray = [Array.from(set).join(',')];
+  editTopicRule(event: MatChipEditedEvent, type: AuthRulePatternsType): void {
+    let index: number;
+    let array: string[];
+    const oldRule = event.chip.value;
+    const newRule = event.value;
     switch (type) {
-      case AuthRulePatternsType.PUBLISH:
-        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
-        break;
       case AuthRulePatternsType.SUBSCRIBE:
-        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        array = Array.from(this.subRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.subRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.subRulesSet, type);
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        array = Array.from(this.pubRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.pubRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.pubRulesSet, type);
         break;
     }
-  }
-
-  private atLeastOne(validator: ValidatorFn, controls: string[] = null) {
-    return (group: UntypedFormGroup): ValidationErrors | null => {
-      if (!controls) {
-        controls = Object.keys(group.controls);
-      }
-      const hasAtLeastOne = group?.controls && controls.some(k => !validator(group.controls[k]));
-      return hasAtLeastOne ? null : {atLeastOne: true};
-    };
   }
 
   onClickTbCopyButton(value: string) {
@@ -234,5 +241,27 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         });
         break;
     }
+  }
+
+  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
+    const rulesArray = [Array.from(set).join(',')];
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.credentialsMqttFormGroup.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.credentialsMqttFormGroup.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
+    }
+  }
+
+  private atLeastOne(validator: ValidatorFn, controls: string[] = null) {
+    return (group: UntypedFormGroup): ValidationErrors | null => {
+      if (!controls) {
+        controls = Object.keys(group.controls);
+      }
+      const hasAtLeastOne = group?.controls && controls.some(k => !validator(group.controls[k]));
+      return hasAtLeastOne ? null : {atLeastOne: true};
+    };
   }
 }
