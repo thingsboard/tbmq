@@ -423,14 +423,14 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
 
     private void migrateMessagesToRedis(Path filePath) {
         var clientIdToMsgMap = new HashMap<String, List<DevicePublishMsg>>();
+        List<CompletableFuture<String>> futures = new ArrayList<>();
         consumeCsvRecords(filePath, record -> {
             String clientId = record.get("client_id");
             try {
                 var messages = clientIdToMsgMap.computeIfAbsent(clientId, k -> new ArrayList<>());
                 messages.add(DevicePublishMsgUtil.fromCsvRecord(record, defaultTtl));
                 if (messages.size() >= IMPORT_TO_REDIS_BATCH_SIZE) {
-                    writeBatchToRedis(clientId, messages);
-                    messages.clear();
+                    futures.add(writeBatchToRedis(clientId, messages));
                 }
             } catch (DecoderException e) {
                 throw new RuntimeException("Failed to deserialize message for client: " + clientId, e);
@@ -438,21 +438,25 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         });
         clientIdToMsgMap.forEach((clientId, messages) -> {
             if (!messages.isEmpty()) {
-                writeBatchToRedis(clientId, messages);
+                futures.add(writeBatchToRedis(clientId, messages));
             }
-            log.info("All messages from client {} have been migrated!", clientId);
         });
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .exceptionally(throwable -> {
+                    throw new CompletionException(throwable);
+                }).join();
     }
 
-    private void writeBatchToRedis(String clientId, List<DevicePublishMsg> messages) {
-        log.info("[{}] Adding {} messages to Redis ...", clientId, messages.size());
+    private CompletableFuture<String> writeBatchToRedis(String clientId, List<DevicePublishMsg> messages) {
+        int batchSize = messages.size();
+        log.info("[{}] Adding {} messages to Redis ...", clientId, batchSize);
         String messagesCacheKeyStr = ClientIdMessagesCacheKey.toStringKey(clientId, cachePrefix);
         String lastPacketIdKeyStr = ClientIdLastPacketIdCacheKey.toStringKey(clientId, cachePrefix);
         String messagesStr = JacksonUtil.toString(messages);
         String defaultTtlStr = String.valueOf(defaultTtl);
         RedisFuture<String> migrateFuture = connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
                 new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr);
-        migrateFuture.exceptionallyCompose(throwable -> {
+        var result = migrateFuture.exceptionallyCompose(throwable -> {
             if (throwable instanceof RedisNoScriptException) {
                 CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
                 CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
@@ -467,11 +471,13 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             throw new CompletionException(throwable);
         }).whenComplete((s, throwable) -> {
             if (throwable != null) {
-                log.error("Failed to migrate {} messages for client {}", messages.size(), clientId, throwable);
+                log.error("Failed to migrate {} messages for client {}", batchSize, clientId, throwable);
                 return;
             }
-            log.info("[{}] Successfully added {} messages to Redis!", clientId, messages.size());
-        });
+            log.info("[{}] Successfully added {} messages to Redis!", clientId, batchSize);
+        }).toCompletableFuture();
+        messages.clear();
+        return result;
     }
 
     private void consumeCsvRecords(Path filePath, Consumer<CSVRecord> csvRecordConsumer) {

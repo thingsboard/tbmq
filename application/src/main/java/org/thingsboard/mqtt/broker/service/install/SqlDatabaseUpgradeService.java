@@ -23,7 +23,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +38,8 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Profile("install")
@@ -105,16 +110,60 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 updateSchema("1.3.0", 1003000, "1.4.0", 1004000);
                 break;
             case "1.4.0":
+                updateSchema("1.4.0", 1004000, "2.0.0", 2000000);
                 Path pathToTempFile = getTempFile("device_publish_msgs", ".csv");
-                updateSchema("1.4.0", 1004000, "2.0.0", 2000000, conn -> {
-                    try {
-                        log.info("Starting export of device publish messages to temp file: {} ...", pathToTempFile);
-                        conn.createStatement().execute("call export_device_publish_msgs(" + messagesLimit + ", '" + pathToTempFile + "')");
-                        log.info("Successfully exported device publish messages to temp file: {}", pathToTempFile);
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to copy device publish messages to csv file: " + pathToTempFile + " due to: ", e);
+                Pattern pattern = Pattern.compile("jdbc:postgresql://([^:/]+):(\\d+)/(\\w+)");
+                Matcher matcher = pattern.matcher(dbUrl);
+                if (!matcher.find() || matcher.groupCount() != 3) {
+                    throw new RuntimeException("Failed to extract db host, port, and name from SPRING_DATASOURCE_URL environment variable! " +
+                                               "Ensure the URL is in the format: jdbc:postgresql://<host>:<port>/<database>. " +
+                                               "Example: jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker");
+                }
+                String host = matcher.group(1);
+                String port = matcher.group(2);
+                String dbName = matcher.group(3);
+                String command = String.format(
+                        "psql -h %s -p %s -U %s -d %s -c \"\\COPY (" +
+                        "SELECT dpm.client_id, " +
+                        "       dpm.topic, " +
+                        "       dpm.time, " +
+                        "       dpm.packet_id, " +
+                        "       dpm.packet_type, " +
+                        "       dpm.qos, " +
+                        "       dpm.payload, " +
+                        "       dpm.user_properties, " +
+                        "       dpm.retain, " +
+                        "       dpm.msg_expiry_interval, " +
+                        "       dpm.payload_format_indicator, " +
+                        "       dpm.content_type, " +
+                        "       dpm.response_topic, " +
+                        "       dpm.correlation_data " +
+                        "FROM device_publish_msg dpm " +
+                        "JOIN device_session_ctx dsc ON dpm.client_id = dsc.client_id " +
+                        "WHERE dpm.serial_number >= (dsc.last_serial_number - %d + 1) " +
+                        "ORDER BY dpm.client_id, dpm.serial_number ASC) " +
+                        "TO '%s' WITH CSV HEADER\"",
+                        host, port, dbUserName, dbName, messagesLimit, pathToTempFile);
+                ProcessBuilder processBuilder = new ProcessBuilder("bash", "-c", command);
+                processBuilder.environment().put("PGPASSWORD", dbPassword);
+                try {
+                    Process process = processBuilder.start();
+                    StringBuilder commandExecutionErrorLogs = new StringBuilder();
+                    try (BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                        String line;
+                        while ((line = errorReader.readLine()) != null) {
+                            commandExecutionErrorLogs.append(line).append(System.lineSeparator());
+                        }
                     }
-                });
+                    int exitCode = process.waitFor();
+                    if (exitCode != 0) {
+                        throw new RuntimeException("Failed to copy device publish messages to CSV file: " + pathToTempFile +
+                                                   ". psql \\copy command failed with exit code: " + exitCode + System.lineSeparator() +
+                                                   "Command execution errors: " + System.lineSeparator() + commandExecutionErrorLogs);
+                    }
+                } catch (IOException | InterruptedException e) {
+                    throw new RuntimeException("Failed to copy device publish messages to csv file: " + pathToTempFile + " due to: ", e);
+                }
                 if (!pathToTempFile.toFile().exists()) {
                     break;
                 }

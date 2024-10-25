@@ -33,7 +33,8 @@ RUN apt-get update \
     && mkdir -p $DATA_FOLDER \
     && chown -R ${pkg.user}:${pkg.user} $DATA_FOLDER \
     && chown -R ${pkg.user}:${pkg.user} /var/log/${pkg.name} \
-    && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar
+    && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar \
+    && apt-get install -y postgresql-client # used for upgrade from version 1.4.0 to 2.0.0. To remove in next release.
 
 USER ${pkg.user}
 
