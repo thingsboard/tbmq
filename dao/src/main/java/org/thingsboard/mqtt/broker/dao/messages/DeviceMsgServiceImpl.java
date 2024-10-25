@@ -71,10 +71,10 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             local defaultTtl = tonumber(ARGV[3])
             -- Fetch the last packetId from the key-value store
             local lastPacketId = tonumber(redis.call('GET', lastPacketIdKey)) or 0
-                        
+            
             -- Get the current maximum score in the sorted set
             local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
-                        
+            
             -- Check if the maxScoreElement is non-empty
             local score
             if #maxScoreElement > 0 then
@@ -82,10 +82,10 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             else
                score = lastPacketId
             end
-                        
+            
             -- Track the first packet ID
             local previousPacketId = lastPacketId
-                        
+            
             -- Add each message to the sorted set and as a separate key
             for _, msg in ipairs(messages) do
                 lastPacketId = lastPacketId + 1
@@ -185,7 +185,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             local messages = cjson.decode(ARGV[1])
             local defaultTtl = tonumber(ARGV[2])
             local lastPacketId = 0
-                        
+            
             -- Get the current maximum score in the sorted set
             local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
             -- Check if the maxScoreElement is non-empty
@@ -195,7 +195,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             else
                score = 0
             end
-                        
+            
             -- Add each message to the sorted set using packetId as the score
             for _, msg in ipairs(messages) do
                 local msgKey = messagesKey .. "_" .. msg.packetId
@@ -209,10 +209,10 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 -- Update lastPacketId with the current packetId
                 lastPacketId = msg.packetId
             end
-
+            
             -- Update the last packetId in the key-value store
             redis.call('SET', lastPacketIdKey, lastPacketId)
-                        
+            
             return "OK"
             """;
 
@@ -274,8 +274,8 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         connectionManager.evalShaAsync(ADD_MESSAGES_SCRIPT_SHA, ScriptOutputType.INTEGER,
                                 new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesLimitStr, messagesStr, defaultTtlStr));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
-                    return connectionManager.evalShaAsync(ADD_MESSAGES_SCRIPT, ScriptOutputType.INTEGER,
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of saveAndReturnPreviousPacketId: ", retryThrowable);
+                    return connectionManager.evalAsync(ADD_MESSAGES_SCRIPT, ScriptOutputType.INTEGER,
                             new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesLimitStr, messagesStr, defaultTtlStr);
                 });
             }
@@ -298,8 +298,8 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         connectionManager.evalShaAsync(GET_MESSAGES_SCRIPT_SHA, ScriptOutputType.MULTI,
                                 new String[]{messagesCacheKeyStr}, String.valueOf(messagesLimit)));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
-                    return connectionManager.evalShaAsync(GET_MESSAGES_SCRIPT, ScriptOutputType.MULTI,
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of findPersistedMessages: ", retryThrowable);
+                    return connectionManager.evalAsync(GET_MESSAGES_SCRIPT, ScriptOutputType.MULTI,
                             new String[]{messagesCacheKeyStr}, String.valueOf(messagesLimit));
                 });
             }
@@ -324,7 +324,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                 CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
                         connectionManager.evalShaAsync(REMOVE_MESSAGES_SCRIPT_SHA, ScriptOutputType.STATUS, messagesCacheKeyStr, lastPacketIdKeyStr));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of removePersistedMessages: ", retryThrowable);
                     return connectionManager.evalAsync(REMOVE_MESSAGES_SCRIPT, ScriptOutputType.STATUS, messagesCacheKeyStr, lastPacketIdKeyStr);
                 });
             }
@@ -348,7 +348,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         connectionManager.evalShaAsync(REMOVE_MESSAGE_SCRIPT_SHA, ScriptOutputType.STATUS,
                                 new String[]{messagesCacheKeyStr}, packetIdStr));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of removePersistedMessage: ", retryThrowable);
                     return connectionManager.evalAsync(Objects.requireNonNull(REMOVE_MESSAGE_SCRIPT), ScriptOutputType.STATUS,
                             new String[]{messagesCacheKeyStr}, packetIdStr);
                 });
@@ -373,7 +373,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         connectionManager.evalShaAsync(UPDATE_PACKET_TYPE_SCRIPT_SHA, ScriptOutputType.STATUS,
                                 new String[]{messagesCacheKeyStr}, packetIdStr));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of updatePacketReceived: ", retryThrowable);
                     return connectionManager.evalAsync(UPDATE_PACKET_TYPE_SCRIPT, ScriptOutputType.STATUS,
                             new String[]{messagesCacheKeyStr}, packetIdStr);
                 });
@@ -459,7 +459,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
                         connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
                                 new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr));
                 return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation: ", retryThrowable);
+                    log.debug("Falling back to eval due to exception on retry sha evaluation of writeBatchToRedis: ", retryThrowable);
                     return connectionManager.evalAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT, ScriptOutputType.STATUS,
                             new String[]{messagesCacheKeyStr, lastPacketIdKeyStr}, messagesStr, defaultTtlStr);
                 });
