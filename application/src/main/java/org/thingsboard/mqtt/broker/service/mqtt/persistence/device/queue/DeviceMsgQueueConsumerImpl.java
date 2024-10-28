@@ -23,14 +23,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
+import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.ClientIdMessagesPack;
-import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DefaultClientIdPersistedMsgsCallback;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DeviceMsgPersistenceSubmitStrategyFactory;
@@ -46,6 +45,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -62,6 +62,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     private final DeviceMsgProcessor deviceMsgProcessor;
     private final StatsManager statsManager;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientLogger clientLogger;
 
     @Value("${queue.device-persisted-msg.consumers-count}")
     private int consumersCount;
@@ -101,7 +102,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         continue;
                     }
 
-                    Map<String, List<DevicePublishMsg>> deliveryMap = new HashMap<>();
+                    DevicePackProcessingResult result = null;
 
                     DeviceAckStrategy ackStrategy = ackStrategyFactory.newInstance(consumerId);
                     DeviceSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(consumerId);
@@ -120,16 +121,28 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                         }
                         submitStrategy.process(clientIdMessagesPack -> {
                             long clientIdPackProcessingStart = System.nanoTime();
-                            var callback = new DefaultClientIdPersistedMsgsCallback(clientIdMessagesPack.clientId(), ctx);
-                            deviceMsgProcessor.persistClientDeviceMessages(clientIdMessagesPack, callback);
-                            stats.logClientIdPackProcessingTime(System.nanoTime() - clientIdPackProcessingStart, TimeUnit.NANOSECONDS);
+                            String clientId = clientIdMessagesPack.clientId();
+                            clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msgs");
+                            CompletionStage<Integer> future = deviceMsgProcessor.persistClientDeviceMessages(clientIdMessagesPack);
+                            future.whenComplete((prevPacketId, throwable) -> {
+                                if (throwable == null) {
+                                    clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE messages");
+                                    ctx.onSuccess(clientId, prevPacketId);
+                                } else {
+                                    clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE messages exceptionally: " + throwable.getMessage());
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("[{}] Failed to persist device publish messages due to: ", clientId, throwable);
+                                    }
+                                    ctx.onFailure(clientId);
+                                }
+                                stats.logClientIdPackProcessingTime(System.nanoTime() - clientIdPackProcessingStart, TimeUnit.NANOSECONDS);
+                            });
                         });
 
                         if (!stopped) {
                             ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
                         }
-                        var result = new DevicePackProcessingResult(ctx);
-                        deliveryMap.putAll(result.getSuccessMap());
+                        result = new DevicePackProcessingResult(ctx);
                         ctx.cleanup();
                         DeviceProcessingDecision decision = ackStrategy.analyze(result);
                         stats.log(totalMessagesCount, result, decision.commit());
@@ -138,12 +151,15 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
                             consumer.commitSync();
                             break;
                         } else {
+                            result.getSuccessMap().forEach(deviceMsgProcessor::deliverClientDeviceMessages);
                             submitStrategy.update(decision.reprocessMap());
                         }
                     }
                     stats.logClientIdPacksProcessingTime(msgs.size(), System.nanoTime() - packProcessingStart, TimeUnit.NANOSECONDS);
 
-                    deliveryMap.forEach(deviceMsgProcessor::deliverClientDeviceMessages);
+                    if (result != null) {
+                        result.getSuccessMap().forEach(deviceMsgProcessor::deliverClientDeviceMessages);
+                    }
                 } catch (Exception e) {
                     if (!stopped) {
                         log.error("[{}] Failed to process messages from queue.", consumerId, e);
@@ -172,9 +188,12 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         var clientIdMessagesPackMap = new HashMap<String, ClientIdMessagesPack>();
         for (var msg : msgs) {
             String clientId = msg.getKey();
-            clientIdMessagesPackMap
-                    .computeIfAbsent(clientId, k -> new ClientIdMessagesPack(clientId, new ArrayList<>()))
-                    .messages().add(ProtoConverter.protoToDevicePublishMsg(msg.getKey(), msg.getValue(), msg.getHeaders()));
+            ClientIdMessagesPack pack = clientIdMessagesPackMap.get(clientId);
+            if (pack == null) {
+                pack = clientIdMessagesPackMap.computeIfAbsent(clientId, k -> new ClientIdMessagesPack(clientId, new ArrayList<>()));
+            }
+            var devicePublishMsg = ProtoConverter.protoToDevicePublishMsg(msg.getKey(), msg.getValue(), msg.getHeaders());
+            pack.messages().add(devicePublishMsg);
         }
         return clientIdMessagesPackMap;
     }

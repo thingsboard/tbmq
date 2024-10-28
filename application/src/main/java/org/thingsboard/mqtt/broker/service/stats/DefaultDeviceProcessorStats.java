@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.stats.ResettableTimer;
 import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
 import org.thingsboard.mqtt.broker.common.stats.StatsFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePackProcessingResult;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing.DevicePublishMsgListAndPrevPacketId;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -86,7 +87,7 @@ public class DefaultDeviceProcessorStats implements DeviceProcessorStats {
     public void log(int totalMessagesCount, DevicePackProcessingResult result, boolean finalIterationForPack) {
         int pending = result.getPendingMap().values().stream().mapToInt(pack -> pack.messages().size()).sum();
         int failed = result.getFailedMap().values().stream().mapToInt(pack -> pack.messages().size()).sum();
-        int success = result.getSuccessMap().values().stream().mapToInt(List::size).sum();
+        int success = result.getSuccessMap().values().stream().map(DevicePublishMsgListAndPrevPacketId::messages).mapToInt(List::size).sum();
         totalMsgCounter.add(totalMessagesCount);
         successMsgCounter.add(success);
         if (finalIterationForPack) {

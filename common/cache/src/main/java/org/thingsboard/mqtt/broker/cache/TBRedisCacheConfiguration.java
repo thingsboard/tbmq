@@ -27,9 +27,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisConfiguration;
 import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
@@ -51,7 +53,7 @@ import java.util.stream.Collectors;
 @Configuration
 @EnableCaching
 @Data
-public abstract class TBRedisCacheConfiguration {
+public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
     private final CacheSpecsMap cacheSpecsMap;
 
@@ -92,11 +94,24 @@ public abstract class TBRedisCacheConfiguration {
     private boolean cacheStatsEnabled;
 
     @Bean
-    public RedisConnectionFactory redisConnectionFactory() {
+    public JedisConnectionFactory jedisConnectionFactory() {
         return loadFactory();
     }
 
+    @Bean
+    public LettuceConnectionFactory lettuceConnectionFactory() {
+        var lettucePoolingClientConfigBuilder = LettucePoolingClientConfiguration.builder();
+        if (!useDefaultPoolConfig()) {
+            lettucePoolingClientConfigBuilder.poolConfig(buildConnectionPoolConfig());
+        }
+        return new LettuceConnectionFactory(getRedisConfiguration(), lettucePoolingClientConfigBuilder.build());
+    }
+
     protected abstract JedisConnectionFactory loadFactory();
+
+    protected abstract boolean useDefaultPoolConfig();
+
+    protected abstract C getRedisConfiguration();
 
     protected abstract UnifiedJedis loadUnifiedJedis();
 
@@ -108,7 +123,7 @@ public abstract class TBRedisCacheConfiguration {
     }
 
     @Bean
-    public CacheManager cacheManager(RedisConnectionFactory cf) {
+    public CacheManager cacheManager(JedisConnectionFactory cf) {
         DefaultFormattingConversionService redisConversionService = new DefaultFormattingConversionService();
         RedisCacheConfiguration.registerDefaultConverters(redisConversionService);
         RedisCacheConfiguration configuration = createRedisCacheConfig(redisConversionService);
@@ -139,7 +154,7 @@ public abstract class TBRedisCacheConfiguration {
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(redisConnectionFactory());
+        template.setConnectionFactory(jedisConnectionFactory());
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(new StringRedisSerializer());
         return template;

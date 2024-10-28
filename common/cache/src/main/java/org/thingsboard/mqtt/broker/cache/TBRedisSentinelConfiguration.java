@@ -27,7 +27,7 @@ import redis.clients.jedis.UnifiedJedis;
 
 @Configuration
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "sentinel")
-public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration {
+public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<RedisSentinelConfiguration> {
 
     public TBRedisSentinelConfiguration(CacheSpecsMap cacheSpecsMap) {
         super(cacheSpecsMap);
@@ -59,18 +59,27 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration {
         return new JedisSentineled(master, masterClientConfig, connectionPoolConfig, toHostAndPort(sentinels), sentinelClientConfig);
     }
 
-    public JedisConnectionFactory loadFactory() {
-        RedisSentinelConfiguration redisSentinelConfiguration = new RedisSentinelConfiguration();
+    @Override
+    protected JedisConnectionFactory loadFactory() {
+        return useDefaultPoolConfig ?
+                new JedisConnectionFactory(getRedisConfiguration()) :
+                new JedisConnectionFactory(getRedisConfiguration(), buildPoolConfig());
+    }
+
+    @Override
+    protected boolean useDefaultPoolConfig() {
+        return useDefaultPoolConfig;
+    }
+
+    @Override
+    protected RedisSentinelConfiguration getRedisConfiguration() {
+        var redisSentinelConfiguration = new RedisSentinelConfiguration();
         redisSentinelConfiguration.setMaster(master);
         redisSentinelConfiguration.setSentinels(getNodes(sentinels));
         redisSentinelConfiguration.setSentinelPassword(sentinelPassword);
         redisSentinelConfiguration.setPassword(password);
         redisSentinelConfiguration.setDatabase(database);
-        if (useDefaultPoolConfig) {
-            return new JedisConnectionFactory(redisSentinelConfiguration);
-        } else {
-            return new JedisConnectionFactory(redisSentinelConfiguration, buildPoolConfig());
-        }
+        return redisSentinelConfiguration;
     }
 
 }

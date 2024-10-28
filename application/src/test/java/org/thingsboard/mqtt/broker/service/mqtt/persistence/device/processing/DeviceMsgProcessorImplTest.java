@@ -21,20 +21,18 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 
 import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,16 +48,11 @@ import static org.mockito.Mockito.times;
 public class DeviceMsgProcessorImplTest {
 
     private final String TEST_CLIENT_ID = "clientId";
-    private final String TEST_SERVICE_ID = "service-id";
 
     @MockBean
     ClientSessionCache clientSessionCache;
     @MockBean
-    ClientLogger clientLogger;
-    @MockBean
     DownLinkProxy downLinkProxy;
-    @MockBean
-    DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
     @MockBean
     DeviceMsgService deviceMsgService;
 
@@ -72,59 +65,30 @@ public class DeviceMsgProcessorImplTest {
         var pack = new ClientIdMessagesPack(
                 TEST_CLIENT_ID,
                 List.of(getDevicePublishMsgWithBlankPacketId()));
-        var callback = mock(DefaultClientIdPersistedMsgsCallback.class);
 
-        given(deviceMsgService.saveAndReturnPreviousPacketId(any(), anyList(), anyBoolean())).willReturn(0);
+        var completionStateMock = mock(CompletionStage.class);
 
-        // WHEN
-        deviceMsgProcessor.persistClientDeviceMessages(pack, callback);
-
-        // THEN
-        then(clientLogger).should()
-                .logEvent(TEST_CLIENT_ID, deviceMsgProcessor.getClass(), "Start persisting DEVICE msgs");
-        then(deviceMsgService).should().saveAndReturnPreviousPacketId(TEST_CLIENT_ID, pack.messages(), false);
-        then(callback).should().onSuccess(0);
-        then(clientLogger).should()
-                .logEvent(TEST_CLIENT_ID, deviceMsgProcessor.getClass(), "Finished persisting DEVICE msgs");
-    }
-
-    @Test
-    public void givenClientMsgPackAndCallbackMock_whenPersistClientDeviceMessages_thenVerifyFailureServicesInvocations() {
-        // GIVEN
-        var pack = new ClientIdMessagesPack(
-                TEST_CLIENT_ID,
-                List.of(getDevicePublishMsgWithBlankPacketId()));
-        var callback = mock(DefaultClientIdPersistedMsgsCallback.class);
-
-        var invalidDataAccessApiUsageException = new InvalidDataAccessApiUsageException("Failed to process lua script!");
-        given(deviceMsgService.saveAndReturnPreviousPacketId(any(), anyList(), anyBoolean()))
-                .willThrow(invalidDataAccessApiUsageException);
+        given(deviceMsgService.saveAndReturnPreviousPacketId(any(), anyList(), anyBoolean())).willReturn(completionStateMock);
 
         // WHEN
-        deviceMsgProcessor.persistClientDeviceMessages(pack, callback);
+        deviceMsgProcessor.persistClientDeviceMessages(pack);
 
         // THEN
-        then(clientLogger).should()
-                .logEvent(TEST_CLIENT_ID, deviceMsgProcessor.getClass(), "Start persisting DEVICE msgs");
         then(deviceMsgService).should().saveAndReturnPreviousPacketId(TEST_CLIENT_ID, pack.messages(), false);
-        then(callback).should().onFailure(invalidDataAccessApiUsageException);
-        then(clientLogger).should()
-                .logEvent(TEST_CLIENT_ID, deviceMsgProcessor.getClass(), "Finished persisting DEVICE msgs");
     }
 
-    // TODO: add negative test cases.
     @Test
     public void givenClientIdAndMessagesWithValidPacketIds_whenDeliverClientDeviceMessages_thenVerifySuccessServicesInvocations() {
         // GIVEN
-        var firstMsg = getDevicePublishMsg(1);
-        var secondMsg = getDevicePublishMsg(2);
-        List<DevicePublishMsg> devicePublishMessages = List.of(firstMsg, secondMsg);
+        var firstMsg = getDevicePublishMsgWithBlankPacketId();
+        var secondMsg = getDevicePublishMsgWithBlankPacketId();
+        var devicePublishMessages = new DevicePublishMsgListAndPrevPacketId(List.of(firstMsg, secondMsg), 0);
 
         var clientSessionInfo = mock(ClientSessionInfo.class);
 
         given(clientSessionCache.getClientSessionInfo(TEST_CLIENT_ID)).willReturn(clientSessionInfo);
         given(clientSessionInfo.isConnected()).willReturn(true);
-        given(clientSessionInfo.getServiceId()).willReturn(TEST_SERVICE_ID);
+        given(clientSessionInfo.getServiceId()).willReturn("service-id");
 
         // WHEN
         deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, devicePublishMessages);
@@ -132,71 +96,26 @@ public class DeviceMsgProcessorImplTest {
         // THEN
         var msgArgumentCaptor = ArgumentCaptor.forClass(DevicePublishMsg.class);
         then(downLinkProxy).should(times(2))
-                .sendPersistentMsg(eq(TEST_SERVICE_ID), eq(TEST_CLIENT_ID), msgArgumentCaptor.capture());
+                .sendPersistentMsg(eq("service-id"), eq(TEST_CLIENT_ID), msgArgumentCaptor.capture());
+
+        var packetIdDto = new PacketIdDto(0);
+        for (var devicePublishMsg : devicePublishMessages.messages()) {
+            devicePublishMsg.setPacketId(packetIdDto.getNextPacketId());
+        }
         assertThat(msgArgumentCaptor.getAllValues()).isNotNull().hasSize(2)
-                .containsExactlyElementsOf(devicePublishMessages);
-    }
-
-    @Test
-    public void givenClientIdAndMessagesWithBlankPacketIds_whenDeliverClientDeviceMessages_thenVerifySuccessServicesInvocations() {
-        // GIVEN
-        var firstMsg = getDevicePublishMsgWithBlankPacketId();
-        var secondMsg = getDevicePublishMsgWithBlankPacketId();
-        List<DevicePublishMsg> devicePublishMessages = List.of(firstMsg, secondMsg);
-
-        var clientSessionInfo = mock(ClientSessionInfo.class);
-
-        given(clientSessionCache.getClientSessionInfo(TEST_CLIENT_ID)).willReturn(clientSessionInfo);
-        given(clientSessionInfo.isConnected()).willReturn(true);
-        given(clientSessionInfo.getServiceId()).willReturn(TEST_SERVICE_ID);
-
-        // WHEN
-        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, devicePublishMessages);
-
-        // THEN
-        var msgArgumentCaptor = ArgumentCaptor.forClass(QueueProtos.PublishMsgProto.class);
-        then(downLinkProxy).should(times(2))
-                .sendBasicMsg(eq(TEST_SERVICE_ID), eq(TEST_CLIENT_ID), msgArgumentCaptor.capture());
-        List<QueueProtos.PublishMsgProto> expectedMsgs = devicePublishMessages.stream().map(ProtoConverter::convertToPublishMsgProto).toList();
-        assertThat(msgArgumentCaptor.getAllValues()).isNotNull().hasSize(2)
-                .containsExactlyElementsOf(expectedMsgs);
-    }
-
-    @Test
-    public void givenClientIdAndMessagesWithMixedPacketIds_whenDeliverClientDeviceMessages_thenVerifySuccessServicesInvocations() {
-        // GIVEN
-        var firstMsg = getDevicePublishMsg(1);
-        var secondMsg = getDevicePublishMsgWithBlankPacketId();
-        List<DevicePublishMsg> devicePublishMessages = List.of(firstMsg, secondMsg);
-
-        var clientSessionInfo = mock(ClientSessionInfo.class);
-
-        given(clientSessionCache.getClientSessionInfo(TEST_CLIENT_ID)).willReturn(clientSessionInfo);
-        given(clientSessionInfo.isConnected()).willReturn(true);
-        given(clientSessionInfo.getServiceId()).willReturn(TEST_SERVICE_ID);
-
-        // WHEN
-        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, devicePublishMessages);
-
-        // THEN
-        then(downLinkProxy).should().sendPersistentMsg(TEST_SERVICE_ID, TEST_CLIENT_ID, firstMsg);
-        then(downLinkProxy).should().sendBasicMsg(TEST_SERVICE_ID, TEST_CLIENT_ID, ProtoConverter.convertToPublishMsgProto(secondMsg));
+                .containsExactlyElementsOf(devicePublishMessages.messages());
     }
 
     @Test
     public void givenClientIdAndMessages_whenDeliverClientDeviceMessagesAndClientSessionInfoIsNull_thenVerifyDownlinkProxyHaveNoInteractions() {
         // GIVEN
-        var firstMsg = getDevicePublishMsg(1);
-        var secondMsg = getDevicePublishMsg(2);
-        List<DevicePublishMsg> devicePublishMessages = List.of(firstMsg, secondMsg);
-
         var clientSessionInfo = mock(ClientSessionInfo.class);
 
         given(clientSessionCache.getClientSessionInfo(TEST_CLIENT_ID)).willReturn(clientSessionInfo);
         given(clientSessionInfo.isConnected()).willReturn(false);
 
         // WHEN
-        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, devicePublishMessages);
+        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, mock(DevicePublishMsgListAndPrevPacketId.class));
 
         // THEN
         then(downLinkProxy).shouldHaveNoInteractions();
@@ -205,14 +124,10 @@ public class DeviceMsgProcessorImplTest {
     @Test
     public void givenClientIdAndMessages_whenDeliverClientDeviceMessagesAndClientSessionInfoIsNotConnected_thenVerifyDownlinkProxyHaveNoInteractions() {
         // GIVEN
-        var firstMsg = getDevicePublishMsg(1);
-        var secondMsg = getDevicePublishMsg(2);
-        List<DevicePublishMsg> devicePublishMessages = List.of(firstMsg, secondMsg);
-
         given(clientSessionCache.getClientSessionInfo(TEST_CLIENT_ID)).willReturn(null);
 
         // WHEN
-        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, devicePublishMessages);
+        deviceMsgProcessor.deliverClientDeviceMessages(TEST_CLIENT_ID, mock(DevicePublishMsgListAndPrevPacketId.class));
 
         // THEN
         then(downLinkProxy).shouldHaveNoInteractions();

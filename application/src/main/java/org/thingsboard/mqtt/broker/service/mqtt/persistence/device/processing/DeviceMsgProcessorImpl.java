@@ -18,15 +18,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.processing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 
-import java.util.List;
+import java.util.concurrent.CompletionStage;
 
 @Slf4j
 @Service
@@ -34,25 +31,16 @@ import java.util.List;
 public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
 
     private final ClientSessionCache clientSessionCache;
-    private final ClientLogger clientLogger;
     private final DownLinkProxy downLinkProxy;
     private final DeviceMsgService deviceMsgService;
 
     @Override
-    public void persistClientDeviceMessages(ClientIdMessagesPack pack, DefaultClientIdPersistedMsgsCallback callback) {
-        String clientId = pack.clientId();
-        List<DevicePublishMsg> devicePublishMessages = pack.messages();
-        clientLogger.logEvent(clientId, this.getClass(), "Start persisting DEVICE msgs");
-        try {
-            callback.onSuccess(deviceMsgService.saveAndReturnPreviousPacketId(clientId, devicePublishMessages, false));
-        } catch (Exception e) {
-            callback.onFailure(e);
-        }
-        clientLogger.logEvent(clientId, this.getClass(), "Finished persisting DEVICE msgs");
+    public CompletionStage<Integer> persistClientDeviceMessages(ClientIdMessagesPack pack) {
+        return deviceMsgService.saveAndReturnPreviousPacketId(pack.clientId(), pack.messages(), false);
     }
 
     @Override
-    public void deliverClientDeviceMessages(String clientId, List<DevicePublishMsg> devicePublishMessages) {
+    public void deliverClientDeviceMessages(String clientId, DevicePublishMsgListAndPrevPacketId devicePubMsgsAndPrevId) {
         var clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
             if (log.isDebugEnabled()) {
@@ -66,24 +54,15 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
             }
             return;
         }
-        for (var devicePublishMsg : devicePublishMessages) {
-            String targetServiceId = clientSessionInfo.getServiceId();
-            if (messageWasPersisted(devicePublishMsg)) {
-                downLinkProxy.sendPersistentMsg(
-                        targetServiceId,
-                        devicePublishMsg.getClientId(),
-                        devicePublishMsg);
-            } else {
-                downLinkProxy.sendBasicMsg(
-                        targetServiceId,
-                        devicePublishMsg.getClientId(),
-                        ProtoConverter.convertToPublishMsgProto(devicePublishMsg));
-            }
+        String targetServiceId = clientSessionInfo.getServiceId();
+        var packetIdDto = new PacketIdDto(devicePubMsgsAndPrevId.previousPacketId());
+        for (var devicePublishMsg : devicePubMsgsAndPrevId.messages()) {
+            devicePublishMsg.setPacketId(packetIdDto.getNextPacketId());
+            downLinkProxy.sendPersistentMsg(
+                    targetServiceId,
+                    devicePublishMsg.getClientId(),
+                    devicePublishMsg);
         }
-    }
-
-    private boolean messageWasPersisted(DevicePublishMsg devicePublishMsg) {
-        return !devicePublishMsg.getPacketId().equals(BrokerConstants.BLANK_PACKET_ID);
     }
 
 }

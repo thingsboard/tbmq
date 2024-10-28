@@ -19,6 +19,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
@@ -53,6 +54,7 @@ import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
@@ -94,15 +96,19 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         }
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
-        List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(clientId);
-        try {
-            persistedMessages.forEach(this::deliverPersistedMsg);
-        } catch (Exception e) {
-            log.warn("[{}][{}] Failed to process persisted messages.", clientId, sessionCtx.getSessionId(), e);
+        CompletionStage<List<DevicePublishMsg>> persistedMessagesFuture = deviceMsgService.findPersistedMessages(clientId);
+        persistedMessagesFuture.whenComplete((persistedMessages, throwable) -> {
+            if (throwable == null) {
+                persistedMessages.forEach(this::deliverPersistedMsg);
+                return;
+            }
+            log.warn("[{}][{}] Failed to process persisted messages.", clientId, sessionCtx.getSessionId(), throwable);
             disconnect("Failed to process persisted messages");
-        }
+        });
     }
 
+    // TODO: refactor to not use .toCompletableFuture().get(); for deviceMsgService APIs
+    @SneakyThrows
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
@@ -111,7 +117,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             return;
         }
 
-        int lastPacketId = deviceMsgService.getLastPacketId(clientId);
+        int lastPacketId = deviceMsgService.getLastPacketId(clientId).toCompletableFuture().get();
 
         for (TopicSharedSubscription topicSharedSubscription : msg.getSubscriptions()) {
             boolean anyDeviceClientConnected = sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(clientId, topicSharedSubscription);
@@ -125,7 +131,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 continue;
             }
             String key = topicSharedSubscription.getKey();
-            List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(key);
+            List<DevicePublishMsg> persistedMessages = deviceMsgService.findPersistedMessages(key).toCompletableFuture().get();
             if (CollectionUtils.isEmpty(persistedMessages)) {
                 continue;
             }
@@ -138,9 +144,9 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 log.warn("[{}][{}] Failed to process shared subscription persisted messages.", clientId, sessionCtx.getSessionId(), e);
                 disconnect("Failed to process shared subscription persisted messages");
             }
-            deviceMsgService.removeLastPacketId(key);
+            deviceMsgService.removeLastPacketId(key).toCompletableFuture().get();
         }
-        deviceMsgService.saveLastPacketId(clientId, lastPacketId);
+        deviceMsgService.saveLastPacketId(clientId, lastPacketId).toCompletableFuture().get();
     }
 
     int updateMessagesBeforePublishAndReturnLastPacketId(int lastPacketId, TopicSharedSubscription topicSharedSubscription,
@@ -241,50 +247,57 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-        try {
-            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-            inFlightPacketIds.remove(msg.getPacketId());
-        } catch (Exception e) {
-            log.warn("[{}] Failed to process packet acknowledge, packetId - {}", targetClientId, msg.getPacketId(), e);
-        }
+        deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()))
+                .whenComplete((__, throwable) -> {
+                    if (throwable != null) {
+                        log.warn("[{}] Failed to process packet acknowledge, packetId - {}", targetClientId, msg.getPacketId(), throwable);
+                        return;
+                    }
+                    inFlightPacketIds.remove(msg.getPacketId());
+                });
     }
 
     public void processPacketReceived(PacketReceivedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-        try {
-            deviceMsgService.updatePacketReceived(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
+        deviceMsgService.updatePacketReceived(targetClientId, getTargetPacketId(packet, msg.getPacketId())).whenComplete((__, throwable) -> {
+            if (throwable != null) {
+                log.warn("[{}] Failed to process packet received, packetId - {}", targetClientId, msg.getPacketId(), throwable);
+                return;
+            }
             inFlightPacketIds.remove(msg.getPacketId());
             if (sessionCtx != null) {
                 publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, msg.getPacketId());
             }
-        } catch (Exception e) {
-            log.warn("[{}] Failed to process packet received, packetId - {}", targetClientId, msg.getPacketId(), e);
-        }
+        });
     }
 
     public void processPacketReceivedNoDelivery(PacketReceivedNoDeliveryEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-        try {
-            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-            inFlightPacketIds.remove(msg.getPacketId());
-        } catch (Exception e) {
-            log.warn("[{}] Failed to process packet received no delivery, packetId - {}", targetClientId, msg.getPacketId(), e);
-        }
+        deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()))
+                .whenComplete((__, throwable) -> {
+                    if (throwable != null) {
+                        log.warn("[{}] Failed to process packet received no delivery, packetId - {}", targetClientId, msg.getPacketId(), throwable);
+                        return;
+                    }
+                    inFlightPacketIds.remove(msg.getPacketId());
+                });
     }
 
     public void processPacketComplete(PacketCompletedEventMsg msg) {
         SharedSubscriptionPublishPacket packet = getSharedSubscriptionPublishPacket(msg.getPacketId());
         var targetClientId = getTargetClientId(packet);
-        try {
-            deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()));
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
-            }
-        } catch (Exception e) {
-            log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), e);
-        }
+        deviceMsgService.removePersistedMessage(targetClientId, getTargetPacketId(packet, msg.getPacketId()))
+                .whenComplete((__, throwable) -> {
+                    if (throwable != null) {
+                        log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), throwable);
+                        return;
+                    }
+                    if (log.isDebugEnabled()) {
+                        log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
+                    }
+                });
     }
 
     private String getTargetClientId(SharedSubscriptionPublishPacket packet) {

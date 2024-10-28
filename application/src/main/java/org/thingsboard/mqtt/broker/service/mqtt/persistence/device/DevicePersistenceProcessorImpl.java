@@ -34,7 +34,15 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
 
     @Override
     public void clearPersistedMsgs(String clientId) {
-        deviceMsgService.removePersistedMessages(clientId);
+        deviceMsgService.removePersistedMessages(clientId).whenComplete((status, throwable) -> {
+            if (log.isDebugEnabled()) {
+                if (throwable != null) {
+                    log.debug("Failed to remove persisted messages, clientId - {}", clientId, throwable);
+                } else {
+                    log.debug("Removed persisted messages, clientId - {}", clientId);
+                }
+            }
+        });
     }
 
     @Override

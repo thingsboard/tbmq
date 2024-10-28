@@ -35,8 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "redis.connection.type=standalone",
-        "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
-        "cache.specs.mqttClientCredentials.maxSize=100"
+        "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440"
 })
 @Slf4j
 public class TbRedisCacheConfigurationTest {

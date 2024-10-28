@@ -31,4 +31,8 @@ public record ClientIdLastPacketIdCacheKey(String clientId, String cachePrefix) 
         return StringUtils.isBlank(cachePrefix) ? keyBase : cachePrefix + keyBase;
     }
 
+    public static String toStringKey(String clientId, String cachePrefix) {
+        return new ClientIdLastPacketIdCacheKey(clientId, cachePrefix).toString();
+    }
+
 }
