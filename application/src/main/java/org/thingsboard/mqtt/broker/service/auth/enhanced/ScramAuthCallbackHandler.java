@@ -74,7 +74,7 @@ public class ScramAuthCallbackHandler implements CallbackHandler {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Failed to process SCRAM enhanced authentication due to missing ScramCredentialCallback!"));
 
-        String credentialsId = ProtocolUtil.usernameCredentialsId(username);
+        String credentialsId = ProtocolUtil.scramCredentialsId(username);
         List<MqttClientCredentials> matchingCredentials = credentialsService.findMatchingCredentials(List.of(credentialsId));
         if (matchingCredentials.isEmpty()) {
             throw new RuntimeException("Failed to find credentials for given credentialsId: " + credentialsId);

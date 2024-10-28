@@ -21,7 +21,7 @@
 <ng-template #componentMode>
   <ng-container *ngIf="buttonMode; else retainedMessagesFilter">
     <button color="primary"
-            matTooltip="{{buttonDisplayValue}}"
+            matTooltip="{{buttonDisplayTooltip}}"
             matTooltipPosition="above"
             mat-stroked-button
             (click)="toggleFilterPanel($event)">

@@ -51,6 +51,7 @@
                     <mat-chip-row
                       *ngFor="let rule of pubRulesArray[$index]"
                       [editable]="!disabled"
+                      (edited)="editTopicRule($event, $index, authRulePatternsType.PUBLISH)"
                       [removable]="!disabled"
                       [value]="rule"
                       (removed)="removeTopicRule(rule, $index, authRulePatternsType.PUBLISH)">
@@ -62,6 +63,7 @@
                     <input matInput
                            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            matChipInputAddOnBlur
+                           [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
                            [matChipInputFor]="chipListPub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.PUBLISH)">
                   </mat-chip-grid>
@@ -75,6 +77,7 @@
                     <mat-chip-row
                       *ngFor="let rule of subRulesArray[$index]"
                       [editable]="!disabled"
+                      (edited)="editTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)"
                       [removable]="!disabled"
                       [value]="rule"
                       (removed)="removeTopicRule(rule, $index, authRulePatternsType.SUBSCRIBE)">
@@ -86,6 +89,7 @@
                     <input matInput type="text"
                            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
                            matChipInputAddOnBlur
+                           [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
                            [matChipInputFor]="chipListSub"
                            (matChipInputTokenEnd)="addTopicRule($event, $index, authRulePatternsType.SUBSCRIBE)">
                   </mat-chip-grid>

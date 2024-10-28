@@ -36,6 +36,8 @@ MQTT.js version: 5.9.1
 ##### Connect to the TBMQ
 The code snippet below provides a demonstration on how to connect to a TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, subscribe to a topic, publish a message, handle received messages and some MQTT client events.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 You may paste this code into a new JavaScript file in your project, e.g. `tbmq_js_example.js`. 
 
 ```bash
@@ -51,7 +53,7 @@ const options = {
 const client = mqtt.connect(url, options); // create a client
 
 const topic = 'sensors/temperature';
-const message = 'Hello World';
+const message = 'Hello, TBMQ!';
 const qos = 1;
 
 client.on('connect', function () { // connect client
@@ -65,7 +67,7 @@ client.on('connect', function () { // connect client
 
 client.on('message', (topic, message) => { // handle received messages
  console.log(`Received Message: ${message.toString()} \nTopic: '${topic}'`);
- client.end(); // end client session
+ //client.end(); // end client session
 });
 
 client.on('disconnect', () => { console.log('Disconnecting...'); });
@@ -93,9 +95,8 @@ Packet receive cmd:  suback
 Packet send cmd:  publish
 Packet receive cmd:  puback
 Packet receive cmd:  publish
-Received Message: Hello World 
+Received Message: Hello, TBMQ! 
 Topic: 'sensors/temperature'
-Packet send cmd:  disconnect
 Packet send cmd:  puback
 ```
 

@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import java.util.UUID;
 
 public interface AdminSettingsService {
+
     AdminSettings findAdminSettingsById(UUID adminSettingsId);
 
     AdminSettings findAdminSettingsByKey(String key);

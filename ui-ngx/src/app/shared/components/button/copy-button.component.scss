@@ -16,6 +16,7 @@
 @import "../../../../scss/constants";
 
 :host {
+  cursor: pointer;
   .mat-icon.copied{
     color: #00C851 !important;
   }

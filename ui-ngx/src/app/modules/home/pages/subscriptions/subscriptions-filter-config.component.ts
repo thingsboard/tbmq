@@ -87,6 +87,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   rhOptions = RhOptions;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
+  buttonDisplayTooltip: string;
   subscriptionsFilterConfigForm: UntypedFormGroup;
   subscriptionsFilterOverlayRef: OverlayRef;
   panelResult: ClientSubscriptionFilterConfig = null;
@@ -270,31 +271,48 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.subscriptionsFilterConfig?.clientId?.length) {
-        filterTextParts.push(this.subscriptionsFilterConfig.clientId);
+        const clientId = this.subscriptionsFilterConfig.clientId;
+        filterTextParts.push(clientId);
+        filterTooltipParts.push(`${this.translate.instant('mqtt-client.client-id')}: ${clientId}`);
       }
       if (this.subscriptionsFilterConfig?.topicFilter?.length) {
-        filterTextParts.push(this.subscriptionsFilterConfig.topicFilter);
+        const topicFilter = this.subscriptionsFilterConfig.topicFilter;
+        filterTextParts.push(topicFilter);
+        filterTooltipParts.push(`${this.translate.instant('shared-subscription.topic-filter')}: ${topicFilter}`);
       }
       if (this.subscriptionsFilterConfig?.qosList?.length) {
-        filterTextParts.push(`${this.translate.instant('mqtt-client-session.qos')}:${this.subscriptionsFilterConfig.qosList.join(', ')}`);
+        const qosList = `${this.translate.instant('mqtt-client-session.qos')}: ${this.subscriptionsFilterConfig.qosList.join(', ')}`;
+        filterTextParts.push(qosList);
+        filterTooltipParts.push(qosList);
       }
       if (this.subscriptionsFilterConfig?.noLocalList?.length) {
-        filterTextParts.push(`nl:${this.subscriptionsFilterConfig.noLocalList.join(', ')}`);
+        const noLocalList = this.subscriptionsFilterConfig.noLocalList.join(', ');
+        filterTextParts.push(`NL: ${noLocalList}`);
+        filterTooltipParts.push(`${this.translate.instant('subscription.nl')}: ${noLocalList}`);
       }
       if (this.subscriptionsFilterConfig?.retainAsPublishList?.length) {
-        filterTextParts.push(`rap:${this.subscriptionsFilterConfig.retainAsPublishList.join(', ')}`);
+        const retainAsPublishList = this.subscriptionsFilterConfig.retainAsPublishList.join(', ');
+        filterTextParts.push(`RAP: ${retainAsPublishList}`);
+        filterTooltipParts.push(`${this.translate.instant('subscription.rap')}: ${retainAsPublishList}`);
       }
       if (this.subscriptionsFilterConfig?.retainHandlingList?.length) {
-        filterTextParts.push(`rh:${this.subscriptionsFilterConfig.retainHandlingList.join(', ')}`);
+        const retainHandlingList = this.subscriptionsFilterConfig.retainHandlingList.join(', ');
+        filterTextParts.push(`RH: ${retainHandlingList}`);
+        filterTooltipParts.push(`${this.translate.instant('subscription.rh')}: ${retainHandlingList}`);
       }
       if (this.subscriptionsFilterConfig?.subscriptionId) {
-        filterTextParts.push(`ID:${this.subscriptionsFilterConfig.subscriptionId.toString()}`);
+        const subscriptionId = this.subscriptionsFilterConfig.subscriptionId;
+        filterTextParts.push(`SUBS ID: ${subscriptionId}`);
+        filterTooltipParts.push(`${this.translate.instant('subscription.subscription-id')}: ${subscriptionId}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join('; ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

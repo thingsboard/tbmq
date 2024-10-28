@@ -16,7 +16,7 @@
 
 export const smtpPortPattern: RegExp = /^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$/;
 export const connectivitySettingsKey = 'connectivity';
-export const websocketSettingsKey = 'websocket';
+export const webSocketSettingsKey = 'websocket';
 
 export interface AdminSettings<T> {
   key: string;
@@ -43,7 +43,7 @@ export interface MailServerSettings {
   proxyPassword: string;
 }
 
-export interface WebsocketSettings {
+export interface WebSocketSettings {
   isLoggingEnabled: boolean;
   maxMessages: number;
 }

@@ -54,13 +54,16 @@ export class EditClientCredentialsButtonComponent {
     if ($event) {
       $event.stopPropagation();
     }
-    this.clientCredentialsService.getClientCredentialsByName(this.name).subscribe(
+    this.clientCredentialsService.getClientCredentialsByName(this.name, {ignoreErrors: true}).subscribe(
       credentials => {
         if (credentials) {
           this.router.navigate(['client-credentials', credentials.id]);
         } else {
           this.clientNotFound();
         }
+      },
+      () => {
+        this.clientNotFound();
       }
     );
   }
@@ -71,8 +74,6 @@ export class EditClientCredentialsButtonComponent {
         message: this.translate.instant('mqtt-client-credentials.no-client-credentials-text'),
         type: 'error',
         duration: 2000,
-        verticalPosition: 'top',
-        horizontalPosition: 'left'
       })
     );
   }

@@ -22,7 +22,7 @@ import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
-import { getOS } from '@core/utils';
+import { randomStringFromRegex, getOS } from '@core/utils';
 import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 
@@ -159,46 +159,46 @@ export class CheckConnectivityDialogComponent extends
 
     const subCommands: string[] = [];
     subCommands.push(
-      "mosquitto_sub",
+      'mosquitto_sub',
       config.debugQoS,
       `-h ${config.hostname}`,
       `-p ${config.mqttPort}`,
-      `-t ${config.subTopic}`,
+      `-t "${config.subTopic}"`,
       commonCommands,
       '-v'
     );
 
     const pubCommands: string[] = [];
     pubCommands.push(
-      "mosquitto_pub",
+      'mosquitto_pub',
       config.debugQoS,
       `-h ${config.hostname}`,
       `-p ${config.mqttPort}`,
-      `-t ${config.pubTopic}`,
+      `-t "${config.pubTopic}"`,
       commonCommands,
       config.message
     );
 
     const dockerSubCommands: string[] = [];
-    dockerSubCommands.push("docker run --rm");
+    dockerSubCommands.push('docker run --rm');
     if (config.network) dockerSubCommands.push(config.network);
     dockerSubCommands.push(
-      "-it thingsboard/mosquitto-clients mosquitto_sub -d -q 1",
+      '-it thingsboard/mosquitto-clients mosquitto_sub -d -q 1',
       `-h ${config.hostname}`,
       `-p ${config.mqttPort}`,
-      `-t ${config.subTopic}`,
+      `-t "${config.subTopic}"`,
       commonCommands,
       '-v'
     );
 
     const dockerPubCommands: string[] = [];
-    dockerPubCommands.push("docker run --rm");
+    dockerPubCommands.push('docker run --rm');
     if (config.network) dockerPubCommands.push(config.network);
     dockerPubCommands.push(
-      "-it thingsboard/mosquitto-clients mosquitto_pub -d -q 1",
+      '-it thingsboard/mosquitto-clients mosquitto_pub -d -q 1',
       `-h ${config.hostname}`,
       `-p ${config.mqttPort}`,
-      `-t ${config.pubTopic}`,
+      `-t "${config.pubTopic}"`,
       commonCommands,
       config.message
     );
@@ -268,7 +268,12 @@ export class CheckConnectivityDialogComponent extends
 
   private setTopic(rules: string[], topic: string): string {
     for (let i= 0; i < rules?.length; i++) {
-      if (rules[i] === ".*") return topic;
+      if (rules[i] === '.*') {
+        return topic;
+      }
+    }
+    if (rules?.length) {
+      return randomStringFromRegex(rules[0]);
     }
     return '$YOUR_TOPIC';
   }

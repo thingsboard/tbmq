@@ -552,7 +552,6 @@
     "selected-sessions-are-connected": "Selected Sessions are connected. Please disconnect them before removing.",
     "selected-sessions-are-disconnected": "Selected Sessions are already disconnected.",
     "subscriptions": "Subscriptions",
-    "subscriptions-short": "Subs",
     "subscriptions-count": "Subscriptions",
     "support-level-wildcards": "Single <code>[+]</code> and multi-level <code>[#]</code> wildcards supported.",
     "single-level-wildcards-hint": "<code>[+]</code> is suitable for any topic filter level. Ex.: <b>city/+/country</b> or <b>+/city/+/country</b>.",
@@ -904,13 +903,15 @@
     "messages": {
       "retained": "Retain",
       "publish-message": "Publish message",
+      "publish-message-unknown-error": "Failed to publish message due to an unknown reason.",
       "received": "Received",
       "published": "Published",
       "no-messages-text": "No messages yet",
       "filter": "Filter messages",
       "max-messages": "Maximum messages in WebSocket Client table",
       "max-messages-min": "Minimum value is 1",
-      "max-messages-hint": "Messages are stored in the browser's memory."
+      "max-messages-required": "Maximum messages parameter is required.",
+      "max-messages-hint": "Messages are stored in the browser's memory. Changing this value will clear messages of all WebSocket Clients."
     },
     "connections": {
       "add-connection": "Add new connection",
@@ -941,8 +942,6 @@
       "host": "Host",
       "path": "Path",
       "port": "Port",
-      "client-id": "Client ID",
-      "client-id-required": "Client ID is required.",
       "connect-timeout": "Connect Timeout",
       "connect-timeout-hint": "Time to wait before a CONNACK is received",
       "connect-timeout-required": "Connect Timeout is required.",
@@ -1036,8 +1035,6 @@
     "general-settings": "General security settings",
     "access-token": "Access token",
     "access-token-required": "Access token is required",
-    "clientId": "Client ID",
-    "clientId-required": "Client ID is required",
     "username": "Username",
     "username-required": "Username is required",
     "ca-cert": "CA certificate",

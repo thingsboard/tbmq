@@ -16,14 +16,15 @@
 
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
-import { emptyPageData, PageData } from '@shared/models/page/page-data';
+import { PageData } from '@shared/models/page/page-data';
 import {
   clientUserNameRandom,
   ConnectionStatus,
   ConnectionStatusLog,
   DataSizeUnitType,
   DisconnectReasonCodes,
-  MessageCounters,
+  MessageCounter,
+  MessageCounterEmpty,
   MessageFilterConfig,
   MessageFilterDefaultConfigAll,
   QoS,
@@ -35,23 +36,27 @@ import {
   WebSocketTimeUnit,
   WsTableMessage
 } from '@shared/models/ws-client.model';
-import mqtt, {
-  IClientOptions,
-  IClientPublishOptions,
-  IConnackPacket,
-  IPublishPacket,
-  MqttClient,
-  Packet
-} from 'mqtt';
+import mqtt, { IClientOptions, IClientPublishOptions, IConnackPacket, IPublishPacket, MqttClient, Packet } from 'mqtt';
 import { ErrorWithReasonCode } from 'mqtt/src/lib/shared';
-import { convertDataSizeUnits, convertTimeUnits, guid, isDefinedAndNotNull, isNotEmptyStr, isNumber, isUndefined } from '@core/utils';
+import {
+  convertDataSizeUnits,
+  convertTimeUnits,
+  guid,
+  isDefinedAndNotNull,
+  isNotEmptyStr,
+  isNumber
+} from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
 import { Buffer } from 'buffer';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
-import { WebsocketSettings } from '@shared/models/settings.models';
+import { WebSocketSettings } from '@shared/models/settings.models';
 import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
+import { ActionNotificationShow } from "@core/notification/notification.actions";
+import { Store } from "@ngrx/store";
+import { AppState } from "@core/core.state";
+import { TranslateService } from "@ngx-translate/core";
 
 @Injectable({
   providedIn: 'root'
@@ -63,7 +68,7 @@ export class MqttJsClientService {
   private connectionsSubject$ = new BehaviorSubject<boolean>(true);
   private connectionStatusSubject$ = new BehaviorSubject<ConnectionStatusLog>({status: ConnectionStatus.DISCONNECTED, details: null});
   private messagesSubject$ = new BehaviorSubject<WsTableMessage[]>(this.messagesList);
-  private messageCounterSubject$ = new BehaviorSubject<MessageCounters>({all: 0, received: 0, published: 0});
+  private messageCounterSubject$ = new BehaviorSubject<MessageCounter>(MessageCounterEmpty);
   private clientConnectingSubject$ = new Subject<void>();
   private logsUpdatedSubject$ = new Subject<void>();
 
@@ -82,17 +87,19 @@ export class MqttJsClientService {
   private mqttClientIdSubscriptionsMap = new Map<string, any[]>();
   private mqttClientConnectionMap = new Map<string, WebSocketConnection>();
   private connectionMessagesMap = new Map<string, WsTableMessage[]>();
+  private connectionMessageCounterMap = new Map<string, MessageCounter>();
 
-  private maxMessages = 1000;
   private publishMsgDelay = 200;
   private publishMsgStartTs = null;
   private publishMsgTimeout = null;
 
   private messagesFilter: MessageFilterConfig = MessageFilterDefaultConfigAll;
-  private websocketSettings: WebsocketSettings;
+  private webSocketSettings: WebSocketSettings;
 
   constructor(private webSocketSubscriptionService: WebSocketSubscriptionService,
-              private clientSessionService: ClientSessionService) {
+              private clientSessionService: ClientSessionService,
+              private translate: TranslateService,
+              private store: Store<AppState>) {
   }
 
   public onConnectionsUpdated(selectFirst: boolean = true) {
@@ -198,8 +205,8 @@ export class MqttJsClientService {
     if (isDefinedAndNotNull(options?.properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = convertTimeUnits(options.properties.messageExpiryInterval, options.properties.messageExpiryIntervalUnit, WebSocketTimeUnit.SECONDS)
     // @ts-ignore
     if (isDefinedAndNotNull(options?.properties?.messageExpiryIntervalUnit)) delete options.properties.messageExpiryIntervalUnit;
-    const logUnknownPubErrorTimeout = setTimeout(function() {
-      console.log(`Unknown error on publish message with topic '${topic}' \n${JSON.stringify(options)}`);
+    const logUnknownPubErrorTimeout = setTimeout(() => {
+      this.notifyError(this.translate.instant('ws-client.messages.publish-message-unknown-error'));
     }, 3000);
     this.getSelectedMqttJsClient().publish(topic, payload, options, (error, packet) => {
       if (!error || !error?.message?.length) {
@@ -207,15 +214,27 @@ export class MqttJsClientService {
         this.addMessage(message, this.getSelectedConnectionId());
       }
       if (error?.message?.length) {
-        console.log(`Unexpected error on publish message \nTopic: '${topic}' \nError: ${error.message}`);
+        this.notifyError(error.message);
       }
     });
   }
 
-  public clearHistory() {
-    const connectionId = this.getSelectedConnectionId();
+  public clearMessages() {
+    this.clearHistory(this.getSelectedConnectionId());
+  }
+
+  public clearAllMessages() {
+    for (const clientId of this.connectionMqttClientMap.keys()) {
+      console.log('clientId', clientId)
+      this.clearHistory(clientId);
+    }
+  }
+
+  private clearHistory(connectionId: string) {
     this.connectionMessagesMap.set(connectionId, []);
+    this.connectionMessageCounterMap.delete(connectionId);
     this.updateMessages();
+    this.updateMessageCounter();
   }
 
   public selectConnection(connection: WebSocketConnection) {
@@ -223,6 +242,7 @@ export class MqttJsClientService {
     const connectionStatus = this.connectionStatusMap.get(this.getSelectedConnectionId());
     this.connectionStatusSubject$.next(connectionStatus);
     this.updateMessages();
+    this.updateMessageCounter();
   }
 
   public getMessages(pageLink: PageLink): Observable<PageData<WsTableMessage>> {
@@ -236,7 +256,7 @@ export class MqttJsClientService {
         let qosMatch = this.messagesFilter.qosList?.length ? this.messagesFilter.qosList.includes(item.qos) : true;
         let retainMatch = this.messagesFilter.retainList?.length ? this.messagesFilter.retainList.includes(item.retain) : true;
         return typeMatch && topicMatch && qosMatch && retainMatch;
-      }).slice(0, this.websocketSettings.maxMessages || this.maxMessages);
+      });
     }
     filteredMessages.sort(function(objA, objB) {
       const sortKey = sortOrder.property;
@@ -269,12 +289,12 @@ export class MqttJsClientService {
       }
     });
     const pageData = pageLink.filterData(filteredMessages);
-    this.updateMessageCounter(data);
+    this.updateMessageCounter();
     return of(pageData);
   }
 
-  public setWebsocketSettings(settings: WebsocketSettings) {
-    this.websocketSettings = settings;
+  public setWebSocketSettings(settings: WebSocketSettings) {
+    this.webSocketSettings = settings;
   }
 
   private addMqttClient(connection: WebSocketConnection, password: string) {
@@ -414,7 +434,7 @@ export class MqttJsClientService {
   }
 
   private logMqttClienEvent(type: string, details?: any) {
-    if (this.websocketSettings?.isLoggingEnabled) {
+    if (this.webSocketSettings?.isLoggingEnabled) {
       console.log(`MQTT log on event '${type}'`, details?.length ? [...details] : null);
     }
   }
@@ -469,7 +489,7 @@ export class MqttJsClientService {
       details
     };
     if (this.connectionStatusLogMap.has(connection.id)) {
-      this.connectionStatusLogMap.get(connection.id)?.push(log);
+      this.connectionStatusLogMap.get(connection.id)?.unshift(log);
     } else {
       this.connectionStatusLogMap.set(connection.id, [log]);
     }
@@ -513,9 +533,26 @@ export class MqttJsClientService {
     if (!this.connectionMessagesMap.has(clientId)) {
       this.connectionMessagesMap.set(clientId, []);
     }
+    const messageType = message.type;
     const clientMessages = this.connectionMessagesMap.get(clientId);
     clientMessages.unshift(message);
-    if (message.type === 'received') {
+    const maxMessages = this.webSocketSettings?.maxMessages;
+    if (clientMessages.length > maxMessages) {
+      clientMessages.pop();
+    }
+    if (!this.connectionMessageCounterMap.has(clientId)) {
+      this.connectionMessageCounterMap.set(clientId, MessageCounterEmpty);
+    }
+    const counter = this.connectionMessageCounterMap.get(clientId);
+    const newCounter = {
+      ...counter,
+      ...{
+        all: counter.all + 1,
+        [messageType]: counter[messageType] + 1
+      }
+    };
+    this.connectionMessageCounterMap.set(clientId, newCounter);
+    if (messageType === 'received') {
       if (!this.publishMsgStartTs) {
         clearTimeout(this.publishMsgTimeout);
         this.publishMsgStartTs = this.nowTs();
@@ -564,14 +601,13 @@ export class MqttJsClientService {
     return this.connectionMqttClientMap.get(this.getSelectedConnectionId());
   }
 
-  private updateMessageCounter(data: WsTableMessage[]) {
-    const all = data?.length || 0;
-    const received = data?.filter(el => el.type === 'received')?.length || 0;
-    this.messageCounterSubject$.next({
-      all,
-      received,
-      published: all - received
-    });
+  private updateMessageCounter() {
+    const connectionId = this.getSelectedConnectionId();
+    if (!this.connectionMessageCounterMap.has(connectionId)) {
+      this.connectionMessageCounterMap.set(connectionId, MessageCounterEmpty);
+    }
+    const counter = this.connectionMessageCounterMap.get(connectionId);
+    this.messageCounterSubject$.next(counter);
   }
 
   private subscriptionOptions(subscription: WebSocketSubscription): IClientSubscribeOptions {
@@ -585,5 +621,12 @@ export class MqttJsClientService {
       options.properties.subscriptionIdentifier = subscription.configuration.subscriptionId;
     }
     return options;
+  }
+
+  private notifyError(message: string) {
+    this.store.dispatch(new ActionNotificationShow({
+      message,
+      type: 'error'
+    }));
   }
 }

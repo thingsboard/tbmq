@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, AfterViewInit } from '@angular/core';
 import { UntypedFormBuilder } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
@@ -25,6 +25,7 @@ import {
   GettingStartedLink
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
+import { animatedScroll } from "@core/utils";
 
 @Component({
   selector: 'tb-getting-started',
@@ -32,7 +33,7 @@ import { ConfigService } from '@core/http/config.service';
   styleUrls: ['./getting-started.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class GettingStartedComponent implements OnInit {
+export class GettingStartedComponent implements OnInit, AfterViewInit {
 
   currentReleaseVersion: string;
 
@@ -54,6 +55,13 @@ export class GettingStartedComponent implements OnInit {
         this.cd.detectChanges();
       }
     });
+  }
+
+  ngAfterViewInit() {
+    const tbMainContentElement = document.querySelector('.tb-main-content') as HTMLElement;
+    if (tbMainContentElement) {
+      animatedScroll(tbMainContentElement, 0, 0);
+    }
   }
 
   navigate(guide: GettingStartedLink) {

@@ -104,7 +104,7 @@ public class ScramAuthCallbackHandlerTest {
 
         assertThatThrownBy(() -> callbackHandler.handle(callbacks))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Failed to find credentials for given credentialsId: " + ProtocolUtil.usernameCredentialsId(username));
+                .hasMessage("Failed to find credentials for given credentialsId: " + ProtocolUtil.scramCredentialsId(username));
     }
 
     @Test
@@ -124,7 +124,7 @@ public class ScramAuthCallbackHandlerTest {
 
         assertThatThrownBy(() -> callbackHandler.handle(callbacks))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Failed to find SCRAM credentials for given credentialsId: " + ProtocolUtil.usernameCredentialsId(username));
+                .hasMessage("Failed to find SCRAM credentials for given credentialsId: " + ProtocolUtil.scramCredentialsId(username));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class ScramAuthCallbackHandlerTest {
 
         assertThatThrownBy(() -> callbackHandler.handle(callbacks))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Failed to parse authorization rule for SCRAM credentials: " + ProtocolUtil.usernameCredentialsId(username))
+                .hasMessage("Failed to parse authorization rule for SCRAM credentials: " + ProtocolUtil.scramCredentialsId(username))
                 .hasCauseInstanceOf(AuthenticationException.class);
     }
 

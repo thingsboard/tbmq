@@ -77,6 +77,7 @@ public class ThingsboardMqttBrokerInstallService {
                     case "1.4.0":
                         log.info("Upgrading TBMQ from version 1.4.0 to 2.0.0 ...");
                         databaseEntitiesUpgradeService.upgradeDatabase("1.4.0");
+                        dataUpdateService.updateData("1.4.0");
                         break;
                     default:
                         throw new RuntimeException("Unable to upgrade TBMQ, unsupported fromVersion: " + upgradeFromVersion);

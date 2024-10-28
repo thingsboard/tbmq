@@ -33,7 +33,7 @@ else
     fromVersion="${FROM_VERSION// }"
 fi
 
-java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                 -Dspring.jpa.hibernate.ddl-auto=none \
                 -Dinstall.upgrade=true \
                 -Dinstall.upgrade.from_version=${fromVersion} \

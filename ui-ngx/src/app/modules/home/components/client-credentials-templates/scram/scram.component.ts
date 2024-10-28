@@ -36,9 +36,10 @@ import {
   ShaType,
   shaTypeTranslationMap
 } from '@shared/models/credentials.model';
-import { MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientUserNameRandom } from '@shared/models/ws-client.model';
+import { ENTER, TAB } from "@angular/cdk/keycodes";
 
 @Component({
   selector: 'tb-mqtt-credentials-scram',
@@ -73,6 +74,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
   subRulesSet: Set<string> = new Set();
   shaTypes = Object.values(ShaType);
   shaTypeTranslations = shaTypeTranslationMap;
+  separatorKeysCodes = [ENTER, TAB];
 
   private maskedPassword = '********';
   private newPassword: string;
@@ -193,6 +195,33 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
       case AuthRulePatternsType.SUBSCRIBE:
         this.subRulesSet.delete(rule);
         this.setAuthRulePatternsControl(this.subRulesSet, type);
+        break;
+    }
+  }
+
+  editTopicRule(event: MatChipEditedEvent, type: AuthRulePatternsType): void {
+    let index: number;
+    let array: string[];
+    const oldRule = event.chip.value;
+    const newRule = event.value;
+    switch (type) {
+      case AuthRulePatternsType.SUBSCRIBE:
+        array = Array.from(this.subRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.subRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.subRulesSet, type);
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        array = Array.from(this.pubRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.pubRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.pubRulesSet, type);
         break;
     }
   }

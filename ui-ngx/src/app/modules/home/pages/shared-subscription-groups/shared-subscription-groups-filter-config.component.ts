@@ -37,10 +37,6 @@ import { TranslateService } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subscription } from 'rxjs';
-import {
-  ConnectionState,
-  connectionStateTranslationMap,
-} from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { SharedSubscriptionFilterConfig, sharedSubscriptionFilterConfigEquals } from '@shared/models/shared-subscription.model';
@@ -84,29 +80,21 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   @Input()
   initialSharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
 
-  connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
-  connectionStateTranslationMap= connectionStateTranslationMap;
   ClientType = ClientType;
   clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   cleanStartList = [true, false];
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
-
+  buttonDisplayTooltip: string;
   sharedSubscriptionFilterConfigForm: UntypedFormGroup;
-
   sharedSubscriptionFilterOverlayRef: OverlayRef;
-
   panelResult: SharedSubscriptionFilterConfig = null;
-
   entityType = EntityType;
 
   private sharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
   private resizeWindows: Subscription;
-
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SHARED_SUBSCRIPTION_FILTER_CONFIG_DATA)
@@ -271,19 +259,28 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.sharedSubscriptionFilterConfig?.shareNameSearch?.length) {
-        filterTextParts.push(this.sharedSubscriptionFilterConfig.shareNameSearch);
+        const shareNameSearch = this.sharedSubscriptionFilterConfig.shareNameSearch;
+        filterTextParts.push(shareNameSearch);
+        filterTooltipParts.push(`${this.translate.instant('shared-subscription.share-name')}: ${shareNameSearch}`);
       }
       if (this.sharedSubscriptionFilterConfig?.topicFilter?.length) {
-        filterTextParts.push(this.sharedSubscriptionFilterConfig.topicFilter);
+        const topicFilter = this.sharedSubscriptionFilterConfig.topicFilter;
+        filterTextParts.push(topicFilter);
+        filterTooltipParts.push(`${this.translate.instant('shared-subscription.topic-filter')}: ${topicFilter}`);
       }
       if (this.sharedSubscriptionFilterConfig?.clientIdSearch?.length) {
-        filterTextParts.push(this.sharedSubscriptionFilterConfig.clientIdSearch);
+        const clientIdSearch = this.sharedSubscriptionFilterConfig.clientIdSearch;
+        filterTextParts.push(clientIdSearch);
+        filterTooltipParts.push(`${this.translate.instant('shared-subscription.client')}: ${clientIdSearch}`);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title') + `: ${filterTextParts.join('; ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

@@ -77,8 +77,6 @@ spec:
               value: "true"
             - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
               value: "15000"
-            - name: CACHE_TYPE
-              value: "redis"
             - name: REDIS_HOST
               value: "tb-redis"
           envFrom:

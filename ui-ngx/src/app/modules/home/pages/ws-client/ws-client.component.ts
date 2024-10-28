@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-// @ts-nocheck
-
 import { Component, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
@@ -30,7 +28,6 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { SettingsService } from '@core/http/settings.service';
-import { websocketSettingsKey } from '@shared/models/settings.models';
 
 @Component({
   selector: 'tb-ws-client',
@@ -57,7 +54,7 @@ export class WsClientComponent extends PageComponent implements OnInit {
     this.mqttJsClientService.connections$.subscribe((res) => {
       this.updateData(res);
     });
-    this.settingsService.getGeneralSettings(websocketSettingsKey).subscribe(settings => this.mqttJsClientService.setWebsocketSettings(settings.jsonValue));
+    this.settingsService.getWebSocketSettings().subscribe(settings => this.mqttJsClientService.setWebSocketSettings(settings.jsonValue));
   }
 
   private selectFirstConnection(connectionId: string) {

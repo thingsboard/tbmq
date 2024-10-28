@@ -86,6 +86,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   qoSValuesMap = mqttQoSValuesMap;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('retained-message.filter-title');
+  buttonDisplayTooltip: string;
   retainedMessagesFilterConfigForm: UntypedFormGroup;
   retainedMessagesFilterOverlayRef: OverlayRef;
   panelResult: RetainedMessagesFilterConfig = null;
@@ -254,19 +255,28 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   private updateButtonDisplayValue() {
     if (this.buttonMode) {
       const filterTextParts: string[] = [];
+      const filterTooltipParts: string[] = [];
       if (this.retainedMessagesFilterConfig?.topicName?.length) {
-        filterTextParts.push(this.retainedMessagesFilterConfig.topicName);
+        const topicName = this.retainedMessagesFilterConfig.topicName;
+        filterTextParts.push(topicName);
+        filterTooltipParts.push(`${this.translate.instant('retained-message.topic')}: ${topicName}`);
       }
       if (this.retainedMessagesFilterConfig?.payload?.length) {
-        filterTextParts.push(this.retainedMessagesFilterConfig.payload);
+        const payload = this.retainedMessagesFilterConfig.payload;
+        filterTextParts.push(payload);
+        filterTooltipParts.push(`${this.translate.instant('retained-message.payload')}: ${payload}`);
       }
       if (this.retainedMessagesFilterConfig?.qosList?.length) {
-        filterTextParts.push(`${this.translate.instant('retained-message.qos')}:${this.retainedMessagesFilterConfig.qosList.join(', ')}`);
+        const qosList = `${this.translate.instant('retained-message.qos')}:${this.retainedMessagesFilterConfig.qosList.join(', ')}`;
+        filterTextParts.push(qosList);
+        filterTooltipParts.push(qosList);
       }
       if (!filterTextParts.length) {
         this.buttonDisplayValue = this.translate.instant('retained-message.filter-title');
+        this.buttonDisplayTooltip = null;
       } else {
         this.buttonDisplayValue = this.translate.instant('retained-message.filter-title') + `: ${filterTextParts.join('; ')}`;
+        this.buttonDisplayTooltip = filterTooltipParts.join('; ');
       }
     }
   }

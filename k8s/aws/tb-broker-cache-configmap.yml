@@ -26,7 +26,5 @@ data:
   CACHE_STATS_INTERVAL_SEC: "60"
 
   # Make sure that the REDIS_HOST value does not contain the port (:6379).
-  # Uncomment the following lines to enable Redis cache.
-
-  #CACHE_TYPE: "redis"
-  #REDIS_HOST: "YOUR_REDIS_ENDPOINT_URL_WITHOUT_PORT"
+  REDIS_HOST: "YOUR_REDIS_ENDPOINT_URL_WITHOUT_PORT"
+  #REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"

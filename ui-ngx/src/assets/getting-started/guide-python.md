@@ -23,6 +23,8 @@ pip3 show paho-mqtt{:copy-code}
 ##### Connect to the TBMQ
 The script below sets up a Paho MQTT client to connect to the TBMQ broker using default credentials `TBMQ WebSockets MQTT Credentials`, handles basic MQTT operations such as publishing a message and subscribing to a topic.
 
+In case you have changed the `TBMQ WebSockets MQTT Credentials`, don't forget to update the client ID, username, and password in the guide.
+
 You can paste this code into a new file in your project `tbmq-python.py`.
 
 ```bash
@@ -32,7 +34,7 @@ from paho import mqtt
 host = "{:mqttHost}"
 port = {:mqttPort}
 topic = "sensors/temperature"
-payload = "Hello world"
+payload = "Hello, TBMQ!"
 qos = 1
 retain = False
 clean_session = True
@@ -65,7 +67,8 @@ def on_connect(client, userdata, flags, rc, properties=None):
 
 # This is the callback function that is called when a message is received after subscribing to a topic.
 def on_message(client, userdata, msg):
-    print('Received message ' + str(msg.payload) + ' on topic ' + msg.topic)
+    message_str = msg.payload.decode('utf-8')  # Decoding bytes to string
+    print('Received message \'' + message_str + '\' on topic ' + msg.topic)
 
 # This is the callback function that is called when there is any error during MQTT operations.
 def on_error(client, userdata, err):
@@ -100,7 +103,7 @@ python3 tbmq-python.py
 The output from executing the `tbmq-python.py` file:
 ```bash
 Client connected!
-Received message 'Hello world' on topic sensors/temperature
+Received message 'Hello, TBMQ!' on topic sensors/temperature
 ```
 
 #### See also
