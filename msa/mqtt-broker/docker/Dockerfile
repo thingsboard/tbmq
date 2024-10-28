@@ -19,6 +19,9 @@ FROM thingsboard/openjdk17:bookworm-slim
 
 COPY start-tb-mqtt-broker.sh ${pkg.name}.deb /tmp/
 
+RUN apt-get update \
+    && apt-get install -y postgresql-client # used for upgrade from version 1.4.0 to 2.0.0. To remove in next release.
+
 RUN chmod a+x /tmp/*.sh \
     && mv /tmp/start-tb-mqtt-broker.sh /usr/bin
 
