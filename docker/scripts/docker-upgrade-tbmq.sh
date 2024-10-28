@@ -62,7 +62,7 @@ COMPOSE_ARGS_UP="\
 COMPOSE_ARGS_RUN="\
       --env-file ./.env \
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
-      run --no-deps --rm -e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} \
+      run --no-deps --rm -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=1000 -e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} \
       tbmq1"
 
 case $COMPOSE_VERSION in

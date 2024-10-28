@@ -52,6 +52,7 @@ try {
     $db_username = "postgres"
     $db_password = "postgres"
     $redis_url = "redis"
+    $device_persisted_msgs_limit=1000
 
     # Pull the new TBMQ image
     docker pull "thingsboard/tbmq:$new_version"
@@ -85,6 +86,7 @@ try {
             -e SPRING_DATASOURCE_USERNAME=$db_username `
             -e SPRING_DATASOURCE_PASSWORD=$db_password `
             -e REDIS_HOST=$redis_url `
+            -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit `
             -v tbmq-data:/data `
             --rm `
             "thingsboard/tbmq:$new_version" upgrade-tbmq.sh
@@ -105,6 +107,7 @@ try {
             -e SPRING_DATASOURCE_USERNAME=$db_username `
             -e SPRING_DATASOURCE_PASSWORD=$db_password `
             -e REDIS_HOST=$redis_url `
+            -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit `
             -v tbmq-data:/data `
             --rm `
             "thingsboard/tbmq:$new_version" upgrade-tbmq.sh
