@@ -187,6 +187,9 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                     }
                 }
                 break;
+            case "2.0.0":
+                updateSchema("2.0.0", 2000000, "2.0.1", 2000001);
+                break;
             default:
                 throw new RuntimeException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);
         }
