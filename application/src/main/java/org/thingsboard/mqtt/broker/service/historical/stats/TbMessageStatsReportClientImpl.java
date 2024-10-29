@@ -25,10 +25,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -202,7 +202,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Override
     public void removeClient(String clientId) {
-        clientSessionsStats.remove(clientId);
+        if (enabled) {
+            clientSessionsStats.remove(clientId);
+        }
     }
 
     private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
