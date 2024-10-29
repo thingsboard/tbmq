@@ -64,7 +64,7 @@ if [ -f "docker-compose.yml" ]; then
   echo "docker-compose.yml is already present in the current directory. Skipping download."
 else
   echo "docker-compose.yml is absent in the current directory. Downloading the file..."
-  wget https://raw.githubusercontent.com/thingsboard/tbmq/release-1.4.0/msa/tbmq/configs/docker-compose.yml
+  wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.0.0/msa/tbmq/configs/docker-compose.yml
 fi
 
 COMPOSE_VERSION=$(compose_version) || exit $?

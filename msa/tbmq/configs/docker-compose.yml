@@ -53,7 +53,7 @@ services:
       - tbmq-redis-data:/bitnami/redis/data
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:1.4.0"
+    image: "thingsboard/tbmq:2.0.0"
     depends_on:
       - postgres
       - kafka
