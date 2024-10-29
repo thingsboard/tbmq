@@ -56,11 +56,7 @@ postgres:15 \
 sh -c 'pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump'
 ```
 
-#### Commands for Windows PowerShell:
-
-```bash
-New-Item -ItemType Directory -Path .\backups
-```
+#### Command for Windows PowerShell:
 
 ```bash
 docker run --rm --network <network_name> `
@@ -68,7 +64,7 @@ docker run --rm --network <network_name> `
 -v ${PWD}/backups:/backups `
 -e PGPASSWORD=postgres `
 postgres:15 `
-sh -c "pg_dump -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.sql"
+sh -c "pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump"
 ```
 
 #### Explanation:
@@ -109,7 +105,7 @@ docker run --rm --network <network_name> `
 -v ${PWD}/backups:/backups `
 -e PGPASSWORD=postgres `
 postgres:15 `
-sh -c "psql -h postgres -U postgres -d thingsboard_mqtt_broker -f /backups/tbmq_backup.sql"
+sh -c "pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /backups/tbmq_backup.dump"
 ```
 
 #### Explanation:
