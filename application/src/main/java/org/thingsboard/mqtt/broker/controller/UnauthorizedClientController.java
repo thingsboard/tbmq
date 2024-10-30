@@ -55,8 +55,8 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.GET)
-    public UnauthorizedClient getUnauthorizedClient(@RequestParam("clientId") String clientId) throws ThingsboardException {
+    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.GET)
+    public UnauthorizedClient getUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
         try {
             return checkNotNull(unauthorizedClientService.findUnauthorizedClient(clientId).orElse(null));
         } catch (Exception e) {
@@ -65,8 +65,8 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.DELETE)
-    public void deleteUnauthorizedClient(@RequestParam("clientId") String clientId) throws ThingsboardException {
+    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.DELETE)
+    public void deleteUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
         try {
             UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
             unauthorizedClientService.deleteUnauthorizedClient(unauthorizedClient.getClientId());
