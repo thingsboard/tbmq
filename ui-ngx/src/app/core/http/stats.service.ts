@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { isDefinedAndNotNull } from '@core/utils';
-import { AggregationType } from '@shared/models/time/time.models';
-import { Direction } from '@shared/models/page/sort-order';
-import { TimeseriesData } from '@shared/models/chart.model';
+import {Injectable} from '@angular/core';
+import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
+import {Observable} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {isDefinedAndNotNull} from '@core/utils';
+import {AggregationType} from '@shared/models/time/time.models';
+import {Direction} from '@shared/models/page/sort-order';
+import {TimeseriesData} from '@shared/models/chart.model';
 
 export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions', 'processedBytes'];
 export const timeseriesDataLimit = 50000;
@@ -62,7 +62,7 @@ export class StatsService {
 
   public getLatestTimeseries(entityId: string, keys: Array<string> = chartKeysTotal,
                              useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
-    let url = `/api/timeseries/${encodeURIComponent(entityId)}/latest?keys=${keys.join(',')}`;
+    let url = `/api/timeseries/latest?entityId=${encodeURIComponent(entityId)}&keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;
     }
@@ -79,9 +79,9 @@ export class StatsService {
   }
 
   public deleteLatestTimeseries(clientId: string, keys: string[], deleteClientSessionCachedStats: boolean, config?: RequestConfig) {
-    let url = `/api/timeseries/${encodeURIComponent(clientId)}/latest`;
+    let url = `/api/timeseries/latest?entityId=${encodeURIComponent(clientId)}`;
     if (keys && keys.length) {
-      url += `?keys=${keys.join(',')}`;
+      url += `&keys=${keys.join(',')}`;
     }
     if (isDefinedAndNotNull(deleteClientSessionCachedStats)) {
       url += `&deleteClientSessionCachedStats=${deleteClientSessionCachedStats}`;

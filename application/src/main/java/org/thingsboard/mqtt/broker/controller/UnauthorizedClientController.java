@@ -17,19 +17,18 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,8 +55,8 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.GET)
-    public UnauthorizedClient getUnauthorizedClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    @RequestMapping(value = "", method = RequestMethod.GET)
+    public UnauthorizedClient getUnauthorizedClient(@RequestParam("clientId") String clientId) throws ThingsboardException {
         try {
             return checkNotNull(unauthorizedClientService.findUnauthorizedClient(clientId).orElse(null));
         } catch (Exception e) {
@@ -66,8 +65,8 @@ public class UnauthorizedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{clientId}", method = RequestMethod.DELETE)
-    public void deleteUnauthorizedClient(@PathVariable("clientId") String clientId) throws ThingsboardException {
+    @RequestMapping(value = "", method = RequestMethod.DELETE)
+    public void deleteUnauthorizedClient(@RequestParam("clientId") String clientId) throws ThingsboardException {
         try {
             UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
             unauthorizedClientService.deleteUnauthorizedClient(unauthorizedClient.getClientId());

@@ -14,13 +14,13 @@
 /// limitations under the License.
 ///
 
-import { Injectable } from '@angular/core';
-import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
-import { Observable } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { PageLink } from '@shared/models/page/page-link';
-import { PageData } from '@shared/models/page/page-data';
-import { UnauthorizedClient, UnauthorizedClientQuery } from '@shared/models/unauthorized-client.model';
+import {Injectable} from '@angular/core';
+import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
+import {Observable} from 'rxjs';
+import {HttpClient} from '@angular/common/http';
+import {PageLink} from '@shared/models/page/page-link';
+import {PageData} from '@shared/models/page/page-data';
+import {UnauthorizedClient, UnauthorizedClientQuery} from '@shared/models/unauthorized-client.model';
 
 @Injectable({
   providedIn: 'root'
@@ -35,11 +35,11 @@ export class UnauthorizedClientService {
   }
 
   public getUnauthorizedClient(clientId: string, config?: RequestConfig): Observable<UnauthorizedClient> {
-    return this.http.get<UnauthorizedClient>(`/api/unauthorized/client/${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
+    return this.http.get<UnauthorizedClient>(`/api/unauthorized/client?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteUnauthorizedClient(clientId: string, config?: RequestConfig): Observable<void> {
-    return this.http.delete<void>(`/api/unauthorized/client/${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
+    return this.http.delete<void>(`/api/unauthorized/client?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
   public deleteAllUnauthorizedClients(config?: RequestConfig): Observable<void> {
