@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import {Injectable} from '@angular/core';
-import {defaultHttpOptionsFromConfig, RequestConfig} from './http-utils';
-import {Observable} from 'rxjs';
-import {HttpClient} from '@angular/common/http';
-import {isDefinedAndNotNull} from '@core/utils';
-import {AggregationType} from '@shared/models/time/time.models';
-import {Direction} from '@shared/models/page/sort-order';
-import {TimeseriesData} from '@shared/models/chart.model';
+import { Injectable } from '@angular/core';
+import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { isDefinedAndNotNull } from '@core/utils';
+import { AggregationType } from '@shared/models/time/time.models';
+import { Direction } from '@shared/models/page/sort-order';
+import { TimeseriesData } from '@shared/models/chart.model';
 
 export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions', 'processedBytes'];
 export const timeseriesDataLimit = 50000;
