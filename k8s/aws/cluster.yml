@@ -17,12 +17,12 @@
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
-availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
+availabilityZones: [ eu-west-1a,eu-west-1b,eu-west-1c ]
 
 metadata:
   name: tbmq
-  region: us-east-1
-  version: "1.30"
+  region: eu-west-1
+  version: "1.31"
 
 managedNodeGroups:
   - name: managed
@@ -31,6 +31,24 @@ managedNodeGroups:
     maxSize: 2
     minSize: 1
     labels: { role: tbmq }
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak' # Note, use your own public key name here
+  - name: kafka
+    instanceType: m7g.large
+    desiredCapacity: 3
+    maxSize: 3
+    minSize: 0
+    labels: { role: kafka }
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak' # Note, use your own public key name here
+  - name: redis
+    instanceType: r7g.medium
+    desiredCapacity: 6
+    maxSize: 6
+    minSize: 0
+    labels: { role: redis }
     ssh:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here

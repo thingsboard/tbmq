@@ -87,7 +87,7 @@ spec:
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "true"
             - name: TB_KAFKA_SERVERS
-              value: "PUT_YOUR_KAFKA_SERVERS_HERE"
+              value: "tbmq-kafka:9092"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT
