@@ -52,3 +52,33 @@ managedNodeGroups:
     ssh:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here
+  - name: tb-perf-test-publishers
+    instanceType: m7a.medium
+    desiredCapacity: 5
+    maxSize: 5
+    minSize: 0
+    labels: { role: tb-perf-test-publishers }
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak'
+  - name: tb-perf-test-subscribers
+    instanceType: m7a.medium
+    desiredCapacity: 5
+    maxSize: 5
+    minSize: 0
+    labels: { role: tb-perf-test-subscribers }
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak'
+  - name: tb-additional
+    instanceType: m7a.large
+    desiredCapacity: 1
+    maxSize: 1
+    minSize: 0
+    labels: { role: tb-additional }
+    volumeSize: 20
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak'
