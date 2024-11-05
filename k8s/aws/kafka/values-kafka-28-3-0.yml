@@ -894,7 +894,7 @@ controller:
       - ReadWriteOnce
     ## @param controller.persistence.size PVC Storage Request for Kafka data volume
     ##
-    size: 8Gi
+    size: 30Gi
     ## @param controller.persistence.annotations Annotations for the PVC
     ##
     annotations: { }
@@ -2134,7 +2134,7 @@ metrics:
     ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
     ##
     nodeSelector:
-      role: kafka
+      role: tb-additional
     ## @param metrics.kafka.tolerations Tolerations for pod assignment
     ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
     ##

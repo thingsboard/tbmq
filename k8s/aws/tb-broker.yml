@@ -22,6 +22,7 @@ metadata:
 spec:
   serviceName: tb-broker
   replicas: 2
+  podManagementPolicy: "Parallel"
   selector:
     matchLabels:
       app: tb-broker
@@ -82,6 +83,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: DUMMY_VALUE_FOR_RESTART
+              value: "100000000"
             - name: SECURITY_MQTT_BASIC_ENABLED
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
@@ -94,8 +97,6 @@ spec:
               value: "1883"
             - name: LISTENER_SSL_BIND_PORT
               value: "8883"
-            - name: STATS_ENABLED
-              value: "true"
             - name: STATS_PRINT_INTERVAL_MS
               value: "60000"
             - name: METRICS_ENDPOINTS_EXPOSE
@@ -116,6 +117,8 @@ spec:
                 name: tb-broker-db-config
             - configMapRef:
                 name: tb-broker-cache-config
+            - configMapRef:
+                name: tb-broker-yml-config
           volumeMounts:
             - mountPath: /config
               name: tb-broker-config

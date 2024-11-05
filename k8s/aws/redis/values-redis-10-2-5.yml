@@ -408,7 +408,7 @@ persistence:
     - ReadWriteOnce
   ## @param persistence.size Size of data volume
   ##
-  size: 1Gi
+  size: 8Gi
   ## @param persistence.matchLabels Persistent Volume selectors
   ## https://kubernetes.io/docs/concepts/storage/persistent-volumes/#selector
   ##
@@ -611,11 +611,11 @@ redis:
   resources: { }
   #  resources:
   #    requests:
-  #      cpu: 1
-  #      memory: 1Gi
+  #      cpu: 0.7
+  #      memory: 6Gi
   #    limits:
-  #      cpu: 1
-  #      memory: 1Gi
+  #      cpu: 0.7
+  #      memory: 6Gi
   ## @param redis.schedulerName Use an alternate scheduler, e.g. "stork".
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
   ##
@@ -928,7 +928,7 @@ cluster:
 metrics:
   ## @param metrics.enabled Start a side-car prometheus exporter
   ##
-  enabled: true
+  enabled: false
   ## @param metrics.image.registry [default: REGISTRY_NAME] Redis&reg; exporter image registry
   ## @param metrics.image.repository [default: REPOSITORY_NAME/redis-exporter] Redis&reg; exporter image name
   ## @skip metrics.image.tag Redis&reg; exporter image tag
