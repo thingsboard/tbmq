@@ -84,7 +84,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: DUMMY_VALUE_FOR_RESTART
-              value: "100000000"
+              value: "10000000"
             - name: SECURITY_MQTT_BASIC_ENABLED
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED

@@ -26,7 +26,7 @@ metadata:
 
 managedNodeGroups:
   - name: managed
-    instanceType: m7a.2xlarge
+    instanceType: m7a.4xlarge
     desiredCapacity: 1
     maxSize: 1
     minSize: 0
