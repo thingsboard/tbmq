@@ -27,8 +27,8 @@ metadata:
 managedNodeGroups:
   - name: managed
     instanceType: m7a.2xlarge
-    desiredCapacity: 2
-    maxSize: 2
+    desiredCapacity: 1
+    maxSize: 1
     minSize: 0
     labels: { role: tbmq }
     volumeSize: 20

@@ -62,7 +62,7 @@ data:
             </encoder>
         </appender>
     
-          <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
+          <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="TRACE"/>
           <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="INFO"/>
     
         <root level="INFO">
@@ -149,7 +149,8 @@ data:
   MQTT_PERSISTENT_BUFFERED_MSG_COUNT: "5"
 
   REDIS_LETTUCE_CMDS_AUTO_FLUSH_ENABLED: "false"
-  REDIS_LETTUCE_BUFFERED_CMDS_COUNT: "15"
+  REDIS_LETTUCE_BUFFERED_CMDS_COUNT: "250"
   REDIS_LETTUCE_FLUSH_INTERVAL_MS: "5"
 
   TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS: "90000"
+  TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS: "70000"
