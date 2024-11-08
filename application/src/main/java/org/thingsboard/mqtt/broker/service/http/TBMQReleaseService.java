@@ -70,10 +70,13 @@ public class TBMQReleaseService extends AbstractServiceProvider {
                 .build();
     }
 
-    @Scheduled(initialDelay = 1, fixedRate = VERSION_CHECK_INTERVAL, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(initialDelay = 5, fixedRate = VERSION_CHECK_INTERVAL, timeUnit = TimeUnit.SECONDS)
     public void scheduleVersionCheck() {
         try {
             if (!isCurrentNodeShouldCheckAvailableVersion()) {
+                return;
+            }
+            if (!retainedMsgListenerService.isInitialized()) {
                 return;
             }
             log.info("Executing get latest version of TBMQ release from GitHub.");
