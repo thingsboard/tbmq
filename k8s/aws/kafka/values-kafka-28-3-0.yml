@@ -631,10 +631,10 @@ controller:
   resources:
     requests:
       cpu: 1.5
-      memory: 6Gi
+      memory: 2Gi
     limits:
       cpu: 1.5
-      memory: 6Gi
+      memory: 2Gi
   ## Kafka pods' Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   ## @param controller.podSecurityContext.enabled Enable security context for the pods
@@ -985,7 +985,7 @@ broker:
   existingSecretConfig: ""
   ## @param broker.heapOpts Kafka Java Heap size for broker-only nodes
   ##
-  heapOpts: -Xmx4096m -Xms4096m
+  heapOpts: -Xmx2048m -Xms2048m
   ## @param broker.command Override Kafka container command
   ##
   command: [ ]

@@ -23,7 +23,7 @@ metadata:
     name: tb-broker-config
 data:
   conf: |
-    export JAVA_OPTS="$JAVA_OPTS -Xmx42g -Xms42g -Xss320k -XX:+AlwaysPreTouch"
+    export JAVA_OPTS="$JAVA_OPTS -Xmx24g -Xms24g -Xss320k -XX:+AlwaysPreTouch"
     export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
     export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
     export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-heapdump.bin"
@@ -155,9 +155,9 @@ data:
   MQTT_PERSISTENT_BUFFERED_MSG_COUNT: "5"
 
   REDIS_LETTUCE_CMDS_AUTO_FLUSH_ENABLED: "false"
-  REDIS_LETTUCE_BUFFERED_CMDS_COUNT: "250"
+  REDIS_LETTUCE_BUFFERED_CMDS_COUNT: "150"
   REDIS_LETTUCE_FLUSH_INTERVAL_MS: "5"
 
   TB_CLIENT_SESSION_EVENT_BATCH_WAIT_MS: "90000"
-  TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS: "70000"
+  TB_CLIENT_SESSION_EVENT_MAX_PENDING_REQUESTS: "80000"
   TB_CLIENT_SESSION_EVENT_CONSUMERS_COUNT: "3"
