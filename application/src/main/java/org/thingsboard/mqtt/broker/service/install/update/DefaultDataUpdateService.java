@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -55,6 +56,10 @@ public class DefaultDataUpdateService implements DataUpdateService {
             case "1.4.0":
                 log.info("Updating data from version 1.4.0 to 2.0.0 ...");
                 createWsClientSettings();
+                break;
+            case "2.0.0":
+                log.info("Updating data from version 2.0.0 to 2.0.1 ...");
+                updateWsClientSettings();
                 break;
             default:
                 throw new RuntimeException("Unable to update data, unsupported fromVersion: " + fromVersion);
@@ -100,7 +105,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     }
 
     private void createConnectivitySettings() {
-        if (adminSettingsService.findAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY) == null) {
+        if (getAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY) == null) {
             log.info("Creating connectivity settings ...");
             adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
             log.info("Connectivity settings created!");
@@ -108,11 +113,45 @@ public class DefaultDataUpdateService implements DataUpdateService {
     }
 
     private void createWsClientSettings() {
-        if (adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY) == null) {
-            log.info("Creating WebSocket client settings ...");
-            adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
-            log.info("WebSocket client settings created!");
+        if (getAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY) == null) {
+            saveWsClientSettings();
         }
     }
 
+    private void saveWsClientSettings() {
+        log.info("Creating WebSocket client settings ...");
+        adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
+        log.info("WebSocket client settings created!");
+    }
+
+    private void updateWsClientSettings() {
+        AdminSettings wsSettings = getAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        if (wsSettings == null) {
+            saveWsClientSettings();
+            return;
+        }
+        JsonNode jsonValue = wsSettings.getJsonValue();
+        if (jsonValue == null) {
+            log.info("Creating correct JSON value for WebSocket client settings ...");
+            wsSettings.setJsonValue(WebSocketClientSettings.createWsClientJsonValue());
+            adminSettingsService.saveAdminSettings(wsSettings);
+            log.info("WebSocket client settings updated with correct JSON value!");
+            return;
+        }
+        JsonNode maxMessages = jsonValue.get("maxMessages");
+        if (maxMessages == null || maxMessages.isNull()) {
+            log.info("Setting 'maxMessages' value for WebSocket client settings ...");
+
+            ObjectNode objectNode = (ObjectNode) jsonValue;
+            objectNode.put("maxMessages", 1000);
+
+            wsSettings.setJsonValue(objectNode);
+            adminSettingsService.saveAdminSettings(wsSettings);
+            log.info("WebSocket client settings updated with 'maxMessages' value!");
+        }
+    }
+
+    private AdminSettings getAdminSettingsByKey(String key) {
+        return adminSettingsService.findAdminSettingsByKey(key);
+    }
 }
