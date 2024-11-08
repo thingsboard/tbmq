@@ -53,10 +53,10 @@ import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
 import { WebSocketSettings } from '@shared/models/settings.models';
 import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { Store } from "@ngrx/store";
-import { AppState } from "@core/core.state";
-import { TranslateService } from "@ngx-translate/core";
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'

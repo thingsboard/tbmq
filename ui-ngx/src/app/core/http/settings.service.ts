@@ -26,8 +26,8 @@ import {
   defaultConnectivitySettings,
   SecuritySettings, WebSocketSettings, webSocketSettingsKey
 } from '@shared/models/settings.models';
-import { ConfigService } from "@core/http/config.service";
-import { BrokerConfig } from "@shared/models/config.model";
+import { ConfigService } from '@core/http/config.service';
+import { BrokerConfig } from '@shared/models/config.model';
 
 @Injectable({
   providedIn: 'root'
