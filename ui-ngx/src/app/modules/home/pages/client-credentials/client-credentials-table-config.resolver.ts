@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ActivatedRoute, ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import {
   cellWithIcon,
   DateEntityTableColumn,
@@ -57,7 +57,7 @@ import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
 
 @Injectable()
-export class ClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<ClientCredentials>> {
+export class ClientCredentialsTableConfigResolver {
 
   clientCredentialsFilterConfig: ClientCredentialsFilterConfig = {};
   private readonly config: EntityTableConfig<ClientCredentials> = new EntityTableConfig<ClientCredentials>();

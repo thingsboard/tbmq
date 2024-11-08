@@ -26,13 +26,13 @@ import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared
 import { SharedSubscription } from '@shared/models/shared-subscription.model';
 import { SharedSubscriptionComponent } from '@home/pages/shared-subscription-applications/shared-subscription.component';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
-import { ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
 
 @Injectable()
-export class SharedSubscriptionsTableConfigResolver implements Resolve<EntityTableConfig<SharedSubscription>> {
+export class SharedSubscriptionsTableConfigResolver {
 
   private readonly config: EntityTableConfig<SharedSubscription> = new EntityTableConfig<SharedSubscription>();
 
