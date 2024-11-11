@@ -52,6 +52,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -237,7 +238,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
         verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
     }
 
@@ -256,7 +257,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
         verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
     }
 
@@ -276,7 +277,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .build();
         persistedDeviceActorMessageProcessor.deliverPersistedMsg(devicePublishMsg);
 
-        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
         verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
 
         assertEquals(1, persistedDeviceActorMessageProcessor.getInFlightPacketIds().size());
@@ -298,7 +299,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
@@ -315,7 +316,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
@@ -335,7 +336,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
 
-        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any());
+        verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
 
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().contains(1));
     }
