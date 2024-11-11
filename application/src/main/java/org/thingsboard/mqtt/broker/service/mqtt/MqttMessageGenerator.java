@@ -25,6 +25,7 @@ import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import io.netty.handler.codec.mqtt.MqttSubAckMessage;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 
@@ -49,6 +50,8 @@ public interface MqttMessageGenerator {
     MqttMessage createPubCompMsg(int msgId, MqttReasonCodes.PubComp code);
 
     MqttPublishMessage createPubMsg(PublishMsg pubMsg);
+
+    MqttPublishMessage createPubMsg(DevicePublishMsg pubMsg, boolean isDup);
 
     MqttPublishMessage createPubMsg(PublishMsgProto publishMsgProto, int qos, boolean retain, String topicName, int packetId, MqttProperties properties);
 

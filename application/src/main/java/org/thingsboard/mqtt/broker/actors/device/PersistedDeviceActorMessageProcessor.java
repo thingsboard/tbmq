@@ -40,7 +40,6 @@ import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.dto.PacketIdDto;
 import org.thingsboard.mqtt.broker.dto.SharedSubscriptionPublishPacket;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
-import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -176,11 +175,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                     inFlightPacketIds.add(persistedMessage.getPacketId());
                 }
                 lastPersistedMsgSentPacketId = persistedMessage.getPacketId();
-                PublishMsg pubMsg = getPublishMsg(persistedMessage, isDup);
                 if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
-                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(pubMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
+                    MqttPropertiesUtil.addMsgExpiryIntervalToProps(persistedMessage.getProperties(), msgExpiryResult.getMsgExpiryInterval());
                 }
-                publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
+                publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, persistedMessage, isDup);
                 break;
             case PUBREL:
                 publishMsgDeliveryService.sendPubRelMsgToClient(sessionCtx, persistedMessage.getPacketId());
@@ -213,11 +211,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
         inFlightPacketIds.add(publishMsg.getPacketId());
         try {
-            PublishMsg pubMsg = getPublishMsg(publishMsg, false);
             if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                 MqttPropertiesUtil.addMsgExpiryIntervalToProps(publishMsg.getProperties(), msgExpiryResult.getMsgExpiryInterval());
             }
-            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, pubMsg);
+            publishMsgDeliveryService.sendPublishMsgToClient(sessionCtx, publishMsg, false);
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
             log.warn("[{}] Failed to send PUBLISH msg", clientId, e);
@@ -230,18 +227,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 sessionCtx.getSessionId(),
                 new DisconnectReason(
                         DisconnectReasonType.ON_ERROR, message)));
-    }
-
-    private PublishMsg getPublishMsg(DevicePublishMsg publishMsg, boolean isDup) {
-        return PublishMsg.builder()
-                .packetId(publishMsg.getPacketId())
-                .topicName(publishMsg.getTopic())
-                .payload(publishMsg.getPayload())
-                .qosLevel(publishMsg.getQos())
-                .isDup(isDup)
-                .properties(publishMsg.getProperties())
-                .isRetained(publishMsg.isRetained())
-                .build();
     }
 
     public void processPacketAcknowledge(PacketAcknowledgedEventMsg msg) {
