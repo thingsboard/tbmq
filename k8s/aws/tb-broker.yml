@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 1
+  replicas: 2
   podManagementPolicy: "Parallel"
   selector:
     matchLabels:
@@ -64,7 +64,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:2.0.0
+          image: thingsboard/tbmq-node:2.0.1-SNAPSHOT
           ports:
             - containerPort: 8083
               name: http
