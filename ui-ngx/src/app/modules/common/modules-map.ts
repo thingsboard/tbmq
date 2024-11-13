@@ -68,7 +68,7 @@ import * as TranslateCore from '@ngx-translate/core';
 import * as TbCore from '@core/public-api';
 import * as TbShared from '@shared/public-api';
 import * as TbHomeComponents from '@home/components/public-api';
-import * as _moment from 'moment';
+import _moment from 'moment';
 import * as DragDropModule from "@angular/cdk/drag-drop";
 import * as HttpClientModule from "@angular/common/http";
 

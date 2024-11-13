@@ -14,19 +14,19 @@
 /// limitations under the License.
 ///
 
-// This file is required by karma.conf.js and loads recursively all the .spec and framework files
+import { TranslateLoader } from '@ngx-translate/core';
+import { Observable } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
-import 'zone.js/testing';
-import { getTestBed } from '@angular/core/testing';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting
-} from '@angular/platform-browser-dynamic/testing';
+@Injectable({ providedIn: 'root' })
+export class TranslateDefaultLoader implements TranslateLoader {
 
-// First, initialize the Angular testing environment.
-getTestBed().initTestEnvironment(
-    BrowserDynamicTestingModule,
-    platformBrowserDynamicTesting(), {
-      teardown: { destroyAfterEach: false }
-    }
-);
+  constructor(private http: HttpClient) {
+
+  }
+
+  getTranslation(lang: string): Observable<object> {
+    return this.http.get(`/assets/locale/locale.constant-${lang}.json`);
+  }
+}

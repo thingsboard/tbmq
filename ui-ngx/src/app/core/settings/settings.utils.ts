@@ -16,7 +16,7 @@
 
 import { environment as env } from '@env/environment';
 import { TranslateService } from '@ngx-translate/core';
-import * as _moment from 'moment';
+import _moment from 'moment';
 
 export function updateUserLang(translate: TranslateService, userLang: string) {
   let targetLang = userLang;
