@@ -154,10 +154,7 @@
     },
     "resolutions": {
         "@types/react": "18.3.10",
-        "rc-virtual-list": "3.5.2",
         "ace-builds": "1.36.2",
-        "tinymce": "6.8.5",
-        "rollup": "4.22.4",
-        "@babel/core": "7.25.2"
+        "tinymce": "6.8.5"
     }
 }
