@@ -32,7 +32,8 @@ const defineTbVariablesPlugin: Plugin = {
       /* 'locale.constant-LANG_CODE[_REGION_CODE].json', e.g. locale.constant-es.json or locale.constant-zh_CN.json*/
       langs.push(item.name.slice(item.name.lastIndexOf("-") + 1, -5));
     });
-    options.define.TB_VERSION = JSON.stringify(packageJson.version);
+    console.log("packageJson: ", packageJson);
+    options.define.TBMQ_VERSION = JSON.stringify(packageJson.version) || 'unknown';
     options.define.SUPPORTED_LANGS = JSON.stringify(langs);
     options.define.ngJitMode = 'true';
   },

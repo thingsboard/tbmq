@@ -19,7 +19,7 @@ import { Inject, Injectable } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { DOCUMENT } from '@angular/common';
 import { WINDOW } from '@core/services/window.service';
-import { Tokenizer, marked } from 'marked';
+import { Tokens, marked, TokenizerObject} from 'marked';
 import { Clipboard } from '@angular/cdk/clipboard';
 import { ConnectivitySettings, defaultConnectivitySettings } from '@shared/models/settings.models';
 
@@ -32,7 +32,7 @@ const targetBlankBlock = '{:target=&quot;_blank&quot;}';
 @Injectable({
   providedIn: 'root'
 })
-export class MarkedOptionsService extends MarkedOptions {
+export class MarkedOptionsService implements MarkedOptions {
 
   renderer = new MarkedRenderer();
   headerIds = true;
@@ -51,10 +51,9 @@ export class MarkedOptionsService extends MarkedOptions {
               private clipboardService: Clipboard,
               @Inject(WINDOW) private readonly window: Window,
               @Inject(DOCUMENT) private readonly document: Document) {
-    super();
     // @ts-ignore
-    const tokenizer: Tokenizer = {
-      autolink(src: string, mangle: (cap: string) => string): marked.Tokens.Link {
+    const tokenizer: TokenizerObject = {
+      autolink(src: string): Tokens.Link {
         if (src.endsWith(copyCodeBlock)) {
           return undefined;
         } else {
@@ -62,7 +61,7 @@ export class MarkedOptionsService extends MarkedOptions {
           return false;
         }
       },
-      url(src: string, mangle: (cap: string) => string): marked.Tokens.Link {
+      url(src: string): Tokens.Link {
         if (src.endsWith(copyCodeBlock)) {
           return undefined;
         } else {

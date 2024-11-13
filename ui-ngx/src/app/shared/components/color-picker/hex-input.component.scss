@@ -13,35 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../scss/constants";
 
-.tb-color-picker-panel {
-  width: 342px;
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 24px);
-  min-height: 100%;
-  @media #{$mat-sm} {
-    width: 578px;
-  }
-  .tb-color-picker-title {
-    font-size: 16px;
-    font-weight: 500;
-    line-height: 24px;
-    letter-spacing: 0.25px;
-    color: rgba(0, 0, 0, 0.87);
-  }
-  .tb-color-picker {
-    padding-right: 4px;
-    overflow-y: scroll;
-  }
-  .tb-color-picker-panel-buttons {
-    height: 60px;
-    padding: 8px 8px 0 0;
+:host {
+  .hex-input-container {
     display: flex;
-    flex-direction: row;
-    gap: 16px;
-    justify-content: space-between;
-    align-items: flex-end;
+    gap: 8px;
+  }
+  .hex-input {
+    max-width: 190px;
+  }
+  .alpha-input {
+    min-width: 60px;
+    max-width: 60px;
+  }
+
+  ::ng-deep {
+    .mdc-text-field--filled, .mat-mdc-form-field-focus-overlay {
+      &:before {
+        background-color: transparent !important;
+      }
+    }
+    .mat-mdc-form-field-icon-prefix, .mdc-line-ripple, .copy-button {
+      opacity: 0.4;
+    }
+    .alpha-input {
+      .mat-mdc-text-field-wrapper {
+        padding-left: 0;
+      }
+    }
+
   }
 }
+
+

@@ -63,7 +63,7 @@ import { MatListModule } from '@angular/material/list';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { NgxHmCarouselModule } from 'ngx-hm-carousel';
+import { NgxHmCarouselComponent, NgxHmCarouselDynamicDirective, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { UserMenuComponent } from '@shared/components/user-menu.component';
 import { NospacePipe } from '@shared/pipe/nospace.pipe';
 import { TranslateModule } from '@ngx-translate/core';
@@ -72,7 +72,7 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { MillisecondsToTimeStringPipe } from '@shared/pipe/milliseconds-to-time-string.pipe';
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ClipboardModule } from 'ngx-clipboard';
-import { MarkdownModule, MarkedOptions } from 'ngx-markdown';
+import { MarkdownModule, MARKED_OPTIONS } from 'ngx-markdown';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons.component';
@@ -126,6 +126,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
 import {
   EditClientCredentialsButtonComponent
 } from '@shared/components/button/edit-client-credentials-button.component';
+import { HexInputComponent } from '@shared/components/color-picker/hex-input.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -213,6 +214,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     JsonObjectEditComponent,
     ColorInputComponent,
     ColorPickerPanelComponent,
+    HexInputComponent,
     TbPopoverDirective,
     ColorPickerDialogComponent,
     HelpMarkdownComponent,
@@ -263,14 +265,16 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     FormsModule,
     ReactiveFormsModule,
     OverlayModule,
-    NgxHmCarouselModule,
+    NgxHmCarouselComponent,
+    NgxHmCarouselDynamicDirective,
+    NgxHmCarouselItemDirective,
     DndModule,
     ColorPickerModule,
     // ngx-markdown
     MarkdownModule.forRoot({
       sanitize: SecurityContext.NONE,
       markedOptions: {
-        provide: MarkedOptions,
+        provide: MARKED_OPTIONS,
         useFactory: MarkedOptionsFactory,
         deps: [MarkedOptionsService]
       }
@@ -332,7 +336,9 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     FormsModule,
     ReactiveFormsModule,
     OverlayModule,
-    NgxHmCarouselModule,
+    NgxHmCarouselComponent,
+    NgxHmCarouselDynamicDirective,
+    NgxHmCarouselItemDirective,
     DndModule,
     MarkdownModule,
     ConfirmDialogComponent,
@@ -374,6 +380,7 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     JsonObjectEditComponent,
     ColorInputComponent,
     ColorPickerPanelComponent,
+    HexInputComponent,
     TbPopoverDirective,
     ColorPickerDialogComponent,
     HelpMarkdownComponent,

@@ -619,3 +619,11 @@ export const randomStringFromRegex = (pattern: string): string => {
   randexp.max = 10;
   return randexp.gen().replace(/[!'#$%^&*()+\-=?:;"№`ʼ~,<>|{}]/g, '');
 }
+
+export const unwrapModule = (module: any) : any => {
+  if ('default' in module && Object.keys(module).length === 1) {
+    return module.default;
+  } else {
+    return module;
+  }
+};
