@@ -47,8 +47,8 @@ managedNodeGroups:
       publicKeyName: 'dlandiak' # Note, use your own public key name here
   - name: tbmq-redis
     instanceType: r7a.large
-    desiredCapacity: 6
-    maxSize: 6
+    desiredCapacity: 10
+    maxSize: 10
     minSize: 0
     labels: { role: redis }
     volumeSize: 20
@@ -56,7 +56,7 @@ managedNodeGroups:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here
   - name: tb-perf-test-publishers
-    instanceType: c7a.2xlarge
+    instanceType: c7a.4xlarge
     desiredCapacity: 1
     maxSize: 1
     minSize: 0
@@ -66,7 +66,7 @@ managedNodeGroups:
       allow: true
       publicKeyName: 'dlandiak'
   - name: tb-perf-test-subscribers
-    instanceType: c7a.2xlarge
+    instanceType: c7a.4xlarge
     desiredCapacity: 1
     maxSize: 1
     minSize: 0
