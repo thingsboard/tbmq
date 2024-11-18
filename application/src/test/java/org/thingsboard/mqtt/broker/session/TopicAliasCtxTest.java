@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.session;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -24,8 +25,15 @@ import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class TopicAliasCtxTest {
 
@@ -329,6 +337,34 @@ public class TopicAliasCtxTest {
 
         int topicAlias = topicAliasCtx.getNextTopicAlias("test/topic/1");
         Assert.assertEquals(2, topicAlias);
+    }
+
+    @Test
+    public void givenTopicAlias_whenGetNextTopicAliasConcurrently_thenReturnExpectedResult() throws InterruptedException {
+        topicAliasCtx = new TopicAliasCtx(true, 100);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+        CountDownLatch latch = new CountDownLatch(10);
+        List<Integer> allTopicAliases = new CopyOnWriteArrayList<>();
+        List<Integer> expectedTopicAliases = new ArrayList<>();
+
+        for (int i = 0; i < 10; i++) {
+            expectedTopicAliases.add(i + 1);
+            executorService.submit(() -> {
+                int topicAlias = topicAliasCtx.getNextTopicAlias(RandomStringUtils.randomAlphabetic(10));
+                allTopicAliases.add(topicAlias);
+                latch.countDown();
+            });
+        }
+        boolean awaitResult = latch.await(10, TimeUnit.SECONDS);
+
+        Assert.assertTrue(awaitResult);
+        Assert.assertEquals(10, allTopicAliases.size());
+        Assert.assertEquals(10, expectedTopicAliases.size());
+        Assert.assertTrue(allTopicAliases.containsAll(expectedTopicAliases));
+
+        executorService.shutdownNow();
     }
 
     @Test

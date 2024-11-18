@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Getter
@@ -40,6 +41,8 @@ public class TopicAliasCtx {
     private final int maxTopicAlias;
     private final ConcurrentMap<Integer, String> clientMappings;
     private final ConcurrentMap<String, Integer> serverMappings;
+    private final AtomicInteger clientMappingsCount;
+    private final AtomicInteger serverMappingsCount;
 
     public TopicAliasCtx(boolean enabled, int maxTopicAlias) {
         this(enabled, maxTopicAlias, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
@@ -52,6 +55,8 @@ public class TopicAliasCtx {
         this.maxTopicAlias = maxTopicAlias;
         this.clientMappings = clientMappings;
         this.serverMappings = serverMappings;
+        this.clientMappingsCount = clientMappings != null ? new AtomicInteger(clientMappings.size()) : null;
+        this.serverMappingsCount = serverMappings != null ? new AtomicInteger(serverMappings.size()) : null;
     }
 
     public String getTopicNameByAlias(PublishMsg publishMsg) {
@@ -148,12 +153,12 @@ public class TopicAliasCtx {
 
     private void saveMapping(int topicAlias, String topicName) {
         clientMappings.put(topicAlias, topicName);
+        clientMappingsCount.incrementAndGet();
     }
 
     int getNextTopicAlias(String topicName) {
         if (isMoreTopicAliasAvailable()) {
-            int lastTopicAlias = serverMappings.size();
-            int nextTopicAlias = lastTopicAlias + 1;
+            int nextTopicAlias = serverMappingsCount.incrementAndGet();
             serverMappings.put(topicName, nextTopicAlias);
             return nextTopicAlias;
         }
@@ -165,6 +170,6 @@ public class TopicAliasCtx {
     }
 
     private int currentTopicAliasesCount() {
-        return clientMappings.size() + serverMappings.size();
+        return clientMappingsCount.get() + serverMappingsCount.get();
     }
 }
