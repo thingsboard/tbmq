@@ -54,7 +54,7 @@ public class RetainedMsgProcessorImpl implements RetainedMsgProcessor {
 
     private RetainedMsg newRetainedMsg(PublishMsg publishMsg) {
         MqttProperties properties = MqttPropertiesUtil.getMqttProperties(publishMsg);
-        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQosLevel(), properties);
+        return new RetainedMsg(publishMsg.getTopicName(), publishMsg.getPayload(), publishMsg.getQos(), properties);
     }
 
 }

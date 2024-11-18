@@ -60,7 +60,7 @@ public class ProtoConverter {
         QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
-                .setQos(publishMsg.getQosLevel())
+                .setQos(publishMsg.getQos())
                 .setRetain(publishMsg.isRetained())
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setClientId(sessionInfo.getClientInfo().getClientId());
@@ -155,7 +155,7 @@ public class ProtoConverter {
                 .payload(msg.getPayload().toByteArray())
                 .properties(properties)
                 .packetId(packetId)
-                .qosLevel(qos)
+                .qos(qos)
                 .isDup(isDup)
                 .build();
     }

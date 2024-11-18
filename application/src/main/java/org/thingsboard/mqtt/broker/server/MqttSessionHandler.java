@@ -223,7 +223,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
                 rateLimitBatchProcessor.addMessage(mqttPublishMsg,
                         mqttMsg -> clientMqttActorManager.processMqttMsg(clientId, mqttMsg),
                         mqttMsg -> {
-                            processMsgOnRateLimits(mqttMsg.getPublishMsg().getPacketId(), mqttMsg.getPublishMsg().getQosLevel(), "Total rate limits detected");
+                            processMsgOnRateLimits(mqttMsg.getPublishMsg().getPacketId(), mqttMsg.getPublishMsg().getQos(), "Total rate limits detected");
                             mqttMsg.release();
                         });
                 return;

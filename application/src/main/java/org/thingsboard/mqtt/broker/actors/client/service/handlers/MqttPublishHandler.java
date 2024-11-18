@@ -112,10 +112,10 @@ public class MqttPublishHandler {
 
         MqttMsgWrapper mqttMsgWrapper = null; // for QoS 0
         try {
-            if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQosLevel()) {
+            if (MqttQoS.EXACTLY_ONCE.value() == publishMsg.getQos()) {
                 mqttMsgWrapper = processExactlyOnce(ctx, msgId);
                 if (ensureMsgPersistedAwaitingPubRel(ctx, actorRef, mqttMsgWrapper)) return;
-            } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQosLevel()) {
+            } else if (MqttQoS.AT_LEAST_ONCE.value() == publishMsg.getQos()) {
                 mqttMsgWrapper = processAtLeastOnce(ctx, msgId);
             }
         } catch (FullMsgQueueException e) {
@@ -180,9 +180,9 @@ public class MqttPublishHandler {
 
     private void handleMqtt5ErrorResponse(ClientSessionCtx ctx, PublishMsg publishMsg,
                                           MqttReasonCodes.PubRec pubRecCode, MqttReasonCodes.PubAck pubAckCode) {
-        if (publishMsg.getQosLevel() == 2) {
+        if (publishMsg.getQos() == 2) {
             pushPubRecErrorResponseWithReasonCode(ctx, publishMsg, pubRecCode);
-        } else if (publishMsg.getQosLevel() == 1) {
+        } else if (publishMsg.getQos() == 1) {
             pushPubAckErrorResponseWithReasonCode(ctx, publishMsg, pubAckCode);
         } else {
             // QoS=0 - do nothing
@@ -218,7 +218,7 @@ public class MqttPublishHandler {
                     if (isTraceEnabled) {
                         log.trace("[{}][{}] Successfully acknowledged msg: {}", ctx.getClientId(), ctx.getSessionId(), publishMsg.getPacketId());
                     }
-                    sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQosLevel()));
+                    sendPubResponseEventToActor(actorRef, ctx.getSessionId(), mqttMsgWrapper, MqttQoS.valueOf(publishMsg.getQos()));
                 });
             }
 

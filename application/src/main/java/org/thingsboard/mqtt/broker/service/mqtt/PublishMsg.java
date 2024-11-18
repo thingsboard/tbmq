@@ -33,17 +33,17 @@ public class PublishMsg {
     private final String topicName;
     private final byte[] payload;
     private final ByteBuf byteBuf;
-    private final int qosLevel;
+    private final int qos;
     private final boolean isRetained;
     private final boolean isDup;
     private final MqttProperties properties;
 
-    public PublishMsg(int packetId, String topicName, byte[] payload, int qosLevel, boolean isRetained, boolean isDup) {
+    public PublishMsg(int packetId, String topicName, byte[] payload, int qos, boolean isRetained, boolean isDup) {
         this.packetId = packetId;
         this.topicName = topicName;
         this.payload = payload;
         this.byteBuf = Unpooled.wrappedBuffer(payload);
-        this.qosLevel = qosLevel;
+        this.qos = qos;
         this.isRetained = isRetained;
         this.isDup = isDup;
         this.properties = MqttProperties.NO_PROPERTIES;

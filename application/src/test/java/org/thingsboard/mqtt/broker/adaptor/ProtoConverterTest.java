@@ -367,7 +367,7 @@ public class ProtoConverterTest {
         PublishMsg publishMsg = PublishMsg.builder()
                 .topicName("topic")
                 .packetId(1)
-                .qosLevel(2)
+                .qos(2)
                 .properties(properties)
                 .payload("p".getBytes(StandardCharsets.UTF_8))
                 .build();
@@ -391,7 +391,7 @@ public class ProtoConverterTest {
 
         assertEquals("t", publishMsg.getTopicName());
         assertEquals(1, publishMsg.getPacketId());
-        assertEquals(1, publishMsg.getQosLevel());
+        assertEquals(1, publishMsg.getQos());
         assertNotNull(publishMsg.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
         assertNull(publishMsg.getProperties().getProperty(BrokerConstants.CONTENT_TYPE_PROP_ID));
         assertNull(publishMsg.getProperties().getProperty(BrokerConstants.SUBSCRIPTION_IDENTIFIER_PROP_ID));

@@ -50,10 +50,10 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
@@ -224,7 +224,7 @@ public class NettyMqttConverterTest {
         PublishMsg publishMsg = mqttPublishMsg.getPublishMsg();
         Assert.assertEquals(1, publishMsg.getPacketId());
         Assert.assertEquals("topic", publishMsg.getTopicName());
-        Assert.assertEquals(MqttQoS.AT_LEAST_ONCE.value(), publishMsg.getQosLevel());
+        Assert.assertEquals(MqttQoS.AT_LEAST_ONCE.value(), publishMsg.getQos());
         Assert.assertFalse(publishMsg.isRetained());
         Assert.assertFalse(publishMsg.isDup());
     }

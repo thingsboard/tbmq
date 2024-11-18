@@ -30,8 +30,8 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -107,7 +107,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         PublishMsgProto publishMsgProto = ProtoConverter.convertToPublishMsgProto(sessionInfo, publishMsg);
         producerStats.incrementTotal();
         tbMessageStatsReportClient.reportStats(INCOMING_MSGS);
-        tbMessageStatsReportClient.reportClientSendStats(sessionInfo.getClientId(), publishMsg.getQosLevel());
+        tbMessageStatsReportClient.reportClientSendStats(sessionInfo.getClientId(), publishMsg.getQos());
         callback = statsManager.wrapTbQueueCallback(callback, producerStats);
 
         DefaultTbQueueMsgHeaders headers = createHeaders(publishMsg);
