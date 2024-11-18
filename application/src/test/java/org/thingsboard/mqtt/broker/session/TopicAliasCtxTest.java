@@ -19,6 +19,7 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.Assert;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -129,6 +130,21 @@ public class TopicAliasCtxTest {
     }
 
     @Test
+    public void givenDevicePubMsgWithSmallTopic_whenCreateDevicePublishMsgUsingTopicAlias_thenReturnSamePubMsg() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(Map.of(1, "topic123")), null);
+
+        DevicePublishMsg publishMsg = DevicePublishMsg
+                .builder()
+                .topic("topic/1")
+                .properties(new MqttProperties())
+                .build();
+
+        DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
+
+        Assert.assertEquals(publishMsg, publishMsgUsingTopicAlias);
+    }
+
+    @Test
     public void givenPubMsgWithTopicAndMaxAllowedAliases_whenCreatePublishMsgUsingTopicAlias_thenReturnSamePubMsg() {
         topicAliasCtx = new TopicAliasCtx(true, 1, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("topic123", 1)));
 
@@ -139,6 +155,21 @@ public class TopicAliasCtxTest {
                 .build();
 
         PublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
+
+        Assert.assertEquals(publishMsg, publishMsgUsingTopicAlias);
+    }
+
+    @Test
+    public void givenDevicePubMsgWithTopicAndMaxAllowedAliases_whenCreateDevicePublishMsgUsingTopicAlias_thenReturnSamePubMsg() {
+        topicAliasCtx = new TopicAliasCtx(true, 1, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("topic123", 1)));
+
+        DevicePublishMsg publishMsg = DevicePublishMsg
+                .builder()
+                .topic("topic/qwerty")
+                .properties(new MqttProperties())
+                .build();
+
+        DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
 
         Assert.assertEquals(publishMsg, publishMsgUsingTopicAlias);
     }
@@ -162,6 +193,24 @@ public class TopicAliasCtxTest {
     }
 
     @Test
+    public void givenDevicePubMsgWithTopic_whenCreateDevicePublishMsgUsingTopicAlias_thenReturnUpdatedPubMsg() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("topic123", 1)));
+
+        DevicePublishMsg publishMsg = DevicePublishMsg
+                .builder()
+                .topic("topic/qwerty")
+                .properties(new MqttProperties())
+                .build();
+
+        DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
+
+        Assert.assertEquals("topic/qwerty", publishMsgUsingTopicAlias.getTopic());
+        int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
+        Assert.assertEquals(2, topicAlias);
+        Assert.assertEquals(2, topicAliasCtx.getServerMappings().size());
+    }
+
+    @Test
     public void givenPubMsgWithTopicAndExisingMapping_whenCreatePublishMsgUsingTopicAlias_thenReturnUpdatedPubMsgWithEmptyTopic() {
         topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("topic123456", 1)));
 
@@ -174,6 +223,24 @@ public class TopicAliasCtxTest {
         PublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
 
         Assert.assertEquals(BrokerConstants.EMPTY_STR, publishMsgUsingTopicAlias.getTopicName());
+        int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
+        Assert.assertEquals(1, topicAlias);
+        Assert.assertEquals(1, topicAliasCtx.getServerMappings().size());
+    }
+
+    @Test
+    public void givenDevicePubMsgWithTopicAndExisingMapping_whenCreateDevicePublishMsgUsingTopicAlias_thenReturnUpdatedPubMsgWithEmptyTopic() {
+        topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("topic123456", 1)));
+
+        DevicePublishMsg publishMsg = DevicePublishMsg
+                .builder()
+                .topic("topic123456")
+                .properties(new MqttProperties())
+                .build();
+
+        DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
+
+        Assert.assertEquals(BrokerConstants.EMPTY_STR, publishMsgUsingTopicAlias.getTopic());
         int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
         Assert.assertEquals(1, topicAlias);
         Assert.assertEquals(1, topicAliasCtx.getServerMappings().size());
