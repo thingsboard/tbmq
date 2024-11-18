@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -31,7 +32,6 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -324,7 +324,7 @@ public class ProtoConverterTest {
                 .build();
 
         DevicePublishMsg devicePublishMsg = ProtoConverter.protoToDevicePublishMsg(proto);
-        assertEquals("topic", devicePublishMsg.getTopic());
+        assertEquals("topic", devicePublishMsg.getTopicName());
         assertEquals(1, devicePublishMsg.getQos());
         assertEquals(PersistedPacketType.PUBLISH, devicePublishMsg.getPacketType());
         assertNull(devicePublishMsg.getProperties().getProperty(BrokerConstants.PAYLOAD_FORMAT_INDICATOR_PROP_ID));
@@ -344,7 +344,7 @@ public class ProtoConverterTest {
                 .payload("p".getBytes(StandardCharsets.UTF_8))
                 .packetType(PersistedPacketType.PUBREL)
                 .clientId("cli")
-                .topic("topic")
+                .topicName("topic")
                 .packetId(124)
                 .build();
 

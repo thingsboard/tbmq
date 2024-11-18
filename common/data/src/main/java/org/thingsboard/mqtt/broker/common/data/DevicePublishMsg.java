@@ -38,7 +38,7 @@ import java.util.List;
 public class DevicePublishMsg {
 
     private String clientId;
-    private String topic;
+    private String topicName;
     private Long time;
     private Integer qos;
     private Integer packetId;

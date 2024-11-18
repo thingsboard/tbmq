@@ -143,7 +143,7 @@ public class TopicAliasCtxTest {
 
         DevicePublishMsg publishMsg = DevicePublishMsg
                 .builder()
-                .topic("topic/1")
+                .topicName("topic/1")
                 .properties(new MqttProperties())
                 .build();
 
@@ -173,7 +173,7 @@ public class TopicAliasCtxTest {
 
         DevicePublishMsg publishMsg = DevicePublishMsg
                 .builder()
-                .topic("topic/qwerty")
+                .topicName("topic/qwerty")
                 .properties(new MqttProperties())
                 .build();
 
@@ -206,13 +206,13 @@ public class TopicAliasCtxTest {
 
         DevicePublishMsg publishMsg = DevicePublishMsg
                 .builder()
-                .topic("topic/qwerty")
+                .topicName("topic/qwerty")
                 .properties(new MqttProperties())
                 .build();
 
         DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
 
-        Assert.assertEquals("topic/qwerty", publishMsgUsingTopicAlias.getTopic());
+        Assert.assertEquals("topic/qwerty", publishMsgUsingTopicAlias.getTopicName());
         int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
         Assert.assertEquals(2, topicAlias);
         Assert.assertEquals(2, topicAliasCtx.getServerMappings().size());
@@ -242,13 +242,13 @@ public class TopicAliasCtxTest {
 
         DevicePublishMsg publishMsg = DevicePublishMsg
                 .builder()
-                .topic("topic123456")
+                .topicName("topic123456")
                 .properties(new MqttProperties())
                 .build();
 
         DevicePublishMsg publishMsgUsingTopicAlias = topicAliasCtx.createPublishMsgUsingTopicAlias(publishMsg, minTopicNameLengthForAliasReplacement);
 
-        Assert.assertEquals(BrokerConstants.EMPTY_STR, publishMsgUsingTopicAlias.getTopic());
+        Assert.assertEquals(BrokerConstants.EMPTY_STR, publishMsgUsingTopicAlias.getTopicName());
         int topicAlias = (int) publishMsgUsingTopicAlias.getProperties().getProperty(BrokerConstants.TOPIC_ALIAS_PROP_ID).value();
         Assert.assertEquals(1, topicAlias);
         Assert.assertEquals(1, topicAliasCtx.getServerMappings().size());

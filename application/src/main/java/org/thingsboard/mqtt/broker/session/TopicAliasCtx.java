@@ -95,9 +95,9 @@ public class TopicAliasCtx {
 
     public DevicePublishMsg createPublishMsgUsingTopicAlias(DevicePublishMsg publishMsg, int minTopicNameLengthForAliasReplacement) {
         if (enabled) {
-            boolean setEmptyTopic = updateTopicAlias(publishMsg.getTopic(), publishMsg.getProperties(), minTopicNameLengthForAliasReplacement);
+            boolean setEmptyTopic = updateTopicAlias(publishMsg.getTopicName(), publishMsg.getProperties(), minTopicNameLengthForAliasReplacement);
             if (setEmptyTopic) {
-                return publishMsg.toBuilder().topic(BrokerConstants.EMPTY_STR).build();
+                return publishMsg.toBuilder().topicName(BrokerConstants.EMPTY_STR).build();
             }
         }
         return publishMsg;
