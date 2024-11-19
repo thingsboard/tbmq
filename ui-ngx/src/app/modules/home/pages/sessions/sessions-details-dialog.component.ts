@@ -34,6 +34,7 @@ import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/mode
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
+  selectedTab?: number;
 }
 
 @Component({
@@ -54,6 +55,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   entityForm: UntypedFormGroup;
   connectionStateColor = connectionStateColor;
   showAppClientShouldBePersistentWarning: boolean;
+  selectedTab: number;
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
   clientCredentials = '';
@@ -76,6 +78,7 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   ngOnInit(): void {
     this.entity = this.data.session;
+    this.selectedTab = this.data.selectedTab || 0;
     this.showAppClientShouldBePersistentWarning = this.entity.clientType === ClientType.APPLICATION && this.entity.cleanStart && this.entity.sessionExpiryInterval === 0;
     this.buildForms(this.entity);
   }

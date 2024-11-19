@@ -66,7 +66,9 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.tableTitle = this.translate.instant('subscription.subscriptions');
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
+    this.rowPointer = true;
     this.defaultSortOrder = {property: 'clientId', direction: Direction.DESC};
+    this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity.clientId);
 
     this.columns.push(
       new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%',
@@ -226,8 +228,8 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     return actions;
   }
 
-  private showSessionDetails($event: Event, clientId: string) {
-    this.clientSessionService.openSessionDetailsDialog($event, clientId).subscribe(
+  private showSessionDetails($event: Event, clientId: string): boolean {
+    this.clientSessionService.openSessionDetailsDialog($event, clientId, {selectedTab: 1}).subscribe(
       (dialog) => {
         dialog.afterClosed().subscribe((res) => {
           if (res) {
@@ -238,5 +240,6 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
         });
       }
     );
+    return false;
   }
 }
