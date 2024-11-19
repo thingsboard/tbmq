@@ -35,7 +35,7 @@ export interface TimeInterval {
   value: number;
 }
 
-const MIN_INTERVAL = HOUR;
+const MIN_INTERVAL = MINUTE;
 const MAX_INTERVAL = 365 * 20 * DAY;
 
 const MIN_LIMIT = 7;
