@@ -17,13 +17,10 @@ package org.thingsboard.mqtt.broker.cache;
 
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScriptOutputType;
-import io.lettuce.core.cluster.RedisClusterClient;
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -34,87 +31,75 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
 public class ClusterAwareLettuceConnectionManager extends AbstractLettuceConnectionManager implements LettuceConnectionManager {
 
-    private final LettuceConnectionFactory lettuceConnectionFactory;
-
-    private StatefulRedisClusterConnection<String, String> connection;
-
-    @PostConstruct
-    public void init() {
-        RedisClusterClient client = (RedisClusterClient) lettuceConnectionFactory.getNativeClient();
-        if (client == null) {
-            throw new IllegalStateException("Failed to initiate Redis lettuce cluster client!");
-        }
-        connection = client.connect();
-        connection.setAutoFlushCommands(autoFlush);
-    }
+    private final StatefulRedisClusterConnection<String, String> statefulRedisClusterConnection;
 
     @Override
     @SneakyThrows
     public String scriptLoad(String script) {
-        RedisFuture<String> scriptLoadFuture = connection.async().scriptLoad(script);
+        RedisFuture<String> scriptLoadFuture = statefulRedisClusterConnection.async().scriptLoad(script);
         forceFlush();
         return scriptLoadFuture.get(10, TimeUnit.SECONDS);
     }
 
     @Override
     public RedisFuture<String> scriptLoadAsync(String script) {
-        RedisFuture<String> scriptLoadFuture = connection.async().scriptLoad(script);
+        RedisFuture<String> scriptLoadFuture = statefulRedisClusterConnection.async().scriptLoad(script);
         flushIfNeeded();
         return scriptLoadFuture;
     }
 
     @Override
     public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String[] keys, String... values) {
-        RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys, values);
+        RedisFuture<T> evalshaFuture = statefulRedisClusterConnection.async().evalsha(sha, outputType, keys, values);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
     public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String... keys) {
-        RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys);
+        RedisFuture<T> evalshaFuture = statefulRedisClusterConnection.async().evalsha(sha, outputType, keys);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
     public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String[] keys, String... values) {
-        RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys, values);
+        RedisFuture<T> evalFuture = statefulRedisClusterConnection.async().eval(script, outputType, keys, values);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
     public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String... keys) {
-        RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys);
+        RedisFuture<T> evalFuture = statefulRedisClusterConnection.async().eval(script, outputType, keys);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
     public RedisFuture<String> getAsync(String key) {
-        RedisFuture<String> getFuture = connection.async().get(key);
+        RedisFuture<String> getFuture = statefulRedisClusterConnection.async().get(key);
         flushIfNeeded();
         return getFuture;
     }
 
     @Override
     public RedisFuture<Long> delAsync(String key) {
-        RedisFuture<Long> delFuture = connection.async().del(key);
+        RedisFuture<Long> delFuture = statefulRedisClusterConnection.async().del(key);
         flushIfNeeded();
         return delFuture;
     }
 
     @Override
     public RedisFuture<String> setAsync(String key, String value) {
-        RedisFuture<String> setFuture = connection.async().set(key, value);
+        RedisFuture<String> setFuture = statefulRedisClusterConnection.async().set(key, value);
         flushIfNeeded();
         return setFuture;
     }
 
     @Override
     protected void flushCommands() {
-        connection.flushCommands();
+        statefulRedisClusterConnection.flushCommands();
         bufferedCmdCount.set(0);
     }
 
