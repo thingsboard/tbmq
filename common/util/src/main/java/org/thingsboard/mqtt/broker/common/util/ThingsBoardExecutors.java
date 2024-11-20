@@ -15,11 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import lombok.extern.slf4j.Slf4j;
+
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
 
+@Slf4j
 public class ThingsBoardExecutors {
 
     /**
@@ -70,5 +75,21 @@ public class ThingsBoardExecutors {
             return Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName(serviceName));
         }
         return Executors.newScheduledThreadPool(threadsCount, ThingsBoardThreadFactory.forName(serviceName));
+    }
+
+    public static void shutdownAndAwaitTermination(ExecutorService service, String name) {
+        shutdownAndAwaitTermination(service, 0, name);
+    }
+
+    public static void shutdownAndAwaitTermination(ExecutorService service, long timeoutSeconds, String name) {
+        if (service == null) {
+            return;
+        }
+        boolean terminated = MoreExecutors.shutdownAndAwaitTermination(service, Duration.ofSeconds(getTimeoutSeconds(timeoutSeconds)));
+        log.info("{} executor termination is: [{}]", name, terminated ? "successful" : "failed");
+    }
+
+    public static long getTimeoutSeconds(long timeoutSeconds) {
+        return timeoutSeconds > 0 ? timeoutSeconds : 30;
     }
 }

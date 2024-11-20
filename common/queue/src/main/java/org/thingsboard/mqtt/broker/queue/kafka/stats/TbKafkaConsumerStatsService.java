@@ -30,6 +30,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
@@ -151,7 +152,7 @@ public class TbKafkaConsumerStatsService {
     @PreDestroy
     public void destroy() {
         if (statsPrintScheduler != null) {
-            statsPrintScheduler.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(statsPrintScheduler, "Kafka consumer stats");
         }
         if (adminClient != null) {
             adminClient.close();

@@ -25,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
@@ -33,7 +34,6 @@ import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.ReadTsKvQuery;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvLatestRemovingResult;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.dictionary.KeyDictionaryDao;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
@@ -123,7 +123,7 @@ public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao impleme
     @PreDestroy
     public void destroy() {
         if (tsLatestQueue != null) {
-            tsLatestQueue.destroy();
+            tsLatestQueue.destroy("Latest time series queue ");
         }
     }
 

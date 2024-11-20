@@ -40,11 +40,11 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ConnectionValidationException;
@@ -400,10 +400,10 @@ public class ConnectServiceImpl implements ConnectService {
     @PreDestroy
     public void destroy() {
         if (log.isDebugEnabled()) {
-            log.debug("Shutting down executors");
+            log.debug("Shutting down connect handler executor");
         }
         if (connectHandlerExecutor != null) {
-            connectHandlerExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(connectHandlerExecutor, "Connect handler");
         }
     }
 }

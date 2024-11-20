@@ -21,7 +21,7 @@ public interface TbSqlQueue<E> {
 
     void init();
 
-    void destroy();
+    void destroy(String name);
 
     ListenableFuture<Void> add(E element);
 }

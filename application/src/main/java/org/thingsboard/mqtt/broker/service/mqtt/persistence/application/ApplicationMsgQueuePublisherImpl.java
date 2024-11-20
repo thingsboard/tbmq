@@ -135,7 +135,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
         publisher.destroy();
         sharedSubsPublisher.destroy();
         if (callbackProcessor != null) {
-            callbackProcessor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(callbackProcessor, "Application queue callback");
         }
     }
 }

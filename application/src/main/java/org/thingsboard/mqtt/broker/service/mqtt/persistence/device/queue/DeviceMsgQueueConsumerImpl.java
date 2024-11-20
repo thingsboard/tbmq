@@ -180,7 +180,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         stopped = true;
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Device msg consumer");
         }
     }
 

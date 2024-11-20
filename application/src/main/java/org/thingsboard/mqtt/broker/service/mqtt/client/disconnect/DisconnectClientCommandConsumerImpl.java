@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -113,7 +114,7 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
     @PreDestroy
     public void destroy() {
         stopped = true;
-        consumerExecutor.shutdownNow();
+        ThingsBoardExecutors.shutdownAndAwaitTermination(consumerExecutor, "Disconnect client command");
         if (consumer != null) {
             consumer.unsubscribeAndClose();
         }

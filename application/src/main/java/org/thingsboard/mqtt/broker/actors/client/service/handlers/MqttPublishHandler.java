@@ -320,7 +320,7 @@ public class MqttPublishHandler {
     @PreDestroy
     public void destroy() {
         if (callbackProcessor != null) {
-            callbackProcessor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(callbackProcessor, "Msg all publish callback");
         }
     }
 }

@@ -24,8 +24,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -66,7 +67,7 @@ public class DefaultLastWillService implements LastWillService {
     @PreDestroy
     public void destroy() {
         if (this.scheduler != null) {
-            this.scheduler.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Last will scheduler");
         }
     }
 

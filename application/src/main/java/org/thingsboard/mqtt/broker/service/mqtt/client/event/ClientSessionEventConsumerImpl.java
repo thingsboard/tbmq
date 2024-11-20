@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -152,13 +153,7 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         stopped = true;
         eventConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
-            consumersExecutor.shutdown();
-            try {
-                boolean terminationSuccessful = consumersExecutor.awaitTermination(3, TimeUnit.SECONDS);
-                log.info("Client session event consumers executor termination is: [{}]", terminationSuccessful ? "successful" : "failed");
-            } catch (InterruptedException e) {
-                log.warn("Failed to stop client session event consumers executor gracefully due to interruption!", e);
-            }
+            ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Client session event consumer");
         }
     }
 }

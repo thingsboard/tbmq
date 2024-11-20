@@ -68,10 +68,10 @@ public class UnauthorizedClientDaoImpl extends JpaAbstractDaoListeningExecutorSe
     @PreDestroy
     public void destroy() {
         if (insertQueue != null) {
-            insertQueue.destroy();
+            insertQueue.destroy("Unauthorized insert queue ");
         }
         if (deleteQueue != null) {
-            deleteQueue.destroy();
+            deleteQueue.destroy("Unauthorized delete queue ");
         }
     }
 

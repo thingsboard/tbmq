@@ -89,7 +89,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     public void destroy() {
         publisher.destroy();
         if (callbackProcessor != null) {
-            callbackProcessor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(callbackProcessor, "Device queue callback");
         }
     }
 }

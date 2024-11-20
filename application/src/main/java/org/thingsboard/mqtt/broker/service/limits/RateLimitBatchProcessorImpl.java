@@ -60,7 +60,7 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
     @PreDestroy
     public void destroy() {
         if (scheduler != null) {
-            scheduler.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Rate limit batch processor");
         }
     }
 

@@ -35,7 +35,7 @@ public abstract class AbstractListeningExecutor implements ListeningExecutor {
     @PreDestroy
     public void destroy() {
         if (this.service != null) {
-            this.service.shutdown();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(this.service, getExecutorName());
         }
     }
 
@@ -60,4 +60,5 @@ public abstract class AbstractListeningExecutor implements ListeningExecutor {
 
     protected abstract int getThreadPollSize();
 
+    protected abstract String getExecutorName();
 }

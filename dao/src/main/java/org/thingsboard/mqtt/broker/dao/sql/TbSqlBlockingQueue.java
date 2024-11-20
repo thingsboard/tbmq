@@ -17,9 +17,11 @@ package org.thingsboard.mqtt.broker.dao.sql;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import java.util.ArrayList;
@@ -40,6 +42,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
 
     private final BlockingQueue<TbSqlQueueElement<E>> queue = new LinkedBlockingQueue<>();
 
+    @Getter
     private final int id;
     private final TbSqlQueueParams params;
     private final Consumer<List<E>> processingFunction;
@@ -47,6 +50,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
     private final Comparator<E> batchUpdateComparator;
 
     private ExecutorService executor;
+    private volatile boolean stopped = false;
 
     @Override
     public void init() {
@@ -60,7 +64,7 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
         int batchSize = params.getBatchSize();
         long maxDelay = params.getMaxDelay();
         List<TbSqlQueueElement<E>> elements = new ArrayList<>(batchSize);
-        while (!Thread.interrupted()) {
+        while (!stopped && !Thread.interrupted()) {
             try {
                 long currentTs = System.currentTimeMillis();
                 TbSqlQueueElement<E> queuedElement = queue.poll(maxDelay, TimeUnit.MILLISECONDS);
@@ -103,9 +107,10 @@ class TbSqlBlockingQueue<E> implements TbSqlQueue<E> {
     }
 
     @Override
-    public void destroy() {
+    public void destroy(String name) {
+        stopped = true;
         if (executor != null) {
-            executor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(executor, name);
         }
     }
 

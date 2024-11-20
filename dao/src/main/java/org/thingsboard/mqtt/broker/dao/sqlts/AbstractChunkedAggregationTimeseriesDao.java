@@ -102,7 +102,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
     @PreDestroy
     protected void destroy() {
         if (tsQueue != null) {
-            tsQueue.destroy();
+            tsQueue.destroy("Time series queue ");
         }
     }
 

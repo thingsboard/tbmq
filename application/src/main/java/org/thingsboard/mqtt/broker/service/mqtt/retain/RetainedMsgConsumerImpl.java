@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -212,6 +213,6 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                 queueAdmin.deleteConsumerGroups(Collections.singleton(this.retainedMsgConsumer.getConsumerGroupId()));
             }
         }
-        consumerExecutor.shutdownNow();
+        ThingsBoardExecutors.shutdownAndAwaitTermination(consumerExecutor, "Retained msg consumer");
     }
 }
