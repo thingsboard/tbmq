@@ -211,9 +211,10 @@ public class DefaultTbActorSystem implements TbActorSystem {
     }
 
     public void destroy() {
-        log.info("Stopping actor system.");
+        log.info("Stopping actor system dispatchers...");
         dispatchers.values().forEach(d -> ThingsBoardExecutors.shutdownAndAwaitTermination(d.getExecutor(), d.getDispatcherId()));
         if (scheduler != null) {
+            log.info("Stopping actor system scheduler...");
             ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Actor system scheduler");
         }
         actors.clear();
