@@ -85,11 +85,14 @@ public class ThingsBoardExecutors {
         if (service == null) {
             return;
         }
-        boolean terminated = MoreExecutors.shutdownAndAwaitTermination(service, Duration.ofSeconds(getTimeoutSeconds(timeoutSeconds)));
+        long seconds = getTimeoutSeconds(timeoutSeconds);
+        log.debug("Initiating graceful shutdown of {} executor within {}s", name, seconds);
+        boolean terminated = MoreExecutors.shutdownAndAwaitTermination(service, Duration.ofSeconds(seconds));
         log.info("{} executor termination is: [{}]", name, terminated ? "successful" : "failed");
     }
 
     public static long getTimeoutSeconds(long timeoutSeconds) {
-        return timeoutSeconds > 0 ? timeoutSeconds : 30;
+        String timeoutEnv = System.getenv("TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC");
+        return timeoutSeconds > 0 ? timeoutSeconds : (timeoutEnv == null ? 5 : Long.parseLong(timeoutEnv));
     }
 }
