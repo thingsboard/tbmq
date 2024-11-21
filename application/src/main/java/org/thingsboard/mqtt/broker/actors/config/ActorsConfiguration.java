@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystemSettings;
 
 @Configuration
 public class ActorsConfiguration {
+
     @Value("${actors.system.throughput:5}")
     private int actorThroughput;
     @Value("${actors.system.max-actor-init-attempts:10}")

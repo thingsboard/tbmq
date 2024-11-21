@@ -16,10 +16,10 @@
 package org.thingsboard.mqtt.broker.util;
 
 import io.netty.handler.codec.mqtt.MqttProperties;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -117,6 +117,10 @@ public class MqttPropertiesUtil {
     public static Integer getPayloadFormatIndicatorValue(MqttProperties mqttProperties) {
         MqttProperties.IntegerProperty payloadFormatProperty = getPayloadFormatIndicatorProperty(mqttProperties);
         return payloadFormatProperty == null ? null : payloadFormatProperty.value();
+    }
+
+    public static MqttProperties.IntegerProperty getWillDelayProperty(MqttProperties mqttProperties) {
+        return (MqttProperties.IntegerProperty) mqttProperties.getProperty(BrokerConstants.WILL_DELAY_INTERVAL_PROP_ID);
     }
 
     public static MqttProperties.StringProperty getContentTypeProperty(MqttProperties mqttProperties) {
