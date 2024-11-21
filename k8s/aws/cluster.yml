@@ -27,8 +27,8 @@ metadata:
 managedNodeGroups:
   - name: managed
     instanceType: c7a.4xlarge
-    desiredCapacity: 2
-    maxSize: 2
+    desiredCapacity: 3
+    maxSize: 3
     minSize: 0
     labels: { role: tbmq }
     volumeSize: 20
@@ -47,8 +47,8 @@ managedNodeGroups:
       publicKeyName: 'dlandiak' # Note, use your own public key name here
   - name: tbmq-redis
     instanceType: r7a.large
-    desiredCapacity: 10
-    maxSize: 10
+    desiredCapacity: 7
+    maxSize: 7
     minSize: 0
     labels: { role: redis }
     volumeSize: 20
