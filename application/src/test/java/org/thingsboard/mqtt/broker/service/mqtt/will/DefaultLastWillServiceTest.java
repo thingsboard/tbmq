@@ -21,8 +21,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.verification.VerificationMode;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgProcessor;
 import org.thingsboard.mqtt.broker.service.processing.MsgDispatcherService;
@@ -65,7 +65,7 @@ public class DefaultLastWillServiceTest {
 
         ScheduledExecutorService scheduledExecutorService = mock(ScheduledExecutorService.class);
         lastWillService.setScheduler(scheduledExecutorService);
-        doNothing().when(lastWillService).scheduleLastWill(any(), any(), anyInt());
+        doNothing().when(lastWillService).scheduleLastWill(any(), anyInt());
     }
 
     @Test
@@ -96,7 +96,7 @@ public class DefaultLastWillServiceTest {
     }
 
     private void verifyPersistPublishMsg(VerificationMode mode) {
-        verify(lastWillService, mode).scheduleLastWill(any(), any(), anyInt());
+        verify(lastWillService, mode).scheduleLastWill(any(), anyInt());
     }
 
     private void saveLastWillMsg() {
