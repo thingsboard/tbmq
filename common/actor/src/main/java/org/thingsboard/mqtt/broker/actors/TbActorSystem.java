@@ -52,4 +52,6 @@ public interface TbActorSystem {
     List<TbActorId> filterChildren(TbActorId parent, Predicate<TbActorId> childFilter);
 
     Set<TbActorId> getAllActorIds();
+
+    void destroy();
 }

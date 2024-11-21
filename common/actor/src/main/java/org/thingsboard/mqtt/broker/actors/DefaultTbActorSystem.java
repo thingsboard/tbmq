@@ -210,6 +210,7 @@ public class DefaultTbActorSystem implements TbActorSystem {
         return new HashSet<>(actors.keySet());
     }
 
+    @Override
     public void destroy() {
         log.info("Stopping actor system dispatchers...");
         dispatchers.values().forEach(d -> ThingsBoardExecutors.shutdownAndAwaitTermination(d.getExecutor(), d.getDispatcherId()));
