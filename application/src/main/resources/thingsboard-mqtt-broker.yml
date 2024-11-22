@@ -829,6 +829,8 @@ mqtt:
     device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
     # Number of threads in thread pool for processing application persisted publish messages callbacks after sending them to Kafka
     app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing downlink messages callbacks after sending them to Kafka
+    downlink_msg_callback_threads: "${MQTT_HANDLER_DOWNLINK_MSG_CALLBACK_THREADS:2}"
   # Response info value for MQTT 5 request-response feature to be returned to clients that request it.
   # If not set the broker will not reply with response info to mqtt 5 clients that connect with "request response info" = 1.
   # Set it to topic to be used for request-response feature, e.g. "example/"

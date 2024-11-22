@@ -71,7 +71,7 @@ public class MqttPublishHandler {
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
-    @Value("${mqtt.handler.all_msg_callback_threads:0}")
+    @Value("${mqtt.handler.all_msg_callback_threads:2}")
     private int threadsCount;
 
     private ExecutorService callbackProcessor;

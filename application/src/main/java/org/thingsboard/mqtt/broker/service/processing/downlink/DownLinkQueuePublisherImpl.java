@@ -19,10 +19,12 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -32,6 +34,8 @@ import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQu
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
+
+import java.util.concurrent.ExecutorService;
 
 @Slf4j
 @Service
@@ -46,11 +50,17 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
+    @Value("${mqtt.handler.downlink_msg_callback_threads:2}")
+    private int threadsCount;
+
     private TbPublishServiceImpl<QueueProtos.ClientPublishMsgProto> basicPublisher;
     private TbPublishServiceImpl<QueueProtos.DevicePublishMsgProto> persistentPublisher;
 
+    private ExecutorService callbackProcessor;
+
     @PostConstruct
     public void init() {
+        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "downlink-msg-callback-processor");
         this.basicPublisher = TbPublishServiceImpl.<QueueProtos.ClientPublishMsgProto>builder()
                 .queueName("basicDownlink")
                 .producer(downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
@@ -75,15 +85,18 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg to basic down-link queue");
-                        if (isTraceEnabled) {
-                            log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
-                        }
+                        callbackProcessor.submit(() -> {
+                            clientLogger.logEvent(clientId, this.getClass(), "Sent msg to basic down-link queue");
+                            if (isTraceEnabled) {
+                                log.trace("[{}] Successfully published BASIC msg to {} service.", clientId, targetServiceId);
+                            }
+                        });
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t);
+                        callbackProcessor.submit(() ->
+                                log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t));
                     }
                 },
                 topic
@@ -99,15 +112,18 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Sent msg to persistent down-link queue");
-                        if (isTraceEnabled) {
-                            log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
-                        }
+                        callbackProcessor.submit(() -> {
+                            clientLogger.logEvent(clientId, this.getClass(), "Sent msg to persistent down-link queue");
+                            if (isTraceEnabled) {
+                                log.trace("[{}] Successfully published PERSISTENT msg to {} service.", clientId, targetServiceId);
+                            }
+                        });
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        log.warn("[{}] Failed to publish PERSISTENT msg to {} service.", clientId, targetServiceId, t);
+                        callbackProcessor.submit(() ->
+                                log.warn("[{}] Failed to publish PERSISTENT msg to {} service.", clientId, targetServiceId, t));
                     }
                 },
                 topic
@@ -121,6 +137,9 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
         }
         if (persistentPublisher != null) {
             persistentPublisher.destroy();
+        }
+        if (callbackProcessor != null) {
+            ThingsBoardExecutors.shutdownAndAwaitTermination(callbackProcessor, "Downlink queues callback");
         }
     }
 }

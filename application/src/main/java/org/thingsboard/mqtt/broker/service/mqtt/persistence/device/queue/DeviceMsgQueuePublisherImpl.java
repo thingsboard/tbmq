@@ -43,7 +43,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
 
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
 
-    @Value("${mqtt.handler.device_msg_callback_threads:0}")
+    @Value("${mqtt.handler.device_msg_callback_threads:2}")
     private int threadsCount;
 
     private ExecutorService callbackProcessor;
