@@ -131,12 +131,10 @@ public abstract class AbstractPubSubIntegrationTest {
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
-            if (bean instanceof TbKafkaConsumerSettings) {
-                TbKafkaConsumerSettings kafkaSettings = (TbKafkaConsumerSettings) bean;
+            if (bean instanceof TbKafkaConsumerSettings kafkaSettings) {
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
-            if (bean instanceof TbKafkaProducerSettings) {
-                TbKafkaProducerSettings kafkaSettings = (TbKafkaProducerSettings) bean;
+            if (bean instanceof TbKafkaProducerSettings kafkaSettings) {
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
             if (bean instanceof TbKafkaAdminSettings kafkaAdminSettings) {

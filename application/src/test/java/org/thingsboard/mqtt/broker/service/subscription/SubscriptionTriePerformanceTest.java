@@ -43,12 +43,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)
 public class SubscriptionTriePerformanceTest {
+
     private static final String SERVICE_ID = "serviceId";
 
     private static final int FIRST_LEVEL_SEGMENTS = 50;
@@ -85,8 +85,7 @@ public class SubscriptionTriePerformanceTest {
         List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
 
         List<String> topicFilters = initializeTopicFilters(levelSuppliers);
-        List<String> topics = topicFilters.stream().map(s -> s.replaceAll("[+#]", "test")).collect(Collectors.toList());
-
+        List<String> topics = topicFilters.stream().map(s -> s.replaceAll("[+#]", "test")).toList();
 
         fillSubscriptionTrie(topicFilters);
 
@@ -105,7 +104,7 @@ public class SubscriptionTriePerformanceTest {
         task.get(30, TimeUnit.SECONDS);
         long endTime = System.currentTimeMillis();
         System.out.println("All took " + (endTime - startTime) + " ms");
-
+        executor.shutdownNow();
     }
 
     @Test
@@ -113,15 +112,13 @@ public class SubscriptionTriePerformanceTest {
         List<Supplier<String>> levelSuppliers = initializeLevelSuppliers();
 
         List<String> topicFilters = initializeTopicFilters(levelSuppliers);
-        List<String> topics = topicFilters.stream().map(s -> s.replaceAll("[+#]", "test")).collect(Collectors.toList());
+        List<String> topics = topicFilters.stream().map(s -> s.replaceAll("[+#]", "test")).toList();
 
         fillSubscriptionTrie(topicFilters);
 
         ExecutorService subscribeExecutor = Executors.newSingleThreadExecutor();
         CountDownLatch processingPublishers = new CountDownLatch(NUMBER_OF_THREADS);
-        subscribeExecutor.execute(() -> {
-            simulateSubscribers(topicFilters, processingPublishers);
-        });
+        subscribeExecutor.execute(() -> simulateSubscribers(topicFilters, processingPublishers));
         long startTime = System.currentTimeMillis();
 
         ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
@@ -142,6 +139,8 @@ public class SubscriptionTriePerformanceTest {
         long endTime = System.currentTimeMillis();
         System.out.println("All took " + (endTime - startTime) + " ms");
 
+        subscribeExecutor.shutdownNow();
+        executor.shutdownNow();
     }
 
     private void simulateSubscribers(List<String> topicFilters, CountDownLatch processingPublishers) {
@@ -215,10 +214,10 @@ public class SubscriptionTriePerformanceTest {
         List<Supplier<String>> levelSuppliers = new ArrayList<>(MAX_LEVELS);
         List<String> firstLevelSegments = IntStream.range(0, FIRST_LEVEL_SEGMENTS).boxed()
                 .map(ignored -> UUID.randomUUID().toString().substring(0, 10))
-                .collect(Collectors.toList());
+                .toList();
         List<String> secondLevelSegments = IntStream.range(0, SECOND_LEVEL_SEGMENTS).boxed()
                 .map(ignored -> UUID.randomUUID().toString().substring(0, 10))
-                .collect(Collectors.toList());
+                .toList();
         levelSuppliers.add(() -> firstLevelSegments.get(r.nextInt(firstLevelSegments.size())));
         levelSuppliers.add(() -> secondLevelSegments.get(r.nextInt(secondLevelSegments.size())));
         for (int i = 0; i < MAX_LEVELS; i++) {
