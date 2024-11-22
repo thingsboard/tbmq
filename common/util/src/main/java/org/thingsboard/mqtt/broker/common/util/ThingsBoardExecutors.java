@@ -92,7 +92,19 @@ public class ThingsBoardExecutors {
     }
 
     public static long getTimeoutSeconds(long timeoutSeconds) {
-        String timeoutEnv = System.getenv("TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC");
-        return timeoutSeconds > 0 ? timeoutSeconds : (timeoutEnv == null ? 5 : Long.parseLong(timeoutEnv));
+        if (timeoutSeconds > 0) {
+            return timeoutSeconds;
+        }
+        String timeoutValue = System.getenv("TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC");
+        if (timeoutValue == null) {
+            timeoutValue = System.getProperty("tbmq.graceful.shutdown.timeout.sec");
+        }
+        final long defaultTimeout = 5L;
+        try {
+            return timeoutValue != null ? Long.parseLong(timeoutValue) : defaultTimeout;
+        } catch (NumberFormatException e) {
+            log.error("Invalid timeout value from system properties {}. Using default: 5 seconds", timeoutValue);
+            return defaultTimeout;
+        }
     }
 }

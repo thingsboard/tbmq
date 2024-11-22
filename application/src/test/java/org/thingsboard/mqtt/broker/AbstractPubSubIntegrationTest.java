@@ -25,6 +25,7 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.springframework.beans.BeansException;
@@ -79,6 +80,11 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     protected final ObjectMapper mapper = new ObjectMapper();
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        System.setProperty("tbmq.graceful.shutdown.timeout.sec", "1");
+    }
 
     @Autowired
     @Lazy
