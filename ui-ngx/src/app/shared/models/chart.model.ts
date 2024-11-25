@@ -37,11 +37,15 @@ export enum StatsChartType {
   processedBytes = 'processedBytes',
 }
 
+export const CHART_ALL = Object.values(StatsChartType);
+export const CHART_TOTAL_ONLY = [StatsChartType.sessions, StatsChartType.subscriptions];
 export const TOTAL_KEY = 'total';
+export const timeseriesDataLimit = 50000;
 
-export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
-
-export type ChartPage = 'home' | 'monitoring';
+export enum ChartPage {
+  home = 'home',
+  monitoring = 'monitoring'
+}
 
 export const StatsChartTypeTranslationMap = new Map<string, string>(
   [
@@ -201,7 +205,7 @@ const lineChartParams = {
 }
 
 function getParams(type) {
-  if (type === 'monitoring') {
+  if (type === ChartPage.monitoring) {
     return {
       options: {
         plugins: {
@@ -225,7 +229,7 @@ function getParams(type) {
             }
           },
           legend: {
-            display: true,
+            display: false,
             position: 'bottom',
             align: 'start',
             fullSize: true,
@@ -273,7 +277,7 @@ function getParams(type) {
       },
     };
   }
-  if (type === 'home') {
+  if (type === ChartPage.home) {
     return {
       options: {
         title: {
@@ -328,4 +332,23 @@ function getParams(type) {
 export const chartJsParams = (type: string) => {
   const options = getParams(type);
   return _.merge(options, lineChartParams);
+}
+
+export interface LegendConfig {
+  showMin: boolean;
+  showMax: boolean;
+  showAvg: boolean;
+  showTotal: boolean;
+  showLatest: boolean;
+}
+
+export interface LegendKey {
+  dataKey: DataKey;
+  dataIndex: number;
+}
+
+export interface DataKey {
+  label: string;
+  hidden: boolean;
+  color: string;
 }

@@ -383,6 +383,44 @@
       "de_DE": "Deutsch"
     }
   },
+  "legend": {
+    "direction": "Direction",
+    "position": "Position",
+    "show-values": "Show values",
+    "min-option": "Min",
+    "max-option": "Max",
+    "average-option": "Average",
+    "total-option": "Total",
+    "latest-option": "Latest",
+    "sort-legend": "Sort datakeys in legend",
+    "show-max": "Show max value",
+    "show-min": "Show min value",
+    "show-avg": "Show average value",
+    "show-total": "Show total value",
+    "show-latest": "Show latest value",
+    "settings": "Legend settings",
+    "min": "min",
+    "max": "max",
+    "avg": "avg",
+    "total": "total",
+    "latest": "latest",
+    "Min": "Min",
+    "Max": "Max",
+    "Avg": "Avg",
+    "Total": "Total",
+    "Latest": "Latest",
+    "comparison-time-ago": {
+        "previousInterval": "(previous interval)",
+        "customInterval": "(custom interval)",
+        "days": "(day ago)",
+        "weeks": "(week ago)",
+        "months": "(month ago)",
+        "years": "(year ago)"
+    },
+    "column-title": "Column title",
+    "label": "Label",
+    "value": "Value"
+  },
   "monitoring": {
     "monitoring": "Monitoring",
     "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points."

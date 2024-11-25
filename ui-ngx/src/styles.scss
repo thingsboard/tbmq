@@ -1196,6 +1196,96 @@ mat-label {
     white-space: pre-line;
   }
 
+  .tb-time-series-chart-legend {
+      display: flex;
+      width: 100%;
+      align-items: flex-start;
+      align-self: stretch;
+      column-gap: 16px;
+      row-gap: 8px;
+      flex-wrap: wrap;
+      overflow: auto;
+      max-width: 100%;
+      padding: 0 2px 0 2px;
+      max-height: calc(35% - 8px);
+
+      .tb-time-series-chart-legend-table {
+        border-spacing: 0;
+        table-layout: fixed;
+        &.vertical {
+          width: 100%;
+          table-layout: auto;
+          tbody {
+            th {
+              width: 95%;
+            }
+          }
+        }
+        th, td {
+          &:not(:last-child) {
+            padding-right: 16px;
+          }
+        }
+        thead tr, tbody tr:not(:last-child) {
+          th, td {
+            padding-bottom: 8px;
+          }
+        }
+        .tb-time-series-chart-legend-item {
+          align-items: flex-end;
+          &.left {
+            align-items: flex-start;
+          }
+        }
+      }
+      .tb-time-series-chart-legend-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        user-select: none;
+        .tb-time-series-chart-legend-item-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: #ccc;
+          white-space: nowrap;
+          cursor: pointer;
+          .tb-time-series-chart-legend-item-label-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ccc;
+          }
+          .tb-time-series-chart-legend-item-label-text {
+            font-size: 12px;
+            line-height: 16px;
+            font-weight: 400;
+            color: rgba(0, 0, 0, 0.76);
+          }
+        }
+      }
+      .tb-time-series-chart-legend-type-label {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 16px;
+        color: rgba(0, 0, 0, 0.38);
+        white-space: nowrap;
+        text-align: left;
+        &.right {
+          text-align: right;
+        }
+      }
+      .tb-time-series-chart-legend-value {
+        font-weight: 500;
+        line-height: 16px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.87);
+        white-space: nowrap;
+        text-align: right;
+      }
+    }
+
   // TinyMCE
 
   .tox-tinymce {

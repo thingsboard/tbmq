@@ -16,22 +16,33 @@
 
 // @ts-nocheck
 
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChildren
+} from '@angular/core';
 import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
-import { chartKeysTotal, StatsService, timeseriesDataLimit } from '@core/http/stats.service';
+import { StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  CHART_TOTAL_ONLY,
+  CHART_ALL,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
   getColor,
-  ONLY_TOTAL_KEYS,
+  LegendConfig,
+  LegendKey,
   StatsChartType,
   StatsChartTypeTranslationMap,
   TimeseriesData,
+  timeseriesDataLimit,
   TOTAL_KEY
 } from '@shared/models/chart.model';
 import { PageComponent } from '@shared/components/page.component';
@@ -44,7 +55,15 @@ import { POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ActivatedRoute } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { DataSizeUnitType, DataSizeUnitTypeTranslationMap, } from '@shared/models/ws-client.model';
-import { convertDataSizeUnits } from '@core/utils';
+import {
+  calculateAvg,
+  calculateLatest,
+  calculateMax,
+  calculateMin,
+  calculateTotal,
+  convertDataSizeUnits
+} from '@core/utils';
+import { ChartDataSets } from 'chart.js';
 
 Chart.register([Zoom]);
 
@@ -55,17 +74,33 @@ Chart.register([Zoom]);
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  chartPage: ChartPage = 'monitoring';
+  @ViewChildren('chartElement') chartElements!: QueryList<ElementRef>;
+
+  chartPage = ChartPage.monitoring;
   charts = {};
-  timewindow: Timewindow;
-  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  chartTypes = CHART_ALL;
+  chartTypeTranslationMap = StatsChartTypeTranslationMap;
   dataSizeUnitTypeTranslationMap = DataSizeUnitTypeTranslationMap;
   dataSizeUnitType = Object.values(DataSizeUnitType);
-  isFullscreen = false;
+  timewindow: Timewindow;
+
   chartHeight = 300;
-  chartContainerHeight: string;
-  fullscreenChart: string;
   currentDataSizeUnitType = DataSizeUnitType.BYTE;
+  chartContainerHeight: string;
+  fullscreenElements: HTMLElement[] = [];
+  fullscreenChart: string;
+  isFullscreen = false;
+
+  showLegend = true;
+  legendConfig: LegendConfig = {
+    showMin: true,
+    showMax: true,
+    showAvg: true,
+    showTotal: true,
+    showLatest: true
+  };
+  legendData = {};
+  legendKeys = {};
 
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
@@ -79,6 +114,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
               private translate: TranslateService,
               private timeService: TimeService,
               private statsService: StatsService,
+              private cd: ChangeDetectorRef,
               private route: ActivatedRoute) {
     super(store);
     this.timewindow = this.timeService.defaultTimewindow();
@@ -97,6 +133,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
 
   ngAfterViewInit(): void {
     this.fetchEntityTimeseries(true);
+    this.fullscreenElements = this.chartElements.map((element) => element.nativeElement);
     $(document).on('keydown',
       (event) => {
         if ((event.code === 'Escape') && this.isFullscreen) {
@@ -120,7 +157,11 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     this.isFullscreen = !this.isFullscreen;
     if (this.isFullscreen) {
       this.fullscreenChart = chartType;
-      this.chartContainerHeight = '90%';
+      let height = 90;
+      if (this.brokerIds.length > 1) {
+        height = height - (this.brokerIds.length * 2);
+      }
+      this.chartContainerHeight = height + '%';
     } else {
       this.fullscreenChart = undefined;
       this.chartContainerHeight = this.chartHeight + 'px';
@@ -141,6 +182,42 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     this.updateChartView(chartType);
   }
 
+  onLegendKeyEnter(legendKey: LegendKey, chartType: StatsChartType) {
+    const datasetIndex = legendKey.dataIndex;
+    this.charts[chartType].data.datasets[datasetIndex].borderWidth = 4;
+    this.updateChart(chartType);
+  }
+
+  onLegendKeyLeave(legendKey: LegendKey, chartType: StatsChartType) {
+    const datasetIndex = legendKey.dataIndex;
+    this.charts[chartType].data.datasets[datasetIndex].borderWidth = 2;
+    this.updateChart(chartType);
+  }
+
+  toggleLegendKey(legendKey: LegendKey, chartType: StatsChartType) {
+    const datasetIndex = legendKey.dataIndex;
+    this.charts[chartType].isDatasetVisible(datasetIndex)
+      ? this.charts[chartType].hide(datasetIndex)
+      : this.charts[chartType].show(datasetIndex);
+    this.updateLegendLabel(chartType, datasetIndex, this.charts[chartType].isDatasetVisible(datasetIndex));
+  }
+
+  trackByIndex(index: number) {
+    return index;
+  }
+
+  legendValue(index: number, chartType: StatsChartType, type: string): number {
+    if (this.totalOnly(chartType)) {
+      return this.legendData[chartType]?.data[0][type];
+    } else {
+      return this.legendData[chartType]?.data[index][type];
+    }
+  }
+
+  totalOnly(chartType: StatsChartType): boolean {
+    return CHART_TOTAL_ONLY.includes(chartType);
+  }
+
   private initData() {
     this.brokerIds = this.route.snapshot.data.brokerIds;
   }
@@ -152,7 +229,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   private fetchEntityTimeseries(initCharts = false) {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, chartKeysTotal));
+      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, CHART_ALL));
     }
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
@@ -162,10 +239,10 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
         } else {
           for (const chartType in StatsChartType) {
             for (let i = 0; i < this.brokerIds.length; i++) {
-              if (!ONLY_TOTAL_KEYS.includes(chartType)) {
-                this.charts[chartType].data.datasets[i].data = data[i][chartType];
-              } else {
+              if (this.totalOnly(chartType)) {
                 this.charts[chartType].data.datasets[0].data = data[0][chartType];
+              } else {
+                this.charts[chartType].data.datasets[i].data = data[i][chartType];
               }
               this.updateChartView(chartType);
             }
@@ -179,34 +256,23 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   }
 
   private initCharts(data: TimeseriesData[]) {
-    const getDataset = (dataset, chartType, i, brokerId) => {
-      const color = getColor(chartType, i);
-      return {
-        label: this.brokerIds[i],
-        data: dataset ? dataset[i][chartType] : null,
-        pointStyle: 'circle',
-        hidden: brokerId !== TOTAL_KEY,
-        borderColor: color,
-        backgroundColor: color,
-        pointHoverBackgroundColor: color,
-        pointBorderColor: color,
-        pointBackgroundColor: color,
-        pointHoverBorderColor: color,
-        pointRadius: 0
-      };
-    };
     for (const chartType in StatsChartType) {
       this.charts[chartType] = {} as Chart;
       const ctx = document.getElementById(chartType + this.chartPage) as HTMLCanvasElement;
       const datasets = {data: {datasets: []}};
+      this.resetLegendKeys(chartType);
+      this.updateLegendKeys(chartType);
+      this.resetLegendData(chartType);
       for (let i = 0; i < this.brokerIds.length; i++) {
         const brokerId = this.brokerIds[i];
-        if (ONLY_TOTAL_KEYS.includes(chartType)) {
+        if (this.totalOnly(chartType)) {
           if (brokerId === TOTAL_KEY) {
-            datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
+            datasets.data.datasets.push(this.getDataset(data, chartType, i, brokerId));
+            this.updateLegendData(data[i][chartType], chartType);
           }
         } else {
-          datasets.data.datasets.push(getDataset(data, chartType, i, brokerId));
+          datasets.data.datasets.push(this.getDataset(data, chartType, i, brokerId));
+          this.updateLegendData(data[i][chartType], chartType);
         }
       }
       const params = {...chartJsParams(this.chartPage), ...datasets};
@@ -225,10 +291,27 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
+  private getDataset(dataset, chartType, i, brokerId): ChartDataSets {
+    const color = getColor(chartType, i);
+    return {
+      label: brokerId,
+      data: dataset ? dataset[i][chartType] : null,
+      pointStyle: 'circle',
+      hidden: brokerId !== TOTAL_KEY,
+      borderColor: color,
+      backgroundColor: color,
+      pointHoverBackgroundColor: color,
+      pointBorderColor: color,
+      pointBackgroundColor: color,
+      pointHoverBorderColor: color,
+      pointRadius: 0
+    };
+  }
+
   private startPolling() {
     const $getLatestTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, chartKeysTotal));
+      $getLatestTimeseriesTasks.push(this.statsService.getLatestTimeseries(brokerId, CHART_ALL));
     }
     timer(0, POLLING_INTERVAL)
     .pipe(
@@ -265,7 +348,9 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     for (let i = 0; i < this.brokerIds.length; i++) {
       let index = i;
       if (data[index][chartType]?.length) {
-        if (ONLY_TOTAL_KEYS.includes(chartType)) index = 0;
+        if (this.totalOnly(chartType)) {
+          index = 0;
+        }
         const latestValue = data[index][chartType][0];
         this.charts[chartType].data.datasets[index].data.unshift(latestValue);
       }
@@ -275,6 +360,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   private updateChartView(chartType: string) {
     this.updateXScale(chartType);
     this.updateChart(chartType);
+    this.updateLegend(chartType);
   }
 
   private stopPolling() {
@@ -322,5 +408,81 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
         })
       );
     }
+  }
+
+  private resetLegendKeys(chartType: StatsChartType) {
+    this.legendKeys[chartType] = {};
+    this.legendKeys[chartType].keys = [];
+  }
+
+  private resetLegendData(chartType: StatsChartType) {
+    this.legendData[chartType] = {};
+    this.legendData[chartType].data = [];
+  }
+
+  private updateLegendKeys(chartType: StatsChartType) {
+    for (let i = 0; i < this.brokerIds.length; i++) {
+      const color = getColor(chartType, i);
+      const brokerId = this.brokerIds[i];
+      if (this.totalOnly(chartType)) {
+        if (brokerId === TOTAL_KEY) {
+          this.addLegendKey(chartType, 0, brokerId, color);
+        }
+      } else {
+        this.addLegendKey(chartType, i, brokerId, color);
+      }
+    }
+  }
+
+  private updateLegendData(data: any[], chartType: StatsChartType) {
+    if (data?.length) {
+      this.legendData[chartType].data.push({
+        min: Math.floor(calculateMin(data)),
+        max: Math.floor(calculateMax(data)),
+        avg: Math.floor(calculateAvg(data)),
+        total: Math.floor(calculateTotal(data)),
+        latest: Math.floor(calculateLatest(data))
+      });
+    } else {
+      this.legendData[chartType].data.push({
+        min: 0,
+        max: 0,
+        avg: 0,
+        total: 0,
+        latest: 0
+      });
+    }
+  }
+
+  private addLegendKey(chartType: StatsChartType, index: number, brokerId: string, color: string) {
+    this.legendKeys[chartType].keys.push({
+      dataKey: {
+        label: brokerId,
+        color,
+        hidden: brokerId !== TOTAL_KEY
+      },
+      dataIndex: index
+    });
+  }
+
+  private updateLegend(chartType: StatsChartType) {
+    this.resetLegendData(chartType);
+    for (let i = 0; i < this.brokerIds.length; i++) {
+      const brokerId = this.brokerIds[i];
+      const data = this.charts[chartType].data.datasets[i]?.data;
+      if (this.totalOnly(chartType)) {
+        if (brokerId === TOTAL_KEY) {
+          this.updateLegendData(data, chartType);
+        }
+      } else {
+        this.updateLegendData(data, chartType);
+      }
+    }
+  }
+
+  private updateLegendLabel(chartType, datasetIndex, isDatasetvisible) {
+    this.legendKeys[chartType].keys[datasetIndex].dataKey.color = isDatasetvisible ? getColor(chartType, datasetIndex) : null;
+    this.legendKeys[chartType].keys[datasetIndex].dataKey.hidden = !this.legendKeys[chartType].keys[datasetIndex].dataKey.hidden;
+    this.cd.detectChanges();
   }
 }

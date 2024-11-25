@@ -22,6 +22,7 @@ import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/tim
 import { TimeService } from '@core/services/time.service';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  CHART_ALL,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
@@ -44,10 +45,10 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('homeChartsContainer', {static: true}) homeChartsContainer: ElementRef;
 
   cardType = HomePageTitleType.MONITORING;
-  chartPage: ChartPage = 'home';
+  chartPage = ChartPage.home;
   charts = {};
-  statsCharts = Object.values(StatsChartType);
-  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  chartKeys = CHART_ALL;
+  chartTypeTranslationMap = StatsChartTypeTranslationMap;
   chartWidth: string;
   chartHeight: string;
   chartsCarouselIndex = 0;
@@ -111,8 +112,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         pointBackgroundColor: color,
         pointHoverBackgroundColor: color,
         pointHoverBorderColor: color,
-        pointRadius: 0,
-        chartType
+        pointRadius: 0
       };
       const params = {...chartJsParams(this.chartPage), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params as any);

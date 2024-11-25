@@ -27,164 +27,97 @@
   </tb-timewindow>
 </mat-toolbar>
 <div class="mat-padding" fxFlex fxLayout="column" fxLayoutGap="16px">
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'incomingMsgs'"
-         [fullscreenElement]="incomingMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'incomingMsgscontainer'" class="mat-padding chart-container" #incomingMsgs>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('incomingMsgs') | translate }}</span>
-          <span fxFlex></span>
-          <mat-icon [matTooltip]="chartTooltip('incomingMsgs')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('incomingMsgs')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'incomingMsgsmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
-    </div>
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'outgoingMsgs'"
-         [fullscreenElement]="outgoingMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'outgoingMsgscontainer'" class="mat-padding chart-container" #outgoingMsgs>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('outgoingMsgs') | translate }}</span>
-          <span fxFlex></span>
-          <mat-icon [matTooltip]="chartTooltip('outgoingMsgs')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('outgoingMsgs')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'outgoingMsgsmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
-    </div>
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'droppedMsgs'"
-         [fullscreenElement]="droppedMsgs" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'droppedMsgscontainer'" class="mat-padding chart-container" #droppedMsgs>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('droppedMsgs') | translate }}</span>
-          <span fxFlex></span>
-          <mat-icon [matTooltip]="chartTooltip('droppedMsgs')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('droppedMsgs')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'droppedMsgsmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
-    </div>
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'sessions'"
-         [fullscreenElement]="sessions" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'sessionscontainer'" class="mat-padding chart-container" #sessions>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('sessions') | translate }}</span>
-          <span fxFlex></span>
-          <mat-icon [matTooltip]="chartTooltip('sessions')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('sessions')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'sessionsmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
-    </div>
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'subscriptions'"
-         [fullscreenElement]="subscriptions" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'subscriptionscontainer'" class="mat-padding chart-container" #subscriptions>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span>{{ statChartTypeTranslationMap.get('subscriptions') | translate }}</span>
-          <span fxFlex></span>
-          <mat-icon [matTooltip]="chartTooltip('subscriptions')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('subscriptions')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'subscriptionsmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
-    </div>
-    <div tb-fullscreen [fullscreen]="fullscreenChart === 'processedBytes'"
-         [fullscreenElement]="processedBytes" [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="'processedBytescontainer'" class="mat-padding chart-container" #processedBytes>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
-          <span style="padding-left: 170px">{{ statChartTypeTranslationMap.get('processedBytes') | translate }}</span>
-          <span fxFlex></span>
+
+  <div *ngFor="let statsChartType of chartTypes; let index = index; trackBy: trackByIndex" tb-fullscreen
+       [fullscreen]="fullscreenChart === statsChartType"
+       [fullscreenElement]="fullscreenElements[index]"
+       [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
+    <div [id]="statsChartType + 'container'" #chartElement class="mat-padding chart-container" >
+      <mat-divider [fxShow]="isFullscreen"></mat-divider>
+      <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+        <span fxFlex></span>
+        <span [ngStyle]="{paddingLeft: statsChartType === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(statsChartType) | translate }}</span>
+        <span fxFlex></span>
+        <ng-container *ngIf="statsChartType === 'processedBytes'">
           <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
                             [value]="currentDataSizeUnitType"
                             style="padding-right: 12px"
-                            name="processedBytes"
+                            [name]="statsChartType"
                             useSelectOnMdLg="true"
                             appearance="fill">
             <tb-toggle-option *ngFor="let type of dataSizeUnitType" [value]="type">
               {{ dataSizeUnitTypeTranslationMap.get(type) }}
             </tb-toggle-option>
           </tb-toggle-header>
-          <mat-icon [matTooltip]="chartTooltip('processedBytes')" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-                  mat-icon-button class="tb-fullscreen-button tb-mat-40"
-                  (click)="onFullScreen('processedBytes')"
-                  matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-                  matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
-          <canvas [id]="'processedBytesmonitoring'" [height]="chartHeight"></canvas>
-        </section>
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-      </div>
+        </ng-container>
+        <mat-icon [matTooltip]="chartTooltip(statsChartType)" class="material-icons" style="cursor: default">
+          info_outline
+        </mat-icon>
+        <button type="button"
+                mat-icon-button class="tb-fullscreen-button tb-mat-40"
+                (click)="onFullScreen(statsChartType)"
+                matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+                matTooltipPosition="above">
+          <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
+        </button>
+      </section>
+      <section [ngStyle]="{'height': chartContainerHeight}">
+        <canvas [id]="statsChartType + chartPage" [height]="chartHeight"></canvas>
+      </section>
+      <section *ngIf="showLegend" class="tb-time-series-chart-legend">
+        <ng-container *ngTemplateOutlet="legend; context:{chartType: statsChartType}"></ng-container>
+      </section>
+      <mat-divider [fxShow]="isFullscreen"></mat-divider>
     </div>
   </div>
+</div>
+
+<ng-template #legend let-chartType="chartType">
+  <table class="tb-time-series-chart-legend-table vertical">
+    <thead>
+    <tr>
+      <th></th>
+      <th class="tb-time-series-chart-legend-type-label right" *ngIf="legendConfig.showMin === true">{{ 'legend.Min' | translate }}</th>
+      <th class="tb-time-series-chart-legend-type-label right" *ngIf="legendConfig.showMax === true">{{ 'legend.Max' | translate }}</th>
+      <th class="tb-time-series-chart-legend-type-label right" *ngIf="legendConfig.showAvg === true">{{ 'legend.Avg' | translate }}</th>
+      <th class="tb-time-series-chart-legend-type-label right" *ngIf="legendConfig.showTotal === true && !totalOnly(chartType)">{{ 'legend.Total' | translate }}</th>
+      <th class="tb-time-series-chart-legend-type-label right" *ngIf="legendConfig.showLatest === true">{{ 'legend.Latest' | translate }}</th>
+    </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let legendKey of legendKeys[chartType]?.keys; let index = index">
+        <th>
+          <ng-container *ngTemplateOutlet="legendItem; context:{legendKey: legendKey, chartType: chartType, left: true}"></ng-container>
+        </th>
+        <td *ngIf="legendConfig.showMin === true && !legendKey.dataKey.hidden" class="tb-time-series-chart-legend-value"
+            [innerHTML]="legendValue(index, chartType, 'min') | safe: 'html'">
+        </td>
+        <td *ngIf="legendConfig.showMax === true && !legendKey.dataKey.hidden" class="tb-time-series-chart-legend-value"
+            [innerHTML]="legendValue(index, chartType, 'max') | safe: 'html'">
+        </td>
+        <td *ngIf="legendConfig.showAvg === true && !legendKey.dataKey.hidden" class="tb-time-series-chart-legend-value"
+            [innerHTML]="legendValue(index, chartType, 'avg') | safe: 'html'">
+        </td>
+        <td *ngIf="legendConfig.showTotal === true && !legendKey.dataKey.hidden && !totalOnly(chartType)"
+            class="tb-time-series-chart-legend-value"
+            [innerHTML]="legendValue(index, chartType, 'total') | safe: 'html'">
+        </td>
+        <td *ngIf="legendConfig.showLatest === true && !legendKey.dataKey.hidden" class="tb-time-series-chart-legend-value"
+            [innerHTML]="legendValue(index, chartType, 'latest') | safe: 'html'">
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</ng-template>
+<ng-template #legendItem let-legendKey="legendKey" let-left="left" let-chartType="chartType">
+  <div class="tb-time-series-chart-legend-item"
+       [class.left]="left">
+    <div class="tb-time-series-chart-legend-item-label"
+         (mouseenter)="onLegendKeyEnter(legendKey, chartType)"
+         (mouseleave)="onLegendKeyLeave(legendKey, chartType)"
+         (click)="toggleLegendKey(legendKey, chartType)">
+      <div class="tb-time-series-chart-legend-item-label-circle" [style]="{background: !legendKey.dataKey.hidden ? legendKey.dataKey.color : null}"></div>
+      <div class="tb-time-series-chart-legend-item-label-text" [innerHTML]="legendKey.dataKey.label | safe: 'html'"></div>
+    </div>
+  </div>
+</ng-template>
