@@ -27,7 +27,8 @@ import { AppComponent } from './app.component';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
-  { path: '**',
+  {
+    path: '**',
     redirectTo: 'home'
   }
 ];

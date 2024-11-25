@@ -26,6 +26,7 @@
 <div #toggleGroupContainer class="tb-toggle-container" [class]="{'tb-disable-pagination': disablePagination}"> <!--*ngIf="(useSelect$ | async) === false; else select"-->
   <mat-button-toggle-group #toggleGroup
                            class="tb-toggle-header"
+                           hideSingleSelectionIndicator="true"
                            [ngClass]="{'tb-fill': (appearance === 'fill' || appearance === 'fill-invert'),
                                        'tb-invert': appearance === 'fill-invert',
                                        'tb-ignore-md-lg': ignoreMdLgSize,

@@ -148,15 +148,15 @@
         "serve": {
           "builder": "@angular-builders/custom-esbuild:dev-server",
           "options": {
-            "browserTarget": "tbmq:build",
+            "buildTarget": "tbmq:build",
             "proxyConfig": "proxy.conf.js"
           },
           "configurations": {
             "production": {
-              "browserTarget": "tbmq:build:production"
+              "buildTarget": "tbmq:build:production"
             },
             "development": {
-              "browserTarget": "tbmq:build:development"
+              "buildTarget": "tbmq:build:development"
             }
           },
           "defaultConfiguration": "development"
