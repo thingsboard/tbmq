@@ -36,7 +36,7 @@ managedNodeGroups:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here
   - name: tbmq-kafka
-    instanceType: c7a.xlarge
+    instanceType: c7a.large
     desiredCapacity: 3
     maxSize: 3
     minSize: 0
