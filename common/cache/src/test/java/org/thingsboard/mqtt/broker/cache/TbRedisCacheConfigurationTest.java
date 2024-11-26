@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
+import io.lettuce.core.cluster.ClusterClientOptions;
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,21 +26,35 @@ import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.Duration;
+import java.util.EnumSet;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = {CacheSpecsMap.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
+@ContextConfiguration(classes = {CacheSpecsMap.class, LettuceConfig.class, TBRedisCacheConfiguration.class, TBRedisStandaloneConfiguration.class})
 @EnableConfigurationProperties
 @TestPropertySource(properties = {
         "redis.connection.type=standalone",
-        "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440"
+        "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
+        "lettuce.config.shutdown-quiet-period=1",
+        "lettuce.config.shutdown-timeout=10",
+        "lettuce.config.topology-refresh.enabled=false",
+        "lettuce.config.topology-refresh.period=60"
 })
 @Slf4j
 public class TbRedisCacheConfigurationTest {
+
+    @Autowired
+    LettuceConnectionFactory lettuceConnectionFactory;
+
+    @Autowired
+    private LettuceConfig lettuceConfig;
 
     @Autowired
     CacheManager cacheManager;
@@ -59,4 +75,33 @@ public class TbRedisCacheConfigurationTest {
     public void givenCacheConfig_whenCacheManagerReady_thenVerifyNonExistedCaches() {
         assertThat(cacheManager.getCache("rainbows_and_unicorns")).isNull();
     }
+
+    @Test
+    public void verifyLettuceConnectionFactoryProperties() {
+        assertThat(lettuceConnectionFactory).isNotNull();
+
+        var lettuceClientConfiguration = lettuceConnectionFactory.getClientConfiguration();
+        assertThat(lettuceClientConfiguration.getShutdownQuietPeriod()).isEqualTo(Duration.ofSeconds(lettuceConfig.getShutdownQuietPeriod()));
+        assertThat(lettuceClientConfiguration.getShutdownTimeout()).isEqualTo(Duration.ofSeconds(lettuceConfig.getShutdownTimeout()));
+
+        var clientOptionsOpt = lettuceClientConfiguration.getClientOptions();
+        assertThat(clientOptionsOpt).isNotEmpty();
+
+        var clientOptions = clientOptionsOpt.get();
+        assertThat(clientOptions).isInstanceOf(ClusterClientOptions.class);
+
+        var clusterClientOptions = (ClusterClientOptions) clientOptions;
+
+        var topologyRefreshOptions = clusterClientOptions.getTopologyRefreshOptions();
+        assertThat(topologyRefreshOptions).isNotNull();
+        assertThat(topologyRefreshOptions.isPeriodicRefreshEnabled()).isEqualTo(lettuceConfig.getTopologyRefresh().isEnabled());
+        assertThat(topologyRefreshOptions.getRefreshPeriod()).isEqualTo(Duration.ofSeconds(lettuceConfig.getTopologyRefresh().getPeriod()));
+        assertThat(topologyRefreshOptions.getAdaptiveRefreshTriggers()).isEqualTo(EnumSet.allOf(ClusterTopologyRefreshOptions.RefreshTrigger.class));
+
+        var timeoutOptions = clusterClientOptions.getTimeoutOptions();
+        assertThat(timeoutOptions).isNotNull();
+        assertThat(timeoutOptions.isTimeoutCommands()).isTrue();
+
+    }
+
 }
