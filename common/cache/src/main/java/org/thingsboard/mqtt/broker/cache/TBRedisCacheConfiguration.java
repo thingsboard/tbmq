@@ -18,6 +18,9 @@ package org.thingsboard.mqtt.broker.cache;
 import io.github.bucket4j.distributed.serialization.Mapper;
 import io.github.bucket4j.redis.jedis.Bucket4jJedis;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
+import io.lettuce.core.TimeoutOptions;
+import io.lettuce.core.cluster.ClusterClientOptions;
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
 import lombok.Data;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,6 +59,7 @@ import java.util.stream.Collectors;
 public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
     private final CacheSpecsMap cacheSpecsMap;
+    private final LettuceConfig lettuceConfig;
 
     @Value("${redis.pool_config.maxTotal:128}")
     private int maxTotal;
@@ -104,6 +108,23 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         if (!useDefaultPoolConfig()) {
             lettucePoolingClientConfigBuilder.poolConfig(buildConnectionPoolConfig());
         }
+
+        lettucePoolingClientConfigBuilder.shutdownQuietPeriod(Duration.ofSeconds(lettuceConfig.getShutdownQuietPeriod()));
+        lettucePoolingClientConfigBuilder.shutdownTimeout(Duration.ofSeconds(lettuceConfig.getShutdownTimeout()));
+
+        ClusterTopologyRefreshOptions topologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
+                .enablePeriodicRefresh(lettuceConfig.getTopologyRefresh().isEnabled())
+                .refreshPeriod(Duration.ofSeconds(lettuceConfig.getTopologyRefresh().getPeriod()))
+                .enableAllAdaptiveRefreshTriggers()
+                .build();
+
+        ClusterClientOptions clientOptions = ClusterClientOptions
+                .builder()
+                .timeoutOptions(TimeoutOptions.enabled())
+                .topologyRefreshOptions(topologyRefreshOptions)
+                .build();
+        lettucePoolingClientConfigBuilder.clientOptions(clientOptions);
+
         return new LettuceConnectionFactory(getRedisConfiguration(), lettucePoolingClientConfigBuilder.build());
     }
 

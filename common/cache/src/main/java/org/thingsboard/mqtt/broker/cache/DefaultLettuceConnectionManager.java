@@ -19,7 +19,9 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.codec.ByteArrayCodec;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -36,7 +38,7 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
 
     private final LettuceConnectionFactory lettuceConnectionFactory;
 
-    private StatefulRedisConnection<String, String> connection;
+    private StatefulRedisConnection<byte[], byte[]> connection;
 
     @PostConstruct
     public void init() {
@@ -44,8 +46,15 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
         if (client == null) {
             throw new IllegalStateException("Failed to initiate Redis lettuce client!");
         }
-        connection = client.connect();
+        connection = client.connect(ByteArrayCodec.INSTANCE);
         connection.setAutoFlushCommands(autoFlush);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (connection != null && connection.isOpen()) {
+            connection.close();
+        }
     }
 
     @Override
@@ -64,49 +73,49 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
     }
 
     @Override
-    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String[] keys, String... values) {
+    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[][] keys, byte[]... values) {
         RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys, values);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String... keys) {
+    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[]... keys) {
         RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String[] keys, String... values) {
+    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[][] keys, byte[]... values) {
         RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys, values);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String... keys) {
+    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[]... keys) {
         RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
-    public RedisFuture<String> getAsync(String key) {
-        RedisFuture<String> getFuture = connection.async().get(key);
+    public RedisFuture<byte[]> getAsync(byte[] key) {
+        RedisFuture<byte[]> getFuture = connection.async().get(key);
         flushIfNeeded();
         return getFuture;
     }
 
     @Override
-    public RedisFuture<Long> delAsync(String key) {
+    public RedisFuture<Long> delAsync(byte[] key) {
         RedisFuture<Long> delFuture = connection.async().del(key);
         flushIfNeeded();
         return delFuture;
     }
 
     @Override
-    public RedisFuture<String> setAsync(String key, String value) {
+    public RedisFuture<String> setAsync(byte[] key, byte[] value) {
         RedisFuture<String> setFuture = connection.async().set(key, value);
         flushIfNeeded();
         return setFuture;
