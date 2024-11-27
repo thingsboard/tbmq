@@ -29,8 +29,8 @@ import redis.clients.jedis.UnifiedJedis;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
 public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<RedisClusterConfiguration> {
 
-    public TBRedisClusterConfiguration(CacheSpecsMap cacheSpecsMap) {
-        super(cacheSpecsMap);
+    public TBRedisClusterConfiguration(CacheSpecsMap cacheSpecsMap, LettuceConfig lettuceConfig) {
+        super(cacheSpecsMap, lettuceConfig);
     }
 
     @Value("${redis.cluster.nodes:}")

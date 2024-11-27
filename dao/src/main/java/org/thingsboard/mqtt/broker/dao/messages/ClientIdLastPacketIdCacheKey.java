@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 
 public record ClientIdLastPacketIdCacheKey(String clientId, String cachePrefix) implements Serializable {
 
@@ -31,8 +32,16 @@ public record ClientIdLastPacketIdCacheKey(String clientId, String cachePrefix) 
         return StringUtils.isBlank(cachePrefix) ? keyBase : cachePrefix + keyBase;
     }
 
+    private static ClientIdLastPacketIdCacheKey newInstance(String clientId, String cachePrefix) {
+        return new ClientIdLastPacketIdCacheKey(clientId, cachePrefix);
+    }
+
     public static String toStringKey(String clientId, String cachePrefix) {
-        return new ClientIdLastPacketIdCacheKey(clientId, cachePrefix).toString();
+        return newInstance(clientId, cachePrefix).toString();
+    }
+
+    public static byte[] toBytesKey(String clientId, String cachePrefix) {
+        return toStringKey(clientId, cachePrefix).getBytes(StandardCharsets.UTF_8);
     }
 
 }

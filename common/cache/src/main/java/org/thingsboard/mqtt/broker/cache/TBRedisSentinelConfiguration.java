@@ -29,8 +29,8 @@ import redis.clients.jedis.UnifiedJedis;
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "sentinel")
 public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<RedisSentinelConfiguration> {
 
-    public TBRedisSentinelConfiguration(CacheSpecsMap cacheSpecsMap) {
-        super(cacheSpecsMap);
+    public TBRedisSentinelConfiguration(CacheSpecsMap cacheSpecsMap, LettuceConfig lettuceConfig) {
+        super(cacheSpecsMap, lettuceConfig);
     }
 
     @Value("${redis.sentinel.master:}")
