@@ -15,8 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
-import io.lettuce.core.cluster.ClusterClientOptions;
-import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
+import io.lettuce.core.ClientOptions;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,7 +31,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.Duration;
-import java.util.EnumSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -88,17 +86,9 @@ public class TbRedisCacheConfigurationTest {
         assertThat(clientOptionsOpt).isNotEmpty();
 
         var clientOptions = clientOptionsOpt.get();
-        assertThat(clientOptions).isInstanceOf(ClusterClientOptions.class);
+        assertThat(clientOptions).isInstanceOf(ClientOptions.class);
 
-        var clusterClientOptions = (ClusterClientOptions) clientOptions;
-
-        var topologyRefreshOptions = clusterClientOptions.getTopologyRefreshOptions();
-        assertThat(topologyRefreshOptions).isNotNull();
-        assertThat(topologyRefreshOptions.isPeriodicRefreshEnabled()).isEqualTo(lettuceConfig.getCluster().getTopologyRefresh().isEnabled());
-        assertThat(topologyRefreshOptions.getRefreshPeriod()).isEqualTo(Duration.ofSeconds(lettuceConfig.getCluster().getTopologyRefresh().getPeriod()));
-        assertThat(topologyRefreshOptions.getAdaptiveRefreshTriggers()).isEqualTo(EnumSet.allOf(ClusterTopologyRefreshOptions.RefreshTrigger.class));
-
-        var timeoutOptions = clusterClientOptions.getTimeoutOptions();
+        var timeoutOptions = clientOptions.getTimeoutOptions();
         assertThat(timeoutOptions).isNotNull();
         assertThat(timeoutOptions.isTimeoutCommands()).isTrue();
 
