@@ -29,5 +29,5 @@ data:
   REDIS_HOST: "YOUR_REDIS_ENDPOINT_URL_WITHOUT_PORT"
   #REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"
 
-  # Recommended to enable in Kubernetes environments in case of Redis cluster or master-replica setups to handle dynamic IP changes and nodes failover
+  # Recommended to enable in Kubernetes environments in case of Redis cluster setup to handle dynamic IP changes and nodes failover
   #REDIS_LETTUCE_TOPOLOGY_REFRESH_ENABLED: "true"

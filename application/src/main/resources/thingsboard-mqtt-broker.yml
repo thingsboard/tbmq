@@ -613,13 +613,24 @@ lettuce:
     shutdown-quiet-period: "${REDIS_LETTUCE_SHUTDOWN_QUIET_PERIOD_SEC:1}"
     # The shutdown timeout for lettuce client set in seconds
     shutdown-timeout: "${REDIS_LETTUCE_SHUTDOWN_TIMEOUT_SEC:10}"
+    cluster:
+      topology-refresh:
+        # Enables or disables periodic cluster topology updates.
+        # Useful for Redis Cluster setup to handle topology changes,
+        # such as node failover, restarts, or IP address changes
+        enabled: "${REDIS_LETTUCE_TOPOLOGY_REFRESH_ENABLED:false}"
+        # Specifies the interval (in seconds) for periodic cluster topology updates
+        period: "${REDIS_LETTUCE_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
+
+jedis:
+  cluster:
     topology-refresh:
       # Enables or disables periodic cluster topology updates.
-      # Useful for Redis Sentinel or Cluster setups to handle topology changes,
+      # Useful for Redis cluster setup to handle topology changes,
       # such as node failover, restarts, or IP address changes
-      enabled: "${REDIS_LETTUCE_TOPOLOGY_REFRESH_ENABLED:false}"
+      enabled: "${REDIS_JEDIS_TOPOLOGY_REFRESH_ENABLED:false}"
       # Specifies the interval (in seconds) for periodic cluster topology updates
-      period: "${REDIS_LETTUCE_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
+      period: "${REDIS_JEDIS_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
 
 # SQL DAO configuration parameters
 spring:

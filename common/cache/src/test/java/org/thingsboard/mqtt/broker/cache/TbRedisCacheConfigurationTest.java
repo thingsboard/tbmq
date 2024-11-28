@@ -44,8 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "cache.specs.mqttClientCredentials.timeToLiveInMinutes=1440",
         "lettuce.config.shutdown-quiet-period=1",
         "lettuce.config.shutdown-timeout=10",
-        "lettuce.config.topology-refresh.enabled=false",
-        "lettuce.config.topology-refresh.period=60"
+        "lettuce.config.cluster.topology-refresh.enabled=false",
+        "lettuce.config.cluster.topology-refresh.period=60"
 })
 @Slf4j
 public class TbRedisCacheConfigurationTest {
@@ -94,8 +94,8 @@ public class TbRedisCacheConfigurationTest {
 
         var topologyRefreshOptions = clusterClientOptions.getTopologyRefreshOptions();
         assertThat(topologyRefreshOptions).isNotNull();
-        assertThat(topologyRefreshOptions.isPeriodicRefreshEnabled()).isEqualTo(lettuceConfig.getTopologyRefresh().isEnabled());
-        assertThat(topologyRefreshOptions.getRefreshPeriod()).isEqualTo(Duration.ofSeconds(lettuceConfig.getTopologyRefresh().getPeriod()));
+        assertThat(topologyRefreshOptions.isPeriodicRefreshEnabled()).isEqualTo(lettuceConfig.getCluster().getTopologyRefresh().isEnabled());
+        assertThat(topologyRefreshOptions.getRefreshPeriod()).isEqualTo(Duration.ofSeconds(lettuceConfig.getCluster().getTopologyRefresh().getPeriod()));
         assertThat(topologyRefreshOptions.getAdaptiveRefreshTriggers()).isEqualTo(EnumSet.allOf(ClusterTopologyRefreshOptions.RefreshTrigger.class));
 
         var timeoutOptions = clusterClientOptions.getTimeoutOptions();

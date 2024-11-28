@@ -26,6 +26,20 @@ public class LettuceConfig {
 
     private int shutdownQuietPeriod;
     private int shutdownTimeout;
-    private LettuceTopologyRefreshConfig topologyRefresh;
+    private ClusterConfig cluster;
+
+    @Data
+    public static class ClusterConfig {
+        private LettuceTopologyRefreshConfig topologyRefresh;
+
+        @Data
+        public static class LettuceTopologyRefreshConfig {
+
+            private boolean enabled;
+            private int period;
+
+        }
+
+    }
 
 }

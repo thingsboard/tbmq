@@ -15,6 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.TimeoutOptions;
+import io.lettuce.core.cluster.ClusterClientOptions;
+import io.lettuce.core.cluster.ClusterTopologyRefreshOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
@@ -24,6 +28,8 @@ import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.UnifiedJedis;
+
+import java.time.Duration;
 
 @Configuration
 @ConditionalOnProperty(prefix = "redis.connection", value = "type", havingValue = "cluster")
@@ -71,6 +77,21 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
         clusterConfiguration.setMaxRedirects(maxRedirects);
         clusterConfiguration.setPassword(password);
         return clusterConfiguration;
+    }
+
+    @Override
+    protected ClientOptions getLettuceClientOptions() {
+        ClusterTopologyRefreshOptions topologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
+                .enablePeriodicRefresh(lettuceConfig.getCluster().getTopologyRefresh().isEnabled())
+                .refreshPeriod(Duration.ofSeconds(lettuceConfig.getCluster().getTopologyRefresh().getPeriod()))
+                .enableAllAdaptiveRefreshTriggers()
+                .build();
+
+        return ClusterClientOptions
+                .builder()
+                .timeoutOptions(TimeoutOptions.enabled())
+                .topologyRefreshOptions(topologyRefreshOptions)
+                .build();
     }
 
 }
