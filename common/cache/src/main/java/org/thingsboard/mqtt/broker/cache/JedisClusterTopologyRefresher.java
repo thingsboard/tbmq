@@ -47,10 +47,11 @@ public class JedisClusterTopologyRefresher {
             log.trace("Redis cluster configuration is not set!");
             return;
         }
+        log.trace("Redis cluster refresh topology is starting!");
         try {
             RedisClusterConfiguration clusterConfig = factory.getClusterConfiguration();
             Set<RedisNode> currentNodes = clusterConfig.getClusterNodes();
-            log.trace("Current Redis cluster nodes: {}", currentNodes);
+            log.debug("Current Redis cluster nodes: {}", currentNodes);
 
             for (RedisNode node : currentNodes) {
                 if (!node.hasValidHost()) {
@@ -67,19 +68,20 @@ public class JedisClusterTopologyRefresher {
                     }
                     Set<RedisNode> redisNodes = getRedisNodes(node, jedis);
                     if (currentNodes.equals(redisNodes)) {
-                        log.trace("Redis cluster topology is up to date!");
+                        log.debug("Redis cluster topology is up to date!");
                         break;
                     }
                     clusterConfig.setClusterNodes(redisNodes);
-                    log.trace("Successfully updated Redis cluster topology, nodes: {}", redisNodes);
+                    log.debug("Successfully updated Redis cluster topology, nodes: {}", redisNodes);
                     break;
                 } catch (Exception e) {
-                    log.debug("Failed to refresh cluster topology using node: {}", node.getHost(), e);
+                    log.warn("Failed to refresh cluster topology using node: {}", node.getHost(), e);
                 }
             }
         } catch (Exception e) {
             log.warn("Failed to refresh cluster topology", e);
         }
+        log.trace("Redis cluster refresh topology has finished!");
     }
 
     private Set<RedisNode> getRedisNodes(RedisNode node, Jedis jedis) {
