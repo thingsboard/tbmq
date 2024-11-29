@@ -27,12 +27,13 @@ import { getAce } from '@shared/models/ace/ace.models';
 import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
-import { base64toString, isLiteralObject } from '@core/utils';
+import { base64toString, isLiteralObject, isValidObjectString } from '@core/utils';
 
-export interface EventContentDialogData {
+export interface EventContentDialogComponentDialogData {
   content: string;
   title: string;
-  contentType: ContentType;
+  icon?: string;
+  contentType?: ContentType;
 }
 
 @Component({
@@ -40,19 +41,20 @@ export interface EventContentDialogData {
   templateUrl: './event-content-dialog.component.html',
   styleUrls: ['./event-content-dialog.component.scss']
 })
-export class EventContentDialogComponent extends DialogComponent<EventContentDialogData> implements OnInit, OnDestroy {
+export class EventContentDialogComponent extends DialogComponent<EventContentDialogComponentDialogData> implements OnInit, OnDestroy {
 
   @ViewChild('eventContentEditor', {static: true})
   eventContentEditorElmRef: ElementRef;
 
   content: string;
   title: string;
+  icon: string;
   contentType: ContentType;
   aceEditor: Ace.Editor;
 
   constructor(protected store: Store<AppState>,
               protected router: Router,
-              @Inject(MAT_DIALOG_DATA) public data: EventContentDialogData,
+              @Inject(MAT_DIALOG_DATA) public data: EventContentDialogComponentDialogData,
               public dialogRef: MatDialogRef<EventContentDialogComponent>,
               private renderer: Renderer2) {
     super(store, router, dialogRef);
@@ -61,8 +63,13 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
   ngOnInit(): void {
     this.content = this.data.content;
     this.title = this.data.title;
-    this.contentType = this.data.contentType;
-
+    this.icon = this.data.icon;
+    if (this.data.contentType) {
+      this.contentType = this.data.contentType;
+    } else {
+      const isJson = isValidObjectString(this.content);
+      this.contentType = isJson ? ContentType.JSON : ContentType.TEXT;
+    }
     this.createEditor(this.eventContentEditorElmRef, this.content);
   }
 
@@ -128,6 +135,10 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
           (ace) => {
             this.aceEditor = ace.edit(editorElement, editorOptions);
             this.aceEditor.session.setUseWrapMode(this.contentType === ContentType.TEXT);
+            if (this.contentType === ContentType.TEXT) {
+              this.aceEditor.session.setWrapLimitRange(0, 100);
+              this.aceEditor.setOption('indentedSoftWrap', false);
+            }
             this.aceEditor.setValue(processedContent, -1);
             this.updateEditorSize(editorElement, processedContent, this.aceEditor);
           }
@@ -141,7 +152,7 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
     let newWidth = 400;
     if (content && content.length > 0) {
       const lines = content.split('\n');
-      newHeight = 16 * lines.length + 16;
+      newHeight = 16 * lines.length + 24;
       let maxLineLength = 0;
       lines.forEach((row) => {
         const line = row.replace(/\t/g, '    ').replace(/\n/g, '');
@@ -150,10 +161,10 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
       });
       newWidth = 8 * maxLineLength + 16;
     }
+    // newHeight = Math.min(400, newHeight);
     this.renderer.setStyle(editorElement, 'minHeight', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'height', newHeight.toString() + 'px');
     this.renderer.setStyle(editorElement, 'width', newWidth.toString() + 'px');
-    this.renderer.setStyle(editorElement, 'minHeight', '100px');
     editor.resize();
   }
 }

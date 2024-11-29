@@ -15,25 +15,21 @@
     limitations under the License.
 
 -->
-<mat-toolbar fxLayout="row" color="primary">
-  <h2 translate>{{ title }}</h2>
-  <span fxFlex></span>
-  <button mat-icon-button
-          [mat-dialog-close]="false"
-          type="button">
-    <mat-icon class="material-icons">close</mat-icon>
-  </button>
-</mat-toolbar>
-<div mat-dialog-content fxLayout="row">
-  <div #eventContentEditor class="tb-event-content"></div>
-  <tb-copy-button [disabled]="isLoading$ | async"
-                  [copyText]="data.content">
-  </tb-copy-button>
-</div>
-<div mat-dialog-actions fxLayout="row" fxLayoutAlign="flex-end">
-  <button mat-button type="button"
-          [disabled]="(isLoading$ | async)"
-          [mat-dialog-close]="false" cdkFocusInitial>
-    {{ 'action.close' | translate }}
-  </button>
+<div mat-dialog-content fxLayout="column" fxLayoutGap="16px">
+  <section fxLayout="row" fxLayoutAlign="flex-start center">
+    <div fxLayout="row" fxLayoutGap="8px">
+      <tb-icon *ngIf="icon">{{ icon }}</tb-icon>
+      <span class="title" translate>{{ title }}</span>
+    </div>
+    <span fxFlex></span>
+    <button mat-icon-button [mat-dialog-close]="false">
+      <mat-icon class="material-icons">close</mat-icon>
+    </button>
+  </section>
+  <section fxLayout="row">
+    <div #eventContentEditor class="tb-event-content"></div>
+    <tb-copy-button [disabled]="isLoading$ | async"
+                    [copyText]="data.content">
+    </tb-copy-button>
+  </section>
 </div>
