@@ -68,7 +68,7 @@ public class TbKafkaConsumerSettings {
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
         props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
         if (customProperties != null) {
-            QueueUtil.getConfigs(customProperties).forEach(props::put);
+            props.putAll(QueueUtil.getConfigs(customProperties));
         }
         consumerPropertiesPerTopic
                 .getOrDefault(topic, Collections.emptyList())

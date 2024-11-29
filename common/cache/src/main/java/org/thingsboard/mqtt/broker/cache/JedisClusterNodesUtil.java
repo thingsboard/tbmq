@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.cache;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.RedisNode;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 @Slf4j
 public class JedisClusterNodesUtil {
@@ -31,7 +32,7 @@ public class JedisClusterNodesUtil {
             String id = parts[0];
 
             // Extract host and port from <ip:port@cport>
-            String[] hostPort = parts[1].split(":");
+            String[] hostPort = parts[1].split(BrokerConstants.COLON);
             String host = hostPort[0];
             int port = Integer.parseInt(hostPort[1].split("@")[0]);
 

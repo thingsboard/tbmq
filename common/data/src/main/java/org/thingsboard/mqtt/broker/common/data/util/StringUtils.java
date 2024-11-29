@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.common.data.util;
 
 import com.google.common.base.Splitter;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -27,8 +28,6 @@ import static org.apache.commons.lang3.StringUtils.repeat;
 public class StringUtils {
 
     public static final SecureRandom RANDOM = new SecureRandom();
-
-    public static final String EMPTY = "";
 
     public static final int INDEX_NOT_FOUND = -1;
 
@@ -67,7 +66,7 @@ public class StringUtils {
             return str;
         }
         if (separator.isEmpty()) {
-            return EMPTY;
+            return BrokerConstants.EMPTY_STR;
         }
         final int pos = str.indexOf(separator);
         if (pos == INDEX_NOT_FOUND) {

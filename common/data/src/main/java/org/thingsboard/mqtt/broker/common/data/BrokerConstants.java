@@ -139,6 +139,7 @@ public class BrokerConstants {
 
     public static final String COMMA = ",";
     public static final String COLON = ":";
+    public static final String SEMICOLON = ";";
 
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";

@@ -21,7 +21,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -32,8 +31,8 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
+import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.StatsConsumerKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 
 import java.time.Duration;
@@ -54,7 +53,7 @@ public class TbKafkaConsumerStatsService {
 
     private final Set<String> monitoredGroups = ConcurrentHashMap.newKeySet();
 
-    private final TbKafkaAdminSettings adminSettings;
+    private final TbQueueAdmin tbQueueAdmin;
     private final StatsConsumerKafkaSettings statsConsumerSettings;
     private final TbKafkaConsumerSettings consumerSettings;
     private final TbKafkaConsumerStatisticConfig statsConfig;
@@ -62,7 +61,6 @@ public class TbKafkaConsumerStatsService {
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
 
-    private AdminClient adminClient;
     private Consumer<String, byte[]> consumer;
     private ScheduledExecutorService statsPrintScheduler;
 
@@ -71,7 +69,6 @@ public class TbKafkaConsumerStatsService {
         if (!statsConfig.getEnabled()) {
             return;
         }
-        this.adminClient = AdminClient.create(adminSettings.toProps());
         this.statsPrintScheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("kafka-consumer-stats"));
 
         Properties consumerProps = consumerSettings.toProps("stats_dummy", statsConsumerSettings.getConsumerProperties());
@@ -92,7 +89,7 @@ public class TbKafkaConsumerStatsService {
             }
             for (String groupId : monitoredGroups) {
                 try {
-                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = adminClient.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
+                    Map<TopicPartition, OffsetAndMetadata> groupOffsets = tbQueueAdmin.listConsumerGroupOffsets(groupId).partitionsToOffsetAndMetadata()
                             .get(statsConfig.getKafkaResponseTimeoutMs(), TimeUnit.MILLISECONDS);
                     Map<TopicPartition, Long> endOffsets = consumer.endOffsets(groupOffsets.keySet(), timeoutDuration);
 
@@ -154,18 +151,15 @@ public class TbKafkaConsumerStatsService {
         if (statsPrintScheduler != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(statsPrintScheduler, "Kafka consumer stats");
         }
-        if (adminClient != null) {
-            adminClient.close();
-        }
         if (consumer != null) {
             consumer.close();
         }
     }
 
-
     @Builder
     @Data
     private static class GroupTopicStats {
+
         private String topic;
         private int partition;
         private long lag;

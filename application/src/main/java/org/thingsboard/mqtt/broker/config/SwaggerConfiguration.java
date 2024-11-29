@@ -55,9 +55,10 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.ThingsboardCredentialsExpiredResponse;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponse;
@@ -274,7 +275,7 @@ public class SwaggerConfiguration {
                 }
             }
             if (!requestParams.isEmpty()) {
-                var path = routerOperation.getPath() + "{?" + String.join(",", requestParams) + "}";
+                var path = routerOperation.getPath() + "{?" + String.join(BrokerConstants.COMMA, requestParams) + "}";
                 routerOperation.setPath(path);
             }
             return routerOperation;
