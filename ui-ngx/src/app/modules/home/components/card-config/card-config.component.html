@@ -35,7 +35,7 @@
                       matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
               content_copy
             </mat-icon>
-            <section class="tb-warning-icon" *ngIf="!showWarningIcon(entity, configParams)">
+            <section class="tb-warning-icon" *ngIf="showWarningIcon(entity, configParams)">
                  <mat-icon (click)="gotoDocs('security/#authentication')"
                            [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
                            class="tb-config-icon">warning

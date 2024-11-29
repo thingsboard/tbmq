@@ -103,6 +103,10 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
     this.entityForm.patchValue({clientType: entity.clientType});
   }
+
+  showConnectivityDialog() {
+    return !this.isEdit && this.entity?.credentialsType === CredentialsType.MQTT_BASIC;
+  }
 }
 
 export class BasicClientCredentials {
