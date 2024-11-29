@@ -22,7 +22,7 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { DetailsPanelComponent } from '@home/components/details-panel.component';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { SharedHomeComponentsModule } from '@home/components/shared-home-components.module';
-import { EventContentDialogV2Component } from '@home/components/event/event-content-dialog-v2.component';
+import { EventContentDialogComponent } from '@home/components/event/event-content-dialog.component';
 import {
   ClientCredentialsAutocompleteComponent
 } from '@home/components/client-credentials-templates/client-credentials-autocomplete.component';
@@ -38,7 +38,7 @@ import { EntityDetailsPageComponent } from '@home/components/entity/entity-detai
       DetailsPanelComponent,
       EntityDetailsPanelComponent,
       EntityDetailsPageComponent,
-      EventContentDialogV2Component,
+      EventContentDialogComponent,
       ClientCredentialsAutocompleteComponent,
       UserPropertiesComponent,
       RouterTabsComponent

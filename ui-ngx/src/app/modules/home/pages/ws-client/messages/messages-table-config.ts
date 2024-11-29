@@ -37,9 +37,9 @@ import {
 } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import {
-  EventContentDialogV2ComponentDialogData,
-  EventContentDialogV2Component
-} from '@home/components/event/event-content-dialog-v2.component';
+  EventContentDialogComponentDialogData,
+  EventContentDialogComponent
+} from '@home/components/event/event-content-dialog.component';
 import {
   WsMessagePropertiesDialogComponent,
   WsMessagePropertiesDialogData
@@ -131,7 +131,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
+    this.dialog.open<EventContentDialogComponent, EventContentDialogComponentDialogData>(EventContentDialogComponent, {
       disableClose: false,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

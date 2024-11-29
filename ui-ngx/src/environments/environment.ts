@@ -22,7 +22,7 @@ export const environment = {
   appTitle: 'TBMQ',
   production: false,
 // @ts-ignore
-  tbmqVersion: SUPPORTED_LANGS, // TODO fix TBMQ_VERSION
+  tbmqVersion: TBMQ_VERSION,
 // @ts-ignore
   supportedLangs: SUPPORTED_LANGS,
   defaultLang: 'en_US'

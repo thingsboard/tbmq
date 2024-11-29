@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import "../../../../scss/constants";
+@import 'constants';
 
 :host {
-  cursor: pointer;
-  .mat-icon.copied{
+  .mat-icon.copied {
     color: #00C851 !important;
-  }
-  &:hover{
-    .mat-icon{
-      color: $tb-primary-color !important;
-    }
   }
 }

@@ -44,9 +44,9 @@ import {
 } from '@home/pages/retained-messages/retained-messages-table-header.component';
 import { forAllTimeInterval } from '@shared/models/time/time.models';
 import {
-  EventContentDialogV2ComponentDialogData,
-  EventContentDialogV2Component
-} from '@home/components/event/event-content-dialog-v2.component';
+  EventContentDialogComponentDialogData,
+  EventContentDialogComponent
+} from '@home/components/event/event-content-dialog.component';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
 
@@ -263,7 +263,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
+    this.dialog.open<EventContentDialogComponent, EventContentDialogComponentDialogData>(EventContentDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

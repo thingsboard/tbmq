@@ -32,14 +32,12 @@
                       ngxClipboard
                       (cbOnSuccess)="onCopied()"
                       [cbContent]="entity.value"
-                      style="color: #0a5b25"
                       matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
               content_copy
             </mat-icon>
-            <section class="tb-warning-icon" *ngIf="showWarningIcon(entity, configParams)">
+            <section class="tb-warning-icon" *ngIf="!showWarningIcon(entity, configParams)">
                  <mat-icon (click)="gotoDocs('security/#authentication')"
                            [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
-                           style="color: #ff9a00"
                            class="tb-config-icon">warning
                  </mat-icon>
             </section>

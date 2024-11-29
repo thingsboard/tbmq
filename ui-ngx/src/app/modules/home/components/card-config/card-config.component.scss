@@ -25,44 +25,21 @@
     height: 13px;
     margin-left: 4px;
     cursor: pointer;
+    color: $tb-primary-color;
   }
 
   .tb-warning-icon {
     position: relative;
     display: inline-block;
     text-align: left;
+
+    .tb-config-icon {
+      color: #ff9a00;
+    }
   }
 
   .tb-config-table {
     overflow: auto;
-
-    .mat-tab {
-      overflow: auto;
-    }
-
-    .mat-row, .mat-header-row {
-      cursor: unset;
-      height: 1.375em;
-    }
-
-    .mat-paginator-container {
-      flex-wrap: nowrap;
-    }
-
-    .mat-cell {
-      padding: 0;
-    }
-
-    .mat-header-cell {
-      color: rgba(0, 0, 0, 0.38);
-      font-size: 0.75em;
-      font-weight: 400;
-      padding: 0;
-
-      /*@media #{$mat-lt-xl} {
-        font-size: 10px;
-      }*/
-    }
   }
 }
 
