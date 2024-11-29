@@ -22,7 +22,7 @@ import lombok.Data;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.thingsboard.mqtt.broker.cache.CacheConstants;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.time.Duration;
 
@@ -34,8 +34,8 @@ public abstract class AbstractMsgsRateLimitsConfiguration {
 
     protected BucketConfiguration getBucketConfiguration() {
         ConfigurationBuilder builder = BucketConfiguration.builder();
-        for (String limitSrc : config.split(CacheConstants.COMMA)) {
-            String[] parts = limitSrc.split(CacheConstants.COLON);
+        for (String limitSrc : config.split(BrokerConstants.COMMA)) {
+            String[] parts = limitSrc.split(BrokerConstants.COLON);
             if (parts.length != 2) {
                 throw new IllegalArgumentException("Invalid limitSrc format: " + limitSrc);
             }

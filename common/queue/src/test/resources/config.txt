@@ -1,0 +1,1 @@
+security.protocol:SASL_PLAINTEXT;sasl.mechanism:OAUTHBEARER;sasl.jaas.config:org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required clientId="exampleClient" clientSecret="supersecret"\;;sasl.oauthbearer.token.endpoint.url:http://example.com/realms/Example/protocol/openid-connect/token

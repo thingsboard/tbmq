@@ -37,6 +37,7 @@ import org.springframework.data.redis.connection.lettuce.LettucePoolingClientCon
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.HostAndPort;
@@ -205,9 +206,9 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
             result = Collections.emptyList();
         } else {
             result = new ArrayList<>();
-            for (String hostPort : nodes.split(CacheConstants.COMMA)) {
-                String host = hostPort.split(CacheConstants.COLON)[0];
-                int port = Integer.parseInt(hostPort.split(CacheConstants.COLON)[1]);
+            for (String hostPort : nodes.split(BrokerConstants.COMMA)) {
+                String host = hostPort.split(BrokerConstants.COLON)[0];
+                int port = Integer.parseInt(hostPort.split(BrokerConstants.COLON)[1]);
                 result.add(new RedisNode(host, port));
             }
         }

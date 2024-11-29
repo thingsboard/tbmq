@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 @Getter
 @Component
 public class StatsConsumerKafkaSettings {
+
     @Value("${queue.kafka.consumer-stats.consumer-config}")
     private String consumerProperties;
+
 }

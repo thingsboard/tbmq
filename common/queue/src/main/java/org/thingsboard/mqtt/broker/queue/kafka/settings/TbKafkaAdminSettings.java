@@ -26,6 +26,7 @@ import java.util.Properties;
 @Setter
 @Component
 public class TbKafkaAdminSettings {
+
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
@@ -36,7 +37,7 @@ public class TbKafkaAdminSettings {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
         if (config != null) {
-            QueueUtil.getConfigs(config).forEach(props::put);
+            props.putAll(QueueUtil.getConfigs(config));
         }
         return props;
     }

@@ -17,13 +17,14 @@ package org.thingsboard.mqtt.broker.queue.kafka;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.ConsumerGroupDescription;
 import org.apache.kafka.clients.admin.ConsumerGroupListing;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConsumerGroupsResult;
 import org.apache.kafka.clients.admin.DescribeLogDirsResult;
+import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
 import org.apache.kafka.clients.admin.ListConsumerGroupsOptions;
 import org.apache.kafka.clients.admin.LogDirDescription;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -79,13 +80,13 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Value("${queue.kafka.client-session-event-response.topic-prefix}")
     private String clientSessionEventRespTopicPrefix;
 
-    private final AdminClient client;
+    private final Admin client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
     private final Consumer<String, byte[]> consumer;
     private final Duration timeoutDuration;
 
     public TbKafkaAdmin(TbKafkaAdminSettings adminSettings, TbKafkaConsumerSettings consumerSettings, HomePageConsumerKafkaSettings homePageConsumerKafkaSettings) {
-        client = AdminClient.create(adminSettings.toProps());
+        client = Admin.create(adminSettings.toProps());
         try {
             topics.addAll(client.listTopics().names().get());
         } catch (InterruptedException | ExecutionException e) {
@@ -452,6 +453,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                 }
             });
         });
+    }
+
+    @Override
+    public ListConsumerGroupOffsetsResult listConsumerGroupOffsets(String groupId) {
+        return client.listConsumerGroupOffsets(groupId);
     }
 
     private boolean isConsumerGroupToDelete(String consumerGroupPrefix, String serviceId, long currentCgSuffix, String consumerGroupId) {

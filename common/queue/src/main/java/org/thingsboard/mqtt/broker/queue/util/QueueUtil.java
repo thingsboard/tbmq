@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.queue.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.util.Collections;
@@ -26,15 +27,26 @@ import java.util.Properties;
 @Slf4j
 public class QueueUtil {
 
+    private static final String TBMQ_SEMICOLON_PLACEHOLDER = "{{TBMQ_SEMICOLON}}";
+
     public static Map<String, String> getConfigs(String properties) {
         if (StringUtils.isEmpty(properties)) {
             return Collections.emptyMap();
         }
+
+        String processedInput = properties.replace("\\;", TBMQ_SEMICOLON_PLACEHOLDER);
+
         Map<String, String> configs = new HashMap<>();
-        for (String property : properties.split(";")) {
-            int delimiterPosition = property.indexOf(":");
+        for (String property : processedInput.split(BrokerConstants.SEMICOLON)) {
+            int delimiterPosition = property.indexOf(BrokerConstants.COLON);
+
+            if (delimiterPosition == -1 || delimiterPosition == 0 || delimiterPosition == property.length() - 1) {
+                throw new IllegalArgumentException("Invalid property format: " + property);
+            }
+
             String key = property.substring(0, delimiterPosition);
-            String value = property.substring(delimiterPosition + 1);
+            String value = property.substring(delimiterPosition + 1).replace(TBMQ_SEMICOLON_PLACEHOLDER, BrokerConstants.SEMICOLON);
+
             configs.put(key, value);
         }
         return configs;

@@ -36,6 +36,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.Aggregation;
 import org.thingsboard.mqtt.broker.common.data.kv.BaseReadTsKvQuery;
@@ -310,7 +311,7 @@ public class TimeseriesController extends BaseController {
     private List<String> toKeysList(String keys) {
         List<String> keyList = null;
         if (!StringUtils.isEmpty(keys)) {
-            keyList = Arrays.asList(keys.split(","));
+            keyList = Arrays.asList(keys.split(BrokerConstants.COMMA));
         }
         return keyList;
     }
