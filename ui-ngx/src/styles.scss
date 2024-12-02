@@ -821,18 +821,14 @@ pre.tb-highlight {
   }
 
   .mat-toolbar-tools {
-    //font-size: 20px;
     letter-spacing: .005em;
-    //box-sizing: border-box;
     font-weight: 400;
     display: flex;
     align-items: center;
     flex-direction: row;
     width: 100%;
     height: 64px;
-    //max-height: 64px;
     padding: 0 16px;
-    //margin: 0;
   }
 
   .mat-icon {
@@ -869,6 +865,12 @@ pre.tb-highlight {
   }
 
   .mat-mdc-icon-button {
+    &.tb-mat-12 {
+      @include tb-mat-icon-button-size(12);
+      .mat-icon {
+        @include tb-mat-icon-size(12);
+      }
+    }
     &.tb-mat-16 {
       @include tb-mat-icon-button-size(16);
       .mat-icon {

@@ -58,8 +58,7 @@ export class CopyButtonComponent {
   color: ThemePalette;
 
   @Input()
-  @coerceBoolean()
-  miniButton = false;
+  buttonClass: {[key: string]: any} = {};
 
   @Output()
   successCopied = new EventEmitter<string>();

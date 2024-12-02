@@ -20,20 +20,15 @@
   flex: 1;
   min-height: 150px;
 
-  .tb-config-icon {
-    font-size: inherit;
-    height: 13px;
-    margin-left: 4px;
-    cursor: pointer;
-    color: $tb-primary-color;
-  }
-
   .tb-warning-icon {
     position: relative;
     display: inline-block;
     text-align: left;
 
-    .tb-config-icon {
+    mat-icon {
+      font-size: inherit;
+      height: 12px;
+      margin-left: 4px;
       color: #ff9a00;
     }
   }

@@ -27,18 +27,16 @@
           <span *ngIf="column.key === 'key'" translate>{{configParamsTranslationMap.get(entity.key)}}</span>
           <span *ngIf="column.key === 'value'">
             {{ formatBytesToValue(entity) }}
-            <mat-icon *ngIf="showCopyButton(entity, configParams)"
-                      class="tb-config-icon"
-                      ngxClipboard
-                      (cbOnSuccess)="onCopied()"
-                      [cbContent]="entity.value"
-                      matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
-              content_copy
-            </mat-icon>
+            <tb-copy-button [fxShow]="showCopyButton(entity, configParams)"
+                            [copyText]="entity.value"
+                            [buttonClass]="{'tb-mat-12': true}"
+                            [style]="{display: 'inline'}"
+                            class="tb-config-icon">
+            </tb-copy-button>
             <section class="tb-warning-icon" *ngIf="showWarningIcon(entity, configParams)">
                  <mat-icon (click)="gotoDocs('security/#authentication')"
-                           [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
-                           class="tb-config-icon">warning
+                           [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))">
+                   warning
                  </mat-icon>
             </section>
           </span>

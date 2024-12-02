@@ -20,7 +20,6 @@ import {
   ConfigParams,
   ConfigParamsTranslationMap,
 } from '@shared/models/config.model';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
@@ -69,17 +68,6 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;
-  }
-
-  onCopied() {
-    const message = this.translate.instant('action.on-copied');
-    this.store.dispatch(new ActionNotificationShow({
-      message,
-      type: 'success',
-      duration: 1000,
-      verticalPosition: 'top',
-      horizontalPosition: 'left'
-    }));
   }
 
   gotoDocs(page: string){
