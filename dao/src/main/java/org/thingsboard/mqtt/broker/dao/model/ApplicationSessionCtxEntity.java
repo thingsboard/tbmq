@@ -48,6 +48,7 @@ public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx
     @Convert(converter = JsonConverter.class)
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBLISH_MSG_INFOS_PROPERTY)
     private JsonNode publishMsgInfos;
+
     @Convert(converter = JsonConverter.class)
     @Column(name = ModelConstants.APPLICATION_SESSION_CTX_PUBREL_MSG_INFOS_PROPERTY)
     private JsonNode pubRelMsgInfos;
@@ -58,8 +59,8 @@ public class ApplicationSessionCtxEntity implements ToData<ApplicationSessionCtx
     public ApplicationSessionCtxEntity(ApplicationSessionCtx applicationSessionCtx) {
         this.clientId = applicationSessionCtx.getClientId();
         this.lastUpdatedTime = applicationSessionCtx.getLastUpdatedTime();
-        this.publishMsgInfos = JacksonUtil.toJsonNode(JacksonUtil.toString(applicationSessionCtx.getPublishMsgInfos()));
-        this.pubRelMsgInfos = JacksonUtil.toJsonNode(JacksonUtil.toString(applicationSessionCtx.getPubRelMsgInfos()));
+        this.publishMsgInfos = JacksonUtil.valueToTree(applicationSessionCtx.getPublishMsgInfos());
+        this.pubRelMsgInfos = JacksonUtil.valueToTree(applicationSessionCtx.getPubRelMsgInfos());
     }
 
     @Override

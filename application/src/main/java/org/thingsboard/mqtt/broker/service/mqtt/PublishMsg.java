@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -33,6 +34,7 @@ public class PublishMsg {
     private final String topicName;
     private final byte[] payload;
     private final ByteBuf byteBuf;
+    @JsonAlias("qosLevel") // Map old "qosLevel" field during deserialization. Can be removed in the future releases
     private final int qos;
     private final boolean isRetained;
     private final boolean isDup;

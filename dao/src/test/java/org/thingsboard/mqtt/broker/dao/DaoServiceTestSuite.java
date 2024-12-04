@@ -21,13 +21,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(ClasspathSuite.class)
 @ClassnameFilters({
-        "org.thingsboard.mqtt.broker.dao.service.*ServiceTest",
-        "org.thingsboard.mqtt.broker.dao.client.unauthorized.*Test",
-        "org.thingsboard.mqtt.broker.dao.data.*Test",
-        "org.thingsboard.mqtt.broker.dao.sqlts.sql.*Test",
-        "org.thingsboard.mqtt.broker.dao.util.protocol.*Test",
-        "org.thingsboard.mqtt.broker.dao.validation.*Test",
-        "org.thingsboard.mqtt.broker.dao.ws.*Test"
+        "org.thingsboard.mqtt.broker.dao.*Test"
 })
 public class DaoServiceTestSuite extends AbstractRedisContainer {
 

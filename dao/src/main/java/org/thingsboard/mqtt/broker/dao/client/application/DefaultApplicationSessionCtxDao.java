@@ -31,6 +31,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class DefaultApplicationSessionCtxDao extends JpaAbstractDaoListeningExecutorService implements ApplicationSessionCtxDao {
+
     private final ApplicationSessionCtxRepository applicationSessionCtxRepository;
 
     @Override

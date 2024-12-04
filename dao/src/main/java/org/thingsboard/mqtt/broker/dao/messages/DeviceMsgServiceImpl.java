@@ -311,7 +311,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             throw new CompletionException(throwable);
         }).thenApply(messages ->
                 messages.stream()
-                        .map(messageStr -> JacksonUtil.fromBytes(messageStr, DevicePublishMsg.class))
+                        .map(messageInBytes -> JacksonUtil.fromBytes(messageInBytes, DevicePublishMsg.class))
                         .toList());
     }
 
