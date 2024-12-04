@@ -59,34 +59,39 @@ kubectl get sc
 # gp3 (default)   ebs.csi.aws.com         Delete          WaitForFirstConsumer   true                   14s
 ```
 
-### Kafka
+### Kafka and Redis Installation Using Helm
 
-**Important notice**, instead of creation of AWS MSK, we recommend deploying Bitnami Kafka from Helm.
-For that, review the [kafka](/k8s/aws/kafka) folder.
-You can find there `default-values-kafka-28-3-0.yml` - default values downloaded from Bitnami artifactHub.
-And `values-kafka-28-3-0.yml` with modified values.
+For deploying Kafka and Redis, we recommend using Bitnami Helm charts instead of AWS-managed services like MSK or ElastiCache. 
+Configuration files for both components are available in their respective folders.
 
-To add the Bitnami helm repo:
+Please review [kafka](/k8s/aws/kafka) folder.
+You can find there next configuration files:
+ - `default-values-kafka-28-3-0.yml` - default values downloaded from Bitnami artifactHub.
+ - `values-kafka-28-3-0.yml` - customized version of the default values with changes required for our test case.
 
-```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo update
+In the same way you can review [redis](/k8s/aws/redis) folder and find inside next configuration files:
+ - `default-values-redis-10-2-5.yml` - default values downloaded from Bitnami artifactHub
+ - `values-redis-10-2-5.yml` - customized version of the default values with changes required for our test case.
+
+
+> **Important notice**: Before proceeding with Kafka and Redis installation, execute the following commands to create 
+> the `thingsboard-mqtt-broker` namespace and set it as the current context for deployment:
+
+```shell
+kubectl apply -f tb-broker-namespace.yml
 ```
+
+```shell
+kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
+```
+
+This ensures that all components of the stack (Kafka, Redis, etc.) will be deployed in the correct namespace. After completing these steps, you can proceed with the installation.
 
 To install Kafka v3.7.0:
 
 ```bash
 helm install tbmq-kafka oci://registry-1.docker.io/bitnamicharts/kafka --version 28.3.0 -f kafka/values-kafka-28-3-0.yml
 ```
-
-**Note**: it is recommended to execute Kafka installation after installing TBMQ DB (i.e. run `./k8s-install-tbmq.sh`).
-
-### Redis
-
-**Important notice**, instead of creation of AWS ElastiCache, we recommend deploying Bitnami Redis from Helm.
-For that, review the [redis](/k8s/aws/redis) folder.
-You can find there `default-values-redis-10-2-5.yml` - default values downloaded from Bitnami artifactHub.
-And `values-redis-10-2-5.yml` with modified values.
 
 To install Redis v7.2.5:
 
