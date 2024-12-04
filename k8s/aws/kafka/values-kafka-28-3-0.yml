@@ -157,7 +157,7 @@ log4j: ""
 existingLog4jConfigMap: ""
 ## @param heapOpts Kafka Java Heap size
 ##
-heapOpts: -Xmx1024m -Xms1024m
+heapOpts: -Xmx2048m -Xms2048m
 ## @param interBrokerProtocolVersion Override the setting 'inter.broker.protocol.version' during the ZK migration.
 ## Ref. https://docs.confluent.io/platform/current/installation/migrate-zk-kraft.html
 ##
@@ -631,10 +631,10 @@ controller:
   resources:
     requests:
       cpu: 1.7
-      memory: 2Gi
+      memory: 3Gi
     limits:
       cpu: 1.7
-      memory: 2Gi
+      memory: 3Gi
   ## Kafka pods' Security Context
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod
   ## @param controller.podSecurityContext.enabled Enable security context for the pods
