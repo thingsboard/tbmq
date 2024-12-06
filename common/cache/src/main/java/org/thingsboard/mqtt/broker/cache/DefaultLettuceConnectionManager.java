@@ -15,16 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
-import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.codec.ByteArrayCodec;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -40,21 +39,14 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
 
     private StatefulRedisConnection<byte[], byte[]> connection;
 
+    @SuppressWarnings({"unchecked", "deprecation"})
     @PostConstruct
     public void init() {
-        RedisClient client = (RedisClient) lettuceConnectionFactory.getNativeClient();
-        if (client == null) {
-            throw new IllegalStateException("Failed to initiate Redis lettuce client!");
-        }
-        connection = client.connect(ByteArrayCodec.INSTANCE);
+        RedisConnection redisConnection = lettuceConnectionFactory.getConnection();
+        RedisAsyncCommands<byte[], byte[]> asyncCommands =
+                (RedisAsyncCommands<byte[], byte[]>) redisConnection.getNativeConnection();
+        connection = asyncCommands.getStatefulConnection();
         connection.setAutoFlushCommands(autoFlush);
-    }
-
-    @PreDestroy
-    public void destroy() {
-        if (connection != null && connection.isOpen()) {
-            connection.close();
-        }
     }
 
     @Override
