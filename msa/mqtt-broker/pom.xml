@@ -30,7 +30,7 @@
     <artifactId>mqtt-broker</artifactId>
     <packaging>pom</packaging>
 
-    <name>TBMQ Application Docker</name>
+    <name>TBMQ Node Microservice</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
