@@ -36,10 +36,10 @@
         <pkg.implementationTitle>${project.name}</pkg.implementationTitle>
         <pkg.unixLogFolder>/var/log/${pkg.name}</pkg.unixLogFolder>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
-        <spring-boot.version>3.2.10</spring-boot.version>
-        <spring.version>6.1.13</spring.version>
-        <spring-security.version>6.2.4</spring-security.version>
-        <jupiter.version>5.10.3
+        <spring-boot.version>3.2.12</spring-boot.version>
+        <spring.version>6.1.15</spring.version>
+        <spring-security.version>6.2.8</spring-security.version>
+        <jupiter.version>5.10.5
         </jupiter.version> <!-- keep the same version as spring-boot-starter-test depend on jupiter-->
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.5</logback.version>
@@ -51,13 +51,13 @@
         <protobuf.version>3.25.5</protobuf.version>
         <grpc.version>1.63.0</grpc.version>
         <lombok.version>1.18.32</lombok.version>
-        <netty.version>4.1.109.Final</netty.version>
+        <netty.version>4.1.115.Final</netty.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <dbunit.version>2.7.3</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
         <postgresql.driver.version>42.7.3</postgresql.driver.version>
-        <kafka.version>3.7.0</kafka.version>
-        <testcontainers.version>1.19.7</testcontainers.version>
+        <kafka.version>3.7.1</kafka.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
         <winsw.version>2.0.1</winsw.version>
         <surefire.version>3.2.5</surefire.version>
         <jar-plugin.version>3.4.0</jar-plugin.version>
@@ -76,17 +76,17 @@
         <awaitility.version>4.2.1</awaitility.version>
         <jaxb.version>4.0.2</jaxb.version>
         <jjwt.version>0.12.5</jjwt.version>
-        <bouncycastle.version>1.78</bouncycastle.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
         <bucket4j.version>8.13.0</bucket4j.version>
         <passay.version>1.6.4</passay.version>
         <springdoc-swagger.version>2.4.0TB</springdoc-swagger.version>
         <swagger-annotations.version>2.2.21</swagger-annotations.version>
-        <micrometer.version>1.12.5</micrometer.version>
+        <micrometer.version>1.12.12</micrometer.version>
         <hibernate-validator.version>8.0.1.Final</hibernate-validator.version>
         <jakarta.el.version>4.0.2</jakarta.el.version>
         <antisamy.version>1.7.5</antisamy.version>
-        <spring-data-redis.version>3.2.10</spring-data-redis.version>
-        <jedis.version>5.1.2</jedis.version>
+        <spring-data-redis.version>3.2.12</spring-data-redis.version>
+        <jedis.version>5.1.5</jedis.version>
         <lettuce.version>6.3.2.RELEASE</lettuce.version>
         <hivemq-mqtt-client>1.3.3</hivemq-mqtt-client>
     </properties>
