@@ -140,7 +140,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
                 futures.add(aggregateTsKvEntry);
                 startPeriod = endTs;
             }
-            return getTsKvEntriesFuture(Futures.allAsList(futures));
+            return getTsKvEntriesFuture(Futures.allAsList(futures), query.getOrder());
         }
     }
 
