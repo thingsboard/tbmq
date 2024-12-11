@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.dao.sqlts;
 
-import com.google.common.base.Function;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import jakarta.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
@@ -35,20 +35,29 @@ public abstract class BaseAbstractSqlTimeseriesDao extends JpaAbstractDaoListeni
 
     protected ListenableFuture<List<TsKvEntry>> getTsKvEntriesFuture(ListenableFuture<List<Optional<? extends AbstractTsKvEntity>>> future,
                                                                      String order) {
-        return Futures.transform(future, new Function<>() {
-            @Nullable
-            @Override
-            public List<TsKvEntry> apply(@Nullable List<Optional<? extends AbstractTsKvEntity>> results) {
-                if (results == null || results.isEmpty()) {
-                    return null;
-                }
-                List<? extends AbstractTsKvEntity> data = results.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
-                if (order.equals("DESC")) {
-                    Collections.reverse(data);
-                }
-                return DaoUtil.convertDataList(data);
+        return Futures.transform(future, results -> {
+            if (CollectionUtils.isEmpty(results)) {
+                return null;
             }
+            return DaoUtil.convertDataList(collectWithOrder(results, order));
         }, service);
+    }
+
+    private List<? extends AbstractTsKvEntity> collectWithOrder(List<Optional<? extends AbstractTsKvEntity>> results,
+                                                                String order) {
+        List<? extends AbstractTsKvEntity> data = collectData(results);
+        if (BrokerConstants.DESC_ORDER.equals(order)) {
+            Collections.reverse(data);
+        }
+        return data;
+    }
+
+    private List<? extends AbstractTsKvEntity> collectData(List<Optional<? extends AbstractTsKvEntity>> results) {
+        return results
+                .stream()
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 
 }

@@ -56,12 +56,11 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static java.time.ZoneOffset.UTC;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER;
 
 @Slf4j
 @Component
 public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao implements TimeseriesLatestDao {
-
-    private static final String DESC_ORDER = "DESC";
 
     @Autowired
     private TsKvLatestRepository tsKvLatestRepository;
