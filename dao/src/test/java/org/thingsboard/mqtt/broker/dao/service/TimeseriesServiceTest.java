@@ -41,6 +41,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.ASC_ORDER;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER;
 
@@ -73,6 +74,23 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(1, tsList.size());
         assertEquals(LONG_KEY, tsList.get(0).getKey());
         assertEquals(TS, tsList.get(0).getTs());
+    }
+
+    @Test
+    public void testRemoveLatest() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+
+        saveEntries(entityId, TS - 2);
+        saveEntries(entityId, TS - 1);
+        saveEntries(entityId, TS);
+
+        List<TsKvEntry> tsList = tsService.findAllLatest(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertNotNull(tsList);
+
+        tsService.removeLatest(entityId, List.of(LONG_KEY)).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        tsList = tsService.findAllLatest(entityId).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertTrue(tsList.isEmpty());
     }
 
     @Test
@@ -326,6 +344,96 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
 
         assertEquals(50000, list.get(2).getTs());
         assertEquals(Optional.of(2L), list.get(2).getLongValue());
+    }
+
+    @Test
+    public void testFindDeviceTsDataDesc() throws Exception {
+        String entityId = RandomStringUtils.randomAlphabetic(20);
+
+        save(entityId, 5000, 100);
+        save(entityId, 15000, 200);
+
+        save(entityId, 25000, 300);
+        save(entityId, 35000, 400);
+
+        save(entityId, 45000, 500);
+        save(entityId, 55000, 600);
+
+        List<TsKvEntry> list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.NONE))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertEquals(3, list.size());
+        assertEquals(55000, list.get(0).getTs());
+        assertEquals(Optional.of(600L), list.get(0).getLongValue());
+
+        assertEquals(45000, list.get(1).getTs());
+        assertEquals(Optional.of(500L), list.get(1).getLongValue());
+
+        assertEquals(35000, list.get(2).getTs());
+        assertEquals(Optional.of(400L), list.get(2).getLongValue());
+
+        list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.AVG, DESC_ORDER))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+        assertEquals(3, list.size());
+        assertEquals(10000, list.get(2).getTs());
+        assertEquals(Optional.of(150.0), list.get(2).getDoubleValue());
+
+        assertEquals(30000, list.get(1).getTs());
+        assertEquals(Optional.of(350.0), list.get(1).getDoubleValue());
+
+        assertEquals(50000, list.get(0).getTs());
+        assertEquals(Optional.of(550.0), list.get(0).getDoubleValue());
+
+        list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.SUM, DESC_ORDER))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(3, list.size());
+        assertEquals(10000, list.get(2).getTs());
+        assertEquals(Optional.of(300L), list.get(2).getLongValue());
+
+        assertEquals(30000, list.get(1).getTs());
+        assertEquals(Optional.of(700L), list.get(1).getLongValue());
+
+        assertEquals(50000, list.get(0).getTs());
+        assertEquals(Optional.of(1100L), list.get(0).getLongValue());
+
+        list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.MIN, DESC_ORDER))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(3, list.size());
+        assertEquals(10000, list.get(2).getTs());
+        assertEquals(Optional.of(100L), list.get(2).getLongValue());
+
+        assertEquals(30000, list.get(1).getTs());
+        assertEquals(Optional.of(300L), list.get(1).getLongValue());
+
+        assertEquals(50000, list.get(0).getTs());
+        assertEquals(Optional.of(500L), list.get(0).getLongValue());
+
+        list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.MAX, DESC_ORDER))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(3, list.size());
+        assertEquals(10000, list.get(2).getTs());
+        assertEquals(Optional.of(200L), list.get(2).getLongValue());
+
+        assertEquals(30000, list.get(1).getTs());
+        assertEquals(Optional.of(400L), list.get(1).getLongValue());
+
+        assertEquals(50000, list.get(0).getTs());
+        assertEquals(Optional.of(600L), list.get(0).getLongValue());
+
+        list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
+                60000, 20000, 3, Aggregation.COUNT, DESC_ORDER))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+
+        assertEquals(3, list.size());
+        assertEquals(10000, list.get(2).getTs());
+        assertEquals(Optional.of(2L), list.get(2).getLongValue());
+
+        assertEquals(30000, list.get(1).getTs());
+        assertEquals(Optional.of(2L), list.get(1).getLongValue());
+
+        assertEquals(50000, list.get(0).getTs());
+        assertEquals(Optional.of(2L), list.get(0).getLongValue());
     }
 
     @Test
