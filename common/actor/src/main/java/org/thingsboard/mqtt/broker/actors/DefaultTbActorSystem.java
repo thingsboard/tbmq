@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import java.util.Collections;
@@ -29,7 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
@@ -66,7 +66,7 @@ public class DefaultTbActorSystem implements TbActorSystem {
     public void destroyDispatcher(String dispatcherId) {
         Dispatcher dispatcher = dispatchers.remove(dispatcherId);
         if (dispatcher != null) {
-            dispatcher.getExecutor().shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(dispatcher.getExecutor(), dispatcherId);
         } else {
             throw new RuntimeException("Dispatcher with id [" + dispatcherId + "] is not registered!");
         }
@@ -210,19 +210,13 @@ public class DefaultTbActorSystem implements TbActorSystem {
         return new HashSet<>(actors.keySet());
     }
 
+    @Override
     public void destroy() {
-        log.info("Stopping actor system.");
-        dispatchers.values().forEach(dispatcher -> {
-            dispatcher.getExecutor().shutdown();
-            try {
-                boolean terminationSuccessful = dispatcher.getExecutor().awaitTermination(3, TimeUnit.SECONDS);
-                log.info("[{}] Dispatcher termination is: [{}]", dispatcher.getDispatcherId(), terminationSuccessful ? "successful" : "failed");
-            } catch (InterruptedException e) {
-                log.warn("[{}] Failed to stop dispatcher due to interruption!", dispatcher.getDispatcherId(), e);
-            }
-        });
+        log.info("Stopping actor system dispatchers...");
+        dispatchers.values().forEach(d -> ThingsBoardExecutors.shutdownAndAwaitTermination(d.getExecutor(), d.getDispatcherId()));
         if (scheduler != null) {
-            scheduler.shutdownNow();
+            log.info("Stopping actor system scheduler...");
+            ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Actor system scheduler");
         }
         actors.clear();
         log.info("Actor system stopped.");

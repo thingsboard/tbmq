@@ -30,4 +30,8 @@ public class PasswordResetExecutorService extends AbstractListeningExecutor {
         return mailExecutorThreadPoolSize;
     }
 
+    @Override
+    protected String getExecutorName() {
+        return "Password";
+    }
 }

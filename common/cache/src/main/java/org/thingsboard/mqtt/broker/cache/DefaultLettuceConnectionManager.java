@@ -15,14 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.cache;
 
-import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.ScriptOutputType;
 import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -36,15 +37,15 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
 
     private final LettuceConnectionFactory lettuceConnectionFactory;
 
-    private StatefulRedisConnection<String, String> connection;
+    private StatefulRedisConnection<byte[], byte[]> connection;
 
+    @SuppressWarnings({"unchecked", "deprecation"})
     @PostConstruct
     public void init() {
-        RedisClient client = (RedisClient) lettuceConnectionFactory.getNativeClient();
-        if (client == null) {
-            throw new IllegalStateException("Failed to initiate Redis lettuce client!");
-        }
-        connection = client.connect();
+        RedisConnection redisConnection = lettuceConnectionFactory.getConnection();
+        RedisAsyncCommands<byte[], byte[]> asyncCommands =
+                (RedisAsyncCommands<byte[], byte[]>) redisConnection.getNativeConnection();
+        connection = asyncCommands.getStatefulConnection();
         connection.setAutoFlushCommands(autoFlush);
     }
 
@@ -64,49 +65,49 @@ public class DefaultLettuceConnectionManager extends AbstractLettuceConnectionMa
     }
 
     @Override
-    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String[] keys, String... values) {
+    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[][] keys, byte[]... values) {
         RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys, values);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String... keys) {
+    public <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[]... keys) {
         RedisFuture<T> evalshaFuture = connection.async().evalsha(sha, outputType, keys);
         flushIfNeeded();
         return evalshaFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String[] keys, String... values) {
+    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[][] keys, byte[]... values) {
         RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys, values);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
-    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String... keys) {
+    public <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[]... keys) {
         RedisFuture<T> evalFuture = connection.async().eval(script, outputType, keys);
         flushIfNeeded();
         return evalFuture;
     }
 
     @Override
-    public RedisFuture<String> getAsync(String key) {
-        RedisFuture<String> getFuture = connection.async().get(key);
+    public RedisFuture<byte[]> getAsync(byte[] key) {
+        RedisFuture<byte[]> getFuture = connection.async().get(key);
         flushIfNeeded();
         return getFuture;
     }
 
     @Override
-    public RedisFuture<Long> delAsync(String key) {
+    public RedisFuture<Long> delAsync(byte[] key) {
         RedisFuture<Long> delFuture = connection.async().del(key);
         flushIfNeeded();
         return delFuture;
     }
 
     @Override
-    public RedisFuture<String> setAsync(String key, String value) {
+    public RedisFuture<String> setAsync(byte[] key, byte[] value) {
         RedisFuture<String> setFuture = connection.async().set(key, value);
         flushIfNeeded();
         return setFuture;

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.JpaAbstractDaoListeningExecutorService;
 import org.thingsboard.mqtt.broker.dao.model.sqlts.AbstractTsKvEntity;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,7 +33,8 @@ import java.util.stream.Collectors;
 @Slf4j
 public abstract class BaseAbstractSqlTimeseriesDao extends JpaAbstractDaoListeningExecutorService {
 
-    protected ListenableFuture<List<TsKvEntry>> getTsKvEntriesFuture(ListenableFuture<List<Optional<? extends AbstractTsKvEntity>>> future) {
+    protected ListenableFuture<List<TsKvEntry>> getTsKvEntriesFuture(ListenableFuture<List<Optional<? extends AbstractTsKvEntity>>> future,
+                                                                     String order) {
         return Futures.transform(future, new Function<>() {
             @Nullable
             @Override
@@ -41,6 +43,9 @@ public abstract class BaseAbstractSqlTimeseriesDao extends JpaAbstractDaoListeni
                     return null;
                 }
                 List<? extends AbstractTsKvEntity> data = results.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
+                if (order.equals("DESC")) {
+                    Collections.reverse(data);
+                }
                 return DaoUtil.convertDataList(data);
             }
         }, service);

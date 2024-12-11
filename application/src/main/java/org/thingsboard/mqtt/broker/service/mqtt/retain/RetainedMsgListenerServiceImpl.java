@@ -66,6 +66,11 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     }
 
     @Override
+    public boolean isInitialized() {
+        return this.retainedMessagesMap != null;
+    }
+
+    @Override
     public void startListening(RetainedMsgConsumer retainedMsgConsumer) {
         retainedMsgConsumer.listen(this::processRetainedMsgUpdate);
     }

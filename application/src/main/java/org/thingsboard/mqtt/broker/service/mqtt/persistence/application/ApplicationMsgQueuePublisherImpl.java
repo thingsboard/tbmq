@@ -50,7 +50,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
     private TbPublishServiceImpl<QueueProtos.PublishMsgProto> sharedSubsPublisher;
 
-    @Value("${mqtt.handler.app_msg_callback_threads:0}")
+    @Value("${mqtt.handler.app_msg_callback_threads:2}")
     private int threadsCount;
     @Value("${queue.application-persisted-msg.client-id-validation:true}")
     private boolean validateClientId;
@@ -135,7 +135,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
         publisher.destroy();
         sharedSubsPublisher.destroy();
         if (callbackProcessor != null) {
-            callbackProcessor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(callbackProcessor, "Application queue callback");
         }
     }
 }

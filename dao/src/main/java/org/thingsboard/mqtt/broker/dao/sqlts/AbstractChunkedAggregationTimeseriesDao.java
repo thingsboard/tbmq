@@ -102,7 +102,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
     @PreDestroy
     protected void destroy() {
         if (tsQueue != null) {
-            tsQueue.destroy();
+            tsQueue.destroy("Time series queue ");
         }
     }
 
@@ -140,7 +140,7 @@ public abstract class AbstractChunkedAggregationTimeseriesDao extends BaseAbstra
                 futures.add(aggregateTsKvEntry);
                 startPeriod = endTs;
             }
-            return getTsKvEntriesFuture(Futures.allAsList(futures));
+            return getTsKvEntriesFuture(Futures.allAsList(futures), query.getOrder());
         }
     }
 

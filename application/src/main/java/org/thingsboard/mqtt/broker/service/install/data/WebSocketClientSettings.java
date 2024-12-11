@@ -25,13 +25,15 @@ public class WebSocketClientSettings {
     public static AdminSettings createWsClientSettings() {
         AdminSettings wsClientSettings = new AdminSettings();
         wsClientSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsClientSettings.setJsonValue(createWsClientJsonValue());
+        return wsClientSettings;
+    }
 
+    public static ObjectNode createWsClientJsonValue() {
         ObjectNode objectNode = JacksonUtil.newObjectNode();
         objectNode.put("isLoggingEnabled", false);
         objectNode.put("maxMessages", 1000);
-        wsClientSettings.setJsonValue(objectNode);
-
-        return wsClientSettings;
+        return objectNode;
     }
 
 }

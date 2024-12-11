@@ -33,7 +33,7 @@ public class DevicePublishMsgUtil {
         // non-null fields
         String clientId = record.get("client_id");
         devicePublishMsg.setClientId(clientId);
-        devicePublishMsg.setTopic(record.get("topic"));
+        devicePublishMsg.setTopicName(record.get("topic"));
         devicePublishMsg.setTime(Long.parseLong(record.get("time")));
 
         devicePublishMsg.setPacketId(Integer.parseInt(record.get("packet_id")));

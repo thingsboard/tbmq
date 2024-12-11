@@ -129,7 +129,6 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
             allTopicPartitions.add(newTopicPartition(topic, i));
         }
         consumer.assign(allTopicPartitions);
-
     }
 
     @Override

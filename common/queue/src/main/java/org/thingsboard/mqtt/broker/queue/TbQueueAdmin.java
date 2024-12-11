@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -50,4 +51,5 @@ public interface TbQueueAdmin {
 
     void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix);
 
+    ListConsumerGroupOffsetsResult listConsumerGroupOffsets(String groupId);
 }

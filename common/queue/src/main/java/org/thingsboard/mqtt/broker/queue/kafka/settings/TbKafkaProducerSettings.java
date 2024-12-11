@@ -26,6 +26,7 @@ import java.util.Properties;
 @Setter
 @Component
 public class TbKafkaProducerSettings {
+
     @Value("${queue.kafka.bootstrap.servers}")
     private String servers;
 
@@ -57,7 +58,7 @@ public class TbKafkaProducerSettings {
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, bufferMemory);
         props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, compressionType);
         if (customProperties != null) {
-            QueueUtil.getConfigs(customProperties).forEach(props::put);
+            props.putAll(QueueUtil.getConfigs(customProperties));
         }
         return props;
     }

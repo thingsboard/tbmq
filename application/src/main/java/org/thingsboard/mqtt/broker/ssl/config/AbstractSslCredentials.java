@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.ssl.config;
 
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -131,7 +132,7 @@ public abstract class AbstractSslCredentials implements SslCredentials {
 
     @Override
     public String getValueFromSubjectNameByKey(String subjectName, String key) {
-        String[] dns = subjectName.split(",");
+        String[] dns = subjectName.split(BrokerConstants.COMMA);
         Optional<String> cn = (Arrays.stream(dns).filter(dn -> dn.contains(key + "="))).findFirst();
         String value = cn.isPresent() ? cn.get().replace(key + "=", "") : null;
         return StringUtils.isNotEmpty(value) ? value : null;

@@ -26,6 +26,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -65,7 +66,7 @@ public class RetransmissionServiceImpl implements RetransmissionService {
     @PreDestroy
     public void destroy() {
         if (this.scheduler != null) {
-            this.scheduler.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Retransmission scheduler");
         }
     }
 

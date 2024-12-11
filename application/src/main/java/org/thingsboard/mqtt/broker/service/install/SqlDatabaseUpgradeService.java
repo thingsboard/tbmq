@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 
 import java.io.BufferedReader;
@@ -210,7 +211,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 if (additionalAction != null) {
                     additionalAction.accept(conn);
                 }
-                conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + ";");
+                conn.createStatement().execute("UPDATE tb_schema_settings SET schema_version = " + newVersion + BrokerConstants.SEMICOLON);
                 log.info("Schema updated to version {}", newVersionStr);
             } else {
                 log.info("Skip schema re-update to version {}. Use env flag 'SKIP_SCHEMA_VERSION_CHECK' to force the re-update.", newVersionStr);

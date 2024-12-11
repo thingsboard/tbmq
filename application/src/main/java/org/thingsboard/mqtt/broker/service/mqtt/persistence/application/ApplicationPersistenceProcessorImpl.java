@@ -536,7 +536,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
             log.warn("[{}] Cannot find processing future for client.", clientId);
         } else {
             try {
-                processingFuture.cancel(true);
+                processingFuture.cancel(false);
                 statsManager.clearApplicationProcessorStats(clientId);
             } catch (Exception e) {
                 log.warn("[{}] Exception stopping future for client.", clientId, e);
@@ -622,7 +622,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         if (log.isDebugEnabled()) {
             log.debug("Canceling job {}", job);
         }
-        job.getFuture().cancel(true);
+        job.getFuture().cancel(false);
         job.setInterrupted(true);
     }
 
@@ -830,9 +830,9 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     @PreDestroy
     public void destroy() {
         stopped = true;
-        sharedSubscriptionsProcessingJobs.forEach((clientId, jobs) -> jobs.forEach(j -> j.getFuture().cancel(true)));
+        sharedSubscriptionsProcessingJobs.forEach((clientId, jobs) -> jobs.forEach(j -> j.getFuture().cancel(false)));
         processingFutures.forEach((clientId, future) -> {
-            future.cancel(true);
+            future.cancel(false);
             log.info("[{}] Saving processing context before shutting down.", clientId);
             ApplicationPackProcessingCtx processingContext = collectPackProcessingCtx(clientId);
             try {
@@ -841,20 +841,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                 log.warn("[{}] Failed to save APPLICATION context.", clientId);
             }
         });
-        shutdownExecutor(persistedMsgsConsumerExecutor, "persistence");
-        shutdownExecutor(sharedSubsMsgsConsumerExecutor, "shared subscriptions");
-    }
-
-    private void shutdownExecutor(ExecutorService service, String name) {
-        if (service == null) {
-            return;
-        }
-        service.shutdown();
-        try {
-            boolean terminationSuccessful = service.awaitTermination(3, TimeUnit.SECONDS);
-            log.info("Application {} consumers' executor termination is: [{}]", name, terminationSuccessful ? "successful" : "failed");
-        } catch (InterruptedException e) {
-            log.warn("Failed to stop application {} consumers' executor gracefully due to interruption!", name, e);
-        }
+        ThingsBoardExecutors.shutdownAndAwaitTermination(persistedMsgsConsumerExecutor, "Application consumers'");
+        ThingsBoardExecutors.shutdownAndAwaitTermination(sharedSubsMsgsConsumerExecutor, "Application shared subs consumers'");
     }
 }

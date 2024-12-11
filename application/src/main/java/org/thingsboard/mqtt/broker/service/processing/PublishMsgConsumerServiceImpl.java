@@ -188,7 +188,7 @@ public class PublishMsgConsumerServiceImpl implements PublishMsgConsumerService 
         stopped = true;
         publishMsgConsumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Publish msg consumer");
         }
     }
 }

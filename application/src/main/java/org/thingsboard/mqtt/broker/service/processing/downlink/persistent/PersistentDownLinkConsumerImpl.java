@@ -120,7 +120,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         deleteUniqueConsumerGroup();
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Persistent downlink consumer");
         }
     }
 

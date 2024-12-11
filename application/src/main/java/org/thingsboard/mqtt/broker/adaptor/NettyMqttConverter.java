@@ -39,9 +39,9 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import org.thingsboard.mqtt.broker.session.DisconnectReason;
@@ -185,7 +185,7 @@ public class NettyMqttConverter {
         return PublishMsg.builder()
                 .packetId(mqttPublishMessage.variableHeader().packetId())
                 .topicName(mqttPublishMessage.variableHeader().topicName())
-                .qosLevel(mqttPublishMessage.fixedHeader().qosLevel().value())
+                .qos(mqttPublishMessage.fixedHeader().qosLevel().value())
                 .isRetained(mqttPublishMessage.fixedHeader().isRetain())
                 .isDup(mqttPublishMessage.fixedHeader().isDup())
                 .byteBuf(byteBuf)
@@ -200,7 +200,7 @@ public class NettyMqttConverter {
                 .payload(msg.payload().willMessageInBytes())
                 .isRetained(msg.variableHeader().isWillRetain())
                 .isDup(false)
-                .qosLevel(msg.variableHeader().willQos())
+                .qos(msg.variableHeader().willQos())
                 .properties(msg.payload().willProperties())
                 .build();
     }

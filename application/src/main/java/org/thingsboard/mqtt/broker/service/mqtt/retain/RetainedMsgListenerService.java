@@ -25,6 +25,8 @@ public interface RetainedMsgListenerService {
 
     void init(Map<String, RetainedMsg> retainedMsgMap);
 
+    boolean isInitialized();
+
     void startListening(RetainedMsgConsumer retainedMsgConsumer);
 
     void cacheRetainedMsgAndPersist(String topic, RetainedMsg retainedMsg);

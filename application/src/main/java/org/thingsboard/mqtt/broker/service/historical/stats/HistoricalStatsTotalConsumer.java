@@ -34,6 +34,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
@@ -234,10 +235,10 @@ public class HistoricalStatsTotalConsumer {
         if (!enabled) return;
         stopped = true;
         if (totalStatsProcessingExecutor != null) {
-            totalStatsProcessingExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(totalStatsProcessingExecutor, "Historical total stats");
         }
         if (sessionsProcessingExecutor != null) {
-            sessionsProcessingExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(sessionsProcessingExecutor, "Historical session stats");
         }
         if (consumer != null) {
             consumer.unsubscribeAndClose();

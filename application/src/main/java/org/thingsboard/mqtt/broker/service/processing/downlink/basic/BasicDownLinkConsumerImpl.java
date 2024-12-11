@@ -115,7 +115,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
         consumers.forEach(TbQueueConsumer::unsubscribeAndClose);
         deleteUniqueConsumerGroup();
         if (consumersExecutor != null) {
-            consumersExecutor.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "Basic donwlink consumer");
         }
     }
 

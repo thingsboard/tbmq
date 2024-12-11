@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import net.jodah.concurrentunit.Waiter;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +28,28 @@ import java.util.function.BiConsumer;
 
 @Service
 public class IntegrationTestInitService {
+
     public static final int SUBSCRIBERS_COUNT = 10;
     public static final int PUBLISHERS_COUNT = 5;
     public static final int PUBLISH_MSGS_COUNT = 100;
+
+    private ExecutorService executor;
+
+    @PostConstruct
+    public void init() {
+        executor = Executors.newFixedThreadPool(PUBLISHERS_COUNT);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executor.shutdownNow();
+    }
 
     public void initPubSubTest(BiConsumer<Waiter, Integer> subscriberInitializer,
                                BiConsumer<Waiter, Integer> publisherInitializer) throws Throwable {
         Waiter subscribersWaiter = new Waiter();
         CountDownLatch connectingSubscribers = new CountDownLatch(SUBSCRIBERS_COUNT);
-        ExecutorService executor = Executors.newFixedThreadPool(PUBLISHERS_COUNT);
+        executor = Executors.newFixedThreadPool(PUBLISHERS_COUNT);
         for (int i = 0; i < SUBSCRIBERS_COUNT; i++) {
             int finalI = i;
             executor.execute(() -> {

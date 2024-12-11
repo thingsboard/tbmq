@@ -29,12 +29,11 @@
     <artifactId>msa</artifactId>
     <packaging>pom</packaging>
 
-    <name>TBMQ Docker Configuration</name>
+    <name>TBMQ Microservices</name>
 
     <modules>
-        <module>black-box-tests</module>
-        <module>mqtt-broker</module>
         <module>tbmq</module>
+        <module>mqtt-broker</module>
     </modules>
 
     <properties>

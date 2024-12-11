@@ -386,6 +386,8 @@ public class ClientActor extends ContextAwareActor {
 
         long delay = state.isClientIdGenerated() ? TimeUnit.SECONDS.toMillis(actorConfiguration.getWaitBeforeGeneratedActorStopSeconds())
                 : TimeUnit.SECONDS.toMillis(actorConfiguration.getWaitBeforeNamedActorStopSeconds());
+        log.debug("[{}][{}][{}] Scheduling actor stop command with {} delay", state.getClientId(), state.getCurrentSessionId(),
+                state.getCurrentSessionState(), delay);
         systemContext.scheduleMsgWithDelay(ctx, stopActorCommandMsg, delay);
     }
 

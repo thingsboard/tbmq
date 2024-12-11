@@ -22,6 +22,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,7 +47,7 @@ public class DefaultStatsFactory implements StatsFactory {
     @PostConstruct
     public void init() {
         if (!StringUtils.isEmpty(timerPercentilesStr)) {
-            String[] split = timerPercentilesStr.split(",");
+            String[] split = timerPercentilesStr.split(BrokerConstants.COMMA);
             timerPercentiles = new double[split.length];
             for (int i = 0; i < split.length; i++) {
                 timerPercentiles[i] = Double.parseDouble(split[i]);

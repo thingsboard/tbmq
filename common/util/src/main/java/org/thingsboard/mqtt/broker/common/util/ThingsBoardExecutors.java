@@ -15,11 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import com.google.common.util.concurrent.MoreExecutors;
+import lombok.extern.slf4j.Slf4j;
+
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
 
+@Slf4j
 public class ThingsBoardExecutors {
 
     /**
@@ -70,5 +75,36 @@ public class ThingsBoardExecutors {
             return Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName(serviceName));
         }
         return Executors.newScheduledThreadPool(threadsCount, ThingsBoardThreadFactory.forName(serviceName));
+    }
+
+    public static void shutdownAndAwaitTermination(ExecutorService service, String name) {
+        shutdownAndAwaitTermination(service, 0, name);
+    }
+
+    public static void shutdownAndAwaitTermination(ExecutorService service, long timeoutSeconds, String name) {
+        if (service == null) {
+            return;
+        }
+        long seconds = getTimeoutSeconds(timeoutSeconds);
+        log.debug("Initiating graceful shutdown of {} executor within {}s", name, seconds);
+        boolean terminated = MoreExecutors.shutdownAndAwaitTermination(service, Duration.ofSeconds(seconds));
+        log.info("{} executor termination is: [{}]", name, terminated ? "successful" : "failed");
+    }
+
+    public static long getTimeoutSeconds(long timeoutSeconds) {
+        if (timeoutSeconds > 0) {
+            return timeoutSeconds;
+        }
+        String timeoutValue = System.getenv("TBMQ_GRACEFUL_SHUTDOWN_TIMEOUT_SEC");
+        if (timeoutValue == null) {
+            timeoutValue = System.getProperty("tbmq.graceful.shutdown.timeout.sec");
+        }
+        final long defaultTimeout = 5L;
+        try {
+            return timeoutValue != null ? Long.parseLong(timeoutValue) : defaultTimeout;
+        } catch (NumberFormatException e) {
+            log.error("Invalid timeout value from system properties {}. Using default: 5 seconds", timeoutValue);
+            return defaultTimeout;
+        }
     }
 }

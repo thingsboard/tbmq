@@ -25,18 +25,18 @@ public interface LettuceConnectionManager {
 
     RedisFuture<String> scriptLoadAsync(String script);
 
-    <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String[] keys, String... values);
+    <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[][] keys, byte[]... values);
 
-    <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, String... keys);
+    <T> RedisFuture<T> evalShaAsync(String sha, ScriptOutputType outputType, byte[]... keys);
 
-    <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String[] keys, String... values);
+    <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[][] keys, byte[]... values);
 
-    <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, String... keys);
+    <T> RedisFuture<T> evalAsync(String script, ScriptOutputType outputType, byte[]... keys);
 
-    RedisFuture<String> getAsync(String key);
+    RedisFuture<byte[]> getAsync(byte[] key);
 
-    RedisFuture<Long> delAsync(String key);
+    RedisFuture<Long> delAsync(byte[] key);
 
-    RedisFuture<String> setAsync(String key, String value);
+    RedisFuture<String> setAsync(byte[] key, byte[] value);
 
 }

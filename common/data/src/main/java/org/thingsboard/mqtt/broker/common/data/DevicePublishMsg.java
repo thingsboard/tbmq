@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.netty.handler.codec.mqtt.MqttProperties;
@@ -38,7 +39,8 @@ import java.util.List;
 public class DevicePublishMsg {
 
     private String clientId;
-    private String topic;
+    @JsonAlias("topic") // Map old "topic" field during deserialization. Can be removed in the future releases
+    private String topicName;
     private Long time;
     private Integer qos;
     private Integer packetId;

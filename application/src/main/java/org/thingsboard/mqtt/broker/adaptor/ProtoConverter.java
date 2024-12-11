@@ -20,6 +20,7 @@ import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -29,7 +30,6 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -60,7 +60,7 @@ public class ProtoConverter {
         QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
-                .setQos(publishMsg.getQosLevel())
+                .setQos(publishMsg.getQos())
                 .setRetain(publishMsg.isRetained())
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setClientId(sessionInfo.getClientInfo().getClientId());
@@ -80,7 +80,7 @@ public class ProtoConverter {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
         QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
                 .setPacketId(devicePublishMsg.getPacketId())
-                .setTopicName(devicePublishMsg.getTopic())
+                .setTopicName(devicePublishMsg.getTopicName())
                 .setQos(devicePublishMsg.getQos())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
@@ -155,7 +155,7 @@ public class ProtoConverter {
                 .payload(msg.getPayload().toByteArray())
                 .properties(properties)
                 .packetId(packetId)
-                .qosLevel(qos)
+                .qos(qos)
                 .isDup(isDup)
                 .build();
     }
@@ -169,7 +169,7 @@ public class ProtoConverter {
         MqttPropertiesUtil.addMsgExpiryIntervalToProps(mqttProperties, headers);
         return DevicePublishMsg.builder()
                 .clientId(clientId)
-                .topic(publishMsgProto.getTopicName())
+                .topicName(publishMsgProto.getTopicName())
                 .qos(publishMsgProto.getQos())
                 .payload(publishMsgProto.getPayload().toByteArray())
                 .properties(mqttProperties)
@@ -187,7 +187,7 @@ public class ProtoConverter {
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
                 .setQos(devicePublishMsg.getQos())
-                .setTopicName(devicePublishMsg.getTopic())
+                .setTopicName(devicePublishMsg.getTopicName())
                 .setClientId(devicePublishMsg.getClientId())
                 .setPacketType(devicePublishMsg.getPacketType().toString())
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
@@ -212,7 +212,7 @@ public class ProtoConverter {
                 .packetId(devicePublishMsgProto.getPacketId())
                 .payload(devicePublishMsgProto.getPayload().toByteArray())
                 .qos(devicePublishMsgProto.getQos())
-                .topic(devicePublishMsgProto.getTopicName())
+                .topicName(devicePublishMsgProto.getTopicName())
                 .clientId(devicePublishMsgProto.getClientId())
                 .packetType(PersistedPacketType.valueOf(devicePublishMsgProto.getPacketType()))
                 .properties(properties)

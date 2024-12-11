@@ -61,7 +61,7 @@ public class ApplicationPackProcessingCtx {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
                     PersistedPublishMsg persistedPublishMsg = (PersistedPublishMsg) persistedMsg;
-                    if (persistedPublishMsg.isSharedSubscriptionMsg() && persistedPublishMsg.getPublishMsg().getQosLevel() == 0) {
+                    if (persistedPublishMsg.isSharedSubscriptionMsg() && persistedPublishMsg.getPublishMsg().getQos() == 0) {
                         break;
                     }
                     publishPendingMsgMap.put(persistedMsg.getPacketId(), persistedPublishMsg);

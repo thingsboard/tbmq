@@ -31,6 +31,8 @@ import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -39,7 +41,6 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.List;
 import java.util.UUID;
@@ -288,9 +289,9 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     public void destroy() {
         stopped = true;
 
-        responseConsumerExecutor.shutdownNow();
+        ThingsBoardExecutors.shutdownAndAwaitTermination(responseConsumerExecutor, "Client session event response consumer");
         if (cleanupStaleRequestsScheduler != null) {
-            cleanupStaleRequestsScheduler.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(cleanupStaleRequestsScheduler, "Client session cleanup");
         }
 
         if (eventProducer != null) {

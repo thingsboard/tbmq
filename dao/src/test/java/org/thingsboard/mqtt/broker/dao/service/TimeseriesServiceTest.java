@@ -130,7 +130,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         saveEntries(entityId, TS);
         saveEntries(entityId, TS + 1L);
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS, 1, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS, 1, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(1, entries.size());
@@ -146,7 +146,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         }
         saveEntries(entityId, TS + 100L + 1L);
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 100, 100, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 100, 100, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(1, entries.size());
@@ -162,7 +162,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         }
         saveEntries(entityId, TS + 100000L + 1L);
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 99999, 50000, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 99999, 50000, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(2, entries.size());
@@ -179,7 +179,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         }
         saveEntries(entityId, TS + 80000L + 1L);
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 80000, 50000, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 80000, 50000, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(2, entries.size());
@@ -194,7 +194,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
             saveEntries(entityId, i);
         }
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 99999, 50000, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 99999, 50000, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(2, entries.size());
@@ -209,7 +209,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
             saveEntries(entityId, i);
         }
 
-        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 80000, 50000, 1, Aggregation.COUNT, DESC_ORDER));
+        List<ReadTsKvQuery> queries = List.of(new BaseReadTsKvQuery(LONG_KEY, TS, TS + 80000, 50000, 1, Aggregation.COUNT, "ASC"));
 
         List<TsKvEntry> entries = tsService.findAll(entityId, queries).get();
         Assert.assertEquals(2, entries.size());
@@ -263,7 +263,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(Optional.of(400L), list.get(2).getLongValue());
 
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
-                60000, 20000, 3, Aggregation.AVG))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+                60000, 20000, 3, Aggregation.AVG, "ASC"))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
         assertEquals(3, list.size());
         assertEquals(10000, list.get(0).getTs());
         assertEquals(Optional.of(150.0), list.get(0).getDoubleValue());
@@ -275,7 +275,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(Optional.of(550.0), list.get(2).getDoubleValue());
 
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
-                60000, 20000, 3, Aggregation.SUM))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+                60000, 20000, 3, Aggregation.SUM, "ASC"))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(3, list.size());
         assertEquals(10000, list.get(0).getTs());
@@ -288,7 +288,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(Optional.of(1100L), list.get(2).getLongValue());
 
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
-                60000, 20000, 3, Aggregation.MIN))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+                60000, 20000, 3, Aggregation.MIN, "ASC"))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(3, list.size());
         assertEquals(10000, list.get(0).getTs());
@@ -301,7 +301,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(Optional.of(500L), list.get(2).getLongValue());
 
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
-                60000, 20000, 3, Aggregation.MAX))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+                60000, 20000, 3, Aggregation.MAX, "ASC"))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(3, list.size());
         assertEquals(10000, list.get(0).getTs());
@@ -314,7 +314,7 @@ public class TimeseriesServiceTest extends AbstractServiceTest {
         assertEquals(Optional.of(600L), list.get(2).getLongValue());
 
         list = tsService.findAll(entityId, Collections.singletonList(new BaseReadTsKvQuery(LONG_KEY, 0,
-                60000, 20000, 3, Aggregation.COUNT))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
+                60000, 20000, 3, Aggregation.COUNT, "ASC"))).get(MAX_TIMEOUT, TimeUnit.SECONDS);
 
         assertEquals(3, list.size());
         assertEquals(10000, list.get(0).getTs());

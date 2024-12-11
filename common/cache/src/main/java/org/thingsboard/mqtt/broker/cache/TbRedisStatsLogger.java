@@ -26,6 +26,7 @@ import org.springframework.cache.transaction.TransactionAwareCacheDecorator;
 import org.springframework.data.redis.cache.CacheStatistics;
 import org.springframework.data.redis.cache.RedisCache;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 
 import java.util.concurrent.Executors;
@@ -61,7 +62,7 @@ public class TbRedisStatsLogger {
     @PreDestroy
     public void destroy() {
         if (scheduler != null) {
-            scheduler.shutdown();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(scheduler, "Redis stats");
         }
     }
 

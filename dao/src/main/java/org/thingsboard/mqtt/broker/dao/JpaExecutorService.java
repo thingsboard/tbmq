@@ -30,4 +30,9 @@ public class JpaExecutorService extends AbstractListeningExecutor {
         return poolSize;
     }
 
+    @Override
+    protected String getExecutorName() {
+        return "Jpa";
+    }
+
 }

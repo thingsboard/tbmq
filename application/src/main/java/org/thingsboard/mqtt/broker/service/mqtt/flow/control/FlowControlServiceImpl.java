@@ -124,7 +124,7 @@ public class FlowControlServiceImpl implements FlowControlService {
     public void destroy() {
         stopped = true;
         if (service != null) {
-            service.shutdownNow();
+            ThingsBoardExecutors.shutdownAndAwaitTermination(service, "Flow control");
         }
     }
 

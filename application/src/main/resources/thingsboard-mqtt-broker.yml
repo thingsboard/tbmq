@@ -608,6 +608,30 @@ lettuce:
   buffered-cmd-count: "${REDIS_LETTUCE_BUFFERED_CMDS_COUNT:5}"
   # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count.
   flush-interval-ms: "${REDIS_LETTUCE_FLUSH_INTERVAL_MS:5}"
+  config:
+    # The shutdown quiet period for lettuce client set in seconds
+    shutdown-quiet-period: "${REDIS_LETTUCE_SHUTDOWN_QUIET_PERIOD_SEC:1}"
+    # The shutdown timeout for lettuce client set in seconds
+    shutdown-timeout: "${REDIS_LETTUCE_SHUTDOWN_TIMEOUT_SEC:10}"
+    cluster:
+      topology-refresh:
+        # Enables or disables periodic cluster topology updates.
+        # Useful for Redis Cluster setup to handle topology changes,
+        # such as node failover, restarts, or IP address changes
+        enabled: "${REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_ENABLED:false}"
+        # Specifies the interval (in seconds) for periodic cluster topology updates
+        period: "${REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
+
+# Redis jedis configuration parameters
+jedis:
+  cluster:
+    topology-refresh:
+      # Enables or disables periodic cluster topology updates.
+      # Useful for Redis cluster setup to handle topology changes,
+      # such as node failover, restarts, or IP address changes
+      enabled: "${REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_ENABLED:false}"
+      # Specifies the interval (in seconds) for periodic cluster topology updates
+      period: "${REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_PERIOD_SEC:60}"
 
 # SQL DAO configuration parameters
 spring:
@@ -829,6 +853,8 @@ mqtt:
     device_msg_callback_threads: "${MQTT_HANDLER_DEVICE_MSG_CALLBACK_THREADS:2}"
     # Number of threads in thread pool for processing application persisted publish messages callbacks after sending them to Kafka
     app_msg_callback_threads: "${MQTT_HANDLER_APP_MSG_CALLBACK_THREADS:2}"
+    # Number of threads in thread pool for processing downlink messages callbacks after sending them to Kafka
+    downlink_msg_callback_threads: "${MQTT_HANDLER_DOWNLINK_MSG_CALLBACK_THREADS:2}"
   # Response info value for MQTT 5 request-response feature to be returned to clients that request it.
   # If not set the broker will not reply with response info to mqtt 5 clients that connect with "request response info" = 1.
   # Set it to topic to be used for request-response feature, e.g. "example/"

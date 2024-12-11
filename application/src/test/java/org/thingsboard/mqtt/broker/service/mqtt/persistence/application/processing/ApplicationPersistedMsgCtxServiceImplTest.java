@@ -129,7 +129,7 @@ public class ApplicationPersistedMsgCtxServiceImplTest {
                 .packetId(1)
                 .topicName("topic")
                 .payload("data".getBytes())
-                .qosLevel(1)
+                .qos(1)
                 .isRetained(false)
                 .isDup(false)
                 .build();

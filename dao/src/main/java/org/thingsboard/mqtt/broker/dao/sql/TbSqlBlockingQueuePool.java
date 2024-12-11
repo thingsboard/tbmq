@@ -59,7 +59,7 @@ public class TbSqlBlockingQueuePool<E> implements TbSqlQueue<E> {
     }
 
     @Override
-    public void destroy() {
-        queues.forEach(TbSqlBlockingQueue::destroy);
+    public void destroy(String name) {
+        queues.forEach(queue -> queue.destroy(name + queue.getId()));
     }
 }

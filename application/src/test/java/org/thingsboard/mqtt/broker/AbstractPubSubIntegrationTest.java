@@ -25,6 +25,7 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.springframework.beans.BeansException;
@@ -44,6 +45,7 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
@@ -62,7 +64,7 @@ public abstract class AbstractPubSubIntegrationTest {
 
     public static final int ONE_HOUR_MS = 3600000;
     public static final String LOCALHOST = "localhost";
-    public static final String SERVER_URI = "tcp://" + LOCALHOST + ":";
+    public static final String SERVER_URI = "tcp://" + LOCALHOST + BrokerConstants.COLON;
     public static final byte[] PAYLOAD = "testPayload".getBytes(StandardCharsets.UTF_8);
 
     public static final List<UserProperty> USER_PROPERTIES = List.of(
@@ -79,6 +81,11 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     protected final ObjectMapper mapper = new ObjectMapper();
+
+    @BeforeClass
+    public static void setup() throws Exception {
+        System.setProperty("tbmq.graceful.shutdown.timeout.sec", "1");
+    }
 
     @Autowired
     @Lazy
@@ -131,12 +138,10 @@ public abstract class AbstractPubSubIntegrationTest {
     public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
         @Override
         public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
-            if (bean instanceof TbKafkaConsumerSettings) {
-                TbKafkaConsumerSettings kafkaSettings = (TbKafkaConsumerSettings) bean;
+            if (bean instanceof TbKafkaConsumerSettings kafkaSettings) {
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
-            if (bean instanceof TbKafkaProducerSettings) {
-                TbKafkaProducerSettings kafkaSettings = (TbKafkaProducerSettings) bean;
+            if (bean instanceof TbKafkaProducerSettings kafkaSettings) {
                 kafkaSettings.setServers(kafka.getBootstrapServers());
             }
             if (bean instanceof TbKafkaAdminSettings kafkaAdminSettings) {

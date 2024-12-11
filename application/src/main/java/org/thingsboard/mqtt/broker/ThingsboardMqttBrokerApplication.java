@@ -18,17 +18,18 @@ package org.thingsboard.mqtt.broker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.thingsboard.mqtt.broker.config.annotations.AfterStartUp;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @SpringBootConfiguration
 @EnableAsync
-@EnableConfigurationProperties
 @EnableScheduling
 @ComponentScan({"org.thingsboard.mqtt.broker"})
 public class ThingsboardMqttBrokerApplication {
@@ -36,8 +37,11 @@ public class ThingsboardMqttBrokerApplication {
     private static final String SPRING_CONFIG_NAME_KEY = "--spring.config.name";
     private static final String DEFAULT_SPRING_CONFIG_PARAM = SPRING_CONFIG_NAME_KEY + "=" + "thingsboard-mqtt-broker";
 
+    private static long startTs;
+
     public static void main(String[] args) {
         try {
+            startTs = System.currentTimeMillis();
             SpringApplication.run(ThingsboardMqttBrokerApplication.class, updateArguments(args));
         } catch (Exception e) {
             log.error("Failed to start application.", e);
@@ -54,4 +58,11 @@ public class ThingsboardMqttBrokerApplication {
         }
         return args;
     }
+
+    @AfterStartUp(order = Ordered.LOWEST_PRECEDENCE)
+    public void afterStartUp() {
+        long startupTimeMs = System.currentTimeMillis() - startTs;
+        log.info("Started TBMQ in {} seconds", TimeUnit.MILLISECONDS.toSeconds(startupTimeMs));
+    }
+
 }

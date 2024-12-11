@@ -20,6 +20,7 @@ import jakarta.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
@@ -27,6 +28,7 @@ import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Getter
@@ -39,6 +41,8 @@ public class TopicAliasCtx {
     private final int maxTopicAlias;
     private final ConcurrentMap<Integer, String> clientMappings;
     private final ConcurrentMap<String, Integer> serverMappings;
+    private final AtomicInteger clientMappingsCount;
+    private final AtomicInteger serverMappingsCount;
 
     public TopicAliasCtx(boolean enabled, int maxTopicAlias) {
         this(enabled, maxTopicAlias, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
@@ -51,6 +55,8 @@ public class TopicAliasCtx {
         this.maxTopicAlias = maxTopicAlias;
         this.clientMappings = clientMappings;
         this.serverMappings = serverMappings;
+        this.clientMappingsCount = clientMappings != null ? new AtomicInteger(clientMappings.size()) : null;
+        this.serverMappingsCount = serverMappings != null ? new AtomicInteger(serverMappings.size()) : null;
     }
 
     public String getTopicNameByAlias(PublishMsg publishMsg) {
@@ -79,24 +85,38 @@ public class TopicAliasCtx {
 
     public PublishMsg createPublishMsgUsingTopicAlias(PublishMsg publishMsg, int minTopicNameLengthForAliasReplacement) {
         if (enabled) {
-            String topicName = publishMsg.getTopicName();
-            if (topicName.length() > minTopicNameLengthForAliasReplacement) {
-                MqttProperties properties = publishMsg.getProperties();
-
-                Integer topicAlias = serverMappings.get(topicName);
-                if (topicAlias == null) {
-                    int nextTopicAlias = getNextTopicAlias(topicName);
-                    if (nextTopicAlias == 0) {
-                        return publishMsg;
-                    }
-                    MqttPropertiesUtil.addTopicAliasToProps(properties, nextTopicAlias);
-                    return getPublishMsg(publishMsg, topicName, properties);
-                }
-                MqttPropertiesUtil.addTopicAliasToProps(properties, topicAlias);
-                return getPublishMsg(publishMsg, BrokerConstants.EMPTY_STR, properties);
+            boolean setEmptyTopic = updateTopicAlias(publishMsg.getTopicName(), publishMsg.getProperties(), minTopicNameLengthForAliasReplacement);
+            if (setEmptyTopic) {
+                return publishMsg.toBuilder().topicName(BrokerConstants.EMPTY_STR).build();
             }
         }
         return publishMsg;
+    }
+
+    public DevicePublishMsg createPublishMsgUsingTopicAlias(DevicePublishMsg publishMsg, int minTopicNameLengthForAliasReplacement) {
+        if (enabled) {
+            boolean setEmptyTopic = updateTopicAlias(publishMsg.getTopicName(), publishMsg.getProperties(), minTopicNameLengthForAliasReplacement);
+            if (setEmptyTopic) {
+                return publishMsg.toBuilder().topicName(BrokerConstants.EMPTY_STR).build();
+            }
+        }
+        return publishMsg;
+    }
+
+    private boolean updateTopicAlias(String topicName, MqttProperties properties, int minTopicNameLengthForAliasReplacement) {
+        if (topicName.length() <= minTopicNameLengthForAliasReplacement) {
+            return false;
+        }
+        Integer topicAlias = serverMappings.get(topicName);
+        if (topicAlias != null) {
+            MqttPropertiesUtil.addTopicAliasToProps(properties, topicAlias);
+            return true;
+        }
+        int nextTopicAlias = getNextTopicAlias(topicName);
+        if (nextTopicAlias != 0) {
+            MqttPropertiesUtil.addTopicAliasToProps(properties, nextTopicAlias);
+        }
+        return false;
     }
 
     public TopicAliasResult getTopicAliasResult(PublishMsgProto publishMsgProto, int minTopicNameLengthForAliasReplacement) {
@@ -117,13 +137,6 @@ public class TopicAliasCtx {
         return null;
     }
 
-    private PublishMsg getPublishMsg(PublishMsg publishMsg, String topicName, MqttProperties properties) {
-        return publishMsg.toBuilder()
-                .topicName(topicName)
-                .properties(properties)
-                .build();
-    }
-
     void validateTopicAlias(int topicAlias) {
         if (topicAlias == 0) {
             throw new MqttException("Topic Alias is zero.");
@@ -140,12 +153,12 @@ public class TopicAliasCtx {
 
     private void saveMapping(int topicAlias, String topicName) {
         clientMappings.put(topicAlias, topicName);
+        clientMappingsCount.incrementAndGet();
     }
 
     int getNextTopicAlias(String topicName) {
         if (isMoreTopicAliasAvailable()) {
-            int lastTopicAlias = serverMappings.size();
-            int nextTopicAlias = lastTopicAlias + 1;
+            int nextTopicAlias = serverMappingsCount.incrementAndGet();
             serverMappings.put(topicName, nextTopicAlias);
             return nextTopicAlias;
         }
@@ -157,6 +170,6 @@ public class TopicAliasCtx {
     }
 
     private int currentTopicAliasesCount() {
-        return clientMappings.size() + serverMappings.size();
+        return clientMappingsCount.get() + serverMappingsCount.get();
     }
 }

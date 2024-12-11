@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.util;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import jakarta.servlet.http.HttpServletRequest;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -71,7 +72,7 @@ public class MiscUtils {
         String scheme = getScheme(request);
         int port = MiscUtils.getPort(request);
         if (needsPort(scheme, port)) {
-            domainName += ":" + port;
+            domainName += BrokerConstants.COLON + port;
         }
         return domainName;
     }

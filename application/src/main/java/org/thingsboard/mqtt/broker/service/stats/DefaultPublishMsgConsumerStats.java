@@ -36,6 +36,7 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TOTAL_
 
 @Slf4j
 public class DefaultPublishMsgConsumerStats implements PublishMsgConsumerStats {
+
     private static final String CONSUMER_ID_TAG = "consumerId";
 
     private final String consumerId;

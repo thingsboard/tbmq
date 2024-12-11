@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.cache;
 import io.github.bucket4j.distributed.serialization.Mapper;
 import io.github.bucket4j.redis.jedis.Bucket4jJedis;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
+import io.lettuce.core.ClientOptions;
+import io.lettuce.core.TimeoutOptions;
 import lombok.Data;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +37,7 @@ import org.springframework.data.redis.connection.lettuce.LettucePoolingClientCon
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.format.support.DefaultFormattingConversionService;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.HostAndPort;
@@ -56,6 +59,7 @@ import java.util.stream.Collectors;
 public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
 
     private final CacheSpecsMap cacheSpecsMap;
+    protected final LettuceConfig lettuceConfig;
 
     @Value("${redis.pool_config.maxTotal:128}")
     private int maxTotal;
@@ -104,7 +108,17 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         if (!useDefaultPoolConfig()) {
             lettucePoolingClientConfigBuilder.poolConfig(buildConnectionPoolConfig());
         }
+
+        lettucePoolingClientConfigBuilder.shutdownQuietPeriod(Duration.ofSeconds(lettuceConfig.getShutdownQuietPeriod()));
+        lettucePoolingClientConfigBuilder.shutdownTimeout(Duration.ofSeconds(lettuceConfig.getShutdownTimeout()));
+
+        lettucePoolingClientConfigBuilder.clientOptions(getLettuceClientOptions());
+
         return new LettuceConnectionFactory(getRedisConfiguration(), lettucePoolingClientConfigBuilder.build());
+    }
+
+    protected ClientOptions getLettuceClientOptions() {
+        return ClientOptions.builder().timeoutOptions(TimeoutOptions.enabled()).build();
     }
 
     protected abstract JedisConnectionFactory loadFactory();
@@ -192,9 +206,9 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
             result = Collections.emptyList();
         } else {
             result = new ArrayList<>();
-            for (String hostPort : nodes.split(CacheConstants.COMMA)) {
-                String host = hostPort.split(CacheConstants.COLON)[0];
-                int port = Integer.parseInt(hostPort.split(CacheConstants.COLON)[1]);
+            for (String hostPort : nodes.split(BrokerConstants.COMMA)) {
+                String host = hostPort.split(BrokerConstants.COLON)[0];
+                int port = Integer.parseInt(hostPort.split(BrokerConstants.COLON)[1]);
                 result.add(new RedisNode(host, port));
             }
         }
