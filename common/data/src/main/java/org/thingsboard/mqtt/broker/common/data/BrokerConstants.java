@@ -27,6 +27,9 @@ public class BrokerConstants {
     public static final String WS = "WS";
     public static final String WSS = "WSS";
 
+    private final String ASC_ORDER = "ASC";
+    private final String DESC_ORDER = "DESC";
+
     public static final String ENTITY_ID_TOTAL = "total";
     public static final String INCOMING_MSGS = "incomingMsgs";
     public static final String OUTGOING_MSGS = "outgoingMsgs";
