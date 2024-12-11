@@ -133,8 +133,8 @@ existingConfigmap: ""
 extraConfig: |
   auto.create.topics.enable=false
   default.replication.factor=2
-  offsets.topic.replication.factor=3
-  transaction.state.log.replication.factor=3
+  offsets.topic.replication.factor=5
+  transaction.state.log.replication.factor=5
   transaction.state.log.min.isr=2
 ## @param secretConfig Additional configuration to be appended at the end of the generated Kafka configuration file.
 ## This value will be stored in a secret.
@@ -489,7 +489,7 @@ controller:
   ## @param controller.replicaCount Number of Kafka controller-eligible nodes
   ## Ignore this section if running in Zookeeper mode.
   ##
-  replicaCount: 3
+  replicaCount: 5
   ## @param controller.controllerOnly If set to true, controller nodes will be deployed as dedicated controllers, instead of controller+broker processes.
   ##
   controllerOnly: false

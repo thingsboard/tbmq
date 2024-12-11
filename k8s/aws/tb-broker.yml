@@ -21,7 +21,7 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   serviceName: tb-broker
-  replicas: 3
+  replicas: 5
   podManagementPolicy: "Parallel"
   selector:
     matchLabels:

@@ -23,6 +23,6 @@ metadata:
     name: tb-broker-db-config
 data:
   SPRING_DRIVER_CLASS_NAME: "org.postgresql.Driver"
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://RDS_URL_HERE:5432/thingsboard_mqtt_broker"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://tbmq-db.c4vlkpug5bi9.eu-west-1.rds.amazonaws.com:5432/thingsboard_mqtt_broker"
   SPRING_DATASOURCE_USERNAME: "postgres"
   SPRING_DATASOURCE_PASSWORD: "postgres"

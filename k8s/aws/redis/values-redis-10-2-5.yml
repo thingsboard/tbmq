@@ -611,10 +611,10 @@ redis:
   resources:
     requests:
       cpu: 1.5
-      memory: 12Gi
+      memory: 2.5Gi
     limits:
       cpu: 1.5
-      memory: 12Gi
+      memory: 2.5Gi
   ## @param redis.schedulerName Use an alternate scheduler, e.g. "stork".
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
   ##
@@ -860,7 +860,7 @@ cluster:
   ##
   ## @param cluster.nodes The number of master nodes should always be >= 3, otherwise cluster creation will fail
   ##
-  nodes: 7
+  nodes: 11
   ## @param cluster.replicas Number of replicas for every master in the cluster
   ## Parameter to be passed as --cluster-replicas to the redis-cli --cluster create
   ## 1 means that we want a replica for every master created
