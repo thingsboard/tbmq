@@ -18,7 +18,7 @@ import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators } from '@angular/forms';
-import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
+import { QosType, QoSTranslationMap } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -49,8 +49,8 @@ export class MessangerComponent implements OnInit {
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
 
-  qoSTypes = WsQoSTypes;
-  qoSTranslationMap = WsQoSTranslationMap;
+  qoSType = Object.values(QosType);
+  qoSTranslationMap = QoSTranslationMap;
   payloadFormats = WsPayloadFormats;
   messagesTypeFilters = WsMessagesTypeFilters;
 
@@ -75,7 +75,7 @@ export class MessangerComponent implements OnInit {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
       topic: [defaultPublishTopic, [this.topicValidator, Validators.required]],
-      qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
+      qos: [QosType.AT_LEAST_ONCE, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
       color: ['#CECECE', []],
@@ -130,7 +130,7 @@ export class MessangerComponent implements OnInit {
     const payloadFormat = this.messangerFormGroup.get('payloadFormat').value;
     const message = this.transformMessage(payload, payloadFormat);
     const topic = this.messangerFormGroup.get('topic').value;
-    const qos = this.messangerFormGroup.get('qos').value;
+    const qos = this.qoSType.indexOf(this.messangerFormGroup.get('qos').value);
     const retain = this.messangerFormGroup.get('retain').value;
     const color = this.messangerFormGroup.get('color').value;
     const propertiesForm = this.messangerFormGroup.get('properties').value;

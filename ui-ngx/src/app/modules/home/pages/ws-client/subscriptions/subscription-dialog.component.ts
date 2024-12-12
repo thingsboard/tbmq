@@ -17,7 +17,7 @@
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { WsMqttQoSType, WsQoSTypes, WsQoSTranslationMap } from '@shared/models/session.model';
+import { QosType, QoSTranslationMap } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -44,8 +44,8 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   formGroup: UntypedFormGroup;
 
   rhOptions = RhOptions;
-  qoSTypes = WsQoSTypes;
-  qoSTranslationMap = WsQoSTranslationMap;
+  qoSType = Object.keys(QosType);
+  qoSTranslationMap = QoSTranslationMap;
 
   title = 'subscription.add-subscription';
   actionButtonLabel = 'action.add';
@@ -88,7 +88,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
       topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required]],
-      qos: [this.entity ? this.entity.configuration.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
+      qos: [this.entity ? this.entity.configuration.qos : QosType.AT_LEAST_ONCE, []],
       color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],

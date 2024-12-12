@@ -30,7 +30,7 @@ import { PageComponent } from '@shared/components/page.component';
 import { Subscription } from 'rxjs';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
+import { QosType, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
 import { TranslateService } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
 
@@ -112,7 +112,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   addTopic() {
     const group = this.fb.group({
       topicFilter: [null, [Validators.required]],
-      qos: [MqttQoS.AT_LEAST_ONCE, []],
+      qos: [QosType.AT_LEAST_ONCE, []],
       subscriptionId: [null, []],
       options: this.fb.group({
         retainAsPublish: [false, []],

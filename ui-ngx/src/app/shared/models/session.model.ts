@@ -25,7 +25,7 @@ import {
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { SubscriptionOptions } from '@shared/models/ws-client.model';
+import { TopicSubscription } from '@shared/models/ws-client.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -53,50 +53,46 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export interface TopicSubscription extends SubscriptionOptions {
-  topic: string;
-  qos: WsMqttQoSType;
-}
-
-export enum MqttQoS {
+export enum QosType {
   AT_MOST_ONCE = 'AT_MOST_ONCE',
   AT_LEAST_ONCE = 'AT_LEAST_ONCE',
   EXACTLY_ONCE = 'EXACTLY_ONCE'
 }
 
+export enum WsMqttQoSType {
+  AT_MOST_ONCE,
+  AT_LEAST_ONCE,
+  EXACTLY_ONCE
+}
+
 export interface MqttQoSType {
-  value: MqttQoS;
+  value: QosType;
   name: string;
 }
 
 export const mqttQoSTypes = [
   {
-    value: MqttQoS.AT_MOST_ONCE,
+    value: QosType.AT_MOST_ONCE,
     name: 'mqtt-client-session.qos-at-most-once'
   },
   {
-    value: MqttQoS.AT_LEAST_ONCE,
+    value: QosType.AT_LEAST_ONCE,
     name: 'mqtt-client-session.qos-at-least-once'
   },
   {
-    value: MqttQoS.EXACTLY_ONCE,
+    value: QosType.EXACTLY_ONCE,
     name: 'mqtt-client-session.qos-exactly-once'
   }
 ];
 
-export const mqttQoSValuesMap = new Map<MqttQoS, number>(
+export const mqttQoSValuesMap = new Map<QosType, number>(
   [
-    [MqttQoS.AT_MOST_ONCE, 0],
-    [MqttQoS.AT_LEAST_ONCE, 1],
-    [MqttQoS.EXACTLY_ONCE, 2]
+    [QosType.AT_MOST_ONCE, 0],
+    [QosType.AT_LEAST_ONCE, 1],
+    [QosType.EXACTLY_ONCE, 2]
   ]
 );
 
-export enum WsMqttQoSType {
-  AT_MOST_ONCE = 0,
-  AT_LEAST_ONCE = 1,
-  EXACTLY_ONCE = 2
-}
 
 export const WsQoSTypes = [0, 1, 2];
 
@@ -105,6 +101,14 @@ export const WsQoSTranslationMap = new Map<WsMqttQoSType, string>(
     [0, 'mqtt-client-session.qos-at-most-once'],
     [1, 'mqtt-client-session.qos-at-least-once'],
     [2, 'mqtt-client-session.qos-exactly-once']
+  ]
+);
+
+export const QoSTranslationMap = new Map<QosType, string>(
+  [
+    [QosType.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
+    [QosType.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
+    [QosType.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
   ]
 );
 

@@ -60,7 +60,7 @@
     <mat-form-field fxFlex="20" fxFlex.lt-xl="25" hideRequiredMarker>
       <mat-label translate>mqtt-client-session.qos</mat-label>
       <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
+        <mat-option *ngFor="let qos of qoSType" [value]="qos">
           {{ qoSTranslationMap.get(qos) | translate }}
         </mat-option>
       </mat-select>

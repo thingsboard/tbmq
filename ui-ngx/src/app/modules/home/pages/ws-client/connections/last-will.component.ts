@@ -25,13 +25,13 @@ import {
   Validator
 } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
-import { TimeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
-
-export interface LastWill {
-  topic: string;
-  qos: number;
-}
+import { QoSTranslationMap, QosType } from '@shared/models/session.model';
+import {
+  LastWillMsg,
+  TimeUnitTypeTranslationMap,
+  WebSocketConnection,
+  WebSocketTimeUnit
+} from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-last-will',
@@ -61,8 +61,8 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   entity: WebSocketConnection;
 
   formGroup: UntypedFormGroup;
-  qoSTypes = WsQoSTypes;
-  qoSTranslationMap = WsQoSTranslationMap;
+  qoSType = Object.values(QosType);
+  qoSTranslationMap = QoSTranslationMap;
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
   timeUnitTypeTranslationMap = TimeUnitTypeTranslationMap;
 
@@ -95,7 +95,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.formGroup = this.fb.group({
       topic: [lastWillMsg ? lastWillMsg.topic : null, []],
       payload: [lastWillMsg ? lastWillMsg.payload : null, []],
-      qos: [lastWillMsg ? lastWillMsg.qos : WsMqttQoSType.AT_LEAST_ONCE, []],
+      qos: [lastWillMsg ? lastWillMsg.qos : QosType.AT_LEAST_ONCE, []],
       retain: [lastWillMsg ? lastWillMsg.retain : false, []],
       willDelayInterval: [{value: lastWillMsg ? lastWillMsg.willDelayInterval : 0, disabled: this.mqttVersion !== 5}, []],
       willDelayIntervalUnit: [{
@@ -140,7 +140,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     return this.formGroup.valid ? null : {lastWill: true};
   }
 
-  writeValue(value: LastWill): void {
+  writeValue(value: LastWillMsg): void {
     this.formGroup.valueChanges.subscribe((value) => {
       this.updateView(value);
     });
@@ -160,7 +160,9 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     }
   }
 
-  private updateView(value: LastWill) {
+  private updateView(value: LastWillMsg) {
+    // @ts-ignore
+    value.qos = this.qoSType.indexOf(value.qos);
     this.propagateChange(value);
   }
 

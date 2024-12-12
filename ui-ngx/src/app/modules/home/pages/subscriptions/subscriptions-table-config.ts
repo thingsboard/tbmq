@@ -37,7 +37,7 @@ import {
 } from '@shared/models/subscription.model';
 import { SubscriptionService } from '@core/http/subscription.service';
 import { SubscriptionsTableHeaderComponent } from '@home/pages/subscriptions/subscriptions-table-header.component';
-import { mqttQoSTypes } from '@shared/models/session.model';
+import { QoSTranslationMap, QosType } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
 import { ClientSessionService } from '@core/http/client-session.service';
 
@@ -105,10 +105,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
           onAction: ($event, entity) => entity.subscription.topicFilter,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px', entity => {
-        const qos = mqttQoSTypes.find(el => el.value === entity.subscription.qos).name;
-        return this.translate.instant(qos);
-      }),
+      new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px', entity => this.translate.instant(QoSTranslationMap.get(entity.subscription.qos as QosType))),
       new EntityTableColumn<ClientSubscription>('noLocal', 'subscription.nl', '120px', entity => checkBoxCell(entity.subscription?.options?.noLocal)),
       new EntityTableColumn<ClientSubscription>('retainAsPublish', 'subscription.rap', '120px', entity => checkBoxCell(entity.subscription?.options?.retainAsPublish)),
       new EntityTableColumn<ClientSubscription>('retainHandling', 'subscription.rh', '120px', entity => entity.subscription?.options?.retainHandling.toString(),
