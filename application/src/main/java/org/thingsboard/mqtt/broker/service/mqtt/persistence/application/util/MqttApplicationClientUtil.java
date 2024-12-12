@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.util;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
 import java.nio.charset.StandardCharsets;
@@ -86,7 +87,7 @@ public class MqttApplicationClientUtil {
     }
 
     static String getReplacedSharedAppTopicFilter(String topicFilter) {
-        String s1 = SLASH_PATTERN.matcher(topicFilter).replaceAll(".");
+        String s1 = SLASH_PATTERN.matcher(topicFilter).replaceAll(BrokerConstants.DOT);
         String s2 = SINGLE_LVL_WILDCARD_PATTERN.matcher(s1).replaceAll(SINGLE_LVL_WILDCARD_ABBREV);
         String s3 = MULTI_LVL_WILDCARD_PATTERN.matcher(s2).replaceFirst(MULTI_LVL_WILDCARD_ABBREV);
         return constructAppSharedTopic(s3);

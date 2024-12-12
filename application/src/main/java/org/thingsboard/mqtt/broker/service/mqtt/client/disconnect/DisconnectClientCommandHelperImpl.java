@@ -15,10 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.disconnect;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +32,15 @@ public class DisconnectClientCommandHelperImpl implements DisconnectClientComman
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
 
+    private String topicPrefix;
+
+    @PostConstruct
+    public void init() {
+        topicPrefix = kafkaPrefix + disconnectClientCommandSettings.getTopicPrefix() + DOT;
+    }
+
     @Override
     public String getServiceTopic(String serviceId) {
-        return kafkaPrefix + disconnectClientCommandSettings.getTopicPrefix() + "." + serviceId;
+        return topicPrefix + serviceId;
     }
 }

@@ -15,11 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.BasicDownLinkPublishMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.PersistentDownLinkPublishMsgKafkaSettings;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DOT;
 
 @Service
 @RequiredArgsConstructor
@@ -31,13 +34,22 @@ public class DownLinkPublisherHelperImpl implements DownLinkPublisherHelper {
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
 
+    private String basicDownLinkTopicPrefix;
+    private String persistentDownLinkTopicPrefix;
+
+    @PostConstruct
+    public void init() {
+        basicDownLinkTopicPrefix = kafkaPrefix + basicDownLinkPublishMsgKafkaSettings.getTopicPrefix() + DOT;
+        persistentDownLinkTopicPrefix = kafkaPrefix + persistentDownLinkPublishMsgKafkaSettings.getTopicPrefix() + DOT;
+    }
+
     @Override
     public String getBasicDownLinkServiceTopic(String serviceId) {
-        return kafkaPrefix + basicDownLinkPublishMsgKafkaSettings.getTopicPrefix() + "." + serviceId;
+        return basicDownLinkTopicPrefix + serviceId;
     }
 
     @Override
     public String getPersistentDownLinkServiceTopic(String serviceId) {
-        return kafkaPrefix + persistentDownLinkPublishMsgKafkaSettings.getTopicPrefix() + "." + serviceId;
+        return persistentDownLinkTopicPrefix + serviceId;
     }
 }
