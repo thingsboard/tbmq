@@ -78,8 +78,8 @@ export class ClientSessionService {
     return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getSessionMetrics(clientId: string, config?: RequestConfig): Observable<PageData<SessionMetrics>> {
-    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true, config).pipe(
+  public getSessionMetrics(clientId: string): Observable<PageData<SessionMetrics>> {
+    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true).pipe(
       map((metrics) => {
         const data = [];
         for (const [key, value] of Object.entries(metrics)) {

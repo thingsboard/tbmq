@@ -19,9 +19,9 @@ import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
-import { AggregationType } from '@shared/models/time/time.models';
+import { AggregationType, Interval } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
-import { CHART_ALL, TimeseriesData, timeseriesDataLimit } from '@shared/models/chart.model';
+import { CHART_ALL, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -32,8 +32,8 @@ export class StatsService {
   }
 
   public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = CHART_ALL,
-                             limit: number = timeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
-                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
+                             limit: number = MAX_DATAPOINTS_LIMIT, agg: AggregationType = AggregationType.NONE, interval?: Interval,
+                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/${encodeURIComponent(entityId)}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;
@@ -58,7 +58,7 @@ export class StatsService {
   }
 
   public getLatestTimeseries(entityId: string, keys: Array<string> = CHART_ALL,
-                             useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
+                             useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/latest?entityId=${encodeURIComponent(entityId)}&keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;

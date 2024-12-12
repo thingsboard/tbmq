@@ -194,6 +194,18 @@
       "port-required": "Port is required."
     }
   },
+  "aggregation": {
+    "aggregation": "Aggregation",
+    "function": "Data aggregation function",
+    "limit": "Max values",
+    "group-interval": "Grouping interval",
+    "min": "Min",
+    "max": "Max",
+    "avg": "Average",
+    "sum": "Sum",
+    "count": "Count",
+    "none": "None"
+  },
   "confirm-on-exit": {
     "message": "You have unsaved changes. Are you sure you want to leave this page?",
     "html-message": "You have unsaved changes.<br/>Are you sure you want to leave this page?",
@@ -737,6 +749,12 @@
       "current-half-year-so-far": "Current half year so far",
       "current-year": "Current year",
       "current-year-so-far": "Current year so far"
+    },
+    "type": {
+      "week": "Week (Sun - Sat)",
+      "week-iso": "Week (Mon - Sun)",
+      "month": "Month",
+      "quarter": "Quarter"
     }
   },
   "timeunit": {

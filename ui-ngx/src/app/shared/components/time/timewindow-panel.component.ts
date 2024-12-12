@@ -53,33 +53,19 @@ export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelDat
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 
   historyOnly = false;
-
   forAllTimeEnabled = false;
-
   quickIntervalOnly = false;
-
-  aggregation = false;
-
+  aggregation = true;
   timezone = false;
-
   isEdit = false;
-
   timewindow: Timewindow;
-
   timewindowForm: UntypedFormGroup;
-
   historyTypes = HistoryWindowType;
-
   realtimeTypes = RealtimeWindowType;
-
   timewindowTypes = TimewindowType;
-
   aggregationTypes = AggregationType;
-
   aggregations = Object.keys(AggregationType);
-
   aggregationTypesTranslations = aggregationTranslations;
-
   result: Timewindow;
 
   constructor(@Inject(TIMEWINDOW_PANEL_DATA) public data: TimewindowPanelData,
@@ -184,6 +170,38 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
         Validators.max(this.maxDatapointsLimit())]);
     }
     this.timewindowForm.get('aggregation.limit').updateValueAndValidity({emitEvent: false});
+  }
+
+  onTimewindowTypeChange() {
+    this.timewindowForm.markAsDirty();
+    const timewindowFormValue = this.timewindowForm.getRawValue();
+    if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
+      if (timewindowFormValue.history.historyType !== HistoryWindowType.FIXED) {
+        this.timewindowForm.get('realtime').patchValue({
+          realtimeType: Object.keys(RealtimeWindowType).includes(HistoryWindowType[timewindowFormValue.history.historyType]) ?
+            RealtimeWindowType[HistoryWindowType[timewindowFormValue.history.historyType]] :
+            timewindowFormValue.realtime.realtimeType,
+          timewindowMs: timewindowFormValue.history.timewindowMs,
+          quickInterval: timewindowFormValue.history.quickInterval.startsWith('CURRENT') ?
+            timewindowFormValue.history.quickInterval : timewindowFormValue.realtime.quickInterval
+        });
+        setTimeout(() => this.timewindowForm.get('realtime.interval').patchValue(timewindowFormValue.history.interval));
+      }
+    } else {
+      this.timewindowForm.get('history').patchValue({
+        historyType: HistoryWindowType[RealtimeWindowType[timewindowFormValue.realtime.realtimeType]],
+        timewindowMs: timewindowFormValue.realtime.timewindowMs,
+        quickInterval: timewindowFormValue.realtime.quickInterval
+      });
+      setTimeout(() => this.timewindowForm.get('history.interval').patchValue(timewindowFormValue.realtime.interval));
+    }
+    this.timewindowForm.patchValue({
+      aggregation: {
+        type: timewindowFormValue.aggregation.type,
+        limit: timewindowFormValue.aggregation.limit
+      },
+      timezone: timewindowFormValue.timezone
+    });
   }
 
   update() {

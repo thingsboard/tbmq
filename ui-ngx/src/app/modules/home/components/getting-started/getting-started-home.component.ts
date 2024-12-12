@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-// @ts-nocheck
-
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { InstructionsService } from '@core/http/instructions.service';

@@ -14,35 +14,40 @@
 /// limitations under the License.
 ///
 
-// @ts-nocheck
-
 import {
   AfterViewInit,
   ChangeDetectorRef,
   Component,
+  ElementRef,
   OnDestroy,
   OnInit,
+  QueryList,
   ViewChildren
 } from '@angular/core';
-import { calculateFixedWindowTimeMs, FixedWindow, Timewindow, TimewindowType } from '@shared/models/time/time.models';
+import {
+  calculateFixedWindowTimeMs,
+  FixedWindow,
+  Timewindow,
+  TimewindowType
+} from '@shared/models/time/time.models';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
 import {
-  CHART_TOTAL_ONLY,
   CHART_ALL,
+  CHART_TOTAL_ONLY,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
   getColor,
   LegendConfig,
   LegendKey,
+  MAX_DATAPOINTS_LIMIT,
   StatsChartType,
   StatsChartTypeTranslationMap,
   TimeseriesData,
-  timeseriesDataLimit,
   TOTAL_KEY
 } from '@shared/models/chart.model';
 import { PageComponent } from '@shared/components/page.component';
@@ -63,7 +68,7 @@ import {
   calculateTotal,
   convertDataSizeUnits
 } from '@core/utils';
-import { ChartDataSets } from 'chart.js';
+import { ChartConfiguration, ChartDataset } from 'chart.js';
 
 Chart.register([Zoom]);
 
@@ -105,8 +110,8 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   private fixedWindowTimeMs: FixedWindow;
   private brokerIds: string[];
 
-  private stopPolling$ = new Subject();
-  private destroy$ = new Subject();
+  private stopPolling$ = new Subject<void>();
+  private destroy$ = new Subject<void>();
 
   chartTooltip = (chartType: string) => this.translate.instant(ChartTooltipTranslationMap.get(chartType));
 
@@ -153,7 +158,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  onFullScreen(chartType: string) {
+  onFullScreen(chartType?: string) {
     this.isFullscreen = !this.isFullscreen;
     if (this.isFullscreen) {
       this.fullscreenChart = chartType;
@@ -214,8 +219,8 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  totalOnly(chartType: StatsChartType): boolean {
-    return CHART_TOTAL_ONLY.includes(chartType);
+  totalOnly(chartType: string): boolean {
+    return CHART_TOTAL_ONLY.includes(chartType as StatsChartType);
   }
 
   private initData() {
@@ -229,7 +234,17 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   private fetchEntityTimeseries(initCharts = false) {
     const $getEntityTimeseriesTasks: Observable<TimeseriesData>[] = [];
     for (const brokerId of this.brokerIds) {
-      $getEntityTimeseriesTasks.push(this.statsService.getEntityTimeseries(brokerId, this.fixedWindowTimeMs.startTimeMs, this.fixedWindowTimeMs.endTimeMs, CHART_ALL));
+      $getEntityTimeseriesTasks.push(
+        this.statsService.getEntityTimeseries(
+          brokerId,
+          this.fixedWindowTimeMs.startTimeMs,
+          this.fixedWindowTimeMs.endTimeMs,
+          CHART_ALL,
+          MAX_DATAPOINTS_LIMIT,
+          this.timewindow.aggregation.type,
+          this.timeService.timewindowGroupingInterval(this.timewindow)
+        )
+      );
     }
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
@@ -276,7 +291,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
         }
       }
       const params = {...chartJsParams(this.chartPage), ...datasets};
-      this.charts[chartType] = new Chart(ctx, params);
+      this.charts[chartType] = new Chart(ctx, params as ChartConfiguration);
       if (chartType === StatsChartType.processedBytes) {
         this.charts[chartType].options.plugins.tooltip.callbacks.label = (context) => {
           const value = Number.isInteger(context.parsed.y) ? context.parsed.y : context.parsed.y.toFixed(2);
@@ -291,7 +306,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  private getDataset(dataset, chartType, i, brokerId): ChartDataSets {
+  private getDataset(dataset, chartType, i, brokerId): ChartDataset {
     const color = getColor(chartType, i);
     return {
       label: brokerId,
@@ -333,10 +348,11 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     this.fixedWindowTimeMs.endTimeMs += POLLING_INTERVAL;
   }
 
-  private prepareData(chartType: StatsChartType, data: TimeseriesData[]) {
+  private prepareData(chartType: string, data: TimeseriesData[]) {
     if (chartType === StatsChartType.processedBytes) {
       const tsValue = data[0][StatsChartType.processedBytes][0];
       data[0][StatsChartType.processedBytes][0] = {
+        // @ts-ignore
         value: convertDataSizeUnits(tsValue.value, DataSizeUnitType.BYTE, this.currentDataSizeUnitType),
         ts: tsValue.ts
       }
@@ -391,7 +407,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     for (const brokerData of data) {
       for (const key in brokerData) {
         const dataLength = brokerData[key].length;
-        if (dataLength === timeseriesDataLimit) {
+        if (dataLength === MAX_DATAPOINTS_LIMIT) {
           showWarning = true;
           break;
         }
@@ -410,17 +426,17 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  private resetLegendKeys(chartType: StatsChartType) {
+  private resetLegendKeys(chartType: string) {
     this.legendKeys[chartType] = {};
     this.legendKeys[chartType].keys = [];
   }
 
-  private resetLegendData(chartType: StatsChartType) {
+  private resetLegendData(chartType: string) {
     this.legendData[chartType] = {};
     this.legendData[chartType].data = [];
   }
 
-  private updateLegendKeys(chartType: StatsChartType) {
+  private updateLegendKeys(chartType: string) {
     for (let i = 0; i < this.brokerIds.length; i++) {
       const color = getColor(chartType, i);
       const brokerId = this.brokerIds[i];
@@ -434,7 +450,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  private updateLegendData(data: any[], chartType: StatsChartType) {
+  private updateLegendData(data: any[], chartType: string) {
     if (data?.length) {
       this.legendData[chartType].data.push({
         min: Math.floor(calculateMin(data)),
@@ -454,7 +470,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     }
   }
 
-  private addLegendKey(chartType: StatsChartType, index: number, brokerId: string, color: string) {
+  private addLegendKey(chartType: string, index: number, brokerId: string, color: string) {
     this.legendKeys[chartType].keys.push({
       dataKey: {
         label: brokerId,
@@ -465,7 +481,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     });
   }
 
-  private updateLegend(chartType: StatsChartType) {
+  private updateLegend(chartType: string) {
     this.resetLegendData(chartType);
     for (let i = 0; i < this.brokerIds.length; i++) {
       const brokerId = this.brokerIds[i];
