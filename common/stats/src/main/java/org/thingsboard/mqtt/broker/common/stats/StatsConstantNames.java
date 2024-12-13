@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.stats;
 
 public class StatsConstantNames {
+
     public static final String TOTAL_MSGS = "totalMsgs";
     public static final String SUCCESSFUL_MSGS = "successfulMsgs";
     public static final String FAILED_MSGS = "failedMsgs";

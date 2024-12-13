@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 @ConditionalOnProperty(prefix = "stats", value = "enabled", havingValue = "false", matchIfMissing = true)
 public class StatsManagerStub implements StatsManager, ActorStatsManager, ProducerStatsManager, ConsumerStatsManager {
+
     private static final StubTimerStats timerStats = new StubTimerStats();
 
     @Override

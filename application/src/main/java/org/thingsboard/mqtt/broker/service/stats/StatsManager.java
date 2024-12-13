@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public interface StatsManager {
+
     TbQueueCallback wrapTbQueueCallback(TbQueueCallback queueCallback, MessagesStats stats);
 
     MessagesStats createMsgDispatcherPublishStats();

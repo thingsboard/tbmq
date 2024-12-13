@@ -957,6 +957,9 @@ stats:
   enabled: "${STATS_ENABLED:true}"
   # Period in milliseconds to print stats. Default value corresponds to 1 minute
   print-interval-ms: "${STATS_PRINT_INTERVAL_MS:60000}"
+  timer:
+    # Metrics percentiles returned by actuator for timer metrics. List of comma-separated (,) double values
+    percentiles: "${STATS_TIMER_PERCENTILES:0.3}"
   application-processor:
     # Enable/disable specific Application clients stats
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
