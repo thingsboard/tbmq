@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME)
-public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredentials> implements SearchTextEntity<MqttClientCredentials> {
+public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredentials> implements BaseEntity<MqttClientCredentials> {
 
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ID_PROPERTY, unique = true)
     private String credentialsId;
@@ -49,9 +49,6 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY)
     private String credentialsValue;
 
-    @Column(name = ModelConstants.SEARCH_TEXT_PROPERTY)
-    private String searchText;
-
     public MqttClientCredentialsEntity() {
     }
 
@@ -65,7 +62,6 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
-        this.searchText = mqttClientCredentials.getSearchText();
     }
 
     @Override
@@ -81,8 +77,4 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         return mqttClientCredentials;
     }
 
-    @Override
-    public String getSearchTextSource() {
-        return name;
-    }
 }

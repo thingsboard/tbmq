@@ -29,7 +29,7 @@ public interface ApplicationSharedSubscriptionRepository extends JpaRepository<A
     ApplicationSharedSubscriptionEntity findByTopic(String topic);
 
     @Query("SELECT c FROM ApplicationSharedSubscriptionEntity c WHERE " +
-            "LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "LOWER(c.name) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<ApplicationSharedSubscriptionEntity> findAll(@Param("textSearch") String textSearch,
                                                       Pageable pageable);
 }

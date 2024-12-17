@@ -28,8 +28,6 @@ import java.io.IOException;
 import java.io.Serial;
 import java.util.UUID;
 
-import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditionalInfo.mapper;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j

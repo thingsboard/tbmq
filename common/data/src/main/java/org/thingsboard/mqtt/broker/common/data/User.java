@@ -24,24 +24,18 @@ import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import java.io.Serial;
 import java.util.UUID;
 
+@Getter
+@Setter
 @EqualsAndHashCode(callSuper = true)
-public class User extends SearchTextBasedWithAdditionalInfo {
+public class User extends BaseDataWithAdditionalInfo {
 
     @Serial
     private static final long serialVersionUID = 8250339805336035966L;
 
-    @Getter
-    @Setter
     private String email;
-    @Getter
-    @Setter
     private Authority authority;
-    @Getter
-    @Setter
     @NoXss
     private String firstName;
-    @Getter
-    @Setter
     @NoXss
     private String lastName;
 
@@ -52,11 +46,6 @@ public class User extends SearchTextBasedWithAdditionalInfo {
         super(id);
     }
 
-    @Override
-    public String getSearchText() {
-        return getEmail();
-    }
-
     public User(User user) {
         super(user);
         this.email = user.email;
@@ -64,7 +53,6 @@ public class User extends SearchTextBasedWithAdditionalInfo {
         this.firstName = user.firstName;
         this.lastName = user.lastName;
     }
-
 
     @Override
     public String toString() {

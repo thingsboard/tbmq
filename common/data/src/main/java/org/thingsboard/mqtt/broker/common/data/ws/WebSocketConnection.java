@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
+import org.thingsboard.mqtt.broker.common.data.BaseData;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.ByteArrayInputStream;
@@ -29,12 +29,10 @@ import java.io.IOException;
 import java.io.Serial;
 import java.util.UUID;
 
-import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditionalInfo.mapper;
-
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Slf4j
-public class WebSocketConnection extends SearchTextBased {
+public class WebSocketConnection extends BaseData {
 
     @Serial
     private static final long serialVersionUID = -2995421139460181824L;
@@ -46,11 +44,6 @@ public class WebSocketConnection extends SearchTextBased {
     private transient WebSocketConnectionConfiguration configuration;
     @JsonIgnore
     private byte[] configurationBytes;
-
-    @Override
-    public String getSearchText() {
-        return getName();
-    }
 
     public WebSocketConnectionConfiguration getConfiguration() {
         if (configuration != null) {

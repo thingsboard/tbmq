@@ -37,6 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -189,7 +190,16 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
                 }
                 break;
             case "2.0.0":
-                updateSchema("2.0.0", 2000000, "2.0.1", 2000001);
+                updateSchema("2.0.0", 2000000, "2.0.1", 2000001, conn -> {
+
+                    for (String table : List.of("broker_user", "mqtt_client_credentials", "application_shared_subscription", "websocket_connection")) {
+                        try {
+                            conn.createStatement().execute("ALTER TABLE " + table + " DROP COLUMN IF EXISTS search_text");
+                        } catch (Exception ignored) {
+                        }
+                    }
+
+                });
                 break;
             default:
                 throw new RuntimeException("Unable to upgrade SQL database, unsupported fromVersion: " + fromVersion);

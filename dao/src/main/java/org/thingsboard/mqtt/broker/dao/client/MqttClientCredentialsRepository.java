@@ -38,7 +38,7 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
     boolean existsByCredentialsType(ClientCredentialsType credentialsType);
 
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
-            "LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "LOWER(c.name) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<MqttClientCredentialsEntity> findAll(@Param("textSearch") String textSearch,
                                               Pageable pageable);
 
@@ -47,7 +47,7 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
     @Query("SELECT c FROM MqttClientCredentialsEntity c WHERE " +
             "((:clientTypes) IS NULL OR c.clientType IN (:clientTypes)) " +
             "AND ((:clientCredentialsTypes) IS NULL OR c.credentialsType IN (:clientCredentialsTypes)) " +
-            "AND LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%')) " +
+            "AND LOWER(c.name) LIKE LOWER(CONCAT('%', :textSearch, '%')) " +
             "AND (" +
             // Return all credentials if all parameters are empty
             "    (:certificateCn = '' AND :username = '' AND :clientId = '') " +

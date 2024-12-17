@@ -37,7 +37,7 @@ import java.util.UUID;
 @Entity
 
 @Table(name = ModelConstants.WEBSOCKET_CONNECTION_COLUMN_FAMILY_NAME)
-public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection> implements SearchTextEntity<WebSocketConnection> {
+public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection> implements BaseEntity<WebSocketConnection> {
 
     @Column(name = ModelConstants.WEBSOCKET_CONNECTION_NAME_PROPERTY)
     private String name;
@@ -49,9 +49,6 @@ public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection
     @JdbcType(PostgreSQLJsonPGObjectJsonbType.class)
     @Column(name = ModelConstants.WEBSOCKET_CONNECTION_CONFIGURATION_PROPERTY, columnDefinition = "jsonb")
     private JsonNode configuration;
-
-    @Column(name = ModelConstants.SEARCH_TEXT_PROPERTY)
-    private String searchText;
 
     public WebSocketConnectionEntity() {
     }
@@ -66,7 +63,6 @@ public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection
             this.userId = connection.getUserId();
         }
         this.configuration = JacksonUtil.convertValue(connection.getConfiguration(), ObjectNode.class);
-        this.searchText = connection.getSearchText();
     }
 
     @Override
@@ -80,11 +76,6 @@ public class WebSocketConnectionEntity extends BaseSqlEntity<WebSocketConnection
         }
         webSocketConnection.setConfiguration(JacksonUtil.convertValue(configuration, WebSocketConnectionConfiguration.class));
         return webSocketConnection;
-    }
-
-    @Override
-    public String getSearchTextSource() {
-        return name;
     }
 
 }
