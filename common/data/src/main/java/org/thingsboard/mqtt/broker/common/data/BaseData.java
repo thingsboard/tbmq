@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
 import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.id.IdBased;
@@ -25,6 +26,8 @@ import java.util.UUID;
 @Getter
 @Setter
 public abstract class BaseData extends IdBased {
+
+    public static final ObjectMapper mapper = new ObjectMapper();
 
     @Serial
     private static final long serialVersionUID = 3948809716795694300L;

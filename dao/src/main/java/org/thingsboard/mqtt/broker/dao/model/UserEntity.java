@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.USER_COLUMN_FAMILY_NAME)
-public class UserEntity extends BaseSqlEntity<User> implements SearchTextEntity<User> {
+public class UserEntity extends BaseSqlEntity<User> implements BaseEntity<User> {
 
     @Enumerated(EnumType.STRING)
     @Column(name = ModelConstants.USER_AUTHORITY_PROPERTY)
@@ -40,9 +40,6 @@ public class UserEntity extends BaseSqlEntity<User> implements SearchTextEntity<
 
     @Column(name = ModelConstants.USER_EMAIL_PROPERTY, unique = true)
     private String email;
-
-    @Column(name = ModelConstants.SEARCH_TEXT_PROPERTY)
-    private String searchText;
 
     @Column(name = ModelConstants.USER_FIRST_NAME_PROPERTY)
     private String firstName;
@@ -67,16 +64,6 @@ public class UserEntity extends BaseSqlEntity<User> implements SearchTextEntity<
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.additionalInfo = user.getAdditionalInfo();
-    }
-
-    @Override
-    public String getSearchTextSource() {
-        return email;
-    }
-
-    @Override
-    public void setSearchText(String searchText) {
-        this.searchText = searchText;
     }
 
     @Override

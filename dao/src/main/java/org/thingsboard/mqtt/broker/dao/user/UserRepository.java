@@ -29,7 +29,7 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     UserEntity findByEmail(String email);
 
     @Query("SELECT u FROM UserEntity u WHERE " +
-            "LOWER(u.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<UserEntity> findAll(@Param("textSearch") String textSearch,
                              Pageable pageable);
 }
