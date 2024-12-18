@@ -14,20 +14,11 @@
 -- limitations under the License.
 --
 
-CREATE TABLE IF NOT EXISTS ts_kv_latest (
-    entity_id varchar (255) NOT NULL,
-    key int NOT NULL,
-    ts bigint NOT NULL,
-    long_v bigint,
-    CONSTRAINT ts_kv_latest_pkey PRIMARY KEY (entity_id, key)
-);
+-- UPGRADE FROM VERSION 2.0.0 TO 2.0.1 START
 
-CREATE TABLE IF NOT EXISTS unauthorized_client (
-    client_id varchar(255) NOT NULL CONSTRAINT unauthorized_clients_pkey PRIMARY KEY,
-    ip_address varchar(255) NOT NULL,
-    ts bigint NOT NULL,
-    username varchar(255),
-    password_provided boolean,
-    tls_used boolean,
-    reason varchar
-);
+ALTER TABLE broker_user DROP COLUMN IF EXISTS search_text;
+ALTER TABLE mqtt_client_credentials DROP COLUMN IF EXISTS search_text;
+ALTER TABLE application_shared_subscription DROP COLUMN IF EXISTS search_text;
+ALTER TABLE websocket_connection DROP COLUMN IF EXISTS search_text;
+
+-- UPGRADE FROM VERSION 2.0.0 TO 2.0.1 END

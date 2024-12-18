@@ -21,17 +21,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Profile;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE;
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE;
-import static org.thingsboard.mqtt.broker.cache.CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE;
 
 @RequiredArgsConstructor
 @Service
@@ -40,7 +32,6 @@ import static org.thingsboard.mqtt.broker.cache.CacheConstants.SSL_REGEX_BASED_C
 public class DefaultCacheCleanupService implements CacheCleanupService {
 
     private final CacheManager cacheManager;
-    private final Optional<RedisTemplate<String, Object>> redisTemplate;
 
     @Value("${cache.cache-prefix:}")
     private String cachePrefix;
@@ -49,54 +40,76 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
      * Cleanup caches that can not deserialize anymore due to schema upgrade or data update using sql scripts.
      * Refer to SqlDatabaseUpgradeService and /data/upgrade/*.sql
      * to discover what tables were changed
-     * */
+     *
+     * IMPORTANT NOTE: We are using Redis to persist messages for DEVICE persisted clients,
+     * so calling flushAll may lead to data loss. Ensure proper evaluation and backups before performing this operation.
+     */
     @Override
-    public void clearCache(String fromVersion) throws Exception {
-        switch (fromVersion) {
-            case "1.3.0":
-                log.info("Clearing cache to upgrade from version 1.3.0 to 1.4.0");
-                clearAll();
-                break;
-            case "2.0.0":
-                log.info("Clearing cache to upgrade from version 2.0.0 to 2.0.1");
+    public void clearCache() throws Exception {
+        /*log.info("Clearing cache ...");
 
-                Set<String> cacheNamesToFlush = Set.of(
-                        cachePrefix + MQTT_CLIENT_CREDENTIALS_CACHE,
-                        cachePrefix + BASIC_CREDENTIALS_PASSWORD_CACHE,
-                        cachePrefix + SSL_REGEX_BASED_CREDENTIALS_CACHE);
-
-                cacheManager.getCacheNames().forEach(cacheName -> {
-                    if (cacheManager.getCache(cacheName) != null && cacheNamesToFlush.contains(cacheName)) {
-                        clearCacheByName(cacheName);
-                    }
-                });
-
-            default:
-                //Do nothing since cache cleanup is optional.
-        }
+        log.info("Successfully cleared cache!");*/
     }
 
-    void clearAll() {
-        if (redisTemplate.isPresent()) {
-            log.info("Flushing all caches");
-            redisTemplate.get().execute((RedisCallback<Object>) connection -> {
-                connection.serverCommands().flushAll();
-                return null;
-            });
-            return;
-        }
-        clearAllCaches();
-    }
-
+    /**
+     * Clear all caches managed by the CacheManager.
+     *
+     * NOTE: The `cacheManager.getCacheNames()` method returns cache names with prefixes already applied.
+     * This method directly clears all caches.
+     */
     void clearAllCaches() {
         cacheManager.getCacheNames().forEach(this::clearCacheByName);
     }
 
-    void clearCacheByName(final String cacheName) {
+    /**
+     * Clear specific caches by their base names.
+     *
+     * This method allows clearing only a specific set of caches. The base cache names
+     * are provided in the input set, and the cache prefix is automatically applied.
+     *
+     * Example of usage:
+     * <pre>
+     *     Set<String> cacheNamesToFlush = Set.of(
+     *         MQTT_CLIENT_CREDENTIALS_CACHE,
+     *         BASIC_CREDENTIALS_PASSWORD_CACHE,
+     *         SSL_REGEX_BASED_CREDENTIALS_CACHE
+     *     );
+     *     clearCachesByNames(cacheNamesToFlush);
+     * </pre>
+     *
+     * @param cacheNamesToFlush Set of base cache names to be flushed.
+     */
+    private void clearCachesByNames(Set<String> cacheNamesToFlush) {
+        cacheNamesToFlush.stream().map(cacheName -> cachePrefix + cacheName)
+                .forEach(fullCacheName -> clearCacheByName(fullCacheName, false));
+    }
+
+    /**
+     * Clear a cache by its full name.
+     *
+     * @param cacheName The full name of the cache (including prefix) to be cleared.
+     * @throws NullPointerException if the cache does not exist and npeOnMissingCache is true.
+     */
+    private void clearCacheByName(final String cacheName) {
+        clearCacheByName(cacheName, true);
+    }
+
+    /**
+     * Clear a cache by its full name, with optional behavior for missing caches.
+     *
+     * @param cacheName          The full name of the cache (including prefix).
+     * @param npeOnMissingCache  Whether to throw an exception if the cache does not exist.
+     */
+    private void clearCacheByName(final String cacheName, boolean npeOnMissingCache) {
         log.info("Clearing cache [{}]", cacheName);
         Cache cache = cacheManager.getCache(cacheName);
-        Objects.requireNonNull(cache, "Cache does not exist for name " + cacheName);
-        cache.clear();
+        if (cache != null) {
+            cache.clear();
+            return;
+        }
+        if (npeOnMissingCache) {
+            throw new NullPointerException("Cache does not exist for name " + cacheName);
+        }
     }
 
 }

@@ -26,12 +26,7 @@ FROM_VERSION=`cat ${upgradeversion}`
 
 echo "Starting TBMQ upgrade ..."
 
-if [[ -z "${FROM_VERSION// }" ]]; then
-    echo "FROM_VERSION variable is invalid or unspecified!"
-    exit 1
-else
-    fromVersion="${FROM_VERSION// }"
-fi
+fromVersion="${FROM_VERSION// }"
 
 exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                 -Dspring.jpa.hibernate.ddl-auto=none \
