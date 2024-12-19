@@ -18,33 +18,33 @@ three main scenarios for MQTT-based solutions.
   Normally, a few applications are set up to handle these lots of incoming data. It must be ensured that they do not
   miss any single message.
 
-<div style="text-align: center;">
+<p align="center">
   <img src="https://github.com/user-attachments/assets/c28d60ae-e31c-43d4-97cc-7ffb9b5cc2b3" 
        alt="Diagram showing fan-in communication pattern" 
-       width="500">
-</div>
+       width="600">
+</p>
 
 * The second scenario involves numerous devices subscribing to specific updates or notifications that must be delivered.
   This leads to a few incoming requests that cause a high volume of outgoing data.
   This case is known as a **fan-out (broadcast)** pattern.
 
-<div style="text-align: center;">
+<p align="center">
   <img src="https://github.com/user-attachments/assets/e8656f1d-13a3-41dc-84d5-6028f5009c49" 
        alt="Diagram showing fan-out communication pattern" 
-       width="500">
-</div>
+       width="600">
+</p>
 
 * The third scenario, **point-to-point (P2P)** communication, is a targeted messaging pattern, primarily used for
   one-to-one communication.
   Ideal for use cases such as private messaging or command-based interactions where messages are routed between a single
   publisher and a specific subscriber through uniquely defined topics.
 
-<div style="text-align: center;">
+<p align="center">
   <img src="https://github.com/user-attachments/assets/4b0f9ba2-7387-4e05-bb46-fe4ca1e191fd" 
        alt="Diagram showing p2p communication pattern" 
-       width="500"
+       width="600"
        style="margin-left: 10px;">
-</div>
+</p>
 
 > In all scenarios, persistent clients with a Quality of Service (QoS) level set to 1 or 2 are often utilized to ensure
 > reliable message delivery, even when they're temporarily offline due to restarts or upgrades.
