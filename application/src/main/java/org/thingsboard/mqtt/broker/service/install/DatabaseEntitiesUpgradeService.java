@@ -17,6 +17,6 @@ package org.thingsboard.mqtt.broker.service.install;
 
 public interface DatabaseEntitiesUpgradeService {
 
-    void upgradeDatabase(String fromVersion) throws Exception;
+    void upgradeDatabase() throws Exception;
 
 }
