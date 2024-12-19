@@ -46,9 +46,8 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
      */
     @Override
     public void clearCache() throws Exception {
-        /*log.info("Clearing cache ...");
-
-        log.info("Successfully cleared cache!");*/
+        log.info("Clearing cache ...");
+        log.info("Successfully cleared cache!");
     }
 
     /**

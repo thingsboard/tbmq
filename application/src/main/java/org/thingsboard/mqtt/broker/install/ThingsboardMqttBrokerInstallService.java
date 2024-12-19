@@ -37,8 +37,6 @@ public class ThingsboardMqttBrokerInstallService {
 
     @Value("${install.upgrade:false}")
     private Boolean isUpgrade;
-    @Value("${install.upgrade.from_version:1.2.3}")
-    private String upgradeFromVersion;
 
     private final DatabaseSchemaService databaseSchemaService;
     private final ApplicationContext context;
