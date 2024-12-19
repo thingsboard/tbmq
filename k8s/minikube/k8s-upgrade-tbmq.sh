@@ -28,13 +28,7 @@ case $i in
 esac
 done
 
-if [[ -z "${FROM_VERSION// }" ]]; then
-    echo "--fromVersion parameter is invalid or unspecified!"
-    echo "Usage: k8s-upgrade-tbmq.sh --fromVersion={VERSION}"
-    exit 1
-else
-    fromVersion="${FROM_VERSION// }"
-fi
+fromVersion="${FROM_VERSION// }"
 
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
