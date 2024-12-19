@@ -31,7 +31,7 @@ three main scenarios for MQTT-based solutions.
   Ideal for use cases such as private messaging or command-based interactions where messages are routed between a single
   publisher and a specific subscriber through uniquely defined topics.
 
-<img src="https://github.com/user-attachments/assets/4b0f9ba2-7387-4e05-bb46-fe4ca1e191fd" alt="Diagram showing p2p communication pattern" width="500">
+<img src="https://github.com/user-attachments/assets/4b0f9ba2-7387-4e05-bb46-fe4ca1e191fd" alt="Diagram showing p2p communication pattern" width="500" style="margin-left: 10px;">
 
 > In all scenarios, persistent clients with a Quality of Service (QoS) level set to 1 or 2 are often utilized to ensure
 > reliable message delivery, even when they're temporarily offline due to restarts or upgrades.
