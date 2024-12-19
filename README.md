@@ -19,7 +19,7 @@ three main scenarios for MQTT-based solutions.
   miss any single message.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c28d60ae-e31c-43d4-97cc-7ffb9b5cc2b3" 
+  <img src="https://github.com/user-attachments/assets/bbc92bcf-c09b-4141-b71d-d5e469ceeec2" 
        alt="Diagram showing fan-in communication pattern" 
        width="600">
 </p>
@@ -29,7 +29,7 @@ three main scenarios for MQTT-based solutions.
   This case is known as a **fan-out (broadcast)** pattern.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e8656f1d-13a3-41dc-84d5-6028f5009c49" 
+  <img src="https://github.com/user-attachments/assets/85fe89da-ae81-4bef-8d50-c0c21e60b60f" 
        alt="Diagram showing fan-out communication pattern" 
        width="600">
 </p>
@@ -40,7 +40,7 @@ three main scenarios for MQTT-based solutions.
   publisher and a specific subscriber through uniquely defined topics.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4b0f9ba2-7387-4e05-bb46-fe4ca1e191fd" 
+  <img src="https://github.com/user-attachments/assets/88ce216d-891a-4232-9b4a-8590ded2cdfc" 
        alt="Diagram showing p2p communication pattern" 
        width="600"
        style="margin-left: 10px;">
