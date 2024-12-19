@@ -83,13 +83,11 @@ After that execute the following commands:
 ```
 
 ```
-./scripts/docker-upgrade-tbmq.sh --fromVersion=FROM_VERSION
+./scripts/docker-upgrade-tbmq.sh
 ```
 
 ```
 ./scripts/docker-start-services.sh
 ```
 
-Where `FROM_VERSION` - from which version upgrade should be started.
-See [Upgrade Instructions](https://thingsboard.io/docs/mqtt-broker/install/upgrade-instructions/) for
-valid `fromVersion` values.
+See [Upgrade Instructions](https://thingsboard.io/docs/mqtt-broker/install/upgrade-instructions/) for more details.

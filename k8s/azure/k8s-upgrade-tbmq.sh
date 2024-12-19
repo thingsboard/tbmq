@@ -15,23 +15,8 @@
 # limitations under the License.
 #
 
-for i in "$@"
-do
-case $i in
-    --fromVersion=*)
-    FROM_VERSION="${i#*=}"
-    shift
-    ;;
-    *)
-            # unknown option
-    ;;
-esac
-done
-
-fromVersion="${FROM_VERSION// }"
-
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
-kubectl exec tb-db-setup -- sh -c 'export UPGRADE_TB=true; export FROM_VERSION='"$fromVersion"'; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'
+kubectl exec tb-db-setup -- sh -c 'export UPGRADE_TB=true; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'
 
 kubectl delete pod tb-db-setup

@@ -44,12 +44,9 @@ elif [ "$UPGRADE_TB" == "true" ]; then
 
     echo "Starting '${project.name}' upgrade ..."
 
-    fromVersion="${FROM_VERSION// }"
-
     exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                     -Dspring.jpa.hibernate.ddl-auto=none \
                     -Dinstall.upgrade=true \
-                    -Dinstall.upgrade.from_version=${fromVersion} \
                     -Dlogging.config=${logbackfile} \
                     org.springframework.boot.loader.launch.PropertiesLauncher
 

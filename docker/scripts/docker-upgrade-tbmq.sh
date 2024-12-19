@@ -15,21 +15,6 @@
 # limitations under the License.
 #
 
-for i in "$@"
-do
-case $i in
-    --fromVersion=*)
-    FROM_VERSION="${i#*=}"
-    shift
-    ;;
-    *)
-            # unknown option
-    ;;
-esac
-done
-
-fromVersion="${FROM_VERSION// }"
-
 set -e
 
 source scripts/compose-utils.sh
@@ -56,7 +41,7 @@ COMPOSE_ARGS_UP="\
 COMPOSE_ARGS_RUN="\
       --env-file ./.env \
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \
-      run --no-deps --rm -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=1000 -e UPGRADE_TB=true -e FROM_VERSION=${fromVersion} \
+      run --no-deps --rm -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=1000 -e UPGRADE_TB=true \
       tbmq1"
 
 case $COMPOSE_VERSION in
