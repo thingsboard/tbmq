@@ -21,6 +21,11 @@ services:
     image: "postgres:15"
     ports:
       - "5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       POSTGRES_DB: thingsboard_mqtt_broker
       POSTGRES_PASSWORD: postgres
@@ -32,6 +37,11 @@ services:
     image: "bitnami/kafka:3.5.1"
     ports:
       - "9092"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     env_file:
       - kafka.env
     volumes:
