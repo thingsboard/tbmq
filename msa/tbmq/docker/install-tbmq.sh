@@ -18,19 +18,12 @@
 CONF_FOLDER="${pkg.installFolder}/conf"
 jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
 configfile=${pkg.name}.conf
-upgradeversion=${DATA_FOLDER}/.upgradeversion
 
 source "${CONF_FOLDER}/${configfile}"
 
 echo "Starting TBMQ installation ..."
 
 set -e
-
-echo "Saving install version to file..."
-
-echo "${pkg.upgradeVersion}" > ${upgradeversion}
-
-echo "Saved ${pkg.upgradeVersion}"
 
 exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                     -Dspring.jpa.hibernate.ddl-auto=none \
