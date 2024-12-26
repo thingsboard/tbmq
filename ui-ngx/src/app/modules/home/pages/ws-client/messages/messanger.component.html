@@ -57,14 +57,8 @@
       <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
       </tb-color-input>
     </mat-form-field>
-    <mat-form-field fxFlex="20" fxFlex.lt-xl="25" hideRequiredMarker>
-      <mat-label translate>mqtt-client-session.qos</mat-label>
-      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let qos of qoSType" [value]="qos">
-          {{ qoSTranslationMap.get(qos) | translate }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+    <tb-qos-select formControlName="qos" fxFlex="20" fxFlex.lt-xl="25">
+    </tb-qos-select>
     <mat-form-field fxFlex="20" fxFlex.lt-xl="25">
       <mat-label translate>value.format</mat-label>
       <mat-select formControlName="payloadFormat">

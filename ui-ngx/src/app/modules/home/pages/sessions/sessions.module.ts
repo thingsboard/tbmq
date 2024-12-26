@@ -40,9 +40,9 @@ import { SessionMetricsComponent } from '@home/components/session-metrics/sessio
     SessionFilterConfigComponent
   ],
   exports: [
-      SessionsDetailsDialogComponent,
-      SubscriptionsComponent,
-      SessionMetricsComponent
+    SessionsDetailsDialogComponent,
+    SubscriptionsComponent,
+    SessionMetricsComponent
   ],
   imports: [
     CommonModule,

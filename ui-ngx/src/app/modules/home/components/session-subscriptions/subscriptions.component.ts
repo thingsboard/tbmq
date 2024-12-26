@@ -30,37 +30,35 @@ import { PageComponent } from '@shared/components/page.component';
 import { Subscription } from 'rxjs';
 import { AppState } from '@core/core.state';
 import { Store } from '@ngrx/store';
-import { QosType, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
-import { TranslateService } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
 
 @Component({
   selector: 'tb-session-subscriptions',
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.scss'],
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => SubscriptionsComponent),
-    multi: true
-  },
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => SubscriptionsComponent),
+      multi: true
+    },
     {
       provide: NG_VALIDATORS,
       useExisting: forwardRef(() => SubscriptionsComponent),
       multi: true
-    }]
+    }
+  ]
 })
 export class SubscriptionsComponent extends PageComponent implements ControlValueAccessor, OnInit {
 
   @Input() disabled: boolean;
 
   topicListFormGroup: UntypedFormGroup;
-  mqttQoSTypes = mqttQoSTypes;
 
   private propagateChange = (v: any) => {};
   private valueChangeSubscription: Subscription = null;
 
   constructor(protected store: Store<AppState>,
-              private translate: TranslateService,
               private fb: UntypedFormBuilder) {
     super(store);
   }
@@ -112,7 +110,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   addTopic() {
     const group = this.fb.group({
       topicFilter: [null, [Validators.required]],
-      qos: [QosType.AT_LEAST_ONCE, []],
+      qos: [null, []],
       subscriptionId: [null, []],
       options: this.fb.group({
         retainAsPublish: [false, []],
@@ -127,10 +125,6 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     return !this.topicListFormGroup.invalid ? null : {
       topicFilters: {valid: false}
     };
-  }
-
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    return this.translate.instant(mqttQoSValue.name);
   }
 
   subscriptionOptionsChanged(value: TopicSubscription, topicFilter: AbstractControl<TopicSubscription>) {

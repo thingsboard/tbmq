@@ -127,6 +127,7 @@ import {
   EditClientCredentialsButtonComponent
 } from '@shared/components/button/edit-client-credentials-button.component';
 import { HexInputComponent } from '@shared/components/color-picker/hex-input.component';
+import { QosSelectComponent } from '@shared/components/qos-select.component';
 
 export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService) {
   return markedOptionsService;
@@ -222,7 +223,8 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TbComponentOutletDirective,
     ColorPickerComponent,
     HelpPageComponent,
-    HintTooltipIconComponent
+    HintTooltipIconComponent,
+    QosSelectComponent,
   ],
   imports: [
     CommonModule,
@@ -390,7 +392,8 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     ColorPickerModule,
     HelpPageComponent,
     RouterModule,
-    HintTooltipIconComponent
+    HintTooltipIconComponent,
+    QosSelectComponent,
   ]
 })
 export class SharedModule { }

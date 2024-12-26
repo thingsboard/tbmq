@@ -39,13 +39,8 @@
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex="30" class="mat-block" appearance="outline" subscriptSizing="dynamic">
-        <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-          <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-            {{ mqttQoSValue(mqttQoS) }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+      <tb-qos-select fxFlex="30" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
+      </tb-qos-select>
       <section style="width: 40px">
         <tb-subscription-options
           [subscriptionOptions]="topicFilter"
