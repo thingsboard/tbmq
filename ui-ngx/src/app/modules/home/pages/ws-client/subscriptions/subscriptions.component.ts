@@ -25,11 +25,21 @@ import {
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor } from '@angular/common';
+import { SubscriptionComponent } from './subscription.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'tb-ws-subscriptions',
-  templateUrl: './subscriptions.component.html',
-  styleUrls: ['./subscriptions.component.scss']
+    selector: 'tb-ws-subscriptions',
+    templateUrl: './subscriptions.component.html',
+    styleUrls: ['./subscriptions.component.scss'],
+    standalone: true,
+    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, NgIf, NgFor, SubscriptionComponent, FlexModule, MatProgressSpinner]
 })
 export class SubscriptionsComponent {
 

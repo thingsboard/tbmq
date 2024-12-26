@@ -15,16 +15,7 @@
 ///
 
 import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
-import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator,
-  Validators
-} from '@angular/forms';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
@@ -36,26 +27,43 @@ import {
   ShaType,
   shaTypeTranslationMap
 } from '@shared/models/credentials.model';
-import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientUserNameRandom } from '@shared/models/ws-client.model';
 import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { TranslateModule } from '@ngx-translate/core';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { CopyButtonComponent as CopyButtonComponent_1 } from '../../../../../shared/components/button/copy-button.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor } from '@angular/common';
+import { TogglePasswordComponent } from '../../../../../shared/components/button/toggle-password.component';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
 
 @Component({
-  selector: 'tb-mqtt-credentials-scram',
-  templateUrl: './scram.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MqttCredentialsScramComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => MqttCredentialsScramComponent),
-      multi: true,
-    }],
-  styleUrls: ['./scram.component.scss']
+    selector: 'tb-mqtt-credentials-scram',
+    templateUrl: './scram.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MqttCredentialsScramComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => MqttCredentialsScramComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./scram.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, FlexModule, MatFormField, MatLabel, MatInput, CopyButtonComponent_1, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, NgIf, MatError, TogglePasswordComponent, MatSelect, NgFor, MatOption, MatHint, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsScramComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

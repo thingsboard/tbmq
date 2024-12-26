@@ -15,13 +15,13 @@
 ///
 
 import { Component, Inject, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { MatStepper, StepperOrientation } from '@angular/material/stepper';
+import { MatStepper, StepperOrientation, MatStepperIcon, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
@@ -33,11 +33,30 @@ import { ClientCredentialsService } from "@core/http/client-credentials.service"
 import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
 import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
 import { BaseData } from "@shared/models/base-data";
+import { MatToolbar } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { HelpComponent } from '../../../../shared/components/help.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MqttCredentialsBasicComponent } from '../client-credentials-templates/basic/basic.component';
+import { MqttCredentialsSslComponent } from '../client-credentials-templates/ssl/ssl.component';
+import { MqttCredentialsScramComponent } from '../client-credentials-templates/scram/scram.component';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
-  selector: 'tb-client-credentials-wizard',
-  templateUrl: './client-credentials-wizard-dialog.component.html',
-  styleUrls: ['./client-credentials-wizard-dialog.component.scss']
+    selector: 'tb-client-credentials-wizard',
+    templateUrl: './client-credentials-wizard-dialog.component.html',
+    styleUrls: ['./client-credentials-wizard-dialog.component.scss'],
+    standalone: true,
+    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, MatError, MatSelect, NgFor, MatOption, NgSwitch, NgSwitchCase, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ClientCredentialsWizardDialogComponent extends DialogComponent<ClientCredentialsWizardDialogComponent, ClientCredentials> {
 

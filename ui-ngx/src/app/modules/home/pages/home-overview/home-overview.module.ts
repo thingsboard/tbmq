@@ -31,24 +31,22 @@ import { EntitiesTableHomeComponent } from '@home/components/entity/entities-tab
 import { HomeCardsTableComponent } from '@home/components/home-cards-sessions-credentials/home-cards-table.component';
 
 @NgModule({
-  declarations: [
-    HomeOverviewComponent,
-    HomeChartsComponent,
-    QuickLinksComponent,
-    VersionCardComponent,
-    HomeCardsSessionsCredentialsComponent,
-    HomeCardsTableComponent,
-    CardConfigComponent,
-    KafkaBrokersHomeTableComponent,
-    KafkaTablesTabGroupComponent,
-    GettingStartedHomeComponent,
-    EntitiesTableHomeComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeOverviewRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeOverviewRoutingModule,
+        HomeOverviewComponent,
+        HomeChartsComponent,
+        QuickLinksComponent,
+        VersionCardComponent,
+        HomeCardsSessionsCredentialsComponent,
+        HomeCardsTableComponent,
+        CardConfigComponent,
+        KafkaBrokersHomeTableComponent,
+        KafkaTablesTabGroupComponent,
+        GettingStartedHomeComponent,
+        EntitiesTableHomeComponent
+    ]
 })
 export class HomeOverviewModule {
 }

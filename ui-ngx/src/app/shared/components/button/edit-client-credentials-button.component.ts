@@ -15,19 +15,23 @@
 ///
 
 import { Component, Input } from '@angular/core';
-import { TooltipPosition } from '@angular/material/tooltip';
-import { TranslateService } from '@ngx-translate/core';
+import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-edit-client-credentials-button',
-  styleUrls: ['edit-client-credentials-button.component.scss'],
-  templateUrl: './edit-client-credentials-button.component.html'
+    selector: 'tb-edit-client-credentials-button',
+    styleUrls: ['edit-client-credentials-button.component.scss'],
+    templateUrl: './edit-client-credentials-button.component.html',
+    standalone: true,
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class EditClientCredentialsButtonComponent {
 

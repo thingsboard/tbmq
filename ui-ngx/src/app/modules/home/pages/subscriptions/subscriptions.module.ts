@@ -24,17 +24,15 @@ import { SubscriptionsTableHeaderComponent } from '@home/pages/subscriptions/sub
 import { SubscriptionsFilterConfigComponent } from '@home/pages/subscriptions/subscriptions-filter-config.component';
 
 @NgModule({
-  declarations: [
-    SubscriptionsTableComponent,
-    SubscriptionsTableHeaderComponent,
-    SubscriptionsFilterConfigComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    SubscriptionsRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SubscriptionsRoutingModule,
+        SubscriptionsTableComponent,
+        SubscriptionsTableHeaderComponent,
+        SubscriptionsFilterConfigComponent
+    ]
 })
 
 export class SubscriptionsModule {

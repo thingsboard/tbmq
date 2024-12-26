@@ -22,15 +22,13 @@ import { SharedSubscriptionsRoutingModule } from '@home/pages/shared-subscriptio
 import { SharedSubscriptionComponent } from '@home/pages/shared-subscription-applications/shared-subscription.component';
 
 @NgModule({
-  declarations: [
-    SharedSubscriptionComponent,
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    SharedSubscriptionsRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SharedSubscriptionsRoutingModule,
+        SharedSubscriptionComponent
+    ]
 })
 
 export class SharedSubscriptionsModule { }

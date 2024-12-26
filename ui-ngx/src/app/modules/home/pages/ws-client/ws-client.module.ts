@@ -40,41 +40,39 @@ import { MessageFilterConfigComponent } from '@home/pages/ws-client/messages/mes
 import { WsMessagePropertiesDialogComponent } from '@home/pages/ws-client/messages/ws-message-properties-dialog.component';
 
 @NgModule({
-  declarations: [
-    WsClientComponent,
-    MessangerComponent,
-    ConnectionsComponent,
-    ConnectionControllerComponent,
-    SubscriptionDialogComponent,
-    ConnectionWizardDialogComponent,
-    MessagesComponent,
-    SubscriptionsComponent,
-    WsPublishMessagePropertiesDialogComponent,
-    SelectConnectionComponent,
-    ShowSelectConnectionPopoverComponent,
-    ShowConnectionLogsPopoverComponent,
-    ConnectionComponent,
-    SubscriptionComponent,
-    EntitiesTableWsComponent,
-    WsJsonObjectEditComponent,
-    LastWillComponent,
-    MessageFilterConfigComponent,
-    WsMessagePropertiesDialogComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    WsClientRoutingModule
-  ],
-  exports: [
-    SubscriptionDialogComponent,
-    ConnectionWizardDialogComponent,
-    SubscriptionsComponent,
-    WsPublishMessagePropertiesDialogComponent,
-    ShowSelectConnectionPopoverComponent,
-    ShowConnectionLogsPopoverComponent
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        WsClientRoutingModule,
+        WsClientComponent,
+        MessangerComponent,
+        ConnectionsComponent,
+        ConnectionControllerComponent,
+        SubscriptionDialogComponent,
+        ConnectionWizardDialogComponent,
+        MessagesComponent,
+        SubscriptionsComponent,
+        WsPublishMessagePropertiesDialogComponent,
+        SelectConnectionComponent,
+        ShowSelectConnectionPopoverComponent,
+        ShowConnectionLogsPopoverComponent,
+        ConnectionComponent,
+        SubscriptionComponent,
+        EntitiesTableWsComponent,
+        WsJsonObjectEditComponent,
+        LastWillComponent,
+        MessageFilterConfigComponent,
+        WsMessagePropertiesDialogComponent
+    ],
+    exports: [
+        SubscriptionDialogComponent,
+        ConnectionWizardDialogComponent,
+        SubscriptionsComponent,
+        WsPublishMessagePropertiesDialogComponent,
+        ShowSelectConnectionPopoverComponent,
+        ShowConnectionLogsPopoverComponent
+    ]
 })
 
 export class WsClientModule {

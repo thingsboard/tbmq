@@ -22,14 +22,12 @@ import {ProfileRoutingModule} from './profile-routing.module';
 import {ChangePasswordDialogComponent} from '@modules/home/pages/profile/change-password-dialog.component';
 
 @NgModule({
-  declarations: [
-    ProfileComponent,
-    ChangePasswordDialogComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    ProfileRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        ProfileRoutingModule,
+        ProfileComponent,
+        ChangePasswordDialogComponent
+    ]
 })
 export class ProfileModule { }

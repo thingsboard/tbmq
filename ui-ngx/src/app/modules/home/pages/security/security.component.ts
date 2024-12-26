@@ -19,15 +19,7 @@ import { User } from '@shared/models/user.model';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import {
-  AbstractControl,
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  FormGroupDirective,
-  ValidationErrors,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, FormGroupDirective, ValidationErrors, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute } from '@angular/router';
@@ -36,11 +28,26 @@ import { Subject } from 'rxjs';
 import { isEqual } from '@core/utils';
 import { AuthService } from '@core/http/auth.service';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatCard } from '@angular/material/card';
+import { ToastDirective } from '../../../../shared/components/toast.directive';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { TogglePasswordComponent } from '../../../../shared/components/button/toggle-password.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { NgIf, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { MatDivider } from '@angular/material/divider';
+import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-security',
-  templateUrl: './security.component.html',
-  styleUrls: ['./security.component.scss']
+    selector: 'tb-security',
+    templateUrl: './security.component.html',
+    styleUrls: ['./security.component.scss'],
+    standalone: true,
+    imports: [FlexModule, MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, ExtendedModule, NgIf, MatError, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe]
 })
 export class SecurityComponent extends PageComponent implements OnInit, OnDestroy {
 

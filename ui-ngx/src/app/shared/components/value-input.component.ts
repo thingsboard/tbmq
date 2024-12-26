@@ -15,7 +15,7 @@
 ///
 
 import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, FormsModule } from '@angular/forms';
 import { ValueType, valueTypesMap } from '@shared/models/constants';
 import { isValidObjectString } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -23,18 +23,30 @@ import {
   JsonObjectEditDialogComponent,
   JsonObjectEditDialogData
 } from '@shared/components/dialog/json-object-edit-dialog.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatSelect, MatSelectTrigger } from '@angular/material/select';
+import { MatIcon } from '@angular/material/icon';
+import { NgFor, NgIf } from '@angular/common';
+import { MatOption } from '@angular/material/core';
+import { MatInput } from '@angular/material/input';
+import { TbJsonToStringDirective } from './directives/tb-json-to-string.directive';
+import { MatIconButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-value-input',
-  templateUrl: './value-input.component.html',
-  styleUrls: ['./value-input.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ValueInputComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-value-input',
+    templateUrl: './value-input.component.html',
+    styleUrls: ['./value-input.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ValueInputComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [FormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, MatSelectTrigger, MatIcon, NgFor, MatOption, NgIf, MatInput, MatError, TbJsonToStringDirective, MatIconButton, MatSuffix]
 })
 export class ValueInputComponent implements OnInit, ControlValueAccessor {
 

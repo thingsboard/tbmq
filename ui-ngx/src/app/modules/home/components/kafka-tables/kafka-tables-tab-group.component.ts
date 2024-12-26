@@ -17,16 +17,21 @@
 import { Component, OnInit } from '@angular/core';
 import { KafkaTable, KafkaTableTranslationMap } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { HomePageTitleType } from "@shared/models/home-page.model";
 import { DialogService } from '@core/services/dialog.service';
 import { KafkaConsumerGroupsHomeTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-home-table-config';
 import { KafkaTopicsHomeTableConfig } from '@home/components/kafka-tables/kafka-topics-home-table-config';
+import { ToggleHeaderComponent, ToggleOption } from '../../../../shared/components/toggle-header.component';
+import { NgSwitch, NgSwitchDefault, NgSwitchCase } from '@angular/common';
+import { EntitiesTableHomeComponent } from '../entity/entities-table-home.component';
 
 @Component({
-  selector: 'tb-kafka-tables-tab-group',
-  templateUrl: './kafka-tables-tab-group.component.html',
-  styleUrls: ['./kafka-tables-tab-group.component.scss']
+    selector: 'tb-kafka-tables-tab-group',
+    templateUrl: './kafka-tables-tab-group.component.html',
+    styleUrls: ['./kafka-tables-tab-group.component.scss'],
+    standalone: true,
+    imports: [ToggleHeaderComponent, ToggleOption, NgSwitch, NgSwitchDefault, NgSwitchCase, EntitiesTableHomeComponent, TranslateModule]
 })
 export class KafkaTablesTabGroupComponent implements OnInit {
 

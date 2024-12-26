@@ -15,27 +15,36 @@
 ///
 
 import { AfterViewInit, Component, forwardRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
-import { ControlValueAccessor, UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { MatFormFieldAppearance } from '@angular/material/form-field';
+import { ControlValueAccessor, UntypedFormBuilder, UntypedFormGroup, NG_VALUE_ACCESSOR, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldAppearance, MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { Observable, of } from 'rxjs';
 import { map, mergeMap, share, tap } from 'rxjs/operators';
 import { Store } from '@ngrx/store';
 import { AppState } from '@app/core/core.state';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
-import { MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatAutocompleteTrigger, MatAutocomplete } from '@angular/material/autocomplete';
 import { getDefaultTimezoneInfo, getTimezoneInfo, getTimezones, TimezoneInfo } from '@shared/models/time/time.models';
 import { deepClone } from '@core/utils';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatInput } from '@angular/material/input';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatOption } from '@angular/material/core';
+import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 
 @Component({
-  selector: 'tb-timezone-select',
-  templateUrl: './timezone-select.component.html',
-  styleUrls: [],
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => TimezoneSelectComponent),
-    multi: true
-  }]
+    selector: 'tb-timezone-select',
+    templateUrl: './timezone-select.component.html',
+    styleUrls: [],
+    providers: [{
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TimezoneSelectComponent),
+            multi: true
+        }],
+    standalone: true,
+    imports: [MatFormField, FlexModule, FormsModule, ReactiveFormsModule, MatLabel, TranslateModule, MatInput, MatAutocompleteTrigger, NgIf, MatIconButton, MatSuffix, MatIcon, MatAutocomplete, NgFor, MatOption, MatError, AsyncPipe, HighlightPipe]
 })
 export class TimezoneSelectComponent implements ControlValueAccessor, OnInit, AfterViewInit {
 

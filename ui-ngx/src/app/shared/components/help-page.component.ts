@@ -15,11 +15,17 @@
 ///
 
 import { Component, Input } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-help-page',
-  templateUrl: './help-page.component.html',
-  styleUrls: ['./help-page.component.scss']
+    selector: 'tb-help-page',
+    templateUrl: './help-page.component.html',
+    styleUrls: ['./help-page.component.scss'],
+    standalone: true,
+    imports: [MatButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class HelpPageComponent {
 

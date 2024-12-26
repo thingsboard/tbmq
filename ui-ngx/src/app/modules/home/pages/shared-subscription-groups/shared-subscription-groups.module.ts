@@ -29,16 +29,14 @@ import {
 } from '@home/pages/shared-subscription-groups/shared-subscription-groups-filter-config.component';
 
 @NgModule({
-  declarations: [
-    SharedSubsriptionGroupsTableComponent,
-    SharedSubscriptionGroupsTableHeaderComponent,
-    SharedSubscriptionGroupsFilterConfigComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SharedSubsriptionGroupsTableComponent,
+        SharedSubscriptionGroupsTableHeaderComponent,
+        SharedSubscriptionGroupsFilterConfigComponent,
+    ]
 })
 
 export class SharedSubscriptionGroupsModule {

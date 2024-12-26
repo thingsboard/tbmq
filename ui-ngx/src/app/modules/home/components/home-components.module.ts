@@ -31,33 +31,30 @@ import { RouterTabsComponent } from '@home/components/router-tabs.component';
 import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
 
 @NgModule({
-  declarations:
-    [
-      EntitiesTableComponent,
-      AddEntityDialogComponent,
-      DetailsPanelComponent,
-      EntityDetailsPanelComponent,
-      EntityDetailsPageComponent,
-      EventContentDialogComponent,
-      ClientCredentialsAutocompleteComponent,
-      UserPropertiesComponent,
-      RouterTabsComponent
+    imports: [
+        CommonModule,
+        SharedModule,
+        SharedHomeComponentsModule,
+        EntitiesTableComponent,
+        AddEntityDialogComponent,
+        DetailsPanelComponent,
+        EntityDetailsPanelComponent,
+        EntityDetailsPageComponent,
+        EventContentDialogComponent,
+        ClientCredentialsAutocompleteComponent,
+        UserPropertiesComponent,
+        RouterTabsComponent
     ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    SharedHomeComponentsModule
-  ],
-  exports: [
-    EntitiesTableComponent,
-    AddEntityDialogComponent,
-    DetailsPanelComponent,
-    EntityDetailsPanelComponent,
-    EntityDetailsPageComponent,
-    ClientCredentialsAutocompleteComponent,
-    UserPropertiesComponent,
-    RouterTabsComponent
-  ]
+    exports: [
+        EntitiesTableComponent,
+        AddEntityDialogComponent,
+        DetailsPanelComponent,
+        EntityDetailsPanelComponent,
+        EntityDetailsPageComponent,
+        ClientCredentialsAutocompleteComponent,
+        UserPropertiesComponent,
+        RouterTabsComponent
+    ]
 })
 export class HomeComponentsModule {
 }

@@ -15,17 +15,10 @@
 ///
 
 import { Component, Inject, NgZone, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogClose, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import {
-  AbstractControl, FormGroupDirective,
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  ValidationErrors,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import { AbstractControl, FormGroupDirective, UntypedFormBuilder, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
@@ -33,11 +26,29 @@ import { AuthService } from '@core/http/auth.service';
 import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
 import { isEqual } from '@core/utils';
+import { MatToolbar } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { ToastDirective } from '../../../../shared/components/toast.directive';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatInput } from '@angular/material/input';
+import { TogglePasswordComponent } from '../../../../shared/components/button/toggle-password.component';
+import { MatDivider } from '@angular/material/divider';
+import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({
-  selector: 'tb-change-password-dialog',
-  templateUrl: './change-password-dialog.component.html',
-  styleUrls: ['./change-password-dialog.component.scss']
+    selector: 'tb-change-password-dialog',
+    templateUrl: './change-password-dialog.component.html',
+    styleUrls: ['./change-password-dialog.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, FlexModule, MatIconButton, MatDialogClose, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, ToastDirective, MatFormField, ExtendedModule, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatError, MatHint, MatDivider, TbIconComponent, MatDialogActions, MatSlideToggle, MatButton, AsyncPipe]
 })
 export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswordDialogComponent> implements OnInit {
 

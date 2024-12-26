@@ -25,18 +25,15 @@ import { GeneralSettingsComponent } from '@home/pages/settings/general-settings.
 import { SecuritySettingsComponent } from '@home/pages/settings/security-settings.component';
 
 @NgModule({
-  declarations:
-    [
-      MailServerComponent,
-      GeneralSettingsComponent,
-      SecuritySettingsComponent
-    ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    SettingsRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SettingsRoutingModule,
+        MailServerComponent,
+        GeneralSettingsComponent,
+        SecuritySettingsComponent
+    ]
 })
 export class SettingsModule {
 }

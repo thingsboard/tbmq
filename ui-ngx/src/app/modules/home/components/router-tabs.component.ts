@@ -18,18 +18,26 @@ import { Component, ComponentRef, OnInit, Type, ViewChild } from '@angular/core'
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLinkActive, RouterLink, RouterOutlet } from '@angular/router';
 import { MenuService } from '@core/services/menu.service';
 import { distinctUntilChanged, filter, map, mergeMap, startWith, take } from 'rxjs/operators';
 import { merge, Observable } from 'rxjs';
 import { MenuSection } from '@core/services/menu.models';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatTabNav, MatTabLink, MatTabNavPanel } from '@angular/material/tabs';
+import { TbIconComponent } from '../../../shared/components/icon.component';
+import { TbAnchorComponent as TbAnchorComponent_1 } from '../../../shared/components/tb-anchor.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-router-tabs',
-  templateUrl: './router-tabs.component.html',
-  styleUrls: ['./router-tabs.component.scss']
+    selector: 'tb-router-tabs',
+    templateUrl: './router-tabs.component.html',
+    styleUrls: ['./router-tabs.component.scss'],
+    standalone: true,
+    imports: [FlexModule, NgIf, MatTabNav, NgFor, RouterLinkActive, MatTabLink, RouterLink, TbIconComponent, TbAnchorComponent_1, MatTabNavPanel, RouterOutlet, AsyncPipe, TranslateModule]
 })
 export class RouterTabsComponent extends PageComponent implements OnInit {
 

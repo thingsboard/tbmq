@@ -41,25 +41,36 @@ import { guid, isDefinedAndNotNull, isObject, isUndefined } from '@core/utils';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { FullscreenDirective } from './fullscreen.directive';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { ToastDirective } from './toast.directive';
+import { TranslateModule } from '@ngx-translate/core';
 
 export const jsonRequired = (control: AbstractControl): ValidationErrors | null => !control.value ? {required: true} : null;
 
 @Component({
-  selector: 'tb-json-object-edit',
-  templateUrl: './json-object-edit.component.html',
-  styleUrls: ['./json-object-edit.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => JsonObjectEditComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => JsonObjectEditComponent),
-      multi: true,
-    }
-  ]
+    selector: 'tb-json-object-edit',
+    templateUrl: './json-object-edit.component.html',
+    styleUrls: ['./json-object-edit.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => JsonObjectEditComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => JsonObjectEditComponent),
+            multi: true,
+        }
+    ],
+    standalone: true,
+    imports: [FullscreenDirective, FlexModule, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
 

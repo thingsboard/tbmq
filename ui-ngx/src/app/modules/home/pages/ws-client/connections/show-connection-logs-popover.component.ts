@@ -22,11 +22,20 @@ import { AppState } from '@core/core.state';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
 import { Subscription } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor, NgStyle, DatePipe } from '@angular/common';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'tb-show-connection-logs-popover',
-  templateUrl: './show-connection-logs-popover.component.html',
-  styleUrls: ['./show-connection-logs-popover.component.scss']
+    selector: 'tb-show-connection-logs-popover',
+    templateUrl: './show-connection-logs-popover.component.html',
+    styleUrls: ['./show-connection-logs-popover.component.scss'],
+    standalone: true,
+    imports: [TranslateModule, MatIconButton, MatIcon, NgIf, NgFor, FlexModule, NgStyle, ExtendedModule, MatTooltip, DatePipe]
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

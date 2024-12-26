@@ -24,17 +24,15 @@ import { KafkaConsumerGroupsTableComponent } from '@home/pages/kafka-management/
 import { KafkaBrokersTableComponent } from '@home/pages/kafka-management/kafka-brokers-table.component';
 
 @NgModule({
-  declarations: [
-    KafkaTopicsTableComponent,
-    KafkaConsumerGroupsTableComponent,
-    KafkaBrokersTableComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    KafkaManagementRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        KafkaManagementRoutingModule,
+        KafkaTopicsTableComponent,
+        KafkaConsumerGroupsTableComponent,
+        KafkaBrokersTableComponent
+    ]
 })
 export class KafkaManagementModule {
 }

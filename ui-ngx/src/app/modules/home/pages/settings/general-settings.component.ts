@@ -18,7 +18,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import {
   AdminSettings,
@@ -31,11 +31,26 @@ import { SettingsService } from '@core/http/settings.service';
 import { takeUntil } from 'rxjs/operators';
 import { isUndefined } from '@core/utils';
 import { MqttJsClientService } from "@core/http/mqtt-js-client.service";
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgIf, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatButton } from '@angular/material/button';
+import { ToggleSelectComponent } from '../../../../shared/components/toggle-select.component';
+import { ToggleOption } from '../../../../shared/components/toggle-header.component';
 
 @Component({
-  selector: 'tb-general-settings',
-  templateUrl: './general-settings.component.html',
-  styleUrls: ['./general-settings.component.scss']
+    selector: 'tb-general-settings',
+    templateUrl: './general-settings.component.html',
+    styleUrls: ['./general-settings.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, FlexModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatError, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy {
 

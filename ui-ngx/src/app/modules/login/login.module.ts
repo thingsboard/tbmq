@@ -25,16 +25,14 @@ import {ResetPasswordComponent} from '@modules/login/pages/login/reset-password.
 import {CreatePasswordComponent} from '@modules/login/pages/login/create-password.component';
 
 @NgModule({
-  declarations: [
-    LoginComponent,
-    ResetPasswordRequestComponent,
-    ResetPasswordComponent,
-    CreatePasswordComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    LoginRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        LoginRoutingModule,
+        LoginComponent,
+        ResetPasswordRequestComponent,
+        ResetPasswordComponent,
+        CreatePasswordComponent
+    ]
 })
 export class LoginModule { }

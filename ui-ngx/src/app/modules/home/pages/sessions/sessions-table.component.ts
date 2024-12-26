@@ -19,13 +19,17 @@ import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config'
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { EntitiesTableComponent as EntitiesTableComponent_1 } from '../../components/entity/entities-table.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
-  selector: 'tb-sessions-table',
-  templateUrl: './sessions-table.component.html'
+    selector: 'tb-sessions-table',
+    templateUrl: './sessions-table.component.html',
+    standalone: true,
+    imports: [EntitiesTableComponent_1, NgClass, ExtendedModule]
 })
 export class SessionsTableComponent implements OnInit {
 

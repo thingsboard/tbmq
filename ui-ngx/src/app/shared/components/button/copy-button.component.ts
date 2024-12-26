@@ -16,15 +16,21 @@
 
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { ClipboardService } from 'ngx-clipboard';
-import { TooltipPosition } from '@angular/material/tooltip';
+import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { MatIconButton } from '@angular/material/button';
+import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-copy-button',
-  styleUrls: ['copy-button.component.scss'],
-  templateUrl: './copy-button.component.html'
+    selector: 'tb-copy-button',
+    styleUrls: ['copy-button.component.scss'],
+    templateUrl: './copy-button.component.html',
+    standalone: true,
+    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, NgIf, MatIcon, NgStyle]
 })
 export class CopyButtonComponent {
 

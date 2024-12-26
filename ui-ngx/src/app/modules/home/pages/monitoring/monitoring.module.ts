@@ -22,15 +22,13 @@ import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routi
 import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
 
 @NgModule({
-  declarations: [
-    MonitoringComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    MonitoringRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        MonitoringRoutingModule,
+        MonitoringComponent
+    ]
 })
 
 export class MonitoringModule {

@@ -28,10 +28,25 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeService } from '@core/services/time.service';
 import { isDefined } from '@core/utils';
 import { OverlayRef } from '@angular/cdk/overlay';
+import { MatTabGroup, MatTab } from '@angular/material/tabs';
+import { NgClass, NgIf, NgTemplateOutlet, NgFor, AsyncPipe } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { TimeintervalComponent } from './timeinterval.component';
+import { QuickTimeIntervalComponent } from './quick-time-interval.component';
+import { DatetimePeriodComponent } from './datetime-period.component';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { TimezoneSelectComponent } from './timezone-select.component';
+import { MatButton } from '@angular/material/button';
 
 export interface TimewindowPanelData {
   historyOnly: boolean;
@@ -46,9 +61,11 @@ export interface TimewindowPanelData {
 export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelData');
 
 @Component({
-  selector: 'tb-timewindow-panel',
-  templateUrl: './timewindow-panel.component.html',
-  styleUrls: ['./timewindow-panel.component.scss']
+    selector: 'tb-timewindow-panel',
+    templateUrl: './timewindow-panel.component.html',
+    styleUrls: ['./timewindow-panel.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, MatTabGroup, NgClass, ExtendedModule, MatTab, FlexModule, NgIf, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, NgFor, MatOption, TimezoneSelectComponent, MatButton, AsyncPipe]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 

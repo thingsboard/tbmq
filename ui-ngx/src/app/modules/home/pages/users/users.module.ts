@@ -22,15 +22,13 @@ import { UserComponent } from '@home/pages/users/user.component';
 import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
 
 @NgModule({
-  declarations: [
-    UserComponent,
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    UsersRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        UsersRoutingModule,
+        UserComponent
+    ]
 })
 
 export class UsersModule {

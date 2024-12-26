@@ -16,12 +16,18 @@
 
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Color } from '@iplab/ngx-color-picker';
+import { MatFormField, MatPrefix, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { CopyButtonComponent } from '../button/copy-button.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: `tb-hex-input`,
-  templateUrl: `./hex-input.component.html`,
-  styleUrls: ['./hex-input.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: `tb-hex-input`,
+    templateUrl: `./hex-input.component.html`,
+    styleUrls: ['./hex-input.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatFormField, MatPrefix, MatInput, CopyButtonComponent, MatSuffix, TranslateModule]
 })
 export class HexInputComponent {
 

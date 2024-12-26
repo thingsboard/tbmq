@@ -44,25 +44,36 @@ import { guid, isDefinedAndNotNull, isEmptyStr, isObject, isUndefined } from '@c
 import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { FullscreenDirective } from '../../../../../shared/components/fullscreen.directive';
+import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { ToastDirective } from '../../../../../shared/components/toast.directive';
+import { TranslateModule } from '@ngx-translate/core';
 
 export const jsonRequired = (control: AbstractControl): ValidationErrors | null => !control.value ? {required: true} : null;
 
 @Component({
-  selector: 'tb-ws-json-object-edit',
-  templateUrl: './ws-json-object-edit.component.html',
-  styleUrls: ['./ws-json-object-edit.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => WsJsonObjectEditComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => WsJsonObjectEditComponent),
-      multi: true,
-    }
-  ]
+    selector: 'tb-ws-json-object-edit',
+    templateUrl: './ws-json-object-edit.component.html',
+    styleUrls: ['./ws-json-object-edit.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => WsJsonObjectEditComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => WsJsonObjectEditComponent),
+            multi: true,
+        }
+    ],
+    standalone: true,
+    imports: [FlexModule, FullscreenDirective, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

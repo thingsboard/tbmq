@@ -22,11 +22,16 @@ import { ClientCredentialsService } from '@core/http/client-credentials.service'
 import { ClientSessionService } from '@core/http/client-session.service';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { CredentialsHomeCardConfig, HomePageTitleType, POLLING_INTERVAL, SessionsHomeCardConfig } from '@shared/models/home-page.model';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { HomeCardsTableComponent } from './home-cards-table.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-home-cards-sessions-credentials',
-  templateUrl: './home-cards-sessions-credentials.component.html',
-  styles: [':host {display: flex}']
+    selector: 'tb-home-cards-sessions-credentials',
+    templateUrl: './home-cards-sessions-credentials.component.html',
+    styles: [':host {display: flex}'],
+    standalone: true,
+    imports: [FlexModule, HomeCardsTableComponent, TranslateModule]
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 

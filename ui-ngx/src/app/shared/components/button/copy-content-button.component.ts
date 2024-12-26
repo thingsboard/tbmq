@@ -18,11 +18,17 @@ import { Component, Input } from '@angular/core';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { MatButton } from '@angular/material/button';
+import { ClipboardModule } from 'ngx-clipboard';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-copy-content-button',
-  templateUrl: './copy-content-button.component.html'
+    selector: 'tb-copy-content-button',
+    templateUrl: './copy-content-button.component.html',
+    standalone: true,
+    imports: [MatButton, ClipboardModule, ExtendedModule, MatIcon, TranslateModule]
 })
 export class CopyContentButtonComponent {
 

@@ -15,22 +15,37 @@
 ///
 
 import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogClose } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { FormBuilder, UntypedFormGroup } from '@angular/forms';
+import { FormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PublishMessageProperties, TimeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { NgFor } from '@angular/common';
+import { MatOption } from '@angular/material/core';
+import { UserPropertiesComponent } from '../../../components/client-credentials-templates/user-properties.component';
 
 export interface WsMessagePropertiesDialogData {
   entity: PublishMessageProperties;
 }
 
 @Component({
-  selector: 'tb-ws-message-properties-dialog',
-  templateUrl: './ws-message-properties-dialog.component.html',
-  styleUrls: ['./ws-message-properties-dialog.component.scss']
+    selector: 'tb-ws-message-properties-dialog',
+    templateUrl: './ws-message-properties-dialog.component.html',
+    styleUrls: ['./ws-message-properties-dialog.component.scss'],
+    standalone: true,
+    imports: [CdkScrollable, MatDialogContent, FlexModule, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, NgFor, MatOption, UserPropertiesComponent]
 })
 export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessagePropertiesDialogData> implements OnInit, OnDestroy {
 

@@ -26,11 +26,19 @@ import { MatDialog } from '@angular/material/dialog';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgFor, AsyncPipe } from '@angular/common';
+import { ConnectionComponent } from './connection.component';
+import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
-  selector: 'tb-show-connections-popover',
-  templateUrl: './show-select-connection-popover.component.html',
-  styleUrls: []
+    selector: 'tb-show-connections-popover',
+    templateUrl: './show-select-connection-popover.component.html',
+    styleUrls: [],
+    standalone: true,
+    imports: [TranslateModule, MatIconButton, MatIcon, NgFor, ConnectionComponent, FlexModule, MatButton, AsyncPipe]
 })
 export class ShowSelectConnectionPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

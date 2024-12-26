@@ -15,7 +15,7 @@
 ///
 
 import { Component, ElementRef, Inject, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogClose } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 
@@ -28,6 +28,14 @@ import { Observable } from 'rxjs/internal/Observable';
 import { beautifyJs } from '@shared/models/beautify.models';
 import { of } from 'rxjs';
 import { base64toString, isLiteralObject, isValidObjectString } from '@core/utils';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { CopyButtonComponent } from '../../../../shared/components/button/copy-button.component';
 
 export interface EventContentDialogComponentDialogData {
   content: string;
@@ -37,9 +45,11 @@ export interface EventContentDialogComponentDialogData {
 }
 
 @Component({
-  selector: 'tb-event-content-dialog',
-  templateUrl: './event-content-dialog.component.html',
-  styleUrls: ['./event-content-dialog.component.scss']
+    selector: 'tb-event-content-dialog',
+    templateUrl: './event-content-dialog.component.html',
+    styleUrls: ['./event-content-dialog.component.scss'],
+    standalone: true,
+    imports: [CdkScrollable, MatDialogContent, FlexModule, NgIf, TbIconComponent, TranslateModule, MatIconButton, MatDialogClose, MatIcon, CopyButtonComponent, AsyncPipe]
 })
 export class EventContentDialogComponent extends DialogComponent<EventContentDialogComponentDialogData> implements OnInit, OnDestroy {
 

@@ -38,13 +38,17 @@ import { SHARED_MODULE_TOKEN } from '@shared/components/tokens';
 import { deepClone, guid, isDefinedAndNotNull } from '@core/utils';
 import { Observable, of, ReplaySubject } from 'rxjs';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { NgIf, NgClass, NgStyle } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 let defaultMarkdownStyle;
 
 @Component({
-  selector: 'tb-markdown',
-  templateUrl: './markdown.component.html',
-  styleUrls: ['./markdown.component.scss']
+    selector: 'tb-markdown',
+    templateUrl: './markdown.component.html',
+    styleUrls: ['./markdown.component.scss'],
+    standalone: true,
+    imports: [NgIf, ExtendedModule, NgClass, NgStyle]
 })
 export class TbMarkdownComponent implements OnChanges {
 

@@ -29,27 +29,25 @@ import { ShowSubscriptionOptionsPopoverComponent } from '@home/components/sessio
 import { SessionMetricsComponent } from '@home/components/session-metrics/session-metrics.component';
 
 @NgModule({
-  declarations: [
-    SessionsTableComponent,
-    SessionsDetailsDialogComponent,
-    SubscriptionsComponent,
-    SessionMetricsComponent,
-    SubscriptionOptionsComponent,
-    ShowSubscriptionOptionsPopoverComponent,
-    SessionTableHeaderComponent,
-    SessionFilterConfigComponent
-  ],
-  exports: [
-      SessionsDetailsDialogComponent,
-      SubscriptionsComponent,
-      SessionMetricsComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    SessionsRoutingModule
-  ]
+    exports: [
+        SessionsDetailsDialogComponent,
+        SubscriptionsComponent,
+        SessionMetricsComponent
+    ],
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        SessionsRoutingModule,
+        SessionsTableComponent,
+        SessionsDetailsDialogComponent,
+        SubscriptionsComponent,
+        SessionMetricsComponent,
+        SubscriptionOptionsComponent,
+        ShowSubscriptionOptionsPopoverComponent,
+        SessionTableHeaderComponent,
+        SessionFilterConfigComponent
+    ]
 })
 
 export class SessionsModule {

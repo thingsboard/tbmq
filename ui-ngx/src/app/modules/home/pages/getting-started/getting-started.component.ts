@@ -26,12 +26,19 @@ import {
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from "@core/utils";
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { TranslateModule } from '@ngx-translate/core';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-getting-started',
-  templateUrl: './getting-started.component.html',
-  styleUrls: ['./getting-started.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-getting-started',
+    templateUrl: './getting-started.component.html',
+    styleUrls: ['./getting-started.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FlexModule, NgFor, MatButton]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 

@@ -26,18 +26,15 @@ import {SideMenuComponent} from '@modules/home/menu/side-menu.component';
 import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/getting-started-menu-link.component';
 
 @NgModule({
-  declarations:
-    [
-      HomeComponent,
-      MenuLinkComponent,
-      MenuToggleComponent,
-      SideMenuComponent,
-      GettingStartedMenuLinkComponent
-    ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeRoutingModule,
+        HomeComponent,
+        MenuLinkComponent,
+        MenuToggleComponent,
+        SideMenuComponent,
+        GettingStartedMenuLinkComponent
+    ]
 })
 export class HomeModule { }

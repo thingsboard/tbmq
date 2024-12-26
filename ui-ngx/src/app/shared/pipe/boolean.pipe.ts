@@ -17,7 +17,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
-@Pipe({name: 'boolean'})
+@Pipe({
+    name: 'boolean',
+    standalone: true
+})
 export class BooleanPipe implements PipeTransform {
 
   constructor(public translate: TranslateService) {

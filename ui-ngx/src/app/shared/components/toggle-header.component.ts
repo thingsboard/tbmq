@@ -43,6 +43,13 @@ import { coerceBoolean } from '@shared/decorators/coercion';
 import { startWith, takeUntil } from 'rxjs/operators';
 import { Platform } from '@angular/cdk/platform';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatFormField } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
 
 export interface ToggleHeaderOption {
   name: string;
@@ -53,12 +60,11 @@ export type ToggleHeaderAppearance = 'fill' | 'fill-invert' | 'stroked';
 
 export type ScrollDirection = 'after' | 'before';
 
-@Directive(
-  {
+@Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'tb-toggle-option',
-  }
-)
+    standalone: true,
+})
 // eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class ToggleOption {
 
@@ -114,9 +120,11 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
 }
 
 @Component({
-  selector: 'tb-toggle-header',
-  templateUrl: './toggle-header.component.html',
-  styleUrls: ['./toggle-header.component.scss']
+    selector: 'tb-toggle-header',
+    templateUrl: './toggle-header.component.html',
+    styleUrls: ['./toggle-header.component.scss'],
+    standalone: true,
+    imports: [MatIconButton, MatIcon, NgIf, MatButtonToggleGroup, FormsModule, NgFor, MatButtonToggle, MatFormField, MatSelect, MatOption, AsyncPipe]
 })
 export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterViewInit, AfterContentInit,
   AfterContentChecked, AfterViewChecked, OnDestroy {

@@ -15,35 +15,39 @@
 ///
 
 import { AfterViewInit, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
-import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR, UntypedFormGroup,
-  ValidationErrors,
-  Validator, Validators
-} from '@angular/forms';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ClientCredentials, SslMqttCredentials } from '@shared/models/credentials.model';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { CopyButtonComponent as CopyButtonComponent_1 } from '../../../../../shared/components/button/copy-button.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { NgIf } from '@angular/common';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { AuthRulesComponent } from './auth-rules.component';
 
 @Component({
-  selector: 'tb-mqtt-credentials-ssl',
-  templateUrl: './ssl.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MqttCredentialsSslComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => MqttCredentialsSslComponent),
-      multi: true,
-    }],
-  styleUrls: []
+    selector: 'tb-mqtt-credentials-ssl',
+    templateUrl: './ssl.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MqttCredentialsSslComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => MqttCredentialsSslComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: [],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent_1, MatSuffix, ExtendedModule, NgIf, MatError, MatSlideToggle, AuthRulesComponent]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 

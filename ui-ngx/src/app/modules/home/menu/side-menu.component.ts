@@ -17,12 +17,18 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { MenuSection } from '@core/services/menu.models';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgFor, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
+import { MenuLinkComponent } from './menu-link.component';
+import { MenuToggleComponent } from './menu-toggle.component';
 
 @Component({
-  selector: 'tb-side-menu',
-  templateUrl: './side-menu.component.html',
-  styleUrls: ['./side-menu.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-side-menu',
+    templateUrl: './side-menu.component.html',
+    styleUrls: ['./side-menu.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [FlexModule, NgFor, NgSwitch, NgSwitchCase, MenuLinkComponent, MenuToggleComponent, AsyncPipe]
 })
 export class SideMenuComponent {
 

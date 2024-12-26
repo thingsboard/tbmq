@@ -37,24 +37,22 @@ import { CheckConnectivityDialogComponent } from '@home/pages/client-credentials
 import { MqttCredentialsScramComponent } from '@home/components/client-credentials-templates/scram/scram.component';
 
 @NgModule({
-  declarations: [
-    ClientCredentialsComponent,
-    MqttCredentialsSslComponent,
-    MqttCredentialsBasicComponent,
-    MqttCredentialsScramComponent,
-    AuthRulesComponent,
-    ChangeBasicPasswordDialogComponent,
-    ClientCredentialsTableHeaderComponent,
-    ClientCredentialsFilterConfigComponent,
-    ClientCredentialsWizardDialogComponent,
-    CheckConnectivityDialogComponent
-  ],
-  imports: [
-    CommonModule,
-    SharedModule,
-    HomeComponentsModule,
-    ClientCredentialsRoutingModule
-  ]
+    imports: [
+        CommonModule,
+        SharedModule,
+        HomeComponentsModule,
+        ClientCredentialsRoutingModule,
+        ClientCredentialsComponent,
+        MqttCredentialsSslComponent,
+        MqttCredentialsBasicComponent,
+        MqttCredentialsScramComponent,
+        AuthRulesComponent,
+        ChangeBasicPasswordDialogComponent,
+        ClientCredentialsTableHeaderComponent,
+        ClientCredentialsFilterConfigComponent,
+        ClientCredentialsWizardDialogComponent,
+        CheckConnectivityDialogComponent
+    ]
 })
 
 export class ClientCredentialsModule {

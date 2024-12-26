@@ -25,11 +25,15 @@ import { BehaviorSubject } from 'rxjs';
 import { share } from 'rxjs/operators';
 import { HelpService } from '@core/services/help.service';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { TbMarkdownComponent } from './markdown.component';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'tb-help-markdown',
-  templateUrl: './help-markdown.component.html',
-  styleUrls: ['./help-markdown.component.scss']
+    selector: 'tb-help-markdown',
+    templateUrl: './help-markdown.component.html',
+    styleUrls: ['./help-markdown.component.scss'],
+    standalone: true,
+    imports: [TbMarkdownComponent, AsyncPipe]
 })
 export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
 

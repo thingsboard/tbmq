@@ -15,14 +15,19 @@
 ///
 
 import { ChangeDetectionStrategy, Component, Renderer2, ViewContainerRef } from '@angular/core';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-select-connection',
-  templateUrl: './select-connection.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-select-connection',
+    templateUrl: './select-connection.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class SelectConnectionComponent {
 

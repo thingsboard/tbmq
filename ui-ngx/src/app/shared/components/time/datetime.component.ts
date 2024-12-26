@@ -15,20 +15,28 @@
 ///
 
 import { Component, forwardRef, Input, OnInit } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
+import { NgIf } from '@angular/common';
+import { MatDatetimepickerModule } from '@mat-datetimepicker/core';
+import { MatInput } from '@angular/material/input';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-datetime',
-  templateUrl: './datetime.component.html',
-  styleUrls: [],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DatetimeComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-datetime',
+    templateUrl: './datetime.component.html',
+    styleUrls: [],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DatetimeComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [FlexModule, MatFormField, NgIf, MatLabel, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule, TranslateModule]
 })
 export class DatetimeComponent implements OnInit, ControlValueAccessor {
 

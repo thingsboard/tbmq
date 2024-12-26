@@ -15,17 +15,17 @@
 ///
 
 import { Component, ElementRef, forwardRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { PageLink } from '@shared/models/page/page-link';
 import { Direction } from '@shared/models/page/sort-order';
 import { catchError, debounceTime, distinctUntilChanged, map, share, switchMap, tap } from 'rxjs/operators';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TruncatePipe } from '@shared//pipe/truncate.pipe';
 import { ENTER } from '@angular/cdk/keycodes';
-import { MatAutocomplete } from '@angular/material/autocomplete';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
-import { SubscriptSizing } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
@@ -42,16 +42,26 @@ import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
+import { MatInput } from '@angular/material/input';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { EditClientCredentialsButtonComponent } from '../../../../shared/components/button/edit-client-credentials-button.component';
+import { MatOption } from '@angular/material/core';
+import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 
 @Component({
-  selector: 'tb-client-credentials-autocomplete',
-  templateUrl: './client-credentials-autocomplete.component.html',
-  styleUrls: ['./client-credentials-autocomplete.component.scss'],
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => ClientCredentialsAutocompleteComponent),
-    multi: true
-  }]
+    selector: 'tb-client-credentials-autocomplete',
+    templateUrl: './client-credentials-autocomplete.component.html',
+    styleUrls: ['./client-credentials-autocomplete.component.scss'],
+    providers: [{
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ClientCredentialsAutocompleteComponent),
+            multi: true
+        }],
+    standalone: true,
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 
