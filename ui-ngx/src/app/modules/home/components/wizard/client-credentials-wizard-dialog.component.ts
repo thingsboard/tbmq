@@ -36,7 +36,7 @@ import { BaseData } from "@shared/models/base-data";
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgIf, NgFor, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';

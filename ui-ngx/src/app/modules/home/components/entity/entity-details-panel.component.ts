@@ -46,10 +46,9 @@ import { EntityTabsComponent } from '@home/components/entity/entity-tabs.compone
 import { deepClone, mergeDeep } from '@core/utils';
 import { DetailsPanelComponent } from '../details-panel.component';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { NgClass } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { TbAnchorComponent as TbAnchorComponent_1 } from '../../../../shared/components/tb-anchor.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -58,7 +57,7 @@ import { TranslateModule } from '@ngx-translate/core';
     styleUrls: ['./entity-details-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [DetailsPanelComponent, FlexModule, HelpComponent, MatTabGroup, NgClass, ExtendedModule, MatTab, TbAnchorComponent_1, TranslateModule]
+    imports: [DetailsPanelComponent, FlexModule, HelpComponent, MatTabGroup, NgClass, ExtendedModule, MatTab, TbAnchorComponent, TranslateModule]
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {
 

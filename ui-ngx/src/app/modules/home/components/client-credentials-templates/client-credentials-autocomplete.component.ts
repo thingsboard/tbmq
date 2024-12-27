@@ -47,7 +47,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { EditClientCredentialsButtonComponent } from '../../../../shared/components/button/edit-client-credentials-button.component';
+import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
 import { MatOption } from '@angular/material/core';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 

@@ -27,7 +27,7 @@ import { MatButton } from '@angular/material/button';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
-import { CopyContentButtonComponent } from '../../../../shared/components/button/copy-content-button.component';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgIf, AsyncPipe } from '@angular/common';

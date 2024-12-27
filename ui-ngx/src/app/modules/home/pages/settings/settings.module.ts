@@ -16,7 +16,6 @@
 
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { SettingsRoutingModule } from './settings-routing.module';
 import { SharedModule } from '@app/shared/shared.module';
 import { MailServerComponent } from '@home/pages/settings/mail-server.component';
@@ -25,15 +24,15 @@ import { GeneralSettingsComponent } from '@home/pages/settings/general-settings.
 import { SecuritySettingsComponent } from '@home/pages/settings/security-settings.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        SharedModule,
-        HomeComponentsModule,
-        SettingsRoutingModule,
-        MailServerComponent,
-        GeneralSettingsComponent,
-        SecuritySettingsComponent
-    ]
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    SettingsRoutingModule,
+    MailServerComponent,
+    GeneralSettingsComponent,
+    SecuritySettingsComponent
+  ]
 })
 export class SettingsModule {
 }

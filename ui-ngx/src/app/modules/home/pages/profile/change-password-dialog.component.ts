@@ -34,13 +34,13 @@ import { MatIcon } from '@angular/material/icon';
 import { NgIf, AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { ToastDirective } from '../../../../shared/components/toast.directive';
+import { ToastDirective } from '@shared/components/toast.directive';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatInput } from '@angular/material/input';
-import { TogglePasswordComponent } from '../../../../shared/components/button/toggle-password.component';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatDivider } from '@angular/material/divider';
-import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({

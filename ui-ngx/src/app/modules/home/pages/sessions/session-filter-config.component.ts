@@ -56,7 +56,7 @@ import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
-import { EntitySubTypeListComponent } from '../../../../shared/components/entity/entity-subtype-list.component';
+import { EntitySubTypeListComponent } from '@shared/components/entity/entity-subtype-list.component';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 

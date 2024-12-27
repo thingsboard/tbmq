@@ -42,8 +42,8 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
-import { ToggleSelectComponent } from '../../../../shared/components/toggle-select.component';
-import { ToggleOption } from '../../../../shared/components/toggle-header.component';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
+import { ToggleOption } from '@shared/components/toggle-header.component';
 
 @Component({
     selector: 'tb-general-settings',

@@ -23,7 +23,6 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { GlobalHttpInterceptor } from './interceptors/global-http-interceptor';
 import { effects, metaReducers, reducers } from './core.state';
 import { environment as env } from '@env/environment';
-
 import {
   MissingTranslationHandler,
   TranslateCompiler,
@@ -48,7 +47,6 @@ import { TranslateDefaultLoader } from '@core/translate/translate-default-loader
     MatDialogModule,
     MatButtonModule,
     MatSnackBarModule,
-
     // ngx-translate
     TranslateModule.forRoot({
       loader: {

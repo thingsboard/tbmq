@@ -28,15 +28,15 @@ import {
 } from '@home/pages/retained-messages/retained-messages-table-header.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        SharedModule,
-        HomeComponentsModule,
-        RetainedMessagesRoutingModule,
-        RetainedMessagesTableComponent,
-        RetainedMessagesFilterConfigComponent,
-        RetainedMessagesTableHeaderComponent
-    ]
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    RetainedMessagesRoutingModule,
+    RetainedMessagesTableComponent,
+    RetainedMessagesFilterConfigComponent,
+    RetainedMessagesTableHeaderComponent
+  ]
 })
 
 export class RetainedMessagesModule {

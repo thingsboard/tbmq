@@ -29,7 +29,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatError, MatHint, MatSuffix } from '@angular/material/form-field';
@@ -38,7 +38,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, Mat
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { TogglePasswordComponent } from '../../../../shared/components/button/toggle-password.component';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatButton } from '@angular/material/button';
 

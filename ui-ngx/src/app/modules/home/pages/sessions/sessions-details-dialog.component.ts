@@ -34,19 +34,19 @@ import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/mode
 import { MatToolbar } from '@angular/material/toolbar';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { TranslateModule } from '@ngx-translate/core';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { NgIf, NgStyle, AsyncPipe, TitleCasePipe, DatePipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTabGroup, MatTab, MatTabContent } from '@angular/material/tabs';
-import { CopyContentButtonComponent } from '../../../../shared/components/button/copy-content-button.component';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { MatInput } from '@angular/material/input';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { CopyButtonComponent } from '../../../../shared/components/button/copy-button.component';
-import { EditClientCredentialsButtonComponent } from '../../../../shared/components/button/edit-client-credentials-button.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
 import { SubscriptionsComponent } from '../../components/session-subscriptions/subscriptions.component';
 import { SessionMetricsComponent } from '../../components/session-metrics/session-metrics.component';
 

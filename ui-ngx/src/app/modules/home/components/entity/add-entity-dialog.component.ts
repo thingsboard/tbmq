@@ -48,13 +48,11 @@ import { Subscription } from 'rxjs/internal/Subscription';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { MatToolbar } from '@angular/material/toolbar';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgIf, AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { CdkScrollable } from '@angular/cdk/scrolling';
-import { TbAnchorComponent as TbAnchorComponent_1 } from '../../../../shared/components/tb-anchor.component';
 import { MatDivider } from '@angular/material/divider';
 
 @Component({
@@ -63,7 +61,7 @@ import { MatDivider } from '@angular/material/divider';
     providers: [{ provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent }],
     styleUrls: ['./add-entity-dialog.component.scss'],
     standalone: true,
-    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent_1, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
                                       implements OnInit, AfterViewInit {

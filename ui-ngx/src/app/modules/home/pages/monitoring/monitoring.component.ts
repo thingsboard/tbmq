@@ -71,13 +71,13 @@ import {
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { MatToolbar } from '@angular/material/toolbar';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { TimewindowComponent } from '../../../../shared/components/time/timewindow.component';
+import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
 import { NgFor, NgStyle, NgIf, NgTemplateOutlet } from '@angular/common';
-import { FullscreenDirective } from '../../../../shared/components/fullscreen.directive';
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatDivider } from '@angular/material/divider';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { ToggleHeaderComponent, ToggleOption } from '../../../../shared/components/toggle-header.component';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';

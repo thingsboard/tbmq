@@ -17,9 +17,9 @@
 import { Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
-import { CardTitleButtonComponent } from '../../../../shared/components/button/card-title-button.component';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { NgFor, AsyncPipe } from '@angular/common';
-import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({

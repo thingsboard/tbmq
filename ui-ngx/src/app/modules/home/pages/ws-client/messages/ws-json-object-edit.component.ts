@@ -45,16 +45,14 @@ import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { FullscreenDirective } from '../../../../../shared/components/fullscreen.directive';
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { NgClass, NgIf, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { ToastDirective } from '../../../../../shared/components/toast.directive';
+import { ToastDirective } from '@shared/components/toast.directive';
 import { TranslateModule } from '@ngx-translate/core';
-
-export const jsonRequired = (control: AbstractControl): ValidationErrors | null => !control.value ? {required: true} : null;
 
 @Component({
     selector: 'tb-ws-json-object-edit',

@@ -19,7 +19,7 @@ import { MenuSection } from '@core/services/menu.models';
 import { MatAnchor } from '@angular/material/button';
 import { RouterLinkActive, RouterLink } from '@angular/router';
 import { NgIf } from '@angular/common';
-import { TbIconComponent } from '../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({

@@ -27,18 +27,17 @@ import { MatButton } from '@angular/material/button';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
-import { CopyContentButtonComponent } from '../../../../shared/components/button/copy-content-button.component';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgIf, AsyncPipe } from '@angular/common';
-import { CopyButtonComponent as CopyButtonComponent_1 } from '../../../../shared/components/button/copy-button.component';
 
 @Component({
     selector: 'tb-shared-subscriptions',
     templateUrl: './shared-subscription.component.html',
     styleUrls: ['./shared-subscription.component.scss'],
     standalone: true,
-    imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, CopyButtonComponent_1, MatSuffix, AsyncPipe]
+    imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, CopyButtonComponent, MatSuffix, AsyncPipe]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
 

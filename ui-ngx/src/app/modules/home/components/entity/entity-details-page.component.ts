@@ -42,11 +42,11 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatFabButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { HelpComponent } from '../../../../shared/components/help.component';
+import { HelpComponent } from '@shared/components/help.component';
 import { NgIf, NgClass, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTabGroup, MatTab } from '@angular/material/tabs';
-import { TbAnchorComponent } from '../../../../shared/components/tb-anchor.component';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 
 @Component({
     selector: 'tb-entity-details-page',

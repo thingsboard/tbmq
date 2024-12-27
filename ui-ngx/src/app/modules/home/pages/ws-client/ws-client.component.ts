@@ -34,7 +34,7 @@ import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectionsComponent } from './connections/connections.component';
 import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
-import { HelpPageComponent } from '../../../../shared/components/help-page.component';
+import { HelpPageComponent } from '@shared/components/help-page.component';
 import { ConnectionControllerComponent } from './connections/connection-controller.component';
 import { MessangerComponent } from './messages/messanger.component';
 

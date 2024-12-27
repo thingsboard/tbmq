@@ -38,7 +38,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { TbIconComponent } from '../../../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
     selector: 'tb-subscription',

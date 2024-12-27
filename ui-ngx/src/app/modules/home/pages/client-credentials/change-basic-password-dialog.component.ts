@@ -33,7 +33,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { TogglePasswordComponent } from '../../../../shared/components/button/toggle-password.component';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 
 export interface ChangeBasicPasswordDialogData {
   credentialsId: string;

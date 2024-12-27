@@ -26,7 +26,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { NgIf, AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { ToastDirective } from '../../../../shared/components/toast.directive';
+import { ToastDirective } from '@shared/components/toast.directive';
 import { MatFormField, MatLabel, MatPrefix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';

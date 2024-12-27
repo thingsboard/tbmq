@@ -34,7 +34,7 @@ import {
 import Chart from 'chart.js/auto';
 import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ResizeObserver } from '@juggle/resize-observer';
-import { CardTitleButtonComponent } from '../../../../shared/components/button/card-title-button.component';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';

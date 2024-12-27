@@ -27,15 +27,14 @@ import { ENTER, TAB } from "@angular/cdk/keycodes";
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { CopyButtonComponent as CopyButtonComponent_1 } from '../../../../../shared/components/button/copy-button.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { NgIf, NgFor } from '@angular/common';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { TogglePasswordComponent } from '../../../../../shared/components/button/toggle-password.component';
-import { TbErrorComponent } from '../../../../../shared/components/tb-error.component';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
 
 @Component({
@@ -55,7 +54,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
     ],
     styleUrls: ['./basic.component.scss'],
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent_1, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, NgIf, MatError, FlexModule, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, NgFor, MatChipRow, MatChipRemove, MatChipInput]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, NgIf, MatError, FlexModule, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, NgFor, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

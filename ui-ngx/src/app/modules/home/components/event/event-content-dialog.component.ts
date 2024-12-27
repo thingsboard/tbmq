@@ -31,11 +31,11 @@ import { base64toString, isLiteralObject, isValidObjectString } from '@core/util
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { NgIf, AsyncPipe } from '@angular/common';
-import { TbIconComponent } from '../../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { CopyButtonComponent } from '../../../../shared/components/button/copy-button.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 export interface EventContentDialogComponentDialogData {
   content: string;

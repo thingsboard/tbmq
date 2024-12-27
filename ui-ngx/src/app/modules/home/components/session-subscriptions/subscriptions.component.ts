@@ -27,7 +27,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatLabel, MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
 import { NgFor, NgIf, AsyncPipe } from '@angular/common';
 import { MatInput } from '@angular/material/input';
-import { CopyButtonComponent } from '../../../../shared/components/button/copy-button.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';

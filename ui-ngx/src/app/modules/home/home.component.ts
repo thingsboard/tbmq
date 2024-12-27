@@ -35,11 +35,11 @@ import { GettingStartedMenuLinkComponent } from './pages/getting-started/getting
 import { MatIconButton } from '@angular/material/button';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
-import { BreadcrumbComponent } from '../../shared/components/breadcrumb.component';
+import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
 import { NgIf, AsyncPipe } from '@angular/common';
-import { UserMenuComponent } from '../../shared/components/user-menu.component';
+import { UserMenuComponent } from '@shared/components/user-menu.component';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { ToastDirective } from '../../shared/components/toast.directive';
+import { ToastDirective } from '@shared/components/toast.directive';
 import { RouterOutlet } from '@angular/router';
 
 @Component({

@@ -22,7 +22,7 @@ import { HomePageTitleType } from "@shared/models/home-page.model";
 import { DialogService } from '@core/services/dialog.service';
 import { KafkaConsumerGroupsHomeTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-home-table-config';
 import { KafkaTopicsHomeTableConfig } from '@home/components/kafka-tables/kafka-topics-home-table-config';
-import { ToggleHeaderComponent, ToggleOption } from '../../../../shared/components/toggle-header.component';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { NgSwitch, NgSwitchDefault, NgSwitchCase } from '@angular/common';
 import { EntitiesTableHomeComponent } from '../entity/entities-table-home.component';
 

@@ -30,7 +30,7 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatError, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { HintTooltipIconComponent } from '../../../../shared/components/hint-tooltip-icon.component';
+import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 import { MatButton } from '@angular/material/button';
 
 @Component({

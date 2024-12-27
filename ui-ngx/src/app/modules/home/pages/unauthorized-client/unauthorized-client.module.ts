@@ -28,15 +28,15 @@ import {
 } from '@home/pages/unauthorized-client/unauthorized-client-filter-config.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        SharedModule,
-        HomeComponentsModule,
-        UnauthorizedClientRoutingModule,
-        UnauthorizedClientTableComponent,
-        UnauthorizedClientTableHeaderComponent,
-        UnauthorizedClientFilterConfigComponent
-    ]
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    UnauthorizedClientRoutingModule,
+    UnauthorizedClientTableComponent,
+    UnauthorizedClientTableHeaderComponent,
+    UnauthorizedClientFilterConfigComponent
+  ]
 })
 
 export class UnauthorizedClientModule {

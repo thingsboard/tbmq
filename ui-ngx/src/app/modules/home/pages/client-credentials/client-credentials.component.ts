@@ -30,7 +30,7 @@ import { MatButton } from '@angular/material/button';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
-import { CopyContentButtonComponent } from '../../../../shared/components/button/copy-content-button.component';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
 import { MatInput } from '@angular/material/input';
 import { NgIf, NgFor, NgSwitch, NgSwitchCase, AsyncPipe } from '@angular/common';
 import { MatSelect } from '@angular/material/select';

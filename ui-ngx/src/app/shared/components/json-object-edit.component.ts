@@ -51,8 +51,6 @@ import { MatIcon } from '@angular/material/icon';
 import { ToastDirective } from './toast.directive';
 import { TranslateModule } from '@ngx-translate/core';
 
-export const jsonRequired = (control: AbstractControl): ValidationErrors | null => !control.value ? {required: true} : null;
-
 @Component({
     selector: 'tb-json-object-edit',
     templateUrl: './json-object-edit.component.html',

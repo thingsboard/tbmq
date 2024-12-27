@@ -29,7 +29,7 @@ import { NgClass, NgStyle, NgFor, NgIf } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
-import { TbIconComponent } from '../../../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
     selector: 'tb-connection',

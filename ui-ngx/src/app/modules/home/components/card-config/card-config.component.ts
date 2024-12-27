@@ -30,12 +30,12 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { map } from 'rxjs/operators';
 import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { CardTitleButtonComponent } from '../../../../shared/components/button/card-title-button.component';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { NgFor, NgStyle, NgIf } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { CopyButtonComponent } from '../../../../shared/components/button/copy-button.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 

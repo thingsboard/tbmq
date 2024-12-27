@@ -19,7 +19,7 @@ import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
 import { MatAnchor } from '@angular/material/button';
 import { NgIf, NgClass, NgStyle, NgFor } from '@angular/common';
-import { TbIconComponent } from '../../../shared/components/icon.component';
+import { TbIconComponent } from '@shared/components/icon.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MenuLinkComponent } from './menu-link.component';
 import { NospacePipe } from '@shared/pipe/nospace.pipe';

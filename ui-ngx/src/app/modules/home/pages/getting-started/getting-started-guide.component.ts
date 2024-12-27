@@ -21,7 +21,7 @@ import { InstructionsService } from '@core/http/instructions.service';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatDialogContent } from '@angular/material/dialog';
-import { TbMarkdownComponent } from '../../../../shared/components/markdown.component';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
 
 @Component({
     selector: 'tb-getting-started-guide',

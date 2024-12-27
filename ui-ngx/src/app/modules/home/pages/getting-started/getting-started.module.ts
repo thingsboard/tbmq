@@ -24,14 +24,14 @@ import { GettingStartedRoutingModule } from '@home/pages/getting-started/getting
 import { GettingStartedGuideComponent } from '@home/pages/getting-started/getting-started-guide.component';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        SharedModule,
-        HomeComponentsModule,
-        GettingStartedRoutingModule,
-        GettingStartedComponent,
-        GettingStartedGuideComponent
-    ]
+  imports: [
+    CommonModule,
+    SharedModule,
+    HomeComponentsModule,
+    GettingStartedRoutingModule,
+    GettingStartedComponent,
+    GettingStartedGuideComponent
+  ]
 })
 export class GettingStartedModule {
 }
