@@ -18,14 +18,12 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SecurityComponent } from './security.component';
 import { SharedModule } from '@shared/shared.module';
-import { SecurityRoutingModule } from './security-routing.module';
 
 @NgModule({
-    imports: [
-        CommonModule,
-        SharedModule,
-        SecurityRoutingModule,
-        SecurityComponent
-    ]
+  imports: [
+    CommonModule,
+    SharedModule,
+    SecurityComponent
+  ]
 })
 export class SecurityModule { }

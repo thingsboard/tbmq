@@ -28,8 +28,8 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { NgIf, NgFor, AsyncPipe } from '@angular/common';
 import { MatTabNav, MatTabLink, MatTabNavPanel } from '@angular/material/tabs';
-import { TbIconComponent } from '../../../shared/components/icon.component';
-import { TbAnchorComponent as TbAnchorComponent_1 } from '../../../shared/components/tb-anchor.component';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { TbAnchorComponent as TbAnchorComponent_1 } from '@shared/components/tb-anchor.component';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -126,7 +126,7 @@ export class RouterTabsComponent extends PageComponent implements OnInit {
     if (activatedRoute.routeConfig.children.length) {
       const activeRouterChildren = activatedRoute.routeConfig.children.filter(page => page.path !== '');
       return activeRouterChildren.map(tab => ({
-        id: tab.component.name,
+        id: tab.path,
         type: 'link',
         name: tab.data?.breadcrumb?.label ?? '',
         icon: tab.data?.breadcrumb?.icon ?? '',

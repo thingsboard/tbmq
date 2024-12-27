@@ -21,9 +21,7 @@ import { EntityDetailsPageComponent } from '@home/components/entity/entity-detai
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
 import { BreadCrumbConfig } from '@shared/components/breadcrumb';
-import {
-  ClientCredentialsTableConfigResolver
-} from '@home/pages/client-credentials/client-credentials-table-config.resolver';
+import { ClientCredentialsTableConfigResolver } from '@home/pages/client-credentials/client-credentials-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -33,8 +31,7 @@ const routes: Routes = [
       breadcrumb: {
         label: 'mqtt-client-credentials.client-credentials',
         icon: 'mdi:shield-lock'
-      },
-      isPage: true
+      }
     },
     children: [
       {

@@ -16,7 +16,6 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
 import { Authority } from '@shared/models/authority.enum';
 
 const routes: Routes = [
@@ -29,8 +28,7 @@ const routes: Routes = [
       breadcrumb: {
         label: 'mqtt-client-session.sessions',
         icon: 'mdi:book-multiple'
-      },
-      isPage: true
+      }
     }
   }
 ];

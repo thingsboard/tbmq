@@ -14,12 +14,14 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
-
+import { inject, NgModule } from '@angular/core';
+import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { securityRoutes } from '@home/pages/security/security-routing.module';
-import { profileRoutes } from '@home/pages/profile/profile-routing.module';
+import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
+import { User } from '@shared/models/user.model';
+import { AuthService } from '@core/http/auth.service';
+
+const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).getUser();
 
 const routes: Routes = [
   {
@@ -27,7 +29,6 @@ const routes: Routes = [
     loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
-      showMainLoadingBar: false,
       breadcrumb: {
         label: 'account.account',
         icon: 'account_circle'
@@ -39,12 +40,43 @@ const routes: Routes = [
         path: '',
         children: [],
         data: {
-          auth: [Authority.SYS_ADMIN],
-          redirectTo: '/account/profile',
+          redirectTo: {
+            SYS_ADMIN: '/account/profile'
+          }
         }
       },
-      ...profileRoutes,
-      ...securityRoutes
+      {
+        path: 'profile',
+        loadComponent: () => import('@home/pages/profile/profile.component').then(m => m.ProfileComponent),
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'profile.profile',
+          breadcrumb: {
+            label: 'profile.profile',
+            icon: 'account_circle'
+          }
+        },
+        resolve: {
+          user: UserProfileResolver
+        }
+      },
+      {
+        path: 'security',
+        loadComponent: () => import('@home/pages/security/security.component').then(m => m.SecurityComponent),
+        canDeactivate: [ConfirmOnExitGuard],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'security.security',
+          breadcrumb: {
+            label: 'security.security',
+            icon: 'lock'
+          }
+        },
+        resolve: {
+          user: UserProfileResolver
+        }
+      }
     ]
   }
 ];

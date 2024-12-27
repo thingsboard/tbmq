@@ -16,13 +16,8 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-
-
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
-
-
-
 
 const routes: Routes = [
   {
@@ -56,8 +51,6 @@ const routes: Routes = [
             label: 'admin.general',
             icon: 'settings'
           }
-        },
-        resolve: {
         }
       },
       {

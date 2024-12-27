@@ -14,15 +14,14 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-
-
-import {AuthGuard} from '@core/guards/auth.guard';
-import {StoreModule} from '@ngrx/store';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from '@core/guards/auth.guard';
+import { StoreModule } from '@ngrx/store';
 
 const routes: Routes = [
-  { path: '',
+  {
+    path: '',
     loadComponent: () => import('./home.component').then(m => m.HomeComponent),
     data: {
       title: 'home.home',
