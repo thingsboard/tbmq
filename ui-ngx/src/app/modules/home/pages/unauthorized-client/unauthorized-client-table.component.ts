@@ -23,14 +23,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { UnauthorizedClientTableConfig } from '@home/pages/unauthorized-client/unauthorized-client-table-config';
 import { UnauthorizedClientService } from '@core/http/unauthorized-client.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EntitiesTableComponent as EntitiesTableComponent_1 } from '../../components/entity/entities-table.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
     selector: 'tb-unauthorized-client-table',
     templateUrl: './unauthorized-client-table.component.html',
     standalone: true,
-    imports: [EntitiesTableComponent_1, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class UnauthorizedClientTableComponent implements OnInit {
 

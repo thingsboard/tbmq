@@ -19,7 +19,6 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { KafkaService } from '@core/http/kafka.service';
 import { TranslateService } from '@ngx-translate/core';
 import { KafkaBrokersTableConfig } from '@home/pages/kafka-management/kafka-brokers-table-config';
-import { EntitiesTableComponent as EntitiesTableComponent_1 } from '../../components/entity/entities-table.component';
 import { NgClass } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
@@ -27,7 +26,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
     selector: 'tb-kafka-brokers-table',
     templateUrl: './kafka-brokers-table.component.html',
     standalone: true,
-    imports: [EntitiesTableComponent_1, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class KafkaBrokersTableComponent implements OnInit {
 

@@ -22,7 +22,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
 import { SubscriptionService } from '@core/http/subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { EntitiesTableComponent as EntitiesTableComponent_1 } from '../../components/entity/entities-table.component';
 import { NgClass } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
@@ -30,7 +29,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
     selector: 'tb-subscriptions-table',
     templateUrl: './subscriptions-table.component.html',
     standalone: true,
-    imports: [EntitiesTableComponent_1, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class SubscriptionsTableComponent implements OnInit {
 

@@ -16,12 +16,10 @@
 
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
-import { EntitiesTableComponent as EntitiesTableComponent_1 } from '../../components/entity/entities-table.component';
 import { NgClass } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
@@ -29,7 +27,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
     selector: 'tb-kafka-consumer-groups-table',
     templateUrl: './kafka-consumer-groups-table.component.html',
     standalone: true,
-    imports: [EntitiesTableComponent_1, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class KafkaConsumerGroupsTableComponent implements OnInit {
 
