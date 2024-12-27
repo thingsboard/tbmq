@@ -22,7 +22,7 @@ import { EntityDetailsPageComponent } from '@home/components/entity/entity-detai
 import { BreadCrumbConfig } from '@shared/components/breadcrumb';
 import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
 import { UsersTableConfigResolver } from '@home/pages/users/users-table-config.resolver';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
+
 
 const routes: Routes = [
   {
@@ -37,7 +37,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        component: EntitiesTableComponent,
+        loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'user.users'
@@ -48,7 +48,7 @@ const routes: Routes = [
       },
       {
         path: ':entityId',
-        component: EntityDetailsPageComponent,
+        loadComponent: () => import('@home/components/entity/entity-details-page.component').then(m => m.EntityDetailsPageComponent),
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           breadcrumb: {

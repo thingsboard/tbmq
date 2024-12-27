@@ -17,7 +17,7 @@
 import { inject, NgModule } from '@angular/core';
 import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
+
 import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
 import { TOTAL_KEY } from '@shared/models/chart.model';
@@ -35,7 +35,7 @@ export const BrokerIdsResolver: ResolveFn<string[]> = () =>
 const routes: Routes = [
   {
     path: 'monitoring',
-    component: MonitoringComponent,
+    loadComponent: () => import('@home/pages/monitoring/monitoring.component').then(m => m.MonitoringComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'monitoring.monitoring',

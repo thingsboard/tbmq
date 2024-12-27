@@ -17,13 +17,13 @@
 import {NgModule} from '@angular/core';
 import {RouterModule, Routes} from '@angular/router';
 
-import {HomeComponent} from './home.component';
+
 import {AuthGuard} from '@core/guards/auth.guard';
 import {StoreModule} from '@ngrx/store';
 
 const routes: Routes = [
   { path: '',
-    component: HomeComponent,
+    loadComponent: () => import('./home.component').then(m => m.HomeComponent),
     data: {
       title: 'home.home',
       breadcrumb: {

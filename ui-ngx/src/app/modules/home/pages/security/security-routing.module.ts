@@ -17,7 +17,7 @@
 import { Injectable, NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { SecurityComponent } from './security.component';
+
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
 import { User } from '@shared/models/user.model';
@@ -43,7 +43,7 @@ export class UserProfileResolver {
 export const securityRoutes: Routes = [
   {
     path: 'security',
-    component: SecurityComponent,
+    loadComponent: () => import('./security.component').then(m => m.SecurityComponent),
     canDeactivate: [ConfirmOnExitGuard],
     data: {
       auth: [Authority.SYS_ADMIN],

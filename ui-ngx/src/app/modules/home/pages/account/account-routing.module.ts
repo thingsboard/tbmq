@@ -16,7 +16,7 @@
 
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { RouterTabsComponent } from '@home/components/router-tabs.component';
+
 import { Authority } from '@shared/models/authority.enum';
 import { securityRoutes } from '@home/pages/security/security-routing.module';
 import { profileRoutes } from '@home/pages/profile/profile-routing.module';
@@ -24,7 +24,7 @@ import { profileRoutes } from '@home/pages/profile/profile-routing.module';
 const routes: Routes = [
   {
     path: 'account',
-    component: RouterTabsComponent,
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       showMainLoadingBar: false,

@@ -17,12 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { SubscriptionsTableComponent } from '@home/pages/subscriptions/subscriptions-table.component';
+
 
 const routes: Routes = [
   {
     path: 'subscriptions',
-    component: SubscriptionsTableComponent,
+    loadComponent: () => import('@home/pages/subscriptions/subscriptions-table.component').then(m => m.SubscriptionsTableComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'subscription.subscriptions',

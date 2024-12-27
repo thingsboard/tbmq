@@ -16,7 +16,7 @@
 
 import { inject, NgModule } from '@angular/core';
 import { ResolveFn, RouterModule, Routes } from '@angular/router';
-import { ProfileComponent } from './profile.component';
+
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { Authority } from '@shared/models/authority.enum';
 import { User } from '@shared/models/user.model';
@@ -27,7 +27,7 @@ export const UserProfileResolver: ResolveFn<User> = () => inject(AuthService).ge
 export const profileRoutes: Routes = [
   {
     path: 'profile',
-    component: ProfileComponent,
+    loadComponent: () => import('./profile.component').then(m => m.ProfileComponent),
     canDeactivate: [ConfirmOnExitGuard],
     data: {
       auth: [Authority.SYS_ADMIN],
