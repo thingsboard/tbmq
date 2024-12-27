@@ -14,19 +14,14 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-
-import {LoginComponent} from './pages/login/login.component';
-import {AuthGuard} from '@core/guards/auth.guard';
-import {ResetPasswordRequestComponent} from '@modules/login/pages/login/reset-password-request.component';
-import {ResetPasswordComponent} from '@modules/login/pages/login/reset-password.component';
-import {CreatePasswordComponent} from '@modules/login/pages/login/create-password.component';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from '@core/guards/auth.guard';
 
 const routes: Routes = [
   {
     path: 'login',
-    component: LoginComponent,
+    loadComponent: () => import('./pages/login/login.component').then(m => m.LoginComponent),
     data: {
       title: 'login.login',
       module: 'public'
@@ -35,7 +30,7 @@ const routes: Routes = [
   },
   {
     path: 'login/resetPasswordRequest',
-    component: ResetPasswordRequestComponent,
+    loadComponent: () => import('@modules/login/pages/login/reset-password-request.component').then(m => m.ResetPasswordRequestComponent),
     data: {
       title: 'login.request-password-reset',
       module: 'public'
@@ -44,7 +39,7 @@ const routes: Routes = [
   },
   {
     path: 'login/resetPassword',
-    component: ResetPasswordComponent,
+    loadComponent: () => import('@modules/login/pages/login/reset-password.component').then(m => m.ResetPasswordComponent),
     data: {
       title: 'login.reset-password',
       module: 'public'
@@ -53,7 +48,7 @@ const routes: Routes = [
   },
   {
     path: 'login/resetExpiredPassword',
-    component: ResetPasswordComponent,
+    loadComponent: () => import('@modules/login/pages/login/reset-password.component').then(m => m.ResetPasswordComponent),
     data: {
       title: 'login.reset-password',
       module: 'public',
@@ -63,7 +58,7 @@ const routes: Routes = [
   },
   {
     path: 'login/createPassword',
-    component: CreatePasswordComponent,
+    loadComponent: () => import('@modules/login/pages/login/create-password.component').then(m => m.CreatePasswordComponent),
     data: {
       title: 'login.create-password',
       module: 'public'
