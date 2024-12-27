@@ -19,7 +19,6 @@ import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
 import { SubscriptionsRoutingModule } from '@home/pages/subscriptions/subscriptions-routing.module';
-import { SubscriptionsTableComponent } from '@home/pages/subscriptions/subscriptions-table.component';
 import { SubscriptionsTableHeaderComponent } from '@home/pages/subscriptions/subscriptions-table-header.component';
 import { SubscriptionsFilterConfigComponent } from '@home/pages/subscriptions/subscriptions-filter-config.component';
 
@@ -29,7 +28,6 @@ import { SubscriptionsFilterConfigComponent } from '@home/pages/subscriptions/su
     SharedModule,
     HomeComponentsModule,
     SubscriptionsRoutingModule,
-    SubscriptionsTableComponent,
     SubscriptionsTableHeaderComponent,
     SubscriptionsFilterConfigComponent
   ]

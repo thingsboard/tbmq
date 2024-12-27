@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { SessionsTableComponent } from '@home/pages/sessions/sessions-table.component';
 import { SessionsDetailsDialogComponent } from '@home/pages/sessions/sessions-details-dialog.component';
 import { SessionsRoutingModule } from '@home/pages/sessions/sessions-routing.module';
 import { SubscriptionsComponent } from '@home/components/session-subscriptions/subscriptions.component';
@@ -39,7 +38,6 @@ import { SessionMetricsComponent } from '@home/components/session-metrics/sessio
     SharedModule,
     HomeComponentsModule,
     SessionsRoutingModule,
-    SessionsTableComponent,
     SessionsDetailsDialogComponent,
     SubscriptionsComponent,
     SessionMetricsComponent,

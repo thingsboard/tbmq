@@ -16,10 +16,8 @@
 
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { SharedModule } from '@app/shared/shared.module';
 import { HomeComponentsModule } from '@modules/home/components/home-components.module';
-import { GettingStartedComponent } from '@home/pages/getting-started/getting-started.component';
 import { GettingStartedRoutingModule } from '@home/pages/getting-started/getting-started-routing.module';
 import { GettingStartedGuideComponent } from '@home/pages/getting-started/getting-started-guide.component';
 
@@ -29,7 +27,6 @@ import { GettingStartedGuideComponent } from '@home/pages/getting-started/gettin
     SharedModule,
     HomeComponentsModule,
     GettingStartedRoutingModule,
-    GettingStartedComponent,
     GettingStartedGuideComponent
   ]
 })

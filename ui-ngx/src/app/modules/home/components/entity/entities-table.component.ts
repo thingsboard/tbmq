@@ -81,6 +81,14 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatChipSet, MatChip } from '@angular/material/chips';
 import { MatDivider } from '@angular/material/divider';
+import { UsersModule } from '@home/pages/users/users.module';
+import { SessionsModule } from '@home/pages/sessions/sessions.module';
+import { SubscriptionsModule } from '@home/pages/subscriptions/subscriptions.module';
+import { ClientCredentialsModule } from '@home/pages/client-credentials/client-credentials.module';
+import { UnauthorizedClientModule } from '@home/pages/unauthorized-client/unauthorized-client.module';
+import { RetainedMessagesModule } from '@home/pages/retained-messages/retained-messages.module';
+import { SharedSubscriptionsModule } from '@home/pages/shared-subscription-applications/shared-subscriptions.module';
+import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
 
 @Component({
     selector: 'tb-entities-table',
@@ -88,7 +96,8 @@ import { MatDivider } from '@angular/material/divider';
     styleUrls: ['./entities-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [MatDrawerContainer, NgIf, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, FlexModule, MatToolbar, ExtendedModule, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, NgFor, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, NgStyle, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
+    imports: [UsersModule, SessionsModule, SubscriptionsModule, ClientCredentialsModule, UnauthorizedClientModule, RetainedMessagesModule, SharedSubscriptionsModule, WsClientModule,
+      MatDrawerContainer, NgIf, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, FlexModule, MatToolbar, ExtendedModule, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, NgFor, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, NgStyle, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 

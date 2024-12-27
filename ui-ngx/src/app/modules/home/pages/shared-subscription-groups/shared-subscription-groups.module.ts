@@ -18,22 +18,14 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import {
-  SharedSubsriptionGroupsTableComponent
-} from "@home/pages/shared-subscription-groups/shared-subsription-groups-table.component";
-import {
-  SharedSubscriptionGroupsTableHeaderComponent
-} from '@home/pages/shared-subscription-groups/shared-subscription-groups-table-header.component';
-import {
-  SharedSubscriptionGroupsFilterConfigComponent
-} from '@home/pages/shared-subscription-groups/shared-subscription-groups-filter-config.component';
+import { SharedSubscriptionGroupsTableHeaderComponent } from '@home/pages/shared-subscription-groups/shared-subscription-groups-table-header.component';
+import { SharedSubscriptionGroupsFilterConfigComponent } from '@home/pages/shared-subscription-groups/shared-subscription-groups-filter-config.component';
 
 @NgModule({
   imports: [
     CommonModule,
     SharedModule,
     HomeComponentsModule,
-    SharedSubsriptionGroupsTableComponent,
     SharedSubscriptionGroupsTableHeaderComponent,
     SharedSubscriptionGroupsFilterConfigComponent,
   ]

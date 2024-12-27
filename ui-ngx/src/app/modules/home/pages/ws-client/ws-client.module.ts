@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
 import { MessangerComponent } from '@home/pages/ws-client/messages/messanger.component';
 import { ConnectionsComponent } from '@home/pages/ws-client/connections/connections.component';
@@ -45,7 +44,6 @@ import { WsMessagePropertiesDialogComponent } from '@home/pages/ws-client/messag
     SharedModule,
     HomeComponentsModule,
     WsClientRoutingModule,
-    WsClientComponent,
     MessangerComponent,
     ConnectionsComponent,
     ConnectionControllerComponent,

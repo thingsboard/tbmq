@@ -18,14 +18,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SharedModule } from '@shared/shared.module';
 import { HomeComponentsModule } from '@home/components/home-components.module';
-import { UnauthorizedClientTableComponent } from '@home/pages/unauthorized-client/unauthorized-client-table.component';
 import { UnauthorizedClientRoutingModule } from '@home/pages/unauthorized-client/unauthorized-client-routing.module';
-import {
-  UnauthorizedClientTableHeaderComponent
-} from '@home/pages/unauthorized-client/unauthorized-client-table-header.component';
-import {
-  UnauthorizedClientFilterConfigComponent
-} from '@home/pages/unauthorized-client/unauthorized-client-filter-config.component';
+import { UnauthorizedClientTableHeaderComponent } from '@home/pages/unauthorized-client/unauthorized-client-table-header.component';
+import { UnauthorizedClientFilterConfigComponent } from '@home/pages/unauthorized-client/unauthorized-client-filter-config.component';
 
 @NgModule({
   imports: [
@@ -33,7 +28,6 @@ import {
     SharedModule,
     HomeComponentsModule,
     UnauthorizedClientRoutingModule,
-    UnauthorizedClientTableComponent,
     UnauthorizedClientTableHeaderComponent,
     UnauthorizedClientFilterConfigComponent
   ]

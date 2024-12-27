@@ -31,6 +31,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { NgFor } from '@angular/common';
 import { MatButton } from '@angular/material/button';
+import { GettingStartedModule } from '@home/pages/getting-started/getting-started.module';
 
 @Component({
     selector: 'tb-getting-started',
@@ -38,7 +39,7 @@ import { MatButton } from '@angular/material/button';
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FlexModule, NgFor, MatButton]
+    imports: [GettingStartedModule, MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FlexModule, NgFor, MatButton]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 

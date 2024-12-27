@@ -37,13 +37,14 @@ import { SubscriptionsComponent } from './subscriptions/subscriptions.component'
 import { HelpPageComponent } from '@shared/components/help-page.component';
 import { ConnectionControllerComponent } from './connections/connection-controller.component';
 import { MessangerComponent } from './messages/messanger.component';
+import { WsClientModule } from '@home/pages/ws-client/ws-client.module';
 
 @Component({
     selector: 'tb-ws-client',
     templateUrl: './ws-client.component.html',
     styleUrls: ['./ws-client.component.scss'],
     standalone: true,
-    imports: [NgIf, NgTemplateOutlet, FlexModule, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe]
+    imports: [WsClientModule, NgIf, NgTemplateOutlet, FlexModule, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe]
 })
 export class WsClientComponent extends PageComponent implements OnInit {
 
