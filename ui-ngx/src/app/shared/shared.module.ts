@@ -89,7 +89,6 @@ import { TimewindowPanelComponent } from '@shared/components/time/timewindow-pan
 import { TimeintervalComponent } from '@shared/components/time/timeinterval.component';
 import { DatetimePeriodComponent } from '@shared/components/time/datetime-period.component';
 import { DatetimeComponent } from '@shared/components/time/datetime.component';
-import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
 import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
@@ -244,7 +243,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TimewindowComponent,
     TimewindowPanelComponent,
     TimeintervalComponent,
-    TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,
@@ -353,7 +351,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TimewindowComponent,
     TimewindowPanelComponent,
     TimeintervalComponent,
-    TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,

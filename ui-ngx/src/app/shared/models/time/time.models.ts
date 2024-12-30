@@ -17,7 +17,6 @@
 import { TimeService } from '@core/services/time.service';
 import { deepClone, isDefined, isNumeric, isUndefined } from '@app/core/utils';
 import moment_ from 'moment';
-import * as momentTz from 'moment-timezone';
 
 const moment = moment_;
 
@@ -335,11 +334,7 @@ export const initModelFromDefaultTimewindow = (value: Timewindow, quickIntervalO
 };
 
 export const getCurrentTime = (tz?: string): moment_.Moment => {
-  if (tz) {
-    return moment().tz(tz);
-  } else {
-    return moment();
-  }
+  return moment();
 };
 
 export const calculateIntervalStartTime = (interval: QuickTimeInterval, currentDate: moment_.Moment): moment_.Moment => {
@@ -639,58 +634,6 @@ export interface TimezoneInfo {
   nOffset: number;
   abbr: string;
 }
-
-let timezones: TimezoneInfo[] = null;
-let defaultTimezone: string = null;
-
-export const getTimezones = (): TimezoneInfo[] => {
-  if (!timezones) {
-    timezones = momentTz.tz.names().map((zoneName) => {
-      const tz = momentTz.tz(zoneName);
-      return {
-        id: zoneName,
-        name: zoneName.replace(/_/g, ' '),
-        offset: `UTC${tz.format('Z')}`,
-        nOffset: tz.utcOffset(),
-        abbr: tz.zoneAbbr()
-      };
-    });
-  }
-  return timezones;
-};
-
-export const getDefaultTimezone = (): string => {
-  if (!defaultTimezone) {
-    defaultTimezone = momentTz.tz.guess();
-  }
-  return defaultTimezone;
-};
-export const getTimezoneInfo = (timezoneId: string, defaultTimezoneId?: string, userTimezoneByDefault?: boolean): TimezoneInfo => {
-  const timezoneList = getTimezones();
-  let foundTimezone = timezoneId ? timezoneList.find(timezoneInfo => timezoneInfo.id === timezoneId) : null;
-  if (!foundTimezone) {
-    if (userTimezoneByDefault) {
-      const userTimezone = getDefaultTimezone();
-      foundTimezone = timezoneList.find(timezoneInfo => timezoneInfo.id === userTimezone);
-    } else if (defaultTimezoneId) {
-      foundTimezone = timezoneList.find(timezoneInfo => timezoneInfo.id === defaultTimezoneId);
-    }
-  }
-  return foundTimezone;
-};
-
-export const getDefaultTimezoneInfo = (): TimezoneInfo => {
-  const userTimezone = getDefaultTimezone();
-  return getTimezoneInfo(userTimezone);
-};
-
-export const getTime = (ts: number, tz?: string): moment_.Moment => {
-  if (tz) {
-    return moment(ts).tz(tz);
-  } else {
-    return moment(ts);
-  }
-};
 
 export const calculateFixedWindowTimeMs = (timewindow: Timewindow): FixedWindow => {
   const currentTime = Date.now();

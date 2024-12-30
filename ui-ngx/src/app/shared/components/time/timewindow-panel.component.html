@@ -211,10 +211,6 @@
           <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideTimezone"
                         (ngModelChange)="onHideTimezoneChanged()"></mat-checkbox>
         </section>
-        <tb-timezone-select fxFlex [fxShow]="isEdit || !timewindow.hideTimezone"
-                            localBrowserTimezonePlaceholderOnEmpty="true"
-                            formControlName="timezone">
-        </tb-timezone-select>
       </div>
     </ng-template>
 </form>

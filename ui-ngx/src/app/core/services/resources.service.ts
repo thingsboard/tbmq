@@ -33,7 +33,6 @@ export interface ModulesWithFactories {
 export class ResourcesService {
 
     private loadedJsonResources: { [url: string]: ReplaySubject<any> } = {};
-    private loadedResources: { [url: string]: ReplaySubject<void> } = {};
     private loadedModules: { [url: string]: ReplaySubject<Type<any>[]> } = {};
     private loadedModulesAndFactories: { [url: string]: ReplaySubject<ModulesWithFactories> } = {};
 

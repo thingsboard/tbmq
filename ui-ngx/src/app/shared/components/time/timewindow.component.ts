@@ -33,7 +33,6 @@ import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MillisecondsToTimeStringPipe } from '@shared/pipe/milliseconds-to-time-string.pipe';
 import {
   cloneSelectedTimewindow,
-  getTimezoneInfo,
   HistoryWindowType,
   initModelFromDefaultTimewindow,
   QuickTimeIntervalTranslationMap,
@@ -358,12 +357,7 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
         this.innerValue.displayValue += this.translate.instant('timewindow.period', {startTime: startString, endTime: endString});
       }
     }
-    if (isDefinedAndNotNull(this.innerValue.timezone) && this.innerValue.timezone !== '') {
-      this.innerValue.displayValue += ' ';
-      this.innerValue.displayTimezoneAbbr = getTimezoneInfo(this.innerValue.timezone).abbr;
-    } else {
-      this.innerValue.displayTimezoneAbbr = '';
-    }
+    this.innerValue.displayTimezoneAbbr = '';
     this.cd.detectChanges();
   }
 
