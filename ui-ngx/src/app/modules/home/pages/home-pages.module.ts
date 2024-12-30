@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { ProfileModule } from './profile/profile.module';
 import { SettingsModule } from '@home/pages/settings/settings.module';
 import { HomeOverviewModule } from '@home/pages/home-overview/home-overview.module';
-import { MonitoringModule } from '@home/pages/monitoring/monitoring.module';
 import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-management.module';
 
 @NgModule({
@@ -26,7 +25,6 @@ import { KafkaManagementModule } from '@home/pages/kafka-management/kafka-manage
     HomeOverviewModule,
     SettingsModule,
     ProfileModule,
-    MonitoringModule,
     KafkaManagementModule,
   ]
 })

@@ -26,7 +26,6 @@
   </tb-timewindow>
 </mat-toolbar>
 <div class="mat-padding" fxFlex fxLayout="column" fxLayoutGap="16px">
-
   <div *ngFor="let statsChartType of chartTypes; let index = index; trackBy: trackByIndex" tb-fullscreen
        [fullscreen]="fullscreenChart === statsChartType"
        [fullscreenElement]="fullscreenElements[index]"
