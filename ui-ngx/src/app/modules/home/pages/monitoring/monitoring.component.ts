@@ -161,6 +161,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
           this.onFullScreen();
         }
       });
+    this.cd.detectChanges();
   }
 
   onTimewindowChange() {
