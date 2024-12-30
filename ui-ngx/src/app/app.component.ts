@@ -30,7 +30,7 @@ import { combineLatest } from 'rxjs';
 import { getCurrentAuthState, selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
 import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
 import { AuthService } from '@core/http/auth.service';
-import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
+import { ChangePasswordDialogComponent } from '@home/pages/account/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
 import { Router, RouterOutlet } from '@angular/router';
 import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';

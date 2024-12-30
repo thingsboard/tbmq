@@ -38,14 +38,13 @@ import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatButton } from '@angular/material/button';
-import { AccountModule } from '@home/pages/account/account.module';
 
 @Component({
     selector: 'tb-profile',
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss'],
     standalone: true,
-    imports: [AccountModule, MatCard, MatCardHeader, FlexModule, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, NgFor, MatOption, MatButton, AsyncPipe, DatePipe]
+    imports: [MatCard, MatCardHeader, FlexModule, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, NgFor, MatOption, MatButton, AsyncPipe, DatePipe]
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 

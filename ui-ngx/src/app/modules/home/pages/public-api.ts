@@ -14,4 +14,4 @@
 /// limitations under the License.
 ///
 
-export * from './home-pages.module';
+export * from './home-pages-routing.module';

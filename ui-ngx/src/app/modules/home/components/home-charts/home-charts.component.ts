@@ -43,15 +43,13 @@ import { FormsModule } from '@angular/forms';
 import { NgFor, NgStyle } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routing.module';
-import { MonitoringComponent } from '@home/pages/monitoring/monitoring.component';
 
 @Component({
     selector: 'tb-home-charts',
     templateUrl: './home-charts.component.html',
     styleUrls: ['./home-charts.component.scss'],
     standalone: true,
-    imports: [MonitoringRoutingModule, MonitoringComponent, CardTitleButtonComponent, FlexModule, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgFor, NgxHmCarouselItemDirective, MatTooltip, NgStyle, ExtendedModule, TranslateModule]
+    imports: [CardTitleButtonComponent, FlexModule, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgFor, NgxHmCarouselItemDirective, MatTooltip, NgStyle, ExtendedModule, TranslateModule]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 

@@ -25,15 +25,12 @@ import { ClientSessionService } from "@core/http/client-session.service";
 import { MatDialog } from "@angular/material/dialog";
 import { NgClass } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import {
-  SharedSubscriptionGroupsModule
-} from '@home/pages/shared-subscription-groups/shared-subscription-groups.module';
 
 @Component({
     selector: 'tb-shared-subsriptions-groups-table',
     templateUrl: './shared-subsription-groups-table.component.html',
     standalone: true,
-    imports: [SharedSubscriptionGroupsModule, EntitiesTableComponent, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class SharedSubsriptionGroupsTableComponent implements OnInit {
 

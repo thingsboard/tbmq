@@ -47,7 +47,7 @@ const routes: Routes = [
       },
       {
         path: 'profile',
-        loadComponent: () => import('@home/pages/profile/profile.component').then(m => m.ProfileComponent),
+        loadComponent: () => import('@home/pages/account/profile/profile.component').then(m => m.ProfileComponent),
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],
@@ -63,7 +63,7 @@ const routes: Routes = [
       },
       {
         path: 'security',
-        loadComponent: () => import('@home/pages/security/security.component').then(m => m.SecurityComponent),
+        loadComponent: () => import('@home/pages/account/security/security.component').then(m => m.SecurityComponent),
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],

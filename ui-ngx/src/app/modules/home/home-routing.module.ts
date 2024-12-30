@@ -31,7 +31,7 @@ const routes: Routes = [
     },
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
-    loadChildren: () => import('./pages/home-pages.module').then(m => m.HomePagesModule)
+    loadChildren: () => import('./pages/home-pages-routing.module').then(m => m.HomePagesRoutingModule)
   }
 ];
 
