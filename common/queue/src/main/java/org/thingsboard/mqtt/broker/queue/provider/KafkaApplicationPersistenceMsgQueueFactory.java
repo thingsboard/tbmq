@@ -18,21 +18,15 @@ package org.thingsboard.mqtt.broker.queue.provider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationPersistenceMsgKafkaSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationSharedTopicMsgKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Map;
@@ -45,27 +39,15 @@ public class KafkaApplicationPersistenceMsgQueueFactory extends AbstractQueueFac
 
     private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "latest");
 
-    private final TbKafkaConsumerSettings consumerSettings;
-    private final TbKafkaProducerSettings producerSettings;
     private final ApplicationPersistenceMsgKafkaSettings applicationPersistenceMsgSettings;
     private final ApplicationSharedTopicMsgKafkaSettings applicationSharedTopicMsgSettings;
-    private final TbKafkaConsumerStatsService consumerStatsService;
-
-    @Autowired(required = false)
-    private ProducerStatsManager producerStatsManager;
 
     private Map<String, String> topicConfigs;
     private Map<String, String> sharedTopicConfigs;
 
     @PostConstruct
     public void init() {
-        this.topicConfigs = QueueUtil.getConfigs(applicationPersistenceMsgSettings.getTopicProperties());
-        String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
-        if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
-            log.warn("Application persistent message topic must have only 1 partition.");
-        }
-        topicConfigs.put(QueueConstants.PARTITIONS, "1");
-
+        this.topicConfigs = validateAndConfigurePartitionsForTopic(applicationPersistenceMsgSettings.getTopicProperties(), "Application persistent message");
         this.sharedTopicConfigs = QueueUtil.getConfigs(applicationSharedTopicMsgSettings.getTopicProperties());
     }
 

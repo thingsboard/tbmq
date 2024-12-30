@@ -19,19 +19,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.ApplicationRemovedEventKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
-import java.util.Map;
 import java.util.Properties;
 
 @Slf4j
@@ -39,13 +34,7 @@ import java.util.Properties;
 @RequiredArgsConstructor
 public class KafkaApplicationRemovedEventQueueFactory extends AbstractQueueFactory implements ApplicationRemovedEventQueueFactory {
 
-    private final Map<String, String> requiredConsumerProperties = Map.of("auto.offset.reset", "earliest");
-
-    private final TbKafkaConsumerSettings consumerSettings;
-    private final TbKafkaProducerSettings producerSettings;
     private final ApplicationRemovedEventKafkaSettings kafkaSettings;
-    private final TbQueueAdmin queueAdmin;
-    private final TbKafkaConsumerStatsService consumerStatsService;
 
     @Override
     public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventProducer(String serviceId) {

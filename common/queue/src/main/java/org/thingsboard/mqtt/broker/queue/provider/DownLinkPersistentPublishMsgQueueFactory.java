@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;

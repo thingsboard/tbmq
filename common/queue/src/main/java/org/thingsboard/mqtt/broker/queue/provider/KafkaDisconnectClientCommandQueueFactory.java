@@ -18,21 +18,14 @@ package org.thingsboard.mqtt.broker.queue.provider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Map;
@@ -42,16 +35,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KafkaDisconnectClientCommandQueueFactory extends AbstractQueueFactory implements DisconnectClientCommandQueueFactory {
 
-    private final TbKafkaConsumerSettings consumerSettings;
-    private final TbKafkaProducerSettings producerSettings;
     private final DisconnectClientCommandKafkaSettings disconnectClientCommandSettings;
-    private final TbQueueAdmin queueAdmin;
-    private final TbKafkaConsumerStatsService consumerStatsService;
-
-    @Autowired(required = false)
-    private ProducerStatsManager producerStatsManager;
-    @Autowired(required = false)
-    private ConsumerStatsManager consumerStatsManager;
 
     private Map<String, String> topicConfigs;
 
