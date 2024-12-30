@@ -43,6 +43,7 @@ import { FormsModule } from '@angular/forms';
 import { NgFor, NgStyle } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ExtendedModule } from '@angular/flex-layout/extended';
+import 'chartjs-adapter-moment';
 
 @Component({
     selector: 'tb-home-charts',
