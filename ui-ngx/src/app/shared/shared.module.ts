@@ -104,7 +104,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
-import { HELP_MARKDOWN_COMPONENT_TOKEN, SHARED_MODULE_TOKEN } from '@shared/components/tokens';
+import { HELP_MARKDOWN_COMPONENT_TOKEN } from '@shared/components/tokens';
 import { MarkedOptionsService } from '@shared/components/marked-options.service';
 import { ValueInputComponent } from '@shared/components/value-input.component';
 import { JsonObjectEditDialogComponent } from '@shared/components/dialog/json-object-edit-dialog.component';
@@ -142,10 +142,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     {
         provide: MAT_DATE_LOCALE,
         useValue: 'en-GB'
-    },
-    {
-        provide: SHARED_MODULE_TOKEN,
-        useValue: SharedModule
     },
     {
         provide: HELP_MARKDOWN_COMPONENT_TOKEN,
