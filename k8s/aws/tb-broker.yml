@@ -64,7 +64,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-node:2.0.1-SNAPSHOT
+          image: thingsboard/tbmq-node:2.0.1
           ports:
             - containerPort: 8083
               name: http

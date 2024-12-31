@@ -32,7 +32,7 @@ spec:
   containers:
     - name: tb-db-setup
       imagePullPolicy: Always
-      image: thingsboard/tbmq-node:2.0.0
+      image: thingsboard/tbmq-node:2.0.1
       env:
         - name: REDIS_HOST
           value: "tb-redis"
