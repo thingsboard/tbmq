@@ -6192,11 +6192,6 @@ follow-redirects@^1.0.0:
   resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.9.tgz#a604fa10e443bf98ca94228d9eebcc2e8a2c8ee1"
   integrity sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==
 
-font-awesome@^4.7.0:
-  version "4.7.0"
-  resolved "https://registry.yarnpkg.com/font-awesome/-/font-awesome-4.7.0.tgz#8fa8cf0411a1a31afd07b06d2902bb9fc815a133"
-  integrity sha512-U6kGnykA/6bFmg1M/oT9EkFeIYv7JlX3bozwQJWiiLz6L0w3F5vBVPxHlwyX/vtNq1ckcpRKOB9f2Qal/VtFpg==
-
 for-each@^0.3.3:
   version "0.3.3"
   resolved "https://registry.yarnpkg.com/for-each/-/for-each-0.3.3.tgz#69b447e88a0a5d32c3e7084f3f1710034b21376e"
@@ -7937,14 +7932,7 @@ mlly@^1.4.2, mlly@^1.7.1, mlly@^1.7.2:
     pkg-types "^1.2.1"
     ufo "^1.5.4"
 
-moment-timezone@^0.5.45:
-  version "0.5.46"
-  resolved "https://registry.yarnpkg.com/moment-timezone/-/moment-timezone-0.5.46.tgz#a21aa6392b3c6b3ed916cd5e95858a28d893704a"
-  integrity sha512-ZXm9b36esbe7OmdABqIWJuBBiLLwAjrN7CE+7sYdCCx82Nabt1wHDj8TVseS59QIlfFPbOoiBPm6ca9BioG4hw==
-  dependencies:
-    moment "^2.29.4"
-
-moment@^2.10.2, moment@^2.29.4, moment@^2.30.1:
+moment@^2.10.2, moment@^2.30.1:
   version "2.30.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.30.1.tgz#f8c91c07b7a786e30c59926df530b4eac96974ae"
   integrity sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==
@@ -8126,13 +8114,6 @@ ngx-daterangepicker-material@^6.0.4:
   dependencies:
     dayjs "^1.11.5"
     tslib "^2.0.0"
-
-ngx-drag-drop@^18.0.2:
-  version "18.0.2"
-  resolved "https://registry.yarnpkg.com/ngx-drag-drop/-/ngx-drag-drop-18.0.2.tgz#a8d805db20d75ad450db75f65d26fafdf0e2ec97"
-  integrity sha512-I2u5hhUGysRfAhxFCReG9DVUGnPZpu5r3qXZuU9dS22PfzriwtkGrBeD/pgGlUB1BREZd77fb8tY6okpUTvIBw==
-  dependencies:
-    tslib "^2.3.0"
 
 "ngx-flowchart@https://github.com/thingsboard/ngx-flowchart.git#release/3.0.0":
   version "3.0.0"

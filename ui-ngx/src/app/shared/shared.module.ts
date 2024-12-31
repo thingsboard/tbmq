@@ -79,7 +79,6 @@ import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons
 import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { DndModule } from 'ngx-drag-drop';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
@@ -199,7 +198,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     NgxHmCarouselComponent,
     NgxHmCarouselDynamicDirective,
     NgxHmCarouselItemDirective,
-    DndModule,
     ColorPickerModule,
     // ngx-markdown
     MarkdownModule.forRoot({
@@ -335,7 +333,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     NgxHmCarouselComponent,
     NgxHmCarouselDynamicDirective,
     NgxHmCarouselItemDirective,
-    DndModule,
     MarkdownModule,
     ConfirmDialogComponent,
     AlertDialogComponent,
