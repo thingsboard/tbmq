@@ -15,8 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.install;
 
-public interface DatabaseUpgradeService {
+public interface DatabaseSchemaSettingsService {
 
-    void upgradeDatabase(String fromVersion) throws Exception;
+    void validateSchemaSettings();
+
+    void createSchemaSettings();
+
+    void updateSchemaVersion();
+
+    String getPackageSchemaVersion();
+
+    String getDbSchemaVersion();
 
 }
