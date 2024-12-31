@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.historical-data-total")
-public class HistoricalDataTotalKafkaSettings {
+public class HistoricalDataTotalKafkaSettings extends AbstractKafkaSettings {
 
     private String topic;
     private String topicProperties;

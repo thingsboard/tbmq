@@ -16,23 +16,20 @@
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Data
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.client-session-event-response")
-public class ClientSessionEventResponseKafkaSettings {
+public class ClientSessionEventResponseKafkaSettings extends AbstractKafkaSettings {
 
     private String topicPrefix;
     private String topicProperties;
     private String additionalProducerConfig;
     private String additionalConsumerConfig;
 
-    @Value("${queue.kafka.kafka-prefix:}")
-    private String kafkaPrefix;
-
+    @Override
     public String getKafkaTopicPrefix() {
         return kafkaPrefix + topicPrefix;
     }

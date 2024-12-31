@@ -15,22 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
-@Data
-@Component
-@ConfigurationProperties(prefix = "queue.kafka.msg-all")
-public class PublishMsgKafkaSettings extends AbstractKafkaSettings {
+public abstract class AbstractKafkaSettings implements KafkaSettings {
 
-    private String topic;
-    private String topicProperties;
-    private String additionalProducerConfig;
-    private String additionalConsumerConfig;
+    @Value("${queue.kafka.kafka-prefix:}")
+    protected String kafkaPrefix;
 
-    @Override
-    public String getKafkaTopic() {
-        return kafkaPrefix + topic;
-    }
 }

@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.application-persisted-msg")
-public class ApplicationPersistenceMsgKafkaSettings {
+public class ApplicationPersistenceMsgKafkaSettings extends AbstractKafkaSettings {
 
     private String topicProperties;
     private String additionalProducerConfig;

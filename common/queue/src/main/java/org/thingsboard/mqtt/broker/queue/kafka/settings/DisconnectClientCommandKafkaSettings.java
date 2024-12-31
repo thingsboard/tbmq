@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "queue.kafka.disconnect-client-command")
-public class DisconnectClientCommandKafkaSettings {
+public class DisconnectClientCommandKafkaSettings extends AbstractKafkaSettings {
 
     private String topicPrefix;
     private String topicProperties;
