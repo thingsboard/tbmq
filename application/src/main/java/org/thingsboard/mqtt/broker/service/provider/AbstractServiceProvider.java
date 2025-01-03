@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.service.provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
 import java.util.List;
 
