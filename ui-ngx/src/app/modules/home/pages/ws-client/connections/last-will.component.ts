@@ -32,6 +32,8 @@ import {
   WebSocketTimeUnit
 } from '@shared/models/ws-client.model';
 import { isDefinedAndNotNull } from '@core/utils';
+import { defaultMqttQos } from '@shared/models/session.model';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-last-will',
@@ -73,9 +75,9 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
 
   ngOnInit() {
     this.initForm();
-    this.formGroup.valueChanges.subscribe((value) => {
-      this.updateView(value);
-    });
+    this.formGroup.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.updateModel(value));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -131,7 +133,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.formGroup = this.fb.group({
       topic: [null, []],
       payload: [null, []],
-      qos: [null, []],
+      qos: [defaultMqttQos, []],
       retain: [false, []],
       willDelayInterval: [{value: 0, disabled}, []],
       willDelayIntervalUnit: [{value: WebSocketTimeUnit.SECONDS, disabled}, []],
@@ -145,7 +147,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.disableMqtt5Features();
   }
 
-  private updateView(value: LastWillMsg) {
+  private updateModel(value: LastWillMsg) {
     this.propagateChange(value);
   }
 

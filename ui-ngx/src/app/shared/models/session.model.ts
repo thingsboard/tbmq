@@ -53,6 +53,20 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
+export enum MqttQos {
+  AT_MOST_ONCE = 0,
+  AT_LEAST_ONCE = 1,
+  EXACTLY_ONCE = 2
+}
+
+export const defaultMqttQos = MqttQos.AT_LEAST_ONCE;
+
+export const MqttQosTranslation = new Map<MqttQos, string>([
+  [MqttQos.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
+  [MqttQos.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
+  [MqttQos.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
+]);
+
 export enum QosType {
   AT_MOST_ONCE = 'AT_MOST_ONCE',
   AT_LEAST_ONCE = 'AT_LEAST_ONCE',

@@ -20,8 +20,8 @@
                 [subscriptSizing]="subscriptSizing">
   <mat-label *ngIf="displayLabel">{{ label | translate}}</mat-label>
   <mat-select [formControl]="qosFormControl">
-    <mat-option *ngFor="let qos of qosType" [value]="qos">
-     {{ qosTranslationMap.get(qos) | translate }}
+    <mat-option *ngFor="let mqttQoS of mqttQosTypes" [value]="mqttQoS">
+      {{ mqttQoS }} - {{ MqttQosTranslation.get(mqttQoS) | translate}}
     </mat-option>
   </mat-select>
 </mat-form-field>

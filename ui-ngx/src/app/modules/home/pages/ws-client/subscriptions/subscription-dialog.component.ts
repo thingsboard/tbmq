@@ -17,7 +17,7 @@
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { QosType, QoSTranslationMap } from '@shared/models/session.model';
+import { defaultMqttQos } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -26,6 +26,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { colorRandom, defaultSubscriptionTopicFilter, RhOptions, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { TranslateService } from '@ngx-translate/core';
+import { takeUntil } from 'rxjs/operators';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
@@ -42,11 +43,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   implements OnInit, OnDestroy, AfterContentChecked {
 
   formGroup: UntypedFormGroup;
-
   rhOptions = RhOptions;
-  qoSType = Object.keys(QosType);
-  qoSTranslationMap = QoSTranslationMap;
-
   title = 'subscription.add-subscription';
   actionButtonLabel = 'action.add';
   entity: WebSocketSubscription;
@@ -75,9 +72,9 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
       .filter(el => !(this.entity?.id === el.id))
       .map(el => el.configuration.topicFilter);
     this.topicFilterDuplicate = connectionTopicFilterList.includes(this.formGroup.get('topicFilter').value);
-    this.formGroup.get('topicFilter').valueChanges.subscribe(topicFilter => {
-      this.topicFilterDuplicate = connectionTopicFilterList.includes(topicFilter);
-    });
+    this.formGroup.get('topicFilter').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(topicFilter => this.topicFilterDuplicate = connectionTopicFilterList.includes(topicFilter));
   }
 
   ngAfterContentChecked(): void {
@@ -88,7 +85,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
       topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required]],
-      qos: [this.entity ? this.entity.configuration.qos : null, []],
+      qos: [this.entity ? this.entity.configuration.qos : defaultMqttQos, []],
       color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],

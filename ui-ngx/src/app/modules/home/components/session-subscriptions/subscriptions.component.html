@@ -32,7 +32,7 @@
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex="60" class="mat-block" appearance="outline" subscriptSizing="dynamic">
         <input matInput name="topicFilter" formControlName="topicFilter" required>
-        <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+        <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
                         [copyText]="topicFilter.get('topicFilter').value">
         </tb-copy-button>
         <mat-error *ngIf="topicFilter.invalid">

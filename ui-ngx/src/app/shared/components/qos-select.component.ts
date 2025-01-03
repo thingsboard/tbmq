@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
   ControlValueAccessor,
   NG_VALUE_ACCESSOR,
@@ -25,8 +25,10 @@ import {
 import { MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { TranslateService } from '@ngx-translate/core';
-import { QoSTranslationMap, QosType } from '../models/session.model';
-import { isDefinedAndNotNull } from '@core/utils';
+import { defaultMqttQos, MqttQos, MqttQosTranslation } from '../models/session.model';
+import { isDefinedAndNotNull, isNumber } from '@core/utils';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-qos-select',
@@ -40,7 +42,7 @@ import { isDefinedAndNotNull } from '@core/utils';
     }
   ]
 })
-export class QosSelectComponent implements ControlValueAccessor, OnInit, AfterViewInit {
+export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
   @Input()
   disabled: boolean;
@@ -64,37 +66,36 @@ export class QosSelectComponent implements ControlValueAccessor, OnInit, AfterVi
   appearance: MatFormFieldAppearance = 'fill';
 
   @Input()
-  defaultQosType: string = QosType.AT_LEAST_ONCE;
-
-  @Input()
   subscriptSizing: SubscriptSizing = 'fixed';
 
   @Input()
   hideRequiredMarker = true;
 
   qosFormControl: UntypedFormControl;
-  qosType = Object.values(QosType);
-  qosTranslationMap = QoSTranslationMap;
+  mqttQosTypes = Object.values(MqttQos).filter(v => isNumber(v));
+  MqttQosTranslation = MqttQosTranslation;
 
+  private destroy$ = new Subject<void>();
   private propagateChange = (_val: any) => {};
 
-  constructor(private fb: UntypedFormBuilder,
-              private translate: TranslateService) {
+  constructor(readonly fb: UntypedFormBuilder,
+              readonly translate: TranslateService) {
+    this.qosFormControl = this.fb.control(null, this.required ? [Validators.required] : []);
+    this.qosFormControl.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.updateModel(value));
   }
 
-  ngOnInit() {
-    this.qosFormControl = this.fb.control(this.defaultQosType, this.required ? [Validators.required] : []);
-    this.qosFormControl.valueChanges.subscribe(value => this.updateView(value));
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  ngAfterViewInit() {
-    this.updateView(this.qosFormControl.value);
-  }
-
-  writeValue(value: number) {
+  writeValue(value: MqttQos) {
     if (isDefinedAndNotNull(value)) {
-      const qosValue = this.qos(value);
-      this.qosFormControl.setValue(qosValue);
+      this.qosFormControl.patchValue(value);
+    } else {
+      this.qosFormControl.patchValue(defaultMqttQos);
     }
   }
 
@@ -113,23 +114,7 @@ export class QosSelectComponent implements ControlValueAccessor, OnInit, AfterVi
 
   registerOnTouched(fn: any) {}
 
-  updateView(value: QosType) {
-    const qosValue = this.qosToNumber(value);
-    this.propagateChange(qosValue);
-  }
-
-  private qosToNumber(value: QosType): number {
-    return this.qosType.indexOf(value);
-  }
-
-  private qos(value: any): QosType {
-    if (this.isQosType(value)) {
-      return value;
-    }
-    return this.qosType.at(value);
-  }
-
-  private isQosType(value: any): boolean {
-    return Object.values(QosType).includes(value);
+  updateModel(value: MqttQos) {
+    this.propagateChange(value);
   }
 }

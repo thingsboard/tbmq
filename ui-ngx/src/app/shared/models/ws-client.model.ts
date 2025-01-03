@@ -19,7 +19,6 @@ import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
 import { randomAlphanumeric } from '@core/utils';
 import { colorPresetsHex } from '@shared/components/color-picker/color-picker.component';
-import { QosType } from '@shared/models/session.model';
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -215,7 +214,7 @@ export interface WebSocketSubscription extends BaseData {
 
 export interface TopicSubscription {
   topicFilter?: string;
-  qos?: QoS | QosType;
+  qos?: any;
   color?: string;
   subscriptionId?: number;
   options: TopicSubscriptionOptions;
