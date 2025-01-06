@@ -14,12 +14,12 @@
 /// limitations under the License.
 ///
 
-import {Component, HostListener, Input} from '@angular/core';
-import {PageComponent} from '@shared/components/page.component';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {speedDialFabAnimations} from '@shared/animations/speed-dial-fab.animations';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import { Component, HostListener, Input } from '@angular/core';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { speedDialFabAnimations } from '@shared/animations/speed-dial-fab.animations';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { NgClass, NgFor, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';

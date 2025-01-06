@@ -16,9 +16,13 @@
 
 import { Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Subject, Subscription } from 'rxjs';
-import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
-import { TimeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import { Subject } from 'rxjs';
+import {
+  LastWillMsg,
+  TimeUnitTypeTranslationMap,
+  WebSocketConnection,
+  WebSocketTimeUnit
+} from '@shared/models/ws-client.model';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
@@ -34,6 +38,8 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
+import { isDefinedAndNotNull } from '@core/utils';
+import { QosSelectComponent } from '@shared/components/qos-select.component';
 
 @Component({
     selector: 'tb-last-will',
@@ -52,7 +58,7 @@ import { takeUntil } from 'rxjs/operators';
     ],
     styleUrls: ['./last-will.component.scss'],
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip]
+  imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

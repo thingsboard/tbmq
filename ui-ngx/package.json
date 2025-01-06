@@ -52,6 +52,7 @@
         "dayjs": "1.11.13",
         "flot": "https://github.com/thingsboard/flot.git#0.9-work",
         "flot.curvedlines": "https://github.com/MichaelZinsmaier/CurvedLines.git#master",
+        "font-awesome": "^4.7.0",
         "html2canvas": "^1.4.1",
         "jquery": "^3.7.1",
         "jquery.terminal": "^2.43.1",

@@ -17,7 +17,7 @@
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { WsMqttQoSType, WsQoSTypes, WsQoSTranslationMap, DEFAULT_QOS } from '@shared/models/session.model';
+import { DEFAULT_QOS } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -44,6 +44,7 @@ import { MatOption } from '@angular/material/core';
 import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent } from '@angular/material/expansion';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { takeUntil } from 'rxjs/operators';
+import { QosSelectComponent } from '@shared/components/qos-select.component';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
@@ -56,7 +57,7 @@ export interface AddWsClientSubscriptionDialogData {
     templateUrl: './subscription-dialog.component.html',
     styleUrls: ['./subscription-dialog.component.scss'],
     standalone: true,
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatError, ColorInputComponent, MatSelect, NgFor, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe]
+  imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatError, ColorInputComponent, MatSelect, NgFor, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
 })
 export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {

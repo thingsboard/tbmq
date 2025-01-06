@@ -32,11 +32,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFor
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { TranslateService } from '@ngx-translate/core';
 import { deepClone, isNumber } from '@core/utils';
-
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { QoS, QosTranslation } from '@shared/models/session.model';

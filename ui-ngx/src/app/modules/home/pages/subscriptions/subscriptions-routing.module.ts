@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
 
-
 const routes: Routes = [
   {
     path: 'subscriptions',

@@ -17,7 +17,6 @@
 import { inject, NgModule } from '@angular/core';
 import { ResolveFn, RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-
 import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
 import { TOTAL_KEY } from '@shared/models/chart.model';

@@ -18,7 +18,6 @@ import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -55,13 +54,14 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { WsJsonObjectEditComponent } from './ws-json-object-edit.component';
 import { MatIcon } from '@angular/material/icon';
 import { DEFAULT_QOS } from '@shared/models/session.model';
+import { QosSelectComponent } from '@shared/components/qos-select.component';
 
 @Component({
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
     standalone: true,
-    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe]
+  imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
 })
 export class MessangerComponent implements OnInit {
 

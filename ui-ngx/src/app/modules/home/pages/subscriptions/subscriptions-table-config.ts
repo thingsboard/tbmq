@@ -110,10 +110,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
       new EntityTableColumn<ClientSubscription>('noLocal', 'subscription.nl', '120px', entity => checkBoxCell(entity.subscription?.options?.noLocal)),
       new EntityTableColumn<ClientSubscription>('retainAsPublish', 'subscription.rap', '120px', entity => checkBoxCell(entity.subscription?.options?.retainAsPublish)),
       new EntityTableColumn<ClientSubscription>('retainHandling', 'subscription.rh', '120px', entity => entity.subscription?.options?.retainHandling.toString(),
-        undefined, undefined, undefined, entity => {
-          const rh = this.rhOptions.find(el => el.value === entity.subscription?.options.retainHandling).name;
-          return this.translate.instant(rh);
-        }),
+        undefined, undefined, undefined, entity => this.rhOptions.find(el => el.value === entity.subscription?.options.retainHandling).name),
       new EntityTableColumn<ClientSubscription>('subscriptionId', 'subscription.subscription-id', '120px',
           entity => entity.subscription.subscriptionId ? entity.subscription.subscriptionId.toString() : ''),
     );

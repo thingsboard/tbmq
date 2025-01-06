@@ -42,8 +42,7 @@ export const TbBreakPointsProvider = {
 };
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayout.md-lg]', inputs: ['fxLayout.md-lg'],
+@Directive({selector: '[fxLayout.md-lg]', inputs: ['fxLayout.md-lg'],
     standalone: true
 })
 export class MdLgLayoutDirective extends LayoutDirective {
@@ -51,8 +50,7 @@ export class MdLgLayoutDirective extends LayoutDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayoutAlign.md-lg]', inputs: ['fxLayoutAlign.md-lg'],
+@Directive({selector: '[fxLayoutAlign.md-lg]', inputs: ['fxLayoutAlign.md-lg'],
     standalone: true
 })
 export class MdLgLayoutAlignDirective extends LayoutAlignDirective {
@@ -60,8 +58,7 @@ export class MdLgLayoutAlignDirective extends LayoutAlignDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayoutGap.md-lg]', inputs: ['fxLayoutGap.md-lg'],
+@Directive({selector: '[fxLayoutGap.md-lg]', inputs: ['fxLayoutGap.md-lg'],
     standalone: true
 })
 export class MdLgLayoutGapDirective extends LayoutGapDirective {
@@ -69,8 +66,7 @@ export class MdLgLayoutGapDirective extends LayoutGapDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxHide.md-lg]', inputs: ['fxHide.md-lg'],
+@Directive({selector: '[fxHide.md-lg]', inputs: ['fxHide.md-lg'],
     standalone: true
 })
 export class MdLgShowHideDirective extends ShowHideDirective {
@@ -78,8 +74,7 @@ export class MdLgShowHideDirective extends ShowHideDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayout.gt-md-lg]', inputs: ['fxLayout.gt-md-lg'],
+@Directive({selector: '[fxLayout.gt-md-lg]', inputs: ['fxLayout.gt-md-lg'],
     standalone: true
 })
 export class GtMdLgLayoutDirective extends LayoutDirective {
@@ -87,8 +82,7 @@ export class GtMdLgLayoutDirective extends LayoutDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayoutAlign.gt-md-lg]', inputs: ['fxLayoutAlign.gt-md-lg'],
+@Directive({selector: '[fxLayoutAlign.gt-md-lg]', inputs: ['fxLayoutAlign.gt-md-lg'],
     standalone: true
 })
 export class GtMdLgLayoutAlignDirective extends LayoutAlignDirective {
@@ -96,8 +90,7 @@ export class GtMdLgLayoutAlignDirective extends LayoutAlignDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxLayoutGap.gt-md-lg]', inputs: ['fxLayoutGap.gt-md-lg'],
+@Directive({selector: '[fxLayoutGap.gt-md-lg]', inputs: ['fxLayoutGap.gt-md-lg'],
     standalone: true
 })
 export class GtMdLgLayoutGapDirective extends LayoutGapDirective {
@@ -105,8 +98,7 @@ export class GtMdLgLayoutGapDirective extends LayoutGapDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxHide.gt-md-lg]', inputs: ['fxHide.gt-md-lg'],
+@Directive({selector: '[fxHide.gt-md-lg]', inputs: ['fxHide.gt-md-lg'],
     standalone: true
 })
 export class GtMdLgShowHideDirective extends ShowHideDirective {
@@ -114,8 +106,7 @@ export class GtMdLgShowHideDirective extends ShowHideDirective {
 }
 
 // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property,@angular-eslint/directive-selector
-@Directive({
-    selector: '[fxHide.lt-xmd]', inputs: ['fxHide.lt-xmd'],
+@Directive({selector: '[fxHide.lt-xmd]', inputs: ['fxHide.lt-xmd'],
     standalone: true
 })
 export class LtXmdShowHideDirective extends ShowHideDirective {

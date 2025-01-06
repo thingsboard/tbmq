@@ -14,8 +14,8 @@
 /// limitations under the License.
 ///
 
-import {Component, Input} from '@angular/core';
-import {HelpLinks} from '@shared/models/constants';
+import { Component, Input } from '@angular/core';
+import { HelpLinks } from '@shared/models/constants';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';

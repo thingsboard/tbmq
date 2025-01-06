@@ -16,19 +16,27 @@
 
 import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
 import {
-  ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
+  ControlValueAccessor, FormsModule,
+  NG_VALUE_ACCESSOR, ReactiveFormsModule,
   UntypedFormBuilder,
   UntypedFormControl,
   Validators
 } from '@angular/forms';
-import { MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
+import {
+  MatFormField,
+  MatFormFieldAppearance,
+  MatLabel,
+  SubscriptSizing
+} from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DEFAULT_QOS, QoS, QosTranslation } from '../models/session.model';
 import { isDefinedAndNotNull, isNumber } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { NgFor, NgIf } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatOption, MatSelect } from '@angular/material/select';
 
 @Component({
   selector: 'tb-qos-select',
@@ -40,7 +48,9 @@ import { takeUntil } from 'rxjs/operators';
       useExisting: forwardRef(() => QosSelectComponent),
       multi: true
     }
-  ]
+  ],
+  standalone: true,
+  imports: [TranslateModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, NgIf, MatSelect, MatOption]
 })
 export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 

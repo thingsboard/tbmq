@@ -22,7 +22,7 @@ import { MessagesTableConfig } from '@home/pages/ws-client/messages/messages-tab
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { EntitiesTableWsComponent } from '../../../components/entity/entities-table-ws.component';
+import { EntitiesTableWsComponent } from '@home/components/entity/entities-table-ws.component';
 
 @Component({
     selector: 'tb-messages',

@@ -23,7 +23,6 @@ import { BreadCrumbConfig } from '@shared/components/breadcrumb';
 import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
 import { UsersTableConfigResolver } from '@home/pages/users/users-table-config.resolver';
 
-
 const routes: Routes = [
   {
     path: 'users',
