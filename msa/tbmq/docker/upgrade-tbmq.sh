@@ -33,7 +33,8 @@ else
     fromVersion="${FROM_VERSION// }"
 fi
 
-exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+# "exec java -cp..." is wrong here since then the following lines "Saving upgrade version to file..." are not executed
+java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                 -Dspring.jpa.hibernate.ddl-auto=none \
                 -Dinstall.upgrade=true \
                 -Dinstall.upgrade.from_version=${fromVersion} \
