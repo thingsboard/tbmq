@@ -15,13 +15,13 @@
 ///
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
-import { AbstractControl, FormBuilder, UntypedFormGroup, ValidatorFn } from '@angular/forms';
+import { AbstractControl, FormBuilder, UntypedFormGroup, ValidatorFn, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogClose, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import {
   PublishMessageProperties,
   TimeUnitTypeTranslationMap,
@@ -30,6 +30,21 @@ import {
   isDefinedProps
 } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { UserPropertiesComponent } from '../../../components/client-credentials-templates/user-properties.component';
 
 export interface PropertiesDialogComponentData {
   props: PublishMessageProperties;
@@ -37,9 +52,11 @@ export interface PropertiesDialogComponentData {
 }
 
 @Component({
-  selector: 'tb-ws-client-properties',
-  templateUrl: './ws-publish-message-properties-dialog.component.html',
-  styleUrls: ['./ws-publish-message-properties-dialog.component.scss']
+    selector: 'tb-ws-client-properties',
+    templateUrl: './ws-publish-message-properties-dialog.component.html',
+    styleUrls: ['./ws-publish-message-properties-dialog.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, NgFor, MatOption, MatError, UserPropertiesComponent, MatDialogActions, MatButton, AsyncPipe]
 })
 export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<WsPublishMessagePropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 

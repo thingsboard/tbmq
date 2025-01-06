@@ -24,11 +24,19 @@ import { DialogService } from '@core/services/dialog.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { ClientSessionService } from '@core/http/client-session.service';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgClass, NgStyle, NgFor, NgIf } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
-  selector: 'tb-connection',
-  templateUrl: './connection.component.html',
-  styleUrls: ['./connection.component.scss']
+    selector: 'tb-connection',
+    templateUrl: './connection.component.html',
+    styleUrls: ['./connection.component.scss'],
+    standalone: true,
+    imports: [FlexModule, NgClass, ExtendedModule, NgStyle, NgFor, MatTooltip, NgIf, MatIconButton, TbIconComponent]
 })
 export class ConnectionComponent implements OnInit {
 

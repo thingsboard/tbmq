@@ -28,12 +28,12 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isNotEmptyStr } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
@@ -45,6 +45,14 @@ import {
   credentialsTypeTranslationMap,
   CredentialsType
 } from '@shared/models/credentials.model';
+import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatFormField, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
 import { takeUntil } from 'rxjs/operators';
 
 export const CLIENT_CREDENTIALS_FILTER_CONFIG_DATA = new InjectionToken<any>('ClientCredentialsFilterConfigData');
@@ -57,16 +65,18 @@ export interface ClientCredentialsFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-client-credentials-filter-config',
-  templateUrl: './client-credentials-filter-config.component.html',
-  styleUrls: ['./client-credentials-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ClientCredentialsFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-client-credentials-filter-config',
+    templateUrl: './client-credentials-filter-config.component.html',
+    styleUrls: ['./client-credentials-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ClientCredentialsFilterConfigComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, NgFor, MatChipOption, MatFormField, MatInput, MatSuffix]
 })
 export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

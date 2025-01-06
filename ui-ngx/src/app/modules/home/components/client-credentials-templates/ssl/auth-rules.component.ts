@@ -15,22 +15,9 @@
 ///
 
 import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  FormBuilder,
-  FormControl,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormArray,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import { AbstractControl, ControlValueAccessor, FormBuilder, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import {
   ANY_CHARACTERS,
   AuthRulePatternsType,
@@ -40,22 +27,35 @@ import {
   SslCredentialsAuthRules
 } from '@shared/models/credentials.model';
 import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgIf, NgFor } from '@angular/common';
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton, MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-auth-rules',
-  templateUrl: './auth-rules.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => AuthRulesComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => AuthRulesComponent),
-      multi: true,
-    }],
-  styleUrls: ['./auth-rules.component.scss']
+    selector: 'tb-auth-rules',
+    templateUrl: './auth-rules.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => AuthRulesComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => AuthRulesComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./auth-rules.component.scss'],
+    standalone: true,
+    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, NgIf, MatExpansionPanelDescription, MatError, FlexModule, ReactiveFormsModule, NgFor, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, ExtendedModule, MatTooltip, MatIconButton, MatButton]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

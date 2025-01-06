@@ -17,14 +17,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { EntityDetailsPageComponent } from '@home/components/entity/entity-details-page.component';
 import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
 import { BreadCrumbConfig } from '@shared/components/breadcrumb';
-import {
-  ClientCredentialsTableConfigResolver
-} from '@home/pages/client-credentials/client-credentials-table-config.resolver';
+import { ClientCredentialsTableConfigResolver } from '@home/pages/client-credentials/client-credentials-table-config.resolver';
 
 const routes: Routes = [
   {
@@ -34,13 +31,12 @@ const routes: Routes = [
       breadcrumb: {
         label: 'mqtt-client-credentials.client-credentials',
         icon: 'mdi:shield-lock'
-      },
-      isPage: true
+      }
     },
     children: [
       {
         path: '',
-        component: EntitiesTableComponent,
+        loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'mqtt-client-credentials.client-credentials'
@@ -51,7 +47,7 @@ const routes: Routes = [
       },
       {
         path: ':entityId',
-        component: EntityDetailsPageComponent,
+        loadComponent: () => import('@home/components/entity/entity-details-page.component').then(m => m.EntityDetailsPageComponent),
         canDeactivate: [ConfirmOnExitGuard],
         data: {
           breadcrumb: {

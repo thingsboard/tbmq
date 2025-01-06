@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-import { InjectionToken } from '@angular/core';
 import { MatFormFieldDefaultOptions } from '@angular/material/form-field';
 
 export const Constants = {
@@ -72,8 +71,6 @@ export const HelpLinks = {
 };
 
 export const customTranslationsPrefix = 'custom.';
-
-export const MODULES_MAP = new InjectionToken<{[key: string]: any}>('ModulesMap');
 
 export const NULL_UUID = '13814000-1dd2-11b2-8080-808080808080';
 

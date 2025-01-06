@@ -29,7 +29,7 @@ import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   ClientCredentialsWizardDialogComponent
@@ -37,17 +37,26 @@ import {
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
 import { ConfigService } from '@core/http/config.service';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { MatStepper, MatStep, MatStepLabel } from '@angular/material/stepper';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-getting-started',
-  templateUrl: './getting-started-home.component.html',
-  styleUrls: ['./getting-started-home.component.scss'],
-  providers: [
-    {
-      provide: STEPPER_GLOBAL_OPTIONS,
-      useValue: { displayDefaultIndicatorType: false }
-    }
-  ]
+    selector: 'tb-getting-started',
+    templateUrl: './getting-started-home.component.html',
+    styleUrls: ['./getting-started-home.component.scss'],
+    providers: [
+        {
+            provide: STEPPER_GLOBAL_OPTIONS,
+            useValue: { displayDefaultIndicatorType: false }
+        }
+    ],
+    standalone: true,
+    imports: [FlexModule, CardTitleButtonComponent, MatStepper, NgFor, MatStep, MatStepLabel, TbMarkdownComponent, NgIf, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
 

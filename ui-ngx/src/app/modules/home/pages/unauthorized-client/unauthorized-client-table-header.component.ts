@@ -20,11 +20,15 @@ import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { UnauthorizedClient } from '@shared/models/unauthorized-client.model';
 import { UnauthorizedClientTableConfig } from '@home/pages/unauthorized-client/unauthorized-client-table-config';
+import { UnauthorizedClientFilterConfigComponent } from './unauthorized-client-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-session-table-header',
-  templateUrl: './unauthorized-client-table-header.component.html',
-  styleUrls: ['./unauthorized-client-table-header.component.scss']
+    selector: 'tb-session-table-header',
+    templateUrl: './unauthorized-client-table-header.component.html',
+    styleUrls: ['./unauthorized-client-table-header.component.scss'],
+    standalone: true,
+    imports: [UnauthorizedClientFilterConfigComponent, FormsModule]
 })
 export class UnauthorizedClientTableHeaderComponent extends EntityTableHeaderComponent<UnauthorizedClient> {
 

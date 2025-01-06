@@ -16,11 +16,17 @@
 
 import {Component, Input} from '@angular/core';
 import {HelpLinks} from '@shared/models/constants';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  // tslint:disable-next-line:component-selector
-  selector: '[tb-help]',
-  templateUrl: './help.component.html'
+    // tslint:disable-next-line:component-selector
+    selector: '[tb-help]',
+    templateUrl: './help.component.html',
+    standalone: true,
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class HelpComponent {
 

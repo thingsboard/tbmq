@@ -16,7 +16,10 @@
 
 import { Pipe, PipeTransform } from '@angular/core';
 
-@Pipe({ name: 'highlight' })
+@Pipe({
+    name: 'highlight',
+    standalone: true
+})
 export class HighlightPipe implements PipeTransform {
   transform(text: string, search: string, includes = false, flags = 'i'): string {
     const pattern = search

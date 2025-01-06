@@ -20,11 +20,18 @@ import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { NgFor } from '@angular/common';
+import { LtXmdShowHideDirective } from '@shared/layout/layout.directives';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-home-cards-table',
-  templateUrl: './home-cards-table.component.html',
-  styleUrls: ['home-cards-table.component.scss']
+    selector: 'tb-home-cards-table',
+    templateUrl: './home-cards-table.component.html',
+    styleUrls: ['home-cards-table.component.scss'],
+    standalone: true,
+    imports: [FlexModule, CardTitleButtonComponent, NgFor, LtXmdShowHideDirective, TranslateModule]
 })
 export class HomeCardsTableComponent {
 

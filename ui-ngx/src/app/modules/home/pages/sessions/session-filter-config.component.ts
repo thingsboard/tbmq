@@ -28,12 +28,12 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
@@ -47,6 +47,17 @@ import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { NumericOperation, numericOperationTranslationMap } from '@shared/models/query/query.models';
 import { takeUntil } from 'rxjs/operators';
+import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { EntitySubTypeListComponent } from '@shared/components/entity/entity-subtype-list.component';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 
@@ -58,16 +69,18 @@ export interface SessionFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-session-filter-config',
-  templateUrl: './session-filter-config.component.html',
-  styleUrls: ['./session-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SessionFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-session-filter-config',
+    templateUrl: './session-filter-config.component.html',
+    styleUrls: ['./session-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SessionFilterConfigComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, NgFor, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

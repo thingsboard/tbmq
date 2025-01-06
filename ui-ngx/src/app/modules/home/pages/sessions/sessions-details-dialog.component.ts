@@ -25,12 +25,30 @@ import {DialogComponent} from '@shared/components/dialog.component';
 import {AppState} from '@core/core.state';
 import {Store} from '@ngrx/store';
 import {Router} from '@angular/router';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {FormArray, UntypedFormBuilder, UntypedFormGroup} from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogClose, MatDialogActions } from '@angular/material/dialog';
+import { FormArray, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import {ClientSessionService} from '@core/http/client-session.service';
-import {MAT_FORM_FIELD_DEFAULT_OPTIONS} from '@angular/material/form-field';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/form-field';
 import {appearance} from '@shared/models/constants';
 import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/models/client.model';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { TranslateModule } from '@ngx-translate/core';
+import { HelpComponent } from '@shared/components/help.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, NgStyle, AsyncPipe, TitleCasePipe, DatePipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatTabGroup, MatTab, MatTabContent } from '@angular/material/tabs';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
+import { MatInput } from '@angular/material/input';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
+import { SubscriptionsComponent } from '../../components/session-subscriptions/subscriptions.component';
+import { SessionMetricsComponent } from '../../components/session-metrics/session-metrics.component';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -38,15 +56,17 @@ export interface SessionsDetailsDialogData {
 }
 
 @Component({
-  selector: 'tb-sessions-details-dialog',
-  templateUrl: './sessions-details-dialog.component.html',
-  styleUrls: ['./sessions-details-dialog.component.scss'],
-  providers: [
-    {
-      provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-      useValue: appearance
-    }
-  ]
+    selector: 'tb-sessions-details-dialog',
+    templateUrl: './sessions-details-dialog.component.html',
+    styleUrls: ['./sessions-details-dialog.component.scss'],
+    providers: [
+        {
+            provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+            useValue: appearance
+        }
+    ],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, ExtendedModule, NgStyle, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {

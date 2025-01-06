@@ -15,10 +15,14 @@
 ///
 
 import { Component, forwardRef, OnDestroy } from '@angular/core';
-import { Color, ColorPickerControl } from '@iplab/ngx-color-picker';
+import { Color, ColorPickerControl, SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, RgbaComponent, HslaComponent, ColorPresetsComponent } from '@iplab/ngx-color-picker';
 import { Subscription } from 'rxjs';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormControl } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { isString } from '@core/utils';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { NgSwitch, NgSwitchCase } from '@angular/common';
+import { HexInputComponent } from './hex-input.component';
 
 export enum ColorType {
   hex = 'hex',
@@ -35,16 +39,18 @@ export const colorPresetsHex =
     '#A1ADB1', '#F9A19B', '#FFD190', '#FFF59D', '#C5E1A4', '#A5D7A7', '#80CBC3', '#81C4E9', '#B39CDB', '#CD93D7', '#F48FB1', '#BC91A4'];
 
 @Component({
-  selector: `tb-color-picker`,
-  templateUrl: `./color-picker.component.html`,
-  styleUrls: [`./color-picker.component.scss`],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ColorPickerComponent),
-      multi: true
-    }
-  ]
+    selector: `tb-color-picker`,
+    templateUrl: `./color-picker.component.html`,
+    styleUrls: [`./color-picker.component.scss`],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ColorPickerComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, NgSwitch, NgSwitchCase, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
 })
 export class ColorPickerComponent implements ControlValueAccessor, OnDestroy {
 

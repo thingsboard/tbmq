@@ -16,7 +16,7 @@
 
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
@@ -28,15 +28,24 @@ import {
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClipboardService } from 'ngx-clipboard';
-import { MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgStyle, NgClass, NgFor, NgIf } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
-  selector: 'tb-subscription',
-  templateUrl: './subscription.component.html',
-  styleUrls: ['./subscription.component.scss']
+    selector: 'tb-subscription',
+    templateUrl: './subscription.component.html',
+    styleUrls: ['./subscription.component.scss'],
+    standalone: true,
+    imports: [FlexModule, NgStyle, ExtendedModule, MatTooltip, NgClass, NgFor, NgIf, MatIconButton, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, TranslateModule]
 })
 export class SubscriptionComponent {
 

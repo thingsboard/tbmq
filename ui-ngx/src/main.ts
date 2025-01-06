@@ -16,12 +16,16 @@
 
 
 
-import { enableProdMode } from '@angular/core';
-import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-
-import { AppModule } from '@app/app.module';
+import { enableProdMode, importProvidersFrom } from '@angular/core';
+import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { AppRoutingModule } from '@app/app-routing.module';
+import { CoreModule } from '@core/core.module';
+import { LoginModule } from '@modules/login/login.module';
+import { HomeModule } from '@home/home.module';
+import { PageNotFoundRoutingModule } from '@app/app.module';
+import { AppComponent } from '@app/app.component';
 import { environment } from '@env/environment';
-
 import $ from 'jquery';
 
 (window as any).jQuery = $;
@@ -31,5 +35,9 @@ if (environment.production) {
   enableProdMode();
 }
 
-platformBrowserDynamic().bootstrapModule(AppModule)
-  .catch(err => console.error(err));
+bootstrapApplication(AppComponent, {
+    providers: [
+        importProvidersFrom(BrowserModule, AppRoutingModule, CoreModule, LoginModule, HomeModule, PageNotFoundRoutingModule),
+        provideAnimations()
+    ]
+}).catch(err => console.error(err));

@@ -31,7 +31,7 @@ import {
   TimewindowType
 } from '@shared/models/time/time.models';
 import { forkJoin, Observable, Subject, timer } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TimeService } from '@core/services/time.service';
 import { StatsService } from '@core/http/stats.service';
 import { share, switchMap, takeUntil } from 'rxjs/operators';
@@ -69,13 +69,28 @@ import {
   convertDataSizeUnits
 } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { TimewindowComponent } from '@shared/components/time/timewindow.component';
+import { FormsModule } from '@angular/forms';
+import { NgFor, NgStyle, NgIf, NgTemplateOutlet } from '@angular/common';
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
+import { MatDivider } from '@angular/material/divider';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { SafePipe } from '@shared/pipe/safe.pipe';
 
 Chart.register([Zoom]);
 
 @Component({
-  selector: 'tb-monitoring',
-  templateUrl: './monitoring.component.html',
-  styleUrls: ['./monitoring.component.scss']
+    selector: 'tb-monitoring',
+    templateUrl: './monitoring.component.html',
+    styleUrls: ['./monitoring.component.scss'],
+    standalone: true,
+    imports: [MatToolbar, FlexModule, TimewindowComponent, FormsModule, NgFor, FullscreenDirective, MatDivider, ExtendedModule, NgStyle, NgIf, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -146,6 +161,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
           this.onFullScreen();
         }
       });
+    this.cd.detectChanges();
   }
 
   onTimewindowChange() {

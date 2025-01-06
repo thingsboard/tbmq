@@ -15,7 +15,7 @@
 ///
 
 import { Component, OnDestroy, OnInit, Renderer2, ViewContainerRef } from '@angular/core';
-import { UntypedFormBuilder } from '@angular/forms';
+import { UntypedFormBuilder, FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection } from '@shared/models/ws-client.model';
@@ -23,11 +23,21 @@ import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { isDefinedAndNotNull } from '@core/utils';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgStyle, NgIf, NgTemplateOutlet, LowerCasePipe } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-connection-controller',
-  templateUrl: './connection-controller.component.html',
-  styleUrls: ['./connection-controller.component.scss']
+    selector: 'tb-connection-controller',
+    templateUrl: './connection-controller.component.html',
+    styleUrls: ['./connection-controller.component.scss'],
+    standalone: true,
+    imports: [TranslateModule, NgStyle, ExtendedModule, NgIf, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 

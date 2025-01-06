@@ -14,30 +14,39 @@
 /// limitations under the License.
 ///
 
+import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
 import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
-import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatChipGrid, MatChipInputEvent } from '@angular/material/chips';
+import { MatAutocomplete, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatAutocompleteOrigin } from '@angular/material/autocomplete';
+import { MatChipGrid, MatChipInputEvent, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
-import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
+import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
 import { ConfigService } from '@core/http/config.service';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { MatOption } from '@angular/material/core';
+import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 
 @Component({
-  selector: 'tb-entity-subtype-list',
-  templateUrl: './entity-subtype-list.component.html',
-  styleUrls: [],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EntitySubTypeListComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-entity-subtype-list',
+    templateUrl: './entity-subtype-list.component.html',
+    styleUrls: [],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => EntitySubTypeListComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, NgIf, MatLabel, MatChipGrid, NgFor, MatChipRow, MatIcon, MatChipRemove, MatInput, MatAutocompleteTrigger, MatChipInput, MatAutocompleteOrigin, MatAutocomplete, MatOption, MatSuffix, MatError, AsyncPipe, TranslateModule, HighlightPipe]
 })
 export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit {
 

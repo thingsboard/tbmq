@@ -32,7 +32,8 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Directive({
-  selector: '[tb-fullscreen]'
+    selector: '[tb-fullscreen]',
+    standalone: true
 })
 export class FullscreenDirective implements OnChanges, OnDestroy {
 

@@ -15,20 +15,20 @@
 ///
 
 import { ChangeDetectorRef, Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
-import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormArray,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator
-} from '@angular/forms';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketUserProperties } from '@shared/models/ws-client.model';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgFor } from '@angular/common';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 export interface UserProperties {
   props: UserPropertiesObject[];
@@ -40,20 +40,23 @@ export interface UserPropertiesObject {
 }
 
 @Component({
-  selector: 'tb-user-properties',
-  templateUrl: './user-properties.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => UserPropertiesComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => UserPropertiesComponent),
-      multi: true,
-    }],
-  styleUrls: ['./user-properties.component.scss']
+    selector: 'tb-user-properties',
+    templateUrl: './user-properties.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => UserPropertiesComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => UserPropertiesComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./user-properties.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, FlexModule, TranslateModule, NgFor, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, ExtendedModule]
 })
 export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {
 

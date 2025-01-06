@@ -16,7 +16,7 @@
 @use '@angular/material' as mat;
 @use 'theme-overwrites' as overwrites;
 @import '../theme/datepicker-theme';
-@import './scss/constants';
+@import 'constants';
 
 @include mat.all-component-typographies();
 @include mat.core();

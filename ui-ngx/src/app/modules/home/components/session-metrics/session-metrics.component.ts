@@ -29,11 +29,22 @@ import {
   SessionMetricsTable,
   SessionMetricsTranslationMap
 } from '@shared/models/session.model';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
+import { NgFor, NgStyle, NgIf, DatePipe } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-session-metrics',
-  templateUrl: './session-metrics.component.html',
-  styleUrls: ['./session-metrics.component.scss']
+    selector: 'tb-session-metrics',
+    templateUrl: './session-metrics.component.html',
+    styleUrls: ['./session-metrics.component.scss'],
+    standalone: true,
+    imports: [FlexModule, MatIconButton, MatTooltip, MatIcon, MatTable, MatSort, NgFor, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, NgStyle, ExtendedModule, NgIf, TranslateModule, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, DatePipe]
 })
 export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<SessionMetricsTable> {
 

@@ -30,18 +30,31 @@ import { EntityTableConfig } from '@home/models/entity/entities-table-config.mod
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormGroup } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { DialogService } from '@core/services/dialog.service';
 import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
 import { BroadcastService } from '@core/services/broadcast.service';
+import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIconButton, MatFabButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { HelpComponent } from '@shared/components/help.component';
+import { NgIf, NgClass, AsyncPipe } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatTabGroup, MatTab } from '@angular/material/tabs';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 
 @Component({
-  selector: 'tb-entity-details-page',
-  templateUrl: './entity-details-page.component.html',
-  styleUrls: ['./entity-details-page.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entity-details-page',
+    templateUrl: './entity-details-page.component.html',
+    styleUrls: ['./entity-details-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatCard, MatToolbar, FlexModule, MatIconButton, MatTooltip, MatIcon, HelpComponent, NgIf, MatFabButton, NgClass, ExtendedModule, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
 })
 export class EntityDetailsPageComponent extends EntityDetailsPanelComponent implements IEntityDetailsPageComponent, OnInit, OnDestroy {
 

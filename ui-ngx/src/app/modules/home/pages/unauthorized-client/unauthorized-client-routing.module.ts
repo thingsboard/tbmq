@@ -17,12 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { UnauthorizedClientTableComponent } from '@home/pages/unauthorized-client/unauthorized-client-table.component';
+
 
 const routes: Routes = [
   {
     path: 'unauthorized-clients',
-    component: UnauthorizedClientTableComponent,
+    loadComponent: () => import('@home/pages/unauthorized-client/unauthorized-client-table.component').then(m => m.UnauthorizedClientTableComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'unauthorized-client.unauthorized-clients',

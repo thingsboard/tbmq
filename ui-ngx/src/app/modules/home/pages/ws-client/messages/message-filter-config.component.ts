@@ -28,17 +28,28 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService } from '@ngx-translate/core';
 import { deepClone, isNumber } from '@core/utils';
+
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { QoS, QosTranslation } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } from '@shared/models/ws-client.model';
+import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatTooltip } from '@angular/material/tooltip';
 import { takeUntil } from 'rxjs/operators';
 
 export const MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('MessageFilterConfigData');
@@ -51,16 +62,18 @@ export interface MessageFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-message-filter-config',
-  templateUrl: './message-filter-config.component.html',
-  styleUrls: ['./message-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MessageFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-message-filter-config',
+    templateUrl: './message-filter-config.component.html',
+    styleUrls: ['./message-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MessageFilterConfigComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, MatButton, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatTooltip]
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 

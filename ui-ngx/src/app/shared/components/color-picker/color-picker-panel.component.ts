@@ -18,16 +18,22 @@ import { PageComponent } from '@shared/components/page.component';
 import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormControl } from '@angular/forms';
+import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { ColorPickerComponent } from './color-picker.component';
+import { NgIf } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-color-picker-panel',
-  templateUrl: './color-picker-panel.component.html',
-  providers: [],
-  styleUrls: ['./color-picker-panel.component.scss'],
-  encapsulation: ViewEncapsulation.None
+    selector: 'tb-color-picker-panel',
+    templateUrl: './color-picker-panel.component.html',
+    providers: [],
+    styleUrls: ['./color-picker-panel.component.scss'],
+    encapsulation: ViewEncapsulation.None,
+    standalone: true,
+    imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, NgIf, MatButton, TranslateModule]
 })
 export class ColorPickerPanelComponent extends PageComponent implements OnInit {
 

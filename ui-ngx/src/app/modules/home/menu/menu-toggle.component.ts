@@ -14,27 +14,30 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
+import { MatAnchor } from '@angular/material/button';
+import { NgIf, NgClass, NgStyle, NgFor } from '@angular/common';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MenuLinkComponent } from './menu-link.component';
+import { NospacePipe } from '@shared/pipe/nospace.pipe';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-menu-toggle',
-  templateUrl: './menu-toggle.component.html',
-  styleUrls: ['./menu-toggle.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-menu-toggle',
+    templateUrl: './menu-toggle.component.html',
+    styleUrls: ['./menu-toggle.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatAnchor, NgIf, TbIconComponent, NgClass, ExtendedModule, NgStyle, NgFor, MenuLinkComponent, NospacePipe, TranslateModule]
 })
-export class MenuToggleComponent implements OnInit {
+export class MenuToggleComponent {
 
   @Input() section: MenuSection;
 
-  constructor(private router: Router,
-              private store: Store<AppState>) {
-  }
-
-  ngOnInit() {
+  constructor(private router: Router) {
   }
 
   sectionHeight(): string {
@@ -48,7 +51,6 @@ export class MenuToggleComponent implements OnInit {
   toggleSection(event: MouseEvent) {
     event.stopPropagation();
     this.section.opened = !this.section.opened;
-    // this.store.dispatch(new ActionPreferencesUpdateOpenedMenuSection({path: this.section.path, opened: this.section.opened}));
   }
 
   trackBySectionPages(index: number, section: MenuSection){

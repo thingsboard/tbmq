@@ -18,20 +18,36 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AdminSettings, MailServerSettings, smtpPortPattern } from '@shared/models/settings.models';
 import { MailServerService } from '@core/http/mail-server.service';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 import { isDefinedAndNotNull, isString } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { HelpComponent } from '@shared/components/help.component';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField, MatLabel, MatError, MatHint, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent } from '@angular/material/expansion';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-mail-server',
-  templateUrl: './mail-server.component.html',
-  styleUrls: ['./mail-server.component.scss']
+    selector: 'tb-mail-server',
+    templateUrl: './mail-server.component.html',
+    styleUrls: ['./mail-server.component.scss'],
+    standalone: true,
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, FlexModule, HelpComponent, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSelect, NgFor, MatOption, MatHint, MatSlideToggle, TogglePasswordComponent, MatSuffix, MatCheckbox, MatButton, AsyncPipe]
 })
 export class MailServerComponent extends PageComponent implements OnInit, OnDestroy, HasConfirmForm {
 

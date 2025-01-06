@@ -18,7 +18,6 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { Authority } from '@shared/models/authority.enum';
-import { GettingStartedComponent } from '@home/pages/getting-started/getting-started.component';
 import { GettingStartedGuideComponent } from '@home/pages/getting-started/getting-started-guide.component';
 import { BreadCrumbConfig, BreadCrumbLabelFunction } from '@shared/components/breadcrumb';
 import { gettingStartedGuideTitle } from '@shared/models/getting-started.model';
@@ -41,7 +40,7 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        component: GettingStartedComponent,
+        loadComponent: () => import('@home/pages/getting-started/getting-started.component').then(m => m.GettingStartedComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'getting-started.getting-started'
@@ -49,7 +48,7 @@ const routes: Routes = [
       },
       {
         path: ':guideId',
-        component: GettingStartedGuideComponent,
+        loadComponent: () => import('@home/pages/getting-started/getting-started-guide.component').then(m => m.GettingStartedGuideComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           breadcrumb: {

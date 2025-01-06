@@ -22,17 +22,32 @@ import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
-import { MatSidenav } from '@angular/material/sidenav';
+import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
 import { UntypedFormBuilder } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActiveComponentService } from '@core/services/active-component.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { SideMenuComponent } from './menu/side-menu.component';
+import { GettingStartedMenuLinkComponent } from './pages/getting-started/getting-started-menu-link.component';
+import { MatIconButton } from '@angular/material/button';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatIcon } from '@angular/material/icon';
+import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { UserMenuComponent } from '@shared/components/user-menu.component';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { ToastDirective } from '@shared/components/toast.directive';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'tb-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+    selector: 'tb-home',
+    templateUrl: './home.component.html',
+    styleUrls: ['./home.component.scss'],
+    standalone: true,
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, FlexModule, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, ExtendedModule, MatIcon, BreadcrumbComponent, NgIf, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 

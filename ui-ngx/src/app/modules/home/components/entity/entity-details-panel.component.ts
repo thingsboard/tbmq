@@ -44,12 +44,20 @@ import { Observable, ReplaySubject, Subscription } from 'rxjs';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { EntityTabsComponent } from '@home/components/entity/entity-tabs.component';
 import { deepClone, mergeDeep } from '@core/utils';
+import { DetailsPanelComponent } from '../details-panel.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { HelpComponent } from '@shared/components/help.component';
+import { NgClass } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-entity-details-panel',
-  templateUrl: './entity-details-panel.component.html',
-  styleUrls: ['./entity-details-panel.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entity-details-panel',
+    templateUrl: './entity-details-panel.component.html',
+    styleUrls: ['./entity-details-panel.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [DetailsPanelComponent, FlexModule, HelpComponent, MatTabGroup, NgClass, ExtendedModule, MatTab, TbAnchorComponent, TranslateModule]
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {
 

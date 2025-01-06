@@ -1170,7 +1170,7 @@
     "clear-empty-subscription-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>subscription</a> nodes.",
     "clear-empty-subscription-nodes-title": "Clear empty subscription nodes?",
     "color": "Color",
-    "copy-topic": "Copy Topic Filter",
+    "copy-topic": "Copy topic filter",
     "delete-subscription": "Delete Subscription",
     "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",
     "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",

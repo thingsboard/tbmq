@@ -15,11 +15,14 @@
 ///
 
 import { Component, Inject } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
 import { DialogComponent } from '@shared/components/dialog.component';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { ColorPickerPanelComponent } from '../color-picker/color-picker-panel.component';
 
 export interface ColorPickerDialogData {
   color: string;
@@ -32,9 +35,11 @@ export interface ColorPickerDialogResult {
 }
 
 @Component({
-  selector: 'tb-color-picker-dialog',
-  templateUrl: './color-picker-dialog.component.html',
-  styleUrls: ['./color-picker-dialog.component.scss']
+    selector: 'tb-color-picker-dialog',
+    templateUrl: './color-picker-dialog.component.html',
+    styleUrls: ['./color-picker-dialog.component.scss'],
+    standalone: true,
+    imports: [MatDialogContent, MatIconButton, MatIcon, ColorPickerPanelComponent]
 })
 export class ColorPickerDialogComponent extends DialogComponent<ColorPickerDialogComponent, ColorPickerDialogResult> {
 

@@ -19,10 +19,14 @@ import { EntitiesTableComponent } from '@home/components/entity/entities-table.c
 import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
 import { TranslateService } from '@ngx-translate/core';
+import { NgClass } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
-  selector: 'tb-kafka-topics-table',
-  templateUrl: './kafka-topics-table.component.html'
+    selector: 'tb-kafka-topics-table',
+    templateUrl: './kafka-topics-table.component.html',
+    standalone: true,
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class KafkaTopicsTableComponent implements OnInit {
 

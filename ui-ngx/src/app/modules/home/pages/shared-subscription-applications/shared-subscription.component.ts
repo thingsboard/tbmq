@@ -15,18 +15,29 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { SharedSubscription } from "@shared/models/shared-subscription.model";
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatButton } from '@angular/material/button';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { NgIf, AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'tb-shared-subscriptions',
-  templateUrl: './shared-subscription.component.html',
-  styleUrls: ['./shared-subscription.component.scss']
+    selector: 'tb-shared-subscriptions',
+    templateUrl: './shared-subscription.component.html',
+    styleUrls: ['./shared-subscription.component.scss'],
+    standalone: true,
+    imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, CopyButtonComponent, MatSuffix, AsyncPipe]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
 

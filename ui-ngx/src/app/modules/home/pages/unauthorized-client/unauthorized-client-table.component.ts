@@ -17,16 +17,19 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { DialogService } from '@core/services/dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { UnauthorizedClientTableConfig } from '@home/pages/unauthorized-client/unauthorized-client-table-config';
 import { UnauthorizedClientService } from '@core/http/unauthorized-client.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
-  selector: 'tb-unauthorized-client-table',
-  templateUrl: './unauthorized-client-table.component.html'
+    selector: 'tb-unauthorized-client-table',
+    templateUrl: './unauthorized-client-table.component.html',
+    standalone: true,
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class UnauthorizedClientTableComponent implements OnInit {
 

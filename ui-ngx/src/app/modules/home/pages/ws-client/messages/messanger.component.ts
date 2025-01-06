@@ -17,7 +17,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, FormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -36,12 +37,31 @@ import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
 import { map } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { TranslateModule } from '@ngx-translate/core';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MessageFilterConfigComponent } from './message-filter-config.component';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { NgClass, NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MessagesComponent } from './messages.component';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { ColorInputComponent } from '@shared/components/color-input.component';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
+import { WsJsonObjectEditComponent } from './ws-json-object-edit.component';
+import { MatIcon } from '@angular/material/icon';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 
 @Component({
-  selector: 'tb-messanger',
-  templateUrl: './messanger.component.html',
-  styleUrls: ['./messanger.component.scss']
+    selector: 'tb-messanger',
+    templateUrl: './messanger.component.html',
+    styleUrls: ['./messanger.component.scss'],
+    standalone: true,
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe]
 })
 export class MessangerComponent implements OnInit {
 

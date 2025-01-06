@@ -28,20 +28,28 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { TranslateService } from '@ngx-translate/core';
+
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isNumber } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 import { ClientSubscriptionFilterConfig, subscriptionsFilterConfigEquals } from '@shared/models/subscription.model';
-import { QoS} from '@shared/models/session.model';
+import { QoS, QosTranslation } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
-import { QosTranslation } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
+import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 
 export const SUBSCRIPTIONS_FILTER_CONFIG_DATA = new InjectionToken<any>('SubscriptionsFilterConfigData');
 
@@ -53,16 +61,18 @@ export interface SubscriptionsFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-subscriptions-filter-config',
-  templateUrl: './subscriptions-filter-config.component.html',
-  styleUrls: ['./subscriptions-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SubscriptionsFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-subscriptions-filter-config',
+    templateUrl: './subscriptions-filter-config.component.html',
+    styleUrls: ['./subscriptions-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SubscriptionsFilterConfigComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatError]
 })
 export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

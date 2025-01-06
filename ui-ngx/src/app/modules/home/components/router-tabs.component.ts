@@ -18,18 +18,25 @@ import { Component, ComponentRef, OnInit, Type, ViewChild } from '@angular/core'
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLinkActive, RouterLink, RouterOutlet } from '@angular/router';
 import { MenuService } from '@core/services/menu.service';
 import { distinctUntilChanged, filter, map, mergeMap, startWith, take } from 'rxjs/operators';
 import { merge, Observable } from 'rxjs';
 import { MenuSection } from '@core/services/menu.models';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { MatTabNav, MatTabLink, MatTabNavPanel } from '@angular/material/tabs';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-router-tabs',
-  templateUrl: './router-tabs.component.html',
-  styleUrls: ['./router-tabs.component.scss']
+    selector: 'tb-router-tabs',
+    templateUrl: './router-tabs.component.html',
+    styleUrls: ['./router-tabs.component.scss'],
+    standalone: true,
+    imports: [FlexModule, NgIf, MatTabNav, NgFor, RouterLinkActive, MatTabLink, RouterLink, TbIconComponent, TbAnchorComponent, MatTabNavPanel, RouterOutlet, AsyncPipe, TranslateModule]
 })
 export class RouterTabsComponent extends PageComponent implements OnInit {
 
@@ -118,7 +125,7 @@ export class RouterTabsComponent extends PageComponent implements OnInit {
     if (activatedRoute.routeConfig.children.length) {
       const activeRouterChildren = activatedRoute.routeConfig.children.filter(page => page.path !== '');
       return activeRouterChildren.map(tab => ({
-        id: tab.component.name,
+        id: tab.path,
         type: 'link',
         name: tab.data?.breadcrumb?.label ?? '',
         icon: tab.data?.breadcrumb?.icon ?? '',

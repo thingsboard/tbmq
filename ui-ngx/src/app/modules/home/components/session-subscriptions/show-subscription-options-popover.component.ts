@@ -15,13 +15,26 @@
 ///
 
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RhOptions, TopicSubscription } from '@shared/models/ws-client.model';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { NgTemplateOutlet, NgFor, NgIf } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatInput } from '@angular/material/input';
 
 @Component({
-  selector: 'tb-show-subscription-options',
-  templateUrl: './show-subscription-options-popover.component.html',
-  styleUrls: []
+    selector: 'tb-show-subscription-options',
+    templateUrl: './show-subscription-options-popover.component.html',
+    styleUrls: [],
+    standalone: true,
+    imports: [FormsModule, FlexModule, NgTemplateOutlet, MatButton, ReactiveFormsModule, TranslateModule, MatFormField, MatSelect, NgFor, MatOption, MatSlideToggle, MatIcon, MatTooltip, MatInput, MatSuffix, NgIf, MatError]
 })
 export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestroy {
 

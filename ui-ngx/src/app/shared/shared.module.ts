@@ -79,7 +79,6 @@ import { FooterFabButtonsComponent } from '@shared/components/footer-fab-buttons
 import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { ConfirmDialogComponent } from '@shared/components/dialog/confirm-dialog.component';
 import { AlertDialogComponent } from '@shared/components/dialog/alert-dialog.component';
-import { DndModule } from 'ngx-drag-drop';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
@@ -89,7 +88,6 @@ import { TimewindowPanelComponent } from '@shared/components/time/timewindow-pan
 import { TimeintervalComponent } from '@shared/components/time/timeinterval.component';
 import { DatetimePeriodComponent } from '@shared/components/time/datetime-period.component';
 import { DatetimeComponent } from '@shared/components/time/datetime.component';
-import { TimezoneSelectComponent } from '@shared/components/time/timezone-select.component';
 import { QuickTimeIntervalComponent } from '@shared/components/time/quick-time-interval.component';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
@@ -106,7 +104,7 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
-import { HELP_MARKDOWN_COMPONENT_TOKEN, SHARED_MODULE_TOKEN } from '@shared/components/tokens';
+import { HELP_MARKDOWN_COMPONENT_TOKEN } from '@shared/components/tokens';
 import { MarkedOptionsService } from '@shared/components/marked-options.service';
 import { ValueInputComponent } from '@shared/components/value-input.component';
 import { JsonObjectEditDialogComponent } from '@shared/components/dialog/json-object-edit-dialog.component';
@@ -143,88 +141,15 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TruncatePipe,
     MillisecondsToTimeStringPipe,
     {
-      provide: MAT_DATE_LOCALE,
-      useValue: 'en-GB'
+        provide: MAT_DATE_LOCALE,
+        useValue: 'en-GB'
     },
     {
-      provide: SHARED_MODULE_TOKEN,
-      useValue: SharedModule
-    },
-    {
-      provide: HELP_MARKDOWN_COMPONENT_TOKEN,
-      useValue: HelpMarkdownComponent
+        provide: HELP_MARKDOWN_COMPONENT_TOKEN,
+        useValue: HelpMarkdownComponent
     },
     TbBreakPointsProvider,
     TbPopoverService
-  ],
-  declarations: [
-    FooterComponent,
-    LogoComponent,
-    FooterFabButtonsComponent,
-    ToastDirective,
-    FullscreenDirective,
-    TbIconComponent,
-    SafePipe,
-    TbAnchorComponent,
-    SelectableColumnsPipe,
-    DateAgoPipe,
-    ShortNumberPipe,
-    TbJsonPipe,
-    TruncatePipe,
-    HelpComponent,
-    TbCheckboxComponent,
-    TbSnackBarComponent,
-    TbErrorComponent,
-    BreadcrumbComponent,
-    UserMenuComponent,
-    ConfirmDialogComponent,
-    AlertDialogComponent,
-    NospacePipe,
-    MillisecondsToTimeStringPipe,
-    HighlightPipe,
-    BooleanPipe,
-    CopyButtonComponent,
-    EditClientCredentialsButtonComponent,
-    CardTitleButtonComponent,
-    CopyContentButtonComponent,
-    TogglePasswordComponent,
-    TimewindowComponent,
-    TimewindowPanelComponent,
-    TimeintervalComponent,
-    TimezoneSelectComponent,
-    DatetimePeriodComponent,
-    DatetimeComponent,
-    QuickTimeIntervalComponent,
-    EntitySubTypeListComponent,
-    ToggleHeaderComponent,
-    ToggleSelectComponent,
-    ToggleOption,
-    MdLgLayoutDirective,
-    MdLgLayoutAlignDirective,
-    MdLgLayoutGapDirective,
-    MdLgShowHideDirective,
-    GtMdLgLayoutDirective,
-    GtMdLgLayoutAlignDirective,
-    GtMdLgLayoutGapDirective,
-    GtMdLgShowHideDirective,
-    LtXmdShowHideDirective,
-    TbMarkdownComponent,
-    ValueInputComponent,
-    JsonObjectEditDialogComponent,
-    TbJsonToStringDirective,
-    JsonObjectEditComponent,
-    ColorInputComponent,
-    ColorPickerPanelComponent,
-    HexInputComponent,
-    TbPopoverDirective,
-    ColorPickerDialogComponent,
-    HelpMarkdownComponent,
-    TbPopoverComponent,
-    TbComponentOutletDirective,
-    ColorPickerComponent,
-    HelpPageComponent,
-    HintTooltipIconComponent,
-    QosSelectComponent,
   ],
   imports: [
     CommonModule,
@@ -263,24 +188,89 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     MatNativeDatetimeModule,
     MatDatetimepickerModule,
     ClipboardModule,
-    FlexLayoutModule.withConfig({addFlexToParent: false}),
+    FlexLayoutModule.withConfig({ addFlexToParent: false }),
     FormsModule,
     ReactiveFormsModule,
     OverlayModule,
     NgxHmCarouselComponent,
     NgxHmCarouselDynamicDirective,
     NgxHmCarouselItemDirective,
-    DndModule,
     ColorPickerModule,
     // ngx-markdown
     MarkdownModule.forRoot({
-      sanitize: SecurityContext.NONE,
-      markedOptions: {
-        provide: MARKED_OPTIONS,
-        useFactory: MarkedOptionsFactory,
-        deps: [MarkedOptionsService]
-      }
-    })
+        sanitize: SecurityContext.NONE,
+        markedOptions: {
+            provide: MARKED_OPTIONS,
+            useFactory: MarkedOptionsFactory,
+            deps: [MarkedOptionsService]
+        }
+    }),
+    FooterComponent,
+    LogoComponent,
+    FooterFabButtonsComponent,
+    ToastDirective,
+    FullscreenDirective,
+    TbIconComponent,
+    SafePipe,
+    TbAnchorComponent,
+    SelectableColumnsPipe,
+    DateAgoPipe,
+    ShortNumberPipe,
+    TbJsonPipe,
+    TruncatePipe,
+    HelpComponent,
+    TbCheckboxComponent,
+    TbSnackBarComponent,
+    TbErrorComponent,
+    BreadcrumbComponent,
+    UserMenuComponent,
+    ConfirmDialogComponent,
+    AlertDialogComponent,
+    NospacePipe,
+    MillisecondsToTimeStringPipe,
+    HighlightPipe,
+    BooleanPipe,
+    CopyButtonComponent,
+    EditClientCredentialsButtonComponent,
+    CardTitleButtonComponent,
+    CopyContentButtonComponent,
+    TogglePasswordComponent,
+    TimewindowComponent,
+    TimewindowPanelComponent,
+    TimeintervalComponent,
+    DatetimePeriodComponent,
+    DatetimeComponent,
+    QuickTimeIntervalComponent,
+    EntitySubTypeListComponent,
+    ToggleHeaderComponent,
+    ToggleSelectComponent,
+    ToggleOption,
+    MdLgLayoutDirective,
+    MdLgLayoutAlignDirective,
+    MdLgLayoutGapDirective,
+    MdLgShowHideDirective,
+    GtMdLgLayoutDirective,
+    GtMdLgLayoutAlignDirective,
+    GtMdLgLayoutGapDirective,
+    GtMdLgShowHideDirective,
+    LtXmdShowHideDirective,
+    TbMarkdownComponent,
+    ValueInputComponent,
+    JsonObjectEditDialogComponent,
+    TbJsonToStringDirective,
+    JsonObjectEditComponent,
+    ColorInputComponent,
+    ColorPickerPanelComponent,
+    HexInputComponent,
+    TbPopoverDirective,
+    ColorPickerDialogComponent,
+    HelpMarkdownComponent,
+    TbPopoverComponent,
+    TbComponentOutletDirective,
+    ColorPickerComponent,
+    HelpPageComponent,
+    HintTooltipIconComponent,
+    QosSelectComponent,
   ],
   exports: [
     FooterComponent,
@@ -341,7 +331,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     NgxHmCarouselComponent,
     NgxHmCarouselDynamicDirective,
     NgxHmCarouselItemDirective,
-    DndModule,
     MarkdownModule,
     ConfirmDialogComponent,
     AlertDialogComponent,
@@ -357,7 +346,6 @@ export function MarkedOptionsFactory(markedOptionsService: MarkedOptionsService)
     TimewindowComponent,
     TimewindowPanelComponent,
     TimeintervalComponent,
-    TimezoneSelectComponent,
     DatetimePeriodComponent,
     DatetimeComponent,
     QuickTimeIntervalComponent,

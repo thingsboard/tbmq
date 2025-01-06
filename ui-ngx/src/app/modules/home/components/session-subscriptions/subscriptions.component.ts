@@ -14,45 +14,52 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  UntypedFormArray,
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  ValidationErrors,
-  Validators
-} from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Component, forwardRef, Input, OnInit, OnDestroy } from '@angular/core';
+import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { PageComponent } from '@shared/components/page.component';
+import { Subscription } from 'rxjs';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
+import { DEFAULT_QOS, QoS  } from '@shared/models/session.model';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatLabel, MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
+import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { MatInput } from '@angular/material/input';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { SubscriptionOptionsComponent } from './subscription-options.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
-  selector: 'tb-session-subscriptions',
-  templateUrl: './subscriptions.component.html',
-  styleUrls: ['./subscriptions.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SubscriptionsComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => SubscriptionsComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-session-subscriptions',
+    templateUrl: './subscriptions.component.html',
+    styleUrls: ['./subscriptions.component.scss'],
+    providers: [{
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SubscriptionsComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => SubscriptionsComponent),
+            multi: true
+        }],
+    standalone: true,
+    imports: [TranslateModule, FlexModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, NgIf, MatError, MatSelect, MatOption, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe]
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
   @Input() disabled: boolean;
 
   topicListFormGroup: UntypedFormGroup;
+  mqttQoSTypes = mqttQoSTypes;
 
   private propagateChange = (v: any) => {};
   private destroy$ = new Subject<void>();

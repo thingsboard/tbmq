@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const child_process = require("child_process");
+const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 const typeDir = path.join('.', 'target', 'types');
 const srcDir = path.join('.', 'target', 'types', 'src');
 const stylesCss = path.join(srcDir, 'styles.css');
-const moduleMapPath = path.join('src', 'app', 'modules', 'common', 'modules-map.ts');
 const ngcPath = path.join('.', 'node_modules', '.bin', 'ngc');
 const tailwindcss = path.join('.', 'node_modules', '.bin', 'tailwindcss');
 const tsconfigPath = path.join('src', 'tsconfig.app.json');
@@ -42,7 +41,6 @@ fromDir(srcDir, /(\.js|\.js\.map)$/, function (filename) {
     console.error(`Remove file error ${filename}: ${err}`);
   }
 });
-fs.cpSync(moduleMapPath, `${typeDir}/${moduleMapPath}`);
 
 const generateStyleCssCommand = `${tailwindcss} -o ${stylesCss} --minify`;
 executeCliCommand(generateStyleCssCommand, 'Generate styles.css');

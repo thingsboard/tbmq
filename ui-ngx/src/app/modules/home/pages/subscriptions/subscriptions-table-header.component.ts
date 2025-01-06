@@ -23,11 +23,15 @@ import {
   ClientSubscriptionFilterConfig,
 } from '@shared/models/subscription.model';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
+import { SubscriptionsFilterConfigComponent } from './subscriptions-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-subscriptions-table-header',
-  templateUrl: './subscriptions-table-header.component.html',
-  styleUrls: ['./subscriptions-table-header.component.scss']
+    selector: 'tb-subscriptions-table-header',
+    templateUrl: './subscriptions-table-header.component.html',
+    styleUrls: ['./subscriptions-table-header.component.scss'],
+    standalone: true,
+    imports: [SubscriptionsFilterConfigComponent, FormsModule]
 })
 export class SubscriptionsTableHeaderComponent extends EntityTableHeaderComponent<ClientSubscription> {
 

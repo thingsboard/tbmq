@@ -20,11 +20,15 @@ import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { RetainedMessagesTableConfig } from '@home/pages/retained-messages/retained-messages-table-config';
 import { RetainedMessage, RetainedMessagesFilterConfig } from '@shared/models/retained-message.model';
+import { RetainedMessagesFilterConfigComponent } from './retained-messages-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-retained-messages-table-header',
-  templateUrl: './retained-messages-table-header.component.html',
-  styleUrls: ['./retained-messages-table-header.component.scss']
+    selector: 'tb-retained-messages-table-header',
+    templateUrl: './retained-messages-table-header.component.html',
+    styleUrls: ['./retained-messages-table-header.component.scss'],
+    standalone: true,
+    imports: [RetainedMessagesFilterConfigComponent, FormsModule]
 })
 export class RetainedMessagesTableHeaderComponent extends EntityTableHeaderComponent<RetainedMessage> {
 

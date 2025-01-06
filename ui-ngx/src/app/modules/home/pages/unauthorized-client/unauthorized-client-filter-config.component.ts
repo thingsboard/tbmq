@@ -28,12 +28,12 @@ import {
   ViewChild,
   ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
@@ -42,6 +42,14 @@ import {
   UnauthorizedClientFilterConfig,
   unauthorizedClientFilterConfigEquals
 } from '@shared/models/unauthorized-client.model';
+import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { takeUntil } from 'rxjs/operators';
 
 export const UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA = new InjectionToken<any>('UnauthorizedClientFilterConfigData');
@@ -54,16 +62,18 @@ export interface UnauthorizedClientFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-unauthorized-client-filter-config',
-  templateUrl: './unauthorized-client-filter-config.component.html',
-  styleUrls: ['./unauthorized-client-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => UnauthorizedClientFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-unauthorized-client-filter-config',
+    templateUrl: './unauthorized-client-filter-config.component.html',
+    styleUrls: ['./unauthorized-client-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => UnauthorizedClientFilterConfigComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption]
 })
 export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

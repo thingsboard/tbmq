@@ -31,12 +31,12 @@ import { AppState } from '@core/core.state';
 import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
 import { tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { merge, Observable, Subscription } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
@@ -56,12 +56,25 @@ import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { NgFor, NgClass, NgStyle, NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatIconButton } from '@angular/material/button';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-entities-table-ws',
-  templateUrl: './entities-table-ws.component.html',
-  styleUrls: ['./entities-table-ws.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entities-table-ws',
+    templateUrl: './entities-table-ws.component.html',
+    styleUrls: ['./entities-table-ws.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, ExtendedModule, NgFor, MatSortHeader, NgClass, NgStyle, MatTooltip, NgIf, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatIconButton, TbIconComponent, FlexModule, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
 

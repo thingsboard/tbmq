@@ -28,11 +28,22 @@ import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { SettingsService } from '@core/http/settings.service';
+import { NgIf, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { ConnectionsComponent } from './connections/connections.component';
+import { SubscriptionsComponent } from './subscriptions/subscriptions.component';
+import { HelpPageComponent } from '@shared/components/help-page.component';
+import { ConnectionControllerComponent } from './connections/connection-controller.component';
+import { MessangerComponent } from './messages/messanger.component';
 
 @Component({
-  selector: 'tb-ws-client',
-  templateUrl: './ws-client.component.html',
-  styleUrls: ['./ws-client.component.scss']
+    selector: 'tb-ws-client',
+    templateUrl: './ws-client.component.html',
+    styleUrls: ['./ws-client.component.scss'],
+    standalone: true,
+    imports: [NgIf, NgTemplateOutlet, FlexModule, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe]
 })
 export class WsClientComponent extends PageComponent implements OnInit {
 

@@ -15,20 +15,28 @@
 ///
 
 import { Component, forwardRef, Input, OnInit } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { QuickTimeInterval, QuickTimeIntervalTranslationMap } from '@shared/models/time/time.models';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatSelect } from '@angular/material/select';
+import { NgFor } from '@angular/common';
+import { MatOption } from '@angular/material/core';
 
 @Component({
-  selector: 'tb-quick-time-interval',
-  templateUrl: './quick-time-interval.component.html',
-  styleUrls: ['./quick-time-interval.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => QuickTimeIntervalComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-quick-time-interval',
+    templateUrl: './quick-time-interval.component.html',
+    styleUrls: ['./quick-time-interval.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => QuickTimeIntervalComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, NgFor, MatOption]
 })
 export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor {
 

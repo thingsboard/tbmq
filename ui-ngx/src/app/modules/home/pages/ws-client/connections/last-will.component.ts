@@ -15,42 +15,44 @@
 ///
 
 import { Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
-import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator
-} from '@angular/forms';
-import { Subject } from 'rxjs';
-import {
-  LastWillMsg,
-  TimeUnitTypeTranslationMap,
-  WebSocketConnection,
-  WebSocketTimeUnit
-} from '@shared/models/ws-client.model';
-import { isDefinedAndNotNull } from '@core/utils';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
+import { TimeUnitTypeTranslationMap, WebSocketConnection, WebSocketTimeUnit } from '@shared/models/ws-client.model';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatInput } from '@angular/material/input';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatSelect } from '@angular/material/select';
+import { NgFor } from '@angular/common';
+import { MatOption } from '@angular/material/core';
+import { ValueInputComponent } from '@shared/components/value-input.component';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
-  selector: 'tb-last-will',
-  templateUrl: './last-will.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => LastWillComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => LastWillComponent),
-      multi: true,
-    }
-  ],
-  styleUrls: ['./last-will.component.scss']
+    selector: 'tb-last-will',
+    templateUrl: './last-will.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => LastWillComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => LastWillComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./last-will.component.scss'],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

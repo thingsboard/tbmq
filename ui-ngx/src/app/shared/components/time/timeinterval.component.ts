@@ -15,25 +15,36 @@
 ///
 
 import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { TimeService } from '@core/services/time.service';
 import { coerceNumberProperty } from '@angular/cdk/coercion';
-import { SubscriptSizing } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField, MatLabel } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Interval, IntervalMath, TimeInterval } from '@shared/models/time/time.models';
 import { isDefined } from '@core/utils';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { ExtendedModule } from '@angular/flex-layout/extended';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { MatInput } from '@angular/material/input';
+import { NgIf, NgFor } from '@angular/common';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({
-  selector: 'tb-timeinterval',
-  templateUrl: './timeinterval.component.html',
-  styleUrls: ['./timeinterval.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TimeintervalComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-timeinterval',
+    templateUrl: './timeinterval.component.html',
+    styleUrls: ['./timeinterval.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TimeintervalComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [FlexModule, ExtendedModule, TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, NgIf, MatSelect, NgFor, MatOption, MatSlideToggle]
 })
 export class TimeintervalComponent implements OnInit, ControlValueAccessor {
 

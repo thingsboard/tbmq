@@ -17,7 +17,10 @@
 import { Pipe, PipeTransform } from '@angular/core';
 // import { DisplayColumn } from '@home/components/widget/lib/table-widget.models';
 
-@Pipe({ name: 'selectableColumns' })
+@Pipe({
+    name: 'selectableColumns',
+    standalone: true
+})
 export class SelectableColumnsPipe implements PipeTransform {
   transform(allColumns: any[]): any[] {
     return allColumns.filter(column => column.selectable);

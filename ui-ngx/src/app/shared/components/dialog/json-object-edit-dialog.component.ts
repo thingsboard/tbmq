@@ -19,10 +19,18 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { FormBuilder, FormGroup } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { isNotEmptyStr } from '@core/utils';
+import { MatToolbar } from '@angular/material/toolbar';
+import { FlexModule } from '@angular/flex-layout/flex';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgIf, AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { CdkScrollable } from '@angular/cdk/scrolling';
+import { JsonObjectEditComponent } from '../json-object-edit.component';
 
 export interface JsonObjectEditDialogData {
   jsonValue: object;
@@ -33,9 +41,11 @@ export interface JsonObjectEditDialogData {
 }
 
 @Component({
-  selector: 'tb-object-edit-dialog',
-  templateUrl: './json-object-edit-dialog.component.html',
-  styleUrls: []
+    selector: 'tb-object-edit-dialog',
+    templateUrl: './json-object-edit-dialog.component.html',
+    styleUrls: [],
+    standalone: true,
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, JsonObjectEditComponent, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class JsonObjectEditDialogComponent extends DialogComponent<JsonObjectEditDialogComponent, object> {
 

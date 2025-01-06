@@ -19,11 +19,15 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { ClientCredentialsFilterConfig, ClientCredentials } from '@shared/models/credentials.model';
+import { ClientCredentialsFilterConfigComponent } from './client-credentials-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-client-credentials-table-header',
-  templateUrl: './client-credentials-table-header.component.html',
-  styleUrls: ['./client-credentials-table-header.component.scss']
+    selector: 'tb-client-credentials-table-header',
+    templateUrl: './client-credentials-table-header.component.html',
+    styleUrls: ['./client-credentials-table-header.component.scss'],
+    standalone: true,
+    imports: [ClientCredentialsFilterConfigComponent, FormsModule]
 })
 export class ClientCredentialsTableHeaderComponent extends EntityTableHeaderComponent<ClientCredentials> {
 

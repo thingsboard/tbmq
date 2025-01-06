@@ -16,17 +16,22 @@
 
 import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import {
   ShowSubscriptionOptionsPopoverComponent
 } from '@home/components/session-subscriptions/show-subscription-options-popover.component';
 import { AbstractControl } from '@angular/forms';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-subscription-options',
-  templateUrl: './subscription-options.component.html',
-  styleUrls: []
+    selector: 'tb-subscription-options',
+    templateUrl: './subscription-options.component.html',
+    styleUrls: [],
+    standalone: true,
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class SubscriptionOptionsComponent {
 

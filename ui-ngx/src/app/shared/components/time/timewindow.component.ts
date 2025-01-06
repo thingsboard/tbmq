@@ -29,11 +29,10 @@ import {
   ViewContainerRef
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MillisecondsToTimeStringPipe } from '@shared/pipe/milliseconds-to-time-string.pipe';
 import {
   cloneSelectedTimewindow,
-  getTimezoneInfo,
   HistoryWindowType,
   initModelFromDefaultTimewindow,
   QuickTimeIntervalTranslationMap,
@@ -41,14 +40,14 @@ import {
   Timewindow,
   TimewindowType
 } from '@shared/models/time/time.models';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgIf } from '@angular/common';
 import {
   TIMEWINDOW_PANEL_DATA,
   TimewindowPanelComponent,
   TimewindowPanelData
 } from '@shared/components/time/timewindow-panel.component';
 import { TimeService } from '@core/services/time.service';
-import { TooltipPosition } from '@angular/material/tooltip';
+import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
@@ -63,19 +62,25 @@ import {
 } from '@shared/models/widget-settings.models';
 import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { TbIconComponent } from '../icon.component';
+import { ExtendedModule } from '@angular/flex-layout/extended';
 
 // @dynamic
 @Component({
-  selector: 'tb-timewindow',
-  templateUrl: './timewindow.component.html',
-  styleUrls: ['./timewindow.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TimewindowComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-timewindow',
+    templateUrl: './timewindow.component.html',
+    styleUrls: ['./timewindow.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TimewindowComponent),
+            multi: true
+        }
+    ],
+    standalone: true,
+    imports: [NgIf, MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule]
 })
 export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChanges {
 
@@ -352,12 +357,7 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
         this.innerValue.displayValue += this.translate.instant('timewindow.period', {startTime: startString, endTime: endString});
       }
     }
-    if (isDefinedAndNotNull(this.innerValue.timezone) && this.innerValue.timezone !== '') {
-      this.innerValue.displayValue += ' ';
-      this.innerValue.displayTimezoneAbbr = getTimezoneInfo(this.innerValue.timezone).abbr;
-    } else {
-      this.innerValue.displayTimezoneAbbr = '';
-    }
+    this.innerValue.displayTimezoneAbbr = '';
     this.cd.detectChanges();
   }
 

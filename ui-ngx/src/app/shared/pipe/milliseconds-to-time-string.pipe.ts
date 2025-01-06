@@ -18,7 +18,8 @@ import { Pipe, PipeTransform } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({
-  name: 'milliSecondsToTimeString'
+    name: 'milliSecondsToTimeString',
+    standalone: true
 })
 export class MillisecondsToTimeStringPipe implements PipeTransform {
 

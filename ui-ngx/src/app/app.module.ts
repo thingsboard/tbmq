@@ -14,16 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BrowserModule } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
-
-import { AppRoutingModule } from './app-routing.module';
-import { CoreModule } from '@core/core.module';
-import { LoginModule } from '@modules/login/login.module';
-import { HomeModule } from '@home/home.module';
-
-import { AppComponent } from './app.component';
 import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
@@ -39,22 +30,3 @@ const routes: Routes = [
   exports: [RouterModule]
 })
 export class PageNotFoundRoutingModule { }
-
-
-@NgModule({
-  declarations: [
-    AppComponent
-  ],
-  imports: [
-    BrowserModule,
-    BrowserAnimationsModule,
-    AppRoutingModule,
-    CoreModule,
-    LoginModule,
-    HomeModule,
-    PageNotFoundRoutingModule
-  ],
-  providers: [],
-  bootstrap: [AppComponent]
-})
-export class AppModule { }
