@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, OnDestroy, OnInit } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -26,48 +26,51 @@ import {
   ValidationErrors,
   Validators
 } from '@angular/forms';
-import { PageComponent } from '@shared/components/page.component';
-import { Subscription } from 'rxjs';
-import { AppState } from '@core/core.state';
-import { Store } from '@ngrx/store';
-import { MqttQoS, MqttQoSType, mqttQoSTypes } from '@shared/models/session.model';
-import { TranslateService } from '@ngx-translate/core';
+import { Subject } from 'rxjs';
 import { TopicSubscription } from '@shared/models/ws-client.model';
+import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'tb-session-subscriptions',
   templateUrl: './subscriptions.component.html',
   styleUrls: ['./subscriptions.component.scss'],
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => SubscriptionsComponent),
-    multi: true
-  },
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => SubscriptionsComponent),
+      multi: true
+    },
     {
       provide: NG_VALIDATORS,
       useExisting: forwardRef(() => SubscriptionsComponent),
       multi: true
-    }]
+    }
+  ]
 })
-export class SubscriptionsComponent extends PageComponent implements ControlValueAccessor, OnInit {
+export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
   @Input() disabled: boolean;
 
   topicListFormGroup: UntypedFormGroup;
-  mqttQoSTypes = mqttQoSTypes;
 
   private propagateChange = (v: any) => {};
-  private valueChangeSubscription: Subscription = null;
+  private destroy$ = new Subject<void>();
 
-  constructor(protected store: Store<AppState>,
-              private translate: TranslateService,
-              private fb: UntypedFormBuilder) {
-    super(store);
+  constructor(private fb: UntypedFormBuilder) {
   }
 
   ngOnInit(): void {
     this.topicListFormGroup = this.fb.group({});
     this.topicListFormGroup.addControl('subscriptions', this.fb.array([]));
+    this.topicListFormGroup.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateModel());
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   subscriptionsFormArray(): UntypedFormArray {
@@ -85,24 +88,23 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     this.disabled = isDisabled;
     if (this.disabled) {
       this.topicListFormGroup.disable({emitEvent: false});
+    } else {
+      this.topicListFormGroup.enable({emitEvent: false});
     }
   }
 
   writeValue(topics: TopicSubscription[]): void {
-    if (this.valueChangeSubscription) {
-      this.valueChangeSubscription.unsubscribe();
-    }
     const subscriptionsControls: Array<AbstractControl> = [];
-    if (topics) {
-      for (const topic of topics) {
-        const topicControl = this.fb.group(topic);
-        subscriptionsControls.push(topicControl);
+    if (topics?.length) {
+      if (topics) {
+        for (let topic of topics) {
+          topic.qos = QoS[topic.qos] as unknown as QoS;
+          const topicControl = this.fb.group(topic);
+          subscriptionsControls.push(topicControl);
+        }
       }
     }
     this.topicListFormGroup.setControl('subscriptions', this.fb.array(subscriptionsControls));
-    this.valueChangeSubscription = this.topicListFormGroup.valueChanges.subscribe(() => {
-      this.updateView();
-    });
   }
 
   removeTopic(index: number) {
@@ -112,7 +114,7 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
   addTopic() {
     const group = this.fb.group({
       topicFilter: [null, [Validators.required]],
-      qos: [MqttQoS.AT_LEAST_ONCE, []],
+      qos: [DEFAULT_QOS, []],
       subscriptionId: [null, []],
       options: this.fb.group({
         retainAsPublish: [false, []],
@@ -129,15 +131,11 @@ export class SubscriptionsComponent extends PageComponent implements ControlValu
     };
   }
 
-  mqttQoSValue(mqttQoSValue: MqttQoSType): string {
-    return this.translate.instant(mqttQoSValue.name);
-  }
-
   subscriptionOptionsChanged(value: TopicSubscription, topicFilter: AbstractControl<TopicSubscription>) {
     topicFilter.patchValue(value);
   }
 
-  private updateView() {
+  private updateModel() {
     this.propagateChange(this.topicListFormGroup.getRawValue().subscriptions);
   }
 }

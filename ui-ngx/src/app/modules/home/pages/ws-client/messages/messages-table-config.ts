@@ -27,7 +27,7 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
-import { WsQoSTranslationMap } from '@shared/models/session.model';
+import { QosTranslation } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
 import {
   isDefinedProps,
@@ -86,7 +86,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
       new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic,
         undefined, undefined, undefined, (entity) => entity.topic),
       new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50px', entity => entity.qos.toString(),
-        undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
+        undefined, undefined, undefined, (entity) => this.translate.instant(QosTranslation.get(entity.qos))),
       new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50px',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),

@@ -535,6 +535,7 @@ pre.tb-highlight {
     overflow: hidden;
     .mat-mdc-menu-item-text {
       flex: 1;
+      display: flex;
       .tb-alt-text {
         float: right;
       }
@@ -706,10 +707,6 @@ pre.tb-highlight {
       &.tb-current-entity {
         background-color: #e9e9e9;
       }
-
-      &.tb-pointer {
-        cursor: pointer;
-      }
     }
   }
 
@@ -798,9 +795,6 @@ pre.tb-highlight {
     }
     .mat-icon {
       color: rgba(0, 0, 0, .54);
-    }
-    &.tb-pointer {
-      cursor: pointer;
     }
   }
 
@@ -1243,6 +1237,10 @@ pre.tb-highlight {
       }
     }
 
+  .tb-pointer {
+    cursor: pointer;
+  }
+
   // TinyMCE
 
   .tox-tinymce {
@@ -1364,7 +1362,7 @@ pre.tb-highlight {
 }
 
 .home-page-material-icons {
-  color: rgba(0,0,0,0.54);
+  color: rgba(0,0,0,0.54) !important;
 }
 
 /***************

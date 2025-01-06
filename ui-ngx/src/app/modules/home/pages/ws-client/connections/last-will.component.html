@@ -25,14 +25,8 @@
                       [copyText]="formGroup.get('topic')?.value">
       </tb-copy-button>
     </mat-form-field>
-    <mat-form-field fxFlex class="mat-block" hideRequiredMarker subscriptSizing="dynamic">
-      <mat-label translate>mqtt-client-session.qos</mat-label>
-      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
-          {{ qoSTranslationMap.get(qos) | translate }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+    <tb-qos-select formControlName="qos" subscriptSizing="dynamic">
+    </tb-qos-select>
   </section>
 
   <fieldset class="fields-group" fxLayout="column" style="padding: 0 8px 8px">

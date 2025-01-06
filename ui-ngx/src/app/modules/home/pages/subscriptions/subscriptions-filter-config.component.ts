@@ -32,15 +32,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFor
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-
 import { TranslateService } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
+import { deepClone, isNumber } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 import { ClientSubscriptionFilterConfig, subscriptionsFilterConfigEquals } from '@shared/models/subscription.model';
-import { mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
+import { QoS} from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
+import { QosTranslation } from '@shared/models/session.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const SUBSCRIPTIONS_FILTER_CONFIG_DATA = new InjectionToken<any>('SubscriptionsFilterConfigData');
 
@@ -82,8 +83,8 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   initialClientSubscriptionFilterConfig: ClientSubscriptionFilterConfig;
 
   booleanList = [true, false];
-  qosList = mqttQoSTypes;
-  qoSValuesMap = mqttQoSValuesMap;
+  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTranslation = QosTranslation;
   rhOptions = RhOptions;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
@@ -95,12 +96,12 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
 
   private subscriptionsFilterConfig: ClientSubscriptionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SUBSCRIPTIONS_FILTER_CONFIG_DATA)
               private data: SubscriptionsFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -126,13 +127,13 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
       retainHandlingList: [null, []],
       subscriptionId: [null, []],
     });
-    this.subscriptionsFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.subscriptionsFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.subscriptionsConfigUpdated(this.subscriptionsFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSubscriptionsConfigForm(this.subscriptionsFilterConfig);
     }
@@ -140,6 +141,8 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {

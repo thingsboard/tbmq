@@ -18,7 +18,6 @@ import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators } from '@angular/forms';
-import { WsMqttQoSType, WsQoSTranslationMap, WsQoSTypes } from '@shared/models/session.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
@@ -37,6 +36,7 @@ import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
 import { map } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { DEFAULT_QOS } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-messanger',
@@ -49,8 +49,6 @@ export class MessangerComponent implements OnInit {
   filterConfig: MessageFilterConfig;
   messangerFormGroup: UntypedFormGroup;
 
-  qoSTypes = WsQoSTypes;
-  qoSTranslationMap = WsQoSTranslationMap;
   payloadFormats = WsPayloadFormats;
   messagesTypeFilters = WsMessagesTypeFilters;
 
@@ -75,7 +73,7 @@ export class MessangerComponent implements OnInit {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
       topic: [defaultPublishTopic, [this.topicValidator, Validators.required]],
-      qos: [WsMqttQoSType.AT_LEAST_ONCE, []],
+      qos: [DEFAULT_QOS, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
       color: ['#CECECE', []],
@@ -126,30 +124,32 @@ export class MessangerComponent implements OnInit {
   }
 
   publishMessage(): void {
-    const payload = this.messangerFormGroup.get('payload').value;
-    const payloadFormat = this.messangerFormGroup.get('payloadFormat').value;
+    const {
+      payload,
+      payloadFormat,
+      topic,
+      qos,
+      retain,
+      color,
+      properties
+    } = this.messangerFormGroup.value;
     const message = this.transformMessage(payload, payloadFormat);
-    const topic = this.messangerFormGroup.get('topic').value;
-    const qos = this.messangerFormGroup.get('qos').value;
-    const retain = this.messangerFormGroup.get('retain').value;
-    const color = this.messangerFormGroup.get('color').value;
-    const propertiesForm = this.messangerFormGroup.get('properties').value;
     const options: IClientPublishOptions = {
       qos,
       retain,
       color
     } as IClientPublishOptions;
-    if (this.mqttVersion === 5 && Object.values(propertiesForm).some(value => isDefinedAndNotNull(value))) {
+    if (this.mqttVersion === 5 && Object.values(properties).some(value => isDefinedAndNotNull(value))) {
       options.properties = {};
-      if (isDefinedAndNotNull(propertiesForm?.payloadFormatIndicator)) options.properties.payloadFormatIndicator = propertiesForm.payloadFormatIndicator;
-      if (isDefinedAndNotNull(propertiesForm?.messageExpiryInterval)) options.properties.messageExpiryInterval = propertiesForm.messageExpiryInterval;
+      if (isDefinedAndNotNull(properties?.payloadFormatIndicator)) options.properties.payloadFormatIndicator = properties.payloadFormatIndicator;
+      if (isDefinedAndNotNull(properties?.messageExpiryInterval)) options.properties.messageExpiryInterval = properties.messageExpiryInterval;
       // @ts-ignore
-      if (isDefinedAndNotNull(propertiesForm?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = propertiesForm.messageExpiryIntervalUnit;
-      if (isDefinedAndNotNull(propertiesForm?.topicAlias) && this.applyTopicAlias) options.properties.topicAlias = propertiesForm.topicAlias;
-      if (isDefinedAndNotNull(propertiesForm?.userProperties) && propertiesForm?.userProperties?.props?.length) options.properties.userProperties = propertiesForm.userProperties;
-      if (isDefinedAndNotNull(propertiesForm?.contentType)) options.properties.contentType = propertiesForm.contentType;
-      if (isDefinedAndNotNull(propertiesForm?.correlationData)) options.properties.correlationData = propertiesForm.correlationData;
-      if (isDefinedAndNotNull(propertiesForm?.responseTopic)) options.properties.responseTopic = propertiesForm.responseTopic;
+      if (isDefinedAndNotNull(properties?.messageExpiryIntervalUnit)) options.properties.messageExpiryIntervalUnit = properties.messageExpiryIntervalUnit;
+      if (isDefinedAndNotNull(properties?.topicAlias) && this.applyTopicAlias) options.properties.topicAlias = properties.topicAlias;
+      if (isDefinedAndNotNull(properties?.userProperties) && properties?.userProperties?.props?.length) options.properties.userProperties = properties.userProperties;
+      if (isDefinedAndNotNull(properties?.contentType)) options.properties.contentType = properties.contentType;
+      if (isDefinedAndNotNull(properties?.correlationData)) options.properties.correlationData = properties.correlationData;
+      if (isDefinedAndNotNull(properties?.responseTopic)) options.properties.responseTopic = properties.responseTopic;
     }
     this.mqttJsClientService.publishMessage(topic, message, options);
   }

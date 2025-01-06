@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { User } from '@shared/models/user.model';
 import { Authority } from '@shared/models/authority.enum';
 import { select, Store } from '@ngrx/store';
@@ -30,7 +30,7 @@ import { AuthService } from "@core/http/auth.service";
   styleUrls: ['./user-menu.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UserMenuComponent implements OnInit, OnDestroy {
+export class UserMenuComponent {
 
   @Input() displayUserInfo: boolean;
 
@@ -52,12 +52,6 @@ export class UserMenuComponent implements OnInit, OnDestroy {
   constructor(private store: Store<AppState>,
               private router: Router,
               private authService: AuthService) {
-  }
-
-  ngOnInit(): void {
-  }
-
-  ngOnDestroy(): void {
   }
 
   getAuthorityName(user: User): string {

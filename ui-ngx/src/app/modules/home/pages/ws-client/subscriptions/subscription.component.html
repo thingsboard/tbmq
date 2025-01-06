@@ -22,12 +22,16 @@
     <section fxFlex="90" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
       <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" class="subscription-row-label">
         <div class="label-color" [ngStyle]="{backgroundColor: subscription.configuration.color}"></div>
-        <span class="label" [matTooltip]="subscription.configuration.topicFilter">{{ subscription.configuration.topicFilter }}</span>
+        <span class="label tb-pointer"
+              [matTooltip]="'action.edit' | translate"
+              (click)="openSubscriptionDetails($event)">
+          {{ subscription.configuration.topicFilter }}
+        </span>
       </section>
       <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription.configuration.qos }}</span>
     </section>
     <section fxFlex="10" fxLayout="row" fxLayoutAlign="end">
-      <div [ngClass]="{ 'action-buttons-container': showActions }" fxHide fxShow.md fxShow.xl fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+      <div [ngClass]="{ 'action-buttons-container': showActions }" fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px" fxHide.xs>
         <div *ngFor="let actionDescriptor of hiddenActions"
              class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
              matTooltipPosition="above"
@@ -41,7 +45,7 @@
           </button>
         </div>
       </div>
-      <div fxHide fxShow.lg fxShow.sm fxShow.xs fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+      <div fxHide fxShow.xs fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
         <button mat-icon-button
                 class="tb-mat-32"
                 (click)="$event.stopPropagation()"

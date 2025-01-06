@@ -38,7 +38,7 @@ import { AppState } from '@core/core.state';
   templateUrl: './subscription.component.html',
   styleUrls: ['./subscription.component.scss']
 })
-export class SubscriptionComponent implements OnInit {
+export class SubscriptionComponent {
 
   @Input()
   subscription: WebSocketSubscription;
@@ -67,15 +67,16 @@ export class SubscriptionComponent implements OnInit {
 
   }
 
-  ngOnInit() {
-  }
-
   onMouseEnter(): void {
     this.showActions = true;
   }
 
   onMouseLeave(): void {
     this.showActions = false;
+  }
+
+  openSubscriptionDetails($event: Event) {
+    this.edit($event, this.subscription);
   }
 
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketSubscription>> {

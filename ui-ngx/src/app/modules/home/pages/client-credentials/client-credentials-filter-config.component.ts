@@ -36,7 +36,7 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService } from '@ngx-translate/core';
 import { deepClone, isNotEmptyStr } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
@@ -45,6 +45,7 @@ import {
   credentialsTypeTranslationMap,
   CredentialsType
 } from '@shared/models/credentials.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const CLIENT_CREDENTIALS_FILTER_CONFIG_DATA = new InjectionToken<any>('ClientCredentialsFilterConfigData');
 
@@ -100,12 +101,12 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
 
   private clientCredentialsFilterConfig: ClientCredentialsFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(CLIENT_CREDENTIALS_FILTER_CONFIG_DATA)
               private data: ClientCredentialsFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -130,13 +131,13 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
       username: [null, []],
       certificateCn: [null, []]
     });
-    this.clientCredentialsFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.clientCredentialsFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.clientCredentialsConfigUpdated(this.clientCredentialsFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateClientCredentialsConfigForm(this.clientCredentialsFilterConfig);
     }
@@ -144,7 +145,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;

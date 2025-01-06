@@ -32,20 +32,15 @@
          *ngFor="let topicFilter of subscriptionsFormArray().controls; let $index = index">
       <mat-form-field fxFlex="60" class="mat-block" appearance="outline" subscriptSizing="dynamic">
         <input matInput name="topicFilter" formControlName="topicFilter" required>
-        <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+        <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
                         [copyText]="topicFilter.get('topicFilter').value">
         </tb-copy-button>
         <mat-error *ngIf="topicFilter.invalid">
           {{ 'mqtt-client-session.topic-filter-required' | translate }}
         </mat-error>
       </mat-form-field>
-      <mat-form-field fxFlex="30" class="mat-block" appearance="outline" subscriptSizing="dynamic">
-        <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-          <mat-option *ngFor="let mqttQoS of mqttQoSTypes" [value]="mqttQoS.value">
-            {{ mqttQoSValue(mqttQoS) }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+      <tb-qos-select fxFlex="30" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
+      </tb-qos-select>
       <section style="width: 40px">
         <tb-subscription-options
           [subscriptionOptions]="topicFilter"

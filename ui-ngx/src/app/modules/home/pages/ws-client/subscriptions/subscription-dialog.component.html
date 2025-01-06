@@ -46,14 +46,8 @@
       <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
       </tb-color-input>
     </section>
-    <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
-      <mat-label translate>mqtt-client-session.qos</mat-label>
-      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
-          {{ qoSTranslationMap.get(qos) | translate }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
+    <tb-qos-select formControlName="qos">
+    </tb-qos-select>
     <section formGroupName="options" fxLayout="column" fxLayoutGap="16px">
       <mat-accordion multi="true" class="mat-body-1">
         <mat-expansion-panel>

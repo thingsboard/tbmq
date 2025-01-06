@@ -19,7 +19,7 @@ import { ClientCredentials } from '@shared/models/credentials.model';
 import { ValueType } from '@shared/models/constants';
 import { randomAlphanumeric } from '@core/utils';
 import { colorPresetsHex } from '@shared/components/color-picker/color-picker.component';
-import { MqttQoS } from '@shared/models/session.model';
+import { QoS } from '@shared/models/session.model';
 
 export enum ConnectionStatus {
   CONNECTED = 'CONNECTED',
@@ -35,7 +35,6 @@ export enum ConnectionStatus {
 export type MqttJsProtocolVersion = 3 | 4 | 5;
 export type MqttJsProtocolId = 'MQTT' | 'MQIsdp';
 export type MqttJsProtocolSecurity = 'ws://' | 'wss://';
-export declare type QoS = 0 | 1 | 2;
 export const WebSocketConnectionsLimit = 100;
 
 export interface ConnectionStatusLog {
@@ -215,13 +214,13 @@ export interface WebSocketSubscription extends BaseData {
 
 export interface TopicSubscription {
   topicFilter?: string;
-  qos?: QoS | MqttQoS;
+  qos?: any;
   color?: string;
   subscriptionId?: number;
-  options: SubscriptionOptions;
+  options: TopicSubscriptionOptions;
 }
 
-export interface SubscriptionOptions {
+export interface TopicSubscriptionOptions {
   noLocal?: boolean;
   retainAsPublish?: boolean;
   retainHandling?: number;
