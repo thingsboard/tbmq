@@ -36,6 +36,7 @@ import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
 import { map } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { DEFAULT_QOS } from '@shared/models/session.model';
 
 @Component({
   selector: 'tb-messanger',
@@ -72,7 +73,7 @@ export class MessangerComponent implements OnInit {
     this.messangerFormGroup = this.fb.group({
       payload: [{temperature: 25}, []],
       topic: [defaultPublishTopic, [this.topicValidator, Validators.required]],
-      qos: [null, []],
+      qos: [DEFAULT_QOS, []],
       payloadFormat: [ValueType.JSON, []],
       retain: [false, []],
       color: ['#CECECE', []],

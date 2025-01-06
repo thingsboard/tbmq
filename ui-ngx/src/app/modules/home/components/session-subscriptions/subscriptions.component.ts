@@ -28,7 +28,7 @@ import {
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { defaultMqttQos, MqttQos } from '@shared/models/session.model';
+import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -98,7 +98,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
     if (topics?.length) {
       if (topics) {
         for (let topic of topics) {
-          topic.qos = MqttQos[topic.qos] as unknown as MqttQos;
+          topic.qos = QoS[topic.qos] as unknown as QoS;
           const topicControl = this.fb.group(topic);
           subscriptionsControls.push(topicControl);
         }
@@ -114,7 +114,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
   addTopic() {
     const group = this.fb.group({
       topicFilter: [null, [Validators.required]],
-      qos: [defaultMqttQos, []],
+      qos: [DEFAULT_QOS, []],
       subscriptionId: [null, []],
       options: this.fb.group({
         retainAsPublish: [false, []],

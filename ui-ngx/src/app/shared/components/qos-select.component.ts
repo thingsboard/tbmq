@@ -25,7 +25,7 @@ import {
 import { MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { TranslateService } from '@ngx-translate/core';
-import { defaultMqttQos, MqttQos, MqttQosTranslation } from '../models/session.model';
+import { DEFAULT_QOS, QoS, QosTranslation } from '../models/session.model';
 import { isDefinedAndNotNull, isNumber } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -72,8 +72,8 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
   hideRequiredMarker = true;
 
   qosFormControl: UntypedFormControl;
-  mqttQosTypes = Object.values(MqttQos).filter(v => isNumber(v));
-  MqttQosTranslation = MqttQosTranslation;
+  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTranslation = QosTranslation;
 
   private destroy$ = new Subject<void>();
   private propagateChange = (_val: any) => {};
@@ -91,11 +91,11 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
     this.destroy$.complete();
   }
 
-  writeValue(value: MqttQos) {
+  writeValue(value: QoS) {
     if (isDefinedAndNotNull(value)) {
       this.qosFormControl.patchValue(value);
     } else {
-      this.qosFormControl.patchValue(defaultMqttQos);
+      this.qosFormControl.patchValue(DEFAULT_QOS);
     }
   }
 
@@ -114,7 +114,7 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
   registerOnTouched(fn: any) {}
 
-  updateModel(value: MqttQos) {
+  updateModel(value: QoS) {
     this.propagateChange(value);
   }
 }

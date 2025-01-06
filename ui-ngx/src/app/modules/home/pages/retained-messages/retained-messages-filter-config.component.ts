@@ -21,6 +21,7 @@ import {
   Inject,
   InjectionToken,
   Input,
+  OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
@@ -33,15 +34,16 @@ import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 import { TranslateService } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
+import { deepClone, isNumber } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import {
   RetainedMessagesFilterConfig,
   retainedMessagesFilterConfigEquals
 } from '@shared/models/retained-message.model';
-import { mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
+import { QoS, QosTranslation } from '@shared/models/session.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const RETAINED_MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('RetainedMessagesFilterConfigData');
 
@@ -51,7 +53,6 @@ export interface RetainedMessagesFilterConfigData {
   initialRetainedMessagesFilterConfig?: RetainedMessagesFilterConfig;
 }
 
-// @dynamic
 @Component({
   selector: 'tb-retained-messages-filter-config',
   templateUrl: './retained-messages-filter-config.component.html',
@@ -64,7 +65,7 @@ export interface RetainedMessagesFilterConfigData {
     }
   ]
 })
-export class RetainedMessagesFilterConfigComponent implements OnInit, ControlValueAccessor {
+export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
   @ViewChild('retainedMessagesPanel')
   retainedMessagesFilterPanel: TemplateRef<any>;
@@ -82,8 +83,8 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   @Input()
   initialRetainedMessagesFilterConfig: RetainedMessagesFilterConfig;
 
-  qosList = mqttQoSTypes;
-  qoSValuesMap = mqttQoSValuesMap;
+  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTranslation = QosTranslation;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('retained-message.filter-title');
   buttonDisplayTooltip: string;
@@ -94,12 +95,12 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
 
   private retainedMessagesFilterConfig: RetainedMessagesFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(RETAINED_MESSAGE_FILTER_CONFIG_DATA)
               private data: RetainedMessagesFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -121,17 +122,22 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
       payload: [null, []],
       qosList: [null, []],
     });
-    this.retainedMessagesFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.retainedMessagesFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.retainedMessagesConfigUpdated(this.retainedMessagesFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateRetainedMessagesConfigForm(this.retainedMessagesFilterConfig);
     }
     this.initialRetainedMessagesFilterConfig = this.retainedMessagesFilterConfigForm.getRawValue();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {

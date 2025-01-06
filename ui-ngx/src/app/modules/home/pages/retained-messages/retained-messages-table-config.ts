@@ -34,7 +34,7 @@ import {
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { forkJoin, Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { WsQoSTranslationMap } from '@shared/models/session.model';
+import { QosTranslation } from '@shared/models/session.model';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
@@ -111,9 +111,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
           onAction: ($event, entity) => entity.topic,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%',
-        (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))
-      )
+      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos + ' - ' + this.translate.instant(QosTranslation.get(entity.qos)))
     );
 
     this.entitiesFetchFunction = pageLink => this.fetchRetainedMessages(pageLink as TimePageLink);

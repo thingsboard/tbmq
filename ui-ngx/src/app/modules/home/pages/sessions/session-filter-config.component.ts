@@ -36,7 +36,7 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService } from '@ngx-translate/core';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import {
   ConnectionState,
   connectionStateTranslationMap,
@@ -46,6 +46,7 @@ import {
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { NumericOperation, numericOperationTranslationMap } from '@shared/models/query/query.models';
+import { takeUntil } from 'rxjs/operators';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 
@@ -106,12 +107,12 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   private sessionFilterConfig: SessionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SESSION_FILTER_CONFIG_DATA)
               private data: SessionFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -138,13 +139,13 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       subscriptionOperation: [null, []],
       clientIpAddress: [null, []],
     });
-    this.sessionFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.sessionFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.sessionConfigUpdated(this.sessionFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSessionConfigForm(this.sessionFilterConfig);
     }
@@ -152,7 +153,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;

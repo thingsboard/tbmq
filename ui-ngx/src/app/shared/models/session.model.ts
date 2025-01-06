@@ -53,78 +53,21 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export enum MqttQos {
+export enum QoS {
   AT_MOST_ONCE = 0,
   AT_LEAST_ONCE = 1,
   EXACTLY_ONCE = 2
 }
 
-export const defaultMqttQos = MqttQos.AT_LEAST_ONCE;
-
-export const MqttQosTranslation = new Map<MqttQos, string>([
-  [MqttQos.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
-  [MqttQos.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
-  [MqttQos.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
+export const QosTranslation = new Map<QoS, string>([
+  [QoS.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
+  [QoS.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
+  [QoS.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
 ]);
 
-export enum QosType {
-  AT_MOST_ONCE = 'AT_MOST_ONCE',
-  AT_LEAST_ONCE = 'AT_LEAST_ONCE',
-  EXACTLY_ONCE = 'EXACTLY_ONCE'
-}
+export const QosAsNum = (qos: QoS): string => QoS[qos];
 
-export enum WsMqttQoSType {
-  AT_MOST_ONCE,
-  AT_LEAST_ONCE,
-  EXACTLY_ONCE
-}
-
-export interface MqttQoSType {
-  value: QosType;
-  name: string;
-}
-
-export const mqttQoSTypes = [
-  {
-    value: QosType.AT_MOST_ONCE,
-    name: 'mqtt-client-session.qos-at-most-once'
-  },
-  {
-    value: QosType.AT_LEAST_ONCE,
-    name: 'mqtt-client-session.qos-at-least-once'
-  },
-  {
-    value: QosType.EXACTLY_ONCE,
-    name: 'mqtt-client-session.qos-exactly-once'
-  }
-];
-
-export const mqttQoSValuesMap = new Map<QosType, number>(
-  [
-    [QosType.AT_MOST_ONCE, 0],
-    [QosType.AT_LEAST_ONCE, 1],
-    [QosType.EXACTLY_ONCE, 2]
-  ]
-);
-
-
-export const WsQoSTypes = [0, 1, 2];
-
-export const WsQoSTranslationMap = new Map<WsMqttQoSType, string>(
-  [
-    [0, 'mqtt-client-session.qos-at-most-once'],
-    [1, 'mqtt-client-session.qos-at-least-once'],
-    [2, 'mqtt-client-session.qos-exactly-once']
-  ]
-);
-
-export const QoSTranslationMap = new Map<QosType, string>(
-  [
-    [QosType.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
-    [QosType.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
-    [QosType.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
-  ]
-);
+export const DEFAULT_QOS = QoS.AT_LEAST_ONCE;
 
 export enum ConnectionState {
   CONNECTED = 'CONNECTED',

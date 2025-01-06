@@ -36,12 +36,13 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import {
   UnauthorizedClientFilterConfig,
   unauthorizedClientFilterConfigEquals
 } from '@shared/models/unauthorized-client.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA = new InjectionToken<any>('UnauthorizedClientFilterConfigData');
 
@@ -94,12 +95,12 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
 
   private unauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA)
               private data: UnauthorizedClientFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -124,13 +125,13 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
       username: [null, []],
       reason: [null, []],
     });
-    this.unauthorizedClientFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.unauthorizedClientFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.unauthorizedClientConfigUpdated(this.unauthorizedClientFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
     }
@@ -138,6 +139,8 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {

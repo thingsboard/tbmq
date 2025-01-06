@@ -36,10 +36,11 @@ import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { SharedSubscriptionFilterConfig, sharedSubscriptionFilterConfigEquals } from '@shared/models/shared-subscription.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const SHARED_SUBSCRIPTION_FILTER_CONFIG_DATA = new InjectionToken<any>('SharedSubscriptionFilterConfigData');
 
@@ -95,12 +96,12 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
 
   private sharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SHARED_SUBSCRIPTION_FILTER_CONFIG_DATA)
               private data: SharedSubscriptionFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -122,13 +123,13 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
       topicFilter: [null, []],
       clientIdSearch: [null, []]
     });
-    this.sharedSubscriptionFilterConfigForm.valueChanges.subscribe(
-      () => {
+    this.sharedSubscriptionFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.sharedSubscriptionConfigUpdated(this.sharedSubscriptionFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSharedSubscriptionConfigForm(this.sharedSubscriptionFilterConfig);
     }
@@ -136,7 +137,8 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;

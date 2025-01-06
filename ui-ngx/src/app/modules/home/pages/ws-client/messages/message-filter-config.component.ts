@@ -32,17 +32,14 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFor
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-
 import { TranslateService } from '@ngx-translate/core';
-import { deepClone } from '@core/utils';
+import { deepClone, isNumber } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
-import {
-  WsQoSTranslationMap,
-  WsQoSTypes
-} from '@shared/models/session.model';
+import { fromEvent, Subject, Subscription } from 'rxjs';
+import { QoS, QosTranslation } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } from '@shared/models/ws-client.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('MessageFilterConfigData');
 
@@ -85,32 +82,24 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   initialFilterConfig: MessageFilterConfig = MessageFilterDefaultConfig;
 
-  qosOptions = WsQoSTypes;
+  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTranslation = QosTranslation;
   retainedOptions = [true, false];
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
-
   filterConfigForm: UntypedFormGroup;
-
   filterOverlayRef: OverlayRef;
-
   panelResult: MessageFilterConfig = null;
-
   entityType = EntityType;
-
-  wsQoSTranslationMap = WsQoSTranslationMap;
 
   private filterConfig: MessageFilterConfig;
   private resizeWindows: Subscription;
-
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(MESSAGE_FILTER_CONFIG_DATA)
               private data: MessageFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -132,19 +121,21 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
       qosList: [null, []],
       retainList: [null, []]
     });
-    this.filterConfigForm.valueChanges.subscribe(
-      () => {
+    this.filterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         if (!this.buttonMode) {
           this.configUpdated(this.filterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateConfigForm(this.filterConfig);
     }
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

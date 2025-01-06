@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
 import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
@@ -39,7 +39,7 @@ import { ConfigService } from '@core/http/config.service';
     }
   ]
 })
-export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit, AfterViewInit, OnDestroy {
+export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit {
 
   entitySubtypeListFormGroup: FormGroup;
 
@@ -122,7 +122,6 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
     });
   }
 
-
   updateValidators() {
     this.entitySubtypeListFormGroup.get('entitySubtypeList').setValidators(this.required ? [Validators.required] : []);
     this.entitySubtypeListFormGroup.get('entitySubtypeList').updateValueAndValidity();
@@ -159,12 +158,6 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
       mergeMap(name => this.fetchEntitySubtypes(name)),
       share()
     );
-  }
-
-  ngAfterViewInit(): void {
-  }
-
-  ngOnDestroy(): void {
   }
 
   setDisabledState(isDisabled: boolean): void {

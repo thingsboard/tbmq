@@ -63,8 +63,8 @@
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>retained-message.qos</div>
       <mat-chip-listbox multiple formControlName="qosList">
-        <mat-chip-option *ngFor="let value of qosOptions" [value]="value" [matTooltip]="wsQoSTranslationMap.get(value) | translate">
-          {{ value }}
+        <mat-chip-option *ngFor="let mqttQoS of qosTypes" [value]="mqttQoS" [matTooltip]="qosTranslation.get(mqttQoS) | translate">
+          {{ mqttQoS }}
         </mat-chip-option>
       </mat-chip-listbox>
     </div>

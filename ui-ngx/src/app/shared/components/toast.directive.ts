@@ -297,8 +297,7 @@ export class TbSnackBarComponent implements AfterViewInit, OnDestroy {
   constructor(@Inject(MAT_SNACK_BAR_DATA)
               private data: ToastPanelData,
               private elementRef: ElementRef,
-              @Optional()
-              private snackBarRef: MatSnackBarRef<TbSnackBarComponent>) {
+              @Optional() private snackBarRef: MatSnackBarRef<TbSnackBarComponent>) {
     this.animationState = !!this.snackBarRef ? 'default' : 'opened';
     this.notification = data.notification;
   }

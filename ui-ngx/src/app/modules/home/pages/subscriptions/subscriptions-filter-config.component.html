@@ -71,8 +71,8 @@
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.qos</div>
       <mat-chip-listbox multiple formControlName="qosList">
-        <mat-chip-option *ngFor="let qos of qosList" [value]="qoSValuesMap.get(qos.value)">
-          {{ qos.name | translate }}
+        <mat-chip-option *ngFor="let mqttQoS of qosTypes" [value]="mqttQoS">
+          {{ mqttQoS }} - {{ qosTranslation.get(mqttQoS) | translate}}
         </mat-chip-option>
       </mat-chip-listbox>
     </div>

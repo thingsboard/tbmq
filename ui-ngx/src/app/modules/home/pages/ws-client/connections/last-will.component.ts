@@ -32,7 +32,7 @@ import {
   WebSocketTimeUnit
 } from '@shared/models/ws-client.model';
 import { isDefinedAndNotNull } from '@core/utils';
-import { defaultMqttQos } from '@shared/models/session.model';
+import { DEFAULT_QOS } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -133,7 +133,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
     this.formGroup = this.fb.group({
       topic: [null, []],
       payload: [null, []],
-      qos: [defaultMqttQos, []],
+      qos: [DEFAULT_QOS, []],
       retain: [false, []],
       willDelayInterval: [{value: 0, disabled}, []],
       willDelayIntervalUnit: [{value: WebSocketTimeUnit.SECONDS, disabled}, []],

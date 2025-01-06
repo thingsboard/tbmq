@@ -17,7 +17,7 @@
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { defaultMqttQos } from '@shared/models/session.model';
+import { DEFAULT_QOS } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -85,7 +85,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
       topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required]],
-      qos: [this.entity ? this.entity.configuration.qos : defaultMqttQos, []],
+      qos: [this.entity ? this.entity.configuration.qos : DEFAULT_QOS, []],
       color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({
         noLocal: [{value: this.entity ? this.entity.configuration.options.noLocal : null, disabled}, []],
