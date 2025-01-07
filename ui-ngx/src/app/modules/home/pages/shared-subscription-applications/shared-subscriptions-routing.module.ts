@@ -28,6 +28,7 @@ import {
 const routes: Routes = [
   {
     path: 'shared-subscriptions',
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       breadcrumb: {

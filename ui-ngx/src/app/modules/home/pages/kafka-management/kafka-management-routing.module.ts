@@ -21,6 +21,7 @@ import { Authority } from '@shared/models/authority.enum';
 const routes: Routes = [
   {
     path: 'kafka',
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       breadcrumb: {

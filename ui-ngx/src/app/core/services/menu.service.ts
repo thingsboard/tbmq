@@ -19,7 +19,7 @@ import { select, Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { selectAuth, selectIsAuthenticated } from '../auth/auth.selectors';
 import { take } from 'rxjs/operators';
-import { MenuSection } from '@core/services/menu.models';
+import { MenuId, MenuSection } from '@core/services/menu.models';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { Authority } from '@shared/models/authority.enum';
 import { AuthState } from '@core/auth/auth.models';
@@ -61,144 +61,144 @@ export class MenuService {
     const sections: Array<MenuSection> = [];
     sections.push(
       {
-        id: 'home',
+        id: MenuId.home,
         name: 'home.home',
         type: 'link',
         path: '/home',
         icon: 'mdi:view-dashboard-outline'
       },
       {
-        id: 'sessions',
+        id: MenuId.sessions,
         name: 'mqtt-client-session.sessions',
         type: 'link',
         path: '/sessions',
         icon: 'mdi:book-multiple'
       },
       {
-        id: 'subscriptions',
+        id: MenuId.sessions,
         name: 'subscription.subscriptions',
         type: 'link',
         path: '/subscriptions',
         icon: 'mdi:filter-outline'
       },
       {
-        id: 'client_credentials',
+        id: MenuId.client_credentials,
         name: 'mqtt-client-credentials.credentials',
         type: 'link',
         path: '/client-credentials',
         icon: 'mdi:shield-lock'
       },
       {
-        id: 'unauthorized-clients',
+        id: MenuId.unauthorized_clients,
         name: 'unauthorized-client.unauthorized-clients',
         type: 'link',
         path: '/unauthorized-clients',
         icon: 'no_accounts'
       },
       {
-        id: 'web_socket_client',
+        id: MenuId.web_socket_client,
         name: 'ws-client.ws-client',
         type: 'link',
         path: '/ws-client',
         icon: 'mdi:chat'
       },
       {
-        id: 'retained_messages',
+        id: MenuId.retained_messages,
         name: 'retained-message.retained-messages',
         type: 'link',
         path: '/retained-messages',
         icon: 'mdi:archive'
       },
       {
-        id: 'shared_subscriptions_management',
+        id: MenuId.shared_subscriptions_management,
         name: 'shared-subscription.shared-subscriptions',
-        type: 'toggle',
+        type: 'link',
         path: '/shared-subscriptions',
         icon: 'mediation',
         pages: [
           {
-            id: 'shared_subscriptions',
-            name: 'shared-subscription.groups',
-            type: 'link',
-            path: '/shared-subscriptions/manage',
-            icon: 'lan'
-          },
-          {
-            id: 'application_shared_subscriptions',
+            id: MenuId.shared_subscriptions_application,
             name: 'shared-subscription.application-shared-subscriptions',
             type: 'link',
             path: '/shared-subscriptions/applications',
             icon: 'mdi:monitor-share'
           },
+          {
+            id: MenuId.shared_subscriptions,
+            name: 'shared-subscription.groups',
+            type: 'link',
+            path: '/shared-subscriptions/manage',
+            icon: 'lan'
+          }
         ]
       },
       {
-        id: 'kafka_management',
+        id: MenuId.kafka_management,
         name: 'kafka.management',
-        type: 'toggle',
+        type: 'link',
         path: '/kafka',
         icon: 'apps',
         pages: [
           {
-            id: 'kafka_topics',
+            id: MenuId.kafka_topics,
             name: 'kafka.topics-title',
             type: 'link',
             path: '/kafka/topics',
             icon: 'topic'
           },
           {
-            id: 'kafka_consumer_groups',
+            id: MenuId.kafka_consumer_groups,
             name: 'kafka.consumer-groups-title',
             type: 'link',
             path: '/kafka/consumer-groups',
             icon: 'filter_alt'
           },
-          /*          {
-                      id: 'kafka_brokers',
-                      name: 'kafka.brokers-title',
-                      type: 'link',
-                      path: '/kafka/brokers',
-                      icon: 'mdi:server'
-                    }*/
+          /*{
+            id: MenuId.kafka_brokers,
+            name: 'kafka.brokers-title',
+            type: 'link',
+            path: '/kafka/brokers',
+            icon: 'mdi:server'
+          }*/
         ]
       },
       {
-        id: 'monitoring',
+        id: MenuId.monitoring,
         name: 'monitoring.monitoring',
         type: 'link',
         path: '/monitoring',
         icon: 'mdi:monitor-dashboard'
       },
       {
-        id: 'users',
+        id: MenuId.users,
         name: 'user.users',
         type: 'link',
         path: '/users',
         icon: 'mdi:account-multiple'
       },
       {
-        id: 'system_settings',
+        id: MenuId.system_settings,
         name: 'admin.system-settings',
         type: 'link',
         path: '/settings',
         icon: 'settings',
         pages: [
           {
-            id: 'ws_settings',
+            id: MenuId.system_settings_general,
             name: 'admin.general',
             type: 'link',
             path: '/settings/general',
             icon: 'settings'
           },
           {
-            id: 'outgoing_mail_settings',
+            id: MenuId.mail_server,
             name: 'admin.outgoing-mail',
             type: 'link',
             path: '/settings/outgoing-mail',
             icon: 'mdi:email'
           },
           {
-            id: 'security_settings',
+            id: MenuId.system_settings_security,
             name: 'home.security',
             type: 'link',
             path: '/settings/security',
