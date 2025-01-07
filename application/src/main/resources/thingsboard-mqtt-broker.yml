@@ -604,9 +604,9 @@ sql:
 lettuce:
   # Enable/disable auto-flush. If disabled, commands are buffered and flushed based on cmd count or time interval
   auto-flush: "${REDIS_LETTUCE_CMDS_AUTO_FLUSH_ENABLED:true}"
-  # Number of buffered commands before flush is triggered. Used when auto-flush is disabled.
+  # Number of buffered commands before flush is triggered. Used when auto-flush is disabled
   buffered-cmd-count: "${REDIS_LETTUCE_BUFFERED_CMDS_COUNT:5}"
-  # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count.
+  # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count
   flush-interval-ms: "${REDIS_LETTUCE_FLUSH_INTERVAL_MS:5}"
   config:
     # The shutdown quiet period for lettuce client set in seconds
