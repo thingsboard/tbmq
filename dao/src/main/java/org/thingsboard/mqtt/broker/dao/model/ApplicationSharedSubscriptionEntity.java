@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.APPLICATION_SHARED_SUBSCRIPTION_COLUMN_FAMILY_NAME)
-public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<ApplicationSharedSubscription> implements SearchTextEntity<ApplicationSharedSubscription> {
+public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<ApplicationSharedSubscription> implements BaseEntity<ApplicationSharedSubscription> {
 
     @Column(name = ModelConstants.APPLICATION_SHARED_SUBSCRIPTION_TOPIC_PROPERTY, unique = true)
     private String topic;
@@ -36,9 +36,6 @@ public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<Applicati
 
     @Column(name = ModelConstants.APPLICATION_SHARED_SUBSCRIPTION_PARTITIONS_PROPERTY)
     private Integer partitions;
-
-    @Column(name = ModelConstants.SEARCH_TEXT_PROPERTY)
-    private String searchText;
 
     public ApplicationSharedSubscriptionEntity() {
     }
@@ -51,7 +48,6 @@ public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<Applicati
         this.name = applicationSharedSubscription.getName();
         this.topic = applicationSharedSubscription.getTopicFilter();
         this.partitions = applicationSharedSubscription.getPartitions();
-        this.searchText = applicationSharedSubscription.getSearchText();
     }
 
     @Override
@@ -65,8 +61,4 @@ public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<Applicati
         return applicationSharedSubscription;
     }
 
-    @Override
-    public String getSearchTextSource() {
-        return name;
-    }
 }

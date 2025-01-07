@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.UUID;
 public interface WebSocketConnectionRepository extends JpaRepository<WebSocketConnectionEntity, UUID> {
 
     @Query("SELECT w FROM WebSocketConnectionEntity w WHERE w.userId = :userId " +
-            "AND LOWER(w.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "AND LOWER(w.name) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<WebSocketConnectionEntity> findAll(@Param("userId") UUID userId,
                                             @Param("textSearch") String textSearch,
                                             Pageable pageable);

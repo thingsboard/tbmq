@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ public class TimeseriesController extends BaseController {
             @RequestParam(name = "interval", defaultValue = "0") Long interval,
             @RequestParam(name = "limit", defaultValue = "100") Integer limit,
             @RequestParam(name = "agg", defaultValue = "NONE") String aggStr,
-            @RequestParam(name = "orderBy", defaultValue = "DESC") String orderBy,
+            @RequestParam(name = "orderBy", defaultValue = BrokerConstants.DESC_ORDER) String orderBy,
             @RequestParam(name = "useStrictDataTypes", required = false, defaultValue = "true") Boolean useStrictDataTypes) throws ThingsboardException {
         try {
             checkParameter(ENTITY_ID, entityId);

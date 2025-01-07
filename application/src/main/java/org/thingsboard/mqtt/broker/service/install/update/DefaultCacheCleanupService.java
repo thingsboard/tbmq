@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.install.update;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Profile;
@@ -26,6 +27,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.MQTT_CLIENT_CREDENTIALS_CACHE;
+import static org.thingsboard.mqtt.broker.cache.CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE;
 
 @RequiredArgsConstructor
 @Service
@@ -35,6 +41,9 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
 
     private final CacheManager cacheManager;
     private final Optional<RedisTemplate<String, Object>> redisTemplate;
+
+    @Value("${cache.cache-prefix:}")
+    private String cachePrefix;
 
     /**
      * Cleanup caches that can not deserialize anymore due to schema upgrade or data update using sql scripts.
@@ -48,6 +57,20 @@ public class DefaultCacheCleanupService implements CacheCleanupService {
                 log.info("Clearing cache to upgrade from version 1.3.0 to 1.4.0");
                 clearAll();
                 break;
+            case "2.0.0":
+                log.info("Clearing cache to upgrade from version 2.0.0 to 2.0.1");
+
+                Set<String> cacheNamesToFlush = Set.of(
+                        cachePrefix + MQTT_CLIENT_CREDENTIALS_CACHE,
+                        cachePrefix + BASIC_CREDENTIALS_PASSWORD_CACHE,
+                        cachePrefix + SSL_REGEX_BASED_CREDENTIALS_CACHE);
+
+                cacheManager.getCacheNames().forEach(cacheName -> {
+                    if (cacheManager.getCache(cacheName) != null && cacheNamesToFlush.contains(cacheName)) {
+                        clearCacheByName(cacheName);
+                    }
+                });
+
             default:
                 //Do nothing since cache cleanup is optional.
         }

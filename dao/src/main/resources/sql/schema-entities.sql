@@ -1,5 +1,5 @@
 --
--- Copyright © 2016-2024 The Thingsboard Authors
+-- Copyright © 2016-2025 The Thingsboard Authors
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ BEGIN
     IF (SELECT COUNT(*) FROM tb_schema_settings) = 0 THEN
         INSERT
         INTO tb_schema_settings (schema_version)
-        VALUES (2000001);
+        VALUES (2001000);
     END IF;
 END;
 $$;
@@ -48,8 +48,7 @@ CREATE TABLE IF NOT EXISTS broker_user (
     authority varchar(255),
     email varchar(255) UNIQUE,
     first_name varchar(255),
-    last_name varchar(255),
-    search_text varchar(255)
+    last_name varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS user_credentials (
@@ -70,7 +69,6 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     credentials_id varchar,
     credentials_type varchar(255),
     credentials_value varchar,
-    search_text varchar(255),
     CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id)
 );
 
@@ -93,7 +91,6 @@ CREATE TABLE IF NOT EXISTS application_shared_subscription (
     topic varchar NOT NULL,
     partitions int NOT NULL,
     name varchar(255),
-    search_text varchar(255),
     CONSTRAINT application_shared_subscription_topic_unq_key UNIQUE (topic)
 );
 
@@ -125,7 +122,6 @@ CREATE TABLE IF NOT EXISTS websocket_connection (
     name varchar (255) NOT NULL,
     user_id uuid NOT NULL,
     configuration jsonb,
-    search_text varchar (255),
     CONSTRAINT name_unq_key UNIQUE (user_id, name),
     CONSTRAINT fk_user_id
     FOREIGN KEY (user_id) REFERENCES broker_user (id) ON DELETE CASCADE

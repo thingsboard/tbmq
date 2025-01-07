@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import java.util.UUID;
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationSharedSubscription extends SearchTextBased {
+public class ApplicationSharedSubscription extends BaseData {
 
     @Serial
     private static final long serialVersionUID = -3332462179399001894L;
@@ -42,11 +42,6 @@ public class ApplicationSharedSubscription extends SearchTextBased {
 
     public ApplicationSharedSubscription(UUID id) {
         super(id);
-    }
-
-    @Override
-    public String getSearchText() {
-        return getName();
     }
 
     public ApplicationSharedSubscription(ApplicationSharedSubscription mqttClientCredentials) {

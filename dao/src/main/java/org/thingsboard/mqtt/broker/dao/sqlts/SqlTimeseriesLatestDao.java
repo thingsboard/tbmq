@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,12 +56,11 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static java.time.ZoneOffset.UTC;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DESC_ORDER;
 
 @Slf4j
 @Component
 public class SqlTimeseriesLatestDao extends BaseAbstractSqlTimeseriesDao implements TimeseriesLatestDao {
-
-    private static final String DESC_ORDER = "DESC";
 
     @Autowired
     private TsKvLatestRepository tsKvLatestRepository;

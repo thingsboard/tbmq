@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnection;
-import org.thingsboard.mqtt.broker.dao.AbstractSearchTextDao;
+import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.WebSocketConnectionEntity;
 
@@ -31,7 +31,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class WebSocketConnectionDaoImpl
-        extends AbstractSearchTextDao<WebSocketConnectionEntity, WebSocketConnection>
+        extends AbstractDao<WebSocketConnectionEntity, WebSocketConnection>
         implements WebSocketConnectionDao {
 
     private final WebSocketConnectionRepository webSocketConnectionRepository;

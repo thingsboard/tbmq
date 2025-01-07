@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public interface ApplicationSharedSubscriptionRepository extends JpaRepository<A
     ApplicationSharedSubscriptionEntity findByTopic(String topic);
 
     @Query("SELECT c FROM ApplicationSharedSubscriptionEntity c WHERE " +
-            "LOWER(c.searchText) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+            "LOWER(c.name) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<ApplicationSharedSubscriptionEntity> findAll(@Param("textSearch") String textSearch,
                                                       Pageable pageable);
 }

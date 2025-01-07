@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao;
+package org.thingsboard.mqtt.broker.queue.cluster;
 
-import org.thingsboard.mqtt.broker.dao.model.BaseEntity;
-import org.thingsboard.mqtt.broker.dao.model.SearchTextEntity;
+import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 
-public abstract class AbstractSearchTextDao<E extends BaseEntity<D>, D> extends AbstractDao<E, D> {
+public interface ServiceInfoProvider {
 
-    @Override
-    protected void setSearchText(E entity) {
-        ((SearchTextEntity) entity).setSearchText(((SearchTextEntity) entity).getSearchTextSource().toLowerCase());
-    }
+    String getServiceId();
+
+    QueueProtos.ServiceInfo getServiceInfo();
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,6 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
 
     protected abstract CrudRepository<E, UUID> getCrudRepository();
 
-    protected void setSearchText(E entity) {
-    }
-
     @Override
     @Transactional
     public D save(D domain) {
@@ -48,7 +45,6 @@ public abstract class AbstractDao<E extends BaseEntity<D>, D>
             log.error("Can't create entity for domain object {}", domain, e);
             throw new IllegalArgumentException("Can't create entity for domain object {" + domain + "}", e);
         }
-        setSearchText(entity);
         if (log.isDebugEnabled()) {
             log.debug("Saving entity {}", entity);
         }

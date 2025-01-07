@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.UUID;
-
-import static org.thingsboard.mqtt.broker.common.data.SearchTextBasedWithAdditionalInfo.mapper;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

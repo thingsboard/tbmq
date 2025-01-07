@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.function.ToDoubleFunction;
 
-// TODO move this to some separate library (or use ThingsBoard stats library)
 public interface StatsFactory {
+
     StatsCounter createStatsCounter(String key, String statsName, String... tags);
 
     DefaultCounter createDefaultCounter(String key, String... tags);

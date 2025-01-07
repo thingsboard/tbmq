@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class DefaultStatsFactory implements StatsFactory {
 
     private final MeterRegistry meterRegistry;
 
-    @Value("${metrics.timer.percentiles:0.5}")
+    @Value("${stats.timer.percentiles:0.5}")
     private String timerPercentilesStr;
 
     private double[] timerPercentiles;
@@ -54,7 +54,6 @@ public class DefaultStatsFactory implements StatsFactory {
             }
         }
     }
-
 
     @Override
     public StatsCounter createStatsCounter(String key, String statsName, String... tags) {

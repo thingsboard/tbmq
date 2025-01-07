@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ public class BrokerConstants {
     public static final String WS = "WS";
     public static final String WSS = "WSS";
 
-    private final String ASC_ORDER = "ASC";
-    private final String DESC_ORDER = "DESC";
+    public static final String ASC_ORDER = "ASC";
+    public static final String DESC_ORDER = "DESC";
 
     public static final String ENTITY_ID_TOTAL = "total";
     public static final String INCOMING_MSGS = "incomingMsgs";
@@ -140,6 +140,7 @@ public class BrokerConstants {
     public static final String SERVICE_ID_HEADER = "serviceId";
     public static final String EMPTY_STR = "";
 
+    public static final String DOT = ".";
     public static final String COMMA = ",";
     public static final String COLON = ":";
     public static final String SEMICOLON = ";";

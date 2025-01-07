@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,6 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY = "credentials_value";
     public static final String MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY = "name";
     public static final String MQTT_CLIENT_TYPE_PROPERTY = "client_type";
-    public static final String SEARCH_TEXT_PROPERTY = "search_text";
 
     /**
      * application_shared_subscription constants.

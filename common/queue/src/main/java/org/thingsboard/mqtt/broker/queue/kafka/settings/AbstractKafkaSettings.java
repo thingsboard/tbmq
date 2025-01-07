@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.controller.sql;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import org.thingsboard.mqtt.broker.controller.BaseMqttClientCredentialsControllerTest;
-import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
+import org.springframework.beans.factory.annotation.Value;
 
-@DaoSqlTest
-public class MqttClientCredentialsControllerSqlTest extends BaseMqttClientCredentialsControllerTest {
+public abstract class AbstractKafkaSettings implements KafkaSettings {
+
+    @Value("${queue.kafka.kafka-prefix:}")
+    protected String kafkaPrefix;
+
 }

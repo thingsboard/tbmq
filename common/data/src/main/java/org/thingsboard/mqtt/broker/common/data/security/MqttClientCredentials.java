@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.common.data.security;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.BaseData;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.SearchTextBased;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -28,7 +28,7 @@ import java.util.UUID;
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class MqttClientCredentials extends SearchTextBased {
+public class MqttClientCredentials extends BaseData {
 
     @Serial
     private static final long serialVersionUID = -8551302106113554112L;
@@ -49,11 +49,6 @@ public class MqttClientCredentials extends SearchTextBased {
 
     public MqttClientCredentials(UUID id) {
         super(id);
-    }
-
-    @Override
-    public String getSearchText() {
-        return getName();
     }
 
     public MqttClientCredentials(MqttClientCredentials mqttClientCredentials) {
