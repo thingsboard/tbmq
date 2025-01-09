@@ -46,7 +46,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-mail-server',
     templateUrl: './mail-server.component.html',
     styleUrls: ['./mail-server.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, FlexModule, HelpComponent, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSelect, NgFor, MatOption, MatHint, MatSlideToggle, TogglePasswordComponent, MatSuffix, MatCheckbox, MatButton, AsyncPipe]
 })
 export class MailServerComponent extends PageComponent implements OnInit, OnDestroy, HasConfirmForm {

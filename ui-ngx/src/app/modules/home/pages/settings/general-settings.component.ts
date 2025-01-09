@@ -49,7 +49,6 @@ import { ToggleOption } from '@shared/components/toggle-header.component';
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, FlexModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatError, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy {

@@ -60,8 +60,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
-    standalone: true,
-  imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
 })
 export class MessangerComponent implements OnInit {
 

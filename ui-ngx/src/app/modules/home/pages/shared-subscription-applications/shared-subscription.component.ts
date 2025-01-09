@@ -36,7 +36,6 @@ import { NgIf, AsyncPipe } from '@angular/common';
     selector: 'tb-shared-subscriptions',
     templateUrl: './shared-subscription.component.html',
     styleUrls: ['./shared-subscription.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, CopyButtonComponent, MatSuffix, AsyncPipe]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {

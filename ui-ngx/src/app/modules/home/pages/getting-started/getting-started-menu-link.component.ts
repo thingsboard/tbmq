@@ -25,7 +25,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './getting-started-menu-link.component.html',
     styleUrls: ['./getting-started-menu-link.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatButton, MatIcon, TranslateModule]
 })
 export class GettingStartedMenuLinkComponent {

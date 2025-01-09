@@ -32,7 +32,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-kafka-brokers-table',
     templateUrl: './kafka-brokers-home-table.component.html',
     styleUrls: ['./kafka-brokers-home-table.component.scss'],
-    standalone: true,
     imports: [FlexModule, CardTitleButtonComponent, MatTable, NgFor, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, NgStyle, ExtendedModule, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, TranslateModule]
 })
 export class KafkaBrokersHomeTableComponent extends EntitiesTableHomeNoPagination<KafkaBroker> {

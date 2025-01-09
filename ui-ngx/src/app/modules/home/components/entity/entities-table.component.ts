@@ -87,7 +87,6 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './entities-table.component.html',
     styleUrls: ['./entities-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatDrawerContainer, NgIf, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, FlexModule, MatToolbar, ExtendedModule, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, NgFor, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, NgStyle, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {

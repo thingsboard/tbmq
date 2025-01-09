@@ -35,7 +35,6 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true
         }
     ],
-    standalone: true,
     imports: [FlexModule, MatFormField, NgIf, MatLabel, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule, TranslateModule]
 })
 export class DatetimeComponent implements OnInit, ControlValueAccessor {

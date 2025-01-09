@@ -28,7 +28,6 @@ import { EntitiesTableWsComponent } from '@home/components/entity/entities-table
     selector: 'tb-messages',
     templateUrl: './messages.component.html',
     styleUrls: ['./messages.component.scss'],
-    standalone: true,
     imports: [EntitiesTableWsComponent]
 })
 export class MessagesComponent {

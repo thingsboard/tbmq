@@ -39,7 +39,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-create-password',
     templateUrl: './create-password.component.html',
     styleUrls: ['./create-password.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatCard, MatCardTitle, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, AsyncPipe]
 })
 export class CreatePasswordComponent extends PageComponent implements OnInit, OnDestroy {

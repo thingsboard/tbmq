@@ -28,7 +28,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-subscriptions-table',
     templateUrl: './subscriptions-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class SubscriptionsTableComponent implements OnInit {

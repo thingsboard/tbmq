@@ -67,7 +67,6 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true,
         }
     ],
-    standalone: true,
     imports: [FullscreenDirective, FlexModule, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {

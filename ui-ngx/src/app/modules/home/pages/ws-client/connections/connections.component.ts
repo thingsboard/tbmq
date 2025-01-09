@@ -31,7 +31,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-connections',
     templateUrl: './connections.component.html',
     styleUrls: ['./connections.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatTooltip, MatIconButton, MatIcon, SelectConnectionComponent, AsyncPipe, TranslateModule]
 })
 export class ConnectionsComponent {

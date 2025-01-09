@@ -73,7 +73,6 @@ import { MatIcon } from '@angular/material/icon';
     templateUrl: './entities-table-ws.component.html',
     styleUrls: ['./entities-table-ws.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, ExtendedModule, NgFor, MatSortHeader, NgClass, NgStyle, MatTooltip, NgIf, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatIconButton, TbIconComponent, FlexModule, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {

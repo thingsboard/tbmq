@@ -33,7 +33,6 @@ import { ToggleHeaderComponent } from './toggle-header.component';
             multi: true
         }
     ],
-    standalone: true,
     imports: [ToggleHeaderComponent]
 })
 export class ToggleSelectComponent extends _ToggleBase implements ControlValueAccessor {

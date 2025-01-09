@@ -45,7 +45,6 @@ import { MatIconButton } from '@angular/material/button';
             multi: true
         }
     ],
-    standalone: true,
     imports: [FormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, MatSelectTrigger, MatIcon, NgFor, MatOption, NgIf, MatInput, MatError, TbJsonToStringDirective, MatIconButton, MatSuffix]
 })
 export class ValueInputComponent implements OnInit, ControlValueAccessor {

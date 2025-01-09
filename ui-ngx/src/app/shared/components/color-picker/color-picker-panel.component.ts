@@ -32,7 +32,6 @@ import { TranslateModule } from '@ngx-translate/core';
     providers: [],
     styleUrls: ['./color-picker-panel.component.scss'],
     encapsulation: ViewEncapsulation.None,
-    standalone: true,
     imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, NgIf, MatButton, TranslateModule]
 })
 export class ColorPickerPanelComponent extends PageComponent implements OnInit {

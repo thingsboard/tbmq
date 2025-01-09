@@ -61,7 +61,6 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
         }
     ],
     styleUrls: ['./scram.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, TranslateModule, FlexModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, NgIf, MatError, TogglePasswordComponent, MatSelect, NgFor, MatOption, MatHint, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsScramComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {

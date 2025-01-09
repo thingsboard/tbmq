@@ -72,7 +72,6 @@ export interface UnauthorizedClientFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption]
 })
 export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

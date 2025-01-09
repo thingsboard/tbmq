@@ -79,7 +79,6 @@ export interface SessionFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, NgFor, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

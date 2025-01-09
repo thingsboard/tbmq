@@ -28,7 +28,6 @@ import { MatCheckbox } from '@angular/material/checkbox';
             multi: true
         }
     ],
-    standalone: true,
     imports: [MatCheckbox, FormsModule]
 })
 export class TbCheckboxComponent implements ControlValueAccessor {

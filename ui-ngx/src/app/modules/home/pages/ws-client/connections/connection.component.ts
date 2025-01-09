@@ -35,7 +35,6 @@ import { TbIconComponent } from '@shared/components/icon.component';
     selector: 'tb-connection',
     templateUrl: './connection.component.html',
     styleUrls: ['./connection.component.scss'],
-    standalone: true,
     imports: [FlexModule, NgClass, ExtendedModule, NgStyle, NgFor, MatTooltip, NgIf, MatIconButton, TbIconComponent]
 })
 export class ConnectionComponent implements OnInit {

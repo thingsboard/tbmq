@@ -53,7 +53,6 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
         }
     ],
     styleUrls: ['./basic.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, NgIf, MatError, FlexModule, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, NgFor, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {

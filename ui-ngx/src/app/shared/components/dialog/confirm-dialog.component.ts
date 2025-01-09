@@ -32,7 +32,6 @@ export interface ConfirmDialogData {
     selector: 'tb-confirm-dialog',
     templateUrl: './confirm-dialog.component.html',
     styleUrls: ['./confirm-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatDialogActions, FlexModule, MatButton, MatDialogClose]
 })
 export class ConfirmDialogComponent {

@@ -35,7 +35,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-router-tabs',
     templateUrl: './router-tabs.component.html',
     styleUrls: ['./router-tabs.component.scss'],
-    standalone: true,
     imports: [FlexModule, NgIf, MatTabNav, NgFor, RouterLinkActive, MatTabLink, RouterLink, TbIconComponent, TbAnchorComponent, MatTabNavPanel, RouterOutlet, AsyncPipe, TranslateModule]
 })
 export class RouterTabsComponent extends PageComponent implements OnInit {

@@ -29,7 +29,6 @@ export interface AlertDialogData {
     selector: 'tb-alert-dialog',
     templateUrl: './alert-dialog.component.html',
     styleUrls: ['./alert-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogTitle, MatDialogContent, MatDialogActions, FlexModule, MatButton, MatDialogClose]
 })
 export class AlertDialogComponent {

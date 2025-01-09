@@ -358,7 +358,6 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
       </div>
     </ng-template>
   `,
-    standalone: true,
     imports: [CdkConnectedOverlay, NgClass, ExtendedModule, NgStyle, NgIf, TbComponentOutletDirective]
 })
 export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {

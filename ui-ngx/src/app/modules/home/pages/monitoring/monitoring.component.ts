@@ -89,7 +89,6 @@ Chart.register([Zoom]);
     selector: 'tb-monitoring',
     templateUrl: './monitoring.component.html',
     styleUrls: ['./monitoring.component.scss'],
-    standalone: true,
     imports: [MatToolbar, FlexModule, TimewindowComponent, FormsModule, NgFor, FullscreenDirective, MatDivider, ExtendedModule, NgStyle, NgIf, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {

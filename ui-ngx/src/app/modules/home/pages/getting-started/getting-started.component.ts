@@ -37,7 +37,6 @@ import { MatButton } from '@angular/material/button';
     templateUrl: './getting-started.component.html',
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FlexModule, NgFor, MatButton]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {

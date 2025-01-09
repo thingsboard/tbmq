@@ -70,7 +70,6 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true,
         }
     ],
-    standalone: true,
     imports: [FlexModule, FullscreenDirective, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {

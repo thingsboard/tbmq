@@ -34,7 +34,6 @@ import { MatInput } from '@angular/material/input';
             multi: true
         }
     ],
-    standalone: true,
     imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
 })
 export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {

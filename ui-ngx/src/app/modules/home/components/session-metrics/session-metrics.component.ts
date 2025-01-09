@@ -43,7 +43,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-session-metrics',
     templateUrl: './session-metrics.component.html',
     styleUrls: ['./session-metrics.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatIconButton, MatTooltip, MatIcon, MatTable, MatSort, NgFor, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, NgStyle, ExtendedModule, NgIf, TranslateModule, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, DatePipe]
 })
 export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<SessionMetricsTable> {

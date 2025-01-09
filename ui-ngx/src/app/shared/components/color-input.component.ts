@@ -52,7 +52,6 @@ import { MatIconButton, MatButton } from '@angular/material/button';
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, NgStyle, ExtendedModule, MatInput, MatIconButton, MatSuffix, MatError, MatButton, NgClass]
 })
 export class ColorInputComponent extends PageComponent implements OnInit, ControlValueAccessor {

@@ -55,7 +55,6 @@ import { MatIcon } from '@angular/material/icon';
             useValue: { displayDefaultIndicatorType: false }
         }
     ],
-    standalone: true,
     imports: [FlexModule, CardTitleButtonComponent, MatStepper, NgFor, MatStep, MatStepLabel, TbMarkdownComponent, NgIf, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {

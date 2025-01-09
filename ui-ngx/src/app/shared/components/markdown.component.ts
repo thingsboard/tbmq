@@ -42,7 +42,6 @@ let defaultMarkdownStyle;
     selector: 'tb-markdown',
     templateUrl: './markdown.component.html',
     styleUrls: ['./markdown.component.scss'],
-    standalone: true,
     imports: [NgIf, ExtendedModule, NgClass, NgStyle]
 })
 export class TbMarkdownComponent implements OnChanges {

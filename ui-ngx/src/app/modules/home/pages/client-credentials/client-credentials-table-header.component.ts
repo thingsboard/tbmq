@@ -26,7 +26,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-client-credentials-table-header',
     templateUrl: './client-credentials-table-header.component.html',
     styleUrls: ['./client-credentials-table-header.component.scss'],
-    standalone: true,
     imports: [ClientCredentialsFilterConfigComponent, FormsModule]
 })
 export class ClientCredentialsTableHeaderComponent extends EntityTableHeaderComponent<ClientCredentials> {

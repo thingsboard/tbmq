@@ -55,7 +55,6 @@ export interface UserPropertiesObject {
         }
     ],
     styleUrls: ['./user-properties.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, FlexModule, TranslateModule, NgFor, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, ExtendedModule]
 })
 export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {

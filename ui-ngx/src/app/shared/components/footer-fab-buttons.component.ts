@@ -45,7 +45,6 @@ export interface FooterFabButtons {
     templateUrl: './footer-fab-buttons.component.html',
     styleUrls: ['./footer-fab-buttons.component.scss'],
     animations: speedDialFabAnimations,
-    standalone: true,
     imports: [FlexModule, NgClass, ExtendedModule, MatFabButton, MatTooltip, MatIcon, NgFor, AsyncPipe, TranslateModule]
 })
 export class FooterFabButtonsComponent extends PageComponent {

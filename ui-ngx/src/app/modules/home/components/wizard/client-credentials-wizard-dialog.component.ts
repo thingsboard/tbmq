@@ -55,7 +55,6 @@ import { MatDivider } from '@angular/material/divider';
     selector: 'tb-client-credentials-wizard',
     templateUrl: './client-credentials-wizard-dialog.component.html',
     styleUrls: ['./client-credentials-wizard-dialog.component.scss'],
-    standalone: true,
     imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, MatError, MatSelect, NgFor, MatOption, NgSwitch, NgSwitchCase, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ClientCredentialsWizardDialogComponent extends DialogComponent<ClientCredentialsWizardDialogComponent, ClientCredentials> {

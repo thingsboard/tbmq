@@ -46,7 +46,6 @@ import { RouterOutlet } from '@angular/router';
     selector: 'tb-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    standalone: true,
     imports: [MatSidenavContainer, MatSidenav, MatToolbar, FlexModule, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, ExtendedModule, MatIcon, BreadcrumbComponent, NgIf, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {

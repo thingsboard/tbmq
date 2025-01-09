@@ -27,7 +27,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-session-table-header',
     templateUrl: './session-table-header.component.html',
     styleUrls: ['./session-table-header.component.scss'],
-    standalone: true,
     imports: [SessionFilterConfigComponent, FormsModule]
 })
 export class SessionTableHeaderComponent extends EntityTableHeaderComponent<DetailedClientSessionInfo> {

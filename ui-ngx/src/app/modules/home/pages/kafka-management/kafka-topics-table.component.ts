@@ -25,7 +25,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-kafka-topics-table',
     templateUrl: './kafka-topics-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class KafkaTopicsTableComponent implements OnInit {

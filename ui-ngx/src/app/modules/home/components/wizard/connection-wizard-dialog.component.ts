@@ -86,7 +86,6 @@ export interface ConnectionDialogData {
     selector: 'tb-connection-wizard',
     templateUrl: './connection-wizard-dialog.component.html',
     styleUrls: ['./connection-wizard-dialog.component.scss'],
-    standalone: true,
     imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, ExtendedModule, MatTooltip, MatSlideToggle, NgSwitch, NgSwitchCase, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, NgFor, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {

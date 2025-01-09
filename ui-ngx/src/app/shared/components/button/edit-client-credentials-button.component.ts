@@ -30,7 +30,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'tb-edit-client-credentials-button',
     styleUrls: ['edit-client-credentials-button.component.scss'],
     templateUrl: './edit-client-credentials-button.component.html',
-    standalone: true,
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class EditClientCredentialsButtonComponent {

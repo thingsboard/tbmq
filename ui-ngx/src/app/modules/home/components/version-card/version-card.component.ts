@@ -29,7 +29,6 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-version-card',
     templateUrl: './version-card.component.html',
     styleUrls: ['./version-card.component.scss'],
-    standalone: true,
     imports: [FlexModule, CardTitleButtonComponent, TranslateModule, NgIf, NgTemplateOutlet, MatButton, ExtendedModule, MatTooltip]
 })
 export class VersionCardComponent implements OnInit {

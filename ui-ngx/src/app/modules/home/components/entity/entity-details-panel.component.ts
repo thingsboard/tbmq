@@ -56,7 +56,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './entity-details-panel.component.html',
     styleUrls: ['./entity-details-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [DetailsPanelComponent, FlexModule, HelpComponent, MatTabGroup, NgClass, ExtendedModule, MatTab, TbAnchorComponent, TranslateModule]
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {

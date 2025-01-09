@@ -43,7 +43,6 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
             multi: true
         }
     ],
-    standalone: true,
     imports: [FlexModule, ExtendedModule, TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, NgIf, MatSelect, NgFor, MatOption, MatSlideToggle]
 })
 export class TimeintervalComponent implements OnInit, ControlValueAccessor {

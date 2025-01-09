@@ -30,7 +30,6 @@ import { VersionCardComponent } from '../../components/version-card/version-card
     selector: 'tb-home-overview',
     templateUrl: './home-overview.component.html',
     styleUrls: ['./home-overview.component.scss'],
-    standalone: true,
     imports: [FlexModule, HomeChartsComponent, HomeCardsSessionsCredentialsComponent, CardConfigComponent, KafkaBrokersHomeTableComponent, KafkaTablesTabGroupComponent, GettingStartedHomeComponent, ExtendedModule, QuickLinksComponent, VersionCardComponent]
 })
 export class HomeOverviewComponent implements AfterViewInit {

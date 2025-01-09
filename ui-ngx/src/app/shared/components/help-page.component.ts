@@ -24,7 +24,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-help-page',
     templateUrl: './help-page.component.html',
     styleUrls: ['./help-page.component.scss'],
-    standalone: true,
     imports: [MatButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class HelpPageComponent {

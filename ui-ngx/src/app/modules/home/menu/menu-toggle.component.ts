@@ -30,7 +30,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './menu-toggle.component.html',
     styleUrls: ['./menu-toggle.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatAnchor, NgIf, TbIconComponent, NgClass, ExtendedModule, NgStyle, NgFor, MenuLinkComponent, NospacePipe, TranslateModule]
 })
 export class MenuToggleComponent {

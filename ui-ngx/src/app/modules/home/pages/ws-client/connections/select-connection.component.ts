@@ -26,7 +26,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-select-connection',
     templateUrl: './select-connection.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class SelectConnectionComponent {

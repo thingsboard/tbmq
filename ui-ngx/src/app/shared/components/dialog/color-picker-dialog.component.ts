@@ -38,7 +38,6 @@ export interface ColorPickerDialogResult {
     selector: 'tb-color-picker-dialog',
     templateUrl: './color-picker-dialog.component.html',
     styleUrls: ['./color-picker-dialog.component.scss'],
-    standalone: true,
     imports: [MatDialogContent, MatIconButton, MatIcon, ColorPickerPanelComponent]
 })
 export class ColorPickerDialogComponent extends DialogComponent<ColorPickerDialogComponent, ColorPickerDialogResult> {

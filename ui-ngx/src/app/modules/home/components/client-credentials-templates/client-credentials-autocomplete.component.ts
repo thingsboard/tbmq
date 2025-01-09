@@ -60,7 +60,6 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
             useExisting: forwardRef(() => ClientCredentialsAutocompleteComponent),
             multi: true
         }],
-    standalone: true,
     imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {

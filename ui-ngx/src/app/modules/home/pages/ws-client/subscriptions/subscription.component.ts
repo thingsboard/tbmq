@@ -44,7 +44,6 @@ import { TbIconComponent } from '@shared/components/icon.component';
     selector: 'tb-subscription',
     templateUrl: './subscription.component.html',
     styleUrls: ['./subscription.component.scss'],
-    standalone: true,
     imports: [FlexModule, NgStyle, ExtendedModule, MatTooltip, NgClass, NgFor, NgIf, MatIconButton, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, TranslateModule]
 })
 export class SubscriptionComponent {

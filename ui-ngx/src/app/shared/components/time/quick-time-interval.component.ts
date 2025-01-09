@@ -35,7 +35,6 @@ import { MatOption } from '@angular/material/core';
             multi: true
         }
     ],
-    standalone: true,
     imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, NgFor, MatOption]
 })
 export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor {

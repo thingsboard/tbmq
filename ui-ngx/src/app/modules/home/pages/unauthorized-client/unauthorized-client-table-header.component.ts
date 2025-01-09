@@ -27,7 +27,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-session-table-header',
     templateUrl: './unauthorized-client-table-header.component.html',
     styleUrls: ['./unauthorized-client-table-header.component.scss'],
-    standalone: true,
     imports: [UnauthorizedClientFilterConfigComponent, FormsModule]
 })
 export class UnauthorizedClientTableHeaderComponent extends EntityTableHeaderComponent<UnauthorizedClient> {

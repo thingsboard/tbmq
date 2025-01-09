@@ -123,7 +123,6 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
     selector: 'tb-toggle-header',
     templateUrl: './toggle-header.component.html',
     styleUrls: ['./toggle-header.component.scss'],
-    standalone: true,
     imports: [MatIconButton, MatIcon, NgIf, MatButtonToggleGroup, FormsModule, NgFor, MatButtonToggle, MatFormField, MatSelect, MatOption, AsyncPipe]
 })
 export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterViewInit, AfterContentInit,

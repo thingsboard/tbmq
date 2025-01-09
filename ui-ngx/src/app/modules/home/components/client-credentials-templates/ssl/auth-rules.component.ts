@@ -54,7 +54,6 @@ import { MatIconButton, MatButton } from '@angular/material/button';
         }
     ],
     styleUrls: ['./auth-rules.component.scss'],
-    standalone: true,
     imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, NgIf, MatExpansionPanelDescription, MatError, FlexModule, ReactiveFormsModule, NgFor, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, ExtendedModule, MatTooltip, MatIconButton, MatButton]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {

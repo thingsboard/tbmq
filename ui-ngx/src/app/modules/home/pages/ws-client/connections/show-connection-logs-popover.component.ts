@@ -34,7 +34,6 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-show-connection-logs-popover',
     templateUrl: './show-connection-logs-popover.component.html',
     styleUrls: ['./show-connection-logs-popover.component.scss'],
-    standalone: true,
     imports: [TranslateModule, MatIconButton, MatIcon, NgIf, NgFor, FlexModule, NgStyle, ExtendedModule, MatTooltip, DatePipe]
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {

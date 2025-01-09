@@ -30,7 +30,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-home-cards-sessions-credentials',
     templateUrl: './home-cards-sessions-credentials.component.html',
     styles: [':host {display: flex}'],
-    standalone: true,
     imports: [FlexModule, HomeCardsTableComponent, TranslateModule]
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {

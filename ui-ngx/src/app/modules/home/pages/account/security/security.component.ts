@@ -46,7 +46,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-security',
     templateUrl: './security.component.html',
     styleUrls: ['./security.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, ExtendedModule, NgIf, MatError, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe]
 })
 export class SecurityComponent extends PageComponent implements OnInit, OnDestroy {

@@ -27,7 +27,6 @@ import { MatIcon } from '@angular/material/icon';
 @Component({
     selector: 'tb-copy-content-button',
     templateUrl: './copy-content-button.component.html',
-    standalone: true,
     imports: [MatButton, ClipboardModule, ExtendedModule, MatIcon, TranslateModule]
 })
 export class CopyContentButtonComponent {

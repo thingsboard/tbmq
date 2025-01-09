@@ -34,7 +34,6 @@ import { TbIconComponent } from './icon.component';
     templateUrl: './breadcrumb.component.html',
     styleUrls: ['./breadcrumb.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [FlexModule, NgIf, ExtendedModule, NgFor, NgSwitch, NgSwitchCase, RouterLink, NgTemplateOutlet, TbIconComponent, AsyncPipe, TranslateModule]
 })
 export class BreadcrumbComponent implements OnInit, OnDestroy {

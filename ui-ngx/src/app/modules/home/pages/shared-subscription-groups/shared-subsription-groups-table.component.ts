@@ -29,7 +29,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-shared-subsriptions-groups-table',
     templateUrl: './shared-subsription-groups-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class SharedSubsriptionGroupsTableComponent implements OnInit {

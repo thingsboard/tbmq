@@ -28,7 +28,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-card-title-button',
     styleUrls: ['card-title-button.component.scss'],
     templateUrl: './card-title-button.component.html',
-    standalone: true,
     imports: [FlexModule, NgClass, ExtendedModule, NgIf, MatIcon, MatTooltip, TranslateModule]
 })
 export class CardTitleButtonComponent implements AfterViewInit {

@@ -30,7 +30,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-subscriptions-table-header',
     templateUrl: './subscriptions-table-header.component.html',
     styleUrls: ['./subscriptions-table-header.component.scss'],
-    standalone: true,
     imports: [SubscriptionsFilterConfigComponent, FormsModule]
 })
 export class SubscriptionsTableHeaderComponent extends EntityTableHeaderComponent<ClientSubscription> {

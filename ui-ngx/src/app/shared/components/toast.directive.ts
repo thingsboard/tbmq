@@ -276,7 +276,6 @@ export type ToastAnimationState = 'default' | 'opened' | 'closing';
     templateUrl: 'snack-bar-component.html',
     styleUrls: ['snack-bar-component.scss'],
     animations: [toastAnimations.showHideToast],
-    standalone: true,
     imports: [FlexModule, NgClass, ExtendedModule, MatButton, TranslateModule]
 })
 export class TbSnackBarComponent implements AfterViewInit, OnDestroy {

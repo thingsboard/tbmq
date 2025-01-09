@@ -63,7 +63,6 @@ export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelDat
     selector: 'tb-timewindow-panel',
     templateUrl: './timewindow-panel.component.html',
     styleUrls: ['./timewindow-panel.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatTabGroup, NgClass, ExtendedModule, MatTab, FlexModule, NgIf, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, NgFor, MatOption, MatButton, AsyncPipe]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {

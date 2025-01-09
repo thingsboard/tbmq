@@ -45,7 +45,6 @@ import { MatError } from '@angular/material/form-field';
             transition('* => show', animate('200ms ease-in'))
         ]),
     ],
-    standalone: true,
     imports: [MatError]
 })
 export class TbErrorComponent {

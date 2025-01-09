@@ -44,7 +44,6 @@ export interface WsMessagePropertiesDialogData {
     selector: 'tb-ws-message-properties-dialog',
     templateUrl: './ws-message-properties-dialog.component.html',
     styleUrls: ['./ws-message-properties-dialog.component.scss'],
-    standalone: true,
     imports: [CdkScrollable, MatDialogContent, FlexModule, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, NgFor, MatOption, UserPropertiesComponent]
 })
 export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessagePropertiesDialogData> implements OnInit, OnDestroy {

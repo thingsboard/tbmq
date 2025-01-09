@@ -49,7 +49,6 @@ import { MqttCredentialsScramComponent } from '../../components/client-credentia
             useValue: appearance
         }
     ],
-    standalone: true,
     imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, MatSelect, NgFor, MatOption, NgSwitch, NgSwitchCase, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe]
 })
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {

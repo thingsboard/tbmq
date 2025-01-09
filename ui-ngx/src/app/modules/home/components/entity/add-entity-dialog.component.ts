@@ -60,7 +60,6 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './add-entity-dialog.component.html',
     providers: [{ provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent }],
     styleUrls: ['./add-entity-dialog.component.scss'],
-    standalone: true,
     imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>

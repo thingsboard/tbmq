@@ -49,7 +49,6 @@ export const colorPresetsHex =
             multi: true
         }
     ],
-    standalone: true,
     imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, NgSwitch, NgSwitchCase, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
 })
 export class ColorPickerComponent implements ControlValueAccessor, OnDestroy {

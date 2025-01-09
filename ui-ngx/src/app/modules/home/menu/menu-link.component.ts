@@ -27,7 +27,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './menu-link.component.html',
     styleUrls: ['./menu-link.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatAnchor, RouterLinkActive, RouterLink, NgIf, TbIconComponent, TranslateModule]
 })
 export class MenuLinkComponent {

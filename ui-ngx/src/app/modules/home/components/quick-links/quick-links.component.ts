@@ -26,7 +26,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-quick-links',
     templateUrl: './quick-links.component.html',
     styleUrls: ['./quick-links.component.scss'],
-    standalone: true,
     imports: [CardTitleButtonComponent, NgFor, TbIconComponent, AsyncPipe, TranslateModule]
 })
 export class QuickLinksComponent {

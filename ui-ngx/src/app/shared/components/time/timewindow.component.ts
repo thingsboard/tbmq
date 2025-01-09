@@ -79,7 +79,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule]
 })
 export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChanges {

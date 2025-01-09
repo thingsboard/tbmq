@@ -45,7 +45,6 @@ import { AuthRulesComponent } from './auth-rules.component';
         }
     ],
     styleUrls: [],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, NgIf, MatError, MatSlideToggle, AuthRulesComponent]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {

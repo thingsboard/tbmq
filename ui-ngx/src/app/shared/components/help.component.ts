@@ -25,7 +25,6 @@ import { TranslateModule } from '@ngx-translate/core';
     // tslint:disable-next-line:component-selector
     selector: '[tb-help]',
     templateUrl: './help.component.html',
-    standalone: true,
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class HelpComponent {

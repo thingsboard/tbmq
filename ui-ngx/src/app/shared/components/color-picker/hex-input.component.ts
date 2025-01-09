@@ -26,7 +26,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: `./hex-input.component.html`,
     styleUrls: ['./hex-input.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatFormField, MatPrefix, MatInput, CopyButtonComponent, MatSuffix, TranslateModule]
 })
 export class HexInputComponent {

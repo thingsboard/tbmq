@@ -27,7 +27,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-shared-subscription-groups-table-header',
     templateUrl: './shared-subscription-groups-table-header.component.html',
     styleUrls: ['./shared-subscription-groups-table-header.component.scss'],
-    standalone: true,
     imports: [SharedSubscriptionGroupsFilterConfigComponent, FormsModule]
 })
 export class SharedSubscriptionGroupsTableHeaderComponent extends EntityTableHeaderComponent<SharedSubscriptionGroup> {

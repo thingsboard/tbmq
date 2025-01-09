@@ -38,7 +38,6 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
     selector: 'tb-ws-subscriptions',
     templateUrl: './subscriptions.component.html',
     styleUrls: ['./subscriptions.component.scss'],
-    standalone: true,
     imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, NgIf, NgFor, SubscriptionComponent, FlexModule, MatProgressSpinner]
 })
 export class SubscriptionsComponent {

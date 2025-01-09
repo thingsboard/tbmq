@@ -28,7 +28,6 @@ import { TbMarkdownComponent } from '@shared/components/markdown.component';
     templateUrl: './getting-started-guide.component.html',
     styleUrls: ['./getting-started-guide.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatCard, MatCardContent, FlexModule, MatDialogContent, TbMarkdownComponent]
 })
 export class GettingStartedGuideComponent implements OnInit {

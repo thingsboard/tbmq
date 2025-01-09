@@ -21,7 +21,6 @@ import { FlexModule } from '@angular/flex-layout/flex';
     selector: 'tb-logo',
     templateUrl: './logo.component.html',
     styleUrls: ['./logo.component.scss'],
-    standalone: true,
     imports: [FlexModule]
 })
 export class LogoComponent {

@@ -36,7 +36,6 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './user-menu.component.html',
     styleUrls: ['./user-menu.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [FlexModule, NgIf, ExtendedModule, MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TranslateModule, AsyncPipe]
 })
 export class UserMenuComponent {

@@ -37,7 +37,6 @@ import { RouterLink } from '@angular/router';
     selector: 'tb-reset-password-request',
     templateUrl: './reset-password-request.component.html',
     styleUrls: ['./reset-password-request.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatCard, MatCardHeader, MatCardTitle, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, MatError, MatButton, RouterLink, AsyncPipe]
 })
 export class ResetPasswordRequestComponent extends PageComponent implements OnInit {

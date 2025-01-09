@@ -33,7 +33,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-details-panel',
     templateUrl: './details-panel.component.html',
     styleUrls: ['./details-panel.component.scss'],
-    standalone: true,
     imports: [MatToolbar, NgStyle, ExtendedModule, FlexModule, NgIf, MatIconButton, MatIcon, MatFabButton, MatTooltip, NgClass, AsyncPipe, TranslateModule]
 })
 export class DetailsPanelComponent extends PageComponent implements OnDestroy {

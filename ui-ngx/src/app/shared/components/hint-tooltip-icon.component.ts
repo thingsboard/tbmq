@@ -23,7 +23,6 @@ import { TbIconComponent } from './icon.component';
     selector: '[tb-hint-tooltip-icon]',
     templateUrl: './hint-tooltip-icon.component.html',
     styleUrls: ['./hint-tooltip-icon.component.scss'],
-    standalone: true,
     imports: [NgIf, TbIconComponent, MatTooltip]
 })
 export class HintTooltipIconComponent {

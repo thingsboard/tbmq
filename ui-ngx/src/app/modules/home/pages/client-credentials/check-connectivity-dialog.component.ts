@@ -85,7 +85,6 @@ export interface MqttCommandConfig {
     selector: 'tb-check-connectivity-dialog',
     templateUrl: './check-connectivity-dialog.component.html',
     styleUrls: ['./check-connectivity-dialog.component.scss'],
-    standalone: true,
     imports: [MatToolbar, TranslateModule, FlexModule, MatIconButton, MatIcon, CdkScrollable, MatDialogContent, NgIf, ToggleHeaderComponent, ExtendedModule, ToggleOption, NgSwitch, NgSwitchCase, NgTemplateOutlet, MatTabGroup, MatTab, MatTabLabel, MatTabContent, TbMarkdownComponent, MatDialogActions, MatSlideToggle, FormsModule, MatButton, MatProgressSpinner, MatAnchor, AsyncPipe]
 })
 export class CheckConnectivityDialogComponent extends

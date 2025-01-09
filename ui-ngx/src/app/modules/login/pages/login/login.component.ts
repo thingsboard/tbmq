@@ -42,7 +42,6 @@ import { FooterComponent } from '@shared/components/footer.component';
     selector: 'tb-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, NgIf, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, MatError, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe]
 })
 export class LoginComponent extends PageComponent {

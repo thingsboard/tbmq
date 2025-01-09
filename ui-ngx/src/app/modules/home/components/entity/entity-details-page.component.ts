@@ -53,7 +53,6 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
     templateUrl: './entity-details-page.component.html',
     styleUrls: ['./entity-details-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [MatCard, MatToolbar, FlexModule, MatIconButton, MatTooltip, MatIcon, HelpComponent, NgIf, MatFabButton, NgClass, ExtendedModule, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
 })
 export class EntityDetailsPageComponent extends EntityDetailsPanelComponent implements IEntityDetailsPageComponent, OnInit, OnDestroy {

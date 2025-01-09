@@ -29,7 +29,6 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'tb-copy-button',
     styleUrls: ['copy-button.component.scss'],
     templateUrl: './copy-button.component.html',
-    standalone: true,
     imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, NgIf, MatIcon, NgStyle]
 })
 export class CopyButtonComponent {

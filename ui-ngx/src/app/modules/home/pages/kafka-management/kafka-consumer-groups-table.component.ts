@@ -26,7 +26,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-kafka-consumer-groups-table',
     templateUrl: './kafka-consumer-groups-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class KafkaConsumerGroupsTableComponent implements OnInit {

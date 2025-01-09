@@ -69,7 +69,6 @@ export interface MessageFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatTooltip]
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {

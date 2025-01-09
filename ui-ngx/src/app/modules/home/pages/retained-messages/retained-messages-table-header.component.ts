@@ -27,7 +27,6 @@ import { FormsModule } from '@angular/forms';
     selector: 'tb-retained-messages-table-header',
     templateUrl: './retained-messages-table-header.component.html',
     styleUrls: ['./retained-messages-table-header.component.scss'],
-    standalone: true,
     imports: [RetainedMessagesFilterConfigComponent, FormsModule]
 })
 export class RetainedMessagesTableHeaderComponent extends EntityTableHeaderComponent<RetainedMessage> {

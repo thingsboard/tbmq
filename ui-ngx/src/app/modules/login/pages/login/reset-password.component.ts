@@ -39,7 +39,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-reset-password',
     templateUrl: './reset-password.component.html',
     styleUrls: ['./reset-password.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatCard, MatCardTitle, TranslateModule, NgIf, MatCardSubtitle, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, AsyncPipe]
 })
 export class ResetPasswordComponent extends PageComponent implements OnInit, OnDestroy {

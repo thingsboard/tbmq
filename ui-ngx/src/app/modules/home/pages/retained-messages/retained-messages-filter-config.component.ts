@@ -73,7 +73,6 @@ export interface RetainedMessagesFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption]
 })
 export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

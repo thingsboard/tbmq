@@ -65,7 +65,6 @@ export interface SessionsDetailsDialogData {
             useValue: appearance
         }
     ],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, ExtendedModule, NgStyle, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>

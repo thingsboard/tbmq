@@ -36,7 +36,6 @@ import { NgIf, AsyncPipe } from '@angular/common';
     selector: 'tb-user',
     templateUrl: './user.component.html',
     styleUrls: ['./user.component.scss'],
-    standalone: true,
     imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, AsyncPipe]
 })
 export class UserComponent extends EntityComponent<User> {

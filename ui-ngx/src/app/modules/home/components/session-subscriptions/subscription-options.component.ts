@@ -30,7 +30,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-subscription-options',
     templateUrl: './subscription-options.component.html',
     styleUrls: [],
-    standalone: true,
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class SubscriptionOptionsComponent {

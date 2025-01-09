@@ -42,7 +42,6 @@ import { MessangerComponent } from './messages/messanger.component';
     selector: 'tb-ws-client',
     templateUrl: './ws-client.component.html',
     styleUrls: ['./ws-client.component.scss'],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, FlexModule, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe]
 })
 export class WsClientComponent extends PageComponent implements OnInit {

@@ -70,7 +70,6 @@ export interface SubscriptionsFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatError]
 })
 export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

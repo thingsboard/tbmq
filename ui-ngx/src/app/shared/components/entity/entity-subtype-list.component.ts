@@ -43,7 +43,6 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
             multi: true
         }
     ],
-    standalone: true,
     imports: [MatFormField, FormsModule, ReactiveFormsModule, NgIf, MatLabel, MatChipGrid, NgFor, MatChipRow, MatIcon, MatChipRemove, MatInput, MatAutocompleteTrigger, MatChipInput, MatAutocompleteOrigin, MatAutocomplete, MatOption, MatSuffix, MatError, AsyncPipe, TranslateModule, HighlightPipe]
 })
 export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit {

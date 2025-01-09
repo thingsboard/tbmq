@@ -48,7 +48,6 @@ export interface EventContentDialogComponentDialogData {
     selector: 'tb-event-content-dialog',
     templateUrl: './event-content-dialog.component.html',
     styleUrls: ['./event-content-dialog.component.scss'],
-    standalone: true,
     imports: [CdkScrollable, MatDialogContent, FlexModule, NgIf, TbIconComponent, TranslateModule, MatIconButton, MatDialogClose, MatIcon, CopyButtonComponent, AsyncPipe]
 })
 export class EventContentDialogComponent extends DialogComponent<EventContentDialogComponentDialogData> implements OnInit, OnDestroy {

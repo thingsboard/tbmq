@@ -30,7 +30,6 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-home-cards-table',
     templateUrl: './home-cards-table.component.html',
     styleUrls: ['home-cards-table.component.scss'],
-    standalone: true,
     imports: [FlexModule, CardTitleButtonComponent, NgFor, LtXmdShowHideDirective, TranslateModule]
 })
 export class HomeCardsTableComponent {

@@ -75,7 +75,6 @@ export interface ClientCredentialsFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, NgFor, MatChipOption, MatFormField, MatInput, MatSuffix]
 })
 export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

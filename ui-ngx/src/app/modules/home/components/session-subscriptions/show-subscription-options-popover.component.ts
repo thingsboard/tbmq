@@ -33,7 +33,6 @@ import { MatInput } from '@angular/material/input';
     selector: 'tb-show-subscription-options',
     templateUrl: './show-subscription-options-popover.component.html',
     styleUrls: [],
-    standalone: true,
     imports: [FormsModule, FlexModule, NgTemplateOutlet, MatButton, ReactiveFormsModule, TranslateModule, MatFormField, MatSelect, NgFor, MatOption, MatSlideToggle, MatIcon, MatTooltip, MatInput, MatSuffix, NgIf, MatError]
 })
 export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestroy {

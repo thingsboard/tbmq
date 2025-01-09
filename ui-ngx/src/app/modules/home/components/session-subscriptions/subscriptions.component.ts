@@ -47,8 +47,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
             useExisting: forwardRef(() => SubscriptionsComponent),
             multi: true
         }],
-  standalone: true,
-  imports: [TranslateModule, FlexModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, ExtendedModule, NgIf, MatError, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton]
+    imports: [TranslateModule, FlexModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, ExtendedModule, NgIf, MatError, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton]
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 

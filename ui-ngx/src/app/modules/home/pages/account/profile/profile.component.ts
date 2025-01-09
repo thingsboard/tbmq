@@ -43,7 +43,6 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-profile',
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss'],
-    standalone: true,
     imports: [MatCard, MatCardHeader, FlexModule, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, NgFor, MatOption, MatButton, AsyncPipe, DatePipe]
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {

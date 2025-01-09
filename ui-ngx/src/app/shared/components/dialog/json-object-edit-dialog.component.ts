@@ -44,7 +44,6 @@ export interface JsonObjectEditDialogData {
     selector: 'tb-object-edit-dialog',
     templateUrl: './json-object-edit-dialog.component.html',
     styleUrls: [],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, JsonObjectEditComponent, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class JsonObjectEditDialogComponent extends DialogComponent<JsonObjectEditDialogComponent, object> {

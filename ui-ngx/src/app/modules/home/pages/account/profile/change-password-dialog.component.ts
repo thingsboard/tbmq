@@ -47,7 +47,6 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
     selector: 'tb-change-password-dialog',
     templateUrl: './change-password-dialog.component.html',
     styleUrls: ['./change-password-dialog.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, FlexModule, MatIconButton, MatDialogClose, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, ToastDirective, MatFormField, ExtendedModule, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatError, MatHint, MatDivider, TbIconComponent, MatDialogActions, MatSlideToggle, MatButton, AsyncPipe]
 })
 export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswordDialogComponent> implements OnInit {

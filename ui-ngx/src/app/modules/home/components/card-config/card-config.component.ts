@@ -43,7 +43,6 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-card-config',
     templateUrl: './card-config.component.html',
     styleUrls: ['./card-config.component.scss'],
-    standalone: true,
     imports: [FlexModule, CardTitleButtonComponent, MatTable, MatSort, NgFor, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, NgStyle, ExtendedModule, NgIf, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {

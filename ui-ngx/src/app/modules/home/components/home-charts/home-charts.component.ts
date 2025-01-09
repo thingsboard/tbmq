@@ -49,7 +49,6 @@ import 'chartjs-adapter-moment';
     selector: 'tb-home-charts',
     templateUrl: './home-charts.component.html',
     styleUrls: ['./home-charts.component.scss'],
-    standalone: true,
     imports: [CardTitleButtonComponent, FlexModule, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgFor, NgxHmCarouselItemDirective, MatTooltip, NgStyle, ExtendedModule, TranslateModule]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {

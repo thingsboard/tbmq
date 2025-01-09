@@ -69,7 +69,6 @@ export interface SharedSubscriptionFilterConfigData {
             multi: true
         }
     ],
-    standalone: true,
     imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput]
 })
 export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {

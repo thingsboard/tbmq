@@ -28,7 +28,6 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-unauthorized-client-table',
     templateUrl: './unauthorized-client-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class UnauthorizedClientTableComponent implements OnInit {

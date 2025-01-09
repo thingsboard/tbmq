@@ -40,7 +40,6 @@ import { AuthState } from '@core/auth/auth.models';
     selector: 'tb-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
-    standalone: true,
     imports: [RouterOutlet]
 })
 export class AppComponent {

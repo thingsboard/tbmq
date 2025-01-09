@@ -32,7 +32,6 @@ import { AsyncPipe } from '@angular/common';
     selector: 'tb-help-markdown',
     templateUrl: './help-markdown.component.html',
     styleUrls: ['./help-markdown.component.scss'],
-    standalone: true,
     imports: [TbMarkdownComponent, AsyncPipe]
 })
 export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {

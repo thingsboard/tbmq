@@ -30,7 +30,6 @@ import { EntitiesTableHomeComponent } from '../entity/entities-table-home.compon
     selector: 'tb-kafka-tables-tab-group',
     templateUrl: './kafka-tables-tab-group.component.html',
     styleUrls: ['./kafka-tables-tab-group.component.scss'],
-    standalone: true,
     imports: [ToggleHeaderComponent, ToggleOption, NgSwitch, NgSwitchDefault, NgSwitchCase, EntitiesTableHomeComponent, TranslateModule]
 })
 export class KafkaTablesTabGroupComponent implements OnInit {

@@ -43,7 +43,6 @@ export interface ChangeBasicPasswordDialogData {
     selector: 'tb-change-password-dialog',
     templateUrl: './change-basic-password-dialog.component.html',
     styleUrls: ['./change-basic-password-dialog.component.scss'],
-    standalone: true,
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe]
 })
 export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBasicPasswordDialogComponent,

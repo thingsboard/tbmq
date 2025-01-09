@@ -39,18 +39,17 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatOption, MatSelect } from '@angular/material/select';
 
 @Component({
-  selector: 'tb-qos-select',
-  templateUrl: './qos-select.component.html',
-  styleUrl: './qos-select.component.scss',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => QosSelectComponent),
-      multi: true
-    }
-  ],
-  standalone: true,
-  imports: [TranslateModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, NgIf, MatSelect, MatOption]
+    selector: 'tb-qos-select',
+    templateUrl: './qos-select.component.html',
+    styleUrl: './qos-select.component.scss',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => QosSelectComponent),
+            multi: true
+        }
+    ],
+    imports: [TranslateModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, NgIf, MatSelect, MatOption]
 })
 export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 

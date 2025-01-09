@@ -27,7 +27,6 @@ import { MenuToggleComponent } from './menu-toggle.component';
     templateUrl: './side-menu.component.html',
     styleUrls: ['./side-menu.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [FlexModule, NgFor, NgSwitch, NgSwitchCase, MenuLinkComponent, MenuToggleComponent, AsyncPipe]
 })
 export class SideMenuComponent {

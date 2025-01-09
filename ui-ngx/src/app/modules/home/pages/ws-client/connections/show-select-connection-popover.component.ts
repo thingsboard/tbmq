@@ -37,7 +37,6 @@ import { FlexModule } from '@angular/flex-layout/flex';
     selector: 'tb-show-connections-popover',
     templateUrl: './show-select-connection-popover.component.html',
     styleUrls: [],
-    standalone: true,
     imports: [TranslateModule, MatIconButton, MatIcon, NgFor, ConnectionComponent, FlexModule, MatButton, AsyncPipe]
 })
 export class ShowSelectConnectionPopoverComponent extends PageComponent implements OnDestroy, OnInit {

@@ -57,8 +57,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
         }
     ],
     styleUrls: ['./last-will.component.scss'],
-    standalone: true,
-  imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
