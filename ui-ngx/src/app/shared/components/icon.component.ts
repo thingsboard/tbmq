@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-import { CanColor, mixinColor } from '@angular/material/core';
 import {
   AfterContentInit,
   AfterViewChecked,
@@ -33,6 +32,20 @@ import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { isSvgIcon, splitIconName } from '@shared/models/icon.models';
 import { ContentObserver } from '@angular/cdk/observers';
+
+export interface CanColor {
+  color: string;
+}
+
+export function mixinColor<T extends new (...args: any[]) => {}>(base: T): T & (new (...args: any[]) => CanColor) {
+  return class extends base {
+    color: string;
+    constructor(...args: any[]) {
+      super(...args);
+      this.color = 'primary'; // Default color
+    }
+  };
+}
 
 const _TbIconBase = mixinColor(
   class {
