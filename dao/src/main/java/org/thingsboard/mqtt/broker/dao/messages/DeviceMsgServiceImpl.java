@@ -64,6 +64,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private static final String UPDATE_PACKET_TYPE_SCRIPT_SHA = "86164ab58880b91c4aee396bb5701fd6af1b0258";
     private static final String MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA = "76ea84e42d6ab98e646ef8f88b99efd568721926";
 
+    // TODO: consider why we set score = lastPacketId if set is empty instead of set it to 0.
     private static final String ADD_MESSAGES_SCRIPT = """
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]
