@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.stats;
+package org.thingsboard.mqtt.broker.common.stats;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
