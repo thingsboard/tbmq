@@ -18,6 +18,7 @@ import {
   ComponentFactory,
   ComponentFactoryResolver,
   ComponentRef,
+  ElementRef,
   Injectable,
   Injector,
   Renderer2,

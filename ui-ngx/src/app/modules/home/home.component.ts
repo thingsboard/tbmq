@@ -24,7 +24,6 @@ import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
-import { UntypedFormBuilder } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActiveComponentService } from '@core/services/active-component.service';
@@ -69,7 +68,6 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
   constructor(protected store: Store<AppState>,
               @Inject(WINDOW) private window: Window,
               private activeComponentService: ActiveComponentService,
-              private fb: UntypedFormBuilder,
               public breakpointObserver: BreakpointObserver) {
     super(store);
   }

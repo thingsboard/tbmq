@@ -47,6 +47,7 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     templateUrl: './color-input.component.html',
     styleUrls: ['./color-input.component.scss'],
     providers: [
+        TbPopoverService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => ColorInputComponent),

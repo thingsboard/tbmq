@@ -14,22 +14,18 @@
 /// limitations under the License.
 ///
 
-import { Pipe, PipeTransform } from '@angular/core';
-import { TranslateService } from '@ngx-translate/core';
+import { NgModule } from '@angular/core';
+import { MenuLinkComponent } from '@modules/home/menu/menu-link.component';
+import { MenuToggleComponent } from '@modules/home/menu/menu-toggle.component';
+import { SideMenuComponent } from '@modules/home/menu/side-menu.component';
+import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/getting-started-menu-link.component';
 
-@Pipe({
-    name: 'boolean',
-    standalone: true
+@NgModule({
+  imports: [
+    MenuLinkComponent,
+    MenuToggleComponent,
+    SideMenuComponent,
+    GettingStartedMenuLinkComponent,
+  ]
 })
-export class BooleanPipe implements PipeTransform {
-
-  constructor(public translate: TranslateService) {
-  }
-
-  transform(value: boolean): string {
-    if (typeof value === 'boolean') {
-      return value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
-    }
-    return value;
-  }
-}
+export class MenuModule { }

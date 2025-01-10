@@ -27,7 +27,9 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     selector: 'tb-select-connection',
     templateUrl: './select-connection.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
+    providers: [TbPopoverService],
+    standalone: true,
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SelectConnectionComponent {
 

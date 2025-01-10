@@ -27,7 +27,8 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-sessions-table',
     templateUrl: './sessions-table.component.html',
-    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
+    standalone: true,
+    imports: [EntitiesTableComponent, NgClass, ExtendedModule, DatePipe]
 })
 export class SessionsTableComponent implements OnInit {
 

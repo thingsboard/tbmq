@@ -31,7 +31,9 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     selector: 'tb-subscription-options',
     templateUrl: './subscription-options.component.html',
     styleUrls: [],
-  imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
+    standalone: true,
+    providers: [TbPopoverService],
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SubscriptionOptionsComponent {
 
