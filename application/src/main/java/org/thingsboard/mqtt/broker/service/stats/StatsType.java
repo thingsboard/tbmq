@@ -15,7 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.stats;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum StatsType {
+
     MSG_DISPATCHER_PRODUCER("incomingPublishMsg.published"),
     CLIENT_SESSION_EVENT_CONSUMER("clientSessionEvent"),
     PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed"),
@@ -52,11 +58,4 @@ public enum StatsType {
 
     private final String printName;
 
-    StatsType(String printName) {
-        this.printName = printName;
-    }
-
-    public String getPrintName() {
-        return printName;
-    }
 }
