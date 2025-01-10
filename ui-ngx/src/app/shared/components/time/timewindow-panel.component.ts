@@ -33,7 +33,7 @@ import { TimeService } from '@core/services/time.service';
 import { isDefined } from '@core/utils';
 import { OverlayRef } from '@angular/cdk/overlay';
 import { MatTabGroup, MatTab } from '@angular/material/tabs';
-import { NgClass, NgIf, NgTemplateOutlet, NgFor, AsyncPipe } from '@angular/common';
+import { NgClass, NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
@@ -63,7 +63,7 @@ export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelDat
     selector: 'tb-timewindow-panel',
     templateUrl: './timewindow-panel.component.html',
     styleUrls: ['./timewindow-panel.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatTabGroup, NgClass, ExtendedModule, MatTab, FlexModule, NgIf, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, NgFor, MatOption, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, MatTabGroup, NgClass, ExtendedModule, MatTab, FlexModule, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, MatOption, MatButton, AsyncPipe]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 

@@ -21,7 +21,7 @@ import {
   isDefinedAndNotNull,
   isEmpty,
   isEqualIgnoreUndefined,
-  isNotEmptyStr,
+  isNotEmptyStr, isNumber,
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
@@ -66,6 +66,8 @@ export const QosTranslation = new Map<QoS, string>([
 ]);
 
 export const QosAsNum = (qos: QoS): string => QoS[qos];
+
+export const QosTypes = Object.values(QoS).filter(v => isNumber(v)) as QoS[];
 
 export const DEFAULT_QOS = QoS.AT_LEAST_ONCE;
 

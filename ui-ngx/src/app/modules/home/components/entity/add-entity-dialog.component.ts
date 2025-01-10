@@ -51,7 +51,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatDivider } from '@angular/material/divider';
 
@@ -60,7 +60,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './add-entity-dialog.component.html',
     providers: [{ provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent }],
     styleUrls: ['./add-entity-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
                                       implements OnInit, AfterViewInit {

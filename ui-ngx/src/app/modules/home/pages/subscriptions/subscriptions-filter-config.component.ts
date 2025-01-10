@@ -33,15 +33,15 @@ import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { deepClone, isNumber } from '@core/utils';
+import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 import { ClientSubscriptionFilterConfig, subscriptionsFilterConfigEquals } from '@shared/models/subscription.model';
-import { QoS, QosTranslation } from '@shared/models/session.model';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
 import { takeUntil } from 'rxjs/operators';
-import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -70,7 +70,7 @@ export interface SubscriptionsFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatError]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatError]
 })
 export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
@@ -91,7 +91,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   initialClientSubscriptionFilterConfig: ClientSubscriptionFilterConfig;
 
   booleanList = [true, false];
-  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTypes = QosTypes;
   qosTranslation = QosTranslation;
   rhOptions = RhOptions;
   panelMode = false;

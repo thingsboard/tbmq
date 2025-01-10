@@ -45,7 +45,7 @@ import {
   credentialsTypeTranslationMap,
   CredentialsType
 } from '@shared/models/credentials.model';
-import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -75,7 +75,7 @@ export interface ClientCredentialsFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, NgFor, MatChipOption, MatFormField, MatInput, MatSuffix]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSuffix]
 })
 export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

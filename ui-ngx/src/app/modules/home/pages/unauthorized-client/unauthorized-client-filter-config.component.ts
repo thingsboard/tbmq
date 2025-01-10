@@ -42,7 +42,7 @@ import {
   UnauthorizedClientFilterConfig,
   unauthorizedClientFilterConfigEquals
 } from '@shared/models/unauthorized-client.model';
-import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -72,7 +72,7 @@ export interface UnauthorizedClientFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption]
 })
 export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

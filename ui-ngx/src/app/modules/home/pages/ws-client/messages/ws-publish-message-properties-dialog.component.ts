@@ -36,7 +36,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -55,7 +55,7 @@ export interface PropertiesDialogComponentData {
     selector: 'tb-ws-client-properties',
     templateUrl: './ws-publish-message-properties-dialog.component.html',
     styleUrls: ['./ws-publish-message-properties-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, NgFor, MatOption, MatError, UserPropertiesComponent, MatDialogActions, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, MatSlideToggle, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, MatOption, MatError, UserPropertiesComponent, MatDialogActions, MatButton, AsyncPipe]
 })
 export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<WsPublishMessagePropertiesDialogComponent> implements OnInit, OnDestroy, AfterContentChecked {
 

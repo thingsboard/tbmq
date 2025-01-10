@@ -24,7 +24,7 @@ import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '@core/http/auth.service';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
 import { MatFormField, MatLabel, MatPrefix, MatError } from '@angular/material/form-field';
@@ -37,7 +37,7 @@ import { RouterLink } from '@angular/router';
     selector: 'tb-reset-password-request',
     templateUrl: './reset-password-request.component.html',
     styleUrls: ['./reset-password-request.component.scss'],
-    imports: [FlexModule, MatCard, MatCardHeader, MatCardTitle, TranslateModule, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, MatError, MatButton, RouterLink, AsyncPipe]
+    imports: [FlexModule, MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, MatError, MatButton, RouterLink, AsyncPipe]
 })
 export class ResetPasswordRequestComponent extends PageComponent implements OnInit {
 

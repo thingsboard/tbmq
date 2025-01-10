@@ -29,7 +29,7 @@ import {
 import { ENTER, TAB } from "@angular/cdk/keycodes";
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { TranslateModule } from '@ngx-translate/core';
-import { NgIf, NgFor } from '@angular/common';
+
 import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatInput } from '@angular/material/input';
@@ -54,7 +54,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
         }
     ],
     styleUrls: ['./auth-rules.component.scss'],
-    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, NgIf, MatExpansionPanelDescription, MatError, FlexModule, ReactiveFormsModule, NgFor, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, ExtendedModule, MatTooltip, MatIconButton, MatButton]
+    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, FlexModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, ExtendedModule, MatTooltip, MatIconButton, MatButton]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

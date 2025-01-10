@@ -36,7 +36,7 @@ import { MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/m
 import { MatInput } from '@angular/material/input';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { NgIf, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { MatDivider } from '@angular/material/divider';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { MatIcon } from '@angular/material/icon';
@@ -46,7 +46,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-security',
     templateUrl: './security.component.html',
     styleUrls: ['./security.component.scss'],
-    imports: [FlexModule, MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, ExtendedModule, NgIf, MatError, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe]
+    imports: [FlexModule, MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, ExtendedModule, MatError, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe]
 })
 export class SecurityComponent extends PageComponent implements OnInit, OnDestroy {
 

@@ -30,7 +30,7 @@ import { takeUntil } from 'rxjs/operators';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatError, MatHint, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -46,7 +46,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-mail-server',
     templateUrl: './mail-server.component.html',
     styleUrls: ['./mail-server.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, FlexModule, HelpComponent, NgIf, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSelect, NgFor, MatOption, MatHint, MatSlideToggle, TogglePasswordComponent, MatSuffix, MatCheckbox, MatButton, AsyncPipe]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, FlexModule, HelpComponent, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSelect, MatOption, MatHint, MatSlideToggle, TogglePasswordComponent, MatSuffix, MatCheckbox, MatButton, AsyncPipe]
 })
 export class MailServerComponent extends PageComponent implements OnInit, OnDestroy, HasConfirmForm {
 

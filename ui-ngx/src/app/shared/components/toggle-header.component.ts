@@ -45,7 +45,7 @@ import { Platform } from '@angular/cdk/platform';
 import { MatButtonToggle, MatButtonToggleGroup } from '@angular/material/button-toggle';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormField } from '@angular/material/form-field';
 import { MatSelect } from '@angular/material/select';
@@ -123,7 +123,7 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
     selector: 'tb-toggle-header',
     templateUrl: './toggle-header.component.html',
     styleUrls: ['./toggle-header.component.scss'],
-    imports: [MatIconButton, MatIcon, NgIf, MatButtonToggleGroup, FormsModule, NgFor, MatButtonToggle, MatFormField, MatSelect, MatOption, AsyncPipe]
+    imports: [MatIconButton, MatIcon, MatButtonToggleGroup, FormsModule, MatButtonToggle, MatFormField, MatSelect, MatOption, AsyncPipe]
 })
 export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterViewInit, AfterContentInit,
   AfterContentChecked, AfterViewChecked, OnDestroy {

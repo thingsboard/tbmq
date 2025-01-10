@@ -34,7 +34,7 @@ import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { deepClone, isNumber } from '@core/utils';
+import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
@@ -42,7 +42,7 @@ import {
   RetainedMessagesFilterConfig,
   retainedMessagesFilterConfigEquals
 } from '@shared/models/retained-message.model';
-import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -50,7 +50,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
-import { QoS, QosTranslation } from '@shared/models/session.model';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
 
 export const RETAINED_MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('RetainedMessagesFilterConfigData');
@@ -73,7 +73,7 @@ export interface RetainedMessagesFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgIf, NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption]
 })
 export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
@@ -93,7 +93,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
   @Input()
   initialRetainedMessagesFilterConfig: RetainedMessagesFilterConfig;
 
-  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTypes = QosTypes;
   qosTranslation = QosTranslation;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('retained-message.filter-title');

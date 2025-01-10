@@ -40,7 +40,7 @@ import { ConfigService } from '@core/http/config.service';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatStepper, MatStep, MatStepLabel } from '@angular/material/stepper';
-import { NgFor, NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -55,7 +55,7 @@ import { MatIcon } from '@angular/material/icon';
             useValue: { displayDefaultIndicatorType: false }
         }
     ],
-    imports: [FlexModule, CardTitleButtonComponent, MatStepper, NgFor, MatStep, MatStepLabel, TbMarkdownComponent, NgIf, MatButton, MatIcon, AsyncPipe, TranslateModule]
+    imports: [FlexModule, CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
 

@@ -35,7 +35,7 @@ import { MatIconButton } from '@angular/material/button';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { UserMenuComponent } from '@shared/components/user-menu.component';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
@@ -45,7 +45,7 @@ import { RouterOutlet } from '@angular/router';
     selector: 'tb-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    imports: [MatSidenavContainer, MatSidenav, MatToolbar, FlexModule, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, ExtendedModule, MatIcon, BreadcrumbComponent, NgIf, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, FlexModule, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, ExtendedModule, MatIcon, BreadcrumbComponent, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 

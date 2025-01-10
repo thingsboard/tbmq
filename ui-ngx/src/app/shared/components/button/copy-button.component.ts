@@ -21,7 +21,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { MatIconButton } from '@angular/material/button';
-import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 
@@ -29,7 +29,7 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'tb-copy-button',
     styleUrls: ['copy-button.component.scss'],
     templateUrl: './copy-button.component.html',
-    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, NgIf, MatIcon, NgStyle]
+    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, MatIcon, NgStyle]
 })
 export class CopyButtonComponent {
 

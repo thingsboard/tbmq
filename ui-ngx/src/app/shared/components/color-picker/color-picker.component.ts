@@ -21,7 +21,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormControl, FormsModul
 import { isString } from '@core/utils';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
-import { NgSwitch, NgSwitchCase } from '@angular/common';
+
 import { HexInputComponent } from './hex-input.component';
 
 export enum ColorType {
@@ -49,7 +49,7 @@ export const colorPresetsHex =
             multi: true
         }
     ],
-    imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, NgSwitch, NgSwitchCase, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
+    imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
 })
 export class ColorPickerComponent implements ControlValueAccessor, OnDestroy {
 

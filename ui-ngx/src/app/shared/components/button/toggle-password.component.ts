@@ -15,7 +15,7 @@
 ///
 
 import { AfterViewInit, Component, ElementRef } from '@angular/core';
-import { NgIf } from '@angular/common';
+
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
@@ -24,10 +24,9 @@ import { MatIcon } from '@angular/material/icon';
     templateUrl: 'toggle-password.component.html',
     styleUrls: [],
     imports: [
-        NgIf,
-        MatIconButton,
-        MatIcon,
-    ]
+    MatIconButton,
+    MatIcon
+]
 })
 export class TogglePasswordComponent implements AfterViewInit {
   showPassword = false;

@@ -43,7 +43,7 @@ import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { FullscreenDirective } from './fullscreen.directive';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -67,7 +67,7 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true,
         }
     ],
-    imports: [FullscreenDirective, FlexModule, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
+    imports: [FullscreenDirective, FlexModule, NgClass, ExtendedModule, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
 

@@ -32,7 +32,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
-import { NgFor } from '@angular/common';
+
 import { MatOption } from '@angular/material/core';
 import { UserPropertiesComponent } from '../../../components/client-credentials-templates/user-properties.component';
 
@@ -44,7 +44,7 @@ export interface WsMessagePropertiesDialogData {
     selector: 'tb-ws-message-properties-dialog',
     templateUrl: './ws-message-properties-dialog.component.html',
     styleUrls: ['./ws-message-properties-dialog.component.scss'],
-    imports: [CdkScrollable, MatDialogContent, FlexModule, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, NgFor, MatOption, UserPropertiesComponent]
+    imports: [CdkScrollable, MatDialogContent, FlexModule, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, MatOption, UserPropertiesComponent]
 })
 export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessagePropertiesDialogData> implements OnInit, OnDestroy {
 

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -59,7 +59,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, NgSwitch, NgSwitchCase, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
@@ -86,7 +86,7 @@ export interface ConnectionDialogData {
     selector: 'tb-connection-wizard',
     templateUrl: './connection-wizard-dialog.component.html',
     styleUrls: ['./connection-wizard-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, ExtendedModule, MatTooltip, MatSlideToggle, NgSwitch, NgSwitchCase, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, NgFor, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, ExtendedModule, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 
@@ -148,6 +148,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private breakpointObserver: BreakpointObserver,
               private settingsService: SettingsService,
               private fb: FormBuilder,
+              private cd: ChangeDetectorRef,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
     super(store, router, dialogRef);
     this.connection = this.data.entity;
@@ -334,6 +335,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientCredentials').setValidators(Validators.required);
     }
     this.connectionFormGroup.updateValueAndValidity();
+    this.cd.detectChanges();
   }
 
   cancel(): void {

@@ -32,14 +32,14 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFor
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-import { deepClone, isNumber } from '@core/utils';
+import { deepClone } from '@core/utils';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
 import { fromEvent, Subject, Subscription } from 'rxjs';
-import { QoS, QosTranslation } from '@shared/models/session.model';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } from '@shared/models/ws-client.model';
-import { NgIf, NgTemplateOutlet, NgFor } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -69,7 +69,7 @@ export interface MessageFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgIf, NgTemplateOutlet, MatButton, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, NgFor, MatChipOption, MatTooltip]
+    imports: [NgTemplateOutlet, MatButton, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatTooltip]
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 
@@ -91,7 +91,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   initialFilterConfig: MessageFilterConfig = MessageFilterDefaultConfig;
 
-  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTypes = QosTypes;
   qosTranslation = QosTranslation;
   retainedOptions = [true, false];
   panelMode = false;

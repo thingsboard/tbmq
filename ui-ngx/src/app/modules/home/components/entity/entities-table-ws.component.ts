@@ -59,7 +59,7 @@ import { MediaBreakpoints } from '@shared/models/constants';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { NgFor, NgClass, NgStyle, NgIf, NgSwitch, NgSwitchCase, NgSwitchDefault, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { NgClass, NgStyle, NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIconButton } from '@angular/material/button';
@@ -73,7 +73,7 @@ import { MatIcon } from '@angular/material/icon';
     templateUrl: './entities-table-ws.component.html',
     styleUrls: ['./entities-table-ws.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, ExtendedModule, NgFor, MatSortHeader, NgClass, NgStyle, MatTooltip, NgIf, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatIconButton, TbIconComponent, FlexModule, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
+    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, ExtendedModule, MatSortHeader, NgClass, NgStyle, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, FlexModule, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
 
@@ -402,12 +402,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     return res;
   }
 
-  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
+  trackByColumnKey(column: EntityColumn<BaseData>) {
     return column.key;
-  }
-
-  trackByEntityId(index: number, entity: any) {
-    return entity.id;
   }
 
   private calcDefaultPageSize(): number {

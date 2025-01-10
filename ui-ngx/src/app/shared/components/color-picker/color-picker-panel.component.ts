@@ -22,7 +22,7 @@ import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/f
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { ColorPickerComponent } from './color-picker.component';
-import { NgIf } from '@angular/common';
+
 import { MatButton } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -32,7 +32,7 @@ import { TranslateModule } from '@ngx-translate/core';
     providers: [],
     styleUrls: ['./color-picker-panel.component.scss'],
     encapsulation: ViewEncapsulation.None,
-    imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, NgIf, MatButton, TranslateModule]
+    imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, MatButton, TranslateModule]
 })
 export class ColorPickerPanelComponent extends PageComponent implements OnInit {
 

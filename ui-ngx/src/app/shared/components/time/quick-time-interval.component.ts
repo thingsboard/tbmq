@@ -21,7 +21,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatSelect } from '@angular/material/select';
-import { NgFor } from '@angular/common';
+
 import { MatOption } from '@angular/material/core';
 
 @Component({
@@ -35,7 +35,7 @@ import { MatOption } from '@angular/material/core';
             multi: true
         }
     ],
-    imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, NgFor, MatOption]
+    imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, MatOption]
 })
 export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor {
 

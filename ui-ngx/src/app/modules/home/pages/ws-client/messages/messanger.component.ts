@@ -41,7 +41,7 @@ import { ToggleSelectComponent } from '@shared/components/toggle-select.componen
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MessageFilterConfigComponent } from './message-filter-config.component';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { NgClass, NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { NgClass, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MessagesComponent } from './messages.component';
 import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
@@ -60,7 +60,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
-    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, NgIf, MatError, ColorInputComponent, MatSuffix, MatSelect, NgFor, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
 })
 export class MessangerComponent implements OnInit {
 

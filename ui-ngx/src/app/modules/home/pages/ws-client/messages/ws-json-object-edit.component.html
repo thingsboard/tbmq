@@ -1,18 +1,18 @@
 <!--
 
-    Copyright © 2016-2025 The Thingsboard Authors
+Copyright © 2016-2025 The Thingsboard Authors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 -->
 <div fxLayout="column" tb-fullscreen [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" [ngClass]="{'fill-height': fillHeight}">
@@ -23,22 +23,26 @@
                        'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>
     <span fxFlex></span>
     <section class="toolbar-buttons">
-      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="beautifyJSON()">
-        {{'js-func.tidy' | translate }}
-      </button>
-      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="minifyJSON()">
-        {{'js-func.mini' | translate }}
-      </button>
+      @if (!readonly && !disabled && jsonFormatSelected) {
+        <button type="button" mat-button (click)="beautifyJSON()">
+          {{'js-func.tidy' | translate }}
+        </button>
+      }
+      @if (!readonly && !disabled && jsonFormatSelected) {
+        <button type="button" mat-button (click)="minifyJSON()">
+          {{'js-func.mini' | translate }}
+        </button>
+      }
       <button mat-icon-button class="tb-mat-32 fullscreen-btn"
-              (click)="fullscreen = !fullscreen"
-              matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-              matTooltipPosition="above">
+        (click)="fullscreen = !fullscreen"
+        matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+        matTooltipPosition="above">
         <mat-icon class="material-icons">{{ fullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
     </section>
   </div>
   <div id="tb-json-panel" tb-toast toastTarget="{{toastTargetId}}"
-       class="tb-json-object-panel" fxLayout="column">
+    class="tb-json-object-panel" fxLayout="column">
     <div #jsonEditor id="tb-json-input" [ngStyle]="editorStyle" [ngClass]="{'fill-height': fillHeight}"></div>
   </div>
 </div>

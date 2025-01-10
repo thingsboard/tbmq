@@ -18,7 +18,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { MatAnchor } from '@angular/material/button';
 import { RouterLinkActive, RouterLink } from '@angular/router';
-import { NgIf } from '@angular/common';
+
 import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -27,7 +27,7 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './menu-link.component.html',
     styleUrls: ['./menu-link.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatAnchor, RouterLinkActive, RouterLink, NgIf, TbIconComponent, TranslateModule]
+    imports: [MatAnchor, RouterLinkActive, RouterLink, TbIconComponent, TranslateModule]
 })
 export class MenuLinkComponent {
 

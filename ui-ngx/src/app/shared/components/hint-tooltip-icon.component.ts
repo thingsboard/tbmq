@@ -16,14 +16,14 @@
 
 import { Component, HostBinding, Input } from '@angular/core';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
-import { NgIf } from '@angular/common';
+
 import { TbIconComponent } from './icon.component';
 
 @Component({
     selector: '[tb-hint-tooltip-icon]',
     templateUrl: './hint-tooltip-icon.component.html',
     styleUrls: ['./hint-tooltip-icon.component.scss'],
-    imports: [NgIf, TbIconComponent, MatTooltip]
+    imports: [TbIconComponent, MatTooltip]
 })
 export class HintTooltipIconComponent {
 

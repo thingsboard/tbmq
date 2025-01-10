@@ -27,7 +27,6 @@ import {
   OnInit,
   SimpleChanges,
   ViewChild,
-  ViewContainerRef
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -63,7 +62,7 @@ import { isDefined, isEqual, isNotEmptyStr, isUndefined } from '@core/utils';
 import { calculateIntervalStartEndTime, HistoryWindowType, Timewindow } from '@shared/models/time/time.models';
 import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDrawerContainer, MatDrawer, MatDrawerContent } from '@angular/material/sidenav';
-import { NgIf, NgFor, NgClass, NgStyle, NgSwitch, NgSwitchCase, NgSwitchDefault, AsyncPipe } from '@angular/common';
+import { NgClass, NgStyle, AsyncPipe } from '@angular/common';
 import { EntityDetailsPanelComponent } from './entity-details-panel.component';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatToolbar } from '@angular/material/toolbar';
@@ -87,7 +86,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './entities-table.component.html',
     styleUrls: ['./entities-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatDrawerContainer, NgIf, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, FlexModule, MatToolbar, ExtendedModule, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, NgFor, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, NgStyle, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
+    imports: [MatDrawerContainer, MatDrawer, EntityDetailsPanelComponent, MatDrawerContent, FlexModule, MatToolbar, ExtendedModule, TbAnchorComponent, TimewindowComponent, FormsModule, MatIconButton, MatTooltip, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, MatFormField, MatLabel, MatInput, ReactiveFormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, NgStyle, CopyButtonComponent, MatChipSet, MatChip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
@@ -189,7 +188,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       const headerComponent = componentRef.instance;
       headerComponent.entitiesTableConfig = this.entitiesTableConfig;
     }
-
+    // @ts-ignore
     this.entitiesTableConfig.setTable(this);
     this.translations = this.entitiesTableConfig.entityTranslations;
 
@@ -676,16 +675,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     return res;
   }
 
-  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
+  trackByColumnKey(column: EntityColumn<BaseData>) {
     return column.key;
   }
-
-  trackByEntityId(index: number, entity: any) {
-    return entity.id;
-  }
-
-  detectChanges() {
-    this.cd.markForCheck();
-  }
-
 }

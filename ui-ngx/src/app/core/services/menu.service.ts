@@ -75,7 +75,7 @@ export class MenuService {
         icon: 'mdi:book-multiple'
       },
       {
-        id: MenuId.sessions,
+        id: MenuId.subscriptions,
         name: 'subscription.subscriptions',
         type: 'link',
         path: '/subscriptions',

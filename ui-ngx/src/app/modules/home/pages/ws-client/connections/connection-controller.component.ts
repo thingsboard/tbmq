@@ -24,7 +24,7 @@ import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connec
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { isDefinedAndNotNull } from '@core/utils';
 import { TranslateModule } from '@ngx-translate/core';
-import { NgStyle, NgIf, NgTemplateOutlet, LowerCasePipe } from '@angular/common';
+import { NgStyle, NgTemplateOutlet, LowerCasePipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -39,7 +39,7 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     styleUrls: ['./connection-controller.component.scss'],
     standalone: true,
     providers: [TbPopoverService],
-  imports: [TranslateModule, NgStyle, ExtendedModule, NgIf, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
+  imports: [TranslateModule, NgStyle, ExtendedModule, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 

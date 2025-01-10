@@ -40,7 +40,7 @@ import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
 import { FormsModule } from '@angular/forms';
-import { NgFor, NgStyle } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import 'chartjs-adapter-moment';
@@ -49,7 +49,7 @@ import 'chartjs-adapter-moment';
     selector: 'tb-home-charts',
     templateUrl: './home-charts.component.html',
     styleUrls: ['./home-charts.component.scss'],
-    imports: [CardTitleButtonComponent, FlexModule, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgFor, NgxHmCarouselItemDirective, MatTooltip, NgStyle, ExtendedModule, TranslateModule]
+    imports: [CardTitleButtonComponent, FlexModule, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, MatTooltip, NgStyle, ExtendedModule, TranslateModule]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 

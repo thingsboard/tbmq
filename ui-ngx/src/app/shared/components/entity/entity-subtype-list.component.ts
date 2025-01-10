@@ -26,7 +26,7 @@ import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
 import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
 import { ConfigService } from '@core/http/config.service';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatInput } from '@angular/material/input';
 import { MatOption } from '@angular/material/core';
@@ -43,7 +43,7 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
             multi: true
         }
     ],
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, NgIf, MatLabel, MatChipGrid, NgFor, MatChipRow, MatIcon, MatChipRemove, MatInput, MatAutocompleteTrigger, MatChipInput, MatAutocompleteOrigin, MatAutocomplete, MatOption, MatSuffix, MatError, AsyncPipe, TranslateModule, HighlightPipe]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatChipGrid, MatChipRow, MatIcon, MatChipRemove, MatInput, MatAutocompleteTrigger, MatChipInput, MatAutocompleteOrigin, MatAutocomplete, MatOption, MatSuffix, MatError, AsyncPipe, TranslateModule, HighlightPipe]
 })
 export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit {
 

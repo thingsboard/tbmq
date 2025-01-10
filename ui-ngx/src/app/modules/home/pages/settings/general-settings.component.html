@@ -1,18 +1,18 @@
 <!--
 
-    Copyright © 2016-2025 The Thingsboard Authors
+Copyright © 2016-2025 The Thingsboard Authors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 -->
 <mat-card appearance="outlined" class="settings-card">
@@ -21,9 +21,13 @@
       <span class="mat-headline-5" translate>admin.general-settings</span>
     </mat-card-title>
   </mat-card-header>
-  <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-  </mat-progress-bar>
-  <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
+  @if (isLoading$ | async) {
+    <mat-progress-bar color="warn" mode="indeterminate">
+    </mat-progress-bar>
+  }
+  @if (!(isLoading$ | async)) {
+    <div style="height: 4px;"></div>
+  }
   <mat-card-content>
     <form [formGroup]="generalSettingsForm" (ngSubmit)="saveGeneralSettings()" class="tb-form-panel no-border no-padding">
       <fieldset class="fields-group">
@@ -34,8 +38,8 @@
               {{ 'ws-client.show-logs' | translate }}
             </mat-slide-toggle>
             <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                      [matTooltip]="'ws-client.show-logs-hint' | translate"
-                      matTooltipPosition="right">
+              [matTooltip]="'ws-client.show-logs-hint' | translate"
+              matTooltipPosition="right">
               info
             </mat-icon>
           </section>
@@ -46,24 +50,28 @@
               <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
                 info
               </mat-icon>
-              <mat-error *ngIf="generalSettingsForm.get('maxMessages').hasError('required')">
-                {{ 'ws-client.messages.max-messages-required' | translate }}
-              </mat-error>
-              <mat-error *ngIf="generalSettingsForm.get('maxMessages').hasError('min')">
-                {{ 'ws-client.messages.max-messages-min' | translate }}
-              </mat-error>
+              @if (generalSettingsForm.get('maxMessages').hasError('required')) {
+                <mat-error>
+                  {{ 'ws-client.messages.max-messages-required' | translate }}
+                </mat-error>
+              }
+              @if (generalSettingsForm.get('maxMessages').hasError('min')) {
+                <mat-error>
+                  {{ 'ws-client.messages.max-messages-min' | translate }}
+                </mat-error>
+              }
             </mat-form-field>
           </section>
         </div>
       </fieldset>
       <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">
         <button mat-button color="primary"
-                [disabled]="generalSettingsForm.pristine"
-                (click)="discardGeneralSettings()"
-                type="button">{{'action.undo' | translate}}
+          [disabled]="generalSettingsForm.pristine"
+          (click)="discardGeneralSettings()"
+          type="button">{{'action.undo' | translate}}
         </button>
         <button mat-button mat-raised-button color="primary" [disabled]="(isLoading$ | async) || generalSettingsForm.invalid || !generalSettingsForm.dirty"
-                type="submit">{{'action.save' | translate}}
+          type="submit">{{'action.save' | translate}}
         </button>
       </div>
     </form>
@@ -76,69 +84,77 @@
     </mat-card-title>
     <span fxFlex></span>
     <mat-icon class="material-icons" style="color: rgba(0,0,0,0.18)"
-              [matTooltip]="'admin.settings.connectivity-settings-hint' | translate">info
+      [matTooltip]="'admin.settings.connectivity-settings-hint' | translate">info
     </mat-icon>
   </mat-card-header>
   <mat-card-content>
-        <section class="tb-form-panel no-border no-padding">
-          <div class="tb-form-panel no-border no-padding toggle-group">
-            <tb-toggle-select appearance="fill" [(ngModel)]="protocol">
-              <tb-toggle-option value="mqtt">{{ 'admin.settings.mqtt-mqtts' | translate }}</tb-toggle-option>
-              <tb-toggle-option value="ws">{{ "admin.settings.ws-wss" | translate }}</tb-toggle-option>
-            </tb-toggle-select>
-            <div class="tb-form-hint tb-primary-fill">{{ 'admin.settings.connectivity-hint' | translate }}</div>
-          </div>
-          <form [formGroup]="connectivitySettingsForm" (ngSubmit)="saveConnectivitySettings()" class="tb-form-panel no-border no-padding">
-            <ng-container *ngIf="protocol === 'ws'">
-              <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol}"></ng-container>
-              <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol + 's'}"></ng-container>
-            </ng-container>
-            <ng-container *ngIf="protocol === 'mqtt'">
-              <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol}"></ng-container>
-              <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol + 's'}"></ng-container>
-            </ng-container>
-            <ng-template #connectivitySettings let-protocol="protocol">
-              <div class="tb-form-panel stroked no-padding-bottom" [formGroupName]="protocol">
-                <mat-slide-toggle formControlName="enabled">
-                  {{ 'admin.settings.' + protocol | translate }}
-                </mat-slide-toggle>
-                <div class="tb-form-row column-xs no-border no-padding tb-standard-fields">
-                  <mat-form-field fxFlex hideRequiredMarker>
-                    <mat-label translate>admin.settings.host</mat-label>
-                    <input matInput formControlName="host"/>
-                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.host').hasError('required')">
-                      {{ 'admin.settings.host-required' | translate }}
-                    </mat-error>
-                  </mat-form-field>
-                  <mat-form-field fxFlex hideRequiredMarker>
-                    <mat-label translate>admin.settings.port</mat-label>
-                    <input matInput type="number" min="0" max="65535" formControlName="port"/>
-                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.port').hasError('required')">
-                      {{ 'admin.settings.port-required' | translate }}
-                    </mat-error>
-                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.port').hasError('pattern')">
-                      {{ 'admin.settings.port-pattern' | translate }}
-                    </mat-error>
-                    <mat-error *ngIf="connectivitySettingsForm.get(protocol + '.port').hasError('min') ||
-                   connectivitySettingsForm.get(protocol + '.port').hasError('max')">
-                      {{ 'admin.settings.port-range' | translate }}
-                    </mat-error>
-                  </mat-form-field>
-                </div>
-              </div>
-            </ng-template>
-            <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">
-              <button mat-button color="primary"
-                      [disabled]="connectivitySettingsForm.pristine"
-                      (click)="discardConnectivitySettings()"
-                      type="button">{{'action.undo' | translate}}
-              </button>
-              <button mat-button mat-raised-button color="primary"
-                      [disabled]="(isLoading$ | async) || connectivitySettingsForm.invalid || !connectivitySettingsForm.dirty"
-                      type="submit">{{'action.save' | translate}}
-              </button>
+    <section class="tb-form-panel no-border no-padding">
+      <div class="tb-form-panel no-border no-padding toggle-group">
+        <tb-toggle-select appearance="fill" [(ngModel)]="protocol">
+          <tb-toggle-option value="mqtt">{{ 'admin.settings.mqtt-mqtts' | translate }}</tb-toggle-option>
+          <tb-toggle-option value="ws">{{ "admin.settings.ws-wss" | translate }}</tb-toggle-option>
+        </tb-toggle-select>
+        <div class="tb-form-hint tb-primary-fill">{{ 'admin.settings.connectivity-hint' | translate }}</div>
+      </div>
+      <form [formGroup]="connectivitySettingsForm" (ngSubmit)="saveConnectivitySettings()" class="tb-form-panel no-border no-padding">
+        @if (protocol === 'ws') {
+          <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol}"></ng-container>
+          <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol + 's'}"></ng-container>
+        }
+        @if (protocol === 'mqtt') {
+          <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol}"></ng-container>
+          <ng-container *ngTemplateOutlet="connectivitySettings; context:{protocol: protocol + 's'}"></ng-container>
+        }
+        <ng-template #connectivitySettings let-protocol="protocol">
+          <div class="tb-form-panel stroked no-padding-bottom" [formGroupName]="protocol">
+            <mat-slide-toggle formControlName="enabled">
+              {{ 'admin.settings.' + protocol | translate }}
+            </mat-slide-toggle>
+            <div class="tb-form-row column-xs no-border no-padding tb-standard-fields">
+              <mat-form-field fxFlex hideRequiredMarker>
+                <mat-label translate>admin.settings.host</mat-label>
+                <input matInput formControlName="host"/>
+                @if (connectivitySettingsForm.get(protocol + '.host').hasError('required')) {
+                  <mat-error>
+                    {{ 'admin.settings.host-required' | translate }}
+                  </mat-error>
+                }
+              </mat-form-field>
+              <mat-form-field fxFlex hideRequiredMarker>
+                <mat-label translate>admin.settings.port</mat-label>
+                <input matInput type="number" min="0" max="65535" formControlName="port"/>
+                @if (connectivitySettingsForm.get(protocol + '.port').hasError('required')) {
+                  <mat-error>
+                    {{ 'admin.settings.port-required' | translate }}
+                  </mat-error>
+                }
+                @if (connectivitySettingsForm.get(protocol + '.port').hasError('pattern')) {
+                  <mat-error>
+                    {{ 'admin.settings.port-pattern' | translate }}
+                  </mat-error>
+                }
+                @if (connectivitySettingsForm.get(protocol + '.port').hasError('min') ||
+                  connectivitySettingsForm.get(protocol + '.port').hasError('max')) {
+                  <mat-error>
+                    {{ 'admin.settings.port-range' | translate }}
+                  </mat-error>
+                }
+              </mat-form-field>
             </div>
-          </form>
-        </section>
+          </div>
+        </ng-template>
+        <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">
+          <button mat-button color="primary"
+            [disabled]="connectivitySettingsForm.pristine"
+            (click)="discardConnectivitySettings()"
+            type="button">{{'action.undo' | translate}}
+          </button>
+          <button mat-button mat-raised-button color="primary"
+            [disabled]="(isLoading$ | async) || connectivitySettingsForm.invalid || !connectivitySettingsForm.dirty"
+            type="submit">{{'action.save' | translate}}
+          </button>
+        </div>
+      </form>
+    </section>
   </mat-card-content>
 </mat-card>

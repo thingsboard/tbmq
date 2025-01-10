@@ -1,18 +1,18 @@
 <!--
 
-    Copyright © 2016-2025 The Thingsboard Authors
+Copyright © 2016-2025 The Thingsboard Authors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 -->
 <div class="tb-home-card-container tb-home-padding" fxLayoutGap="8px">
@@ -21,9 +21,21 @@
     <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">
-    <ng-container *ngIf="updatesAvailable; else noUpdatesAvailableTemplate">
+    @if (updatesAvailable) {
       <ng-container *ngTemplateOutlet="updatesAvailableTemplate"></ng-container>
-    </ng-container>
+    } @else {
+      <div class="version-container">
+        <section fxLayout="column" fxLayoutGap="10px">
+          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
+          </section>
+          <section fxFlex fxLayout="row" fxLayoutAlign="space-between flex-end">
+            <span>{{ currentReleaseVersion }}</span>
+            <span class="tb-title-no-updates" translate>version.no-updates</span>
+          </section>
+        </section>
+      </div>
+    }
     <ng-template #updatesAvailableTemplate>
       <div class="version-container">
         <section fxLayout="column" fxLayoutGap="10px">
@@ -42,25 +54,12 @@
             <span>{{ latestReleaseVersion }}</span>
           </section>
           <button [fxHide.lt-md]="true" mat-raised-button color="primary"
-                  [disabled]="!updatesAvailable"
-                  (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
-                  matTooltip="{{'version.upgrade-instructions' | translate}}">
+            [disabled]="!updatesAvailable"
+            (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
+            matTooltip="{{'version.upgrade-instructions' | translate}}">
             {{'version.upgrade' | translate}}
           </button>
         </div>
-      </div>
-    </ng-template>
-    <ng-template #noUpdatesAvailableTemplate>
-      <div class="version-container">
-        <section fxLayout="column" fxLayoutGap="10px">
-          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
-            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
-          </section>
-          <section fxFlex fxLayout="row" fxLayoutAlign="space-between flex-end">
-            <span>{{ currentReleaseVersion }}</span>
-            <span class="tb-title-no-updates" translate>version.no-updates</span>
-          </section>
-        </section>
       </div>
     </ng-template>
   </section>

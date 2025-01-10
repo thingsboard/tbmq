@@ -73,7 +73,7 @@ import { MatToolbar } from '@angular/material/toolbar';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
-import { NgFor, NgStyle, NgIf, NgTemplateOutlet } from '@angular/common';
+import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatDivider } from '@angular/material/divider';
 import { ExtendedModule } from '@angular/flex-layout/extended';
@@ -89,7 +89,7 @@ Chart.register([Zoom]);
     selector: 'tb-monitoring',
     templateUrl: './monitoring.component.html',
     styleUrls: ['./monitoring.component.scss'],
-    imports: [MatToolbar, FlexModule, TimewindowComponent, FormsModule, NgFor, FullscreenDirective, MatDivider, ExtendedModule, NgStyle, NgIf, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
+    imports: [MatToolbar, FlexModule, TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ExtendedModule, NgStyle, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
@@ -222,7 +222,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     this.updateLegendLabel(chartType, datasetIndex, this.charts[chartType].isDatasetVisible(datasetIndex));
   }
 
-  trackByIndex(index: number) {
+  trackByIndex(index: number): number {
     return index;
   }
 

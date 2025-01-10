@@ -21,7 +21,7 @@ import { AppState } from '@core/core.state';
 import { speedDialFabAnimations } from '@shared/animations/speed-dial-fab.animations';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgClass, NgFor, AsyncPipe } from '@angular/common';
+import { NgClass, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatFabButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -45,7 +45,7 @@ export interface FooterFabButtons {
     templateUrl: './footer-fab-buttons.component.html',
     styleUrls: ['./footer-fab-buttons.component.scss'],
     animations: speedDialFabAnimations,
-    imports: [FlexModule, NgClass, ExtendedModule, MatFabButton, MatTooltip, MatIcon, NgFor, AsyncPipe, TranslateModule]
+    imports: [FlexModule, NgClass, ExtendedModule, MatFabButton, MatTooltip, MatIcon, AsyncPipe, TranslateModule]
 })
 export class FooterFabButtonsComponent extends PageComponent {
 

@@ -33,7 +33,7 @@ import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { deepClone, guid, isDefinedAndNotNull } from '@core/utils';
 import { Observable, of, ReplaySubject } from 'rxjs';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { NgIf, NgClass, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
 let defaultMarkdownStyle;
@@ -42,7 +42,7 @@ let defaultMarkdownStyle;
     selector: 'tb-markdown',
     templateUrl: './markdown.component.html',
     styleUrls: ['./markdown.component.scss'],
-    imports: [NgIf, ExtendedModule, NgClass, NgStyle]
+    imports: [ExtendedModule, NgClass, NgStyle]
 })
 export class TbMarkdownComponent implements OnChanges {
 

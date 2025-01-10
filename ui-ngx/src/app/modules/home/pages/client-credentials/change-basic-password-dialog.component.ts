@@ -28,7 +28,7 @@ import { MatToolbar } from '@angular/material/toolbar';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
@@ -43,7 +43,7 @@ export interface ChangeBasicPasswordDialogData {
     selector: 'tb-change-password-dialog',
     templateUrl: './change-basic-password-dialog.component.html',
     styleUrls: ['./change-basic-password-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe]
 })
 export class ChangeBasicPasswordDialogComponent extends DialogComponent<ChangeBasicPasswordDialogComponent,
   ChangeBasicPasswordDialogData> implements OnInit {

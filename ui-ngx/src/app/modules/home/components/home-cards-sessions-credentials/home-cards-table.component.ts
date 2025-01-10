@@ -22,7 +22,7 @@ import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.mode
 import { Router } from '@angular/router';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
-import { NgFor } from '@angular/common';
+
 import { LtXmdShowHideDirective } from '@shared/layout/layout.directives';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -30,7 +30,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-home-cards-table',
     templateUrl: './home-cards-table.component.html',
     styleUrls: ['home-cards-table.component.scss'],
-    imports: [FlexModule, CardTitleButtonComponent, NgFor, LtXmdShowHideDirective, TranslateModule]
+    imports: [FlexModule, CardTitleButtonComponent, LtXmdShowHideDirective, TranslateModule]
 })
 export class HomeCardsTableComponent {
 
@@ -44,7 +44,7 @@ export class HomeCardsTableComponent {
   latestValues: ClientSessionStatsInfo | ClientCredentialsInfo;
 
   @Input()
-  config: HomeCardFilter;
+  config: HomeCardFilter[];
 
   @Input()
   docsLink: string;

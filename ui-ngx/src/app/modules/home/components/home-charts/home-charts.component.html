@@ -1,18 +1,18 @@
 <!--
 
-    Copyright © 2016-2025 The Thingsboard Authors
+Copyright © 2016-2025 The Thingsboard Authors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 -->
 <div #homeChartsContainer class="tb-home-card-container" style="overflow: auto; padding: 18px 8px 18px 18px">
@@ -25,29 +25,31 @@
   </div>
   <div fxFlex class="tb-home-charts">
     <ngx-hm-carousel #carousel
-                     align="left"
-                     [(ngModel)]="chartsCarouselIndex"
-                     [drag-many]="true"
-                     [show-num]="items"
-                     [data]="chartKeys"
-                     class="carousel c-accent">
+      align="left"
+      [(ngModel)]="chartsCarouselIndex"
+      [drag-many]="true"
+      [show-num]="items"
+      [data]="chartKeys"
+      class="carousel c-accent">
       <section ngx-hm-carousel-container class="content">
-        <article class="item cursor-pointer"
-                 ngx-hm-carousel-item
-                 *ngFor="let chart of chartKeys">
-          <div class="chart-container" fxLayout="column">
-            <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
-              <span>{{ chartTypeTranslationMap.get(chart) | translate }}</span>
-              <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
-                        [matTooltip]="chartTooltip(chart)">
-                info_outline
-              </mat-icon>
-            </section>
-            <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
-              <canvas [id]="chart+chartPage"></canvas>
-            </section>
-          </div>
-        </article>
+        @for (chart of chartKeys; track chart) {
+          <article class="item cursor-pointer"
+            ngx-hm-carousel-item
+            >
+            <div class="chart-container" fxLayout="column">
+              <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
+                <span>{{ chartTypeTranslationMap.get(chart) | translate }}</span>
+                <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
+                  [matTooltip]="chartTooltip(chart)">
+                  info_outline
+                </mat-icon>
+              </section>
+              <section [ngStyle]="{'width': chartWidth, 'height': chartHeight}">
+                <canvas [id]="chart+chartPage"></canvas>
+              </section>
+            </div>
+          </article>
+        }
       </section>
     </ngx-hm-carousel>
   </div>

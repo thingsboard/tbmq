@@ -393,13 +393,13 @@ export const ConnectionStatusTranslationMap = new Map<ConnectionStatus, string>(
   [ConnectionStatus.END, 'ws-client.connections.end'],
   [ConnectionStatus.OFFLINE, 'ws-client.connections.offline'],
 ]);
-export const DataSizeUnitTypeTranslationMap = new Map<DataSizeUnitType, string>([
+export const DataSizeUnitTypeTranslationMap = new Map<string, string>([
     [DataSizeUnitType.BYTE, 'B'],
     [DataSizeUnitType.KILOBYTE, 'KB'],
     [DataSizeUnitType.MEGABYTE, 'MB'],
     [DataSizeUnitType.GIGABYTE, 'GB']
   ]);
-export const TimeUnitTypeTranslationMap = new Map<WebSocketTimeUnit, string>([
+export const TimeUnitTypeTranslationMap = new Map<string, string>([
     [WebSocketTimeUnit.MILLISECONDS, 'timeunit.milliseconds'],
     [WebSocketTimeUnit.SECONDS, 'timeunit.seconds'],
     [WebSocketTimeUnit.MINUTES, 'timeunit.minutes'],

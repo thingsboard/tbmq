@@ -21,7 +21,7 @@ import {AppState} from '@core/core.state';
 import {UntypedFormGroup} from '@angular/forms';
 import {Subscription} from 'rxjs';
 import { MatToolbar } from '@angular/material/toolbar';
-import { NgStyle, NgIf, NgClass, AsyncPipe } from '@angular/common';
+import { NgStyle, NgClass, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatFabButton } from '@angular/material/button';
@@ -33,7 +33,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-details-panel',
     templateUrl: './details-panel.component.html',
     styleUrls: ['./details-panel.component.scss'],
-    imports: [MatToolbar, NgStyle, ExtendedModule, FlexModule, NgIf, MatIconButton, MatIcon, MatFabButton, MatTooltip, NgClass, AsyncPipe, TranslateModule]
+    imports: [MatToolbar, NgStyle, ExtendedModule, FlexModule, MatIconButton, MatIcon, MatFabButton, MatTooltip, NgClass, AsyncPipe, TranslateModule]
 })
 export class DetailsPanelComponent extends PageComponent implements OnDestroy {
 

@@ -65,7 +65,7 @@ import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatToolbar } from '@angular/material/toolbar';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgIf, NgStyle, NgFor, NgClass, NgSwitch, NgSwitchCase, NgSwitchDefault, AsyncPipe } from '@angular/common';
+import { NgStyle, NgClass, AsyncPipe } from '@angular/common';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -84,7 +84,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './entities-table-home.component.html',
     styleUrls: ['./entities-table-home.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FullscreenDirective, MatToolbar, ExtendedModule, FlexModule, NgIf, MatIconButton, MatTooltip, MatIcon, MatFormField, MatInput, FormsModule, NgStyle, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, NgFor, MatSortHeader, NgClass, NgSwitch, NgSwitchCase, CopyButtonComponent, NgSwitchDefault, TbIconComponent, MatMenuTrigger, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
+    imports: [FullscreenDirective, MatToolbar, ExtendedModule, FlexModule, MatIconButton, MatTooltip, MatIcon, MatFormField, MatInput, FormsModule, NgStyle, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, CopyButtonComponent, TbIconComponent, MatMenuTrigger, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableHomeComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
@@ -582,12 +582,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     return res;
   }
 
-  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
+  trackByColumnKey(column: EntityColumn<BaseData>) {
     return column.key;
-  }
-
-  trackByEntityId(index: number, entity: any) {
-    return entity.id;
   }
 
   calcTableHeight(): string {

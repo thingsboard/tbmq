@@ -30,11 +30,10 @@ import {
 } from '@angular/material/form-field';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { DEFAULT_QOS, QoS, QosTranslation } from '../models/session.model';
-import { isDefinedAndNotNull, isNumber } from '@core/utils';
+import { DEFAULT_QOS, QoS, QosTranslation, QosTypes } from '../models/session.model';
+import { isDefinedAndNotNull } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { NgFor, NgIf } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatOption, MatSelect } from '@angular/material/select';
 
@@ -49,7 +48,7 @@ import { MatOption, MatSelect } from '@angular/material/select';
             multi: true
         }
     ],
-    imports: [TranslateModule, MatLabel, NgFor, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, NgIf, MatSelect, MatOption]
+    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, MatSelect, MatOption]
 })
 export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
@@ -81,7 +80,7 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
   hideRequiredMarker = true;
 
   qosFormControl: UntypedFormControl;
-  qosTypes = Object.values(QoS).filter(v => isNumber(v));
+  qosTypes = QosTypes;
   qosTranslation = QosTranslation;
 
   private destroy$ = new Subject<void>();

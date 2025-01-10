@@ -18,7 +18,7 @@ import { Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
-import { NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -26,7 +26,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-quick-links',
     templateUrl: './quick-links.component.html',
     styleUrls: ['./quick-links.component.scss'],
-    imports: [CardTitleButtonComponent, NgFor, TbIconComponent, AsyncPipe, TranslateModule]
+    imports: [CardTitleButtonComponent, TbIconComponent, AsyncPipe, TranslateModule]
 })
 export class QuickLinksComponent {
 

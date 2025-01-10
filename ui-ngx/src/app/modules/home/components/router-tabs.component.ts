@@ -26,7 +26,7 @@ import { MenuSection } from '@core/services/menu.models';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatTabNav, MatTabLink, MatTabNavPanel } from '@angular/material/tabs';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
@@ -35,7 +35,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-router-tabs',
     templateUrl: './router-tabs.component.html',
     styleUrls: ['./router-tabs.component.scss'],
-    imports: [FlexModule, NgIf, MatTabNav, NgFor, RouterLinkActive, MatTabLink, RouterLink, TbIconComponent, TbAnchorComponent, MatTabNavPanel, RouterOutlet, AsyncPipe, TranslateModule]
+    imports: [FlexModule, MatTabNav, RouterLinkActive, MatTabLink, RouterLink, TbIconComponent, TbAnchorComponent, MatTabNavPanel, RouterOutlet, AsyncPipe, TranslateModule]
 })
 export class RouterTabsComponent extends PageComponent implements OnInit {
 

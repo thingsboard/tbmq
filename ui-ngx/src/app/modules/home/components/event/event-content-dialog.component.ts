@@ -30,7 +30,7 @@ import { of } from 'rxjs';
 import { base64toString, isLiteralObject, isValidObjectString } from '@core/utils';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
@@ -48,7 +48,7 @@ export interface EventContentDialogComponentDialogData {
     selector: 'tb-event-content-dialog',
     templateUrl: './event-content-dialog.component.html',
     styleUrls: ['./event-content-dialog.component.scss'],
-    imports: [CdkScrollable, MatDialogContent, FlexModule, NgIf, TbIconComponent, TranslateModule, MatIconButton, MatDialogClose, MatIcon, CopyButtonComponent, AsyncPipe]
+    imports: [CdkScrollable, MatDialogContent, FlexModule, TbIconComponent, TranslateModule, MatIconButton, MatDialogClose, MatIcon, CopyButtonComponent, AsyncPipe]
 })
 export class EventContentDialogComponent extends DialogComponent<EventContentDialogComponentDialogData> implements OnInit, OnDestroy {
 

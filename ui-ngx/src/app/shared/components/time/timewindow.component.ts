@@ -37,7 +37,7 @@ import {
   Timewindow,
   TimewindowType
 } from '@shared/models/time/time.models';
-import { DatePipe, NgIf } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
   TIMEWINDOW_PANEL_DATA,
   TimewindowPanelComponent,
@@ -79,7 +79,7 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
         }
     ],
     standalone: true,
-    imports: [NgIf, MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
+    imports: [MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
 })
 export class TimewindowComponent implements ControlValueAccessor {
 

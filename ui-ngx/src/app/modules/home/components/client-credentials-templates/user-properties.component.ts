@@ -22,7 +22,7 @@ import { WebSocketUserProperties } from '@shared/models/ws-client.model';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { TranslateModule } from '@ngx-translate/core';
-import { NgFor } from '@angular/common';
+
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIconButton, MatButton } from '@angular/material/button';
@@ -55,7 +55,7 @@ export interface UserPropertiesObject {
         }
     ],
     styleUrls: ['./user-properties.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, FlexModule, TranslateModule, NgFor, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, ExtendedModule]
+    imports: [FormsModule, ReactiveFormsModule, FlexModule, TranslateModule, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, ExtendedModule]
 })
 export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {
 

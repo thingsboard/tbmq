@@ -1,55 +1,57 @@
 <!--
 
-    Copyright © 2016-2025 The Thingsboard Authors
+Copyright © 2016-2025 The Thingsboard Authors
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-        http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 
 -->
 <section class="tb-ws-client-title-toolbar" style="padding: 2px 16px 8px 16px;">
   <span class="tb-ws-client-title" translate>subscription.subscriptions</span>
   <button mat-icon-button
-          (click)="addSubscription($event)"
-          [matTooltip]="'subscription.add-subscription' | translate"
-          aria-label="Add subscription">
+    (click)="addSubscription($event)"
+    [matTooltip]="'subscription.add-subscription' | translate"
+    aria-label="Add subscription">
     <mat-icon class="material-icons home-page-material-icons">add</mat-icon>
   </button>
 </section>
 
-<ng-container *ngIf="loadSubscriptions; else loadingSubscriptions">
-  <div *ngIf="subscriptions?.length; else emptySubscriptions" style="overflow: auto">
+@if (loadSubscriptions) {
+  @if (subscriptions?.length) {
     <div style="overflow: auto">
-      <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
-        <div *ngFor="let subscription of subscriptions; trackBy: trackById">
-          <tb-subscription [connection]="connection"
-                           [subscription]="subscription"
-                           [subscriptions]="subscriptions"
-                           (subscriptionUpdated)="fetchSubcriptions(connection)">
-          </tb-subscription>
-        </div>
-      </section>
+      <div style="overflow: auto">
+        <section style="overflow-y: auto; overflow-x: hidden; padding: 0 12px 0 12px;">
+          @for (subscription of subscriptions; track trackById(subscription)) {
+            <div>
+              <tb-subscription [connection]="connection"
+                [subscription]="subscription"
+                [subscriptions]="subscriptions"
+                (subscriptionUpdated)="fetchSubcriptions(connection)">
+              </tb-subscription>
+            </div>
+          }
+        </section>
+      </div>
     </div>
-  </div>
-</ng-container>
-<ng-template #emptySubscriptions>
-  <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px" style="height: 100%;">
-    <img src="../../../../../../assets/home/no_data_bg.svg">
-    <span style="color: rgba(0, 0, 0, 0.38)" translate>subscription.no-subscriptions</span>
-  </section>
-</ng-template>
-<ng-template #loadingSubscriptions>
+  } @else {
+    <section fxLayout="column" fxLayoutAlign="center center" fxLayoutGap="4px" style="height: 100%;">
+      <img src="../../../../../../assets/home/no_data_bg.svg">
+      <span style="color: rgba(0, 0, 0, 0.38)" translate>subscription.no-subscriptions</span>
+    </section>
+  }
+} @else {
   <div class="tb-no-data-available" style="margin: 20px; gap: 16px;">
     <mat-spinner color="accent" diameter="65" strokeWidth="4"></mat-spinner>
     <div class="tb-no-data-text" translate>subscription.loading-subscriptions</div>
   </div>
-</ng-template>
+}
 

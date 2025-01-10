@@ -30,7 +30,7 @@ import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatSelect } from '@angular/material/select';
-import { NgFor } from '@angular/common';
+
 import { MatOption } from '@angular/material/core';
 import { ValueInputComponent } from '@shared/components/value-input.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -57,7 +57,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
         }
     ],
     styleUrls: ['./last-will.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, NgFor, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

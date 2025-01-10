@@ -38,7 +38,7 @@ import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, NgStyle, AsyncPipe, TitleCasePipe, DatePipe } from '@angular/common';
+import { NgStyle, AsyncPipe, TitleCasePipe, DatePipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatTabGroup, MatTab, MatTabContent } from '@angular/material/tabs';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
@@ -65,7 +65,7 @@ export interface SessionsDetailsDialogData {
             useValue: appearance
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, ExtendedModule, NgStyle, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, ExtendedModule, NgStyle, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {

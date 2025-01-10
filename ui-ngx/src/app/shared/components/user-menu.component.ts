@@ -24,7 +24,7 @@ import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from "@core/http/auth.service";
 import { FlexModule } from '@angular/flex-layout/flex';
-import { NgIf, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';
@@ -36,7 +36,7 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './user-menu.component.html',
     styleUrls: ['./user-menu.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FlexModule, NgIf, ExtendedModule, MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TranslateModule, AsyncPipe]
+    imports: [FlexModule, ExtendedModule, MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TranslateModule, AsyncPipe]
 })
 export class UserMenuComponent {
 

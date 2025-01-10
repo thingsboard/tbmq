@@ -31,7 +31,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
@@ -56,7 +56,7 @@ export interface AddWsClientSubscriptionDialogData {
     selector: 'tb-subscription-dialog',
     templateUrl: './subscription-dialog.component.html',
     styleUrls: ['./subscription-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, NgIf, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatError, ColorInputComponent, MatSelect, NgFor, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatError, ColorInputComponent, MatSelect, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
 })
 export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {

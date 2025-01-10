@@ -46,7 +46,7 @@ import { getAce } from '@shared/models/ace/ace.models';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
-import { NgClass, NgIf, NgStyle } from '@angular/common';
+import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -70,7 +70,7 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true,
         }
     ],
-    imports: [FlexModule, FullscreenDirective, NgClass, ExtendedModule, NgIf, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
+    imports: [FlexModule, FullscreenDirective, NgClass, ExtendedModule, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
 })
 export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

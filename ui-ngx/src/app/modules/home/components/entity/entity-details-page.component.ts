@@ -43,7 +43,7 @@ import { MatIconButton, MatFabButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { HelpComponent } from '@shared/components/help.component';
-import { NgIf, NgClass, AsyncPipe } from '@angular/common';
+import { NgClass, AsyncPipe } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTabGroup, MatTab } from '@angular/material/tabs';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
@@ -53,7 +53,7 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
     templateUrl: './entity-details-page.component.html',
     styleUrls: ['./entity-details-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatToolbar, FlexModule, MatIconButton, MatTooltip, MatIcon, HelpComponent, NgIf, MatFabButton, NgClass, ExtendedModule, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
+    imports: [MatCard, MatToolbar, FlexModule, MatIconButton, MatTooltip, MatIcon, HelpComponent, MatFabButton, NgClass, ExtendedModule, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
 })
 export class EntityDetailsPageComponent extends EntityDetailsPanelComponent implements IEntityDetailsPageComponent, OnInit, OnDestroy {
 

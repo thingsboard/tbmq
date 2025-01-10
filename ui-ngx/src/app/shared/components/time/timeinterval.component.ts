@@ -27,7 +27,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatInput } from '@angular/material/input';
-import { NgIf, NgFor } from '@angular/common';
+
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -43,7 +43,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
             multi: true
         }
     ],
-    imports: [FlexModule, ExtendedModule, TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, NgIf, MatSelect, NgFor, MatOption, MatSlideToggle]
+    imports: [FlexModule, ExtendedModule, TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatSlideToggle]
 })
 export class TimeintervalComponent implements OnInit, ControlValueAccessor {
 

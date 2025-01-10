@@ -44,7 +44,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { MatInput } from '@angular/material/input';
 import { ExtendedModule } from '@angular/flex-layout/extended';
-import { NgIf, NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
@@ -64,7 +64,7 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
       TruncatePipe
     ],
     standalone: true,
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 

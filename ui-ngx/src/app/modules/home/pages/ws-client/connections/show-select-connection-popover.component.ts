@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
@@ -29,7 +29,7 @@ import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgFor, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ConnectionComponent } from './connection.component';
 import { FlexModule } from '@angular/flex-layout/flex';
 
@@ -37,7 +37,7 @@ import { FlexModule } from '@angular/flex-layout/flex';
     selector: 'tb-show-connections-popover',
     templateUrl: './show-select-connection-popover.component.html',
     styleUrls: [],
-    imports: [TranslateModule, MatIconButton, MatIcon, NgFor, ConnectionComponent, FlexModule, MatButton, AsyncPipe]
+    imports: [TranslateModule, MatIconButton, MatIcon, ConnectionComponent, FlexModule, MatButton, AsyncPipe]
 })
 export class ShowSelectConnectionPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 
@@ -53,8 +53,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   constructor(protected store: Store<AppState>,
               private webSocketConnectionService: WebSocketConnectionService,
               private mqttJsClientService: MqttJsClientService,
-              private dialog: MatDialog,
-              private cd: ChangeDetectorRef) {
+              private dialog: MatDialog) {
     super(store);
   }
 
@@ -110,7 +109,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
       });
   }
 
-  trackById(index: number, item: WebSocketConnection): string {
+  trackById(item: WebSocketConnectionDto): string {
     return item.id;
   }
 
