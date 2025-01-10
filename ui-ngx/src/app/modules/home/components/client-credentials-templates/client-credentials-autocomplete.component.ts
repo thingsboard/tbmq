@@ -61,7 +61,7 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
             multi: true
         }],
     standalone: true,
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe, TruncatePipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 

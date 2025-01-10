@@ -14,26 +14,30 @@
 /// limitations under the License.
 ///
 
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgModule, SecurityContext } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { HomeRoutingModule } from './home-routing.module';
-import { HomeComponent } from './home.component';
-import { SharedModule } from '@app/shared/shared.module';
-import { MenuLinkComponent } from '@modules/home/menu/menu-link.component';
-import { MenuToggleComponent } from '@modules/home/menu/menu-toggle.component';
-import { SideMenuComponent } from '@modules/home/menu/side-menu.component';
-import { GettingStartedMenuLinkComponent } from '@home/pages/getting-started/getting-started-menu-link.component';
+import { TbBreakPointsProvider } from '@shared/layout/layout.directives';
+import { MarkdownModule, MARKED_OPTIONS } from 'ngx-markdown';
+import { MarkedOptionsService } from '@shared/components/marked-options.service';
+import { MenuModule } from '@home/menu/menu.module';
 
 @NgModule({
+  providers: [
+    DatePipe,
+    TbBreakPointsProvider,
+  ],
   imports: [
     CommonModule,
-    SharedModule,
     HomeRoutingModule,
-    HomeComponent,
-    MenuLinkComponent,
-    MenuToggleComponent,
-    SideMenuComponent,
-    GettingStartedMenuLinkComponent
+    MenuModule,
+    MarkdownModule.forRoot({
+      sanitize: SecurityContext.NONE,
+      markedOptions: {
+        provide: MARKED_OPTIONS,
+        useExisting: MarkedOptionsService
+      }
+    }),
   ]
 })
 export class HomeModule { }

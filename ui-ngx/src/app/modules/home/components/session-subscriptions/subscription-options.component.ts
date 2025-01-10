@@ -31,6 +31,7 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './subscription-options.component.html',
     styleUrls: [],
     standalone: true,
+    providers: [TbPopoverService],
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class SubscriptionOptionsComponent {

@@ -37,6 +37,7 @@ import { MatIcon } from '@angular/material/icon';
     templateUrl: './connection-controller.component.html',
     styleUrls: ['./connection-controller.component.scss'],
     standalone: true,
+    providers: [TbPopoverService],
     imports: [TranslateModule, NgStyle, ExtendedModule, NgIf, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {

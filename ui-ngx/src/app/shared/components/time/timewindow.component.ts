@@ -22,9 +22,6 @@ import {
   HostBinding,
   Injector,
   Input,
-  OnChanges,
-  OnInit,
-  SimpleChanges,
   StaticProvider,
   ViewContainerRef
 } from '@angular/core';
@@ -48,24 +45,20 @@ import {
 } from '@shared/components/time/timewindow-panel.component';
 import { TimeService } from '@core/services/time.service';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
-import { deepClone, isDefinedAndNotNull } from '@core/utils';
+import { deepClone } from '@core/utils';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import {
-  ComponentStyle,
-  defaultTimewindowStyle,
-  iconStyle,
-  textStyle,
-  TimewindowStyle
-} from '@shared/models/widget-settings.models';
 import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { TbIconComponent } from '../icon.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
+import { MatNativeDatetimeModule } from '@mat-datetimepicker/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MAT_DATE_LOCALE } from '@angular/material/core';
 
 // @dynamic
 @Component({
@@ -73,16 +66,22 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
     templateUrl: './timewindow.component.html',
     styleUrls: ['./timewindow.component.scss'],
     providers: [
+        DatePipe,
+        MillisecondsToTimeStringPipe,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => TimewindowComponent),
             multi: true
+        },
+        {
+          provide: MAT_DATE_LOCALE,
+          useValue: 'en-GB'
         }
     ],
     standalone: true,
-    imports: [NgIf, MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule]
+    imports: [NgIf, MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
 })
-export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChanges {
+export class TimewindowComponent implements ControlValueAccessor {
 
   historyOnlyValue = false;
 
@@ -91,19 +90,11 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
     const newHistoryOnlyValue = coerceBooleanProperty(val);
     if (this.historyOnlyValue !== newHistoryOnlyValue) {
       this.historyOnlyValue = newHistoryOnlyValue;
-      if (this.onHistoryOnlyChanged()) {
-        this.notifyChanged();
-      }
     }
   }
 
   get historyOnly() {
     return this.historyOnlyValue;
-  }
-
-  get displayTypePrefix(): boolean {
-    return isDefinedAndNotNull(this.computedTimewindowStyle?.displayTypePrefix)
-      ? this.computedTimewindowStyle?.displayTypePrefix : true;
   }
 
   @HostBinding('class.no-margin')
@@ -179,19 +170,12 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
   tooltipPosition: TooltipPosition = 'above';
 
   @Input()
-  timewindowStyle: TimewindowStyle;
-
-  @Input()
   @coerceBoolean()
   disabled: boolean;
 
   innerValue: Timewindow;
 
   timewindowDisabled: boolean;
-
-  computedTimewindowStyle: TimewindowStyle;
-  timewindowComponentStyle: ComponentStyle;
-  timewindowIconStyle: ComponentStyle;
 
   private propagateChange = (_: any) => {};
 
@@ -203,22 +187,6 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
               private cd: ChangeDetectorRef,
               private nativeElement: ElementRef,
               public viewContainerRef: ViewContainerRef) {
-  }
-
-  ngOnInit() {
-    this.updateTimewindowStyle();
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    for (const propName of Object.keys(changes)) {
-      const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'timewindowStyle') {
-          this.updateTimewindowStyle();
-          this.updateDisplayValue();
-        }
-      }
-    }
   }
 
   toggleTimewindow($event: Event) {
@@ -280,26 +248,6 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
     this.cd.detectChanges();
   }
 
-  private updateTimewindowStyle() {
-    if (!this.asButton) {
-      this.computedTimewindowStyle = {...defaultTimewindowStyle, ...(this.timewindowStyle || {})};
-      this.timewindowComponentStyle = textStyle(this.computedTimewindowStyle.font);
-      if (this.computedTimewindowStyle.color) {
-        this.timewindowComponentStyle.color = this.computedTimewindowStyle.color;
-      }
-      this.timewindowIconStyle = this.computedTimewindowStyle.iconSize ? iconStyle(this.computedTimewindowStyle.iconSize) : {};
-    }
-  }
-
-  private onHistoryOnlyChanged(): boolean {
-    if (this.historyOnlyValue && this.innerValue && this.innerValue.selectedTab !== TimewindowType.HISTORY) {
-      this.innerValue.selectedTab = TimewindowType.HISTORY;
-      this.updateDisplayValue();
-      return true;
-    }
-    return false;
-  }
-
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
   }
@@ -315,13 +263,7 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
   writeValue(obj: Timewindow): void {
     this.innerValue = initModelFromDefaultTimewindow(obj, this.quickIntervalOnly, this.historyOnly, this.timeService);
     this.timewindowDisabled = this.isTimewindowDisabled();
-    if (this.onHistoryOnlyChanged()) {
-      setTimeout(() => {
-        this.notifyChanged();
-      });
-    } else {
-      this.updateDisplayValue();
-    }
+    this.updateDisplayValue();
   }
 
   notifyChanged() {
@@ -334,7 +276,7 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
 
   updateDisplayValue() {
     if (this.innerValue.selectedTab === TimewindowType.REALTIME && !this.historyOnly) {
-      this.innerValue.displayValue = this.displayTypePrefix ? (this.translate.instant('timewindow.realtime') + ' - ') : '';
+      this.innerValue.displayValue = '';
       if (this.innerValue.realtime.realtimeType === RealtimeWindowType.INTERVAL) {
         this.innerValue.displayValue += this.translate.instant(QuickTimeIntervalTranslationMap.get(this.innerValue.realtime.quickInterval));
       } else {
@@ -342,7 +284,7 @@ export class TimewindowComponent implements ControlValueAccessor, OnInit, OnChan
           this.millisecondsToTimeStringPipe.transform(this.innerValue.realtime.timewindowMs);
       }
     } else {
-      this.innerValue.displayValue = this.displayTypePrefix && (!this.historyOnly || this.alwaysDisplayTypePrefix) ?
+      this.innerValue.displayValue = (!this.historyOnly || this.alwaysDisplayTypePrefix) ?
         (this.translate.instant('timewindow.history') + ' - ') : '';
       if (this.innerValue.history.historyType === HistoryWindowType.LAST_INTERVAL) {
         this.innerValue.displayValue += this.translate.instant('timewindow.last-prefix') + ' ' +
