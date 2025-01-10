@@ -15,7 +15,7 @@
 ///
 
 import { animate, AnimationTriggerMetadata, style, transition, trigger } from '@angular/animations';
-import { ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
+import { CdkOverlayOrigin, ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 
@@ -67,6 +67,6 @@ export interface PropertyMapping {
 }
 
 export interface PopoverWithTrigger {
-  trigger: Element;
+  trigger: CdkOverlayOrigin;
   popoverComponent: TbPopoverComponent;
 }

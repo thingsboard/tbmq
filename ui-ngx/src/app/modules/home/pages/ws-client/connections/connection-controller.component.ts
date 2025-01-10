@@ -31,12 +31,13 @@ import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
     selector: 'tb-connection-controller',
     templateUrl: './connection-controller.component.html',
     styleUrls: ['./connection-controller.component.scss'],
-    imports: [TranslateModule, NgStyle, ExtendedModule, NgIf, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe]
+  imports: [TranslateModule, NgStyle, ExtendedModule, NgIf, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
@@ -101,12 +102,11 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     }
   }
 
-  showStatusLogs($event: Event, element: HTMLElement) {
+  showStatusLogs($event: Event, trigger: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
     this.timeout = setTimeout(() => {
-      const trigger = element;
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {

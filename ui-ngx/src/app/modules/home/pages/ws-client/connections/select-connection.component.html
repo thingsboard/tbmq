@@ -15,8 +15,8 @@
     limitations under the License.
 
 -->
-<button mat-icon-button #showConnectionsButton
-        (click)="showConnections($event, showConnectionsButton)"
+<button mat-icon-button cdkOverlayOrigin #trigger="cdkOverlayOrigin"
+        (click)="showConnections($event, trigger)"
         [matTooltip]="'ws-client.connections.select-connection' | translate">
   <mat-icon class="material-icons">expand_more</mat-icon>
 </button>

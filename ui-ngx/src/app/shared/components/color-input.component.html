@@ -39,8 +39,8 @@
           mat-stroked-button
           class="tb-box-button"
           [disabled]="disabled"
-          #matButton
-          (click)="openColorPickerPopup($event, matButton._elementRef)">
+          cdkOverlayOrigin #trigger="cdkOverlayOrigin"
+          (click)="openColorPickerPopup($event, trigger)">
     <div class="tb-color-preview no-margin box" [ngClass]="{'disabled': disabled}">
       <div class="tb-color-result" [style]="!disabled ? {background: colorFormGroup.get('color').value} : {}"></div>
     </div>

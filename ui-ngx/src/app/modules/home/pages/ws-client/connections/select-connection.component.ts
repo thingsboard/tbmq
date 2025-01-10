@@ -21,12 +21,13 @@ import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/conn
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
     selector: 'tb-select-connection',
     templateUrl: './select-connection.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
+  imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SelectConnectionComponent {
 
@@ -35,11 +36,10 @@ export class SelectConnectionComponent {
               private viewContainerRef: ViewContainerRef) {
   }
 
-  showConnections($event: Event, createVersionButton: MatButton) {
+  showConnections($event: Event, trigger: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
-    const trigger = createVersionButton._elementRef.nativeElement;
     if (this.popoverService.hasPopover(trigger)) {
       this.popoverService.hidePopover(trigger);
     } else {

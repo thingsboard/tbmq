@@ -16,7 +16,7 @@
 
 import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import {
   ShowSubscriptionOptionsPopoverComponent
@@ -25,12 +25,13 @@ import { AbstractControl } from '@angular/forms';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
     selector: 'tb-subscription-options',
     templateUrl: './subscription-options.component.html',
     styleUrls: [],
-    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
+  imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SubscriptionOptionsComponent {
 
@@ -45,11 +46,10 @@ export class SubscriptionOptionsComponent {
               private viewContainerRef: ViewContainerRef) {
   }
 
-  toggleSubscriptionOptionsPopover($event: Event, button: MatButton) {
+  toggleSubscriptionOptionsPopover($event: Event, trigger: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
-    const trigger = button._elementRef.nativeElement;
     if (this.popoverService.hasPopover(trigger)) {
       this.popoverService.hidePopover(trigger);
     } else {

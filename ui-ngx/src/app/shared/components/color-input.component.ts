@@ -40,6 +40,7 @@ import { MatIcon } from '@angular/material/icon';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatInput } from '@angular/material/input';
 import { MatIconButton, MatButton } from '@angular/material/button';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
     selector: 'tb-color-input',
@@ -52,7 +53,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
             multi: true
         }
     ],
-    imports: [NgIf, MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, NgStyle, ExtendedModule, MatInput, MatIconButton, MatSuffix, MatError, MatButton, NgClass]
+  imports: [NgIf, MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, NgStyle, ExtendedModule, MatInput, MatIconButton, MatSuffix, MatError, MatButton, NgClass, CdkOverlayOrigin]
 })
 export class ColorInputComponent extends PageComponent implements OnInit, ControlValueAccessor {
 
@@ -179,12 +180,11 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
     }
   }
 
-  openColorPickerPopup($event: Event, element?: ElementRef) {
+  openColorPickerPopup($event: Event, trigger?: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
     if (!this.disabled && !this.readonly) {
-      const trigger = element ? element.nativeElement : $event.target;
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {
