@@ -55,13 +55,16 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
     selector: 'tb-client-credentials-autocomplete',
     templateUrl: './client-credentials-autocomplete.component.html',
     styleUrls: ['./client-credentials-autocomplete.component.scss'],
-    providers: [{
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => ClientCredentialsAutocompleteComponent),
-            multi: true
-        }],
+    providers: [
+      {
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => ClientCredentialsAutocompleteComponent),
+        multi: true
+      },
+      TruncatePipe
+    ],
     standalone: true,
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe, TruncatePipe]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, NgIf, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, NgFor, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 
