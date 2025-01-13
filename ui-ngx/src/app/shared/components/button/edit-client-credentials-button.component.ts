@@ -14,10 +14,9 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { booleanAttribute, Component, input } from '@angular/core';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { Store } from '@ngrx/store';
@@ -34,18 +33,10 @@ import { MatIcon } from '@angular/material/icon';
 })
 export class EditClientCredentialsButtonComponent {
 
-  @Input()
-  @coerceBoolean()
-  disabled = false;
-
-  @Input()
-  name: string;
-
-  @Input()
-  tooltipText: string = this.translate.instant('action.edit');
-
-  @Input()
-  tooltipPosition: TooltipPosition = 'above';
+  readonly disabled = input(false, {transform: booleanAttribute});
+  readonly name = input<string>();
+  readonly tooltipText = input<string>(this.translate.instant('action.edit'));
+  readonly tooltipPosition = input<TooltipPosition>('above');
 
   constructor(private clientCredentialsService: ClientCredentialsService,
               private store: Store<AppState>,
@@ -57,7 +48,7 @@ export class EditClientCredentialsButtonComponent {
     if ($event) {
       $event.stopPropagation();
     }
-    this.clientCredentialsService.getClientCredentialsByName(this.name, {ignoreErrors: true}).subscribe(
+    this.clientCredentialsService.getClientCredentialsByName(this.name(), {ignoreErrors: true}).subscribe(
       credentials => {
         if (credentials) {
           this.router.navigate(['client-credentials', credentials.id]);

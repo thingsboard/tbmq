@@ -20,16 +20,16 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input,
+  model, Input
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
@@ -82,18 +82,11 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   @ViewChild('clientCredentialsFilterPanel')
   clientCredentialsFilterPanel: TemplateRef<any>;
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
   @Input()
   initialClientCredentialsFilterConfig: ClientCredentialsFilterConfig;
+
+  disabled = model<boolean>();
+  readonly buttonMode = input(true);
 
   clientTypes = Object.values(ClientType);
   clientTypeTranslationMap = clientTypeTranslationMap;
@@ -143,7 +136,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     this.clientCredentialsFilterConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        if (!this.buttonMode) {
+        if (!this.buttonMode()) {
           this.clientCredentialsConfigUpdated(this.clientCredentialsFilterConfigForm.value);
         }
       });
@@ -165,8 +158,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.clientCredentialsFilterConfigForm.disable({emitEvent: false});
     } else {
       this.clientCredentialsFilterConfigForm.enable({emitEvent: false});
@@ -235,16 +228,17 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   reset() {
-    if (this.initialClientCredentialsFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialClientCredentialsFilterConfig = this.initialClientCredentialsFilterConfig;
+    if (initialClientCredentialsFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const clientCredentialsFilterConfig = this.clientCredentialsFilterConfigFromFormValue(this.clientCredentialsFilterConfigForm.value);
-        if (!clientCredentialsFilterConfigEquals(clientCredentialsFilterConfig, this.initialClientCredentialsFilterConfig)) {
-          this.updateClientCredentialsConfigForm(this.initialClientCredentialsFilterConfig);
+        if (!clientCredentialsFilterConfigEquals(clientCredentialsFilterConfig, initialClientCredentialsFilterConfig)) {
+          this.updateClientCredentialsConfigForm(initialClientCredentialsFilterConfig);
           this.clientCredentialsFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!clientCredentialsFilterConfigEquals(this.clientCredentialsFilterConfig, this.initialClientCredentialsFilterConfig)) {
-          this.clientCredentialsFilterConfig = this.initialClientCredentialsFilterConfig;
+        if (!clientCredentialsFilterConfigEquals(this.clientCredentialsFilterConfig, initialClientCredentialsFilterConfig)) {
+          this.clientCredentialsFilterConfig = initialClientCredentialsFilterConfig;
           this.updateButtonDisplayValue();
           this.updateClientCredentialsConfigForm(this.clientCredentialsFilterConfig);
           this.propagateChange(this.clientCredentialsFilterConfig);
@@ -282,7 +276,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.clientCredentialsFilterConfig?.clientTypeList?.length) {

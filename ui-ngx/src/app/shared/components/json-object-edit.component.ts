@@ -19,10 +19,10 @@ import {
   Component,
   ElementRef,
   forwardRef,
-  Input,
   OnDestroy,
   OnInit,
-  ViewChild
+  ViewChild,
+  input, booleanAttribute, model
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -30,7 +30,6 @@ import {
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   Validator,
-  AbstractControl, ValidationErrors
 } from '@angular/forms';
 import { Ace } from 'ace-builds';
 import { ActionNotificationHide, ActionNotificationShow } from '@core/notification/notification.actions';
@@ -40,7 +39,6 @@ import { CancelAnimationFrame, RafService } from '@core/services/raf.service';
 import { guid, isDefinedAndNotNull, isObject, isUndefined } from '@core/utils';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { FullscreenDirective } from './fullscreen.directive';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { NgClass, NgStyle } from '@angular/common';
@@ -80,23 +78,17 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
 
   toastTargetId = `jsonObjectEditor-${guid()}`;
 
-  @Input() label: string;
+  disabled = model<boolean>();
+  readonly label = input<string>();
+  readonly fillHeight = input<boolean>();
 
-  @Input() disabled: boolean;
+  readonly editorStyle = input<{
+      [klass: string]: any;
+  }>();
 
-  @Input() fillHeight: boolean;
-
-  @Input() editorStyle: { [klass: string]: any };
-
-  @Input() sort: (key: string, value: any) => any;
-
-  @coerceBoolean()
-  @Input()
-  jsonRequired: boolean;
-
-  @coerceBoolean()
-  @Input()
-  readonly: boolean;
+  readonly sort = input<(key: string, value: any) => any>();
+  readonly jsonRequired = input<boolean>();
+  readonly readonly = input<boolean>();
 
   fullscreen = false;
 
@@ -126,7 +118,7 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
       mode: 'ace/mode/json',
       showGutter: true,
       showPrintMargin: false,
-      readOnly: this.disabled || this.readonly
+      readOnly: this.disabled() || this.readonly()
     };
 
     const advancedOptions = {
@@ -142,7 +134,7 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
         this.jsonEditor = ace.edit(editorElement, editorOptions);
         this.jsonEditor.session.setUseWrapMode(false);
         this.jsonEditor.setValue(this.contentValue ? this.contentValue : '', -1);
-        this.jsonEditor.setReadOnly(this.disabled || this.readonly);
+        this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
         this.jsonEditor.on('change', () => {
           if (!this.ignoreChange) {
             this.cleanupJsonErrors();
@@ -185,9 +177,9 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (this.jsonEditor) {
-      this.jsonEditor.setReadOnly(this.disabled || this.readonly);
+      this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
     }
   }
 
@@ -200,7 +192,7 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
   }
 
   validateOnSubmit(): void {
-    if (!this.disabled && !this.readonly) {
+    if (!this.disabled() && !this.readonly()) {
       this.cleanupJsonErrors();
       if (!this.objectValid) {
         this.store.dispatch(new ActionNotificationShow(
@@ -248,11 +240,11 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
     this.objectValid = false;
     try {
       if (isDefinedAndNotNull(this.modelValue)) {
-        this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort) ? undefined :
-          (key, objectValue) => this.sort(key, objectValue), 2);
+        this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort()) ? undefined :
+          (key, objectValue) => this.sort()(key, objectValue), 2);
         this.objectValid = true;
       } else {
-        this.objectValid = !this.jsonRequired;
+        this.objectValid = !this.jsonRequired();
         this.validationError = 'Json object is required.';
       }
     } catch (e) {
@@ -290,8 +282,8 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
           this.validationError = errorInfo;
         }
       } else {
-        this.objectValid = !this.jsonRequired;
-        this.validationError = this.jsonRequired ? 'Json object is required.' : '';
+        this.objectValid = !this.jsonRequired();
+        this.validationError = this.jsonRequired() ? 'Json object is required.' : '';
       }
       this.modelValue = data;
       this.propagateChange(data);

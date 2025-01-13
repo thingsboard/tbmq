@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output, input} from '@angular/core';
 import {PageComponent} from '@shared/components/page.component';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/core.state';
@@ -37,13 +37,13 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class DetailsPanelComponent extends PageComponent implements OnDestroy {
 
-  @Input() headerHeightPx = 100;
-  @Input() headerTitle = '';
-  @Input() headerSubtitle = '';
-  @Input() isReadOnly = false;
-  @Input() isAlwaysEdit = false;
-  @Input() isShowSearch = false;
-  @Input() backgroundColor = '#FFF';
+  readonly headerHeightPx = input(100);
+  readonly headerTitle = input('');
+  readonly headerSubtitle = input('');
+  readonly isReadOnly = input(false);
+  readonly isAlwaysEdit = input(false);
+  readonly isShowSearch = input(false);
+  readonly backgroundColor = input('#FFF');
 
   private theFormValue: UntypedFormGroup;
   private formSubscription: Subscription = null;
@@ -83,7 +83,7 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
 
   @Input()
   get isEdit() {
-    return this.isAlwaysEdit || this.isEditValue;
+    return this.isAlwaysEdit() || this.isEditValue;
   }
 
   set isEdit(val: boolean) {
@@ -110,7 +110,7 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
   }
 
   onToggleDetailsEditMode() {
-    if (!this.isAlwaysEdit) {
+    if (!this.isAlwaysEdit()) {
       this.isEdit = !this.isEdit;
     }
     this.toggleDetailsEditMode.emit(this.isEditValue);

@@ -20,13 +20,13 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -79,18 +79,10 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   @ViewChild('unauthorizedClientPanel')
   unauthorizedClientFilterPanel: TemplateRef<any>;
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
-  @Input()
-  initialUnauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
+  disabled = model<boolean>();
+  initialUnauthorizedClientFilterConfig = model<UnauthorizedClientFilterConfig>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   passwordProvidedList = [true, false];
   tlsUsedList = [true, false];
@@ -121,9 +113,9 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
     if (this.data) {
       this.panelMode = this.data.panelMode;
       this.unauthorizedClientFilterConfig = this.data.unauthorizedClientFilterConfig;
-      this.initialUnauthorizedClientFilterConfig = this.data.initialUnauthorizedClientFilterConfig;
-      if (this.panelMode && !this.initialUnauthorizedClientFilterConfig) {
-        this.initialUnauthorizedClientFilterConfig = deepClone(this.unauthorizedClientFilterConfig);
+      this.initialUnauthorizedClientFilterConfig.set(this.data.initialUnauthorizedClientFilterConfig);
+      if (this.panelMode && !this.initialUnauthorizedClientFilterConfig()) {
+        this.initialUnauthorizedClientFilterConfig.set(deepClone(this.unauthorizedClientFilterConfig));
       }
     }
     this.unauthorizedClientFilterConfigForm = this.fb.group({
@@ -137,14 +129,14 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
     this.unauthorizedClientFilterConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        if (!this.buttonMode) {
+        if (!this.buttonMode()) {
           this.unauthorizedClientConfigUpdated(this.unauthorizedClientFilterConfigForm.value);
         }
       });
     if (this.panelMode) {
       this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
     }
-    this.initialUnauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigForm.getRawValue();
+    this.initialUnauthorizedClientFilterConfig.set(this.unauthorizedClientFilterConfigForm.getRawValue());
   }
 
   ngOnDestroy(): void {
@@ -160,8 +152,8 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.unauthorizedClientFilterConfigForm.disable({emitEvent: false});
     } else {
       this.unauthorizedClientFilterConfigForm.enable({emitEvent: false});
@@ -170,8 +162,8 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
 
   writeValue(unauthorizedClientFilterConfig?: UnauthorizedClientFilterConfig): void {
     this.unauthorizedClientFilterConfig = unauthorizedClientFilterConfig;
-    if (!this.initialUnauthorizedClientFilterConfig && unauthorizedClientFilterConfig) {
-      this.initialUnauthorizedClientFilterConfig = deepClone(unauthorizedClientFilterConfig);
+    if (!this.initialUnauthorizedClientFilterConfig() && unauthorizedClientFilterConfig) {
+      this.initialUnauthorizedClientFilterConfig.set(deepClone(unauthorizedClientFilterConfig));
     }
     this.updateButtonDisplayValue();
     this.updateUnauthorizedClientConfigForm(unauthorizedClientFilterConfig);
@@ -230,16 +222,17 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   reset() {
-    if (this.initialUnauthorizedClientFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialUnauthorizedClientFilterConfig = this.initialUnauthorizedClientFilterConfig();
+    if (initialUnauthorizedClientFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const unauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigFromFormValue(this.unauthorizedClientFilterConfigForm.value);
-        if (!unauthorizedClientFilterConfigEquals(unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
-          this.updateUnauthorizedClientConfigForm(this.initialUnauthorizedClientFilterConfig);
+        if (!unauthorizedClientFilterConfigEquals(unauthorizedClientFilterConfig, initialUnauthorizedClientFilterConfig)) {
+          this.updateUnauthorizedClientConfigForm(initialUnauthorizedClientFilterConfig);
           this.unauthorizedClientFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!unauthorizedClientFilterConfigEquals(this.unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
-          this.unauthorizedClientFilterConfig = this.initialUnauthorizedClientFilterConfig;
+        if (!unauthorizedClientFilterConfigEquals(this.unauthorizedClientFilterConfig, initialUnauthorizedClientFilterConfig)) {
+          this.unauthorizedClientFilterConfig = initialUnauthorizedClientFilterConfig;
           this.updateButtonDisplayValue();
           this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
           this.propagateChange(this.unauthorizedClientFilterConfig);
@@ -277,7 +270,7 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.unauthorizedClientFilterConfig?.clientId?.length) {

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
 import { MatAnchor } from '@angular/material/button';
@@ -34,14 +34,15 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class MenuToggleComponent {
 
-  @Input() section: MenuSection;
+  readonly section = input<MenuSection>();
 
   constructor(private router: Router) {
   }
 
   sectionHeight(): string {
-    if (this.section.opened || (!this.section.opened && this.router.url.indexOf(this.section.path) > -1)) {
-      return this.section.pages.length * 40 + 'px';
+    const section = this.section();
+    if (section.opened || (!section.opened && this.router.url.indexOf(section.path) > -1)) {
+      return section.pages.length * 40 + 'px';
     } else {
       return '0px';
     }
@@ -49,7 +50,7 @@ export class MenuToggleComponent {
 
   toggleSection(event: MouseEvent) {
     event.stopPropagation();
-    this.section.opened = !this.section.opened;
+    this.section().opened = !this.section().opened;
   }
 
   trackBySectionPages(index: number, section: MenuSection){

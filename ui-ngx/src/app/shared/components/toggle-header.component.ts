@@ -31,7 +31,8 @@ import {
   OnInit,
   Output,
   QueryList,
-  ViewChild
+  ViewChild,
+  input, model, booleanAttribute
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -62,13 +63,12 @@ export type ScrollDirection = 'after' | 'before';
 
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
-    selector: 'tb-toggle-option',
-    standalone: true,
+    selector: 'tb-toggle-option'
 })
 // eslint-disable-next-line @angular-eslint/directive-class-suffix
 export class ToggleOption {
 
-  @Input() value: any;
+  readonly value = input<any>();
 
   get viewValue(): string {
     return (this._element?.nativeElement.textContent || '').trim();
@@ -84,8 +84,7 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
 
   @ContentChildren(ToggleOption) toggleOptions: QueryList<ToggleOption>;
 
-  @Input()
-  options: ToggleHeaderOption[] = [];
+  readonly options = input<ToggleHeaderOption[]>([]);
 
   protected _destroyed = new Subject<void>();
 
@@ -106,11 +105,11 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
 
   private syncToggleHeaderOptions() {
     if (this.toggleOptions?.length) {
-      this.options.length = 0;
+      this.options().length = 0;
       this.toggleOptions.forEach(option => {
-        this.options.push(
+        this.options().push(
           { name: option.viewValue,
-            value: option.value
+            value: option.value()
           }
         );
       });
@@ -162,53 +161,30 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   @Output()
   valueChange = new EventEmitter<any>();
 
-  @Input()
-  name: string;
-
-  @Input()
-  @coerceBoolean()
-  disablePagination = false;
-
-  @Input()
-  selectMediaBreakpoint = 'md-lg';
+  readonly name = input<string>();
+  readonly disablePagination = input(false, {transform: booleanAttribute});
+  readonly selectMediaBreakpoint = model('md-lg');
+  readonly ignoreMdLgSize = input(false, {transform: booleanAttribute});
+  readonly appearance = input<ToggleHeaderAppearance>('stroked');
+  readonly disabled = input(false, {transform: booleanAttribute});
+  readonly fillHeight = input(false, {transform: booleanAttribute});
+  readonly extraPadding = input(false, {transform: booleanAttribute});
+  readonly primaryBackground = input(false, {transform: booleanAttribute});
 
   @Input()
   @coerceBoolean()
   set useSelectOnMdLg(value: boolean) {
     if (value) {
-      this.selectMediaBreakpoint = 'md-lg';
+      this.selectMediaBreakpoint.set('md-lg');
     } else {
-      if (this.selectMediaBreakpoint === 'md-lg') {
-        this.selectMediaBreakpoint = '';
+      if (this.selectMediaBreakpoint() === 'md-lg') {
+        this.selectMediaBreakpoint.set('');
       }
     }
   }
 
-  @Input()
-  @coerceBoolean()
-  ignoreMdLgSize = false;
-
-  @Input()
-  appearance: ToggleHeaderAppearance = 'stroked';
-
-  @Input()
-  @coerceBoolean()
-  disabled = false;
-
-  @Input()
-  @coerceBoolean()
-  fillHeight = false;
-
-  @Input()
-  @coerceBoolean()
-  extraPadding = false;
-
-  @Input()
-  @coerceBoolean()
-  primaryBackground = false;
-
   get isMdLg(): boolean {
-    return !this.ignoreMdLgSize && this.isMdLgValue;
+    return !this.ignoreMdLgSize() && this.isMdLgValue;
   }
 
   private isMdLgValue: boolean;
@@ -228,22 +204,24 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
 
   ngOnInit() {
     const mediaBreakpoints = [MediaBreakpoints['md-lg']];
-    if (this.selectMediaBreakpoint && this.selectMediaBreakpoint !== 'md-lg') {
-      mediaBreakpoints.push(MediaBreakpoints[this.selectMediaBreakpoint]);
+    const selectMediaBreakpoint = this.selectMediaBreakpoint();
+    if (selectMediaBreakpoint && selectMediaBreakpoint !== 'md-lg') {
+      mediaBreakpoints.push(MediaBreakpoints[selectMediaBreakpoint]);
     }
     this.observeBreakpointSubscription = this.breakpointObserver
       .observe(mediaBreakpoints)
       .subscribe((state: BreakpointState) => {
           this.isMdLgValue = state.breakpoints[MediaBreakpoints['md-lg']];
-          if (this.selectMediaBreakpoint) {
-            this.useSelectSubject.next(state.breakpoints[MediaBreakpoints[this.selectMediaBreakpoint]]);
+          const selectMediaBreakpointValue = this.selectMediaBreakpoint();
+          if (selectMediaBreakpointValue) {
+            this.useSelectSubject.next(state.breakpoints[MediaBreakpoints[selectMediaBreakpointValue]]);
           } else {
             this.useSelectSubject.next(false);
           }
           this.cd.markForCheck();
         }
       );
-    if (!this.disablePagination) {
+    if (!this.disablePagination()) {
       this.valueChange.pipe(takeUntil(this._destroyed)).subscribe(() => {
         this.scrollToToggleOptionValue();
       });
@@ -256,7 +234,7 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   }
 
   ngAfterViewInit() {
-    if (!this.disablePagination) {
+    if (!this.disablePagination()) {
       this.useSelect$.pipe(takeUntil(this._destroyed)).subscribe((useSelect) => {
         if (useSelect) {
           this.removePagination();
@@ -334,8 +312,8 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   private scrollToToggleOptionValue() {
     if (this.buttonToggleGroup && this.buttonToggleGroup.selected) {
       const selectedToggleButton = this.buttonToggleGroup.selected as MatButtonToggle;
-      const index = this.options.findIndex(o => o.value === selectedToggleButton.value);
-      const isLast = index === this.options.length - 1;
+      const index = this.options().findIndex(o => o.value === selectedToggleButton.value);
+      const isLast = index === this.options().length - 1;
       const isFirst = index === 0;
       const viewLength = this.toggleGroupContainer.nativeElement.offsetWidth;
       const {offsetLeft, offsetWidth} = (selectedToggleButton._buttonElement.nativeElement.offsetParent as HTMLElement);

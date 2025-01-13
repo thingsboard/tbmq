@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, OnDestroy, ViewChild, input, model } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -52,11 +52,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   @ViewChild('copyBtn')
   copyBtn: CopyButtonComponent;
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   credentialsMqttFormGroup: UntypedFormGroup;
   certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
@@ -93,8 +90,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.credentialsMqttFormGroup.disable({emitEvent: false});
     } else {
       this.credentialsMqttFormGroup.enable({emitEvent: false});

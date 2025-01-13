@@ -29,7 +29,6 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
     selector: 'tb-color-picker-panel',
     templateUrl: './color-picker-panel.component.html',
-    providers: [],
     styleUrls: ['./color-picker-panel.component.scss'],
     encapsulation: ViewEncapsulation.None,
     imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, MatButton, TranslateModule]

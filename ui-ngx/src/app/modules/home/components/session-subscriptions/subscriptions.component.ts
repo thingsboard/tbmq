@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, forwardRef, OnInit, OnDestroy, input, model } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { TranslateModule } from '@ngx-translate/core';
@@ -51,7 +51,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
-  @Input() disabled: boolean;
+  disabled = model<boolean>();
 
   topicListFormGroup: UntypedFormGroup;
 
@@ -86,8 +86,8 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
   }
 
   setDisabledState?(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.topicListFormGroup.disable({emitEvent: false});
     } else {
       this.topicListFormGroup.enable({emitEvent: false});

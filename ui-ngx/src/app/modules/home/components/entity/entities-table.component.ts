@@ -22,11 +22,11 @@ import {
   ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
-  Input,
   OnChanges,
   OnInit,
   SimpleChanges,
   ViewChild,
+  input, model
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -90,8 +90,7 @@ import { MatDivider } from '@angular/material/divider';
 })
 export class EntitiesTableComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
-  @Input()
-  entitiesTableConfig: EntityTableConfig<BaseData>;
+  entitiesTableConfig = model<EntityTableConfig<BaseData>>();
 
   translations: EntityTypeTranslation;
 
@@ -158,8 +157,9 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   ngOnInit() {
-    if (this.entitiesTableConfig) {
-      this.init(this.entitiesTableConfig);
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig) {
+      this.init(entitiesTableConfig);
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
     }
@@ -178,30 +178,31 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
     this.isDetailsOpen = false;
-    this.entitiesTableConfig = entitiesTableConfig;
-    this.pageMode = this.entitiesTableConfig.pageMode;
-    if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
+    this.entitiesTableConfig.set(entitiesTableConfig);
+    this.pageMode = this.entitiesTableConfig().pageMode;
+    const entitiesTableConfigValue = this.entitiesTableConfig();
+    if (entitiesTableConfigValue.headerComponent) {
+      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(entitiesTableConfigValue.headerComponent);
       const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
       viewContainerRef.clear();
       const componentRef = viewContainerRef.createComponent(componentFactory);
       const headerComponent = componentRef.instance;
-      headerComponent.entitiesTableConfig = this.entitiesTableConfig;
+      headerComponent.entitiesTableConfig = entitiesTableConfigValue;
     }
     // @ts-ignore
-    this.entitiesTableConfig.setTable(this);
-    this.translations = this.entitiesTableConfig.entityTranslations;
+    entitiesTableConfigValue.setTable(this);
+    this.translations = entitiesTableConfigValue.entityTranslations;
 
-    this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
-    this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
-    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.headerActionDescriptors = [...entitiesTableConfigValue.headerActionDescriptors];
+    this.groupActionDescriptors = [...entitiesTableConfigValue.groupActionDescriptors];
+    this.cellActionDescriptors = [...entitiesTableConfigValue.cellActionDescriptors];
 
-    if (this.entitiesTableConfig.entitiesDeleteEnabled) {
+    if (entitiesTableConfigValue.entitiesDeleteEnabled) {
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
+          isEnabled: entity => this.entitiesTableConfig().deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
       );
@@ -218,25 +219,25 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     const enabledGroupActionDescriptors =
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
-    this.selectionEnabled = this.entitiesTableConfig.selectionEnabled && enabledGroupActionDescriptors.length;
-    this.defaultCursor = this.entitiesTableConfig.defaultCursor;
+    this.selectionEnabled = entitiesTableConfigValue.selectionEnabled && enabledGroupActionDescriptors.length;
+    this.defaultCursor = entitiesTableConfigValue.defaultCursor;
 
     this.columnsUpdated();
 
     let sortOrder: SortOrder = null;
-    if (this.entitiesTableConfig.defaultSortOrder) {
+    if (entitiesTableConfigValue.defaultSortOrder) {
       sortOrder = {
-        property: this.entitiesTableConfig.defaultSortOrder.property,
-        direction: this.entitiesTableConfig.defaultSortOrder.direction
+        property: entitiesTableConfigValue.defaultSortOrder.property,
+        direction: entitiesTableConfigValue.defaultSortOrder.direction
       };
     }
 
-    this.displayPagination = this.entitiesTableConfig.displayPagination;
-    this.defaultPageSize = this.entitiesTableConfig.defaultPageSize;
+    this.displayPagination = entitiesTableConfigValue.displayPagination;
+    this.defaultPageSize = entitiesTableConfigValue.defaultPageSize;
     this.pageSizeOptions = [this.defaultPageSize, this.defaultPageSize * 2, this.defaultPageSize * 3];
 
-    if (this.entitiesTableConfig.useTimePageLink) {
-      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
+    if (entitiesTableConfigValue.useTimePageLink) {
+      this.timewindow = entitiesTableConfigValue.defaultTimewindowInterval;
       const interval = this.getTimePageLinkInterval();
       this.pageLink = new TimePageLink(10, 0, null, sortOrder,
         interval.startTime, interval.endTime);
@@ -244,11 +245,11 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.pageLink = new PageLink(10, 0, null, sortOrder);
     }
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
-    this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
-    if (this.entitiesTableConfig.onLoadAction) {
-      this.entitiesTableConfig.onLoadAction(this.route);
+    this.dataSource = entitiesTableConfigValue.dataSource(this.dataLoaded.bind(this));
+    if (entitiesTableConfigValue.onLoadAction) {
+      entitiesTableConfigValue.onLoadAction(this.route);
     }
-    if (this.entitiesTableConfig.loadDataOnInit) {
+    if (entitiesTableConfigValue.loadDataOnInit) {
       this.dataSource.loadEntities(this.pageLink);
     }
     if (this.viewInited) {
@@ -296,7 +297,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   addEnabled() {
-    return this.entitiesTableConfig.addEnabled;
+    return this.entitiesTableConfig().addEnabled;
   }
 
   clearSelection() {
@@ -322,7 +323,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     } else {
       this.pageLink.sortOrder = null;
     }
-    if (this.entitiesTableConfig.useTimePageLink) {
+    if (this.entitiesTableConfig().useTimePageLink) {
       const timePageLink = this.pageLink as TimePageLink;
       const interval = this.getTimePageLinkInterval();
       timePageLink.startTime = interval.startTime;
@@ -368,7 +369,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   onRowClick($event: Event, entity) {
-    if (!this.entitiesTableConfig.handleRowClick($event, entity)) {
+    if (!this.entitiesTableConfig().handleRowClick($event, entity)) {
       this.toggleEntityDetails($event, entity);
     }
   }
@@ -387,15 +388,16 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   addEntity($event: Event) {
     let entity$: Observable<BaseData>;
-    if (this.entitiesTableConfig.addEntity) {
-      entity$ = this.entitiesTableConfig.addEntity();
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig.addEntity) {
+      entity$ = entitiesTableConfig.addEntity();
     } else {
       entity$ = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<BaseData>,
         BaseData>(AddEntityDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
-          entitiesTableConfig: this.entitiesTableConfig
+          entitiesTableConfig: entitiesTableConfig
         }
       }).afterClosed();
     }
@@ -403,7 +405,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       (entity) => {
         if (entity) {
           this.updateData();
-          this.entitiesTableConfig.entityAdded(entity);
+          this.entitiesTableConfig().entityAdded(entity);
         }
       }
     );
@@ -411,7 +413,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   onEntityUpdated(entity: BaseData) {
     this.updateData(false);
-    this.entitiesTableConfig.entityUpdated(entity);
+    this.entitiesTableConfig().entityUpdated(entity);
   }
 
   onEntityAction(action: EntityAction<BaseData>) {
@@ -425,17 +427,17 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntityTitle(entity),
-      this.entitiesTableConfig.deleteEntityContent(entity),
+      this.entitiesTableConfig().deleteEntityTitle(entity),
+      this.entitiesTableConfig().deleteEntityContent(entity),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
     ).subscribe((result) => {
       if (result) {
-        this.entitiesTableConfig.deleteEntity(entity.id).subscribe(
+        this.entitiesTableConfig().deleteEntity(entity.id).subscribe(
           () => {
             this.updateData();
-            this.entitiesTableConfig.entitiesDeleted([entity.id]);
+            this.entitiesTableConfig().entitiesDeleted([entity.id]);
           }
         );
       }
@@ -447,8 +449,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntitiesTitle(entities.length),
-      this.entitiesTableConfig.deleteEntitiesContent(entities.length),
+      this.entitiesTableConfig().deleteEntitiesTitle(entities.length),
+      this.entitiesTableConfig().deleteEntitiesContent(entities.length),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
@@ -456,8 +458,9 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       if (result) {
         const tasks: Observable<string>[] = [];
         entities.forEach((entity) => {
-          if (this.entitiesTableConfig.deleteEnabled(entity)) {
-            tasks.push(this.entitiesTableConfig.deleteEntity(entity.id).pipe(
+          const entitiesTableConfig = this.entitiesTableConfig();
+          if (entitiesTableConfig.deleteEnabled(entity)) {
+            tasks.push(entitiesTableConfig.deleteEntity(entity.id).pipe(
               map(() => entity.id),
               catchError(() => of(null)
               )));
@@ -466,7 +469,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
         forkJoin(tasks).subscribe(
           (ids) => {
             this.updateData();
-            this.entitiesTableConfig.entitiesDeleted(ids.filter(id => id !== null));
+            this.entitiesTableConfig().entitiesDeleted(ids.filter(id => id !== null));
           }
         );
       }
@@ -497,15 +500,16 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     this.textSearch.reset('', {emitEvent: false});
-    if (this.entitiesTableConfig.useTimePageLink && !preserveTimewindow) {
-      this.timewindow = this.entitiesTableConfig.defaultTimewindowInterval;
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig.useTimePageLink && !preserveTimewindow) {
+      this.timewindow = entitiesTableConfig.defaultTimewindowInterval;
     }
     if (this.displayPagination) {
       this.paginator.pageIndex = 0;
     }
-    const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
+    const sortable = this.sort.sortables.get(entitiesTableConfig.defaultSortOrder.property);
     this.sort.active = sortable.id;
-    this.sort.direction = this.entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
+    this.sort.direction = entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
     if (update) {
       this.updatedRouterParamsAndData({}, '');
     }
@@ -527,13 +531,13 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   columnsUpdated(resetData: boolean = false) {
-    this.entityColumns = this.entitiesTableConfig.columns.filter(
+    this.entityColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityTableColumn)
       .map(column => column as EntityTableColumn<BaseData>);
-    this.actionColumns = this.entitiesTableConfig.columns.filter(
+    this.actionColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityActionTableColumn)
       .map(column => column as EntityActionTableColumn<BaseData>);
-    this.chipsColumns = this.entitiesTableConfig.columns.filter(
+    this.chipsColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof ChipsTableColumn)
       .map(column => column as ChipsTableColumn<BaseData>);
 
@@ -542,7 +546,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     if (this.selectionEnabled) {
       this.displayedColumns.push('select');
     }
-    this.entitiesTableConfig.columns.forEach(
+    this.entitiesTableConfig().columns.forEach(
       (column) => {
         this.displayedColumns.push(column.key);
       }
@@ -558,11 +562,11 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   cellActionDescriptorsUpdated() {
-    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.cellActionDescriptors = [...this.entitiesTableConfig().cellActionDescriptors];
   }
 
   headerCellStyle(column: EntityColumn<BaseData>) {
-    const index = this.entitiesTableConfig.columns.indexOf(column);
+    const index = this.entitiesTableConfig().columns.indexOf(column);
     let res = this.headerCellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};
@@ -581,7 +585,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   clearCellCache(col: number, row: number) {
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const index = row * this.entitiesTableConfig().columns.length + col;
     this.cellContentCache[index] = undefined;
     this.cellTooltipCache[index] = undefined;
     this.cellStyleCache[index] = undefined;
@@ -589,8 +593,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellContentCache[index];
       if (isUndefined(res)) {
         res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
@@ -604,8 +608,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   cellChipsContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof ChipsTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = column.cellContentFunction(entity, column.key)?.split(',');
       this.cellContentCache[index] = res;
       return res;
@@ -640,8 +644,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   cellTooltip(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellTooltipCache[index];
       if (isUndefined(res)) {
         res = column.cellTooltipFunction(entity, column.key);
@@ -656,8 +660,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   }
 
   cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
-    const col = this.entitiesTableConfig.columns.indexOf(column);
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const col = this.entitiesTableConfig().columns.indexOf(column);
+    const index = row * this.entitiesTableConfig().columns.length + col;
     let res = this.cellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};

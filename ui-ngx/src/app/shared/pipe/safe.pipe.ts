@@ -19,7 +19,6 @@ import { DomSanitizer, SafeHtml, SafeStyle, SafeScript, SafeUrl, SafeResourceUrl
 
 @Pipe({
     name: 'safe',
-    standalone: true
 })
 export class SafePipe implements PipeTransform {
 

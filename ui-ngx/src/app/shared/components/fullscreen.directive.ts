@@ -18,13 +18,13 @@ import {
   Directive,
   ElementRef,
   EventEmitter,
-  Input,
   OnChanges,
   OnDestroy,
   Output,
   Renderer2,
   SecurityContext,
   SimpleChanges,
+  input
 } from '@angular/core';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
@@ -33,24 +33,18 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 @Directive({
     selector: '[tb-fullscreen]',
-    standalone: true
 })
 export class FullscreenDirective implements OnChanges, OnDestroy {
 
   private overlayRef: OverlayRef;
   private parentElement: HTMLElement;
 
-  @Input()
-  fullscreen: boolean;
-
-  @Input()
-  fullscreenElement: HTMLElement;
-
-  @Input()
-  fullscreenBackgroundStyle: { [klass: string]: any };
-
-  @Input()
-  fullscreenBackgroundImage: SafeStyle | string;
+  readonly fullscreen = input<boolean>();
+  readonly fullscreenElement = input<HTMLElement>();
+  readonly fullscreenBackgroundStyle = input<{
+      [klass: string]: any;
+  }>();
+  readonly fullscreenBackgroundImage = input<SafeStyle | string>();
 
   @Output()
   fullscreenChanged = new EventEmitter<boolean>();
@@ -72,7 +66,7 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
       }
     }
     if (updateFullscreen) {
-      if (this.fullscreen) {
+      if (this.fullscreen()) {
         this.enterFullscreen();
       } else {
         this.exitFullscreen();
@@ -81,13 +75,13 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.fullscreen) {
+    if (this.fullscreen()) {
       this.exitFullscreen();
     }
   }
 
   enterFullscreen() {
-    const targetElement: HTMLElement = this.fullscreenElement || this.elementRef.nativeElement;
+    const targetElement: HTMLElement = this.fullscreenElement() || this.elementRef.nativeElement;
     this.parentElement = targetElement.parentElement;
     this.parentElement.removeChild(targetElement);
     targetElement.classList.add('tb-fullscreen');
@@ -103,13 +97,15 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
 
     this.overlayRef = this.overlay.create(config);
     this.overlayRef.attach(new EmptyPortal());
-    if (this.fullscreenBackgroundStyle) {
-      for (const key of Object.keys(this.fullscreenBackgroundStyle)) {
-        this.setStyle(this.overlayRef.overlayElement, key, this.fullscreenBackgroundStyle[key]);
+    const fullscreenBackgroundStyle = this.fullscreenBackgroundStyle();
+    if (fullscreenBackgroundStyle) {
+      for (const key of Object.keys(fullscreenBackgroundStyle)) {
+        this.setStyle(this.overlayRef.overlayElement, key, fullscreenBackgroundStyle[key]);
       }
     }
-    if (this.fullscreenBackgroundImage) {
-      this.setStyle(this.overlayRef.overlayElement, 'backgroundImage', this.fullscreenBackgroundImage);
+    const fullscreenBackgroundImage = this.fullscreenBackgroundImage();
+    if (fullscreenBackgroundImage) {
+      this.setStyle(this.overlayRef.overlayElement, 'backgroundImage', fullscreenBackgroundImage);
     }
     this.overlayRef.overlayElement.appendChild(targetElement);
     this.fullscreenChanged.emit(true);
@@ -131,7 +127,7 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   }
 
   exitFullscreen() {
-    const targetElement: HTMLElement = this.fullscreenElement || this.elementRef.nativeElement;
+    const targetElement: HTMLElement = this.fullscreenElement() || this.elementRef.nativeElement;
     if (this.parentElement) {
       this.overlayRef.overlayElement.removeChild(targetElement);
       this.parentElement.appendChild(targetElement);

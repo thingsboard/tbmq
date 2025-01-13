@@ -20,16 +20,16 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input, OnChanges,
+  OnChanges,
   OnDestroy,
   OnInit,
   Optional, SimpleChanges,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { deepClone } from '@core/utils';
@@ -76,18 +76,10 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   @ViewChild('messageFilterPanel')
   filterPanel: TemplateRef<any>;
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
-  @Input()
-  connectionChanged: WebSocketConnection;
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
+  readonly connectionChanged = input<WebSocketConnection>();
 
   initialFilterConfig: MessageFilterConfig = MessageFilterDefaultConfig;
 
@@ -133,7 +125,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.filterConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        if (!this.buttonMode) {
+        if (!this.buttonMode()) {
           this.configUpdated(this.filterConfigForm.value);
         }
       });
@@ -166,8 +158,8 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.filterConfigForm.disable({emitEvent: false});
     } else {
       this.filterConfigForm.enable({emitEvent: false});
@@ -266,7 +258,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   private updateButtonDisplayValue() {
-      if (this.buttonMode) {
+      if (this.buttonMode()) {
         const filterTextParts: string[] = [];
         if (this.filterConfig?.qosList?.length) {
           filterTextParts.push(`${this.filterConfig.qosList.join(', ')}`);

@@ -90,7 +90,6 @@ const funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
     },
     encapsulation: ViewEncapsulation.None,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
 })
 export class TbIconComponent extends _TbIconBase
                              implements AfterContentInit, AfterViewChecked, CanColor, OnDestroy {

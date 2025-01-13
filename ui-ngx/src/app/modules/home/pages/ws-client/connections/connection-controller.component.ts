@@ -37,7 +37,6 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     selector: 'tb-connection-controller',
     templateUrl: './connection-controller.component.html',
     styleUrls: ['./connection-controller.component.scss'],
-    standalone: true,
     providers: [TbPopoverService],
   imports: [TranslateModule, NgStyle, ExtendedModule, NgTemplateOutlet, MatButton, FlexModule, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
 })
@@ -123,7 +122,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           {maxHeight: '90vh', height: '324px', padding: '10px'},
           {width: '500px', minWidth: '100%', maxWidth: '100%'},
           {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
-        showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
+        showNotificationPopover.tbComponentRef.instance.popoverComponent.set(showNotificationPopover);
       }
     }, 200);
   }

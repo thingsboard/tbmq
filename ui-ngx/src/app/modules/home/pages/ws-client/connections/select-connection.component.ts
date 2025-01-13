@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectionStrategy, Component, Renderer2, ViewContainerRef } from '@angular/core';
-import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowSelectConnectionPopoverComponent } from '@home/pages/ws-client/connections/show-select-connection-popover.component';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -28,7 +28,6 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     templateUrl: './select-connection.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [TbPopoverService],
-    standalone: true,
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SelectConnectionComponent {
@@ -55,7 +54,7 @@ export class SelectConnectionComponent {
         {maxHeight: '90vh', height: '324px', padding: '10px'},
         {width: '500px', minWidth: '100%', maxWidth: '100%'},
         {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
-      showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
+      showNotificationPopover.tbComponentRef.instance.popoverComponent.set(showNotificationPopover);
     }
   }
 }

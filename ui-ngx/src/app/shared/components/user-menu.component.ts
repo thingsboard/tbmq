@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { User } from '@shared/models/user.model';
 import { Authority } from '@shared/models/authority.enum';
 import { select, Store } from '@ngrx/store';
@@ -40,7 +40,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class UserMenuComponent {
 
-  @Input() displayUserInfo: boolean;
+  readonly displayUserInfo = input<boolean>();
 
   authority$ = this.store.pipe(
     select(selectAuthUser),

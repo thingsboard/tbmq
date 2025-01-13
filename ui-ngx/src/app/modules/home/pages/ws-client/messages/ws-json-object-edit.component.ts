@@ -20,11 +20,12 @@ import {
   ElementRef,
   EventEmitter,
   forwardRef,
-  Input, OnChanges,
+  OnChanges,
   OnDestroy,
   OnInit,
   Output, SimpleChanges,
-  ViewChild
+  ViewChild,
+  input, model
 } from '@angular/core';
 import {
   AbstractControl,
@@ -32,7 +33,6 @@ import {
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   UntypedFormControl,
-  ValidationErrors,
   Validator
 } from '@angular/forms';
 import { Ace } from 'ace-builds';
@@ -86,27 +86,16 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
 
   toastTargetId = `jsonObjectEditor-${guid()}`;
 
-  @Input() label: string;
-
-  @Input() disabled: boolean;
-
-  @Input() fillHeight: boolean;
-
-  @Input() editorStyle: { [klass: string]: any };
-
-  @Input() sort: (key: string, value: any) => any;
-
-  @coerceBoolean()
-  @Input()
-  jsonRequired: boolean;
-
-  @coerceBoolean()
-  @Input()
-  readonly: boolean;
-
-  @coerceBoolean()
-  @Input()
-  jsonFormatSelected: boolean;
+  disabled = model<boolean>();
+  readonly label = input<string>();
+  readonly fillHeight = input<boolean>();
+  readonly editorStyle = input<{
+      [klass: string]: any;
+  }>();
+  readonly sort = input<(key: string, value: any) => any>();
+  readonly jsonRequired = input<boolean>();
+  readonly readonly = input<boolean>();
+  readonly jsonFormatSelected = input<boolean>();
 
   fullscreen = false;
 
@@ -136,7 +125,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
       mode: 'ace/mode/json',
       showGutter: false,
       showPrintMargin: false,
-      readOnly: this.disabled || this.readonly
+      readOnly: this.disabled() || this.readonly()
     };
 
     const advancedOptions = {
@@ -152,7 +141,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
         this.jsonEditor = ace.edit(editorElement, editorOptions);
         this.jsonEditor.session.setUseWrapMode(false);
         this.jsonEditor.setValue(this.contentValue ? this.contentValue : '', -1);
-        this.jsonEditor.setReadOnly(this.disabled || this.readonly);
+        this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
         this.jsonEditor.on('change', () => {
           if (!this.ignoreChange) {
             this.cleanupJsonErrors();
@@ -206,14 +195,14 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (this.jsonEditor) {
-      this.jsonEditor.setReadOnly(this.disabled || this.readonly);
+      this.jsonEditor.setReadOnly(this.disabled() || this.readonly());
     }
   }
 
   public validate(c: UntypedFormControl) {
-    if (!this.jsonFormatSelected) {
+    if (!this.jsonFormatSelected()) {
       return null;
     } else {
       return (this.objectValid) ? null : {
@@ -225,7 +214,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   }
 
   validateOnSubmit(): void {
-    if (!this.disabled && !this.readonly) {
+    if (!this.disabled() && !this.readonly()) {
       this.cleanupJsonErrors();
       if (!this.objectValid) {
         this.store.dispatch(new ActionNotificationShow(
@@ -273,11 +262,11 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
     this.objectValid = false;
     try {
       if (isDefinedAndNotNull(this.modelValue)) {
-        this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort) ? undefined :
-          (key, objectValue) => this.sort(key, objectValue), 2);
+        this.contentValue = JSON.stringify(this.modelValue, isUndefined(this.sort()) ? undefined :
+          (key, objectValue) => this.sort()(key, objectValue), 2);
         this.objectValid = true;
       } else {
-        this.objectValid = !this.jsonRequired;
+        this.objectValid = !this.jsonRequired();
         this.validationError = 'Json object is required.';
       }
     } catch (e) {
@@ -293,7 +282,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   updateView() {
     const editorValue = this.jsonEditor.getValue();
     this.propagateChange(editorValue);
-    if (this.jsonFormatSelected) {
+    if (this.jsonFormatSelected()) {
       this.contentValue = editorValue;
       let data = null;
       this.objectValid = false;
@@ -316,8 +305,8 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
           this.validationError = errorInfo;
         }
       } else {
-        this.objectValid = !this.jsonRequired;
-        this.validationError = this.jsonRequired ? 'Json object is required.' : '';
+        this.objectValid = !this.jsonRequired();
+        this.validationError = this.jsonRequired() ? 'Json object is required.' : '';
       }
       this.isJsonValid.emit(!this.validationError?.length);
       this.modelValue = data;

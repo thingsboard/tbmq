@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
+import { Component, forwardRef, OnChanges, OnDestroy, OnInit, SimpleChanges, input, model } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import {
@@ -61,14 +61,9 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  mqttVersion: number;
-
-  @Input()
-  entity: WebSocketConnection;
+  disabled = model<boolean>();
+  mqttVersion = model<number>();
+  readonly entity = input<WebSocketConnection>();
 
   formGroup: UntypedFormGroup;
   timeUnitTypes = Object.keys(WebSocketTimeUnit);
@@ -92,7 +87,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
       const change = changes[propName];
       if (!change.firstChange && change.currentValue !== change.previousValue) {
         if (propName === 'mqttVersion' && change.currentValue) {
-          this.mqttVersion = change.currentValue;
+          this.mqttVersion.set(change.currentValue);
           this.disableMqtt5Features();
         }
       }
@@ -182,7 +177,7 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
   }
 
   private isNotMqttVersionV5() {
-    return this.mqttVersion !== 5;
+    return this.mqttVersion() !== 5;
   }
 }
 

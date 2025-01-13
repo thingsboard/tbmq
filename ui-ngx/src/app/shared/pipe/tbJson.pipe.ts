@@ -19,7 +19,6 @@ import { isNumber, isObject } from '@core/utils';
 
 @Pipe({
     name: 'tbJson',
-    standalone: true
 })
 export class TbJsonPipe implements PipeTransform {
   transform(value: any): string {

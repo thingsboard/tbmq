@@ -17,21 +17,21 @@
 import {
   ChangeDetectorRef,
   Component,
-  ElementRef,
   forwardRef,
   Input,
   OnInit,
   Renderer2,
-  ViewContainerRef
+  booleanAttribute,
+  ViewContainerRef,
+  model,
+  input
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { DialogService } from '@core/services/dialog.service';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ColorPickerPanelComponent } from '@shared/components/color-picker/color-picker-panel.component';
 import { NgStyle, NgClass } from '@angular/common';
@@ -58,26 +58,14 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 })
 export class ColorInputComponent extends PageComponent implements OnInit, ControlValueAccessor {
 
-  @Input()
-  @coerceBoolean()
-  asBoxInput = false;
-
-  @Input()
-  icon: string;
-
-  @Input()
-  label: string;
-
-  @Input()
-  requiredText: string;
-
-  @Input()
-  @coerceBoolean()
-  colorClearButton = false;
-
-  @Input()
-  @coerceBoolean()
-  openOnInput = false;
+  disabled = model<boolean>();
+  readonly icon = input<string>();
+  readonly label = input<string>();
+  readonly requiredText = input<string>();
+  readonly asBoxInput = input(false, {transform: booleanAttribute});
+  readonly colorClearButton = input(false, {transform: booleanAttribute});
+  readonly openOnInput = input(false, {transform: booleanAttribute});
+  readonly readonly = input(false, {transform: booleanAttribute});
 
   private requiredValue: boolean;
   get required(): boolean {
@@ -92,22 +80,12 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
     }
   }
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  @coerceBoolean()
-  readonly = false;
-
-  private modelValue: string;
-
-  private propagateChange = null;
-
   public colorFormGroup: UntypedFormGroup;
+  private modelValue: string;
+  private propagateChange = null;
 
   constructor(protected store: Store<AppState>,
               private dialogs: DialogService,
-              private translate: TranslateService,
               private popoverService: TbPopoverService,
               private renderer: Renderer2,
               private viewContainerRef: ViewContainerRef,
@@ -141,7 +119,7 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (isDisabled) {
       this.colorFormGroup.disable({emitEvent: false});
     } else {
@@ -166,9 +144,9 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
 
   showColorPicker($event: MouseEvent) {
     $event.stopPropagation();
-    if (!this.disabled && !this.readonly) {
+    if (!this.disabled() && !this.readonly()) {
       this.dialogs.colorPicker(this.colorFormGroup.get('color').value,
-          this.colorClearButton).subscribe(
+          this.colorClearButton()).subscribe(
           (result) => {
             if (!result?.canceled) {
               this.colorFormGroup.patchValue(
@@ -185,7 +163,7 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
     if ($event) {
       $event.stopPropagation();
     }
-    if (!this.disabled && !this.readonly) {
+    if (!this.disabled() && !this.readonly()) {
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {
@@ -193,7 +171,7 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
             this.viewContainerRef, ColorPickerPanelComponent, 'left', true, null,
             {
               color: this.colorFormGroup.get('color').value,
-              colorClearButton: this.colorClearButton
+              colorClearButton: this.colorClearButton()
             },
             {},
             {}, {}, true);

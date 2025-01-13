@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { FixedWindow } from '@shared/models/time/time.models';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -36,9 +36,9 @@ import { MatInput } from '@angular/material/input';
     ],
     imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
 })
-export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
+export class DatetimePeriodComponent implements ControlValueAccessor {
 
-  @Input() disabled: boolean;
+  disabled = model<boolean>();
 
   modelValue: FixedWindow;
 
@@ -58,9 +58,6 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
   constructor() {
   }
 
-  ngOnInit(): void {
-  }
-
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
     if (this.changePending && this.propagateChange) {
@@ -73,7 +70,7 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(datePeriod: FixedWindow): void {

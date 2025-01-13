@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { QuickTimeInterval, QuickTimeIntervalTranslationMap } from '@shared/models/time/time.models';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -37,18 +37,16 @@ import { MatOption } from '@angular/material/core';
     ],
     imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, MatOption]
 })
-export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor {
+export class QuickTimeIntervalComponent implements ControlValueAccessor {
 
   private allIntervals = Object.values(QuickTimeInterval);
 
   modelValue: QuickTimeInterval;
   timeIntervalTranslationMap = QuickTimeIntervalTranslationMap;
-
   rendered = false;
 
-  @Input() disabled: boolean;
-
-  @Input() onlyCurrentInterval = false;
+  disabled = model<boolean>();
+  readonly onlyCurrentInterval = input(false);
 
   private propagateChange = (_: any) => {};
 
@@ -56,13 +54,10 @@ export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor 
   }
 
   get intervals() {
-    if (this.onlyCurrentInterval) {
+    if (this.onlyCurrentInterval()) {
       return this.allIntervals.filter(interval => interval.startsWith('CURRENT_'));
     }
     return this.allIntervals;
-  }
-
-  ngOnInit(): void {
   }
 
   registerOnChange(fn: any): void {
@@ -73,7 +68,7 @@ export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor 
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(interval: QuickTimeInterval): void {

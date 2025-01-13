@@ -24,13 +24,13 @@ import {
   HostBinding,
   Inject,
   Injector,
-  Input,
   NgZone,
   OnDestroy,
   Optional,
   StaticProvider,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input
 } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarConfig, MatSnackBarRef } from '@angular/material/snack-bar';
 import { NotificationMessage } from '@app/core/notification/notification.models';
@@ -49,12 +49,10 @@ import Timeout = NodeJS.Timeout;
 
 @Directive({
     selector: '[tb-toast]',
-    standalone: true
 })
 export class ToastDirective implements AfterViewInit, OnDestroy {
 
-  @Input()
-  toastTarget = 'root';
+  readonly toastTarget = input('root');
 
   private notificationSubscription: Subscription = null;
   private hideNotificationSubscription: Subscription = null;
@@ -80,7 +78,7 @@ export class ToastDirective implements AfterViewInit, OnDestroy {
         if (this.shouldDisplayMessage(notificationMessage)) {
           this.currentMessage = notificationMessage;
           const isGtSm = this.breakpointObserver.isMatched(MediaBreakpoints['gt-sm']);
-          if (isGtSm && this.toastTarget !== 'root') {
+          if (isGtSm && this.toastTarget() !== 'root') {
             this.showToastPanel(notificationMessage);
           } else {
             this.showSnackBar(notificationMessage, isGtSm);
@@ -93,7 +91,7 @@ export class ToastDirective implements AfterViewInit, OnDestroy {
       (hideNotification) => {
         if (hideNotification) {
           const target = hideNotification.target || 'root';
-          if (this.toastTarget === target) {
+          if (this.toastTarget() === target) {
             this.ngZone.run(() => {
               if (this.snackBarRef) {
                 this.snackBarRef.dismiss();
@@ -225,7 +223,7 @@ export class ToastDirective implements AfterViewInit, OnDestroy {
   private shouldDisplayMessage(notificationMessage: NotificationMessage): boolean {
     if (notificationMessage && notificationMessage.message) {
       const target = notificationMessage.target || 'root';
-      if (this.toastTarget === target) {
+      if (this.toastTarget() === target) {
         if (!this.currentMessage || this.currentMessage.message !== notificationMessage.message
           || this.currentMessage.type !== notificationMessage.type) {
           return true;

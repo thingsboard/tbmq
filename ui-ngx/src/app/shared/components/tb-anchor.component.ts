@@ -19,7 +19,6 @@ import { Component, ViewContainerRef } from '@angular/core';
 @Component({
     selector: 'tb-anchor',
     template: '<ng-template></ng-template>',
-    standalone: true
 })
 export class TbAnchorComponent {
   constructor(public viewContainerRef: ViewContainerRef) { }

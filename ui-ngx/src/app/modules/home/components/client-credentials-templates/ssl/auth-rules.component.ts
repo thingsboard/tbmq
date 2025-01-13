@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, OnDestroy, input, model } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, FormBuilder, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
 import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
@@ -58,15 +58,11 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   rulesMappingFormGroup: UntypedFormGroup;
-
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
   separatorKeysCodes = [ENTER, TAB];
@@ -128,8 +124,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.rulesMappingFormGroup.disable({emitEvent: false});
     } else {
       this.rulesMappingFormGroup.enable({emitEvent: false});
@@ -181,7 +177,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
         });
         this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [];
         this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [];
-        if (this.disabled) {
+        if (this.disabled()) {
           rulesControl.disable();
         }
         rulesControls.push(rulesControl);

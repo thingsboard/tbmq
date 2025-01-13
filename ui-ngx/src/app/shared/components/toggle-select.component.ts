@@ -14,12 +14,11 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, HostBinding, Input } from '@angular/core';
+import { booleanAttribute, Component, forwardRef, HostBinding, input, model } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { _ToggleBase, ToggleHeaderAppearance } from '@shared/components/toggle-header.component';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { ToggleHeaderComponent } from './toggle-header.component';
 
 @Component({
@@ -40,34 +39,15 @@ export class ToggleSelectComponent extends _ToggleBase implements ControlValueAc
   @HostBinding('style.maxWidth')
   get maxWidth() { return '100%'; }
 
-  @Input()
-  @coerceBoolean()
-  disabled: boolean;
-
-  @Input()
-  selectMediaBreakpoint: string;
-
-  @Input()
-  appearance: ToggleHeaderAppearance = 'stroked';
-
-  @Input()
-  @coerceBoolean()
-  disablePagination = false;
-
-  @Input()
-  @coerceBoolean()
-  fillHeight = false;
-
-  @Input()
-  @coerceBoolean()
-  extraPadding = false;
-
-  @Input()
-  @coerceBoolean()
-  primaryBackground = false;
+  disabled = model<boolean>();
+  readonly selectMediaBreakpoint = input<string>();
+  readonly appearance = input<ToggleHeaderAppearance>('stroked');
+  readonly disablePagination = input(false, {transform: booleanAttribute});
+  readonly fillHeight = input(false, {transform: booleanAttribute});
+  readonly extraPadding = input(false, {transform: booleanAttribute});
+  readonly primaryBackground = input(false, {transform: booleanAttribute});
 
   modelValue: any;
-
   private propagateChange = null;
 
   constructor(protected store: Store<AppState>) {
@@ -82,7 +62,7 @@ export class ToggleSelectComponent extends _ToggleBase implements ControlValueAc
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(value: any): void {

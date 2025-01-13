@@ -14,12 +14,11 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Output, input, booleanAttribute, model } from '@angular/core';
 import { ClipboardService } from 'ngx-clipboard';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { MatIconButton } from '@angular/material/button';
 import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
@@ -29,41 +28,23 @@ import { MatIcon } from '@angular/material/icon';
     selector: 'tb-copy-button',
     styleUrls: ['copy-button.component.scss'],
     templateUrl: './copy-button.component.html',
-    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, MatIcon, NgStyle]
+    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, MatIcon, NgStyle],
+    standalone: true
 })
 export class CopyButtonComponent {
 
-  private timer;
+  readonly copyText = model<string>();
+  readonly disabled = input(false, {transform: booleanAttribute});
+  readonly mdiIcon = input<string>();
+  readonly icon = input<string>('content_copy');
+  readonly tooltipText = input<string>(this.translate.instant('action.copy'));
+  readonly tooltipPosition = input<TooltipPosition>('above');
+  readonly style = input<{[key: string]: any;}>({});
+  readonly color = input<ThemePalette>();
+  readonly buttonClass = input<{[key: string]: any;}>({});
 
   copied = false;
-
-  @Input()
-  copyText: string;
-
-  @Input()
-  @coerceBoolean()
-  disabled = false;
-
-  @Input()
-  mdiIcon: string;
-
-  @Input()
-  icon: string = 'content_copy';
-
-  @Input()
-  tooltipText: string = this.translate.instant('action.copy');
-
-  @Input()
-  tooltipPosition: TooltipPosition = 'above';
-
-  @Input()
-  style: {[key: string]: any} = {};
-
-  @Input()
-  color: ThemePalette;
-
-  @Input()
-  buttonClass: {[key: string]: any} = {};
+  private timer;
 
   @Output()
   successCopied = new EventEmitter<string>();
@@ -77,13 +58,14 @@ export class CopyButtonComponent {
     if (typeof $event === 'object') {
       $event.stopPropagation();
     } else if ($event?.length) {
-      this.copyText = $event;
+      this.copyText.set($event);
     }
     if (this.timer) {
       clearTimeout(this.timer);
     }
-    this.clipboardService.copy(this.copyText);
-    this.successCopied.emit(this.copyText);
+    const copyText = this.copyText();
+    this.clipboardService.copy(copyText);
+    this.successCopied.emit(copyText);
     this.copied = true;
     this.timer = setTimeout(() => {
       this.copied = false;
@@ -92,11 +74,11 @@ export class CopyButtonComponent {
   }
 
   get matTooltipText(): string {
-    return this.copied ? this.translate.instant('action.on-copied') : this.tooltipText;
+    return this.copied ? this.translate.instant('action.on-copied') : this.tooltipText();
   }
 
   get matTooltipPosition(): TooltipPosition {
-    return this.copied ? 'below' : this.tooltipPosition;
+    return this.copied ? 'below' : this.tooltipPosition();
   }
 
 }

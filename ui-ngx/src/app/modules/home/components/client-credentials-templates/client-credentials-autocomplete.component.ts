@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, forwardRef, Input, NgZone, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, NgZone, OnInit, ViewChild, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { PageLink } from '@shared/models/page/page-link';
@@ -26,7 +26,6 @@ import { ENTER } from '@angular/cdk/keycodes';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
 import { SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
@@ -63,48 +62,21 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
       },
       TruncatePipe
     ],
-    standalone: true,
     imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, ExtendedModule, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 
-  selectCredentialsFormGroup: UntypedFormGroup;
-
-  modelValue: ClientCredentials | null;
-
-  @Input()
-  entity: WebSocketConnection;
-
-  @Input()
-  subscriptSizing: SubscriptSizing = 'fixed';
-
-  @Input()
-  selectDefaultProfile = false;
-
-  @Input()
-  selectFirstProfile = false;
-
-  @Input()
-  displayAllOnEmpty = false;
-
-  @Input()
-  editEnabled = false;
-
-  @Input()
-  addNewCredentials = true;
-
-  @Input()
-  showDetailsPageLink = false;
-
-  @Input()
-  @coerceBoolean()
-  required = false;
-
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  hint: string;
+  disabled = model<boolean>();
+  readonly entity = input<WebSocketConnection>();
+  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+  readonly selectDefaultProfile = input(false);
+  readonly selectFirstProfile = input(false);
+  readonly displayAllOnEmpty = input(false);
+  readonly editEnabled = input(false);
+  readonly addNewCredentials = input(true);
+  readonly showDetailsPageLink = input(false);
+  readonly required = input(false);
+  readonly hint = input<string>();
 
   @ViewChild('clientCredentialsInput', {static: true})
   clientCredentialsInput: ElementRef;
@@ -112,14 +84,12 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   @ViewChild('clientCredentialsAutocomplete', {static: true})
   clientCredentialsAutocomplete: MatAutocomplete;
 
+  selectCredentialsFormGroup: UntypedFormGroup;
   filteredClientCredentials: Observable<Array<ClientCredentials>>;
-
   searchText = '';
-
+  private modelValue: ClientCredentials | null;
   private dirty = false;
-
   private ignoreClosedPanel = false;
-
   private propagateChange = (v: any) => {
   };
 
@@ -152,7 +122,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
           } else {
             modelValue = value;
           }
-          if (!this.displayAllOnEmpty || modelValue) {
+          if (!this.displayAllOnEmpty() || modelValue) {
             this.updateView(modelValue?.id);
           }
         }),
@@ -161,7 +131,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
             if (typeof value === 'string') {
               return value;
             } else {
-              if (this.displayAllOnEmpty) {
+              if (this.displayAllOnEmpty()) {
                 return '';
               } else {
                 return value.name;
@@ -179,8 +149,8 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.selectCredentialsFormGroup.disable({emitEvent: false});
     } else {
       this.selectCredentialsFormGroup.enable({emitEvent: false});
@@ -204,7 +174,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     if (this.ignoreClosedPanel) {
       this.ignoreClosedPanel = false;
     } else {
-      if (this.displayAllOnEmpty && !this.selectCredentialsFormGroup.get('clientCredentials').value) {
+      if (this.displayAllOnEmpty() && !this.selectCredentialsFormGroup.get('clientCredentials').value) {
         this.zone.run(() => {
         }, 0);
       }
@@ -269,7 +239,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   }
 
   clientCredentialsEnter($event: KeyboardEvent) {
-    if (this.editEnabled && $event.keyCode === ENTER) {
+    if (this.editEnabled() && $event.keyCode === ENTER) {
       $event.preventDefault();
       if (!this.modelValue) {
         this.createClientCredentials($event, this.searchText);
@@ -282,7 +252,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     const clientCredentials: ClientCredentials = {
       name: credentialsName
     } as ClientCredentials;
-    if (this.addNewCredentials) {
+    if (this.addNewCredentials()) {
       this.addClientCredentials(clientCredentials);
     }
   }
@@ -333,6 +303,4 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
       }
     );
   }
-
-
 }

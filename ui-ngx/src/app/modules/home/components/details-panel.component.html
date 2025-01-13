@@ -1,34 +1,34 @@
 <!--
 
-Copyright © 2016-2025 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 
 -->
 <header>
-  <mat-toolbar class="details-toolbar" color="primary" [ngStyle]="{height: headerHeightPx+'px'}">
+  <mat-toolbar class="details-toolbar" color="primary" [ngStyle]="{height: headerHeightPx()+'px'}">
     <div class="mat-toolbar-tools" fxLayout="row" fxLayoutAlign="start center" style="height: 100%;">
       <div class="mat-toolbar-tools tb-details-title-header" fxFlex fxLayout="column" fxLayoutAlign="start start" [fxHide]="showSearchPane">
         <div class="tb-details-title" fxLayout="row" fxLayoutAlign="start center">
           <ng-content select=".prefix-title-buttons"></ng-content>
-          <span>{{ headerTitle }}</span>
+          <span>{{ headerTitle() }}</span>
         </div>
-        <span class="tb-details-subtitle">{{ headerSubtitle }}</span>
+        <span class="tb-details-subtitle">{{ headerSubtitle() }}</span>
         <span style="width: 100%;">
           <ng-content select=".header-pane"></ng-content>
         </span>
       </div>
-      @if (isShowSearch) {
+      @if (isShowSearch()) {
         <div [fxHide]="!showSearchPane" fxLayout="row" fxLayoutAlign="start center" style="width: 100%;">
           <button mat-icon-button (click)="onToggleSearch()">
             <mat-icon class="material-icons">arrow_back</mat-icon>
@@ -38,7 +38,7 @@ limitations under the License.
           </div>
         </div>
       }
-      @if (isShowSearch && !showSearchPane) {
+      @if (isShowSearch() && !showSearchPane) {
         <button mat-icon-button (click)="onToggleSearch()">
           <mat-icon class="material-icons">search</mat-icon>
         </button>
@@ -48,7 +48,7 @@ limitations under the License.
         <mat-icon class="material-icons">close</mat-icon>
       </button>
     </div>
-    @if (!isReadOnly) {
+    @if (!isReadOnly()) {
       <section fxLayout="row" class="layout-wrap tb-header-buttons">
         <button [disabled]="(isLoading$ | async) || theForm?.invalid || !theForm?.dirty"
           mat-fab
@@ -59,9 +59,9 @@ limitations under the License.
           (click)="onApplyDetails()">
           <mat-icon class="material-icons">done</mat-icon>
         </button>
-        <button [disabled]="(isLoading$ | async) || (isAlwaysEdit && !theForm?.dirty)"
+        <button [disabled]="(isLoading$ | async) || (isAlwaysEdit() && !theForm?.dirty)"
           mat-fab
-          matTooltip="{{ (isAlwaysEdit ? 'action.decline-changes' : (isEdit ? 'action.decline-changes' : 'details.toggle-edit-mode')) | translate }}"
+          matTooltip="{{ (isAlwaysEdit() ? 'action.decline-changes' : (isEdit ? 'action.decline-changes' : 'details.toggle-edit-mode')) | translate }}"
           matTooltipPosition="above"
           color="accent" class="tb-btn-header mat-fab-bottom-right"
           (click)="onToggleDetailsEditMode()">
@@ -71,6 +71,6 @@ limitations under the License.
     }
   </mat-toolbar>
 </header>
-<div fxFlex class="mat-content" [ngStyle]="{backgroundColor: backgroundColor}">
+<div fxFlex class="mat-content" [ngStyle]="{backgroundColor: backgroundColor()}">
   <ng-content></ng-content>
 </div>

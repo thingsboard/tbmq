@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, input } from '@angular/core';
 import { Color } from '@iplab/ngx-color-picker';
 import { MatFormField, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -30,32 +30,29 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class HexInputComponent {
 
-  @Input()
-  public color: Color;
-
   @Output()
-  public colorChange = new EventEmitter<Color>(false);
+  colorChange = new EventEmitter<Color>(false);
 
-  @Input()
-  public labelVisible = false;
+  readonly color = input<Color>();
+  readonly labelVisible = input(false);
+  readonly prefixValue = input('#');
 
-  @Input()
-  public prefixValue = '#';
-
-  public get value() {
-    return this.color ? this.color.toHexString(this.color.getRgba().alpha < 1).replace('#', '') : '';
+  get value() {
+    const color = this.color();
+    return color ? color.toHexString(color.getRgba().alpha < 1).replace('#', '') : '';
   }
 
-  public get copyColor() {
-    return this.prefixValue + this.value;
+  get copyColor() {
+    return this.prefixValue() + this.value;
   }
 
-  public get hueValue(): string {
-    return this.color ? Math.round(this.color.getRgba().alpha * 100).toString() : '';
+  get hueValue(): string {
+    const color = this.color();
+    return color ? Math.round(color.getRgba().alpha * 100).toString() : '';
   }
 
-  public onHueInputChange(event: KeyboardEvent, inputValue: string): void {
-    const color = this.color.getRgba();
+  onHueInputChange(event: KeyboardEvent, inputValue: string): void {
+    const color = this.color().getRgba();
     const alpha = +inputValue / 100;
     if (color.getAlpha() !== alpha) {
       const newColor = new Color().setRgba(color.red, color.green, color.blue, alpha).toHexString(true);
@@ -63,7 +60,7 @@ export class HexInputComponent {
     }
   }
 
-  public onInputChange(event: KeyboardEvent, inputValue: string): void {
+  onInputChange(event: KeyboardEvent, inputValue: string): void {
     const value = inputValue.replace('#', '').toLowerCase();
     if (
       ((event.keyCode === 13 || event.key.toLowerCase() === 'enter') && value.length === 3)

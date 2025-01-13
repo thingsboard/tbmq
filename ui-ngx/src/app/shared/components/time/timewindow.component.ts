@@ -23,7 +23,9 @@ import {
   Injector,
   Input,
   StaticProvider,
-  ViewContainerRef
+  ViewContainerRef,
+  input,
+  booleanAttribute, model
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -54,7 +56,6 @@ import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { TbIconComponent } from '../icon.component';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -78,8 +79,7 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
           useValue: 'en-GB'
         }
     ],
-    standalone: true,
-    imports: [MatButton, MatIcon, MatTooltip, TbIconComponent, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
+    imports: [MatButton, MatIcon, MatTooltip, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
 })
 export class TimewindowComponent implements ControlValueAccessor {
 
@@ -98,61 +98,22 @@ export class TimewindowComponent implements ControlValueAccessor {
   }
 
   @HostBinding('class.no-margin')
-  @Input()
   @coerceBoolean()
-  noMargin = false;
+  readonly noMargin = input(false);
 
-  @Input()
-  @coerceBoolean()
-  noPadding = false;
-
-  @Input()
-  @coerceBoolean()
-  disablePanel = false;
-
-  @Input()
-  @coerceBoolean()
-  forAllTimeEnabled = false;
-
-  @Input()
-  @coerceBoolean()
-  alwaysDisplayTypePrefix = false;
-
-  @Input()
-  @coerceBoolean()
-  quickIntervalOnly = false;
-
-  @Input()
-  @coerceBoolean()
-  aggregation = false;
-
-  @Input()
-  @coerceBoolean()
-  timezone = false;
-
-  @Input()
-  @coerceBoolean()
-  isToolbar = false;
-
-  @Input()
-  @coerceBoolean()
-  asButton = false;
-
-  @Input()
-  @coerceBoolean()
-  strokedButton = false;
-
-  @Input()
-  @coerceBoolean()
-  flatButton = false;
-
-  @Input()
-  @coerceBoolean()
-  displayTimewindowValue = true;
-
-  @Input()
-  @coerceBoolean()
-  hideLabel = false;
+  readonly noPadding = input(false, {transform: booleanAttribute});
+  readonly disablePanel = input(false, {transform: booleanAttribute});
+  readonly forAllTimeEnabled = input(false, {transform: booleanAttribute});
+  readonly alwaysDisplayTypePrefix = input(false, {transform: booleanAttribute});
+  readonly quickIntervalOnly = input(false, {transform: booleanAttribute});
+  readonly aggregation = input(false, {transform: booleanAttribute});
+  readonly timezone = input(false, {transform: booleanAttribute});
+  readonly isToolbar = input(false, {transform: booleanAttribute});
+  readonly asButton = input(false, {transform: booleanAttribute});
+  readonly strokedButton = input(false, {transform: booleanAttribute});
+  readonly flatButton = input(false, {transform: booleanAttribute});
+  readonly displayTimewindowValue = input(true, {transform: booleanAttribute});
+  readonly hideLabel = input(false, {transform: booleanAttribute});
 
   isEditValue = false;
 
@@ -166,12 +127,9 @@ export class TimewindowComponent implements ControlValueAccessor {
     return this.isEditValue;
   }
 
-  @Input()
-  tooltipPosition: TooltipPosition = 'above';
+  readonly tooltipPosition = input<TooltipPosition>('above');
 
-  @Input()
-  @coerceBoolean()
-  disabled: boolean;
+  disabled = model<boolean>();
 
   innerValue: Timewindow;
 
@@ -193,7 +151,7 @@ export class TimewindowComponent implements ControlValueAccessor {
     if ($event) {
       $event.stopPropagation();
     }
-    if (this.disablePanel) {
+    if (this.disablePanel()) {
       return;
     }
     const config = new OverlayConfig({
@@ -218,10 +176,10 @@ export class TimewindowComponent implements ControlValueAccessor {
         useValue: {
           timewindow: deepClone(this.innerValue),
           historyOnly: this.historyOnly,
-          forAllTimeEnabled: this.forAllTimeEnabled,
-          quickIntervalOnly: this.quickIntervalOnly,
-          aggregation: this.aggregation,
-          timezone: this.timezone,
+          forAllTimeEnabled: this.forAllTimeEnabled(),
+          quickIntervalOnly: this.quickIntervalOnly(),
+          aggregation: this.aggregation(),
+          timezone: this.timezone(),
           isEdit: this.isEdit
         } as TimewindowPanelData
       },
@@ -256,12 +214,12 @@ export class TimewindowComponent implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     this.timewindowDisabled = this.isTimewindowDisabled();
   }
 
   writeValue(obj: Timewindow): void {
-    this.innerValue = initModelFromDefaultTimewindow(obj, this.quickIntervalOnly, this.historyOnly, this.timeService);
+    this.innerValue = initModelFromDefaultTimewindow(obj, this.quickIntervalOnly(), this.historyOnly, this.timeService);
     this.timewindowDisabled = this.isTimewindowDisabled();
     this.updateDisplayValue();
   }
@@ -271,7 +229,7 @@ export class TimewindowComponent implements ControlValueAccessor {
   }
 
   displayValue(): string {
-    return this.displayTimewindowValue ? this.innerValue?.displayValue : this.translate.instant('timewindow.timewindow');
+    return this.displayTimewindowValue() ? this.innerValue?.displayValue : this.translate.instant('timewindow.timewindow');
   }
 
   updateDisplayValue() {
@@ -284,7 +242,7 @@ export class TimewindowComponent implements ControlValueAccessor {
           this.millisecondsToTimeStringPipe.transform(this.innerValue.realtime.timewindowMs);
       }
     } else {
-      this.innerValue.displayValue = (!this.historyOnly || this.alwaysDisplayTypePrefix) ?
+      this.innerValue.displayValue = (!this.historyOnly || this.alwaysDisplayTypePrefix()) ?
         (this.translate.instant('timewindow.history') + ' - ') : '';
       if (this.innerValue.history.historyType === HistoryWindowType.LAST_INTERVAL) {
         this.innerValue.displayValue += this.translate.instant('timewindow.last-prefix') + ' ' +
@@ -304,9 +262,9 @@ export class TimewindowComponent implements ControlValueAccessor {
   }
 
   private isTimewindowDisabled(): boolean {
-    return this.disabled ||
+    return this.disabled() ||
       (!this.isEdit && (!this.innerValue || this.innerValue.hideInterval &&
-        (!this.aggregation || this.innerValue.hideAggregation && this.innerValue.hideAggInterval)));
+        (!this.aggregation() || this.innerValue.hideAggregation && this.innerValue.hideAggInterval)));
   }
 
 }

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild, input } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe, NgClass } from '@angular/common';
@@ -32,8 +32,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 })
 export class UnauthorizedClientTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;

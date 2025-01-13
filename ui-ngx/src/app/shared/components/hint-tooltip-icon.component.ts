@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, HostBinding, input } from '@angular/core';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 
 import { TbIconComponent } from './icon.component';
@@ -28,12 +28,8 @@ import { TbIconComponent } from './icon.component';
 export class HintTooltipIconComponent {
 
   @HostBinding('class.tb-hint-tooltip')
-  @Input('tb-hint-tooltip-icon') tooltipText: string;
+  readonly tooltipText = input<string>(undefined, { alias: "tb-hint-tooltip-icon" });
 
-  @Input()
-  tooltipPosition: TooltipPosition = 'right';
-
-  @Input()
-  hintIcon = 'info';
-
+  readonly tooltipPosition = input<TooltipPosition>('right');
+  readonly hintIcon = input('info');
 }

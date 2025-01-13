@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import {
@@ -47,12 +47,11 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<SessionMetricsTable> {
 
-  @Input()
-  entity: DetailedClientSessionInfo;
+  readonly entity = input<DetailedClientSessionInfo>();
 
   sessionMetricsTranslationMap = SessionMetricsTranslationMap;
 
-  fetchEntities$ = () => this.clientSessionService.getSessionMetrics(this.entity.clientId);
+  fetchEntities$ = () => this.clientSessionService.getSessionMetrics(this.entity().clientId);
 
   constructor(protected store: Store<AppState>,
               private clientSessionService: ClientSessionService,
@@ -71,7 +70,7 @@ export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<Sessi
   }
 
   deleteSessionMetrics() {
-    this.clientSessionService.deleteSessionMetrics(this.entity.clientId).subscribe(() => {
+    this.clientSessionService.deleteSessionMetrics(this.entity().clientId).subscribe(() => {
       this.updateData();
     })
   }

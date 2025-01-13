@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { HelpLinks } from '@shared/models/constants';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -30,13 +30,14 @@ import { TranslateModule } from '@ngx-translate/core';
 export class HelpComponent {
 
   // tslint:disable-next-line:no-input-rename
-  @Input('tb-help') helpLinkId: string;
+  readonly helpLinkId = input<string>(undefined, { alias: "tb-help" });
 
   gotoHelpPage(): void {
-    let helpUrl = HelpLinks.linksMap[this.helpLinkId];
-    if (!helpUrl && this.helpLinkId &&
-      (this.helpLinkId.startsWith('http://') || this.helpLinkId.startsWith('https://'))) {
-      helpUrl = this.helpLinkId;
+    let helpUrl = HelpLinks.linksMap[this.helpLinkId()];
+    const helpLinkId = this.helpLinkId();
+    if (!helpUrl && helpLinkId &&
+      (helpLinkId.startsWith('http://') || helpLinkId.startsWith('https://'))) {
+      helpUrl = helpLinkId;
     }
     if (helpUrl) {
       window.open(helpUrl, '_blank');

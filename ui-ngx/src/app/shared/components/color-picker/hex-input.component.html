@@ -17,7 +17,7 @@
 -->
 <div class="hex-input-container">
   <mat-form-field class="hex-input" subscriptSizing="dynamic">
-    <span matPrefix>{{prefixValue}}</span>
+    <span matPrefix>{{prefixValue()}}</span>
     <input matInput #elRef type="text" [value]="value" (keyup)="onInputChange($event, elRef.value)">
     <tb-copy-button
       class="copy-button"

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild, input } from '@angular/core';
 import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { ClientSessionService } from '@core/http/client-session.service';
@@ -27,13 +27,11 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 @Component({
     selector: 'tb-sessions-table',
     templateUrl: './sessions-table.component.html',
-    standalone: true,
     imports: [EntitiesTableComponent, NgClass, ExtendedModule]
 })
 export class SessionsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;

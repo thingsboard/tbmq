@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, forwardRef, OnInit, ViewChild, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, FormsModule } from '@angular/forms';
 import { ValueType, valueTypesMap } from '@shared/models/constants';
 import { isValidObjectString } from '@core/utils';
@@ -49,13 +49,10 @@ import { MatIconButton } from '@angular/material/button';
 })
 export class ValueInputComponent implements OnInit, ControlValueAccessor {
 
-  @Input() disabled: boolean;
-
-  @Input() required: boolean;
-
-  @Input() flexCorrelation: number[] = [40, 60];
-
-  @Input() requiredText: string;
+  disabled = model<boolean>();
+  readonly required = input<boolean>();
+  readonly flexCorrelation = input<number[]>([40, 60]);
+  readonly requiredText = input<string>();
 
   @ViewChild('inputForm', {static: true}) inputForm: NgForm;
 
@@ -110,7 +107,7 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(value: any): void {

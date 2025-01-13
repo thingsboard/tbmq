@@ -1,22 +1,22 @@
 <!--
 
-Copyright © 2016-2025 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+        http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
 
 -->
 <mat-drawer-container hasBackdrop="false" class="tb-absolute-fill">
-  @if (entitiesTableConfig.detailsPanelEnabled) {
+  @if (entitiesTableConfig().detailsPanelEnabled) {
     <mat-drawer
       class="tb-details-drawer mat-elevation-z4"
       #drawer
@@ -25,7 +25,7 @@ limitations under the License.
       [opened]="isDetailsOpen">
       <tb-entity-details-panel
         #entityDetailsPanel
-        [entitiesTableConfig]="entitiesTableConfig"
+        [entitiesTableConfig]="entitiesTableConfig()"
         [entityId]="isDetailsOpen ? dataSource.currentEntity?.id : null"
         (closeEntityDetails)="isDetailsOpen = false; detailsPanelOpened.emit(isDetailsOpen);"
         (entityUpdated)="onEntityUpdated($event)"
@@ -40,19 +40,19 @@ limitations under the License.
         <mat-toolbar class="mat-mdc-table-toolbar" [fxShow]="!textSearchMode && dataSource.selection.isEmpty()">
           <div class="mat-toolbar-tools">
             <div fxLayout="row" fxLayoutAlign="start center" fxLayout.xs="column" fxLayoutAlign.xs="center start" class="title-container">
-              @if (entitiesTableConfig.tableTitle) {
-                <span class="tb-entity-table-title">{{ entitiesTableConfig.tableTitle }}</span>
+              @if (entitiesTableConfig().tableTitle) {
+                <span class="tb-entity-table-title">{{ entitiesTableConfig().tableTitle }}</span>
               }
               <tb-anchor #entityTableHeader></tb-anchor>
-              @if (entitiesTableConfig.useTimePageLink) {
+              @if (entitiesTableConfig().useTimePageLink) {
                 <tb-timewindow [(ngModel)]="timewindow"
                   (ngModelChange)="onTimewindowChange()"
-                asButton strokedButton historyOnly [forAllTimeEnabled]="entitiesTableConfig.forAllTimeEnabled"></tb-timewindow>
+                asButton strokedButton historyOnly [forAllTimeEnabled]="entitiesTableConfig().forAllTimeEnabled"></tb-timewindow>
               }
             </div>
             <span fxFlex></span>
             <div [fxShow]="addEnabled()">
-              @if (!entitiesTableConfig.addActionDescriptors.length) {
+              @if (!entitiesTableConfig().addActionDescriptors.length) {
                 <button mat-icon-button [disabled]="isLoading$ | async"
                   (click)="addEntity($event)"
                   matTooltip="{{ translations.add | translate }}"
@@ -60,13 +60,13 @@ limitations under the License.
                   <mat-icon>add</mat-icon>
                 </button>
               } @else {
-                @if (entitiesTableConfig.addActionDescriptors.length === 1) {
+                @if (entitiesTableConfig().addActionDescriptors.length === 1) {
                   <button mat-icon-button [disabled]="isLoading$ | async"
-                    [fxShow]="entitiesTableConfig.addActionDescriptors[0].isEnabled()"
-                    (click)="entitiesTableConfig.addActionDescriptors[0].onAction($event)"
-                    matTooltip="{{ entitiesTableConfig.addActionDescriptors[0].name }}"
+                    [fxShow]="entitiesTableConfig().addActionDescriptors[0].isEnabled()"
+                    (click)="entitiesTableConfig().addActionDescriptors[0].onAction($event)"
+                    matTooltip="{{ entitiesTableConfig().addActionDescriptors[0].name }}"
                     matTooltipPosition="above">
-                    <mat-icon>{{entitiesTableConfig.addActionDescriptors[0].icon}}</mat-icon>
+                    <mat-icon>{{entitiesTableConfig().addActionDescriptors[0].icon}}</mat-icon>
                   </button>
                 } @else {
                   <button mat-icon-button [disabled]="isLoading$ | async"
@@ -76,7 +76,7 @@ limitations under the License.
                     <mat-icon>add</mat-icon>
                   </button>
                   <mat-menu #addActionsMenu="matMenu" xPosition="before">
-                    @for (actionDescriptor of entitiesTableConfig.addActionDescriptors; track actionDescriptor) {
+                    @for (actionDescriptor of entitiesTableConfig().addActionDescriptors; track actionDescriptor) {
                       <button mat-menu-item
                         [disabled]="isLoading$ | async"
                         [fxShow]="actionDescriptor.isEnabled()"
@@ -95,7 +95,7 @@ limitations under the License.
                     <mat-icon>add</mat-icon>
                   </button>
                   <mat-menu #addActionsMenu="matMenu" xPosition="before">
-                    @for (actionDescriptor of entitiesTableConfig.addActionDescriptors; track actionDescriptor) {
+                    @for (actionDescriptor of entitiesTableConfig().addActionDescriptors; track actionDescriptor) {
                       <button mat-menu-item
                         [disabled]="isLoading$ | async"
                         [fxShow]="actionDescriptor.isEnabled()"
@@ -122,7 +122,7 @@ limitations under the License.
               matTooltipPosition="above">
               <mat-icon>refresh</mat-icon>
             </button>
-            @if (entitiesTableConfig.searchEnabled) {
+            @if (entitiesTableConfig().searchEnabled) {
               <button
                 mat-icon-button [disabled]="isLoading$ | async" (click)="enterFilterMode()"
                 matTooltip="{{ translations.search | translate }}"
@@ -152,7 +152,7 @@ limitations under the License.
             </button>
           </div>
         </mat-toolbar>
-        @if (entitiesTableConfig.selectionEnabled) {
+        @if (entitiesTableConfig().selectionEnabled) {
           <mat-toolbar class="mat-mdc-table-toolbar" color="primary" [fxShow]="!dataSource.selection.isEmpty()">
             <div class="mat-toolbar-tools">
               <span class="tb-entity-table-info">
@@ -183,7 +183,7 @@ limitations under the License.
               </mat-header-cell>
               <mat-cell *matCellDef="let entity">
                 <mat-checkbox (click)="$event.stopPropagation()"
-                  [fxShow]="entitiesTableConfig.entitySelectionEnabled(entity)"
+                  [fxShow]="entitiesTableConfig().entitySelectionEnabled(entity)"
                   (change)="$event ? dataSource.selection.toggle(entity) : null"
                   [checked]="dataSource.selection.isSelected(entity)">
                 </mat-checkbox>
@@ -280,7 +280,7 @@ limitations under the License.
               <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 48) + 'px',
                                                                     maxWidth: (cellActionDescriptors.length * 48) + 'px',
                                                                     width: (cellActionDescriptors.length * 48) + 'px' }">
-                {{ entitiesTableConfig.actionsColumnTitle ? (entitiesTableConfig.actionsColumnTitle | translate) : '' }}
+                {{ entitiesTableConfig().actionsColumnTitle ? (entitiesTableConfig().actionsColumnTitle | translate) : '' }}
               </mat-header-cell>
               <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 48) + 'px',
                                                                     maxWidth: (cellActionDescriptors.length * 48) + 'px',
@@ -322,7 +322,7 @@ limitations under the License.
                      [ngClass]="{'mat-row-select': selectionEnabled,
                                  'mat-selected': dataSource.selection.isSelected(entity),
                                  'tb-current-entity': dataSource.isCurrentEntity(entity),
-                                 'tb-pointer': entitiesTableConfig.rowPointer}"
+                                 'tb-pointer': entitiesTableConfig().rowPointer}"
             *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
           </table>
           <span [fxShow]="!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading"

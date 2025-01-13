@@ -26,7 +26,6 @@ import {
   ElementRef,
   EventEmitter,
   Injector,
-  Input,
   OnChanges,
   OnDestroy,
   OnInit,
@@ -37,7 +36,8 @@ import {
   TemplateRef,
   ViewChild,
   ViewContainerRef,
-  ViewEncapsulation
+  ViewEncapsulation,
+  input
 } from '@angular/core';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import {
@@ -71,25 +71,27 @@ export type TbPopoverTrigger = 'click' | 'focus' | 'hover' | null;
     exportAs: 'tbPopover',
     // eslint-disable-next-line @angular-eslint/no-host-metadata-property
     host: {
-        '[class.tb-popover-open]': 'visible'
+        '[class.tb-popover-open]': 'visible()'
     },
-    standalone: true
 })
 export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
 
   /* eslint-disable @angular-eslint/no-input-rename */
-  @Input('tbPopoverContent') content?: string | TemplateRef<void>;
-  @Input('tbPopoverContext') context?: any | null = null;
-  @Input('tbPopoverTrigger') trigger?: TbPopoverTrigger = 'hover';
-  @Input('tbPopoverPlacement') placement?: string | string[] = 'top';
-  @Input('tbPopoverOrigin') origin?: ElementRef<HTMLElement>;
-  @Input('tbPopoverVisible') visible?: boolean;
-  @Input('tbPopoverShowCloseButton') @coerceBoolean() showCloseButton = true;
-  @Input('tbPopoverMouseEnterDelay') mouseEnterDelay?: number;
-  @Input('tbPopoverMouseLeaveDelay') mouseLeaveDelay?: number;
-  @Input('tbPopoverOverlayClassName') overlayClassName?: string;
-  @Input('tbPopoverOverlayStyle') overlayStyle?: { [klass: string]: any };
-  @Input() tbPopoverBackdrop = false;
+  readonly content = input<string | TemplateRef<void>>(undefined, { alias: "tbPopoverContent" });
+  readonly context = input<any | null>(null, { alias: "tbPopoverContext" });
+  readonly trigger = input<TbPopoverTrigger>('hover', { alias: "tbPopoverTrigger" });
+  readonly placement = input<string | string[]>('top', { alias: "tbPopoverPlacement" });
+  readonly origin = input<ElementRef<HTMLElement>>(undefined, { alias: "tbPopoverOrigin" });
+  readonly visible = input<boolean>(undefined, { alias: "tbPopoverVisible" });
+  @coerceBoolean()
+readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
+  readonly mouseEnterDelay = input<number>(undefined, { alias: "tbPopoverMouseEnterDelay" });
+  readonly mouseLeaveDelay = input<number>(undefined, { alias: "tbPopoverMouseLeaveDelay" });
+  readonly overlayClassName = input<string>(undefined, { alias: "tbPopoverOverlayClassName" });
+  readonly overlayStyle = input<{
+    [klass: string]: any;
+}>(undefined, { alias: "tbPopoverOverlayStyle" });
+  readonly tbPopoverBackdrop = input(false);
 
   // eslint-disable-next-line @angular-eslint/no-output-rename
   @Output('tbPopoverVisibleChange') readonly visibleChange = new EventEmitter<boolean>();
@@ -158,7 +160,7 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
       this.renderer.parentNode(this.elementRef.nativeElement),
       componentRef.location.nativeElement
     );
-    this.component.setOverlayOrigin(new CdkOverlayOrigin(this.origin || this.elementRef));
+    this.component.setOverlayOrigin(new CdkOverlayOrigin(this.origin() || this.elementRef));
 
     this.initProperties();
 
@@ -174,7 +176,7 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
     // When the method gets invoked, all properties has been synced to the dynamic component.
     // After removing the old API, we can just check the directive's own `nzTrigger`.
     const el = this.elementRef.nativeElement;
-    const trigger = this.trigger;
+    const trigger = this.trigger();
 
     this.removeTriggerListeners();
 
@@ -182,22 +184,22 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
       let overlayElement: HTMLElement;
       this.triggerDisposables.push(
         this.renderer.listen(el, 'mouseenter', () => {
-          this.delayEnterLeave(true, true, this.mouseEnterDelay);
+          this.delayEnterLeave(true, true, this.mouseEnterDelay());
         })
       );
       this.triggerDisposables.push(
         this.renderer.listen(el, 'mouseleave', () => {
-          this.delayEnterLeave(true, false, this.mouseLeaveDelay);
+          this.delayEnterLeave(true, false, this.mouseLeaveDelay());
           if (this.component?.overlay.overlayRef && !overlayElement) {
             overlayElement = this.component.overlay.overlayRef.overlayElement;
             this.triggerDisposables.push(
               this.renderer.listen(overlayElement, 'mouseenter', () => {
-                this.delayEnterLeave(false, true, this.mouseEnterDelay);
+                this.delayEnterLeave(false, true, this.mouseEnterDelay());
               })
             );
             this.triggerDisposables.push(
               this.renderer.listen(overlayElement, 'mouseleave', () => {
-                this.delayEnterLeave(false, false, this.mouseLeaveDelay);
+                this.delayEnterLeave(false, false, this.mouseLeaveDelay());
               })
             );
           }
@@ -228,17 +230,17 @@ export class TbPopoverDirective implements OnChanges, OnDestroy, AfterViewInit {
   private updatePropertiesByKeys(keys?: string[]): void {
     const mappingProperties: PropertyMapping = {
       // common mappings
-      content: ['tbContent', () => this.content],
-      context: ['tbComponentContext', () => this.context],
-      trigger: ['tbTrigger', () => this.trigger],
-      placement: ['tbPlacement', () => this.placement],
-      visible: ['tbVisible', () => this.visible],
-      showCloseButton: ['tbShowCloseButton', () => this.showCloseButton],
-      mouseEnterDelay: ['tbMouseEnterDelay', () => this.mouseEnterDelay],
-      mouseLeaveDelay: ['tbMouseLeaveDelay', () => this.mouseLeaveDelay],
-      overlayClassName: ['tbOverlayClassName', () => this.overlayClassName],
-      overlayStyle: ['tbOverlayStyle', () => this.overlayStyle],
-      tbPopoverBackdrop: ['tbBackdrop', () => this.tbPopoverBackdrop]
+      content: ['tbContent', () => this.content()],
+      context: ['tbComponentContext', () => this.context()],
+      trigger: ['tbTrigger', () => this.trigger()],
+      placement: ['tbPlacement', () => this.placement()],
+      visible: ['tbVisible', () => this.visible()],
+      showCloseButton: ['tbShowCloseButton', () => this.showCloseButton()],
+      mouseEnterDelay: ['tbMouseEnterDelay', () => this.mouseEnterDelay()],
+      mouseLeaveDelay: ['tbMouseLeaveDelay', () => this.mouseLeaveDelay()],
+      overlayClassName: ['tbOverlayClassName', () => this.overlayClassName()],
+      overlayStyle: ['tbOverlayStyle', () => this.overlayStyle()],
+      tbPopoverBackdrop: ['tbBackdrop', () => this.tbPopoverBackdrop()]
     };
 
     (keys || Object.keys(mappingProperties).filter(key => !key.startsWith('directive'))).forEach(

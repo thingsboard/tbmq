@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input } from '@angular/core';
+import { AfterViewInit, Component, input, model } from '@angular/core';
 import { HomePageTitle, homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -32,21 +32,17 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class CardTitleButtonComponent implements AfterViewInit {
 
-  @Input()
-  cardType: HomePageTitleType;
-
-  @Input()
-  disabled = false;
+  cardType = model<HomePageTitleType>();
+  readonly disabled = input(false);
 
   homePageTitleResources = homePageTitleConfig;
-
   title: HomePageTitle;
 
   constructor(private router: Router) {
   }
 
   ngAfterViewInit() {
-    this.title = this.homePageTitleResources.get(this.cardType);
+    this.title = this.homePageTitleResources.get(this.cardType());
   }
 
   navigate() {

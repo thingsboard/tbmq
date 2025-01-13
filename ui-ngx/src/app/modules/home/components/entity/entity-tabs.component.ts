@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
-import {PageComponent} from '@shared/components/page.component';
-import {AfterViewInit, Directive, Input, OnInit, QueryList, ViewChildren} from '@angular/core';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {EntityTableConfig} from '@home/models/entity/entities-table-config.models';
-import {MatTab} from '@angular/material/tabs';
-import {BehaviorSubject} from 'rxjs';
-import {getCurrentAuthUser} from '@core/auth/auth.selectors';
-import {AuthUser} from '@shared/models/user.model';
-import {EntityType} from '@shared/models/entity-type.models';
-import {UntypedFormGroup} from '@angular/forms';
-import {PageLink} from '@shared/models/page/page-link';
-import {NULL_UUID} from '@shared/models/constants';
+import { BaseData } from '@shared/models/base-data';
+import { PageComponent } from '@shared/components/page.component';
+import { AfterViewInit, Directive, Input, input, model, OnInit, QueryList, ViewChildren } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
+import { MatTab } from '@angular/material/tabs';
+import { BehaviorSubject } from 'rxjs';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
+import { AuthUser } from '@shared/models/user.model';
+import { EntityType } from '@shared/models/entity-type.models';
+import { UntypedFormGroup } from '@angular/forms';
+import { PageLink } from '@shared/models/page/page-link';
+import { NULL_UUID } from '@shared/models/constants';
 
 @Directive()
 // tslint:disable-next-line:directive-class-suffix
@@ -37,52 +37,41 @@ export abstract class EntityTabsComponent<T extends BaseData,
   C extends EntityTableConfig<T, P, L> = EntityTableConfig<T, P, L>>
   extends PageComponent implements OnInit, AfterViewInit {
 
-  entityTypes = EntityType;
-
-  authUser: AuthUser;
-
-  nullUid = NULL_UUID;
-
-  entityValue: T;
-
-  entitiesTableConfigValue: C;
-
-  @ViewChildren(MatTab) entityTabs: QueryList<MatTab>;
-
-  isEditValue: boolean;
-
-  @Input()
-  set isEdit(isEdit: boolean) {
-    this.isEditValue = isEdit;
-  }
-
   get isEdit() {
     return this.isEditValue;
   }
 
-  @Input()
-  set entity(entity: T) {
-    this.setEntity(entity);
+  @Input() set isEdit(isEdit: boolean) {
+    this.isEditValue = isEdit;
   }
 
   get entity(): T {
     return this.entityValue;
   }
 
-  @Input()
-  set entitiesTableConfig(entitiesTableConfig: C) {
-    this.setEntitiesTableConfig(entitiesTableConfig);
+  @Input() set entity(entity: T) {
+    this.setEntity(entity);
   }
 
   get entitiesTableConfig(): C {
     return this.entitiesTableConfigValue;
   }
 
-  @Input()
-  detailsForm: UntypedFormGroup;
+  @Input() set entitiesTableConfig(entitiesTableConfig: C) {
+    this.setEntitiesTableConfig(entitiesTableConfig);
+  }
 
+  @ViewChildren(MatTab) entityTabs: QueryList<MatTab>;
+
+  entityTypes = EntityType;
+  authUser: AuthUser;
+  nullUid = NULL_UUID;
+  entityValue: T;
+  entitiesTableConfigValue: C;
+  isEditValue: boolean;
+
+  detailsForm = model<UntypedFormGroup>();
   private entityTabsSubject = new BehaviorSubject<Array<MatTab>>(null);
-
   entityTabsChanged = this.entityTabsSubject.asObservable();
 
   protected constructor(protected store: Store<AppState>) {
@@ -95,11 +84,9 @@ export abstract class EntityTabsComponent<T extends BaseData,
 
   ngAfterViewInit(): void {
     this.entityTabsSubject.next(this.entityTabs.toArray());
-    this.entityTabs.changes.subscribe(
-      () => {
-        this.entityTabsSubject.next(this.entityTabs.toArray());
-      }
-    );
+    this.entityTabs.changes.subscribe(() => {
+      this.entityTabsSubject.next(this.entityTabs.toArray());
+    });
   }
 
   protected setEntity(entity: T) {

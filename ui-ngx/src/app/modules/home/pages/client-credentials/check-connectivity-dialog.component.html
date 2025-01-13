@@ -35,7 +35,7 @@
       <tb-toggle-option value="MQTT">MQTT</tb-toggle-option>
     </tb-toggle-header>
     <div class="tb-form-panel no-padding no-border">
-      <ng-container [ngSwitch]="transportProtocol.value">
+      <ng-container [ngSwitch]="transportProtocol.value()">
         <ng-template [ngSwitchCase]="NetworkTransportType.MQTT">
           <div *ngIf="commands.mqtt.sparkplug; else mqttCommands" class="tb-form-panel stroked">
             <ng-container
@@ -186,7 +186,7 @@
         <tb-toggle-option value="sec">{{ cmd.secLabel }}</tb-toggle-option>
       </tb-toggle-header>
     </div>
-    <ng-container [ngSwitch]="protocolType.value">
+    <ng-container [ngSwitch]="protocolType.value()">
       <ng-template [ngSwitchCase]="'noSec'">
         <tb-markdown usePlainMarkdown containerClass="tb-command-code"
                      [data]=createMarkDownCommand(cmd.noSec)></tb-markdown>
@@ -222,7 +222,7 @@
         <tb-toggle-option value="sec">{{ cmd.secLabel }}</tb-toggle-option>
       </tb-toggle-header>
     </div>
-    <ng-container [ngSwitch]="protocolType.value">
+    <ng-container [ngSwitch]="protocolType.value()">
       <ng-template [ngSwitchCase]="'noSec'">
         <tb-markdown usePlainMarkdown containerClass="tb-command-code"
                      [data]=createMarkDownCommand(cmd.noSec)></tb-markdown>

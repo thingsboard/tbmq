@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, input } from '@angular/core';
 import { forkJoin, Observable, retry, Subject, timer } from 'rxjs';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import { ClientCredentialsInfo } from '@shared/models/credentials.model';
@@ -34,7 +34,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class HomeCardsSessionsCredentialsComponent implements AfterViewInit, OnDestroy {
 
-  @Input() isLoading$: Observable<boolean>;
+  readonly isLoading$ = input<Observable<boolean>>();
 
   cardTypeCredentials = HomePageTitleType.CLIENT_CREDENTIALS;
   cardTypeSession = HomePageTitleType.SESSION;

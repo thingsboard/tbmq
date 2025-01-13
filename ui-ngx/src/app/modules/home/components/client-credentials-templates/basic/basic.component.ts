@@ -14,7 +14,16 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  forwardRef,
+  OnDestroy,
+  ViewChild,
+  input,
+  model
+} from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -63,11 +72,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   @ViewChild('copyUsernameBtn')
   copyUsernameBtn: CopyButtonComponent;
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
@@ -114,8 +120,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.credentialsMqttFormGroup.disable({emitEvent: false});
     } else {
       this.credentialsMqttFormGroup.enable({emitEvent: false});

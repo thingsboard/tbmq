@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { Component, forwardRef, Input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -37,19 +37,20 @@ import { TranslateModule } from '@ngx-translate/core';
     ],
     imports: [FlexModule, MatFormField, MatLabel, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule, TranslateModule]
 })
-export class DatetimeComponent implements OnInit, ControlValueAccessor {
+export class DatetimeComponent implements ControlValueAccessor {
+
+  disabled = model<boolean>();
 
   private requiredValue: boolean;
+
   get required(): boolean {
     return this.requiredValue;
   }
+
   @Input()
   set required(value: boolean) {
     this.requiredValue = coerceBooleanProperty(value);
   }
-
-  @Input()
-  disabled: boolean;
 
   @Input()
   dateText: string;
@@ -91,10 +92,7 @@ export class DatetimeComponent implements OnInit, ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-  }
-
-  ngOnInit(): void {
+    this.disabled.set(isDisabled);
   }
 
   writeValue(datetime: number | null): void {

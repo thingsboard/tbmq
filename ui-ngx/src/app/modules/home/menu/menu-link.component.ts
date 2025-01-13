@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { MatAnchor } from '@angular/material/button';
 import { RouterLinkActive, RouterLink } from '@angular/router';
@@ -30,10 +30,5 @@ import { TranslateModule } from '@ngx-translate/core';
     imports: [MatAnchor, RouterLinkActive, RouterLink, TbIconComponent, TranslateModule]
 })
 export class MenuLinkComponent {
-
-  @Input() section: MenuSection;
-
-  constructor() {
-  }
-
+  readonly section = input<MenuSection>();
 }

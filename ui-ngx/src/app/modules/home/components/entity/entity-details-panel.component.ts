@@ -217,7 +217,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityTabsComponent = this.entityTabsComponentRef.instance;
       this.entityTabsComponent.isEdit = this.isEdit;
       this.entityTabsComponent.entitiesTableConfig = this.entitiesTableConfig;
-      this.entityTabsComponent.detailsForm = this.detailsForm;
+      this.entityTabsComponent.detailsForm.set(this.detailsForm);
       this.subscriptions.push(this.entityTabsComponent.entityTabsChanged.subscribe(
         (entityTabs) => {
           if (entityTabs) {

@@ -14,7 +14,17 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  forwardRef,
+  Input,
+  OnInit,
+  ViewChild,
+  input,
+  booleanAttribute,
+  model
+} from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
@@ -66,36 +76,16 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
     }
   }
 
-  @Input()
-  floatLabel: FloatLabelType = 'auto';
-
-  @Input()
-  label: string;
-
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entityType: EntityType;
-
-  @Input()
-  emptyInputPlaceholder: string;
-
-  @Input()
-  filledInputPlaceholder: string;
-
-  @Input()
-  appearance: MatFormFieldAppearance = 'fill';
-
-  @Input()
-  subscriptSizing: SubscriptSizing = 'fixed';
-
-  @Input()
-  @coerceArray()
-  additionalClasses: Array<string>;
-
-  @Input()
-  addValueOutOfList: boolean = true;
+  disabled = model<boolean>();
+  readonly floatLabel = input<FloatLabelType>('auto');
+  readonly label = input<string>();
+  readonly entityType = input<EntityType>();
+  readonly emptyInputPlaceholder = input<string>();
+  readonly filledInputPlaceholder = input<string>();
+  readonly appearance = input<MatFormFieldAppearance>('fill');
+  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+  readonly additionalClasses = input<Array<string>>();
+  readonly addValueOutOfList = input<boolean>(true);
 
   @ViewChild('entitySubtypeInput') entitySubtypeInput: ElementRef<HTMLInputElement>;
   @ViewChild('entitySubtypeAutocomplete') entitySubtypeAutocomplete: MatAutocomplete;
@@ -141,7 +131,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   }
 
   ngOnInit() {
-    switch (this.entityType) {
+    switch (this.entityType()) {
       case EntityType.MQTT_SESSION:
         this.placeholder = this.required ? this.translate.instant('asset.enter-asset-type')
           : this.translate.instant('asset.any-asset');
@@ -151,11 +141,13 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
         break;
     }
 
-    if (this.emptyInputPlaceholder) {
-      this.placeholder = this.emptyInputPlaceholder;
+    const emptyInputPlaceholder = this.emptyInputPlaceholder();
+    if (emptyInputPlaceholder) {
+      this.placeholder = emptyInputPlaceholder;
     }
-    if (this.filledInputPlaceholder) {
-      this.secondaryPlaceholder = this.filledInputPlaceholder;
+    const filledInputPlaceholder = this.filledInputPlaceholder();
+    if (filledInputPlaceholder) {
+      this.secondaryPlaceholder = filledInputPlaceholder;
     }
 
     this.filteredEntitySubtypeList = this.entitySubtypeListFormGroup.get('entitySubtype').valueChanges.pipe(
@@ -167,7 +159,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (isDisabled) {
       this.entitySubtypeListFormGroup.disable({emitEvent: false});
     } else {
@@ -194,7 +186,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
       if (!this.modelValue) {
         this.modelValue = [];
       }
-      if (this.addValueOutOfList || this.allEntitySubtypes.includes(entitySubtype)) {
+      if (this.addValueOutOfList() || this.allEntitySubtypes.includes(entitySubtype)) {
         this.modelValue.push(entitySubtype);
         this.entitySubtypeList.push(entitySubtype);
         this.entitySubtypeListFormGroup.get('entitySubtypeList').setValue(this.entitySubtypeList);
@@ -250,7 +242,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   private getEntitySubtypes(searchText?: string): Observable<Array<string>> {
     if (!this.entitySubtypes) {
       let subTypesObservable: Observable<Array<string>>;
-      switch (this.entityType) {
+      switch (this.entityType()) {
         case EntityType.KAFKA_BROKER:
           subTypesObservable = this.configService.getBrokerServiceIds({ignoreLoading: true});
           break;

@@ -26,13 +26,13 @@ import {
   SimpleChanges,
   Type,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute
 } from '@angular/core';
 import { MarkdownService, PrismPlugin } from 'ngx-markdown';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { deepClone, guid, isDefinedAndNotNull } from '@core/utils';
 import { Observable, of, ReplaySubject } from 'rxjs';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { NgClass, NgStyle } from '@angular/common';
 import { ExtendedModule } from '@angular/flex-layout/extended';
 
@@ -49,21 +49,17 @@ export class TbMarkdownComponent implements OnChanges {
   @ViewChild('markdownContainer', {read: ViewContainerRef, static: true}) markdownContainer: ViewContainerRef;
   @ViewChild('fallbackElement', {static: true}) fallbackElement: ElementRef<HTMLElement>;
 
-  @Input() data: string | undefined;
+  readonly data = input<string | undefined>();
+  readonly context = input<any>();
+  readonly additionalCompileModules = input<Type<any>[]>();
+  readonly markdownClass = input<string | undefined>();
+  readonly containerClass = input<string | undefined>();
+  readonly style = input<{
+      [klass: string]: any;
+  }>({});
 
-  @Input() context: any;
-
-  @Input() additionalCompileModules: Type<any>[];
-
-  @Input() markdownClass: string | undefined;
-
-  @Input() containerClass: string | undefined;
-
-  @Input() style: { [klass: string]: any } = {};
-
-  @Input() applyDefaultMarkdownStyle = true;
-
-  @Input() additionalStyles: string[];
+  readonly applyDefaultMarkdownStyle = input(true);
+  readonly additionalStyles = input<string[]>();
 
   @Input()
   get lineNumbers(): boolean { return this.lineNumbersValue; }
@@ -73,9 +69,7 @@ export class TbMarkdownComponent implements OnChanges {
   get fallbackToPlainMarkdown(): boolean { return this.fallbackToPlainMarkdownValue; }
   set fallbackToPlainMarkdown(value: boolean) { this.fallbackToPlainMarkdownValue = coerceBooleanProperty(value); }
 
-  @Input()
-  @coerceBoolean()
-  usePlainMarkdown = false;
+  readonly usePlainMarkdown = input(false, {transform: booleanAttribute});
 
   @Output() ready = new EventEmitter<void>();
 
@@ -92,20 +86,22 @@ export class TbMarkdownComponent implements OnChanges {
               private renderer: Renderer2) {}
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (isDefinedAndNotNull(this.data)) {
-      this.zone.run(() => this.render(this.data));
+    if (isDefinedAndNotNull(this.data())) {
+      this.zone.run(() => this.render(this.data()));
     }
   }
 
   private render(markdown: string) {
     const compiled = this.markdownService.parse(markdown, { decodeHtml: false });
     let markdownClass = 'tb-markdown-view';
-    if (this.markdownClass) {
-      markdownClass += ` ${this.markdownClass}`;
+    const markdownClassValue = this.markdownClass();
+    if (markdownClassValue) {
+      markdownClass += ` ${markdownClassValue}`;
     }
     let template = `<div [ngStyle]="style" class="${markdownClass}">${compiled}</div>`;
-    if (this.containerClass) {
-      template = `<div class="${this.containerClass}" style="width: 100%; height: 100%;">${template}</div>`;
+    const containerClass = this.containerClass();
+    if (containerClass) {
+      template = `<div class="${containerClass}" style="width: 100%; height: 100%;">${template}</div>`;
     }
     const element: HTMLDivElement = this.renderer.createElement('div');
     element.innerHTML = template;
@@ -121,17 +117,18 @@ export class TbMarkdownComponent implements OnChanges {
     this.markdownContainer.clear();
     let styles: string[] = [];
     let readyObservable: Observable<void>;
-    if (this.applyDefaultMarkdownStyle) {
+    if (this.applyDefaultMarkdownStyle()) {
       if (!defaultMarkdownStyle) {
         defaultMarkdownStyle = deepClone(TbMarkdownComponent['ɵcmp'].styles)[0].replace(/\[_nghost\-%COMP%\]/g, '')
           .replace(/\[_ngcontent\-%COMP%\]/g, '');
       }
       styles.push(defaultMarkdownStyle);
     }
-    if (this.additionalStyles) {
-      styles = styles.concat(this.additionalStyles);
+    const additionalStyles = this.additionalStyles();
+    if (additionalStyles) {
+      styles = styles.concat(additionalStyles);
     }
-    if (this.usePlainMarkdown) {
+    if (this.usePlainMarkdown()) {
       readyObservable = this.plainMarkdown(template, styles);
       this.cd.detectChanges();
       readyObservable.subscribe(() => {

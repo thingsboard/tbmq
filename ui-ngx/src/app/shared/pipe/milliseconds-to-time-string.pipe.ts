@@ -19,7 +19,6 @@ import { TranslateService } from '@ngx-translate/core';
 
 @Pipe({
     name: 'milliSecondsToTimeString',
-    standalone: true
 })
 export class MillisecondsToTimeStringPipe implements PipeTransform {
 

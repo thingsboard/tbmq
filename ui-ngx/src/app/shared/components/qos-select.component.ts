@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnDestroy } from '@angular/core';
+import { Component, forwardRef, OnDestroy, input, model, booleanAttribute } from '@angular/core';
 import {
   ControlValueAccessor, FormsModule,
   NG_VALUE_ACCESSOR, ReactiveFormsModule,
@@ -28,7 +28,6 @@ import {
   MatLabel,
   SubscriptSizing
 } from '@angular/material/form-field';
-import { coerceBoolean } from '@shared/decorators/coercion';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { DEFAULT_QOS, QoS, QosTranslation, QosTypes } from '../models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -52,32 +51,14 @@ import { MatOption, MatSelect } from '@angular/material/select';
 })
 export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  @coerceBoolean()
-  required = false;
-
-  @Input()
-  @coerceBoolean()
-  asString = false;
-
-  @Input()
-  @coerceBoolean()
-  displayLabel = true;
-
-  @Input()
-  label: string = this.translate.instant('mqtt-client-session.qos');
-
-  @Input()
-  appearance: MatFormFieldAppearance = 'fill';
-
-  @Input()
-  subscriptSizing: SubscriptSizing = 'fixed';
-
-  @Input()
-  hideRequiredMarker = true;
+  disabled = model<boolean>();
+  readonly required = input(false, {transform: booleanAttribute});
+  readonly asString = input(false, {transform: booleanAttribute});
+  readonly displayLabel = input(true, {transform: booleanAttribute});
+  readonly label = input<string>(this.translate.instant('mqtt-client-session.qos'));
+  readonly appearance = input<MatFormFieldAppearance>('fill');
+  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+  readonly hideRequiredMarker = input(true);
 
   qosFormControl: UntypedFormControl;
   qosTypes = QosTypes;
@@ -88,7 +69,7 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
   constructor(readonly fb: UntypedFormBuilder,
               readonly translate: TranslateService) {
-    this.qosFormControl = this.fb.control(null, this.required ? [Validators.required] : []);
+    this.qosFormControl = this.fb.control(null, this.required() ? [Validators.required] : []);
     this.qosFormControl.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => this.updateModel(value));
@@ -108,8 +89,8 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.qosFormControl.disable({emitEvent: false});
     } else {
       this.qosFormControl.enable({emitEvent: false});

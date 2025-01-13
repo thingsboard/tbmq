@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
@@ -34,23 +34,12 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class HomeCardsTableComponent {
 
-  @Input()
-  isLoading$: Observable<boolean>;
-
-  @Input()
-  cardType: HomePageTitleType;
-
-  @Input()
-  latestValues: ClientSessionStatsInfo | ClientCredentialsInfo;
-
-  @Input()
-  config: HomeCardFilter[];
-
-  @Input()
-  docsLink: string;
-
-  @Input()
-  docsTooltip: string;
+  readonly isLoading$ = input<Observable<boolean>>();
+  readonly cardType = input<HomePageTitleType>();
+  readonly latestValues = input<ClientSessionStatsInfo | ClientCredentialsInfo>();
+  readonly config = input<HomeCardFilter[]>();
+  readonly docsLink = input<string>();
+  readonly docsTooltip = input<string>();
 
   constructor(private router: Router) {
   }

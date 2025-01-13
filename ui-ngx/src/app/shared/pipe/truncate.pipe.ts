@@ -19,7 +19,6 @@ import { isString } from '@core/utils';
 
 @Pipe({
     name: 'truncate',
-    standalone: true
 })
 export class TruncatePipe implements PipeTransform {
   transform(text: string, wordwise: boolean, max: any, tail: string): string {

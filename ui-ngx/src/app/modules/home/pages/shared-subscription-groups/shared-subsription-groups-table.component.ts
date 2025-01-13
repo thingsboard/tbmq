@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild, input } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
@@ -33,8 +33,7 @@ import { ExtendedModule } from '@angular/flex-layout/extended';
 })
 export class SharedSubsriptionGroupsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;

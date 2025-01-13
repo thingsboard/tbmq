@@ -20,13 +20,14 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
   ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model,
+  Input
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -86,18 +87,12 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   @ViewChild('sessionFilterPanel')
   sessionFilterPanel: TemplateRef<any>;
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
   @Input()
   initialSessionFilterConfig: SessionFilterConfig;
+
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
   connectionStateTranslationMap= connectionStateTranslationMap;
@@ -154,7 +149,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.sessionFilterConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        if (!this.buttonMode) {
+        if (!this.buttonMode()) {
           this.sessionConfigUpdated(this.sessionFilterConfigForm.value);
         }
       });
@@ -176,8 +171,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.sessionFilterConfigForm.disable({emitEvent: false});
     } else {
       this.sessionFilterConfigForm.enable({emitEvent: false});
@@ -246,16 +241,17 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   reset() {
-    if (this.initialSessionFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialSessionFilterConfig = this.initialSessionFilterConfig;
+    if (initialSessionFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const sessionFilterConfig = this.sessionFilterConfigFromFormValue(this.sessionFilterConfigForm.value);
-        if (!sessionFilterConfigEquals(sessionFilterConfig, this.initialSessionFilterConfig)) {
-          this.updateSessionConfigForm(this.initialSessionFilterConfig);
+        if (!sessionFilterConfigEquals(sessionFilterConfig, initialSessionFilterConfig)) {
+          this.updateSessionConfigForm(initialSessionFilterConfig);
           this.sessionFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!sessionFilterConfigEquals(this.sessionFilterConfig, this.initialSessionFilterConfig)) {
-          this.sessionFilterConfig = this.initialSessionFilterConfig;
+        if (!sessionFilterConfigEquals(this.sessionFilterConfig, initialSessionFilterConfig)) {
+          this.sessionFilterConfig = initialSessionFilterConfig;
           this.updateButtonDisplayValue();
           this.updateSessionConfigForm(this.sessionFilterConfig);
           this.propagateChange(this.sessionFilterConfig);
@@ -296,7 +292,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.sessionFilterConfig?.connectedStatusList?.length) {

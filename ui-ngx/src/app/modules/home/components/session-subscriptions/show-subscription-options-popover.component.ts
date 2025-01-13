@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output, input } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RhOptions, TopicSubscription } from '@shared/models/ws-client.model';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -37,14 +37,12 @@ import { MatInput } from '@angular/material/input';
 })
 export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestroy {
 
-  @Input()
-  onClose: () => void;
+  readonly onClose = input<() => void>();
 
   @Output()
   subscriptionOptionsApplied = new EventEmitter<TopicSubscription>();
 
-  @Input()
-  data: TopicSubscription;
+  readonly data = input<TopicSubscription>();
 
   subscriptionOptionsForm: UntypedFormGroup;
   rhOptions = RhOptions;
@@ -52,20 +50,24 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
   constructor(private fb: UntypedFormBuilder) {}
 
   ngOnInit() {
+    const data = this.data();
+    const dataValue = this.data();
+    const dataVal = this.data();
+    const dataInput = this.data();
     this.subscriptionOptionsForm = this.fb.group({
-      retainAsPublish: [this.data ? this.data.options?.retainAsPublish : null, []],
-      retainHandling: [this.data ? this.data.options?.retainHandling : null, []],
-      noLocal: [this.data ? this.data.options?.noLocal : null, []],
-      subscriptionId: [this.data ? this.data.subscriptionId : null, []],
+      retainAsPublish: [data ? data.options?.retainAsPublish : null, []],
+      retainHandling: [dataValue ? dataValue.options?.retainHandling : null, []],
+      noLocal: [dataVal ? dataVal.options?.noLocal : null, []],
+      subscriptionId: [dataInput ? dataInput.subscriptionId : null, []],
     });
   }
 
   ngOnDestroy() {
-    this.onClose();
+    this.onClose()();
   }
 
   cancel() {
-    this.onClose();
+    this.onClose()();
   }
 
   apply() {

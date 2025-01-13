@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
+import { Component, EventEmitter, Output, Renderer2, ViewContainerRef, input } from '@angular/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
 import { MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
@@ -31,14 +31,12 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     selector: 'tb-subscription-options',
     templateUrl: './subscription-options.component.html',
     styleUrls: [],
-    standalone: true,
     providers: [TbPopoverService],
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SubscriptionOptionsComponent {
 
-  @Input()
-  subscriptionOptions: AbstractControl;
+  readonly subscriptionOptions = input<AbstractControl>();
 
   @Output()
   subscriptionOptionsValue = new EventEmitter<TopicSubscription>();
@@ -61,7 +59,7 @@ export class SubscriptionOptionsComponent {
           onClose: () => {
             showNotificationPopover.hide();
           },
-          data: this.subscriptionOptions.getRawValue(),
+          data: this.subscriptionOptions().getRawValue(),
         },
         {maxHeight: '90vh', height: '100%', padding: '10px'},
         {width: '560px', minWidth: '100%', maxWidth: '100%'},

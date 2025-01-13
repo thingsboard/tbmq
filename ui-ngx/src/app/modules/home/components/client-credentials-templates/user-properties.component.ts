@@ -14,7 +14,17 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, forwardRef, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  forwardRef,
+  OnChanges,
+  OnDestroy,
+  OnInit,
+  SimpleChanges,
+  input,
+  model
+} from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -59,18 +69,10 @@ export interface UserPropertiesObject {
 })
 export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  mqttVersion: number;
-
-  @Input()
-  entity: UserProperties;
-
-  @coerceBoolean()
-  @Input()
-  reset: boolean;
+  disabled = model<boolean>();
+  readonly mqttVersion = input<number>();
+  readonly entity = input<UserProperties>();
+  readonly reset = input<boolean>();
 
   userPropertiesFormGroup: UntypedFormGroup;
 
@@ -87,7 +89,7 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   ngOnInit() {
-    const properties = this.entity?.props;
+    const properties = this.entity()?.props;
     this.userPropertiesFormGroup = this.fb.group({
       props: this.fb.array([])
     });
@@ -144,8 +146,8 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.userPropertiesFormGroup.disable({emitEvent: false});
     } else {
       this.userPropertiesFormGroup.enable({emitEvent: false});

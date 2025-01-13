@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ViewChild, input } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -48,14 +48,9 @@ import { TbIconComponent } from '@shared/components/icon.component';
 })
 export class SubscriptionComponent {
 
-  @Input()
-  subscription: WebSocketSubscription;
-
-  @Input()
-  subscriptions: WebSocketSubscription[];
-
-  @Input()
-  connection: WebSocketConnection;
+  readonly subscription = input<WebSocketSubscription>();
+  readonly subscriptions = input<WebSocketSubscription[]>();
+  readonly connection = input<WebSocketConnection>();
 
   @Output()
   subscriptionUpdated = new EventEmitter<void>();
@@ -84,7 +79,7 @@ export class SubscriptionComponent {
   }
 
   openSubscriptionDetails($event: Event) {
-    this.edit($event, this.subscription);
+    this.edit($event, this.subscription());
   }
 
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketSubscription>> {
@@ -142,8 +137,8 @@ export class SubscriptionComponent {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('subscription.delete-subscription-title', {topic: this.subscription.configuration.topicFilter}),
-      this.translate.instant('subscription.delete-subscription-text', {topic: this.subscription.configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-title', {topic: this.subscription().configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-text', {topic: this.subscription().configuration.topicFilter}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
@@ -168,8 +163,8 @@ export class SubscriptionComponent {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            mqttVersion: this.connection.configuration.mqttVersion,
-            subscriptions: this.subscriptions,
+            mqttVersion: this.connection().configuration.mqttVersion,
+            subscriptions: this.subscriptions(),
             subscription
           }
         }).afterClosed()

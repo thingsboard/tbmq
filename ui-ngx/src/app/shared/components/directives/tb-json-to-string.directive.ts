@@ -48,7 +48,6 @@ import { isObject } from '@core/utils';
             provide: ErrorStateMatcher,
             useExisting: TbJsonToStringDirective
         }],
-    standalone: true
 })
 
 export class TbJsonToStringDirective implements ControlValueAccessor, Validator, ErrorStateMatcher {
