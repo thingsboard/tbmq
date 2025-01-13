@@ -76,7 +76,6 @@ const funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
     template: '<span style="display: none;" #iconNameContent><ng-content></ng-content></span>',
     selector: 'tb-icon',
     exportAs: 'tbIcon',
-    styleUrls: [],
     // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
     inputs: ['color'],
     // eslint-disable-next-line @angular-eslint/no-host-metadata-property

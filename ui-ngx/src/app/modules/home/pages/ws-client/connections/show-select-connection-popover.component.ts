@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnDestroy, OnInit, input, model } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
@@ -44,7 +44,8 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   @Input()
   onClose: () => void;
 
-  popoverComponent = model<TbPopoverComponent>();
+  @Input()
+  popoverComponent: TbPopoverComponent;
 
   connections$: Observable<WebSocketConnectionDto[]>;
   connectionsTotal: number;

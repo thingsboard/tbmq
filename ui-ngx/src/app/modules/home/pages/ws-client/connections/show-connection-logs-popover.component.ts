@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, input, model } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
@@ -38,9 +38,14 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 
-  readonly onClose = input<() => void>();
-  readonly connectionId = input<string>();
-  readonly popoverComponent = model<TbPopoverComponent>();
+  @Input()
+  onClose: () => void;
+
+  @Input()
+  connectionId: string;
+
+  @Input()
+  popoverComponent: TbPopoverComponent;
 
   statusLogs: ConnectionStatusLog[] = [];
   connectionStatusTranslationMap = ConnectionStatusTranslationMap;
@@ -62,11 +67,11 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
   ngOnDestroy() {
     this.logsSubscription.unsubscribe();
     super.ngOnDestroy();
-    this.onClose()();
+    this.onClose();
   }
 
   close() {
-    this.onClose()();
+    this.onClose();
   }
 
   setStyle(status: ConnectionStatus) {
@@ -92,7 +97,7 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
   }
 
   private updateView() {
-    this.statusLogs = this.mqttJsClientService.connectionStatusLogMap.get(this.connectionId()) || [];
+    this.statusLogs = this.mqttJsClientService.connectionStatusLogMap.get(this.connectionId) || [];
     this.cd.detectChanges();
   }
 }

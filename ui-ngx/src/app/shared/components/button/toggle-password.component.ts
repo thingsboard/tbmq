@@ -22,11 +22,7 @@ import { MatIcon } from '@angular/material/icon';
 @Component({
     selector: 'tb-toggle-password',
     templateUrl: 'toggle-password.component.html',
-    styleUrls: [],
-    imports: [
-    MatIconButton,
-    MatIcon
-]
+    imports: [MatIconButton, MatIcon]
 })
 export class TogglePasswordComponent implements AfterViewInit {
   showPassword = false;

@@ -122,7 +122,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           {maxHeight: '90vh', height: '324px', padding: '10px'},
           {width: '500px', minWidth: '100%', maxWidth: '100%'},
           {height: '100%', flexDirection: 'column', boxSizing: 'border-box', display: 'flex', margin: '0 -16px'}, false);
-        showNotificationPopover.tbComponentRef.instance.popoverComponent.set(showNotificationPopover);
+        showNotificationPopover.tbComponentRef.instance.popoverComponent = showNotificationPopover;
       }
     }, 200);
   }

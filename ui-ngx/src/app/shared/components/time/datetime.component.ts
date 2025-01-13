@@ -27,7 +27,6 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
     selector: 'tb-datetime',
     templateUrl: './datetime.component.html',
-    styleUrls: [],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

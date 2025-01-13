@@ -22,7 +22,6 @@ import {
   OnInit,
   ViewChild,
   input,
-  booleanAttribute,
   model
 } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -34,7 +33,7 @@ import { MatAutocomplete, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, 
 import { MatChipGrid, MatChipInputEvent, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
 import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
-import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
+import { coerceBoolean } from '@shared/decorators/coercion';
 import { ConfigService } from '@core/http/config.service';
 import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
@@ -45,7 +44,6 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 @Component({
     selector: 'tb-entity-subtype-list',
     templateUrl: './entity-subtype-list.component.html',
-    styleUrls: [],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
