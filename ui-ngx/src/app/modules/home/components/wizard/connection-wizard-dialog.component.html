@@ -252,9 +252,6 @@
                   {{ 'mqtt-client-session.keep-alive-required' | translate }}
                 </mat-error>
               }
-              <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('keepalive').hasError('max')">
-              {{ 'mqtt-client-session.keep-alive-max' | translate }}
-            </mat-error>-->
           </mat-form-field>
           <mat-form-field fxFlex>
             <mat-label translate>timeunit.units</mat-label>
@@ -334,9 +331,6 @@
             <mat-form-field fxFlex>
               <mat-label translate>ws-client.connections.session-expiry-interval</mat-label>
               <input matInput formControlName="sessionExpiryInterval" type="number" min="0" [max]="calcMax('sessionExpiryIntervalUnit')">
-              <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('sessionExpiryInterval').hasError('max')">
-              {{ 'ws-client.connections.session-expiry-interval-max' | translate }}
-            </mat-error>-->
           </mat-form-field>
           <mat-form-field fxFlex>
             <mat-label translate>timeunit.units</mat-label>
@@ -353,9 +347,6 @@
           <mat-form-field fxFlex>
             <mat-label translate>ws-client.connections.maximum-packet-size</mat-label>
             <input matInput formControlName="maximumPacketSize" type="number" min="0" [max]="calcMax('maximumPacketSizeUnit')">
-            <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('maximumPacketSize').hasError('max')">
-            {{ 'ws-client.connections.maximum-packet-size-max' | translate }}
-          </mat-error>-->
           <mat-icon matSuffix [matTooltip]="'ws-client.connections.maximum-packet-size-hint' | translate">
             help
           </mat-icon>
@@ -374,9 +365,6 @@
       <mat-form-field class="mat-block">
         <mat-label translate>ws-client.connections.topic-alias-maximum</mat-label>
         <input matInput formControlName="topicAliasMaximum" type="number" min="0" max="65535">
-        <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('topicAliasMaximum').hasError('max')">
-        {{ 'ws-client.connections.topic-alias-maximum-max' | translate }}
-      </mat-error>-->
       <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-maximum-hint' | translate">
         help
       </mat-icon>
@@ -384,9 +372,6 @@
     <mat-form-field class="mat-block">
       <mat-label translate>ws-client.connections.receive-maximum</mat-label>
       <input matInput formControlName="receiveMaximum" type="number" min="1" max="65535">
-      <!--<mat-error *ngIf="connectionAdvancedFormGroup.get('properties')?.get('receiveMaximum').hasError('max')">
-      {{ 'ws-client.connections.receive-maximum-max' | translate }}
-    </mat-error>-->
     <mat-icon matSuffix [matTooltip]="'ws-client.connections.receive-maximum-hint' | translate">
       help
     </mat-icon>

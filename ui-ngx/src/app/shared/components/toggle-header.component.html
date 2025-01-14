@@ -33,6 +33,7 @@
     [class.extra-padding]="extraPadding()"
     >
     <mat-button-toggle-group #toggleGroup
+      hideSingleSelectionIndicator
       class="tb-toggle-header"
       [class.tb-fill]="(appearance() === 'fill' || appearance() === 'fill-invert')"
       [class.tb-invert]="appearance() === 'fill-invert'"
