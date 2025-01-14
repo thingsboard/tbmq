@@ -20,9 +20,9 @@ import {
   forwardRef,
   Input,
   OnInit,
-  ViewChild,
   input,
-  model
+  model,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, ReplaySubject, throwError } from 'rxjs';
@@ -85,9 +85,9 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   readonly additionalClasses = input<Array<string>>();
   readonly addValueOutOfList = input<boolean>(true);
 
-  @ViewChild('entitySubtypeInput') entitySubtypeInput: ElementRef<HTMLInputElement>;
-  @ViewChild('entitySubtypeAutocomplete') entitySubtypeAutocomplete: MatAutocomplete;
-  @ViewChild('chipList', {static: true}) chipList: MatChipGrid;
+  readonly entitySubtypeInput = viewChild<ElementRef<HTMLInputElement>>('entitySubtypeInput');
+  readonly entitySubtypeAutocomplete = viewChild<MatAutocomplete>('entitySubtypeAutocomplete');
+  readonly chipList = viewChild<MatChipGrid>('chipList');
 
   entitySubtypeList: Array<string> = [];
   filteredEntitySubtypeList: Observable<Array<string>>;
@@ -273,11 +273,11 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   }
 
   clear(value: string = '') {
-    this.entitySubtypeInput.nativeElement.value = value;
+    this.entitySubtypeInput().nativeElement.value = value;
     this.entitySubtypeListFormGroup.get('entitySubtype').patchValue(value, {emitEvent: true});
     setTimeout(() => {
-      this.entitySubtypeInput.nativeElement.blur();
-      this.entitySubtypeInput.nativeElement.focus();
+      this.entitySubtypeInput().nativeElement.blur();
+      this.entitySubtypeInput().nativeElement.focus();
     }, 0);
   }
 

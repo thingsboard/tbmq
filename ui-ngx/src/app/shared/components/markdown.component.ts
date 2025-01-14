@@ -23,10 +23,10 @@ import {
   Renderer2,
   SimpleChanges,
   Type,
-  ViewChild,
   ViewContainerRef,
   input, booleanAttribute,
-  output
+  output,
+  viewChild
 } from '@angular/core';
 import { MarkdownService, PrismPlugin } from 'ngx-markdown';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
@@ -45,8 +45,8 @@ let defaultMarkdownStyle;
 })
 export class TbMarkdownComponent implements OnChanges {
 
-  @ViewChild('markdownContainer', {read: ViewContainerRef, static: true}) markdownContainer: ViewContainerRef;
-  @ViewChild('fallbackElement', {static: true}) fallbackElement: ElementRef<HTMLElement>;
+  readonly markdownContainer = viewChild('markdownContainer', { read: ViewContainerRef });
+  readonly fallbackElement = viewChild<ElementRef<HTMLElement>>('fallbackElement');
 
   readonly data = input<string | undefined>();
   readonly context = input<any>();
@@ -113,7 +113,7 @@ export class TbMarkdownComponent implements OnChanges {
       template = template.replace(matches[i][0], preHtml);
     }
     template = this.sanitizeCurlyBraces(template);
-    this.markdownContainer.clear();
+    this.markdownContainer().clear();
     let styles: string[] = [];
     let readyObservable: Observable<void>;
     if (this.applyDefaultMarkdownStyle()) {
@@ -137,7 +137,7 @@ export class TbMarkdownComponent implements OnChanges {
   }
 
   private plainMarkdown(template: string, styles?: string[]): Observable<void> {
-    const element = this.fallbackElement.nativeElement;
+    const element = this.fallbackElement().nativeElement;
     let styleElement;
     if (styles?.length) {
       const markdownClass = 'tb-markdown-view-' + guid();

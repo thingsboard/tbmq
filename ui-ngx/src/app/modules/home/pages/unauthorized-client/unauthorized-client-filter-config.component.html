@@ -16,7 +16,7 @@
 
 -->
 @if (panelMode) {
-  <ng-container *ngTemplateOutlet="unauthorizedClientFilterPanel"></ng-container>
+  <ng-container *ngTemplateOutlet="unauthorizedClientFilterPanel()"></ng-container>
 } @else {
   @if (buttonMode()) {
     <button color="primary"

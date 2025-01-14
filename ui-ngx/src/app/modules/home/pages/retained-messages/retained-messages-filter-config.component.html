@@ -16,7 +16,7 @@
 
 -->
 @if (panelMode) {
-  <ng-container *ngTemplateOutlet="retainedMessagesFilterPanel"></ng-container>
+  <ng-container *ngTemplateOutlet="retainedMessagesFilterPanel()"></ng-container>
 } @else {
   @if (buttonMode()) {
     <button color="primary"

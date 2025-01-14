@@ -25,8 +25,8 @@ import {
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild,
-  input, model
+  model,
+  viewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -129,12 +129,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
 
-  @ViewChild('entityTableHeader', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
-
-  @ViewChild('searchInput') searchInputField: ElementRef;
-
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort) sort: MatSort;
+  readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeader');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
+  readonly paginator = viewChild(MatPaginator);
+  readonly sort = viewChild(MatSort);
 
   textSearch = this.fb.control('', {nonNullable: true});
 
@@ -183,7 +181,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     const entitiesTableConfigValue = this.entitiesTableConfig();
     if (entitiesTableConfigValue.headerComponent) {
       const componentFactory = this.componentFactoryResolver.resolveComponentFactory(entitiesTableConfigValue.headerComponent);
-      const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
+      const viewContainerRef = this.entityTableHeaderAnchor().viewContainerRef;
       viewContainerRef.clear();
       const componentRef = viewContainerRef.createComponent(componentFactory);
       const headerComponent = componentRef.instance;
@@ -267,7 +265,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     ).subscribe(value => {
       this.pageLink.textSearch = isNotEmptyStr(value) ? value.trim() : null;
       if (this.displayPagination) {
-        this.paginator.pageIndex = 0;
+        this.paginator().pageIndex = 0;
       }
       this.updateData();
     });
@@ -286,10 +284,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+      this.sortSubscription = this.sort().sortChange.subscribe(() => this.paginator().pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort.sortChange, this.paginator.page)
-      : this.sort.sortChange) as Observable<any>)
+    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort().sortChange, this.paginator().page)
+      : this.sort().sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
@@ -310,15 +308,16 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator.pageIndex;
-      this.pageLink.pageSize = this.paginator.pageSize;
+      this.pageLink.page = this.paginator().pageIndex;
+      this.pageLink.pageSize = this.paginator().pageSize;
     } else {
       this.pageLink.page = 0;
     }
-    if (this.sort.active) {
+    const sort = this.sort();
+    if (sort.active) {
       this.pageLink.sortOrder = {
-        property: this.sort.active,
-        direction: Direction[this.sort.direction.toUpperCase()]
+        property: sort.active,
+        direction: Direction[sort.direction.toUpperCase()]
       };
     } else {
       this.pageLink.sortOrder = null;
@@ -478,7 +477,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   onTimewindowChange() {
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      this.paginator().pageIndex = 0;
     }
     this.updateData();
   }
@@ -486,8 +485,8 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   enterFilterMode() {
     this.textSearchMode = true;
     setTimeout(() => {
-      this.searchInputField.nativeElement.focus();
-      this.searchInputField.nativeElement.setSelectionRange(0, 0);
+      this.searchInputField().nativeElement.focus();
+      this.searchInputField().nativeElement.setSelectionRange(0, 0);
     }, 10);
   }
 
@@ -505,11 +504,12 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.timewindow = entitiesTableConfig.defaultTimewindowInterval;
     }
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      this.paginator().pageIndex = 0;
     }
-    const sortable = this.sort.sortables.get(entitiesTableConfig.defaultSortOrder.property);
-    this.sort.active = sortable.id;
-    this.sort.direction = entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
+    const sortable = this.sort().sortables.get(entitiesTableConfig.defaultSortOrder.property);
+    const sort = this.sort();
+    sort.active = sortable.id;
+    sort.direction = entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
     if (update) {
       this.updatedRouterParamsAndData({}, '');
     }

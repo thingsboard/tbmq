@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild, input } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
@@ -43,7 +43,7 @@ export class SubscriptionsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -53,14 +53,14 @@ export class SubscriptionsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.subscriptionsTableConfig && this.subscriptionsTableConfig.entityId !== entityId) {
       this.subscriptionsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   subscriptionsTableConfig: SubscriptionsTableConfig;
 

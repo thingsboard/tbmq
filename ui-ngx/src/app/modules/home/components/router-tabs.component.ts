@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ComponentRef, OnInit, Type, ViewChild } from '@angular/core';
+import { Component, ComponentRef, OnInit, Type, viewChild } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -39,7 +39,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class RouterTabsComponent extends PageComponent implements OnInit {
 
-  @ViewChild('tabsHeaderComponent', {static: true}) tabsHeaderComponentAnchor: TbAnchorComponent;
+  readonly tabsHeaderComponentAnchor = viewChild<TbAnchorComponent>('tabsHeaderComponent');
 
   tabsHeaderComponentRef: ComponentRef<any>;
 
@@ -150,7 +150,7 @@ export class RouterTabsComponent extends PageComponent implements OnInit {
   }
 
   private buildTabsHeaderComponent(snapshotData: any) {
-    const viewContainerRef = this.tabsHeaderComponentAnchor.viewContainerRef;
+    const viewContainerRef = this.tabsHeaderComponentAnchor().viewContainerRef;
     if (this.tabsHeaderComponentRef) {
       this.tabsHeaderComponentRef.destroy();
       this.tabsHeaderComponentRef = null;

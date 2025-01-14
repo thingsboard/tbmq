@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, forwardRef, NgZone, OnInit, ViewChild, input, model } from '@angular/core';
+import { Component, ElementRef, forwardRef, NgZone, OnInit, input, model, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, of } from 'rxjs';
 import { PageLink } from '@shared/models/page/page-link';
@@ -78,11 +78,8 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   readonly required = input(false);
   readonly hint = input<string>();
 
-  @ViewChild('clientCredentialsInput', {static: true})
-  clientCredentialsInput: ElementRef;
-
-  @ViewChild('clientCredentialsAutocomplete', {static: true})
-  clientCredentialsAutocomplete: MatAutocomplete;
+  readonly clientCredentialsInput = viewChild<ElementRef>('clientCredentialsInput');
+  readonly clientCredentialsAutocomplete = viewChild<MatAutocomplete>('clientCredentialsAutocomplete');
 
   selectCredentialsFormGroup: UntypedFormGroup;
   filteredClientCredentials: Observable<Array<ClientCredentials>>;
@@ -229,8 +226,8 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
     this.ignoreClosedPanel = true;
     this.selectCredentialsFormGroup.get('clientCredentials').patchValue(null, {emitEvent: true});
     setTimeout(() => {
-      this.clientCredentialsInput.nativeElement.blur();
-      this.clientCredentialsInput.nativeElement.focus();
+      this.clientCredentialsInput().nativeElement.blur();
+      this.clientCredentialsInput().nativeElement.focus();
     }, 0);
   }
 

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit, ViewChild, input, output } from '@angular/core';
+import { Component, input, output, viewChild } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -54,7 +54,7 @@ export class SubscriptionComponent {
 
   readonly subscriptionUpdated = output<void>();
 
-  @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger;
+  readonly trigger = viewChild(MatMenuTrigger);
 
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
@@ -187,7 +187,7 @@ export class SubscriptionComponent {
   }
 
   private closeMenu() {
-    this.trigger.closeMenu();
+    this.trigger().closeMenu();
   }
 
 }

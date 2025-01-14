@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, ViewChild } from '@angular/core';
+import { Component, Inject, viewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -59,7 +59,7 @@ import { MatDivider } from '@angular/material/divider';
 })
 export class ClientCredentialsWizardDialogComponent extends DialogComponent<ClientCredentialsWizardDialogComponent, ClientCredentials> {
 
-  @ViewChild('addClientCredentialsWizardStepper', {static: true}) addClientCredentialsWizardStepper: MatStepper;
+  readonly addClientCredentialsWizardStepper = viewChild<MatStepper>('addClientCredentialsWizardStepper');
 
   stepperOrientation: Observable<StepperOrientation>;
 
@@ -140,11 +140,11 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   }
 
   previousStep(): void {
-    this.addClientCredentialsWizardStepper.previous();
+    this.addClientCredentialsWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addClientCredentialsWizardStepper.next();
+    this.addClientCredentialsWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -157,7 +157,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   }
 
   get maxStepperIndex(): number {
-    return this.addClientCredentialsWizardStepper?._steps?.length - 1;
+    return this.addClientCredentialsWizardStepper()?._steps?.length - 1;
   }
 
   add(): void {
@@ -184,17 +184,17 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
     };
     return this.clientCredentialsService.saveClientCredentials(deepTrim(clientCredentials)).pipe(
       catchError(e => {
-        this.addClientCredentialsWizardStepper.selectedIndex = 0;
+        this.addClientCredentialsWizardStepper().selectedIndex = 0;
         return throwError(e);
       })
     );
   }
 
   allValid(): boolean {
-    return !this.addClientCredentialsWizardStepper.steps.find((item, index) => {
+    return !this.addClientCredentialsWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addClientCredentialsWizardStepper.selectedIndex = index;
+        this.addClientCredentialsWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

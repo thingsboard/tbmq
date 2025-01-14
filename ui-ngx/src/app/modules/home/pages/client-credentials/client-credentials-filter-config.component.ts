@@ -24,10 +24,10 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
   input,
-  model, Input
+  model, Input,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
@@ -79,8 +79,7 @@ export interface ClientCredentialsFilterConfigData {
 })
 export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('clientCredentialsFilterPanel')
-  clientCredentialsFilterPanel: TemplateRef<any>;
+  readonly clientCredentialsFilterPanel = viewChild<TemplateRef<any>>('clientCredentialsFilterPanel');
 
   @Input()
   initialClientCredentialsFilterConfig: ClientCredentialsFilterConfig;
@@ -196,7 +195,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     this.clientCredentialsFilterOverlayRef.backdropClick().subscribe(() => {
       this.clientCredentialsFilterOverlayRef.dispose();
     });
-    this.clientCredentialsFilterOverlayRef.attach(new TemplatePortal(this.clientCredentialsFilterPanel,
+    this.clientCredentialsFilterOverlayRef.attach(new TemplatePortal(this.clientCredentialsFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.clientCredentialsFilterOverlayRef.updatePosition();

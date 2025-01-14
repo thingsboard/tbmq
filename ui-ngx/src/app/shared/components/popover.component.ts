@@ -32,11 +32,11 @@ import {
   Renderer2,
   SimpleChanges,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
   input,
-  output
+  output,
+  viewChild
 } from '@angular/core';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import {
@@ -189,8 +189,9 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
       this.triggerDisposables.push(
         this.renderer.listen(el, 'mouseleave', () => {
           this.delayEnterLeave(true, false, this.mouseLeaveDelay());
-          if (this.component?.overlay.overlayRef && !overlayElement) {
-            overlayElement = this.component.overlay.overlayRef.overlayElement;
+          const overlay = this.component?.overlay();
+          if (overlay.overlayRef && !overlayElement) {
+            overlayElement = overlay.overlayRef.overlayElement;
             this.triggerDisposables.push(
               this.renderer.listen(overlayElement, 'mouseenter', () => {
                 this.delayEnterLeave(false, true, this.mouseEnterDelay());
@@ -367,9 +368,9 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
 })
 export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
 
-  @ViewChild('overlay', { static: false }) overlay!: CdkConnectedOverlay;
-  @ViewChild('popoverRoot', { static: false }) popoverRoot!: ElementRef<HTMLElement>;
-  @ViewChild('popover', { static: false }) popover!: ElementRef<HTMLElement>;
+  readonly overlay = viewChild.required<CdkConnectedOverlay>('overlay');
+  readonly popoverRoot = viewChild.required<ElementRef<HTMLElement>>('popoverRoot');
+  readonly popover = viewChild.required<ElementRef<HTMLElement>>('popover');
 
   tbContent: string | TemplateRef<void> | null = null;
   tbComponentFactory: ComponentFactory<T> | null = null;
@@ -412,12 +413,14 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
     if (this.hidden !== hidden) {
       this.hidden = hidden;
       if (this.hidden) {
-        this.renderer.setStyle(this.popoverRoot.nativeElement, 'width', this.popoverRoot.nativeElement.offsetWidth + 'px');
-        this.renderer.setStyle(this.popoverRoot.nativeElement, 'height', this.popoverRoot.nativeElement.offsetHeight + 'px');
+        const popoverRoot = this.popoverRoot();
+        this.renderer.setStyle(popoverRoot.nativeElement, 'width', popoverRoot.nativeElement.offsetWidth + 'px');
+        this.renderer.setStyle(popoverRoot.nativeElement, 'height', popoverRoot.nativeElement.offsetHeight + 'px');
       } else {
         setTimeout(() => {
-          this.renderer.removeStyle(this.popoverRoot.nativeElement, 'width');
-          this.renderer.removeStyle(this.popoverRoot.nativeElement, 'height');
+          const popoverRoot = this.popoverRoot();
+          this.renderer.removeStyle(popoverRoot.nativeElement, 'width');
+          this.renderer.removeStyle(popoverRoot.nativeElement, 'height');
         });
       }
       this.updateStyles();
@@ -521,13 +524,14 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
       this.cdr.detectChanges();
     }
 
-    if (this.origin && this.overlay && this.overlay.overlayRef) {
-      if (this.overlay.overlayRef.getDirection() === 'rtl') {
-        this.overlay.overlayRef.setDirection('ltr');
+    const overlay = this.overlay();
+    if (this.origin && overlay && overlay.overlayRef) {
+      if (overlay.overlayRef.getDirection() === 'rtl') {
+        overlay.overlayRef.setDirection('ltr');
       }
       const el = this.origin.elementRef.nativeElement;
       this.parentScrollSubscription = onParentScrollOrWindowResize(el).subscribe(() => {
-        this.overlay.overlayRef.updatePosition();
+        this.overlay().overlayRef.updatePosition();
       });
       this.intersectionObserver.observe(el);
     }
@@ -566,17 +570,17 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
 
   resize(width: string, height: string, animationDurationMs?: number) {
     if (animationDurationMs && animationDurationMs > 0) {
-      const prevWidth = this.popover.nativeElement.offsetWidth;
-      const prevHeight = this.popover.nativeElement.offsetHeight;
+      const prevWidth = this.popover().nativeElement.offsetWidth;
+      const prevHeight = this.popover().nativeElement.offsetHeight;
       const animationMetadata: AnimationMetadata[] = [style({width: prevWidth + 'px', height: prevHeight + 'px'}),
         animate(animationDurationMs + 'ms', style({width, height}))];
       const factory = this.animationBuilder.build(animationMetadata);
-      const player = factory.create(this.popover.nativeElement);
+      const player = factory.create(this.popover().nativeElement);
       player.play();
       const resize$ = new ResizeObserver(() => {
         this.updatePosition();
       });
-      resize$.observe(this.popover.nativeElement);
+      resize$.observe(this.popover().nativeElement);
       player.onDone(() => {
         player.destroy();
         resize$.disconnect();
@@ -588,14 +592,16 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
   }
 
   private setSize(width: string, height: string) {
-    this.renderer.setStyle(this.popover.nativeElement, 'width', width);
-    this.renderer.setStyle(this.popover.nativeElement, 'height', height);
+    const popover = this.popover();
+    this.renderer.setStyle(popover.nativeElement, 'width', width);
+    this.renderer.setStyle(popover.nativeElement, 'height', height);
     this.updatePosition();
   }
 
   updatePosition(): void {
-    if (this.origin && this.overlay && this.overlay.overlayRef) {
-      this.overlay.overlayRef.updatePosition();
+    const overlay = this.overlay();
+    if (this.origin && overlay && overlay.overlayRef) {
+      overlay.overlayRef.updatePosition();
     }
   }
 
@@ -646,7 +652,7 @@ export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
       } else {
         targetOverlayContainerChild = target.parents('.cdk-overlay-pane').parent();
       }
-      const currentOverlayContainerChild = $(this.overlay.overlayRef.overlayElement).parent();
+      const currentOverlayContainerChild = $(this.overlay().overlayRef.overlayElement).parent();
       return targetOverlayContainerChild.index() > currentOverlayContainerChild.index();
     }
     return false;

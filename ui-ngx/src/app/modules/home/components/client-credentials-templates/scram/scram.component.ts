@@ -20,9 +20,9 @@ import {
   Component,
   forwardRef,
   OnDestroy,
-  ViewChild,
   input,
-  model
+  model,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -74,8 +74,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 })
 export class MqttCredentialsScramComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  @ViewChild('copyUsernameBtn')
-  copyUsernameBtn: CopyButtonComponent;
+  readonly copyUsernameBtn = viewChild<CopyButtonComponent>('copyUsernameBtn');
 
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
@@ -240,7 +239,7 @@ export class MqttCredentialsScramComponent implements ControlValueAccessor, Vali
 
   onClickTbCopyButton(value: string) {
     if (value === 'userName') {
-      this.copyUsernameBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+      this.copyUsernameBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     }
   }
 

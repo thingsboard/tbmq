@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { retry, Subject, timer } from 'rxjs';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
@@ -53,7 +53,7 @@ import 'chartjs-adapter-moment';
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  @ViewChild('homeChartsContainer', {static: true}) homeChartsContainer: ElementRef;
+  readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
   cardType = HomePageTitleType.MONITORING;
   chartPage = ChartPage.home;
@@ -185,6 +185,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.chartWidth = chartWidthPx + 'px';
       this.chartHeight = (chartWidthPx * 0.5) + 'px';
     });
-    resizeObserver.observe(this.homeChartsContainer.nativeElement);
+    resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
 }

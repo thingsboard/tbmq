@@ -23,8 +23,8 @@ import {
   Inject,
   Injector,
   OnInit,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  viewChild
 } from '@angular/core';
 import { ErrorStateMatcher } from '@angular/material/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
@@ -65,10 +65,10 @@ import { MatDivider } from '@angular/material/divider';
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
                                       implements OnInit, AfterViewInit {
 
-  @ViewChild('addGroupEntityWizardStepper') addGroupEntityWizardStepper: MatStepper;
-  @ViewChild('detailsFormStep', {read: ViewContainerRef}) detailsFormStepContainerRef: ViewContainerRef;
-  @ViewChild('entityDetailsForm') entityDetailsFormAnchor: TbAnchorComponent;
-  @ViewChild('ownersAndGroupPanel') ownersAndGroup: ElementRef;
+  readonly addGroupEntityWizardStepper = viewChild<MatStepper>('addGroupEntityWizardStepper');
+  readonly detailsFormStepContainerRef = viewChild('detailsFormStep', { read: ViewContainerRef });
+  readonly entityDetailsFormAnchor = viewChild<TbAnchorComponent>('entityDetailsForm');
+  readonly ownersAndGroup = viewChild<ElementRef>('ownersAndGroupPanel');
 
   @HostBinding('style')
   style = this.data.entitiesTableConfig.addDialogStyle;
@@ -125,7 +125,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   ngAfterViewInit() {
-    const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
+    const viewContainerRef = this.entityDetailsFormAnchor().viewContainerRef;
     viewContainerRef.clear();
 
     const injector: Injector = Injector.create(
@@ -140,7 +140,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
             useValue: this.entitiesTableConfig
           }
         ],
-        parent: this.addDialogOwnerAndGroupWizard ? this.detailsFormStepContainerRef.injector : null
+        parent: this.addDialogOwnerAndGroupWizard ? this.detailsFormStepContainerRef().injector : null
       }
     );
     const componentRef = viewContainerRef.createComponent(
@@ -196,11 +196,11 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   previousStep(): void {
-    this.addGroupEntityWizardStepper.previous();
+    this.addGroupEntityWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addGroupEntityWizardStepper.next();
+    this.addGroupEntityWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -213,7 +213,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   get maxStepperIndex(): number {
-    return this.addGroupEntityWizardStepper?._steps?.length - 1;
+    return this.addGroupEntityWizardStepper()?._steps?.length - 1;
   }
 
   allValid(): boolean {
@@ -221,10 +221,10 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
       this.detailsForm.markAllAsTouched();
       return this.detailsForm.valid;
     }
-    return !this.addGroupEntityWizardStepper.steps.find((item, index) => {
+    return !this.addGroupEntityWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addGroupEntityWizardStepper.selectedIndex = index;
+        this.addGroupEntityWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

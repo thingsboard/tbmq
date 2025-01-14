@@ -24,8 +24,8 @@ import {
   Inject,
   OnDestroy,
   Renderer2,
-  ViewChild,
-  ViewEncapsulation
+  ViewEncapsulation,
+  viewChild
 } from '@angular/core';
 import { MAT_ICON_LOCATION, MatIconLocation, MatIconRegistry } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
@@ -93,13 +93,12 @@ const funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
 export class TbIconComponent extends _TbIconBase
                              implements AfterContentInit, AfterViewChecked, CanColor, OnDestroy {
 
-  @ViewChild('iconNameContent', {static: true})
-  _iconNameContent: ElementRef;
+  readonly _iconNameContent = viewChild<ElementRef>('iconNameContent');
 
   private icon: string;
 
   get viewValue(): string {
-    return (this._iconNameContent?.nativeElement.textContent || '').trim();
+    return (this._iconNameContent()?.nativeElement.textContent || '').trim();
   }
 
   private _contentChanges = Subscription.EMPTY;
@@ -129,7 +128,7 @@ export class TbIconComponent extends _TbIconBase
   ngAfterContentInit(): void {
     this.icon = this.viewValue;
     this._updateIcon();
-    this._contentChanges = this.contentObserver.observe(this._iconNameContent.nativeElement)
+    this._contentChanges = this.contentObserver.observe(this._iconNameContent().nativeElement)
       .subscribe(() => {
        const content = this.viewValue;
         if (this.icon !== content) {
@@ -181,7 +180,7 @@ export class TbIconComponent extends _TbIconBase
       const iconName = splitIconName(rawName)[1];
       this._textElement = this.renderer.createText(iconName);
       const elem: HTMLElement = this._elementRef.nativeElement;
-      this.renderer.insertBefore(elem, this._textElement, this._iconNameContent.nativeElement);
+      this.renderer.insertBefore(elem, this._textElement, this._iconNameContent().nativeElement);
       const fontSetClasses = (
         this._iconRegistry.getDefaultFontSetClass()
       ).filter(className => className.length > 0);
@@ -237,7 +236,7 @@ export class TbIconComponent extends _TbIconBase
     this._previousPath = path;
     this._cacheChildrenWithExternalReferences(svg);
     this._prependPathToReferences(path);
-    this.renderer.insertBefore(this._elementRef.nativeElement, svg, this._iconNameContent.nativeElement);
+    this.renderer.insertBefore(this._elementRef.nativeElement, svg, this._iconNameContent().nativeElement);
   }
 
   private _clearSvgElement() {

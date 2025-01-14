@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild, input } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
@@ -41,7 +41,7 @@ export class KafkaTopicsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -51,14 +51,14 @@ export class KafkaTopicsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.kafkaTopicsTableConfig && this.kafkaTopicsTableConfig.entityId !== entityId) {
       this.kafkaTopicsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   kafkaTopicsTableConfig: KafkaTopicsTableConfig;
 

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, ViewChild } from '@angular/core';
+import { Component, Input, viewChild } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
@@ -41,7 +41,7 @@ export class MessagesComponent {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -51,14 +51,14 @@ export class MessagesComponent {
     this.entityIdValue = entityId;
     if (this.messagesTableConfig && this.messagesTableConfig.entityId !== entityId) {
       this.messagesTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   messagesTableConfig: MessagesTableConfig;
 

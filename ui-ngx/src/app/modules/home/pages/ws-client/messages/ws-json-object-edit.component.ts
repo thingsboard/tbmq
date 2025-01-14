@@ -23,9 +23,9 @@ import {
   OnDestroy,
   OnInit,
   SimpleChanges,
-  ViewChild,
   input, model,
-  output
+  output,
+  viewChild
 } from '@angular/core';
 import {
   AbstractControl,
@@ -74,8 +74,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
-  @ViewChild('jsonEditor', {static: true})
-  jsonEditorElmRef: ElementRef;
+  readonly jsonEditorElmRef = viewChild<ElementRef>('jsonEditor');
 
   readonly isJsonValid = output<boolean>();
 
@@ -119,7 +118,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   }
 
   ngOnInit(): void {
-    const editorElement = this.jsonEditorElmRef.nativeElement;
+    const editorElement = this.jsonEditorElmRef().nativeElement;
     let editorOptions: Partial<Ace.EditorOptions> = {
       mode: 'ace/mode/json',
       showGutter: false,

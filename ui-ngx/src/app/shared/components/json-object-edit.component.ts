@@ -21,8 +21,9 @@ import {
   forwardRef,
   OnDestroy,
   OnInit,
-  ViewChild,
-  input, booleanAttribute, model
+  input,
+  model,
+  viewChild
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -69,8 +70,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy {
 
-  @ViewChild('jsonEditor', {static: true})
-  jsonEditorElmRef: ElementRef;
+  readonly jsonEditorElmRef = viewChild<ElementRef>('jsonEditor');
 
   private jsonEditor: Ace.Editor;
   private editorsResizeCaf: CancelAnimationFrame;
@@ -113,7 +113,7 @@ export class JsonObjectEditComponent implements OnInit, ControlValueAccessor, Va
   }
 
   ngOnInit(): void {
-    const editorElement = this.jsonEditorElmRef.nativeElement;
+    const editorElement = this.jsonEditorElmRef().nativeElement;
     let editorOptions: Partial<Ace.EditorOptions> = {
       mode: 'ace/mode/json',
       showGutter: true,

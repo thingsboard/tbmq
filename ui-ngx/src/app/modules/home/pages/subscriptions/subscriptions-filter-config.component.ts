@@ -24,9 +24,9 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
-  input, model, booleanAttribute, Input
+  input, model, booleanAttribute, Input,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -74,8 +74,7 @@ export interface SubscriptionsFilterConfigData {
 })
 export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('subscriptionsPanel')
-  subscriptionsFilterPanel: TemplateRef<any>;
+  readonly subscriptionsFilterPanel = viewChild<TemplateRef<any>>('subscriptionsPanel');
 
   @Input()
   initialClientSubscriptionFilterConfig: ClientSubscriptionFilterConfig;
@@ -193,7 +192,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
     this.subscriptionsFilterOverlayRef.backdropClick().subscribe(() => {
       this.subscriptionsFilterOverlayRef.dispose();
     });
-    this.subscriptionsFilterOverlayRef.attach(new TemplatePortal(this.subscriptionsFilterPanel,
+    this.subscriptionsFilterOverlayRef.attach(new TemplatePortal(this.subscriptionsFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.subscriptionsFilterOverlayRef.updatePosition();

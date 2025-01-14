@@ -20,9 +20,9 @@ import {
   Component,
   forwardRef,
   OnDestroy,
-  ViewChild,
   input,
-  model
+  model,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -66,11 +66,8 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  @ViewChild('copyClientIdBtn')
-  copyClientIdBtn: CopyButtonComponent;
-
-  @ViewChild('copyUsernameBtn')
-  copyUsernameBtn: CopyButtonComponent;
+  readonly copyClientIdBtn = viewChild<CopyButtonComponent>('copyClientIdBtn');
+  readonly copyUsernameBtn = viewChild<CopyButtonComponent>('copyUsernameBtn');
 
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
@@ -232,9 +229,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   onClickTbCopyButton(value: string) {
     if (value === 'clientId') {
-      this.copyClientIdBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+      this.copyClientIdBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     } else if (value === 'userName') {
-      this.copyUsernameBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+      this.copyUsernameBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     }
   }
 

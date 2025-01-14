@@ -24,9 +24,9 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
-  input, booleanAttribute, model, Input
+  input, booleanAttribute, model, Input,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -73,8 +73,7 @@ export interface SharedSubscriptionFilterConfigData {
 })
 export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('sharedSubscriptionFilterPanel')
-  sharedSubscriptionFilterPanel: TemplateRef<any>;
+  readonly sharedSubscriptionFilterPanel = viewChild<TemplateRef<any>>('sharedSubscriptionFilterPanel');
 
   @Input()
   initialSharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
@@ -188,7 +187,7 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
     this.sharedSubscriptionFilterOverlayRef.backdropClick().subscribe(() => {
       this.sharedSubscriptionFilterOverlayRef.dispose();
     });
-    this.sharedSubscriptionFilterOverlayRef.attach(new TemplatePortal(this.sharedSubscriptionFilterPanel,
+    this.sharedSubscriptionFilterOverlayRef.attach(new TemplatePortal(this.sharedSubscriptionFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.sharedSubscriptionFilterOverlayRef.updatePosition();

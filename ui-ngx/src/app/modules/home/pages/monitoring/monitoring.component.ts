@@ -21,8 +21,7 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
-  QueryList,
-  ViewChildren
+  viewChildren
 } from '@angular/core';
 import {
   calculateFixedWindowTimeMs,
@@ -93,7 +92,7 @@ Chart.register([Zoom]);
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  @ViewChildren('chartElement') chartElements!: QueryList<ElementRef>;
+  readonly chartElements = viewChildren<ElementRef>('chartElement');
 
   chartPage = ChartPage.monitoring;
   charts = {};
@@ -152,7 +151,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
 
   ngAfterViewInit(): void {
     this.fetchEntityTimeseries(true);
-    this.fullscreenElements = this.chartElements.map((element) => element.nativeElement);
+    this.fullscreenElements = this.chartElements().map((element) => element.nativeElement);
     $(document).on('keydown',
       (event) => {
         if ((event.code === 'Escape') && this.isFullscreen) {

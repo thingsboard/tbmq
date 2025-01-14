@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
@@ -56,10 +56,8 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   logo = 'assets/mqtt_logo_white.svg';
 
-  @ViewChild('sidenav')
-  sidenav: MatSidenav;
-
-  @ViewChild('searchInput') searchInputField: ElementRef;
+  readonly sidenav = viewChild<MatSidenav>('sidenav');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
 
   fullscreenEnabled = screenfull.isEnabled;
 
@@ -100,7 +98,7 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   sidenavClicked() {
     if (this.sidenavMode === 'over') {
-      this.sidenav.toggle();
+      this.sidenav().toggle();
     }
   }
 

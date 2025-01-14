@@ -25,9 +25,9 @@ import {
   OnInit,
   Optional, SimpleChanges,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
-  input, booleanAttribute, model
+  input, booleanAttribute, model,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
@@ -73,8 +73,7 @@ export interface MessageFilterConfigData {
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 
-  @ViewChild('messageFilterPanel')
-  filterPanel: TemplateRef<any>;
+  readonly filterPanel = viewChild<TemplateRef<any>>('messageFilterPanel');
 
   disabled = model<boolean>();
   readonly buttonMode = input(true, {transform: booleanAttribute});
@@ -196,7 +195,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.filterOverlayRef.backdropClick().subscribe(() => {
       this.filterOverlayRef.dispose();
     });
-    this.filterOverlayRef.attach(new TemplatePortal(this.filterPanel,
+    this.filterOverlayRef.attach(new TemplatePortal(this.filterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.filterOverlayRef.updatePosition();

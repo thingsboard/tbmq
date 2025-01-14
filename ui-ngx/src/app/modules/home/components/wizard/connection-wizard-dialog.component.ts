@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, viewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -90,7 +90,7 @@ export interface ConnectionDialogData {
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 
-  @ViewChild('addConnectionWizardStepper', {static: true}) addConnectionWizardStepper: MatStepper;
+  readonly addConnectionWizardStepper = viewChild<MatStepper>('addConnectionWizardStepper');
 
   connectionFormGroup: UntypedFormGroup;
   connectionAdvancedFormGroup: UntypedFormGroup;
@@ -335,7 +335,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       this.connectionFormGroup.get('clientCredentials').setValidators(Validators.required);
     }
     this.connectionFormGroup.updateValueAndValidity();
-    this.cd.detectChanges();
   }
 
   cancel(): void {
@@ -343,11 +342,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   previousStep(): void {
-    this.addConnectionWizardStepper.previous();
+    this.addConnectionWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addConnectionWizardStepper.next();
+    this.addConnectionWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -364,7 +363,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   get maxStepperIndex(): number {
-    return this.addConnectionWizardStepper?._steps?.length - 1;
+    return this.addConnectionWizardStepper()?._steps?.length - 1;
   }
 
   save(): void {
@@ -406,7 +405,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
-        this.addConnectionWizardStepper.selectedIndex = 0;
+        this.addConnectionWizardStepper().selectedIndex = 0;
         return throwError(e);
       })
     );
@@ -467,10 +466,10 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   allValid(): boolean {
-    return !this.addConnectionWizardStepper.steps.find((item, index) => {
+    return !this.addConnectionWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addConnectionWizardStepper.selectedIndex = index;
+        this.addConnectionWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

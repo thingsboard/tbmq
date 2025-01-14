@@ -28,9 +28,9 @@ import {
   OnDestroy,
   Optional,
   StaticProvider,
-  ViewChild,
   ViewContainerRef,
-  input
+  input,
+  viewChild
 } from '@angular/core';
 import { MAT_SNACK_BAR_DATA, MatSnackBar, MatSnackBarConfig, MatSnackBarRef } from '@angular/material/snack-bar';
 import { NotificationMessage } from '@app/core/notification/notification.models';
@@ -97,7 +97,7 @@ export class ToastDirective implements AfterViewInit, OnDestroy {
                 this.snackBarRef.dismiss();
               }
               if (this.toastComponentRef) {
-                this.toastComponentRef.instance.actionButton._elementRef.nativeElement.click();
+                this.toastComponentRef.instance.actionButton()._elementRef.nativeElement.click();
               }
             });
           }
@@ -160,7 +160,7 @@ export class ToastDirective implements AfterViewInit, OnDestroy {
         }
         this.dismissTimeout = setTimeout(() => {
           if (this.toastComponentRef) {
-            this.toastComponentRef.instance.actionButton._elementRef.nativeElement.click();
+            this.toastComponentRef.instance.actionButton()._elementRef.nativeElement.click();
           }
           this.dismissTimeout = null;
         }, notificationMessage.duration + 500);
@@ -278,7 +278,7 @@ export type ToastAnimationState = 'default' | 'opened' | 'closing';
 })
 export class TbSnackBarComponent implements AfterViewInit, OnDestroy {
 
-  @ViewChild('actionButton', {static: true}) actionButton: MatButton;
+  readonly actionButton = viewChild<MatButton>('actionButton');
 
   @HostBinding('class')
   get panelClass(): string[] {

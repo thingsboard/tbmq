@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, OnInit, ViewChild, input, model } from '@angular/core';
+import { Component, forwardRef, OnInit, input, model, viewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, NgForm, FormsModule } from '@angular/forms';
 import { ValueType, valueTypesMap } from '@shared/models/constants';
 import { isValidObjectString } from '@core/utils';
@@ -54,7 +54,7 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
   readonly flexCorrelation = input<number[]>([40, 60]);
   readonly requiredText = input<string>();
 
-  @ViewChild('inputForm', {static: true}) inputForm: NgForm;
+  readonly inputForm = viewChild<NgForm>('inputForm');
 
   modelValue: any;
 
@@ -92,7 +92,7 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
       (res) => {
         if (res) {
           this.modelValue = res;
-          this.inputForm.control.patchValue({value: this.modelValue});
+          this.inputForm().control.patchValue({value: this.modelValue});
           this.updateView();
         }
       }
@@ -121,7 +121,7 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
   }
 
   updateView() {
-    if (this.inputForm.valid || (this.valueType === ValueType.JSON && Array.isArray(this.modelValue))) {
+    if (this.inputForm().valid || (this.valueType === ValueType.JSON && Array.isArray(this.modelValue))) {
       this.propagateChange(this.modelValue);
     } else {
       this.propagateChange(null);
@@ -131,7 +131,7 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
   onValueTypeChanged() {
     if (this.valueType === ValueType.JSON) {
       this.modelValue = {};
-      this.inputForm.form.get('value').patchValue({});
+      this.inputForm().form.get('value').patchValue({});
     } else {
       this.modelValue = null;
     }

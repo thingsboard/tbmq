@@ -24,10 +24,10 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
   input, booleanAttribute, model,
-  Input
+  Input,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -84,8 +84,7 @@ export interface SessionFilterConfigData {
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('sessionFilterPanel')
-  sessionFilterPanel: TemplateRef<any>;
+  readonly sessionFilterPanel = viewChild<TemplateRef<any>>('sessionFilterPanel');
 
   @Input()
   initialSessionFilterConfig: SessionFilterConfig;
@@ -209,7 +208,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.sessionFilterOverlayRef.backdropClick().subscribe(() => {
       this.sessionFilterOverlayRef.dispose();
     });
-    this.sessionFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel,
+    this.sessionFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.sessionFilterOverlayRef.updatePosition();

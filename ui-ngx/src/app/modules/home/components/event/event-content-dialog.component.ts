@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, Renderer2, viewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogClose } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -52,8 +52,7 @@ export interface EventContentDialogComponentDialogData {
 })
 export class EventContentDialogComponent extends DialogComponent<EventContentDialogComponentDialogData> implements OnInit, OnDestroy {
 
-  @ViewChild('eventContentEditor', {static: true})
-  eventContentEditorElmRef: ElementRef;
+  readonly eventContentEditorElmRef = viewChild<ElementRef>('eventContentEditor');
 
   content: string;
   title: string;
@@ -79,7 +78,7 @@ export class EventContentDialogComponent extends DialogComponent<EventContentDia
       const isJson = isValidObjectString(this.content);
       this.contentType = isJson ? ContentType.JSON : ContentType.TEXT;
     }
-    this.createEditor(this.eventContentEditorElmRef, this.content);
+    this.createEditor(this.eventContentEditorElmRef(), this.content);
   }
 
   ngOnDestroy(): void {

@@ -31,8 +31,8 @@ import {
   OnInit,
   Output,
   QueryList,
-  ViewChild,
-  input, model, booleanAttribute
+  input, model, booleanAttribute,
+  viewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -127,14 +127,9 @@ export abstract class _ToggleBase extends PageComponent implements AfterContentI
 export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterViewInit, AfterContentInit,
   AfterContentChecked, AfterViewChecked, OnDestroy {
 
-  @ViewChild('toggleGroup', {static: false})
-  toggleGroup: ElementRef<HTMLElement>;
-
-  @ViewChild(MatButtonToggleGroup, {static: false})
-  buttonToggleGroup: MatButtonToggleGroup;
-
-  @ViewChild('toggleGroupContainer', {static: false})
-  toggleGroupContainer: ElementRef<HTMLElement>;
+  readonly toggleGroup = viewChild<ElementRef<HTMLElement>>('toggleGroup');
+  readonly buttonToggleGroup = viewChild(MatButtonToggleGroup);
+  readonly toggleGroupContainer = viewChild<ElementRef<HTMLElement>>('toggleGroupContainer');
 
   @HostBinding('class.tb-toggle-header-pagination-controls-enabled')
   private showPaginationControls = false;
@@ -287,7 +282,7 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
         this.updatePagination();
       });
     });
-    this.toggleGroupResize$.observe(this.toggleGroupContainer.nativeElement);
+    this.toggleGroupResize$.observe(this.toggleGroupContainer().nativeElement);
   }
 
   private removePagination() {
@@ -303,22 +298,23 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   }
 
   private scrollHeader(direction: ScrollDirection) {
-    const viewLength = this.toggleGroup.nativeElement.offsetWidth;
+    const viewLength = this.toggleGroup().nativeElement.offsetWidth;
     // Move the scroll distance one-third the length of the tab list's viewport.
     const scrollAmount = ((direction === 'before' ? -1 : 1) * viewLength) / 3;
     return this._scrollTo(this._scrollDistance + scrollAmount);
   }
 
   private scrollToToggleOptionValue() {
-    if (this.buttonToggleGroup && this.buttonToggleGroup.selected) {
-      const selectedToggleButton = this.buttonToggleGroup.selected as MatButtonToggle;
+    const buttonToggleGroup = this.buttonToggleGroup();
+    if (buttonToggleGroup && buttonToggleGroup.selected) {
+      const selectedToggleButton = buttonToggleGroup.selected as MatButtonToggle;
       const index = this.options().findIndex(o => o.value === selectedToggleButton.value);
       const isLast = index === this.options().length - 1;
       const isFirst = index === 0;
-      const viewLength = this.toggleGroupContainer.nativeElement.offsetWidth;
+      const viewLength = this.toggleGroupContainer().nativeElement.offsetWidth;
       const {offsetLeft, offsetWidth} = (selectedToggleButton._buttonElement.nativeElement.offsetParent as HTMLElement);
       const labelBeforePos = isFirst ? 0 : offsetLeft;
-      const labelAfterPos = isLast ? this.toggleGroup.nativeElement.scrollWidth : labelBeforePos + offsetWidth;
+      const labelAfterPos = isLast ? this.toggleGroup().nativeElement.scrollWidth : labelBeforePos + offsetWidth;
       const beforeVisiblePos = this.scrollDistance;
       const afterVisiblePos = this.scrollDistance + viewLength;
       if (labelBeforePos < beforeVisiblePos) {
@@ -339,8 +335,9 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   }
 
   private checkPaginationEnabled() {
-    if (this.toggleGroupContainer) {
-      const isEnabled = this.toggleGroup.nativeElement.scrollWidth > this.toggleGroupContainer.nativeElement.offsetWidth;
+    const toggleGroupContainer = this.toggleGroupContainer();
+    if (toggleGroupContainer) {
+      const isEnabled = this.toggleGroup().nativeElement.scrollWidth > toggleGroupContainer.nativeElement.offsetWidth;
       if (isEnabled !== this.showPaginationControls) {
         if (!isEnabled) {
           this.scrollDistance = 0;
@@ -367,8 +364,8 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   }
 
   private getMaxScrollDistance(): number {
-    const lengthOfToggleGroup = this.toggleGroup.nativeElement.scrollWidth;
-    const viewLength = this.toggleGroupContainer.nativeElement.offsetWidth;
+    const lengthOfToggleGroup = this.toggleGroup().nativeElement.scrollWidth;
+    const viewLength = this.toggleGroupContainer().nativeElement.offsetWidth;
     return lengthOfToggleGroup - viewLength || 0;
   }
 
@@ -385,12 +382,13 @@ export class ToggleHeaderComponent extends _ToggleBase implements OnInit, AfterV
   }
 
   private updateToggleHeaderScrollPosition() {
-    if (this.toggleGroupContainer) {
+    const toggleGroupContainer = this.toggleGroupContainer();
+    if (toggleGroupContainer) {
       const scrollDistance = this.scrollDistance;
       const translateX = -scrollDistance;
-      this.toggleGroup.nativeElement.style.transform = `translateX(${Math.round(translateX)}px)`;
+      this.toggleGroup().nativeElement.style.transform = `translateX(${Math.round(translateX)}px)`;
       if (this.platform.TRIDENT || this.platform.EDGE) {
-        this.toggleGroupContainer.nativeElement.scrollLeft = 0;
+        toggleGroupContainer.nativeElement.scrollLeft = 0;
       }
     }
   }

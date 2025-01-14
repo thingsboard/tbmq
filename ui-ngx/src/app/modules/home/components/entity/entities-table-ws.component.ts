@@ -22,8 +22,8 @@ import {
   ElementRef,
   EventEmitter,
   OnInit,
-  ViewChild,
-  input, model
+  model,
+  viewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -114,12 +114,11 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   isFullscreen = false;
   hidePageSize = false;
 
-  @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
+  readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeaderAnchor');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
+  readonly paginator = viewChild(MatPaginator);
+  readonly sort = viewChild(MatSort);
 
-  @ViewChild('searchInput') searchInputField: ElementRef;
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-
-  @ViewChild(MatSort) sort: MatSort;
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
@@ -151,7 +150,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     const entitiesTableConfigValue = this.entitiesTableConfig();
     if (entitiesTableConfigValue.headerComponent) {
       const componentFactory = this.componentFactoryResolver.resolveComponentFactory(entitiesTableConfigValue.headerComponent);
-      const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
+      const viewContainerRef = this.entityTableHeaderAnchor().viewContainerRef;
       viewContainerRef.clear();
       const componentRef = viewContainerRef.createComponent(componentFactory);
       const headerComponent = componentRef.instance;
@@ -203,7 +202,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   ngAfterViewInit() {
     this.mqttJsClientService.connection$.subscribe(
       () => {
-        this.paginator.pageIndex = 0;
+        this.paginator().pageIndex = 0;
         this.init(this.entitiesTableConfig());
       }
     );
@@ -222,10 +221,10 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+      this.sortSubscription = this.sort().sortChange.subscribe(() => this.paginator().pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort.sortChange, this.paginator.page)
-      : this.sort.sortChange) as Observable<any>)
+    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort().sortChange, this.paginator().page)
+      : this.sort().sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
@@ -237,15 +236,16 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator.pageIndex;
-      this.pageLink.pageSize = this.paginator.pageSize;
+      this.pageLink.page = this.paginator().pageIndex;
+      this.pageLink.pageSize = this.paginator().pageSize;
     } else {
       this.pageLink.page = 0;
     }
-    if (this.sort.active) {
+    const sort = this.sort();
+    if (sort.active) {
       this.pageLink.sortOrder = {
-        property: this.sort.active,
-        direction: Direction[this.sort.direction.toUpperCase()]
+        property: sort.active,
+        direction: Direction[sort.direction.toUpperCase()]
       };
     } else {
       this.pageLink.sortOrder = null;

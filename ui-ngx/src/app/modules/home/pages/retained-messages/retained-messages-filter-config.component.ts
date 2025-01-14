@@ -24,9 +24,9 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
-  input, booleanAttribute, model, Input
+  input, booleanAttribute, model, Input,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -77,8 +77,7 @@ export interface RetainedMessagesFilterConfigData {
 })
 export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('retainedMessagesPanel')
-  retainedMessagesFilterPanel: TemplateRef<any>;
+  readonly retainedMessagesFilterPanel = viewChild<TemplateRef<any>>('retainedMessagesPanel');
 
   @Input()
   initialRetainedMessagesFilterConfig: RetainedMessagesFilterConfig;
@@ -190,7 +189,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy,
     this.retainedMessagesFilterOverlayRef.backdropClick().subscribe(() => {
       this.retainedMessagesFilterOverlayRef.dispose();
     });
-    this.retainedMessagesFilterOverlayRef.attach(new TemplatePortal(this.retainedMessagesFilterPanel,
+    this.retainedMessagesFilterOverlayRef.attach(new TemplatePortal(this.retainedMessagesFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.retainedMessagesFilterOverlayRef.updatePosition();

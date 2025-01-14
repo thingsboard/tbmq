@@ -16,7 +16,7 @@
 
 -->
 @if (panelMode) {
-  <ng-container *ngTemplateOutlet="subscriptionsFilterPanel"></ng-container>
+  <ng-container *ngTemplateOutlet="subscriptionsFilterPanel()"></ng-container>
 } @else {
   @if (buttonMode()) {
     <button color="primary"

@@ -24,9 +24,9 @@ import {
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
   ViewContainerRef,
-  input, booleanAttribute, model
+  input, booleanAttribute, model,
+  viewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
@@ -76,8 +76,7 @@ export interface UnauthorizedClientFilterConfigData {
 })
 export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('unauthorizedClientPanel')
-  unauthorizedClientFilterPanel: TemplateRef<any>;
+  readonly unauthorizedClientFilterPanel = viewChild<TemplateRef<any>>('unauthorizedClientPanel');
 
   disabled = model<boolean>();
   initialUnauthorizedClientFilterConfig = model<UnauthorizedClientFilterConfig>();
@@ -190,7 +189,7 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
     this.unauthorizedClientFilterOverlayRef.backdropClick().subscribe(() => {
       this.unauthorizedClientFilterOverlayRef.dispose();
     });
-    this.unauthorizedClientFilterOverlayRef.attach(new TemplatePortal(this.unauthorizedClientFilterPanel,
+    this.unauthorizedClientFilterOverlayRef.attach(new TemplatePortal(this.unauthorizedClientFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.unauthorizedClientFilterOverlayRef.updatePosition();

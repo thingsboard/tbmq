@@ -24,17 +24,16 @@ import {
   Injector,
   Input,
   OnDestroy,
-  QueryList,
-  ViewChild,
-  ViewChildren,
-  output, OutputRefSubscription
+  output, OutputRefSubscription,
+  viewChild,
+  viewChildren
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { BaseData } from '@shared/models/base-data';
-import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { UntypedFormGroup } from '@angular/forms';
 import { EntityComponent } from './entity.component';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
@@ -74,15 +73,10 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   isEditValue = false;
   selectedTab = 0;
 
-  entityTypes = EntityType;
-
-  @ViewChild('entityDetailsForm', {static: true}) entityDetailsFormAnchor: TbAnchorComponent;
-
-  @ViewChild('entityTabs', {static: true}) entityTabsAnchor: TbAnchorComponent;
-
-  @ViewChild(MatTabGroup, {static: true}) matTabGroup: MatTabGroup;
-
-  @ViewChildren(MatTab) inclusiveTabs: QueryList<MatTab>;
+  readonly entityDetailsFormAnchor = viewChild<TbAnchorComponent>('entityDetailsForm');
+  readonly entityTabsAnchor = viewChild<TbAnchorComponent>('entityTabs');
+  readonly matTabGroup = viewChild(MatTabGroup);
+  readonly inclusiveTabs = viewChildren(MatTab);
 
   translations: EntityTypeTranslation;
   resources: EntityTypeResource<BaseData>;
@@ -167,7 +161,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityComponentRef = null;
     }
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.entityComponent);
-    const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
+    const viewContainerRef = this.entityDetailsFormAnchor().viewContainerRef;
     viewContainerRef.clear();
     const injector: Injector = Injector.create(
       {
@@ -202,7 +196,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityTabsComponentRef.destroy();
       this.entityTabsComponentRef = null;
     }
-    const viewContainerRef = this.entityTabsAnchor.viewContainerRef;
+    const viewContainerRef = this.entityTabsAnchor().viewContainerRef;
     viewContainerRef.clear();
     this.entityTabsComponent = null;
     if (this.entitiesTableConfig.entityTabsComponent) {
@@ -216,8 +210,8 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
         (entityTabs) => {
           if (entityTabs) {
             if (this.viewInited) {
-              this.matTabGroup._tabs.reset([...this.inclusiveTabs.toArray(), ...entityTabs]);
-              this.matTabGroup._tabs.notifyOnChanges();
+              this.matTabGroup()._tabs.reset([...this.inclusiveTabs(), ...entityTabs]);
+              this.matTabGroup()._tabs.notifyOnChanges();
             } else {
               this.pendingTabs = entityTabs;
             }
@@ -313,8 +307,8 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   ngAfterViewInit(): void {
     this.viewInited = true;
     if (this.pendingTabs) {
-      this.matTabGroup._tabs.reset([...this.inclusiveTabs.toArray(), ...this.pendingTabs]);
-      this.matTabGroup._tabs.notifyOnChanges();
+      this.matTabGroup()._tabs.reset([...this.inclusiveTabs(), ...this.pendingTabs]);
+      this.matTabGroup()._tabs.notifyOnChanges();
       this.pendingTabs = null;
     }
   }
