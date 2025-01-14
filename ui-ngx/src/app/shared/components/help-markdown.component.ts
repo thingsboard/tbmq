@@ -16,10 +16,10 @@
 
 import {
   Component,
-  EventEmitter,
   Input, OnChanges,
   OnDestroy, OnInit,
-  Output, SimpleChanges
+  output,
+  SimpleChanges
 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { share } from 'rxjs/operators';
@@ -46,7 +46,7 @@ export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
 
   @Input() style: { [klass: string]: any } = {};
 
-  @Output() markdownReady = new EventEmitter<void>();
+  readonly markdownReady = output<void>();
 
   markdownText = new BehaviorSubject<string>(null);
 
@@ -103,7 +103,7 @@ export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
   }
 
   onMarkdownReady() {
-    this.markdownReady.next();
+    this.markdownReady.emit();
   }
 
   markdownClick($event: MouseEvent) {

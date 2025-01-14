@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, EventEmitter, Output, input, booleanAttribute, model } from '@angular/core';
+import { ChangeDetectorRef, Component, input, booleanAttribute, model, output } from '@angular/core';
 import { ClipboardService } from 'ngx-clipboard';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
@@ -45,8 +45,7 @@ export class CopyButtonComponent {
   copied = false;
   private timer;
 
-  @Output()
-  successCopied = new EventEmitter<string>();
+  readonly successCopied = output<string>();
 
   constructor(private clipboardService: ClipboardService,
               private translate: TranslateService,

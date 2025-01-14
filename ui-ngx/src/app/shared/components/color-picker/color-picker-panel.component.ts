@@ -15,7 +15,7 @@
 ///
 
 import { PageComponent } from '@shared/components/page.component';
-import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnInit, ViewEncapsulation, output } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -49,11 +49,9 @@ export class ColorPickerPanelComponent extends PageComponent implements OnInit {
   @Input()
   popover: TbPopoverComponent<ColorPickerPanelComponent>;
 
-  @Output()
-  colorSelected = new EventEmitter<string>();
+  readonly colorSelected = output<string>();
 
-  @Output()
-  colorCancelDialog = new EventEmitter();
+  readonly colorCancelDialog = output();
 
   colorPickerControl: UntypedFormControl;
 

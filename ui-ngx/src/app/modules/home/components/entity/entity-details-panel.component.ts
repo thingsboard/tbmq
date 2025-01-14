@@ -21,14 +21,13 @@ import {
   Component,
   ComponentFactoryResolver,
   ComponentRef,
-  EventEmitter,
   Injector,
   Input,
   OnDestroy,
-  Output,
   QueryList,
   ViewChild,
-  ViewChildren
+  ViewChildren,
+  output, OutputRefSubscription
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -60,14 +59,9 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {
 
-  @Output()
-  closeEntityDetails = new EventEmitter<void>();
-
-  @Output()
-  entityUpdated = new EventEmitter<BaseData>();
-
-  @Output()
-  entityAction = new EventEmitter<EntityAction<BaseData>>();
+  readonly closeEntityDetails = output<void>();
+  readonly entityUpdated = output<BaseData>();
+  readonly entityAction = output<EntityAction<BaseData>>();
 
   entityComponentRef: ComponentRef<EntityComponent<BaseData>>;
   entityComponent: EntityComponent<BaseData>;
@@ -96,7 +90,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   editingEntity: BaseData;
 
   protected currentEntityId: string;
-  protected subscriptions: Subscription[] = [];
+  protected subscriptions: OutputRefSubscription[] = [];
   protected viewInited = false;
   protected pendingTabs: MatTab[];
 

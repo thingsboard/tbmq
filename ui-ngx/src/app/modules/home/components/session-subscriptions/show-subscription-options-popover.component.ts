@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, output } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RhOptions, TopicSubscription } from '@shared/models/ws-client.model';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -40,8 +40,7 @@ export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestro
   @Input()
   onClose: () => void;
 
-  @Output()
-  subscriptionOptionsApplied = new EventEmitter<TopicSubscription>();
+  readonly subscriptionOptionsApplied = output<TopicSubscription>();
 
   @Input()
   data: TopicSubscription;

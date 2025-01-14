@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Output, Renderer2, ViewContainerRef, input } from '@angular/core';
+import { Component, Renderer2, ViewContainerRef, input, output } from '@angular/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
 import { MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
@@ -37,8 +37,7 @@ export class SubscriptionOptionsComponent {
 
   readonly subscriptionOptions = input<AbstractControl>();
 
-  @Output()
-  subscriptionOptionsValue = new EventEmitter<TopicSubscription>();
+  readonly subscriptionOptionsValue = output<TopicSubscription>();
 
   constructor(private renderer: Renderer2,
               private popoverService: TbPopoverService,

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, OnInit, Output, input } from '@angular/core';
+import { Component, OnInit, input, output } from '@angular/core';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
@@ -41,8 +41,7 @@ export class ConnectionComponent implements OnInit {
 
   readonly connection = input<WebSocketConnectionDto>();
 
-  @Output()
-  connectionUpdated = new EventEmitter<void>();
+  readonly connectionUpdated = output<void>();
 
   selectedConnection: WebSocketConnectionDto;
   showActions = false;

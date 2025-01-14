@@ -24,20 +24,19 @@ import {
   ComponentRef,
   Directive,
   ElementRef,
-  EventEmitter,
   Injector,
   OnChanges,
   OnDestroy,
   OnInit,
   Optional,
-  Output,
   Renderer2,
   SimpleChanges,
   TemplateRef,
   ViewChild,
   ViewContainerRef,
   ViewEncapsulation,
-  input
+  input,
+  output
 } from '@angular/core';
 import { Direction, Directionality } from '@angular/cdk/bidi';
 import {
@@ -94,7 +93,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
   readonly tbPopoverBackdrop = input(false);
 
   // eslint-disable-next-line @angular-eslint/no-output-rename
-  @Output('tbPopoverVisibleChange') readonly visibleChange = new EventEmitter<boolean>();
+  readonly visibleChange = output<boolean>({ alias: 'tbPopoverVisibleChange' });
 
   componentFactory: ComponentFactory<TbPopoverComponent> = this.resolver.resolveComponentFactory(TbPopoverComponent);
   component?: TbPopoverComponent;

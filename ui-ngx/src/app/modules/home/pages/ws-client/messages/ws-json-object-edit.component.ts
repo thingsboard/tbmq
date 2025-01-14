@@ -18,14 +18,14 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter,
   forwardRef,
   OnChanges,
   OnDestroy,
   OnInit,
-  Output, SimpleChanges,
+  SimpleChanges,
   ViewChild,
-  input, model
+  input, model,
+  output
 } from '@angular/core';
 import {
   AbstractControl,
@@ -77,8 +77,7 @@ export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, 
   @ViewChild('jsonEditor', {static: true})
   jsonEditorElmRef: ElementRef;
 
-  @Output()
-  isJsonValid = new EventEmitter<boolean>();
+  readonly isJsonValid = output<boolean>();
 
   private jsonEditor: Ace.Editor;
   private editorsResizeCaf: CancelAnimationFrame;

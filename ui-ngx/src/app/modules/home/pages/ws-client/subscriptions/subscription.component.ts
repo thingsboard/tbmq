@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, OnInit, Output, ViewChild, input } from '@angular/core';
+import { Component, OnInit, ViewChild, input, output } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
@@ -52,8 +52,7 @@ export class SubscriptionComponent {
   readonly subscriptions = input<WebSocketSubscription[]>();
   readonly connection = input<WebSocketConnection>();
 
-  @Output()
-  subscriptionUpdated = new EventEmitter<void>();
+  readonly subscriptionUpdated = output<void>();
 
   @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger;
 

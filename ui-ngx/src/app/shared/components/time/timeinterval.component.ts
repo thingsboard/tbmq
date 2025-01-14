@@ -16,14 +16,13 @@
 
 import {
   Component,
-  EventEmitter,
   forwardRef,
   Input,
   OnInit,
-  Output,
   input,
   booleanAttribute,
-  model
+  model,
+  output
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { TimeService } from '@core/services/time.service';
@@ -89,7 +88,7 @@ export class TimeintervalComponent implements OnInit, ControlValueAccessor {
   readonly disabledAdvanced = input(false, {transform: booleanAttribute});
   readonly useCalendarIntervals = input(false, {transform: booleanAttribute});
 
-  @Output() hideFlagChange = new EventEmitter<boolean>();
+  readonly hideFlagChange = output<boolean>();
 
   disabled = model<boolean>();
   readonly subscriptSizing = input<SubscriptSizing>('fixed');

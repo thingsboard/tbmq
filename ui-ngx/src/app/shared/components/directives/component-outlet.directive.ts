@@ -16,12 +16,13 @@
 
 import {
   ComponentFactory, ComponentRef,
-  Directive, EventEmitter, Injector,
-  OnChanges, Output, Renderer2,
+  Directive, Injector,
+  OnChanges, Renderer2,
   SimpleChange,
   SimpleChanges,
   ViewContainerRef,
-  input
+  input,
+  output
 } from '@angular/core';
 
 @Directive({
@@ -38,7 +39,7 @@ export class TbComponentOutletDirective<_T = unknown> implements OnChanges {
 } | null>(null);
   readonly tbComponentInjector = input<Injector | null>(null);
   readonly tbComponentOutlet = input<ComponentFactory<any>>(null);
-  @Output() componentChange = new EventEmitter<ComponentRef<any>>();
+  readonly componentChange = output<ComponentRef<any>>();
 
   static ngTemplateContextGuard<T>(
     // eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle,id-blacklist,id-match
@@ -52,7 +53,7 @@ export class TbComponentOutletDirective<_T = unknown> implements OnChanges {
   private recreateComponent(): void {
     this.viewContainer.clear();
     this.componentRef = this.viewContainer.createComponent(this.tbComponentOutlet(), 0, this.tbComponentInjector());
-    this.componentChange.next(this.componentRef);
+    this.componentChange.emit(this.componentRef);
     const tbComponentOutletContext = this.tbComponentOutletContext();
     if (tbComponentOutletContext) {
       for (const propName of Object.keys(tbComponentOutletContext)) {

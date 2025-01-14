@@ -17,14 +17,13 @@
 import {
   Directive,
   ElementRef,
-  EventEmitter,
   OnChanges,
   OnDestroy,
-  Output,
   Renderer2,
   SecurityContext,
   SimpleChanges,
-  input
+  input,
+  output
 } from '@angular/core';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
@@ -46,8 +45,7 @@ export class FullscreenDirective implements OnChanges, OnDestroy {
   }>();
   readonly fullscreenBackgroundImage = input<SafeStyle | string>();
 
-  @Output()
-  fullscreenChanged = new EventEmitter<boolean>();
+  readonly fullscreenChanged = output<boolean>();
 
   constructor(public elementRef: ElementRef,
               private renderer: Renderer2,

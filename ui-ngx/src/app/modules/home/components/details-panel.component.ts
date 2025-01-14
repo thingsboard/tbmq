@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output, input} from '@angular/core';
+import {ChangeDetectorRef, Component, Input, OnDestroy, input, output} from '@angular/core';
 import {PageComponent} from '@shared/components/page.component';
 import {Store} from '@ngrx/store';
 import {AppState} from '@core/core.state';
@@ -66,20 +66,14 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
     return this.theFormValue;
   }
 
-  @Output()
-  closeDetails = new EventEmitter<void>();
-  @Output()
-  toggleDetailsEditMode = new EventEmitter<boolean>();
-  @Output()
-  applyDetails = new EventEmitter<void>();
-  @Output()
-  closeSearch = new EventEmitter<void>();
+  readonly closeDetails = output<void>();
+  readonly toggleDetailsEditMode = output<boolean>();
+  readonly applyDetails = output<void>();
+  readonly closeSearch = output<void>();
+  readonly isEditChange = output<boolean>();
 
   isEditValue = false;
   showSearchPane = false;
-
-  @Output()
-  isEditChange = new EventEmitter<boolean>();
 
   @Input()
   get isEdit() {

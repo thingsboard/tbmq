@@ -18,16 +18,15 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  EventEmitter,
   Input, NgZone,
   OnChanges,
-  Output,
   Renderer2,
   SimpleChanges,
   Type,
   ViewChild,
   ViewContainerRef,
-  input, booleanAttribute
+  input, booleanAttribute,
+  output
 } from '@angular/core';
 import { MarkdownService, PrismPlugin } from 'ngx-markdown';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
@@ -71,7 +70,7 @@ export class TbMarkdownComponent implements OnChanges {
 
   readonly usePlainMarkdown = input(false, {transform: booleanAttribute});
 
-  @Output() ready = new EventEmitter<void>();
+  readonly ready = output<void>();
 
   private lineNumbersValue = false;
   private fallbackToPlainMarkdownValue = false;

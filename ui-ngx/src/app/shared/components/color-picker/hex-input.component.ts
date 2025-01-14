@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { Color } from '@iplab/ngx-color-picker';
 import { MatFormField, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -30,8 +30,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class HexInputComponent {
 
-  @Output()
-  colorChange = new EventEmitter<Color>(false);
+  readonly colorChange = output<Color>();
 
   readonly color = input<Color>();
   readonly labelVisible = input(false);
