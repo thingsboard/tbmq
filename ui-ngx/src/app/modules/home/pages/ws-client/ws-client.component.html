@@ -18,15 +18,17 @@
 @if ((connections | async)?.length) {
   <ng-container *ngTemplateOutlet="hasConnections"></ng-container>
 } @else {
-  <section style="width: 100%; height: 100%;">
-    <div class="add-connection-container">
-      <div class="add-connection-btn" fxFlex fxLayout="row" fxLayoutAlign="flex-start center"
-        (click)="addConnection($event)">
-        <mat-icon class="mat-icon tb-mat-64">add</mat-icon>
-        <span translate>ws-client.connections.add-connection</span>
+  @defer {
+    <section style="width: 100%; height: 100%;">
+      <div class="add-connection-container">
+        <div class="add-connection-btn" fxFlex fxLayout="row" fxLayoutAlign="flex-start center"
+             (click)="addConnection($event)">
+          <mat-icon class="mat-icon tb-mat-64">add</mat-icon>
+          <span translate>ws-client.connections.add-connection</span>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  }
 }
 
 <ng-template #hasConnections>
@@ -35,47 +37,66 @@
   } @else {
     <div style="display: flex; height: 100%; gap: 12px" class="mat-padding">
       <section class="container" style="width: 30%">
-        <section class="border-bg">
-          <tb-connections></tb-connections>
-        </section>
-        <section class="subscriptions border-bg" style="min-height: 418px">
-          <tb-ws-subscriptions></tb-ws-subscriptions>
-        </section>
-        <section class="border-bg">
-          <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'"></tb-help-page>
-        </section>
+        @defer {
+          <section class="border-bg">
+            <tb-connections></tb-connections>
+          </section>
+        }
+        @defer {
+          <section class="subscriptions border-bg" style="min-height: 418px">
+            <tb-ws-subscriptions></tb-ws-subscriptions>
+          </section>
+        }
+        @defer {
+          <section class="border-bg">
+            <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'"></tb-help-page>
+          </section>
+        }
       </section>
       <section class="container border-bg" style="width: 70%;">
-        <section class="border-bg">
-          <tb-connection-controller></tb-connection-controller>
-        </section>
-        <section class="subscriptions border-bg" style="min-height: 500px; height: auto">
-          <tb-messanger></tb-messanger>
-        </section>
+        @defer {
+          <section class="border-bg">
+            <tb-connection-controller></tb-connection-controller>
+          </section>
+        }
+        @defer {
+          <section class="subscriptions border-bg" style="min-height: 500px; height: auto">
+            <tb-messanger></tb-messanger>
+          </section>
+        }
       </section>
     </div>
   }
 </ng-template>
 
-
 <ng-template #column>
   <div style="display: flex; height: auto; gap: 12px" class="mat-padding">
     <section class="container">
-      <section class="border-bg">
-        <tb-connections></tb-connections>
-      </section>
-      <section class="border-bg">
-        <tb-connection-controller></tb-connection-controller>
-      </section>
-      <section class="subscriptions border-bg" style="min-height: 500px">
-        <tb-messanger></tb-messanger>
-      </section>
-      <section class="subscriptions border-bg" style="height: 400px;">
-        <tb-ws-subscriptions></tb-ws-subscriptions>
-      </section>
-      <section class="border-bg">
-        <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'"></tb-help-page>
-      </section>
+      @defer {
+        <section class="border-bg">
+          <tb-connections></tb-connections>
+        </section>
+      }
+      @defer {
+        <section class="border-bg">
+          <tb-connection-controller></tb-connection-controller>
+        </section>
+      }
+      @defer {
+        <section class="subscriptions border-bg" style="min-height: 500px">
+          <tb-messanger></tb-messanger>
+        </section>
+      }
+      @defer {
+        <section class="subscriptions border-bg" style="height: 400px;">
+          <tb-ws-subscriptions></tb-ws-subscriptions>
+        </section>
+      }
+      @defer {
+        <section class="border-bg">
+          <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'"></tb-help-page>
+        </section>
+      }
     </section>
   </div>
 </ng-template>
