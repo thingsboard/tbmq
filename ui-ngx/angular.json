@@ -82,8 +82,7 @@
             ],
             "stylePreprocessorOptions": {
               "includePaths": [
-                "src/scss",
-                "node_modules"
+                "src/scss"
               ]
             },
             "scripts": [
