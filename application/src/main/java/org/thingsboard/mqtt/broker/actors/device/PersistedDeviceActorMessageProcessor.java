@@ -190,6 +190,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processDeviceDisconnect(TbActorCtx actorCtx) {
         this.sessionCtx = null;
+        this.lastPersistedMsgSentPacketId = 0L;
         long delayMs = TimeUnit.MINUTES.toMillis(deviceActorConfig.getWaitBeforeActorStopMinutes());
         this.stopActorCommandUUID = UUID.randomUUID();
         systemContext.scheduleMsgWithDelay(actorCtx, new StopDeviceActorCommandMsg(stopActorCommandUUID), delayMs);

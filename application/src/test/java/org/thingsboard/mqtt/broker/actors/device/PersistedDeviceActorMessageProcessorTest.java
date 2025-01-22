@@ -290,6 +290,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         persistedDeviceActorMessageProcessor.processDeviceDisconnect(tbActorCtx);
 
         assertNull(persistedDeviceActorMessageProcessor.getSessionCtx());
+        assertEquals(0L, persistedDeviceActorMessageProcessor.getLastPersistedMsgSentPacketId());
         assertNotNull(persistedDeviceActorMessageProcessor.getStopActorCommandUUID());
     }
 
