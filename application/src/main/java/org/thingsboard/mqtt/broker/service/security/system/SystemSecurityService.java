@@ -20,7 +20,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
 import org.thingsboard.mqtt.broker.common.data.security.model.UserPasswordPolicy;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 public interface SystemSecurityService {
 

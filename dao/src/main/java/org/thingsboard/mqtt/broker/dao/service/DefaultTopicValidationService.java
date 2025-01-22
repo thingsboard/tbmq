@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MULTI_LEVEL_WILDCARD;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SINGLE_LEVEL_WILDCARD;

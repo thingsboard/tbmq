@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.GenericClientSessionCtx;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.GenericClientSessionCtxService;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Collection;
 import java.util.Optional;

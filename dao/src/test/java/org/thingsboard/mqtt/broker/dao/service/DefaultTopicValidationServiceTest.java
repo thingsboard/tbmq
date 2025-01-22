@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.dao.service;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Random;

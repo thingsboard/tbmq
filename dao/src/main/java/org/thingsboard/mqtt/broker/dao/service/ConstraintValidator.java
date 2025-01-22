@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.Collection;
 import java.util.Set;

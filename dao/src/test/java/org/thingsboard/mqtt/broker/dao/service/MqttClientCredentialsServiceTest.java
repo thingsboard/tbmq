@@ -41,8 +41,8 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
 import java.util.Collections;

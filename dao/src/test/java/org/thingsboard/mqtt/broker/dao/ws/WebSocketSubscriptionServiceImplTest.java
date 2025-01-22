@@ -28,9 +28,9 @@ import org.thingsboard.mqtt.broker.common.data.ws.WebSocketConnectionConfigurati
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscriptionConfiguration;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.AbstractServiceTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
