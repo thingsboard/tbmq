@@ -37,3 +37,4 @@ jobs:
           days-before-pr-close: -1
           exempt-issue-labels: 'Bug,Enhancement'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+          remove-stale-when-updated: true
