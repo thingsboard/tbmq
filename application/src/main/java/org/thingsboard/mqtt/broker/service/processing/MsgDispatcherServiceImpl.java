@@ -24,17 +24,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -46,18 +43,15 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
+import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
-import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.ArrayList;
@@ -67,7 +61,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
@@ -84,10 +77,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final DownLinkProxy downLinkProxy;
     private final ClientLogger clientLogger;
     private final PublishMsgQueuePublisher publishMsgQueuePublisher;
-    private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    private final DeviceSharedSubscriptionProcessor deviceSharedSubscriptionProcessor;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
-    private final ServiceInfoProvider serviceInfoProvider;
     private final RateLimitService rateLimitService;
 
     private MessagesStats producerStats;
@@ -260,7 +252,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             return new MsgSubscriptions(
                     collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
                     sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
-                    getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
+                    sharedSubscriptions == null ? null : deviceSharedSubscriptionProcessor.getTargetSubscriptions(sharedSubscriptions.getDeviceSubscriptions(), publishMsgProto.getQos())
             );
         } else {
             return new MsgSubscriptions(
@@ -301,23 +293,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return topicSharedSubscriptions;
     }
 
-    private List<Subscription> getTargetDeviceSharedSubscriptions(SharedSubscriptions sharedSubscriptions, int qos) {
-        if (sharedSubscriptions == null || CollectionUtils.isEmpty(sharedSubscriptions.getDeviceSubscriptions())) {
-            return null;
-        }
-        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(sharedSubscriptions.getDeviceSubscriptions());
-        return collectOneSubscriptionFromEveryDeviceSharedSubscription(sharedSubscriptionList, qos);
-    }
-
-    List<SharedSubscription> toSharedSubscriptionList(Set<Subscription> sharedSubscriptions) {
-        return sharedSubscriptions.stream()
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
-                .entrySet().stream()
-                .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-
     private List<Subscription> collectCommonSubscriptions(
             List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
 
@@ -331,60 +306,6 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
             publishMsgProcessingTimerStats.logClientSessionsLookup(startTime, TimeUnit.NANOSECONDS);
         }
         return msgSubscriptions;
-    }
-
-    private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptions, int qos) {
-        List<Subscription> result = new ArrayList<>(sharedSubscriptions.size());
-        for (SharedSubscription sharedSubscription : sharedSubscriptions) {
-            result.add(getSubscription(sharedSubscription, qos));
-        }
-        return result;
-    }
-
-    private Subscription getSubscription(SharedSubscription sharedSubscription, int qos) {
-        Subscription anyActive = findAnyConnectedSubscription(sharedSubscription.getSubscriptions());
-        if (anyActive == null) {
-            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getTopicSharedSubscription());
-            return createDummySubscription(sharedSubscription, qos);
-        } else {
-            SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
-            return strategy.analyze(sharedSubscription);
-        }
-    }
-
-    Subscription findAnyConnectedSubscription(List<Subscription> subscriptions) {
-        if (CollectionUtils.isEmpty(subscriptions)) {
-            return null;
-        }
-        return subscriptions
-                .stream()
-                .filter(subscription -> subscription.getClientSessionInfo().isConnected())
-                .findAny()
-                .orElse(null);
-    }
-
-    private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
-        return new Subscription(
-                sharedSubscription.getTopicSharedSubscription().getTopicFilter(),
-                qos,
-                createDummyClientSession(sharedSubscription),
-                sharedSubscription.getTopicSharedSubscription().getShareName(),
-                SubscriptionOptions.newInstance(),
-                -1
-        );
-    }
-
-    private ClientSessionInfo createDummyClientSession(SharedSubscription sharedSubscription) {
-        ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey());
-        return ClientSessionInfo.builder()
-                .connected(false)
-                .serviceId(serviceInfoProvider.getServiceId())
-                .clientId(clientInfo.getClientId())
-                .type(clientInfo.getType())
-                .clientIpAdr(clientInfo.getClientIpAdr())
-                .cleanStart(false)
-                .sessionExpiryInterval(1000)
-                .build();
     }
 
     List<Subscription> collectSubscriptions(

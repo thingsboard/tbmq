@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -37,13 +36,12 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
+import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessorImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -56,6 +54,8 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -63,8 +63,6 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MsgDispatcherServiceImpl.class)
 public class MsgDispatcherServiceImplTest {
-
-    static final String TOPIC = "topic";
 
     @MockBean
     SubscriptionService subscriptionService;
@@ -81,13 +79,11 @@ public class MsgDispatcherServiceImplTest {
     @MockBean
     PublishMsgQueuePublisher publishMsgQueuePublisher;
     @MockBean
-    SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    DeviceSharedSubscriptionProcessorImpl deviceSharedSubscriptionProcessor;
     @MockBean
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
     @MockBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
-    @MockBean
-    ServiceInfoProvider serviceInfoProvider;
     @MockBean
     RateLimitService rateLimitService;
     @SpyBean
@@ -188,21 +184,6 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testConvertToSharedSubscriptionList() {
-        Set<Subscription> subscriptions = Set.of(
-                newSubscription(0, "group1"),
-                newSubscription(1, "group1"),
-                newSubscription(2, "group2"),
-                newSubscription(0, "group2"),
-                newSubscription(1, "group3"),
-                newSubscription(2, "group3")
-        );
-        List<SharedSubscription> sharedSubscriptionList = msgDispatcherService.toSharedSubscriptionList(subscriptions);
-        assertEquals(3, sharedSubscriptionList.size());
-        sharedSubscriptionList.forEach(sharedSubscription -> assertEquals(2, sharedSubscription.getSubscriptions().size()));
-    }
-
-    @Test
     public void testCollectSubscriptions4() {
         List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
                 new ValueWithTopicFilter<>(
@@ -286,29 +267,6 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testFindAnyConnectedSubscription() {
-        List<Subscription> subscriptions = List.of(
-                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
-        );
-        Subscription subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
-        assertNull(subscription);
-
-        subscriptions = List.of(
-                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(true).build()),
-                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
-        );
-        subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
-        assertEquals("topic3", subscription.getTopicFilter());
-    }
-
-    @Test
     public void testGetAllSubscriptionsForPubMsg() {
         ClientSessionInfo clientSessionInfo1 = mock(ClientSessionInfo.class);
         ClientSessionInfo clientSessionInfo2 = mock(ClientSessionInfo.class);
@@ -332,6 +290,7 @@ public class MsgDispatcherServiceImplTest {
                 .build();
 
         when(sharedSubscriptionCacheService.sharedSubscriptionsInitialized()).thenReturn(true);
+        when(deviceSharedSubscriptionProcessor.getTargetSubscriptions(anySet(), anyInt())).thenCallRealMethod();
 
         when(sharedSubscriptionCacheService.get(
                 Set.of(
@@ -460,10 +419,6 @@ public class MsgDispatcherServiceImplTest {
 
     private void mockClientSessionGetClientId(ClientSessionInfo clientSessionInfo, String clientId) {
         when(clientSessionInfo.getClientId()).thenReturn(clientId);
-    }
-
-    private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(TOPIC, mqttQoSValue, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
     }
 
     private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {
