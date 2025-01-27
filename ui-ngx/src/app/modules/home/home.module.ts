@@ -17,15 +17,13 @@
 import { NgModule, SecurityContext } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HomeRoutingModule } from './home-routing.module';
-import { TbBreakPointsProvider } from '@shared/layout/layout.directives';
 import { MarkdownModule, MARKED_OPTIONS } from 'ngx-markdown';
 import { MarkedOptionsService } from '@shared/components/marked-options.service';
 import { MenuModule } from '@home/menu/menu.module';
 
 @NgModule({
   providers: [
-    DatePipe,
-    TbBreakPointsProvider,
+    DatePipe
   ],
   imports: [
     CommonModule,

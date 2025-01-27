@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, input, model } from '@angular/core';
+import { AfterViewInit, Component, input, model, signal } from '@angular/core';
 import { HomePageTitle, homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
 import { FlexModule } from '@angular/flex-layout/flex';
@@ -32,24 +32,23 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class CardTitleButtonComponent implements AfterViewInit {
 
-  cardType = model<HomePageTitleType>();
+  title = signal<HomePageTitle>(null);
+  readonly cardType = model<HomePageTitleType>();
   readonly disabled = input(false);
-
-  homePageTitleResources = homePageTitleConfig;
-  title: HomePageTitle;
+  readonly homePageTitleResources = homePageTitleConfig;
 
   constructor(private router: Router) {
   }
 
   ngAfterViewInit() {
-    this.title = this.homePageTitleResources.get(this.cardType());
+    this.title.set(this.homePageTitleResources.get(this.cardType()));
   }
 
   navigate() {
-    this.router.navigate([this.title.link]);
+    this.router.navigate([this.title().link]);
   }
 
   gotoDocs(){
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title.docsLink}`, '_blank');
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title().docsLink}`, '_blank');
   }
 }

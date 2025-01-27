@@ -22,15 +22,13 @@ import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.mode
 import { Router } from '@angular/router';
 import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
-
-import { LtXmdShowHideDirective } from '@shared/layout/layout.directives';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
     selector: 'tb-home-cards-table',
     templateUrl: './home-cards-table.component.html',
     styleUrls: ['home-cards-table.component.scss'],
-    imports: [FlexModule, CardTitleButtonComponent, LtXmdShowHideDirective, TranslateModule]
+    imports: [FlexModule, CardTitleButtonComponent, TranslateModule]
 })
 export class HomeCardsTableComponent {
 

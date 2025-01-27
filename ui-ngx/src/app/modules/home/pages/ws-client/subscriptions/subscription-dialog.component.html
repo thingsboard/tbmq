@@ -16,9 +16,9 @@
 
 -->
 <form [formGroup]="formGroup">
-  <mat-toolbar fxLayout="row" color="primary">
+  <mat-toolbar class="flex flex-row" color="primary">
     <h2 translate>{{ title }}</h2>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <button mat-icon-button
       [mat-dialog-close]="null"
       type="button"
@@ -35,12 +35,12 @@
     <div style="height: 4px;"></div>
   }
   <div mat-dialog-content>
-    <section fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center">
-      <mat-form-field fxFlex class="mat-block">
+    <section class="flex flex-1 flex-row items-center gap-4">
+      <mat-form-field class="flex flex-1">
         <mat-label translate>subscription.topic-filter</mat-label>
         <input matInput required formControlName="topicFilter" placeholder="{{ 'subscription.topic-filter' | translate }}">
         <tb-copy-button matSuffix
-          [fxShow]="formGroup.get('topicFilter')?.value?.length"
+          [class.!hidden]="!formGroup.get('topicFilter')?.value?.length"
           [copyText]="formGroup.get('topicFilter')?.value">
         </tb-copy-button>
         @if (formGroup.get('topicFilter').hasError('required')) {
@@ -54,7 +54,7 @@
     </section>
     <tb-qos-select formControlName="qos">
     </tb-qos-select>
-    <section formGroupName="options" fxLayout="column" fxLayoutGap="16px">
+    <section formGroupName="options" class="flex flex-col gap-4">
       <mat-accordion multi="true" class="mat-body-1">
         <mat-expansion-panel>
           <mat-expansion-panel-header>
@@ -63,8 +63,8 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
           <ng-template matExpansionPanelContent>
-            <div fxLayout="column" fxLayoutGap="16px">
-              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+            <div class="flex flex-col gap-4">
+              <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
                 <mat-label translate>subscription.rh</mat-label>
                 <mat-select formControlName="retainHandling">
                   @for (rh of rhOptions; track rh) {
@@ -74,7 +74,7 @@
                   }
                 </mat-select>
               </mat-form-field>
-              <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+              <section class="slider flex flex-row items-center gap-2">
                 <mat-slide-toggle formControlName="noLocal">
                   {{ 'subscription.nl' | translate }}
                 </mat-slide-toggle>
@@ -83,7 +83,7 @@
                   matTooltipPosition="right">
                 info</mat-icon>
               </section>
-              <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+              <section class="slider flex flex-row items-center gap-2">
                 <mat-slide-toggle formControlName="retainAsPublish">
                   {{ 'subscription.rap' | translate }}
                 </mat-slide-toggle>
@@ -115,7 +115,7 @@
       </mat-accordion>
     </section>
   </div>
-  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
+  <div mat-dialog-actions class="flex flex-row justify-end items-center">
     <button mat-button color="primary"
       type="button"
       [disabled]="(isLoading$ | async)"

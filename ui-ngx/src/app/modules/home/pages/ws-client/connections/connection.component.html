@@ -15,17 +15,16 @@
     limitations under the License.
 
 -->
-<section fxLayout="row" fxLayoutAlign="space-between start" class="connection"
-  (click)="selectConnection()"
-  [ngClass]="{'active': (connection()?.id === selectedConnection?.id)}">
-  <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
+<section class="connection" (click)="selectConnection()"
+         [ngClass]="{'active': (connection()?.id === selectedConnection?.id)}">
+  <section class="flex flex-1 flex-row items-center justify-between"
     (mouseenter)="onCommentMouseEnter()"
     (mouseleave)="onCommentMouseLeave()">
-    <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+    <section class="flex flex-row items-center gap-2">
       <div class="status" [ngStyle]="setStyle()"></div>
       <span class="label">{{ connection().name }}</span>
     </section>
-    <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+    <div class="flex flex-1 flex-row justify-end gap-2">
       @for (actionDescriptor of hiddenActions; track actionDescriptor) {
         <div
           class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"

@@ -51,7 +51,6 @@ export class ValueInputComponent implements OnInit, ControlValueAccessor {
 
   disabled = model<boolean>();
   readonly required = input<boolean>();
-  readonly flexCorrelation = input<number[]>([40, 60]);
   readonly requiredText = input<string>();
 
   readonly inputForm = viewChild<NgForm>('inputForm');

@@ -19,7 +19,7 @@
         ngxClipboard
         (cbOnSuccess)="onCopied()"
         [cbContent]="cbContent()"
-        [fxShow]="!isEdit()">
+        [class.!hidden]="isEdit()">
   <mat-icon svgIcon="mdi:content-copy"></mat-icon>
   <span translate>{{title()}}</span>
 </button>

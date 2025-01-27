@@ -15,11 +15,11 @@
     limitations under the License.
 
 -->
-<section fxLayout="row">
+<section class="flex flex-row">
   @if (displayUserInfo()) {
-    <div [fxHide.lt-lg]="true" class="tb-user-info" fxLayout="row">
+    <div [class.lt-lg:!hidden]="true" class="tb-user-info flex flex-row">
       <mat-icon class="material-icons tb-mini-avatar">account_circle</mat-icon>
-      <div fxLayout="column" fxLayoutAlign="center">
+      <div class="flex flex-col justify-center">
         @if (userDisplayName$ | async; as userDisplayName) {
           <span class="tb-user-display-name">{{ userDisplayName }}</span>
         }

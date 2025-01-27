@@ -20,20 +20,18 @@
     <span translate>mqtt-client-session.subscriptions</span>
     <span> ({{ subscriptionsFormArray()?.length }})</span>
   </section>
-  <section fxLayout="column" fxLayoutGap="10px">
-    <div fxLayout="row" fxLayoutGap="10px">
-      <mat-label fxFlex="60">{{ 'subscription.topic-filter' | translate }}&#42;</mat-label>
-      <mat-label fxFlex="30" translate>mqtt-client-session.qos</mat-label>
+  <section class="flex flex-col gap-2.5">
+    <div class="flex flex-row gap-2.5">
+      <mat-label class="flex flex-1 basis-[60%]">{{ 'subscription.topic-filter' | translate }}&#42;</mat-label>
+      <mat-label class="flex flex-1 basis-[30%]" translate>mqtt-client-session.qos</mat-label>
       <mat-label style="width: 40px"></mat-label>
       <mat-label style="width: 40px"></mat-label>
     </div>
     @for (topicFilter of subscriptionsFormArray().controls; track topicFilter) {
-      <div [formGroup]="topicFilter" class="subscriptions-container"
-        fxLayout="row" fxLayoutGap="10px" fxLayoutAlign="flex-start center"
-        >
-        <mat-form-field fxFlex="60" class="mat-block" appearance="outline" subscriptSizing="dynamic">
+      <div [formGroup]="topicFilter" class="subscriptions-container flex flex-row items-center gap-2.5">
+        <mat-form-field class="flex flex-1 basis-[60%]" appearance="outline" subscriptSizing="dynamic">
           <input matInput name="topicFilter" formControlName="topicFilter" required>
-          <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [fxHide]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
+          <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [class.!hidden]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
             [copyText]="topicFilter.get('topicFilter').value">
           </tb-copy-button>
           @if (topicFilter.invalid) {
@@ -42,7 +40,7 @@
             </mat-error>
           }
         </mat-form-field>
-        <tb-qos-select fxFlex="30" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
+        <tb-qos-select class="flex flex-1 basis-[30%]" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
         </tb-qos-select>
         <section style="width: 40px">
           <tb-subscription-options
@@ -52,7 +50,7 @@
         </section>
         <section style="width: 40px">
           <button mat-icon-button
-            [fxShow]="!disabled()"
+            [class.!hidden]="disabled()"
             (click)="removeTopic($index)"
             matTooltip="{{ 'mqtt-client-session.remove-subscription' | translate }}"
             matTooltipPosition="above">
@@ -70,7 +68,7 @@
     </div>
     <button mat-stroked-button color="primary"
       class="add-button"
-      [fxShow]="!disabled()"
+      [class.!hidden]="disabled()"
       (click)="addTopic()"
       type="button">
       {{ 'mqtt-client-session.add-subscription' | translate }}

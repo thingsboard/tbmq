@@ -15,11 +15,11 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
+<div class="tb-home-card-container tb-home-padding flex flex-1">
   <tb-card-title-button [cardType]="cardType()"></tb-card-title-button>
-  <section class="cards" fxLayoutGap="12px">
+  <section class="cards flex flex-row gap-3">
     @for (item of config(); track item; let i = $index) {
-      <div fxFlex class="key-value" [fxHide.lt-xmd]="i === 2"
+      <div class="key-value flex flex-1" [class.lt-xmd:!hidden]="i !== 2"
         (click)="navigateApplyFilter(item)">
         <div class="key-container">
           <div class="key">{{ item.label | translate }}</div>

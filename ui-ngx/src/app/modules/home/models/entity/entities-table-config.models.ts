@@ -85,8 +85,7 @@ export class BaseEntityTableColumn<T extends BaseData> {
               public title: string,
               public width: string = '0px',
               public sortable: boolean = true,
-              public ignoreTranslate: boolean = false,
-              public mobileHide: boolean = false) {
+              public ignoreTranslate: boolean = false) {
   }
 }
 

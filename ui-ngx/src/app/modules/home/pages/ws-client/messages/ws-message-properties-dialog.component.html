@@ -15,13 +15,13 @@
     limitations under the License.
 
 -->
-<div mat-dialog-content fxLayout="column" fxLayoutGap="24px">
-  <section fxLayout="row" fxLayoutAlign="flex-start">
-    <div fxLayout="row" fxLayoutGap="8px">
+<div mat-dialog-content class="flex flex-col gap-6">
+  <section class="flex flex-row">
+    <div class="flex flex-col gap-2">
       <mat-icon svgIcon="mdi:information-outline" class="material-icons"></mat-icon>
       <span class="title" translate>ws-client.connections.properties</span>
     </div>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <button mat-icon-button
       [mat-dialog-close]="false"
       class="tb-mat-24">
@@ -29,8 +29,8 @@
     </button>
   </section>
   <form [formGroup]="formGroup" style="overflow: auto" class="mat-padding">
-    <section fxLayout="column" fxLayoutGap="16px">
-      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+    <section class="flex flex-col gap-4">
+      <section class="flex flex-row items-center gap-2">
         <mat-slide-toggle formControlName="payloadFormatIndicator">
           {{ 'ws-client.last-will.payload-format-indicator' | translate }}
         </mat-slide-toggle>
@@ -46,15 +46,15 @@
           help
         </mat-icon>
       </mat-form-field>
-      <section fxLayout="row" fxLayoutGap="8px">
-        <mat-form-field fxFlex subscriptSizing="dynamic">
+      <section class="flex flex-row gap-2">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
           <mat-label translate>ws-client.last-will.message-expiry-interval</mat-label>
           <input matInput formControlName="messageExpiryInterval" type="number" min="0">
           <mat-icon matSuffix [matTooltip]="'ws-client.last-will.message-expiry-interval-hint' | translate">
             help
           </mat-icon>
         </mat-form-field>
-        <mat-form-field fxFlex subscriptSizing="dynamic">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
           <mat-label translate>timeunit.units</mat-label>
           <mat-select formControlName="messageExpiryIntervalUnit">
             @for (unit of timeUnitTypes; track unit) {
@@ -73,7 +73,7 @@
           help
         </mat-icon>
       </mat-form-field>
-      <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
         <mat-label translate>ws-client.last-will.correlation-data</mat-label>
         <input matInput formControlName="correlationData">
         <mat-icon matSuffix [matTooltip]="'ws-client.last-will.correlation-data-hint' | translate">

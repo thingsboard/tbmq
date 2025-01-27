@@ -15,9 +15,9 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
+<div class="tb-home-card-container tb-home-padding flex !flex-1">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section fxFlex class="tb-config-table" fxFlex.lt-lg="auto">
+  <section class="tb-config-table">
     <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
       @for (column of columns; track column) {
         <ng-container [matColumnDef]="column.key">
@@ -31,7 +31,7 @@
             @if (column.key === 'value') {
               <span>
                 {{ formatBytesToValue(entity) }}
-                <tb-copy-button [fxShow]="showCopyButton(entity, configParams)"
+                <tb-copy-button [class.!hidden]="!showCopyButton(entity, configParams)"
                   [copyText]="entity.value"
                   [buttonClass]="{'tb-mat-12': true}"
                   [style]="{display: 'inline'}"
@@ -53,6 +53,6 @@
       <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </table>
-    <div fxFlex></div>
+    <div class="flex flex-1"></div>
   </section>
 </div>

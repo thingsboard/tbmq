@@ -24,7 +24,7 @@
       <input required matInput formControlName="certCnPattern">
       <tb-copy-button #copyBtn
         (click)="onClickTbCopyButton(credentialsMqttFormGroup.get('certCnPattern')?.value)"
-        [fxShow]="credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
         [copyText]="credentialsMqttFormGroup?.get('certCnPattern').value">
       </tb-copy-button>
       @if (credentialsMqttFormGroup.get('certCnPattern').hasError('required')) {

@@ -18,12 +18,12 @@
 <div #homeChartsContainer class="tb-home-card-container" style="overflow: auto; padding: 18px 8px 18px 18px">
   <div class="tb-card-header">
     <tb-card-title-button [cardType]="cardType" [disabled]="false"></tb-card-title-button>
-    <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px">
+    <div class="flex flex-row items-center gap-2">
       <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex === 0" (click)="chartsCarouselIndex = chartsCarouselIndex - 1"><mat-icon>keyboard_arrow_left</mat-icon></button>
       <button mat-icon-button class="tb-mat-24" [disabled]="chartsCarouselIndex >= chartKeys?.length - items" (click)="chartsCarouselIndex = chartsCarouselIndex + 1"><mat-icon>keyboard_arrow_right</mat-icon></button>
     </div>
   </div>
-  <div fxFlex class="tb-home-charts">
+  <div class="tb-home-charts">
     <ngx-hm-carousel #carousel
       align="left"
       [(ngModel)]="chartsCarouselIndex"
@@ -34,10 +34,9 @@
       <section ngx-hm-carousel-container class="content">
         @for (chart of chartKeys; track chart) {
           <article class="item cursor-pointer"
-            ngx-hm-carousel-item
-            >
-            <div class="chart-container" fxLayout="column">
-              <section fxLayout="row" fxLayoutGap="6px" fxLayoutGap.lt-xl="6px" style="white-space: nowrap">
+            ngx-hm-carousel-item>
+            <div class="chart-container flex flex-col">
+              <section class="flex flex-row gap-1.5 whitespace-nowrap">
                 <span>{{ chartTypeTranslationMap.get(chart) | translate }}</span>
                 <mat-icon class="home-page-material-icons" style="padding: 0; display: block"
                   [matTooltip]="chartTooltip(chart)">

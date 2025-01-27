@@ -15,16 +15,16 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-breadcrumb" fxLayout="row">
+<div class="tb-breadcrumb flex flex-1">
   @if (lastBreadcrumb$ | async; as breadcrumb) {
-    <h1 fxFlex fxHide.gt-sm>
+    <h1 class="flex gt-sm:!hidden">
       {{ breadcrumb.ignoreTranslate
       ? (breadcrumb.labelFunction ? breadcrumb.labelFunction() : breadcrumb.label)
       : (breadcrumb.label | translate) }}
     </h1>
   }
   @for (breadcrumb of breadcrumbs$ | async; track trackByBreadcrumbs; let isLast = $last) {
-    <span fxHide.lt-md fxLayout="row">
+    <span class="flex lt-md:!hidden">
       @switch (isLast) {
         @case (false) {
           <a [routerLink]="breadcrumb.link" [queryParams]="breadcrumb.queryParams">
@@ -41,13 +41,13 @@
           </span>
         }
       }
-    <span class="divider" [fxHide]="isLast"> > </span>
+    <span class="divider" [class.!hidden]="isLast"> > </span>
     </span>
   }
 </div>
 <ng-template #breadcrumbWithIcon let-breadcrumb="breadcrumb">
   @if (breadcrumb.iconUrl) {
-    <img [src]="breadcrumb.iconUrl"/>
+    <img [src]="breadcrumb.iconUrl" [alt]="breadcrumb.link"/>
   } @else {
     <tb-icon>{{ breadcrumb.icon }}</tb-icon>
   }

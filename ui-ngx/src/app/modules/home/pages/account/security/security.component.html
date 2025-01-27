@@ -15,17 +15,17 @@
     limitations under the License.
 
 -->
-<div class="profile-container" fxLayout="column" fxLayoutGap="8px">
-  <mat-card appearance="outlined" class="profile-card" fxLayout="column">
+<div class="profile-container flex flex-col gap-2">
+  <mat-card appearance="outlined" class="profile-card flex flex-col">
     <div class="change-password" tb-toast toastTarget="changePassword">
       <form #changePasswordForm="ngForm" [formGroup]="changePassword" (ngSubmit)="onChangePassword(changePasswordForm)">
-        <div fxLayout="row" fxLayout.xs="column" fxLayoutGap="25px" fxLayoutGap.xs="0">
-          <div fxFlex="290px" fxFlex.sm="250px"  fxFlex.xs="100">
+        <div class="flex flex-1 flex-row gap-[25px] xs:flex-col xs:gap-0">
+          <div class="flex flex-col basis-[290px] xs:basis-full sm:basis-[250px]">
             <h3 class="card-title" translate>profile.change-password</h3>
             <mat-form-field class="mat-block same-color" appearance="fill" color="primary">
               <mat-label translate>profile.current-password</mat-label>
               <input matInput type="password" name="current-password" formControlName="currentPassword" autocomplete="current-password"/>
-              <tb-toggle-password [fxShow]="changePassword.get('currentPassword').dirty || changePassword.get('currentPassword').touched" matSuffix></tb-toggle-password>
+              <tb-toggle-password [class.!hidden]="!(changePassword.get('currentPassword').dirty || changePassword.get('currentPassword').touched)" matSuffix></tb-toggle-password>
               @if (changePassword.get('currentPassword').hasError('differencePassword')) {
                 <mat-error>
                   {{ 'security.password-requirement.incorrect-password-try-again' | translate }}
@@ -35,7 +35,7 @@
             <mat-form-field class="mat-block same-color" hideRequiredMarker appearance="fill" color="primary" subscriptSizing="dynamic">
               <mat-label translate>login.new-password</mat-label>
               <input matInput type="password" name="new-password" formControlName="newPassword" autocomplete="new-password" required/>
-              <tb-toggle-password [fxShow]="changePassword.get('newPassword').dirty || changePassword.get('newPassword').touched" matSuffix></tb-toggle-password>
+              <tb-toggle-password [class.!hidden]="!(changePassword.get('newPassword').dirty || changePassword.get('newPassword').touched)" matSuffix></tb-toggle-password>
               <mat-hint></mat-hint>
               @if (changePassword.get('newPassword').errors
                 && !changePassword.get('newPassword').hasError('alreadyUsed')
@@ -61,13 +61,13 @@
                 </mat-error>
               }
             </mat-form-field>
-            <div fxFlex fxHide fxShow.xs fxLayoutAlign="start center">
+            <div class="hidden flex-1 items-center justify-start xs:flex">
               <ng-container *ngTemplateOutlet="passwordRequirements"></ng-container>
             </div>
             <mat-form-field class="mat-block same-color" hideRequiredMarker appearance="fill" color="primary">
               <mat-label translate>login.new-password-again</mat-label>
               <input matInput type="password" name="new-password" formControlName="newPassword2" autocomplete="new-password" required/>
-              <tb-toggle-password [fxShow]="changePassword.get('newPassword2').dirty || changePassword.get('newPassword2').touched" matSuffix></tb-toggle-password>
+              <tb-toggle-password [class.!hidden]="!(changePassword.get('newPassword2').dirty || changePassword.get('newPassword2').touched)" matSuffix></tb-toggle-password>
               @if (changePassword.get('newPassword2').hasError('differencePassword')) {
                 <mat-error>
                   {{ 'security.password-requirement.new-passwords-not-match' | translate }}
@@ -76,7 +76,7 @@
             </mat-form-field>
           </div>
           <mat-divider [vertical]="true"></mat-divider>
-          <div fxFlex fxHide.xs fxLayoutAlign="start start">
+          <div class="flex flex-1 xs:hidden">
             <ng-container *ngTemplateOutlet="passwordRequirements"></ng-container>
           </div>
         </div>
@@ -137,7 +137,7 @@
             </div>
           }
         </ng-template>
-        <div fxLayout="row" fxLayoutGap="8px" style="margin-top: 18px;" [fxShow]="changePassword.dirty || changePassword.touched">
+        <div class="flex flex-row gap-2" style="margin-top: 18px;" [class.!hidden]="!(changePassword.dirty || changePassword.touched)">
           <button mat-button color="primary"
             type="button"
             (click)="discardChanges(changePasswordForm, $event)"

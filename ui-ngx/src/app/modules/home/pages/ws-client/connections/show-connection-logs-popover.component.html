@@ -27,9 +27,9 @@
     <div >
       <section class="container">
         @for (log of statusLogs; track log) {
-          <div fxFlex fxLayout="row" fxLayoutGap="8px">
+          <div class="flex flex-1 flex-row gap-2">
             <span class="date">{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
-            <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+            <section class="flex flex-row items-center gap-2">
               <span [ngStyle]="setStyle(log.status)" translate>
                 {{ connectionStatusTranslationMap.get(log.status) }}
               </span>

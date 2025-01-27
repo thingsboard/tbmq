@@ -15,13 +15,13 @@
     limitations under the License.
 
 -->
-<section fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="8px">
-  <section fxLayout="column" fxLayoutAlign="start center" [fxShow]="isEdit()">
+<section class="flex flex-row gap-2">
+  <section class="flex flex-col items-center" [class.!hidden]="!isEdit()">
     <label class="tb-small hide-label" translate>timewindow.hide</label>
     <mat-checkbox [(ngModel)]="hideFlag" (ngModelChange)="onHideFlagChange()"></mat-checkbox>
   </section>
-  <section class="interval-section" fxLayout="column" fxFlex [fxShow]="advanced && (isEdit() || !hideFlag)">
-    <section fxLayout="row wrap" fxLayoutAlign="start start" fxFlex fxLayoutGap="6px">
+  <section class="interval-section flex flex-1 flex-col" [class.!hidden]="!(advanced && (isEdit() || !hideFlag))">
+    <section class="flex flex-1 flex-row flex-wrap gap-1.5">
       <mat-form-field class="number-input">
         <mat-label translate>timeinterval.days</mat-label>
         <input matInput [disabled]="hideFlag || disabled()" type="number" step="1" min="0" [(ngModel)]="days" (ngModelChange)="onTimeInputChange('days')"/>
@@ -40,8 +40,8 @@
       </mat-form-field>
     </section>
   </section>
-  <section fxLayout="row" fxFlex [fxShow]="!advanced && (isEdit() || !hideFlag)">
-    <mat-form-field fxFlex [subscriptSizing]="subscriptSizing()">
+  <section class="flex flex-1" [class.!hidden]="!(!advanced && (isEdit() || !hideFlag))">
+    <mat-form-field class="flex flex-1" [subscriptSizing]="subscriptSizing()">
       @if (predefinedName()) {
         <mat-label translate>{{ predefinedName() }}</mat-label>
       }
@@ -54,7 +54,7 @@
       </mat-select>
     </mat-form-field>
   </section>
-  <section fxLayout="column" fxLayoutAlign="center center" [fxShow]="(isEdit() || !hideFlag) && !disabledAdvanced()">
+  <section class="flex flex-col items-center justify-start" [class.!hidden]="!((isEdit() || !hideFlag) && !disabledAdvanced())">
     <label class="tb-small advanced-label" translate>timeinterval.advanced</label>
     <mat-slide-toggle [disabled]="hideFlag || disabled()" class="advanced-switch" [(ngModel)]="advanced" (ngModelChange)="onAdvancedChange()"></mat-slide-toggle>
   </section>

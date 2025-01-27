@@ -16,10 +16,10 @@
 
 -->
 <form #inputForm="ngForm">
-  <section fxLayout="row" fxLayoutGap="16px">
-    <mat-form-field [fxFlex]="flexCorrelation()[0]" class="mat-block tb-value-type">
+  <section class="flex flex-row gap-4">
+    <mat-form-field class="tb-value-type flex flex-1 basis-[30%]">
       <mat-label translate>value.type</mat-label>
-      <mat-select [disabled]="disabled()" matInput name="valueType" [(ngModel)]="valueType" (ngModelChange)="onValueTypeChanged()">
+      <mat-select [disabled]="disabled()" name="valueType" [(ngModel)]="valueType" (ngModelChange)="onValueTypeChanged()">
         <mat-select-trigger>
           <mat-icon svgIcon="{{ valueTypes.get(valueType).icon }}"></mat-icon>
           <span>{{ valueTypes.get(valueType).name | translate }}</span>
@@ -33,9 +33,10 @@
       </mat-select>
     </mat-form-field>
     @if (valueType === valueTypeEnum.STRING) {
-      <mat-form-field [fxFlex]="flexCorrelation()[1]" class="mat-block">
+      <mat-form-field class="tb-value-type flex flex-1 basis-[70%]">
         <mat-label translate>value.string-value</mat-label>
-        <input [disabled]="disabled()" matInput [required]="required()" name="value" #value="ngModel" [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>
+        <input [disabled]="disabled()" matInput [required]="required()" name="value" #value="ngModel"
+               [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>
         @if (value.hasError('required')) {
           <mat-error>
             {{ (requiredText() ? requiredText() : 'value.string-value-required') | translate }}
@@ -44,8 +45,8 @@
       </mat-form-field>
     }
     @if (valueType === valueTypeEnum.JSON) {
-      <div fxLayout="row" fxLayoutAlign="center" [fxFlex]="flexCorrelation()[1]" class="mat-block">
-        <mat-form-field fxFlex class="mat-block">
+      <div class="flex flex-1 basis-[70%] justify-center">
+        <mat-form-field class="flex flex-1">
           <mat-label translate>value.json-value</mat-label>
           <input [disabled]="disabled()" matInput tb-json-to-string [required]="required()" name="value" #value="ngModel"
             [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>

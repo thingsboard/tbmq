@@ -15,27 +15,27 @@
     limitations under the License.
 
 -->
-<div class="tb-details-buttons" fxLayout.xs="column">
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+<div class="tb-details-buttons xs:flex-col">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <button mat-raised-button color="primary"
       [disabled]="(isLoading$ | async)"
       (click)="onEntityAction($event, 'open')"
-      [fxShow]="!isEdit && !isDetailsPage">
+      [class.!hidden]="!(!isEdit && !isDetailsPage)">
       {{'common.open-details-page' | translate }}
     </button>
     <button mat-raised-button color="primary"
       [disabled]="(isLoading$ | async)"
       (click)="onEntityAction($event, 'delete')"
-      [fxShow]="!isEdit">
+      [class.!hidden]="isEdit">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>shared-subscription.delete</span>
     </button>
   </div>
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <tb-copy-content-button [cbContent]="entity?.id" [isEdit]="isEdit"></tb-copy-content-button>
   </div>
 </div>
-<div class="mat-padding" fxLayout="column">
+<div class="mat-padding flex flex-col">
   <fieldset class="fields-group">
     <legend class="group-title">
       <mat-icon class="material-icons">info_outline</mat-icon>
@@ -58,7 +58,7 @@
         <input matInput formControlName="topicFilter" required>
         <tb-copy-button #copyBtn
           (click)="onClickTbCopyButton(entityForm.get('topicFilter')?.value)"
-          [fxShow]="entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+          [class.!hidden]="!entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
           [copyText]="entityForm.get('topicFilter').value">
         </tb-copy-button>
         @if (entityForm.get('topicFilter').hasError('required')) {

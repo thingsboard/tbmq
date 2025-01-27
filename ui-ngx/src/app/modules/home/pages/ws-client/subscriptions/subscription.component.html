@@ -16,11 +16,11 @@
 
 -->
 <section class="subscription-container">
-  <section fxLayout="row" fxLayoutAlign="space-between center" class="subscription-row"
+  <section class="subscription-row flex flex-row items-center justify-between"
     (mouseenter)="onMouseEnter()"
     (mouseleave)="onMouseLeave()">
-    <section fxFlex="90" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px" class="subscription-row-label">
+    <section class="flex max-w-70% flex-[70%] flex-row items-center gap-2">
+      <section class="subscription-row-label flex flex-row items-center gap-2">
         <div class="label-color" [ngStyle]="{backgroundColor: subscription().configuration.color}"></div>
         <span class="label tb-pointer"
           [matTooltip]="'action.edit' | translate"
@@ -30,8 +30,9 @@
       </section>
       <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription().configuration.qos }}</span>
     </section>
-    <section fxFlex="10" fxLayout="row" fxLayoutAlign="end">
-      <div [ngClass]="{ 'action-buttons-container': showActions }" fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px" fxHide.xs>
+    <section>
+      <div [ngClass]="{ 'action-buttons-container': showActions }"
+           class="flex flex-row justify-end gap-2 xs:hidden">
         @for (actionDescriptor of hiddenActions; track actionDescriptor) {
           <div
             class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
@@ -48,7 +49,7 @@
           </div>
         }
       </div>
-      <div fxHide fxShow.xs fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
+      <div class="hidden flex-row justify-end gap-2 xs:flex">
         <button mat-icon-button
           class="tb-mat-32"
           (click)="$event.stopPropagation()"
@@ -58,7 +59,7 @@
         <mat-menu #cellActionsMenu="matMenu" xPosition="before">
           @for (actionDescriptor of hiddenActions; track actionDescriptor) {
             <button mat-menu-item
-              [fxShow]="actionDescriptor.isEnabled(subscription())"
+              [class.!hidden]="!actionDescriptor.isEnabled(subscription())"
               (click)="actionDescriptor.onAction($event, subscription())">
               <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
               <span>{{ actionDescriptor.name }}</span>

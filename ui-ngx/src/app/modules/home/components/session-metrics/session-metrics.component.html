@@ -15,11 +15,11 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
-  <section class="metrics" fxFlex fxFlex.lt-lg="auto">
-    <div fxLayout="row" fxLayoutAlign="space-between center">
+<div class="tb-home-card-container tb-home-padding">
+  <section class="metrics flex flex-1 flex-col lt-lg:flex-auto">
+    <div class="flex flex-row items-center justify-between">
       <span>{{'mqtt-client-session.metrics-title' | translate}}</span>
-      <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
+      <section class="flex flex-row items-center gap-2">
         <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
           style="color: rgba(0,0,0,0.54)"
           matTooltip="{{'action.clear' | translate}}"

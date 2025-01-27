@@ -16,7 +16,7 @@
 
 -->
 <mat-toolbar color="primary" class="mat-elevation-z2">
-  <span fxFlex></span>
+  <span class="flex flex-1"></span>
   <tb-timewindow [(ngModel)]="timewindow"
     (ngModelChange)="onTimewindowChange()"
     asButton
@@ -25,18 +25,18 @@
     aggregation="true">
   </tb-timewindow>
 </mat-toolbar>
-<div class="mat-padding" fxFlex fxLayout="column" fxLayoutGap="16px">
+<div class="mat-padding flex flex-1 flex-col gap-4">
   @for (statsChartType of chartTypes; track trackByIndex(index); let index = $index) {
     <div tb-fullscreen
       [fullscreen]="fullscreenChart === statsChartType"
       [fullscreenElement]="fullscreenElements[index]"
       [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
       <div [id]="statsChartType + 'container'" #chartElement class="mat-padding chart-container" >
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
-        <section fxFlex fxLayoutAlign="space-between center" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span fxFlex></span>
+        <mat-divider [class.!hidden]="!isFullscreen"></mat-divider>
+        <section class="flex flex-row items-center justify-between" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+          <span class="flex flex-1"></span>
           <span [ngStyle]="{paddingLeft: statsChartType === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(statsChartType) | translate }}</span>
-          <span fxFlex></span>
+          <span class="flex flex-1"></span>
           @if (statsChartType === 'processedBytes') {
             <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
               [value]="currentDataSizeUnitType"
@@ -70,7 +70,7 @@
             <ng-container *ngTemplateOutlet="legend; context:{chartType: statsChartType}"></ng-container>
           </section>
         }
-        <mat-divider [fxShow]="isFullscreen"></mat-divider>
+        <mat-divider [class.!hidden]="!isFullscreen"></mat-divider>
       </div>
     </div>
   }

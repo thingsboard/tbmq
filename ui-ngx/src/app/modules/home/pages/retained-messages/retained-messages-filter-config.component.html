@@ -54,16 +54,16 @@
   }
 }
 <ng-template #retainedMessagesPanel>
-  <form fxLayout="column" class="mat-content mat-padding" (ngSubmit)="update()">
+  <form class="mat-content mat-padding flex flex-col" (ngSubmit)="update()">
     <ng-container *ngTemplateOutlet="retainedMessagesFilter"></ng-container>
-    <div fxLayout="row" class="tb-panel-actions" fxLayoutAlign="end center">
+    <div class="tb-panel-actions flex flex-row items-center justify-end">
       <button type="button"
         mat-button
         color="primary"
         (click)="reset()">
         {{ 'action.reset' | translate }}
       </button>
-      <span fxFlex></span>
+      <span class="flex flex-1"></span>
       <button type="button"
         mat-button
         (click)="cancel()">

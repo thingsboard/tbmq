@@ -23,11 +23,11 @@
   </mat-card-header>
   <mat-card-content>
     <div class="tb-form-panel no-border no-padding">
-      <div class="info-container" fxLayout="column" fxLayoutGap="16px">
+      <div class="info-container flex flex-col gap-4">
         <span class="content info" translate>getting-started.guide.info-text</span>
         <a class="content read-more" href="https://thingsboard.io/docs/mqtt-broker" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
-        <section fxLayout="row" fxLayoutGap="8px">
+        <section class="flex flex-row gap-2">
           @for (action of actions; track action) {
             <button mat-stroked-button color="primary" (click)="navigateNewTab(action)">
               <span translate>{{action.title}}</span>
@@ -50,8 +50,8 @@
       <span class="content info" translate>getting-started.guide.guide-text</span>
       <div class="guides-container">
         @for (guide of guides; track guide) {
-          <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
-            (click)="navigate(guide)">
+          <div class="flex flex-col items-center gap-2"
+               (click)="navigate(guide)">
             <div class="guide">
               <img [src]="guide.img" [alt]="guide.subtitle">
               <span translate>{{guide.subtitle}}</span>
@@ -75,7 +75,7 @@
       <span class="content info" translate>getting-started.guide.docs-text</span>
       <div class="guides-container">
         @for (guide of docs; track guide) {
-          <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
+          <div class="flex flex-col items-center gap-2"
             (click)="navigateNewTab(guide)">
             <div class="guide">
               <img [src]="guide.img" [alt]="guide.title">
@@ -99,7 +99,7 @@
       <span class="content info" translate>getting-started.guide.mqtt-features-text</span>
       <div class="guides-container">
         @for (guide of features; track guide) {
-          <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
+          <div class="flex flex-col items-center gap-2"
             (click)="navigateNewTab(guide)">
             <div class="guide">
               <img [src]="guide.img" [alt]="guide.title">

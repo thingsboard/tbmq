@@ -18,10 +18,6 @@
   width: 100%;
   height: 100%;
 
-  .tb-invisible {
-    display: none !important;
-  }
-
   mat-sidenav-container {
     flex: 1;
   }
@@ -58,13 +54,6 @@
       overflow-y: auto;
       height: inherit;
       padding: 0;
-      align-items: initial;
-      section.version {
-        margin: 0 8px 5px 0;
-        font-size: .6em;
-        text-align: right;
-        font-weight: normal;
-      }
     }
   }
   .tb-primary-toolbar {

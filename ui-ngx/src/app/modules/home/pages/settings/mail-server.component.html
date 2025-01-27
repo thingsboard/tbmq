@@ -21,7 +21,7 @@
       <mat-card-title>
         <span class="mat-headline-5" translate>admin.outgoing-mail-settings</span>
       </mat-card-title>
-      <span fxFlex></span>
+      <span class="flex flex-1"></span>
       <div tb-help="outgoingMailSettings"></div>
     </mat-card-header>
     @if (isLoading$ | async) {
@@ -45,7 +45,7 @@
           </mat-form-field>
           <mat-expansion-panel class="configuration-panel mat-elevation-z0" [expanded]="true">
             <mat-expansion-panel-header>
-              <mat-panel-title fxLayoutAlign="start center" translate>
+              <mat-panel-title class="flex items-center" translate>
                 admin.connection-settings
               </mat-panel-title>
             </mat-expansion-panel-header>
@@ -60,8 +60,8 @@
                   }
                 </mat-select>
               </mat-form-field>
-              <div fxLayout.gt-sm="row" fxLayoutGap.gt-sm="10px">
-                <mat-form-field class="mat-block" fxFlex="100" fxFlex.gt-sm="60">
+              <div class="gt-sm:flex gt-sm:flex-row gt-sm:gap-2.5">
+                <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
                   <mat-label translate>admin.smtp-host</mat-label>
                   <input matInput formControlName="smtpHost" placeholder="localhost" required/>
                   @if (mailSettings.get('smtpHost').hasError('required')) {
@@ -70,7 +70,7 @@
                     </mat-error>
                   }
                 </mat-form-field>
-                <mat-form-field class="mat-block" fxFlex="100" fxFlex.gt-sm="40">
+                <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
                   <mat-label translate>admin.smtp-port</mat-label>
                   <input matInput #smtpPortInput formControlName="smtpPort" placeholder="25" maxlength="5" required/>
                   <mat-hint align="end">{{smtpPortInput.value?.length || 0}}/5</mat-hint>
@@ -101,11 +101,11 @@
                   </mat-error>
                 }
               </mat-form-field>
-              <mat-slide-toggle fxFlex formControlName="enableTls" style="display: block; padding-bottom: 22px;">
+              <mat-slide-toggle class="flex flex-1" formControlName="enableTls" style="display: block; padding-bottom: 22px;">
                 {{ 'admin.enable-tls' | translate }}
               </mat-slide-toggle>
               @if (mailSettings.get('enableTls').value) {
-                <mat-form-field fxFlex class="mat-block">
+                <mat-form-field class="flex flex-1">
                   <mat-label translate>admin.tls-version</mat-label>
                   <mat-select formControlName="tlsVersion">
                     @for (tlsVersion of tlsVersions; track tlsVersion) {
@@ -121,8 +121,8 @@
               </mat-slide-toggle>
               @if (mailSettings.get('enableProxy').value) {
                 <div>
-                  <div fxLayout.gt-sm="row" fxLayoutGap.gt-sm="8px">
-                    <mat-form-field class="mat-block" fxFlex="100" fxFlex.gt-sm="60">
+                  <div class="gt-sm:flex gt-sm:flex-row gt-sm:gap-2">
+                    <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
                       <mat-label translate>admin.proxy-host</mat-label>
                       <input matInput required formControlName="proxyHost">
                       @if (mailSettings.get('proxyHost').hasError('required')) {
@@ -131,7 +131,7 @@
                         </mat-error>
                       }
                     </mat-form-field>
-                    <mat-form-field class="mat-block" fxFlex="100" fxFlex.gt-sm="40">
+                    <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
                       <mat-label translate>admin.proxy-port</mat-label>
                       <input matInput required formControlName="proxyPort" type="number" step="1" min="1" max="65535">
                       @if (mailSettings.get('proxyPort').hasError('required')) {
@@ -148,12 +148,12 @@
                       }
                     </mat-form-field>
                   </div>
-                  <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
-                    <mat-form-field fxFlex class="mat-block">
+                  <div class="flex flex-row xs:flex-col gt-xs:gap-2">
+                    <mat-form-field class="flex flex-1">
                       <mat-label translate>admin.proxy-user</mat-label>
                       <input matInput formControlName="proxyUser">
                     </mat-form-field>
-                    <mat-form-field fxFlex class="mat-block">
+                    <mat-form-field class="flex flex-1">
                       <mat-label translate>admin.proxy-password</mat-label>
                       <input matInput type="password" formControlName="proxyPassword" autocomplete="new-proxy-password">
                       <tb-toggle-password matSuffix></tb-toggle-password>
@@ -163,7 +163,7 @@
               }
             </ng-template>
           </mat-expansion-panel>
-          <fieldset class="fields-group" fxLayout="column">
+          <fieldset class="fields-group flex flex-col">
             <legend class="group-title" translate>admin.authentication</legend>
             <mat-form-field class="mat-block">
               <mat-label translate>common.username</mat-label>
@@ -186,7 +186,7 @@
               }
             </section>
           </fieldset>
-          <div fxLayout="row" fxLayoutAlign="end center" fxLayout.xs="column" fxLayoutAlign.xs="end" fxLayoutGap="16px">
+          <div class="flex flex-row items-center justify-end gap-4 xs:flex-col xs:justify-end">
             <button mat-raised-button type="button"
               [disabled]="(isLoading$ | async) || mailSettings.invalid" (click)="sendTestMail()">
               {{'admin.send-test-mail' | translate}}

@@ -15,20 +15,20 @@
     limitations under the License.
 
 -->
-<div mat-dialog-content fxLayout="column" fxLayoutGap="16px">
-  <section fxLayout="row" fxLayoutAlign="flex-start center">
-    <div fxLayout="row" fxLayoutGap="8px">
+<div mat-dialog-content class="flex flex-col gap-4">
+  <section class="flex flex-row items-center justify-start">
+    <div class="flex flex-row gap-2">
       @if (icon) {
         <tb-icon>{{ icon }}</tb-icon>
       }
       <span class="title" translate>{{ title }}</span>
     </div>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <button mat-icon-button [mat-dialog-close]="false">
       <mat-icon class="material-icons">close</mat-icon>
     </button>
   </section>
-  <section fxLayout="row">
+  <section class="flex flex-row">
     <div #eventContentEditor class="tb-event-content"></div>
     <tb-copy-button [disabled]="isLoading$ | async"
       [copyText]="data.content">

@@ -15,10 +15,10 @@
     limitations under the License.
 
 -->
-<div fxFlex fxLayout="column" style="width: 100%;">
-  <div fxLayout="row" style="width: 100%;">
+<div class="flex w-full flex-1 flex-col">
+  <div class="flex w-full flex-row">
     @if (!routerOutlet?.activatedRouteData?.hideTabs && !hideCurrentTabs && (tabs$ | async).length > 1) {
-      <nav fxFlex mat-tab-nav-bar mat-stretch-tabs="false" class="tb-router-tabs" [tabPanel]="tabPanel">
+      <nav mat-tab-nav-bar mat-stretch-tabs="false" class="tb-router-tabs flex flex-1" [tabPanel]="tabPanel">
         @for (tab of tabs$ | async; track index; let index = $index) {
           <a
             routerLink="{{tab.path}}"
@@ -37,7 +37,7 @@
     }
     <tb-anchor #tabsHeaderComponent></tb-anchor>
   </div>
-  <mat-tab-nav-panel #tabPanel fxFlex fxLayout="column" class="tb-router-tabs-content">
+  <mat-tab-nav-panel #tabPanel class="tb-router-tabs-content flex flex-1 flex-col">
     <router-outlet #routerOutlet="outlet" (activate)="activeComponentChanged($event)"></router-outlet>
   </mat-tab-nav-panel>
 </div>

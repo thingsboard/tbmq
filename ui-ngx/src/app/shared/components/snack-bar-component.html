@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div fxLayout="row" fxLayoutAlign="start center" class="tb-toast"
+<div class="tb-toast flex flex-row items-center"
      [@showHideAnimation]="{value: animationState, params: animationParams}"
      (@showHideAnimation.done)="onHideFinished($event)"
      [ngClass]="{

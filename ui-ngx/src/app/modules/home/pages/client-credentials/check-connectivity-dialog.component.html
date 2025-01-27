@@ -17,7 +17,7 @@
 -->
 <mat-toolbar color="primary">
   <h2 translate>{{ dialogTitle }}</h2>
-  <span fxFlex></span>
+  <span class="flex flex-1"></span>
 <!--  <div [tb-help]="'check-connectivity'"></div>-->
   <button mat-icon-button
           (click)="close()"
@@ -35,15 +35,15 @@
   </section>
 </div>
 <div mat-dialog-actions class="tb-dialog-actions">
-  <mat-slide-toggle fxShow="{{ showDontShowAgain }}" [(ngModel)]="notShowAgain">{{ 'action.dont-show-again' | translate}}</mat-slide-toggle>
-  <span fxFlex></span>
+  <mat-slide-toggle [class.!hidden]="!showDontShowAgain" [(ngModel)]="notShowAgain">{{ 'action.dont-show-again' | translate}}</mat-slide-toggle>
+  <span class="flex flex-1"></span>
   <button mat-button
           [disabled]="(isLoading$ | async)"
           (click)="close()">{{ 'action.close' | translate }}</button>
 </div>
 
 <ng-template #loadedCommandTemplate>
-  <tb-toggle-header #transportProtocol fxHide
+  <tb-toggle-header #transportProtocol class="hidden"
                     value="{{ selectTransportType }}"
                     name="TransportProtocol"
                     useSelectOnMdLg="false"
@@ -78,10 +78,10 @@
 
 <ng-template #executeCommandPublish let-cmd="cmd">
   <div class="tb-form-panel stroked">
-    <div fxLayout="row" fxLayoutAlign="space-between center" [fxHide]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
+    <div class="flex items-center justify-between" [class.!hidden]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
       <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.execute-following-command-publish</div>
       <tb-toggle-header #protocolType value="{{ cmd.noSec ? 'noSec' : 'sec'}}" name="protocolType" useSelectOnMdLg="false"
-                        [fxShow]="cmd.noSec && cmd.sec">
+                        [class.!hidden]="!(cmd.noSec && cmd.sec)">
         <tb-toggle-option value="noSec">{{ cmd.noSecLabel }}</tb-toggle-option>
         <tb-toggle-option value="sec">{{ cmd.secLabel }}</tb-toggle-option>
       </tb-toggle-header>
@@ -114,10 +114,10 @@
 
 <ng-template #executeCommandSubscribe let-cmd="cmd">
   <div class="tb-form-panel stroked">
-    <div fxLayout="row" fxLayoutAlign="space-between center" [fxHide]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
+    <div class="flex items-center justify-between" [class.!hidden]="!(cmd.noSec || cmd.sec !== 'Check documentation')">
       <div class="tb-form-panel-title" translate>mqtt-client-credentials.connectivity.execute-following-command-subscribe</div>
       <tb-toggle-header #protocolType value="{{ cmd.noSec ? 'noSec' : 'sec'}}" name="protocolType" useSelectOnMdLg="false"
-                        [fxShow]="cmd.noSec && cmd.sec">
+                        [class.!hidden]="!(cmd.noSec && cmd.sec)">
         <tb-toggle-option value="noSec">{{ cmd.noSecLabel }}</tb-toggle-option>
         <tb-toggle-option value="sec">{{ cmd.secLabel }}</tb-toggle-option>
       </tb-toggle-header>

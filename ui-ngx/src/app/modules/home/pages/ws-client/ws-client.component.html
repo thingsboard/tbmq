@@ -21,11 +21,11 @@
   @defer {
     <section style="width: 100%; height: 100%;">
       <div class="add-connection-container">
-        <div class="add-connection-btn" fxFlex fxLayout="row" fxLayoutAlign="flex-start center"
-             (click)="addConnection($event)">
+        <button class="add-connection-btn flex flex-1 items-center justify-start"
+                (click)="addConnection($event)">
           <mat-icon class="mat-icon tb-mat-64">add</mat-icon>
           <span translate>ws-client.connections.add-connection</span>
-        </div>
+        </button>
       </div>
     </section>
   }

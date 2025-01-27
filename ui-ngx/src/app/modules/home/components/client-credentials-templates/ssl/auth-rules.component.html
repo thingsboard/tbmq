@@ -27,7 +27,7 @@
         </mat-panel-description>
       }
     </mat-expansion-panel-header>
-    <div fxLayout="column" [formGroup]="rulesMappingFormGroup">
+    <div class="flex flex-col" [formGroup]="rulesMappingFormGroup">
       <section>
         <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl' | translate"></div>
         <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-ssl-example' | translate"></div>
@@ -36,8 +36,8 @@
         <div formArrayName="authRulesMapping">
           <fieldset class="fields-group">
             <legend class="group-title">{{ 'mqtt-client-credentials.rule' | translate }} #{{ (index +  1) }}</legend>
-            <div [formGroupName]="index" fxFlex fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-              <div fxFlex fxLayout="column">
+            <div [formGroupName]="index" class="flex flex-1 flex-row items-center gap-2">
+              <div class="flex flex-1 flex-col">
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
                   <input matInput formControlName="certificateMatcherRegex" required>
@@ -77,7 +77,7 @@
                       [matChipInputFor]="chipListPub"
                       (matChipInputTokenEnd)="addTopicRule($event, index, authRulePatternsType.PUBLISH)">
                   </mat-chip-grid>
-                  <mat-icon [fxShow]="!pubRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+                  <mat-icon [class.!hidden]="pubRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
                     warning
                   </mat-icon>
                 </mat-form-field>
@@ -106,13 +106,13 @@
                       [matChipInputFor]="chipListSub"
                       (matChipInputTokenEnd)="addTopicRule($event, index, authRulePatternsType.SUBSCRIBE)">
                   </mat-chip-grid>
-                  <mat-icon [fxShow]="!subRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+                  <mat-icon [class.!hidden]="subRulesArray[index]?.length" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
                     warning
                   </mat-icon>
                 </mat-form-field>
               </div>
               <button mat-icon-button color="warn"
-                [fxShow]="!disabled()"
+                [class.!hidden]="disabled()"
                 [disabled]="rulesFormArray?.controls?.length === 1"
                 type="button"
                 (click)="removeRule(index)"
@@ -126,7 +126,7 @@
       }
     </div>
     <button mat-stroked-button color="primary"
-      [fxShow]="!disabled()"
+      [class.!hidden]="disabled()"
       (click)="addRule()"
       type="button">
       {{ 'mqtt-client-credentials.add-authorization-rules' | translate }}

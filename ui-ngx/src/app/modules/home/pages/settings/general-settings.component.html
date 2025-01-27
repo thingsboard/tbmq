@@ -33,7 +33,7 @@
       <fieldset class="fields-group">
         <legend class="group-title" translate>ws-client.ws-client</legend>
         <div class="container">
-          <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+          <section class="flex flex-row items-center gap-2">
             <mat-slide-toggle formControlName="isLoggingEnabled">
               {{ 'ws-client.show-logs' | translate }}
             </mat-slide-toggle>
@@ -43,8 +43,8 @@
               info
             </mat-icon>
           </section>
-          <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-            <mat-form-field fxFlex>
+          <section class="flex flex-row items-center gap-2">
+            <mat-form-field class="flex flex-1">
               <mat-label translate>ws-client.messages.max-messages</mat-label>
               <input matInput type="number" min="1" formControlName="maxMessages" placeholder="1000"/>
               <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
@@ -64,7 +64,7 @@
           </section>
         </div>
       </fieldset>
-      <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">
+      <div class="layout-wrap flex flex-row items-center justify-end gap-2">
         <button mat-button color="primary"
           [disabled]="generalSettingsForm.pristine"
           (click)="discardGeneralSettings()"
@@ -82,7 +82,7 @@
     <mat-card-title>
       <span class="mat-headline-5" translate>admin.settings.connectivity-settings</span>
     </mat-card-title>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <mat-icon class="material-icons" style="color: rgba(0,0,0,0.18)"
       [matTooltip]="'admin.settings.connectivity-settings-hint' | translate">info
     </mat-icon>
@@ -111,7 +111,7 @@
               {{ 'admin.settings.' + protocol | translate }}
             </mat-slide-toggle>
             <div class="tb-form-row column-xs no-border no-padding tb-standard-fields">
-              <mat-form-field fxFlex hideRequiredMarker>
+              <mat-form-field class="flex flex-1" hideRequiredMarker>
                 <mat-label translate>admin.settings.host</mat-label>
                 <input matInput formControlName="host"/>
                 @if (connectivitySettingsForm.get(protocol + '.host').hasError('required')) {
@@ -120,7 +120,7 @@
                   </mat-error>
                 }
               </mat-form-field>
-              <mat-form-field fxFlex hideRequiredMarker>
+              <mat-form-field class="flex flex-1" hideRequiredMarker>
                 <mat-label translate>admin.settings.port</mat-label>
                 <input matInput type="number" min="0" max="65535" formControlName="port"/>
                 @if (connectivitySettingsForm.get(protocol + '.port').hasError('required')) {
@@ -143,7 +143,7 @@
             </div>
           </div>
         </ng-template>
-        <div fxLayout="row" fxLayoutAlign="end center" fxLayoutGap="8px" class="layout-wrap">
+        <div class="layout-wrap flex flex-row items-center justify-end gap-2">
           <button mat-button color="primary"
             [disabled]="connectivitySettingsForm.pristine"
             (click)="discardConnectivitySettings()"

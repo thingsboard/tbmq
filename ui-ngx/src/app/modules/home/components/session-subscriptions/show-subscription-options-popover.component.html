@@ -15,9 +15,9 @@
     limitations under the License.
 
 -->
-<form fxLayout="column" class="mat-content" style="padding: 16px 8px 8px 8px;" (ngSubmit)="apply()">
+<form class="mat-content flex flex-col" style="padding: 16px 8px 8px 8px;" (ngSubmit)="apply()">
   <ng-container *ngTemplateOutlet="subscriptionOptions"></ng-container>
-  <div fxLayout="row" class="tb-panel-actions" style="padding: 24px 0 0 16px;" fxLayoutAlign="end center">
+  <div class="tb-panel-actions flex flex-row items-center justify-end" style="padding: 24px 0 0 16px;">
     <button type="button"
       mat-button
       (click)="cancel()">
@@ -36,7 +36,7 @@
     <div class="tb-form-panel-title" translate>subscription.mqtt-5-features</div>
     <div class="tb-form-row space-between column-xs" style="height: 56px;">
       <div class="fixed-title-width" translate>subscription.rh</div>
-      <mat-form-field fxFlex class="mat-block" appearance="outline" subscriptSizing="dynamic">
+      <mat-form-field class="flex flex-1" appearance="outline" subscriptSizing="dynamic">
         <mat-select formControlName="retainHandling">
           @for (rh of rhOptions; track rh) {
             <mat-option [value]="rh.value">
@@ -47,7 +47,7 @@
       </mat-form-field>
     </div>
     <div class="tb-form-row space-between column-xs" style="height: 56px">
-      <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
+      <div class="fixed-title-width flex flex-row gap-3">
         <mat-slide-toggle formControlName="noLocal"></mat-slide-toggle>
         <div translate>subscription.nl</div>
         <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18);"
@@ -57,7 +57,7 @@
       </div>
     </div>
     <div class="tb-form-row space-between column-xs" style="height: 56px">
-      <div class="fixed-title-width" fxLayout="row" fxLayoutGap="12px">
+      <div class="fixed-title-width flex flex-row gap-3">
         <mat-slide-toggle formControlName="retainAsPublish"></mat-slide-toggle>
         <div translate>subscription.rap</div>
         <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"

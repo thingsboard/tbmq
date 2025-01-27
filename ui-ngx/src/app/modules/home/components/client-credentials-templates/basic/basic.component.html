@@ -24,7 +24,7 @@
       <input matInput formControlName="clientId">
       <tb-copy-button #copyClientIdBtn
         (click)="onClickTbCopyButton('clientId')"
-        [fxShow]="credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
         [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
       <button mat-icon-button matSuffix
@@ -41,14 +41,14 @@
         </mat-error>
       }
     </mat-form-field>
-    <div fxLayout="column">
-      <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
-        <mat-form-field fxFlex class="mat-block">
+    <div class="flex flex-col">
+      <div class="flex flex-row xs:flex-col gt-xs:gap-2">
+        <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
           <tb-copy-button matSuffix #copyUsernameBtn
             (click)="onClickTbCopyButton('userName')"
-            [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length"
+            [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
             [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <button mat-icon-button matSuffix
@@ -66,7 +66,7 @@
           }
         </mat-form-field>
         @if (!entity()?.id) {
-          <mat-form-field fxFlex class="mat-block">
+          <mat-form-field class="flex flex-1">
             <mat-label translate>mqtt-client-credentials.password</mat-label>
             <input matInput formControlName="password"
               autocomplete="new-password" name="new-password"
@@ -90,10 +90,10 @@
       </mat-panel-title>
     </mat-expansion-panel-header>
     <section>
-      <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
+      <div class="tb-hint pt-0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
       <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
     </section>
-    <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
+    <div class="mt-2 flex flex-1 flex-col" formGroupName="authRules">
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
         <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
@@ -119,7 +119,7 @@
             [matChipInputFor]="chipListPub"
             (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
         </mat-chip-grid>
-        <mat-icon [fxShow]="!pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+        <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
           warning
         </mat-icon>
       </mat-form-field>
@@ -148,7 +148,7 @@
             [matChipInputFor]="chipListSub"
             (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
         </mat-chip-grid>
-        <mat-icon [fxShow]="!subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+        <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
           warning
         </mat-icon>
       </mat-form-field>

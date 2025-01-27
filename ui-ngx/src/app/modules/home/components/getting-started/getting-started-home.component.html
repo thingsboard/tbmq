@@ -15,35 +15,35 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
+<div class="tb-home-card-container tb-home-padding flex flex-1">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
     @for (step of steps | async; track step; let index = $index) {
       <ng-container class="tb-active">
         <mat-step [completed]="index < selectedStep" [editable]="true">
           <ng-template matStepLabel>
-            <div style="width: 100%;" fxLayout="row" fxLayoutAlign="space-between center">
+            <div class="flex w-full flex-row items-center justify-between">
               <div>{{step.title | translate}}</div>
             </div>
           </ng-template>
           <tb-markdown [data]=data usePlainMarkdown containerClass="tb-command-code"></tb-markdown>
           <div style="margin-top: 8px">
             @if (step.id === 'client-device') {
-              <section fxFlex fxLayoutGap="12px">
+              <section class="flex flex-1 gap-3">
                 <button mat-stroked-button color="primary" (click)="addClientCredentials('dev')">
                   <mat-icon>devices_other</mat-icon>{{'getting-started.add-dev-credentials' | translate}}
                 </button>
               </section>
             }
             @if (step.id === 'client-app') {
-              <section fxFlex fxLayoutGap="12px">
+              <section class="flex flex-1 gap-3">
                 <button mat-stroked-button color="primary" (click)="addClientCredentials('app')">
                   <mat-icon>desktop_mac</mat-icon>{{'getting-started.add-app-credentials' | translate}}
                 </button>
               </section>
             }
             @if (step.id === 'session') {
-              <section fxFlex fxLayoutGap="12px">
+              <section class="flex flex-1 gap-3">
                 <button mat-stroked-button color="primary" (click)="openSessions()">
                   <mat-icon [svgIcon]="'mdi:book-multiple'"></mat-icon>{{'getting-started.open-sessions' | translate}}
                 </button>

@@ -15,12 +15,12 @@
     limitations under the License.
 
 -->
-<div class="tb-login-content mat-app-background tb-dark" fxFlex fxLayoutAlign="center center">
+<div class="tb-login-content mat-app-background tb-dark flex flex-1 items-center justify-center">
   <mat-card appearance="raised" style="max-height: 80vh; overflow-y: auto;">
     <mat-card-content>
       <form class="tb-login-form" [formGroup]="loginFormGroup" (ngSubmit)="login()">
-        <fieldset fxLayout="column">
-          <div fxLayout="column" fxLayoutAlign="start center" style="padding: 15px 0;">
+        <fieldset class="flex flex-col">
+          <div class="flex flex-col items-center" style="padding: 15px 0;">
             <tb-logo class="login-logo"></tb-logo>
           </div>
           @if (isLoading$ | async) {
@@ -30,7 +30,7 @@
           @if (!(isLoading$ | async)) {
             <span style="height: 4px;"></span>
           }
-          <div tb-toast fxLayout="column" class="layout-padding">
+          <div tb-toast class="layout-padding flex flex-col">
             <mat-divider style="width: 100%;"></mat-divider>
             <!--            <span style="height: 50px;"></span>-->
             <mat-form-field class="tb-appearance-transparent">
@@ -49,11 +49,11 @@
               <tb-toggle-password matSuffix></tb-toggle-password>
               <mat-icon matPrefix>lock</mat-icon>
             </mat-form-field>
-            <div fxLayoutAlign="end center" class="forgot-password">
+            <div class="forgot-password flex flex-row items-center justify-end">
               <button class="tb-reset-password" mat-button type="button" routerLink="/login/resetPasswordRequest">{{ 'login.forgot-password' | translate }}
               </button>
             </div>
-            <div fxLayout="column" class="tb-action-button">
+            <div class="tb-action-button flex flex-col">
               <button mat-raised-button color="accent" [disabled]="(isLoading$ | async)"
               type="submit">{{ 'login.login' | translate }}</button>
             </div>

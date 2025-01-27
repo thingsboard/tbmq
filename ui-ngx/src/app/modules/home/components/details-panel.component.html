@@ -17,9 +17,9 @@
 -->
 <header>
   <mat-toolbar class="details-toolbar" color="primary" [ngStyle]="{height: headerHeightPx()+'px'}">
-    <div class="mat-toolbar-tools" fxLayout="row" fxLayoutAlign="start center" style="height: 100%;">
-      <div class="mat-toolbar-tools tb-details-title-header" fxFlex fxLayout="column" fxLayoutAlign="start start" [fxHide]="showSearchPane">
-        <div class="tb-details-title" fxLayout="row" fxLayoutAlign="start center">
+    <div class="mat-toolbar-tools flex h-full flex-row items-center">
+      <div class="mat-toolbar-tools tb-details-title-header flex flex-1 flex-col" [class.!hidden]="showSearchPane">
+        <div class="tb-details-title flex flex-row items-center">
           <ng-content select=".prefix-title-buttons"></ng-content>
           <span>{{ headerTitle() }}</span>
         </div>
@@ -29,7 +29,7 @@
         </span>
       </div>
       @if (isShowSearch()) {
-        <div [fxHide]="!showSearchPane" fxLayout="row" fxLayoutAlign="start center" style="width: 100%;">
+        <div [class.!hidden]="!showSearchPane" class="flex w-full flex-row items-center">
           <button mat-icon-button (click)="onToggleSearch()">
             <mat-icon class="material-icons">arrow_back</mat-icon>
           </button>
@@ -49,7 +49,7 @@
       </button>
     </div>
     @if (!isReadOnly()) {
-      <section fxLayout="row" class="layout-wrap tb-header-buttons">
+      <section class="layout-wrap tb-header-buttons flex flex-row">
         <button [disabled]="(isLoading$ | async) || theForm?.invalid || !theForm?.dirty"
           mat-fab
           matTooltip="{{ 'action.apply-changes' | translate }}"
@@ -71,6 +71,6 @@
     }
   </mat-toolbar>
 </header>
-<div fxFlex class="mat-content" [ngStyle]="{backgroundColor: backgroundColor()}">
+<div class="mat-content flex flex-1" [ngStyle]="{backgroundColor: backgroundColor()}">
   <ng-content></ng-content>
 </div>

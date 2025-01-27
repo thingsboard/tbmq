@@ -40,6 +40,7 @@ import { DEFAULT_QOS } from '@shared/models/session.model';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull } from '@core/utils';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
+import { NgTemplateOutlet } from '@angular/common';
 
 @Component({
     selector: 'tb-last-will',
@@ -57,7 +58,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
         }
     ],
     styleUrls: ['./last-will.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent]
+  imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent, NgTemplateOutlet]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

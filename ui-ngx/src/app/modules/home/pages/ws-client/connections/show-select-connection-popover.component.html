@@ -32,8 +32,8 @@
     </section>
   </div>
 </div>
-<section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
-  <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
+<section style="padding: 0 16px 0 16px" class="flex flex-row items-center justify-center">
+  <button class="flex flex-1" mat-stroked-button color="primary" (click)="addConnection($event)">
     <mat-icon class="material-icons">add</mat-icon>
     {{ 'ws-client.connections.add-connection' | translate }}
   </button>

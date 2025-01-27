@@ -15,9 +15,8 @@
     limitations under the License.
 
 -->
-<section fxLayout="column" fxLayoutAlign="start stretch">
-  <section fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="16px"
-           fxLayout.xs="column" fxLayoutAlign.xs="start stretch"  fxLayoutGap.xs="0">
+<section class="flex flex-col items-stretch">
+  <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
     <mat-form-field>
       <mat-label translate>datetime.date-from</mat-label>
       <mat-datetimepicker-toggle [for]="startDatePicker" matPrefix></mat-datetimepicker-toggle>
@@ -31,8 +30,7 @@
       <input matInput [disabled]="disabled()" [(ngModel)]="startDate" [matDatetimepicker]="startTimePicker" (ngModelChange)="onStartDateChange()">
     </mat-form-field>
   </section>
-  <section fxLayout="row" fxLayoutAlign="start start" fxLayoutGap="16px"
-           fxLayout.xs="column" fxLayoutAlign.xs="start stretch"  fxLayoutGap.xs="0">
+  <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
     <mat-form-field>
       <mat-label translate>datetime.date-to</mat-label>
       <mat-datetimepicker-toggle [for]="endDatePicker" matPrefix></mat-datetimepicker-toggle>

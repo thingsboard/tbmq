@@ -23,26 +23,26 @@
     [opened]="sidenavOpened">
     <header class="tb-nav-header">
       <mat-toolbar color="primary" class="tb-nav-header-toolbar">
-        <div fxFlex="auto" fxLayout="row" fxLayoutAlign="center">
-          <img [src]="logo" aria-label="logo" class="tb-logo-title"/>
+        <div class="flex flex-auto">
+          <img [src]="logo" aria-label="logo" alt="TBMQ logo" class="tb-logo-title"/>
         </div>
       </mat-toolbar>
     </header>
-    <mat-toolbar color="primary" fxFlex="0%" class="tb-side-menu-toolbar" fxLayout="column" role="navigation">
+    <mat-toolbar color="primary" class="tb-side-menu-toolbar flex flex-1 flex-col" role="navigation">
       <tb-side-menu></tb-side-menu>
     </mat-toolbar>
     <tb-getting-started-link></tb-getting-started-link>
   </mat-sidenav>
   <mat-sidenav-content>
-    <div fxLayout="column" role="main" style="height: 100%;">
-      <mat-toolbar fxLayout="row" color="primary" class="tb-primary-toolbar">
-        <button mat-icon-button id="main" fxHide.gt-sm (click)="sidenav.toggle()">
+    <div class="flex flex-col" role="main" style="height: 100%;">
+      <mat-toolbar color="primary" class="tb-primary-toolbar flex flex-row">
+        <button mat-icon-button id="main" class="gt-sm:!hidden" (click)="sidenav.toggle()">
           <mat-icon class="material-icons">menu</mat-icon>
         </button>
-        <tb-breadcrumb fxFlex class="mat-toolbar-tools">
+        <tb-breadcrumb class="mat-toolbar-tools flex-1">
         </tb-breadcrumb>
         @if (fullscreenEnabled) {
-          <button mat-icon-button fxHide.lt-md (click)="toggleFullscreen()">
+          <button mat-icon-button class="lt-md:!hidden" (click)="toggleFullscreen()">
             <mat-icon class="material-icons">{{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
           </button>
         }
@@ -53,7 +53,7 @@
           >
         </mat-progress-bar>
       }
-      <div fxFlex fxLayout="column" tb-toast class="tb-main-content">
+      <div tb-toast class="tb-main-content flex flex-1 flex-col">
         <router-outlet (activate)="activeComponentChanged($event)"></router-outlet>
       </div>
     </div>

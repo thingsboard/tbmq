@@ -52,8 +52,8 @@
     matTooltip="{{ 'timewindow.edit' | translate }}"
     [matTooltipPosition]="tooltipPosition()"
     (click)="toggleTimewindow($event)">
-    <div class="tb-timewindow-label" [fxHide]="hideLabel()">
-      {{innerValue?.displayValue}} <span [fxShow]="innerValue?.displayTimezoneAbbr !== ''">| <span class="timezone-abbr">{{innerValue?.displayTimezoneAbbr}}</span></span>
+    <div class="tb-timewindow-label" [class.!hidden]="hideLabel()">
+      {{innerValue?.displayValue}} <span [class.!hidden]="innerValue?.displayTimezoneAbbr === ''">| <span class="timezone-abbr">{{innerValue?.displayTimezoneAbbr}}</span></span>
     </div>
   </section>
 }

@@ -25,7 +25,7 @@
       [(ngModel)]="selectedOption">
     </tb-toggle-select>
   </section>
-  <section fxLayout="row" fxLayoutGap="8px">
+  <section class="flex flex-row gap-2">
     <tb-message-filter-config [ngModel]="filterConfig"
       (ngModelChange)="filterChanged($event)"
       [connectionChanged]="connection"
@@ -42,10 +42,11 @@
   <tb-messages style="overflow: auto"></tb-messages>
 </section>
 
-<div [formGroup]="messangerFormGroup" fxLayout="column" class="mat-padding">
-  <section fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center"
-    style="flex-wrap: nowrap;" [ngClass]="{'wrap': (isLtLg | async)}">
-    <mat-form-field [ngClass]="{'topic-mat-form-field': (isLtLg | async)}" style="min-width: 250px !important; width: 100%" hideRequiredMarker>
+<div [formGroup]="messangerFormGroup" class="mat-padding flex flex-col">
+  <section class="flex flex-row flex-nowrap items-center gap-4"
+    [ngClass]="{'wrap': (isLtLg | async)}">
+    <mat-form-field class="flex flex-1" [ngClass]="{'topic-mat-form-field': (isLtLg | async)}"
+                    style="min-width: 250px !important; width: 100%" hideRequiredMarker>
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic">
       @if (messangerFormGroup.get('topic').hasError('required')) {
@@ -61,9 +62,9 @@
       <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
       </tb-color-input>
     </mat-form-field>
-    <tb-qos-select formControlName="qos" fxFlex="20" fxFlex.lt-xl="25">
+    <tb-qos-select formControlName="qos" class="flex max-w-20% lt-xl:max-w-25%">
     </tb-qos-select>
-    <mat-form-field fxFlex="20" fxFlex.lt-xl="25">
+    <mat-form-field class="flex max-w-20% lt-xl:max-w-25%">
       <mat-label translate>value.format</mat-label>
       <mat-select formControlName="payloadFormat">
         @for (valueType of payloadFormats; track valueType) {

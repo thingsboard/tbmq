@@ -16,9 +16,9 @@
 
 -->
 <form [formGroup]="entityForm">
-  <mat-toolbar fxLayout="row" color="primary">
+  <mat-toolbar class="flex flex-row" color="primary">
     <h2 translate>mqtt-client-session.details</h2>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <div tb-help="sessions"></div>
     <button mat-icon-button
       [mat-dialog-close]="false"
@@ -37,7 +37,7 @@
   }
   <mat-tab-group [selectedIndex]="selectedTab">
     <mat-tab [label]="'details.details' | translate">
-      <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px">
+      <div class="flex flex-row items-center gap-2">
         <button mat-raised-button color="primary"
           [disabled]="(isLoading$ | async) || !isConnected()"
           (click)="onEntityAction($event, 'disconnect')">
@@ -54,18 +54,18 @@
       </div>
       <div class="session-details-content">
         @if (showAppClientShouldBePersistentWarning) {
-          <section class="tb-warning" fxLayoutAlign="start center" fxLayoutGap="4px">
+          <section class="tb-warning flex items-center gap-1">
             <span>{{'mqtt-client-session.should-be-persistent' | translate}}</span>
             <mat-icon class="material-icons" [matTooltip]="'mqtt-client-session.should-be-persistent-tip' | translate" matTooltipPosition="right">info</mat-icon>
           </section>
         }
         <fieldset class="fields-group">
           <legend class="group-title">{{ 'mqtt-client-session.connection-info' | translate }}</legend>
-          <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
-            <div fxFlex class="hint">
+          <div class="session-details flex flex-1 flex-row gap-2.5">
+            <div class="hint flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.connected-status</mat-label>
-                <input matInput fxHide formControlName="connectionState">
+                <input matInput class="hidden" formControlName="connectionState">
                 <span style="vertical-align: bottom; font-size: 32px; padding-right: 8px"
                 [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">&#8226;</span>
                 <span [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">{{ entityForm.get('connectionState')?.value | titlecase }}</span>
@@ -76,16 +76,16 @@
                 <mat-hint translate>mqtt-client-session.keep-alive-hint</mat-hint>
               </mat-form-field>
             </div>
-            <div fxFlex>
+            <div class="flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.connected-at</mat-label>
-                <input matInput fxHide formControlName="connectedAt">
+                <input matInput class="hidden" formControlName="connectedAt">
                 <span>{{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}</span>
               </mat-form-field>
               @if (!isConnected()) {
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
-                  <input matInput fxHide formControlName="disconnectedAt">
+                  <input matInput class="hidden" formControlName="disconnectedAt">
                   <span>
                     {{ isConnected() ? (entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss') : (entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss') }}
                   </span>
@@ -96,8 +96,8 @@
         </fieldset>
         <fieldset class="fields-group">
           <legend class="group-title">{{ 'mqtt-client-session.info' | translate }}</legend>
-          <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
-            <div fxFlex fxLayoutGap="24px" fxLayout="column" class="hint">
+          <div class="session-details flex flex-1 flex-row gap-2.5">
+            <div class="hint flex flex-1 flex-col gap-6">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.node</mat-label>
                 <input matInput formControlName="nodeId">
@@ -110,8 +110,8 @@
                 </mat-form-field>
               }
             </div>
-            <div fxFlex fxLayout="column" class="hint">
-              <div fxLayout="column">
+            <div class="hint flex flex-1 flex-col">
+              <div class="flex flex-col">
                 <mat-checkbox formControlName="cleanStart" [aria-label]="'mqtt-client-session.clean-start' | translate" labelPosition="after">
                   {{ 'mqtt-client-session.clean-start' | translate }}
                 </mat-checkbox>
@@ -122,7 +122,7 @@
               @if (!isConnected() && entity?.sessionEndTs > -1) {
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-session.session-end</mat-label>
-                  <input matInput fxHide formControlName="sessionEndTs">
+                  <input matInput class="hidden" formControlName="sessionEndTs">
                   <span>{{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}</span>
                   <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
                 </mat-form-field>
@@ -132,8 +132,8 @@
         </fieldset>
         <fieldset class="fields-group">
           <legend class="group-title">{{ 'mqtt-client-session.client-info' | translate }}</legend>
-          <div fxFlex class="session-details" fxLayout="row" fxLayoutGap="10px">
-            <div fxFlex>
+          <div class="session-details flex flex-1 flex-row gap-2.5">
+            <div class="flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client.client-id</mat-label>
                 <input matInput formControlName="clientId">
@@ -144,7 +144,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client.client-type</mat-label>
-                <input fxHide matInput formControlName="clientType">
+                <input class="hidden" matInput formControlName="clientType">
                 <span style="display: inline-flex; align-items: center; gap: 8px;">
                   {{ entityForm.get('clientType')?.value | titlecase }}
                   <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">
@@ -157,7 +157,7 @@
                 <input matInput formControlName="mqttVersion">
               </mat-form-field>
             </div>
-            <div fxFlex>
+            <div class="flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.client-ip</mat-label>
                 <input matInput formControlName="clientIpAdr">
@@ -194,9 +194,8 @@
         <tb-session-metrics [entity]="entity"></tb-session-metrics>
       </ng-template>
     </mat-tab>
-
   </mat-tab-group>
-  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
+  <div mat-dialog-actions class="flex flex-row items-center justify-end">
     <button mat-button color="primary"
       type="button"
       [disabled]="(isLoading$ | async)"
