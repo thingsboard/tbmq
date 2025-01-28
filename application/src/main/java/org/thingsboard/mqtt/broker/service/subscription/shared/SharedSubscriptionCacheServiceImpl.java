@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
@@ -180,11 +180,11 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
     }
 
     @Override
-    public CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
+    public CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
         Set<TopicSharedSubscription> topicSharedSubscriptions = null;
-        List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptions.size());
+        List<ValueWithTopicFilter<EntitySubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptions.size());
 
-        for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
+        for (ValueWithTopicFilter<EntitySubscription> clientSubscription : clientSubscriptions) {
             topicSharedSubscriptions = processSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
         }
 
@@ -192,8 +192,8 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return new CompositeSubscriptions(sharedSubscriptions, commonClientSubscriptions);
     }
 
-    private Set<TopicSharedSubscription> processSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,
-                                                             List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions,
+    private Set<TopicSharedSubscription> processSubscription(ValueWithTopicFilter<EntitySubscription> clientSubscription,
+                                                             List<ValueWithTopicFilter<EntitySubscription>> commonClientSubscriptions,
                                                              Set<TopicSharedSubscription> topicSharedSubscriptions) {
         var topicFilter = clientSubscription.getTopicFilter();
         var shareName = clientSubscription.getValue().getShareName();

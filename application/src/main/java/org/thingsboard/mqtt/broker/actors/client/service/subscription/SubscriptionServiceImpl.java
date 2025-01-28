@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
@@ -34,10 +35,10 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
 
-    private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
+    private final SubscriptionTrie<EntitySubscription> subscriptionTrie;
     private final SubscriptionTimerStats subscriptionTimerStats;
 
-    public SubscriptionServiceImpl(SubscriptionTrie<ClientSubscription> subscriptionTrie, StatsManager statsManager) {
+    public SubscriptionServiceImpl(SubscriptionTrie<EntitySubscription> subscriptionTrie, StatsManager statsManager) {
         this.subscriptionTrie = subscriptionTrie;
         this.subscriptionTimerStats = statsManager.getSubscriptionTimerStats();
     }
@@ -76,9 +77,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
+    public List<ValueWithTopicFilter<EntitySubscription>> getSubscriptions(String topic) {
         long startTime = System.nanoTime();
-        List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
+        List<ValueWithTopicFilter<EntitySubscription>> subscriptions = subscriptionTrie.get(topic);
         subscriptionTimerStats.logSubscriptionsLookup(startTime, TimeUnit.NANOSECONDS);
         return subscriptions;
     }

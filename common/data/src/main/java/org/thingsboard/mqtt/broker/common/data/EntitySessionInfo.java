@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription.shared;
+package org.thingsboard.mqtt.broker.common.data;
 
-import lombok.Data;
-import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
-import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import java.util.UUID;
 
-import java.util.List;
+public interface EntitySessionInfo {
 
-@Data
-public class CompositeSubscriptions {
+    String getClientId();
 
-    private final SharedSubscriptions sharedSubscriptions;
-    private final List<ValueWithTopicFilter<EntitySubscription>> commonSubscriptions;
+    ClientType getType();
 
+    default boolean isPersistent() {
+        return true;
+    }
+
+    default boolean isConnected() {
+        return false;
+    }
+
+    String getServiceId();
+
+    UUID getSessionId();
 }

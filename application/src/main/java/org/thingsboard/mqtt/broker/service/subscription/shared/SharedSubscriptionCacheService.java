@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
@@ -38,6 +38,6 @@ public interface SharedSubscriptionCacheService {
 
     Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions();
 
-    CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions);
+    CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions);
 
 }

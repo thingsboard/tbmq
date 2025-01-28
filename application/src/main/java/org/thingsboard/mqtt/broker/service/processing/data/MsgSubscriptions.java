@@ -31,8 +31,10 @@ public class MsgSubscriptions {
     private final List<Subscription> targetDeviceSharedSubscriptions;
 
     public MsgSubscriptions(List<Subscription> commonSubscriptions) {
-        this.commonSubscriptions = commonSubscriptions;
-        this.allApplicationSharedSubscriptions = null;
-        this.targetDeviceSharedSubscriptions = null;
+        this(commonSubscriptions, null, null);
+    }
+
+    public MsgSubscriptions() {
+        this(null, null, null);
     }
 }

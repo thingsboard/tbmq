@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessorImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheServiceImpl;
@@ -103,12 +104,12 @@ public class MsgDispatcherServiceImplTest {
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitDisabled() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(list, result);
     }
@@ -118,12 +119,12 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(0L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(List.of(), result);
     }
@@ -133,12 +134,12 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(3L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(list, result);
     }
@@ -148,14 +149,14 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(5L))).thenReturn(2L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3"),
                 newValueWithTopicFilter("c4", 0, "t4"),
                 newValueWithTopicFilter("c5", 1, "t5")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(2, result.size());
         assertEquals("t1", result.get(0).getTopicFilter());
@@ -186,7 +187,7 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testCollectSubscriptions4() {
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 new ValueWithTopicFilter<>(
                         new ClientSubscription(
                                 "clientId1",
@@ -208,7 +209,7 @@ public class MsgDispatcherServiceImplTest {
     public void testCollectSubscriptions3() {
         when(clientSessionCache.getClientSessionInfo("clientId1")).thenReturn(ClientSessionInfo.builder().clientId("clientId1").build());
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+")
         );
         assertEquals(1, before.size());
@@ -223,7 +224,7 @@ public class MsgDispatcherServiceImplTest {
             when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
         }
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 0, "#"),
                 newValueWithTopicFilter("clientId3", 2, "topic/+/+"),
@@ -253,7 +254,7 @@ public class MsgDispatcherServiceImplTest {
             when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
         }
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 1, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 1, "#"),
                 newValueWithTopicFilter("clientId3", 1, "topic/+/+"),
@@ -330,9 +331,7 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testProcessBasicAndCollectPersistentSubscriptionsWhenNoSubscriptions() {
-        MsgSubscriptions msgSubscriptions = new MsgSubscriptions(
-                null, null, null
-        );
+        MsgSubscriptions msgSubscriptions = new MsgSubscriptions();
 
         QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
                 .newBuilder()
@@ -423,11 +422,11 @@ public class MsgDispatcherServiceImplTest {
         when(clientSessionInfo.getClientId()).thenReturn(clientId);
     }
 
-    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {
+    private ValueWithTopicFilter<EntitySubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {
         return newValueWithTopicFilter(clientId, qos, null, topic);
     }
 
-    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName, String topic) {
+    private ValueWithTopicFilter<EntitySubscription> newValueWithTopicFilter(String clientId, int qos, String shareName, String topic) {
         return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, shareName), topic);
     }
 

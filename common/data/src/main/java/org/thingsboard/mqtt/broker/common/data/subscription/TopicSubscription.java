@@ -34,6 +34,10 @@ public class TopicSubscription {
     private final SubscriptionOptions options;
     private final int subscriptionId;
 
+    public TopicSubscription(String topicFilter) {
+        this(topicFilter, 1);
+    }
+
     public TopicSubscription(String topicFilter, int qos) {
         this(topicFilter, qos, null, SubscriptionOptions.newInstance(), -1);
     }

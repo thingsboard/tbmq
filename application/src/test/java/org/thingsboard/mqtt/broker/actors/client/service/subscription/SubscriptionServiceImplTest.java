@@ -23,7 +23,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 
 import java.util.Set;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(MockitoJUnitRunner.class)
 public class SubscriptionServiceImplTest {
 
-    SubscriptionTrie<ClientSubscription> subscriptionTrie;
+    SubscriptionTrie<EntitySubscription> subscriptionTrie;
     StatsManager statsManager;
     SubscriptionService subscriptionService;
 

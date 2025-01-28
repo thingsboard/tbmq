@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
 import java.util.Collection;
@@ -32,7 +32,7 @@ public interface SubscriptionService {
 
     void unsubscribe(String clientId, Collection<String> topicFilters);
 
-    List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic);
+    List<ValueWithTopicFilter<EntitySubscription>> getSubscriptions(String topic);
 
     void clearEmptyTopicNodes() throws SubscriptionTrieClearException;
 

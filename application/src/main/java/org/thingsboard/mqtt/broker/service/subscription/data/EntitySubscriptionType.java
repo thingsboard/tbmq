@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription.shared;
+package org.thingsboard.mqtt.broker.service.subscription.data;
 
-import lombok.Data;
-import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
-import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+public enum EntitySubscriptionType {
 
-import java.util.List;
-
-@Data
-public class CompositeSubscriptions {
-
-    private final SharedSubscriptions sharedSubscriptions;
-    private final List<ValueWithTopicFilter<EntitySubscription>> commonSubscriptions;
+    DEFAULT,
 
 }

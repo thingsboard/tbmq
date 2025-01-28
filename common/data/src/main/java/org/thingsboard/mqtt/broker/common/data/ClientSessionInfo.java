@@ -28,7 +28,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class ClientSessionInfo {
+public class ClientSessionInfo implements EntitySessionInfo {
 
     private final boolean connected;
     private final String serviceId;
@@ -42,6 +42,7 @@ public class ClientSessionInfo {
     private final long disconnectedAt;
     private final int keepAlive;
 
+    @Override
     public boolean isPersistent() {
         return safeGetSessionExpiryInterval() > 0 || isNotCleanSession();
     }

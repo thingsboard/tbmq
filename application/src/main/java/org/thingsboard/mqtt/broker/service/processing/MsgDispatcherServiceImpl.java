@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
@@ -43,7 +44,7 @@ import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
 import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
@@ -182,7 +183,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return new MsgSubscriptions(collectCommonSubscriptions(clientSubscriptions, senderClientId));
     }
 
-    List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
+    List<ValueWithTopicFilter<EntitySubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
         if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
             int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
             if (availableTokens == 0) {
@@ -198,7 +199,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private List<Subscription> collectCommonSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+            List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
 
         if (clientSubscriptionWithTopicFilterList.isEmpty()) {
             return null;
@@ -213,7 +214,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     List<Subscription> collectSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+            List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
         Map<String, Subscription> map = Maps.newHashMapWithExpectedSize(clientSubscriptionWithTopicFilterList.size());
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
@@ -242,7 +243,7 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return map.isEmpty() ? null : new ArrayList<>(map.values());
     }
 
-    private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+    private Subscription convertToSubscription(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
         String clientId = clientSubscription.getValue().getClientId();
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
@@ -258,15 +259,10 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getSubscriptionId());
     }
 
-    private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
+    private boolean isNoLocalOptionMet(ValueWithTopicFilter<EntitySubscription> clientSubscriptionWithTopicFilter,
                                        String senderClientId) {
-        return clientSubscriptionWithTopicFilter
-                .getValue()
-                .getOptions()
-                .isNoLocalOptionMet(
-                        clientSubscriptionWithTopicFilter.getValue().getClientId(),
-                        senderClientId
-                );
+        SubscriptionOptions options = clientSubscriptionWithTopicFilter.getValue().getOptions();
+        return options != null && options.isNoLocalOptionMet(clientSubscriptionWithTopicFilter.getValue().getClientId(), senderClientId);
     }
 
     Subscription getSubscriptionWithHigherQosAndAllSubscriptionIds(Subscription first, Subscription second) {
