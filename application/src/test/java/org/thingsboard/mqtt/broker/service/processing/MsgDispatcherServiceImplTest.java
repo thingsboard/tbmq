@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -286,7 +286,7 @@ public class MsgDispatcherServiceImplTest {
         mockClientSessionCacheGetClientSession("clientId4", clientSessionInfo4);
 
         var topic = "topic/test";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName(topic)
                 .build();
@@ -333,7 +333,7 @@ public class MsgDispatcherServiceImplTest {
     public void testProcessBasicAndCollectPersistentSubscriptionsWhenNoSubscriptions() {
         MsgSubscriptions msgSubscriptions = new MsgSubscriptions();
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName("topic/test")
                 .build();
@@ -388,7 +388,7 @@ public class MsgDispatcherServiceImplTest {
                         new Subscription("+/topic/1", 2, clientSessionInfo6)
                 )
         );
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName("topic/test")
                 .setQos(2)

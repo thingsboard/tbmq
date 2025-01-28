@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ApplicationRemovedEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -37,7 +37,7 @@ public class ApplicationRemovedEventServiceImpl implements ApplicationRemovedEve
     private final ApplicationRemovedEventQueueFactory applicationRemovedEventQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> eventProducer;
+    private TbQueueProducer<TbProtoQueueMsg<ApplicationRemovedEventProto>> eventProducer;
 
     @PostConstruct
     public void init() {
@@ -46,7 +46,7 @@ public class ApplicationRemovedEventServiceImpl implements ApplicationRemovedEve
 
     @Override
     public void sendApplicationRemovedEvent(String clientId) {
-        QueueProtos.ApplicationRemovedEventProto eventProto = QueueProtos.ApplicationRemovedEventProto.newBuilder()
+        ApplicationRemovedEventProto eventProto = ApplicationRemovedEventProto.newBuilder()
                 .setClientId(clientId)
                 .build();
 

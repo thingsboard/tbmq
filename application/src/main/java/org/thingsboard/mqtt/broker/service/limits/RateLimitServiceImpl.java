@@ -31,7 +31,7 @@ import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfigura
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -87,7 +87,7 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
-    public boolean checkOutgoingLimits(String clientId, QueueProtos.PublishMsgProto msg) {
+    public boolean checkOutgoingLimits(String clientId, PublishMsgProto msg) {
         if (!outgoingRateLimitsConfiguration.isEnabled()) {
             return true;
         }

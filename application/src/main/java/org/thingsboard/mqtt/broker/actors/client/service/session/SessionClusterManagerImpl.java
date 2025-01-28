@@ -43,7 +43,7 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -86,7 +86,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     private final CacheNameResolver cacheNameResolver;
     private final TimeseriesService timeseriesService;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer;
+    private TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseProducer;
     private ExecutorService eventResponseSenderExecutor;
 
     @Value("${queue.client-session-event-response.max-request-timeout}")
@@ -338,7 +338,7 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
     }
 
     private void sendEventResponse(String clientId, ConnectionRequestInfo connectionRequestInfo, boolean success, boolean sessionPresent) {
-        QueueProtos.ClientSessionEventResponseProto response = getEventResponseProto(success, sessionPresent);
+        ClientSessionEventResponseProto response = getEventResponseProto(success, sessionPresent);
         TbQueueMsgHeaders headers = createResponseHeaders(connectionRequestInfo.getRequestId());
         eventResponseSenderExecutor.execute(
                 () -> eventResponseProducer.send(
@@ -360,8 +360,8 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
                         }));
     }
 
-    private QueueProtos.ClientSessionEventResponseProto getEventResponseProto(boolean success, boolean sessionPresent) {
-        return QueueProtos.ClientSessionEventResponseProto.newBuilder()
+    private ClientSessionEventResponseProto getEventResponseProto(boolean success, boolean sessionPresent) {
+        return ClientSessionEventResponseProto.newBuilder()
                 .setSuccess(success)
                 .setSessionPresent(sessionPresent)
                 .build();

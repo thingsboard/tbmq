@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -73,7 +73,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSubscriptionsProto>> clientSubscriptionsConsumer;
 
     @PostConstruct
     public void init() {
@@ -92,7 +92,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         String dummyClientId = persistDummyClientSubscriptions();
         clientSubscriptionsConsumer.assignOrSubscribe();
 
-        List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages;
+        List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages;
         boolean encounteredDummyClient = false;
         Map<String, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
         do {
@@ -101,7 +101,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                 int packSize = messages.size();
                 log.debug("Read {} subscription messages from single poll", packSize);
                 totalMessageCount += packSize;
-                for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
+                for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
                     String clientId = msg.getKey();
                     Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
@@ -141,14 +141,14 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages = clientSubscriptionsConsumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages = clientSubscriptionsConsumer.poll(pollDuration);
                     if (messages.isEmpty()) {
                         continue;
                     }
                     stats.logTotal(messages.size());
                     int acceptedSubscriptions = 0;
                     int ignoredSubscriptions = 0;
-                    for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
+                    for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
                         if (clientId.startsWith(BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX)) {
                             ignoredSubscriptions++;

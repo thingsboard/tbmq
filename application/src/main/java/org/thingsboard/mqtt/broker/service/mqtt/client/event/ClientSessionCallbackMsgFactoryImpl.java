@@ -25,7 +25,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionCluster
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionDisconnectedMsg;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
@@ -42,8 +42,8 @@ import static org.thingsboard.mqtt.broker.common.data.util.BytesUtil.bytesToUuid
 public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbackMsgFactory {
 
     @Override
-    public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg, ClientCallback callback) {
-        QueueProtos.ClientSessionEventProto eventProto = msg.getValue();
+    public SessionClusterManagementMsg createSessionClusterManagementMsg(TbProtoQueueMsg<ClientSessionEventProto> msg, ClientCallback callback) {
+        ClientSessionEventProto eventProto = msg.getValue();
         SessionInfo sessionInfo;
         switch (ClientSessionEventType.valueOf(eventProto.getEventType())) {
             case CONNECTION_REQUEST:
@@ -63,11 +63,11 @@ public class ClientSessionCallbackMsgFactoryImpl implements ClientSessionCallbac
         }
     }
 
-    private SessionInfo getSessionInfo(QueueProtos.ClientSessionEventProto eventProto) {
+    private SessionInfo getSessionInfo(ClientSessionEventProto eventProto) {
         return ProtoConverter.convertToSessionInfo(eventProto.getSessionInfo());
     }
 
-    private ConnectionRequestInfo getConnectionRequestInfo(TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg) {
+    private ConnectionRequestInfo getConnectionRequestInfo(TbProtoQueueMsg<ClientSessionEventProto> msg) {
         TbQueueMsgHeaders requestHeaders = msg.getHeaders();
         long requestTime = bytesToLong(requestHeaders.get(REQUEST_TIME));
         UUID requestId = bytesToUuid(requestHeaders.get(REQUEST_ID_HEADER));

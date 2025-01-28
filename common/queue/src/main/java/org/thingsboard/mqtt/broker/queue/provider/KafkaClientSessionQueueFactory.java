@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -47,8 +47,8 @@ public class KafkaClientSessionQueueFactory extends AbstractQueueFactory impleme
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer() {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<ClientSessionInfoProto>> createProducer() {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<ClientSessionInfoProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(clientSessionSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "client-session-producer");
         producerBuilder.defaultTopic(clientSessionSettings.getKafkaTopic());
@@ -59,8 +59,8 @@ public class KafkaClientSessionQueueFactory extends AbstractQueueFactory impleme
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String consumerId, String groupId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionInfoProto>> createConsumer(String consumerId, String groupId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ClientSessionInfoProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
         Properties props = consumerSettings.toProps(clientSessionSettings.getKafkaTopic(), clientSessionSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ClientSessionQueue-" + consumerId, props, requiredConsumerProperties);
@@ -70,7 +70,7 @@ public class KafkaClientSessionQueueFactory extends AbstractQueueFactory impleme
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "client-session-consumer-" + consumerId);
         consumerBuilder.groupId(kafkaPrefix + BrokerConstants.CLIENT_SESSION_CG_PREFIX + groupId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ClientSessionInfoProto.parseFrom(msg.getData()), msg.getHeaders(),
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), ClientSessionInfoProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

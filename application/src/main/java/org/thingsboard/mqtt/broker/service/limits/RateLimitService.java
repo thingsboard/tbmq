@@ -17,7 +17,7 @@ package org.thingsboard.mqtt.broker.service.limits;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 import java.util.UUID;
 
@@ -31,7 +31,7 @@ public interface RateLimitService {
     /**
      * Rate limits for outgoing PUBLISH messages to non-persistent subscriber with QoS = 0
      */
-    boolean checkOutgoingLimits(String clientId, QueueProtos.PublishMsgProto msg);
+    boolean checkOutgoingLimits(String clientId, PublishMsgProto msg);
 
     void remove(String clientId);
 

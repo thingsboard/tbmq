@@ -24,7 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientPublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -42,7 +42,7 @@ import java.util.concurrent.ExecutorService;
 @RequiredArgsConstructor
 public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DownLinkBasicPublishMsgQueueFactory downLinkBasicPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -72,7 +72,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
         String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
+            TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>> consumer = downLinkBasicPublishMsgQueueFactory.createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
@@ -80,17 +80,17 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
         queueAdmin.deleteOldConsumerGroups(BrokerConstants.BASIC_DOWNLINK_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<ClientPublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
 
-                    for (TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto> msg : msgs) {
-                        QueueProtos.ClientPublishMsgProto clientPublishMsgProto = msg.getValue();
+                    for (TbProtoQueueMsg<ClientPublishMsgProto> msg : msgs) {
+                        ClientPublishMsgProto clientPublishMsgProto = msg.getValue();
                         processor.process(clientPublishMsgProto.getClientId(), clientPublishMsgProto.getPublishMsg());
                     }
                     consumer.commitSync();
@@ -121,7 +121,7 @@ public class BasicDownLinkConsumerImpl implements BasicDownLinkConsumer {
 
     private void deleteUniqueConsumerGroup() {
         if (!CollectionUtils.isEmpty(consumers)) {
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> consumer = consumers.get(0);
+            TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>> consumer = consumers.get(0);
             if (consumer.getConsumerGroupId() != null) {
                 queueAdmin.deleteConsumerGroups(Collections.singleton(consumer.getConsumerGroupId()));
             }

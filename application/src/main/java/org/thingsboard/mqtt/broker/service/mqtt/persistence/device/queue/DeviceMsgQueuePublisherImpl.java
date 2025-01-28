@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -41,7 +41,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     private final ClientLogger clientLogger;
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
 
-    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
+    private TbPublishServiceImpl<PublishMsgProto> publisher;
 
     @Value("${mqtt.handler.device_msg_callback_threads:2}")
     private int threadsCount;
@@ -51,7 +51,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     @PostConstruct
     public void init() {
         this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "device-msg-callback-processor");
-        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("deviceMsg")
                 .producer(devicePersistenceMsgQueueFactory.createProducer())
                 .build();
@@ -59,7 +59,7 @@ public class DeviceMsgQueuePublisherImpl implements DeviceMsgQueuePublisher {
     }
 
     @Override
-    public void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
+    public void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Sending msg in DEVICE Queue");
         publisher.send(queueMsg,
                 new TbQueueCallback() {

@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 public interface DeviceMsgQueuePublisher {
 
-    void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> msgProto, PublishMsgCallback callbackWrapper);
+    void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> msgProto, PublishMsgCallback callbackWrapper);
 }

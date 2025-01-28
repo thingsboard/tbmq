@@ -21,7 +21,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -32,8 +32,8 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
 
     @Value("${service.id:#{null}}")
     private String serviceId;
-    
-    private QueueProtos.ServiceInfo serviceInfo;
+
+    private ServiceInfo serviceInfo;
     
     @PostConstruct
     public void init() {
@@ -41,7 +41,7 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
             serviceId = generateServiceId();
         }
         log.info("Current Service ID: {}", serviceId);
-        this.serviceInfo = QueueProtos.ServiceInfo.newBuilder()
+        this.serviceInfo = ServiceInfo.newBuilder()
                 .setServiceId(serviceId)
                 .build();
     }
@@ -52,7 +52,7 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
     }
 
     @Override
-    public QueueProtos.ServiceInfo getServiceInfo() {
+    public ServiceInfo getServiceInfo() {
         return serviceInfo;
     }
 

@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -47,8 +47,8 @@ public class KafkaRetainedMsgQueueFactory extends AbstractQueueFactory implement
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createProducer() {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<RetainedMsgProto>> createProducer() {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<RetainedMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(retainedMsgKafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "retained-msg-producer");
         producerBuilder.defaultTopic(retainedMsgKafkaSettings.getKafkaTopic());
@@ -59,8 +59,8 @@ public class KafkaRetainedMsgQueueFactory extends AbstractQueueFactory implement
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createConsumer(String consumerId, String groupId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<RetainedMsgProto>> createConsumer(String consumerId, String groupId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<RetainedMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
 
         Properties props = consumerSettings.toProps(retainedMsgKafkaSettings.getKafkaTopic(), retainedMsgKafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("RetainedMsgQueue-" + consumerId, props, requiredConsumerProperties);
@@ -70,7 +70,7 @@ public class KafkaRetainedMsgQueueFactory extends AbstractQueueFactory implement
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "retained-msg-consumer-" + consumerId);
         consumerBuilder.groupId(kafkaPrefix + BrokerConstants.RETAINED_MSG_CG_PREFIX + groupId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.RetainedMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), RetainedMsgProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

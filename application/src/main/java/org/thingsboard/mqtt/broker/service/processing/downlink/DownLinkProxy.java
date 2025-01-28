@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 public interface DownLinkProxy {

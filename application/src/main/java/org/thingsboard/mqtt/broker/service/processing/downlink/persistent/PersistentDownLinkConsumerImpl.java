@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutorService;
 @RequiredArgsConstructor
 public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsumer {
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<DevicePublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -75,7 +75,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         String uniqueGroupId = serviceInfoProvider.getServiceId() + "-" + currentCgSuffix;
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
+            TbQueueConsumer<TbProtoQueueMsg<DevicePublishMsgProto>> consumer = downLinkPersistentPublishMsgQueueFactory
                     .createConsumer(topic, consumerId, uniqueGroupId);
             consumers.add(consumer);
             consumer.subscribe();
@@ -84,16 +84,16 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
         queueAdmin.deleteOldConsumerGroups(BrokerConstants.PERSISTED_DOWNLINK_CG_PREFIX, serviceInfoProvider.getServiceId(), currentCgSuffix);
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<DevicePublishMsgProto>> consumer) {
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<DevicePublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
 
-                    for (TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto> msg : msgs) {
+                    for (TbProtoQueueMsg<DevicePublishMsgProto> msg : msgs) {
                         DevicePublishMsg devicePublishMsg = ProtoConverter.protoToDevicePublishMsg(msg.getValue());
                         MqttPropertiesUtil.addMsgExpiryIntervalToProps(devicePublishMsg.getProperties(), msg.getHeaders());
                         processor.process(msg.getKey(), devicePublishMsg);
@@ -126,7 +126,7 @@ public class PersistentDownLinkConsumerImpl implements PersistentDownLinkConsume
 
     private void deleteUniqueConsumerGroup() {
         if (!CollectionUtils.isEmpty(consumers)) {
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DevicePublishMsgProto>> consumer = consumers.get(0);
+            TbQueueConsumer<TbProtoQueueMsg<DevicePublishMsgProto>> consumer = consumers.get(0);
             if (consumer.getConsumerGroupId() != null) {
                 queueAdmin.deleteConsumerGroups(Collections.singleton(consumer.getConsumerGroupId()));
             }

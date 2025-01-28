@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ClientSessionQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<ClientSessionInfoProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> createConsumer(String consumerId, String groupId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionInfoProto>> createConsumer(String consumerId, String groupId);
 
 }

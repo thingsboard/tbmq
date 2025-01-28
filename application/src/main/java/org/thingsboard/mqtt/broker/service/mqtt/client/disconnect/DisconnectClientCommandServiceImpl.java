@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -41,7 +41,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
     private final ServiceInfoProvider serviceInfoProvider;
     private final DisconnectClientCommandHelper helper;
 
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> clientDisconnectCommandProducer;
+    private TbQueueProducer<TbProtoQueueMsg<DisconnectClientCommandProto>> clientDisconnectCommandProducer;
 
     @PostConstruct
     public void init() {
@@ -50,17 +50,17 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
 
     @Override
     public void disconnectOnSessionConflict(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        QueueProtos.DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_CONFLICTING_SESSIONS);
+        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_CONFLICTING_SESSIONS);
         send(serviceId, clientId, sessionId, disconnectCommand);
     }
 
     @Override
     public void disconnectSessionOnAdminAction(String serviceId, String clientId, UUID sessionId, boolean newSessionCleanStart) {
-        QueueProtos.DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_ADMINISTRATIVE_ACTION);
+        DisconnectClientCommandProto disconnectCommand = getDisconnectCommand(sessionId, newSessionCleanStart, DisconnectReasonType.ON_ADMINISTRATIVE_ACTION);
         send(serviceId, clientId, sessionId, disconnectCommand);
     }
 
-    private void send(String serviceId, String clientId, UUID sessionId, QueueProtos.DisconnectClientCommandProto disconnectCommand) {
+    private void send(String serviceId, String clientId, UUID sessionId, DisconnectClientCommandProto disconnectCommand) {
         String topic = helper.getServiceTopic(serviceId);
         clientDisconnectCommandProducer.send(topic, null, new TbProtoQueueMsg<>(clientId, disconnectCommand), new TbQueueCallback() {
             @Override
@@ -77,7 +77,7 @@ public class DisconnectClientCommandServiceImpl implements DisconnectClientComma
         });
     }
 
-    private QueueProtos.DisconnectClientCommandProto getDisconnectCommand(UUID sessionId, boolean newSessionCleanStart, DisconnectReasonType reasonType) {
+    private DisconnectClientCommandProto getDisconnectCommand(UUID sessionId, boolean newSessionCleanStart, DisconnectReasonType reasonType) {
         return ProtoConverter.createDisconnectClientCommandProto(sessionId, newSessionCleanStart, reasonType.name());
     }
 

@@ -15,19 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ClientSessionEventQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> createEventProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<ClientSessionEventProto>> createEventProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> createEventConsumer(String consumerName);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionEventProto>> createEventConsumer(String consumerName);
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> createEventResponseProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> createEventResponseProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> createEventResponseConsumer(String serviceId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionEventResponseProto>> createEventResponseConsumer(String serviceId);
 
 }

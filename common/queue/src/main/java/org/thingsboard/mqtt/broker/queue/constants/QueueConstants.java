@@ -15,7 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.queue.constants;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 
 public class QueueConstants {
 
@@ -24,7 +25,7 @@ public class QueueConstants {
     public final static String CLEANUP_POLICY_PROPERTY = "cleanup.policy";
     public final static String COMPACT_POLICY = "compact";
 
-    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
-    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
+    public static final ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = ClientSessionInfoProto.newBuilder().build();
+    public static final RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = RetainedMsgProto.newBuilder().build();
 
 }

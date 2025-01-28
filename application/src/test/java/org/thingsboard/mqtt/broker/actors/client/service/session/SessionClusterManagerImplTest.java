@@ -36,7 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -97,18 +97,18 @@ public class SessionClusterManagerImplTest {
 
     @Before
     public void setUp() {
-        TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseProducer = new TbQueueProducer<>() {
+        TbQueueProducer<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseProducer = new TbQueueProducer<>() {
             @Override
             public String getDefaultTopic() {
                 return null;
             }
 
             @Override
-            public void send(TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
+            public void send(TbProtoQueueMsg<ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
             }
 
             @Override
-            public void send(String topic, Integer partition, TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
+            public void send(String topic, Integer partition, TbProtoQueueMsg<ClientSessionEventResponseProto> msg, TbQueueCallback callback) {
             }
 
             @Override

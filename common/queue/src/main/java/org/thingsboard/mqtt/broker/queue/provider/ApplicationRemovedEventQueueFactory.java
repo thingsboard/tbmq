@@ -15,14 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ApplicationRemovedEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface ApplicationRemovedEventQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<ApplicationRemovedEventProto>> createEventProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ApplicationRemovedEventProto>> createEventConsumer(String serviceId);
 }

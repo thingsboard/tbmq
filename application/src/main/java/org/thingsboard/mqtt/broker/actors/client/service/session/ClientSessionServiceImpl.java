@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
@@ -77,7 +77,7 @@ public class ClientSessionServiceImpl implements ClientSessionService {
         ClientSessionInfo clientSessionInfo = ClientSessionInfoFactory.clientSessionToClientSessionInfo(clientSession);
         clientSessionMap.put(clientId, clientSessionInfo);
 
-        QueueProtos.ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
+        ClientSessionInfoProto clientSessionInfoProto = ProtoConverter.convertToClientSessionInfoProto(clientSessionInfo);
         clientSessionPersistenceService.persistClientSessionInfoAsync(clientId, clientSessionInfoProto, callback);
     }
 

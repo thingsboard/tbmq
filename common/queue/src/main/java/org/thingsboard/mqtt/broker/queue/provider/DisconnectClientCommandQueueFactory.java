@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface DisconnectClientCommandQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<DisconnectClientCommandProto>> createProducer(String serviceId);
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer(String topic, String serviceId);
+    TbQueueConsumer<TbProtoQueueMsg<DisconnectClientCommandProto>> createConsumer(String topic, String serviceId);
 
 }

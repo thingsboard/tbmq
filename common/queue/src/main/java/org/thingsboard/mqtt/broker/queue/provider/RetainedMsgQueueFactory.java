@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface RetainedMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<RetainedMsgProto>> createProducer();
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> createConsumer(String consumerId, String groupId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<RetainedMsgProto>> createConsumer(String consumerId, String groupId);
 
 }

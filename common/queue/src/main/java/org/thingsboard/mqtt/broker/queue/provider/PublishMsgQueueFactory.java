@@ -15,15 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface PublishMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer();
+    TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> createProducer();
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String id);
+    TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String id);
 
 }

@@ -19,7 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -44,8 +44,8 @@ public class KafkaHistoricalDataQueueFactory extends AbstractQueueFactory implem
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> createProducer(String serviceId) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> createProducer(String serviceId) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<ToUsageStatsMsgProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(historicalDataTotalKafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "historical-data-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
@@ -55,14 +55,14 @@ public class KafkaHistoricalDataQueueFactory extends AbstractQueueFactory implem
     }
 
     @Override
-    public TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> createConsumer(String topic, String serviceId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueConsumer<TbProtoQueueMsg<ToUsageStatsMsgProto>> createConsumer(String topic, String serviceId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ToUsageStatsMsgProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(topic, historicalDataTotalKafkaSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "historical-data-consumer-" + serviceId);
         consumerBuilder.groupId(kafkaPrefix + "historical-data-consumer-group");
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ToUsageStatsMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), ToUsageStatsMsgProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         consumerBuilder.statsManager(consumerStatsManager);

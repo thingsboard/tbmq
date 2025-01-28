@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -47,8 +47,8 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
-    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
-    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> sharedSubsPublisher;
+    private TbPublishServiceImpl<PublishMsgProto> publisher;
+    private TbPublishServiceImpl<PublishMsgProto> sharedSubsPublisher;
 
     @Value("${mqtt.handler.app_msg_callback_threads:2}")
     private int threadsCount;
@@ -62,13 +62,13 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     @PostConstruct
     public void init() {
         this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "app-msg-callback-processor");
-        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("applicationMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .partition(0)
                 .build();
         this.publisher.init();
-        this.sharedSubsPublisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
+        this.sharedSubsPublisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("applicationSharedSubsMsg")
                 .producer(applicationPersistenceMsgQueueFactory.createSharedSubsProducer(serviceInfoProvider.getServiceId()))
                 .build();
@@ -76,7 +76,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     }
 
     @Override
-    public void sendMsg(String clientId, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
+    public void sendMsg(String clientId, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         clientLogger.logEvent(clientId, this.getClass(), "Start waiting for APPLICATION msg to be persisted");
         String clientQueueTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         publisher.send(queueMsg,
@@ -105,7 +105,7 @@ public class ApplicationMsgQueuePublisherImpl implements ApplicationMsgQueuePubl
     }
 
     @Override
-    public void sendMsgToSharedTopic(String sharedTopic, TbProtoQueueMsg<QueueProtos.PublishMsgProto> queueMsg, PublishMsgCallback callback) {
+    public void sendMsgToSharedTopic(String sharedTopic, TbProtoQueueMsg<PublishMsgProto> queueMsg, PublishMsgCallback callback) {
         sharedSubsPublisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override

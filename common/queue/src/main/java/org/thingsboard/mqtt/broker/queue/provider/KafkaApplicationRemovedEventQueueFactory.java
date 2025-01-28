@@ -19,7 +19,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ApplicationRemovedEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -46,8 +46,8 @@ public class KafkaApplicationRemovedEventQueueFactory extends AbstractQueueFacto
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventProducer(String serviceId) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<ApplicationRemovedEventProto>> createEventProducer(String serviceId) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<ApplicationRemovedEventProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(kafkaSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "application-removed-event-producer-" + serviceId);
         producerBuilder.defaultTopic(kafkaSettings.getKafkaTopic());
@@ -57,8 +57,8 @@ public class KafkaApplicationRemovedEventQueueFactory extends AbstractQueueFacto
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> createEventConsumer(String serviceId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.ApplicationRemovedEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ApplicationRemovedEventProto>> createEventConsumer(String serviceId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<ApplicationRemovedEventProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         Properties props = consumerSettings.toProps(kafkaSettings.getKafkaTopic(), kafkaSettings.getAdditionalConsumerConfig());
         QueueUtil.overrideProperties("ApplicationRemovedEventQueue-" + serviceId, props, requiredConsumerProperties);
         consumerBuilder.properties(props);
@@ -66,7 +66,7 @@ public class KafkaApplicationRemovedEventQueueFactory extends AbstractQueueFacto
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "application-removed-event-consumer-" + serviceId);
         consumerBuilder.groupId(kafkaPrefix + "application-removed-event-consumer-group");
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.ApplicationRemovedEventProto.parseFrom(msg.getData()), msg.getHeaders(),
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), ApplicationRemovedEventProto.parseFrom(msg.getData()), msg.getHeaders(),
                 msg.getPartition(), msg.getOffset()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);

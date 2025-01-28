@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -94,7 +94,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         }
         cacheRetainedMsg(topic, retainedMsg);
 
-        QueueProtos.RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
 
         MqttProperties.IntegerProperty messageExpiryIntervalProperty = MqttPropertiesUtil.getPubExpiryIntervalProperty(retainedMsg);
         if (messageExpiryIntervalProperty != null) {
@@ -179,7 +179,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         if (log.isTraceEnabled()) {
             log.trace("Executing distributeRequestUsingRetainedMsg {}.", retainedMsg);
         }
-        QueueProtos.RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
+        RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
         retainedMsgPersistenceService.persistRetainedMsgAsync(retainedMsg.getTopic(), retainedMsgProto, null);
     }
 

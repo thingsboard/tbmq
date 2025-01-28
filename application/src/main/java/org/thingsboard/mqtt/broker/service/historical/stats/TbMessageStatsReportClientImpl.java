@@ -30,9 +30,8 @@ import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.ToUsageStatsMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.UsageStatsKVProto;
+import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
@@ -73,7 +72,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private String serviceId;
     private ConcurrentMap<String, AtomicLong> stats;
     private ConcurrentMap<String, ConcurrentMap<String, ClientSessionMetricState>> clientSessionsStats;
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> historicalStatsProducer;
+    private TbQueueProducer<TbProtoQueueMsg<ToUsageStatsMsgProto>> historicalStatsProducer;
 
     @PostConstruct
     void init() {

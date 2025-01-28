@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing;
 
 import lombok.Data;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 
 import java.util.UUID;
@@ -25,7 +25,7 @@ import java.util.UUID;
 public class PublishMsgWithId {
 
     private final UUID id;
-    private final QueueProtos.PublishMsgProto publishMsgProto;
+    private final PublishMsgProto publishMsgProto;
     private final TbQueueMsgHeaders headers;
 
 }

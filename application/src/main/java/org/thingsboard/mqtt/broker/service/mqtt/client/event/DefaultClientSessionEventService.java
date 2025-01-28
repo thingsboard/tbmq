@@ -33,7 +33,8 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
@@ -82,8 +83,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
     private long maxRequestTimeout;
 
     private ScheduledExecutorService cleanupStaleRequestsScheduler;
-    private TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> eventProducer;
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseConsumer;
+    private TbQueueProducer<TbProtoQueueMsg<ClientSessionEventProto>> eventProducer;
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseConsumer;
 
     private volatile boolean stopped = false;
 
@@ -153,10 +154,10 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
                 null);
     }
 
-    private ListenableFuture<ConnectionResponse> sendEvent(String clientId, QueueProtos.ClientSessionEventProto eventProto,
+    private ListenableFuture<ConnectionResponse> sendEvent(String clientId, ClientSessionEventProto eventProto,
                                                            boolean isAwaitingResponse, TbQueueCallback callback) {
         UUID requestId = UUID.randomUUID();
-        TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);
+        TbProtoQueueMsg<ClientSessionEventProto> eventRequest = generateRequest(clientId, eventProto, requestId);
 
         SettableFuture<ConnectionResponse> future = SettableFuture.create();
         if (isAwaitingResponse) {
@@ -189,8 +190,8 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         return future;
     }
 
-    private TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> generateRequest(String clientId, QueueProtos.ClientSessionEventProto clientSessionEventProto, UUID requestId) {
-        TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> eventRequest = new TbProtoQueueMsg<>(clientId, clientSessionEventProto);
+    private TbProtoQueueMsg<ClientSessionEventProto> generateRequest(String clientId, ClientSessionEventProto clientSessionEventProto, UUID requestId) {
+        TbProtoQueueMsg<ClientSessionEventProto> eventRequest = new TbProtoQueueMsg<>(clientId, clientSessionEventProto);
         eventRequest.getHeaders().put(REQUEST_ID_HEADER, BytesUtil.uuidToBytes(requestId));
         eventRequest.getHeaders().put(REQUEST_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
         eventRequest.getHeaders().put(RESPONSE_TOPIC_HEADER, BytesUtil.stringToBytes(eventResponseConsumer.getTopic()));
@@ -202,7 +203,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         responseConsumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto>> eventResponseList = eventResponseConsumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<ClientSessionEventResponseProto>> eventResponseList = eventResponseConsumer.poll(pollDuration);
                     if (!eventResponseList.isEmpty()) {
                         if (log.isTraceEnabled()) {
                             log.trace("Read {} event responses.", eventResponseList.size());
@@ -210,7 +211,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
                     } else {
                         continue;
                     }
-                    for (TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> eventResponseMsg : eventResponseList) {
+                    for (TbProtoQueueMsg<ClientSessionEventResponseProto> eventResponseMsg : eventResponseList) {
                         processEventResponse(eventResponseMsg);
                     }
                     eventResponseConsumer.commitSync();
@@ -221,7 +222,7 @@ public class DefaultClientSessionEventService implements ClientSessionEventServi
         });
     }
 
-    private void processEventResponse(TbProtoQueueMsg<QueueProtos.ClientSessionEventResponseProto> eventResponseMsg) {
+    private void processEventResponse(TbProtoQueueMsg<ClientSessionEventResponseProto> eventResponseMsg) {
         byte[] requestIdBytes = eventResponseMsg.getHeaders().get(REQUEST_ID_HEADER);
         if (requestIdBytes == null) {
             log.error("Missing requestId. Msg - {}.", eventResponseMsg);

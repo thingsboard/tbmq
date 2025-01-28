@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -24,13 +24,13 @@ import java.util.Map;
 
 public interface ApplicationPersistenceMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> createProducer(String serviceId);
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createSharedSubsProducer(String serviceId);
+    TbQueueProducer<TbProtoQueueMsg<PublishMsgProto>> createSharedSubsProducer(String serviceId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumer(String topic, String consumerGroupId, String consumerId);
 
-    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> createConsumerForSharedTopic(String topic, String consumerGroupId, String consumerId);
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishMsgProto>> createConsumerForSharedTopic(String topic, String consumerGroupId, String consumerId);
 
     Map<String, String> getTopicConfigs();
 

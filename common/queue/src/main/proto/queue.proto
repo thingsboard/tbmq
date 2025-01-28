@@ -16,6 +16,7 @@
 syntax = "proto3";
 package queue;
 
+option java_multiple_files = true;
 option java_package = "org.thingsboard.mqtt.broker.gen.queue";
 option java_outer_classname = "QueueProtos";
 

@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkProcessor;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkProcessor;
@@ -63,7 +63,7 @@ public class DownLinkProxyImplTest {
     public void givenPubMsgForSubscriberOnSameBroker_whenSendBasicMsg_thenPublishMsgToSubscriber() {
         String serviceId = "broker-0";
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(serviceInfoProvider.getServiceId()).thenReturn(serviceId);
         downLinkProxy.sendBasicMsg(serviceId, clientId, publishMsgProto);
@@ -75,7 +75,7 @@ public class DownLinkProxyImplTest {
     public void givenPubMsgForSubscriberOnDifferentBroker_whenSendBasicMsg_thenPublishMsgToAnotherBroker() {
         String serviceId = "broker-0";
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(serviceInfoProvider.getServiceId()).thenReturn("broker-1");
         downLinkProxy.sendBasicMsg(serviceId, clientId, publishMsgProto);
@@ -90,7 +90,7 @@ public class DownLinkProxyImplTest {
 
         ClientSessionInfo sessionInfo = ClientSessionInfo.builder().serviceId(serviceId).clientId(clientId).build();
         Subscription subscription = new Subscription("#", 1, sessionInfo);
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(serviceInfoProvider.getServiceId()).thenReturn(serviceId);
         downLinkProxy.sendBasicMsg(subscription, publishMsgProto);
@@ -105,7 +105,7 @@ public class DownLinkProxyImplTest {
 
         ClientSessionInfo sessionInfo = ClientSessionInfo.builder().serviceId(serviceId).clientId(clientId).build();
         Subscription subscription = new Subscription("#", 1, sessionInfo);
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(serviceInfoProvider.getServiceId()).thenReturn("broker-1");
         downLinkProxy.sendBasicMsg(subscription, publishMsgProto);

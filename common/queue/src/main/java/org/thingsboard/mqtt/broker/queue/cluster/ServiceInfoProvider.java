@@ -15,11 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.queue.cluster;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 
 public interface ServiceInfoProvider {
 
     String getServiceId();
 
-    QueueProtos.ServiceInfo getServiceInfo();
+    ServiceInfo getServiceInfo();
 }

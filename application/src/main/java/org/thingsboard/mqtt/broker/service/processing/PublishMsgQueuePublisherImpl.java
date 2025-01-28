@@ -20,7 +20,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.PublishMsgQueueFactory;
@@ -33,11 +33,11 @@ public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
 
     private final PublishMsgQueueFactory publishMsgQueueFactory;
 
-    private TbPublishServiceImpl<QueueProtos.PublishMsgProto> publisher;
+    private TbPublishServiceImpl<PublishMsgProto> publisher;
 
     @PostConstruct
     public void init() {
-        this.publisher = TbPublishServiceImpl.<QueueProtos.PublishMsgProto>builder()
+        this.publisher = TbPublishServiceImpl.<PublishMsgProto>builder()
                 .queueName("publishMsg")
                 .producer(publishMsgQueueFactory.createProducer())
                 .build();
@@ -45,7 +45,7 @@ public class PublishMsgQueuePublisherImpl implements PublishMsgQueuePublisher {
     }
 
     @Override
-    public void sendMsg(TbProtoQueueMsg<QueueProtos.PublishMsgProto> msgProto, TbQueueCallback callback) {
+    public void sendMsg(TbProtoQueueMsg<PublishMsgProto> msgProto, TbQueueCallback callback) {
         publisher.send(msgProto, callback);
     }
 
