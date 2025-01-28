@@ -41,7 +41,7 @@ import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheServiceImpl;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -55,6 +55,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -81,7 +82,7 @@ public class MsgDispatcherServiceImplTest {
     @MockBean
     DeviceSharedSubscriptionProcessorImpl deviceSharedSubscriptionProcessor;
     @MockBean
-    SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    SharedSubscriptionCacheServiceImpl sharedSubscriptionCacheService;
     @MockBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
     @MockBean
@@ -291,6 +292,7 @@ public class MsgDispatcherServiceImplTest {
 
         when(sharedSubscriptionCacheService.sharedSubscriptionsInitialized()).thenReturn(true);
         when(deviceSharedSubscriptionProcessor.getTargetSubscriptions(anySet(), anyInt())).thenCallRealMethod();
+        when(sharedSubscriptionCacheService.getSubscriptions(anyList())).thenCallRealMethod();
 
         when(sharedSubscriptionCacheService.get(
                 Set.of(

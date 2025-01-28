@@ -15,29 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.subscription.shared;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import lombok.Data;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-public interface SharedSubscriptionCacheService {
+@Data
+public class CompositeSubscriptions {
 
-    void put(String clientId, Collection<TopicSubscription> topicSubscriptions);
-
-    void remove(String clientId, TopicSubscription topicSubscription);
-
-    SharedSubscriptions get(Set<TopicSharedSubscription> topicSharedSubscriptions);
-
-    boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription);
-
-    boolean sharedSubscriptionsInitialized();
-
-    Map<TopicSharedSubscription, SharedSubscriptions> getAllSharedSubscriptions();
-
-    CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions);
+    private final SharedSubscriptions sharedSubscriptions;
+    private final List<ValueWithTopicFilter<ClientSubscription>> commonSubscriptions;
 
 }

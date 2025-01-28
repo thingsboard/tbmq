@@ -100,6 +100,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
+                false,
                 List.of(
                         createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
                         createSubscription("topic2", 2, "devClientId2", ClientType.DEVICE)
@@ -195,11 +196,7 @@ public class MsgPersistenceManagerImplTest {
     public void testProcessPublishWhenNoSubscriptions() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
-        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
-                null,
-                null,
-                null
-        );
+        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions();
 
         PublishMsgCallback callback = mock(PublishMsgCallback.class);
         msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, callback);

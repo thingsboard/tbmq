@@ -13,26 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.processing.data;
+package org.thingsboard.mqtt.broker.service.processing;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
-import java.util.List;
-import java.util.Set;
+@FunctionalInterface
+public interface MsgProcessingCallback {
 
-@Data
-@RequiredArgsConstructor
-public class MsgSubscriptions {
+    void accept(Subscription subscription);
 
-    private final List<Subscription> commonSubscriptions;
-    private final Set<Subscription> allApplicationSharedSubscriptions;
-    private final List<Subscription> targetDeviceSharedSubscriptions;
-
-    public MsgSubscriptions(List<Subscription> commonSubscriptions) {
-        this.commonSubscriptions = commonSubscriptions;
-        this.allApplicationSharedSubscriptions = null;
-        this.targetDeviceSharedSubscriptions = null;
-    }
 }
