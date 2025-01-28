@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -161,7 +162,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(SUB_CLIENT_ID);
         Assert.assertEquals(1, clientSubscriptions.size());
-        Assert.assertTrue(clientSubscriptions.contains(new TopicSubscription(MY_TOPIC, 1)));
+        Assert.assertTrue(clientSubscriptions.contains(new ClientTopicSubscription(MY_TOPIC, 1)));
 
         String[] unsubscribeTopics = {MY_TOPIC};
         subClient.unsubscribe(unsubscribeTopics);
@@ -197,7 +198,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(SUB_CLIENT_ID);
         Assert.assertEquals(1, clientSubscriptions.size());
-        Assert.assertTrue(clientSubscriptions.contains(new TopicSubscription(MY_TOPIC, 2)));
+        Assert.assertTrue(clientSubscriptions.contains(new ClientTopicSubscription(MY_TOPIC, 2)));
         TopicSubscription topicSubscription = clientSubscriptions.stream().findFirst().get();
         Assert.assertEquals(2, topicSubscription.getQos());
 
@@ -236,7 +237,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
         Collection<ValueWithTopicFilter<EntitySubscription>> clientSubscriptionsFromTrie = subscriptionService.getSubscriptions(MY_TOPIC);
 
         Assert.assertEquals(1, clientSubscriptions.size());
-        Assert.assertTrue(clientSubscriptions.contains(new TopicSubscription(MY_TOPIC, qos)));
+        Assert.assertTrue(clientSubscriptions.contains(new ClientTopicSubscription(MY_TOPIC, qos)));
         TopicSubscription topicSubscription = clientSubscriptions.stream().findFirst().get();
         Assert.assertEquals(qos, topicSubscription.getQos());
         Assert.assertEquals(1, clientSubscriptionsFromTrie.size());

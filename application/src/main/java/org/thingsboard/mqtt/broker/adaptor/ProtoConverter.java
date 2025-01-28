@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
@@ -448,7 +449,7 @@ public class ProtoConverter {
 
     public static Set<TopicSubscription> convertProtoToClientSubscriptions(ClientSubscriptionsProto clientSubscriptionsProto) {
         return clientSubscriptionsProto.getSubscriptionsList().stream()
-                .map(topicSubscriptionProto -> TopicSubscription.builder()
+                .map(topicSubscriptionProto -> ClientTopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
                         .topicFilter(topicSubscriptionProto.getTopic())
                         .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)

@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
@@ -48,7 +49,7 @@ public class SubscriptionInfoDto {
     }
 
     public static TopicSubscription toTopicSubscription(SubscriptionInfoDto subscriptionInfoDto) {
-        return new TopicSubscription(
+        return new ClientTopicSubscription(
                 NettyMqttConverter.getTopicFilter(subscriptionInfoDto.getTopicFilter()),
                 subscriptionInfoDto.getQos().value(),
                 NettyMqttConverter.getShareName(subscriptionInfoDto.getTopicFilter()),

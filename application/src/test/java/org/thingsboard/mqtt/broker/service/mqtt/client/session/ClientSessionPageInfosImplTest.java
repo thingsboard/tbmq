@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
@@ -574,17 +575,17 @@ public class ClientSessionPageInfosImplTest {
         );
         doReturn(map).when(clientSessionCache).getAllClientSessions();
 
-        when(clientSubscriptionCache.getClientSubscriptions("clientId1")).thenReturn(Set.of(new TopicSubscription("tf1", 1)));
-        when(clientSubscriptionCache.getClientSubscriptions("clientId2")).thenReturn(Set.of(new TopicSubscription("tf2", 2)));
-        when(clientSubscriptionCache.getClientSubscriptions("clientId3")).thenReturn(Set.of(new TopicSubscription("tf3", 0)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId1")).thenReturn(Set.of(new ClientTopicSubscription("tf1", 1)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId2")).thenReturn(Set.of(new ClientTopicSubscription("tf2", 2)));
+        when(clientSubscriptionCache.getClientSubscriptions("clientId3")).thenReturn(Set.of(new ClientTopicSubscription("tf3", 0)));
         when(clientSubscriptionCache.getClientSubscriptions("clientId4")).thenReturn(Set.of(
-                new TopicSubscription("tf4", 1),
-                new TopicSubscription("tf44", 1)
+                new ClientTopicSubscription("tf4", 1),
+                new ClientTopicSubscription("tf44", 1)
         ));
         when(clientSubscriptionCache.getClientSubscriptions("clientId5")).thenReturn(Set.of(
-                new TopicSubscription("tf5", 1),
-                new TopicSubscription("tf55", 0),
-                new TopicSubscription("tf555", 2)
+                new ClientTopicSubscription("tf5", 1),
+                new ClientTopicSubscription("tf55", 0),
+                new ClientTopicSubscription("tf555", 2)
         ));
     }
 
@@ -723,6 +724,6 @@ public class ClientSessionPageInfosImplTest {
     }
 
     private TopicSubscription getTopicSubscription() {
-        return new TopicSubscription(RandomStringUtils.randomAlphabetic(10), 1);
+        return new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), 1);
     }
 }

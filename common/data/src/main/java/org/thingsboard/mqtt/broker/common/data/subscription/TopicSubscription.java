@@ -15,64 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.common.data.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+public interface TopicSubscription {
 
-import java.util.Objects;
+    String getTopicFilter();
 
-@AllArgsConstructor
-@Getter
-@Builder(toBuilder = true)
-@ToString
-public class TopicSubscription {
+    int getQos();
 
-    private final String topicFilter;
-    private final int qos;
-    private final String shareName;
-    private final SubscriptionOptions options;
-    private final int subscriptionId;
+    String getShareName();
 
-    public TopicSubscription(String topicFilter) {
-        this(topicFilter, 1);
+    SubscriptionOptions getOptions();
+
+    int getSubscriptionId();
+
+    default boolean isSharedSubscription() {
+        return false;
     }
 
-    public TopicSubscription(String topicFilter, int qos) {
-        this(topicFilter, qos, null, SubscriptionOptions.newInstance(), -1);
+    default boolean isCommonSubscription() {
+        return true;
     }
-
-    public TopicSubscription(String topicFilter, int qos, String shareName) {
-        this(topicFilter, qos, shareName, SubscriptionOptions.newInstance(), -1);
-    }
-
-    public TopicSubscription(String topicFilter, int qos, SubscriptionOptions options) {
-        this(topicFilter, qos, null, options, -1);
-    }
-
-    public TopicSubscription(String topicFilter, int qos, String shareName, SubscriptionOptions options) {
-        this(topicFilter, qos, shareName, options, -1);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TopicSubscription that = (TopicSubscription) o;
-        return Objects.equals(topicFilter, that.topicFilter);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(topicFilter);
-    }
-
-    public boolean isSharedSubscription() {
-        return shareName != null;
-    }
-
-    public boolean isCommonSubscription() {
-        return !isSharedSubscription();
-    }
-
 }

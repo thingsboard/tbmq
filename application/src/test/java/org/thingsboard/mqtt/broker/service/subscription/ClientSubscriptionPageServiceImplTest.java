@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
@@ -284,18 +285,18 @@ public class ClientSubscriptionPageServiceImplTest {
 
             subscriptions.put(RandomStringUtils.randomAlphabetic(10),
                     Set.of(
-                            new TopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
-                            new TopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
-                            new TopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
-                            new TopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
-                            new TopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1)
+                            new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
+                            new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
+                            new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
+                            new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1),
+                            new ClientTopicSubscription(RandomStringUtils.randomAlphabetic(10), qos, null, SubscriptionOptions.newInstance(), -1)
                     )
             );
         }
 
         subscriptions.put("abc",
                 Set.of(
-                        new TopicSubscription(
+                        new ClientTopicSubscription(
                                 "test/topic",
                                 1,
                                 "shared",
@@ -313,9 +314,9 @@ public class ClientSubscriptionPageServiceImplTest {
     private Map<String, Set<TopicSubscription>> getSubscriptionsMap() {
         Map<String, Set<TopicSubscription>> subscriptions = new HashMap<>();
 
-        subscriptions.put("client1", Set.of(new TopicSubscription("tf1", 1, "sn", SubscriptionOptions.newInstance(), -1)));
-        subscriptions.put("client2", Set.of(new TopicSubscription("tf2", 2, "shared", SubscriptionOptions.newInstance(), 1)));
-        subscriptions.put("abcdf", Set.of(new TopicSubscription("test/test", 0, null, SubscriptionOptions.newInstance(), 1)));
+        subscriptions.put("client1", Set.of(new ClientTopicSubscription("tf1", 1, "sn", SubscriptionOptions.newInstance(), -1)));
+        subscriptions.put("client2", Set.of(new ClientTopicSubscription("tf2", 2, "shared", SubscriptionOptions.newInstance(), 1)));
+        subscriptions.put("abcdf", Set.of(new ClientTopicSubscription("test/test", 0, null, SubscriptionOptions.newInstance(), 1)));
 
         return subscriptions;
     }

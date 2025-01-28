@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
@@ -116,11 +117,11 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenTopicSubscription_whenCheckIsSharedSubscriptionWithNoLocal_thenReturnExpectedResult() {
         boolean result = mqttSubscribeHandler.isSharedSubscriptionWithNoLocal(
-                new TopicSubscription("qwe", 1, "g1"));
+                new ClientTopicSubscription("qwe", 1, "g1"));
         assertFalse(result);
 
         result = mqttSubscribeHandler.isSharedSubscriptionWithNoLocal(
-                new TopicSubscription(
+                new ClientTopicSubscription(
                         "qwe",
                         1,
                         null,
@@ -131,7 +132,7 @@ public class MqttSubscribeHandlerTest {
         assertFalse(result);
 
         result = mqttSubscribeHandler.isSharedSubscriptionWithNoLocal(
-                new TopicSubscription(
+                new ClientTopicSubscription(
                         "qwe",
                         1,
                         null,
@@ -142,7 +143,7 @@ public class MqttSubscribeHandlerTest {
         assertFalse(result);
 
         result = mqttSubscribeHandler.isSharedSubscriptionWithNoLocal(
-                new TopicSubscription(
+                new ClientTopicSubscription(
                         "qwe",
                         1,
                         "g1",
@@ -155,22 +156,22 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenTopicSubscription_whenValidateSharedSubscription_thenSuccess() {
-        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "g"));
+        mqttSubscribeHandler.validateSharedSubscription(new ClientTopicSubscription("tf", 1, "g"));
     }
 
     @Test(expected = DataValidationException.class)
     public void givenTopicSubscription_whenValidateSharedSubscriptionWithEmptyShareName_thenFailure() {
-        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, ""));
+        mqttSubscribeHandler.validateSharedSubscription(new ClientTopicSubscription("tf", 1, ""));
     }
 
     @Test(expected = DataValidationException.class)
     public void givenTopicSubscription_whenValidateSharedSubscriptionWithMultiLvlWildcardShareName_thenFailure() {
-        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "#"));
+        mqttSubscribeHandler.validateSharedSubscription(new ClientTopicSubscription("tf", 1, "#"));
     }
 
     @Test(expected = DataValidationException.class)
     public void givenTopicSubscription_whenValidateSharedSubscriptionWithSingleLvlWildcardShareName_thenFailure() {
-        mqttSubscribeHandler.validateSharedSubscription(new TopicSubscription("tf", 1, "abc+"));
+        mqttSubscribeHandler.validateSharedSubscription(new ClientTopicSubscription("tf", 1, "abc+"));
     }
 
     @Test
@@ -335,7 +336,7 @@ public class MqttSubscribeHandlerTest {
     @Test
     public void givenTopicSubscription_whenGetRetainedMessagesForTopicSubscription_thenReturnEmptyResult() {
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of());
-        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 1));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 1));
         assertTrue(messages.isEmpty());
     }
 
@@ -344,7 +345,7 @@ public class MqttSubscribeHandlerTest {
         MqttProperties properties = new MqttProperties();
 
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
-        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 0));
         assertEquals(1, messages.size());
         assertEquals(0, messages.get(0).getQos());
     }
@@ -354,7 +355,7 @@ public class MqttSubscribeHandlerTest {
         MqttProperties properties = new MqttProperties();
 
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
-        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0, null, SubscriptionOptions.newInstance(), 1));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 0, null, SubscriptionOptions.newInstance(), 1));
         assertEquals(1, messages.size());
         assertEquals(0, messages.get(0).getQos());
         MqttProperties resultProps = messages.get(0).getProperties();
@@ -368,7 +369,7 @@ public class MqttSubscribeHandlerTest {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, -10));
 
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
-        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 0));
         assertTrue(messages.isEmpty());
     }
 
@@ -378,7 +379,7 @@ public class MqttSubscribeHandlerTest {
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 30));
 
         when(retainedMsgService.getRetainedMessages("tf")).thenReturn(List.of(new RetainedMsg("tf", null, 1, properties)));
-        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new TopicSubscription("tf", 0));
+        List<RetainedMsg> messages = mqttSubscribeHandler.getRetainedMessagesForTopicSubscription(new ClientTopicSubscription("tf", 0));
         assertEquals(1, messages.size());
     }
 
@@ -424,7 +425,7 @@ public class MqttSubscribeHandlerTest {
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         when(applicationSharedSubscriptionService.findSharedSubscriptionByTopic("tf1")).thenReturn(null);
 
-        List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf1", 1, "g1"));
+        List<TopicSubscription> topicSubscriptions = List.of(new ClientTopicSubscription("tf1", 1, "g1"));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
@@ -440,7 +441,7 @@ public class MqttSubscribeHandlerTest {
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         when(applicationSharedSubscriptionService.findSharedSubscriptionByTopic("tf1")).thenReturn(new ApplicationSharedSubscription());
 
-        List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf1", 1, "g1"));
+        List<TopicSubscription> topicSubscriptions = List.of(new ClientTopicSubscription("tf1", 1, "g1"));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
 
@@ -451,7 +452,7 @@ public class MqttSubscribeHandlerTest {
     public void givenMqttSubscribeMsgWithSharedSubscriptionAndNoLocal_whenCollectMqttReasonCodes_thenReturnEmptyResult() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
-        List<TopicSubscription> topicSubscriptions = List.of(new TopicSubscription("tf", 1, "g",
+        List<TopicSubscription> topicSubscriptions = List.of(new ClientTopicSubscription("tf", 1, "g",
                 new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE)));
         MqttSubscribeMsg msg = new MqttSubscribeMsg(UUID.randomUUID(), 1, topicSubscriptions);
         List<MqttReasonCodes.SubAck> reasonCodes = mqttSubscribeHandler.collectMqttReasonCodes(ctx, msg);
@@ -641,11 +642,11 @@ public class MqttSubscribeHandlerTest {
     }
 
     private TopicSubscription getTopicSubscription(String topic, int qos, String shareName) {
-        return new TopicSubscription(topic, qos, shareName);
+        return new ClientTopicSubscription(topic, qos, shareName);
     }
 
     private TopicSubscription getTopicSubscription(String topic, int qos, SubscriptionOptions options) {
-        return new TopicSubscription(topic, qos, options);
+        return new ClientTopicSubscription(topic, qos, options);
     }
 
     private RetainedMsg newRetainedMsg(String payload, int qos, long ts) {

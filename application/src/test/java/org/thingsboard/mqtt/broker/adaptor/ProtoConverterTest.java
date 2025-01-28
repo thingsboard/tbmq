@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
@@ -133,9 +134,9 @@ public class ProtoConverterTest {
     @Test
     public void givenTopicSubscriptions_whenConvertToProtoAndBack_thenOk() {
         Set<TopicSubscription> input = Set.of(
-                new TopicSubscription("topic1", 0, "name1"),
-                new TopicSubscription("topic2", 1),
-                new TopicSubscription(
+                new ClientTopicSubscription("topic1", 0, "name1"),
+                new ClientTopicSubscription("topic2", 1),
+                new ClientTopicSubscription(
                         "topic3",
                         2,
                         null,

@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
@@ -212,14 +213,14 @@ public class ClientSubscriptionServiceImplTest {
     }
 
     private TopicSubscription getTopicSubscription(String topic) {
-        return new TopicSubscription(topic, 1);
+        return new ClientTopicSubscription(topic, 1);
     }
 
     private TopicSubscription getSharedTopicSubscription(String topic) {
-        return new TopicSubscription(topic, 1, "sharedGroup");
+        return new ClientTopicSubscription(topic, 1, "sharedGroup");
     }
 
     private TopicSubscription getSharedTopicSubscription(String topic, int qos) {
-        return new TopicSubscription(topic, qos, "sharedGroup");
+        return new ClientTopicSubscription(topic, qos, "sharedGroup");
     }
 }

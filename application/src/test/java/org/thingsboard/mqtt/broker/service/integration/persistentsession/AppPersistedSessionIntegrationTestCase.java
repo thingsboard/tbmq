@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -66,8 +67,8 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @RunWith(SpringRunner.class)
 public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
-            new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
+    private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new ClientTopicSubscription("A", 0),
+            new ClientTopicSubscription("A/1", 0), new ClientTopicSubscription("A/2", 1), new ClientTopicSubscription("B", 1));
 
     @Autowired
     private MqttClientCredentialsService credentialsService;
@@ -216,7 +217,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         });
         persistedClient.connect("localhost", mqttPort).get();
 
-        List<TopicSubscription> newTopicSubscriptions = Arrays.asList(new TopicSubscription("C/1", 1), new TopicSubscription("C/2", 0));
+        List<TopicSubscription> newTopicSubscriptions = Arrays.asList(new ClientTopicSubscription("C/1", 1), new ClientTopicSubscription("C/2", 0));
         String[] newTopicNames = getTopicNames(newTopicSubscriptions);
         int[] newQoSLevels = getQoSLevels(newTopicSubscriptions);
         for (int i = 0; i < newTopicNames.length; i++) {

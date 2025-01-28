@@ -20,7 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
@@ -55,8 +55,8 @@ public class SubscriptionServiceImplTest {
     @Test
     public void givenClientTopicSubscriptions_whenSubscribe_thenOk() {
         subscriptionService.subscribe("clientId", Set.of(
-                new TopicSubscription("topic1", 1),
-                new TopicSubscription("topic2", 2)
+                new ClientTopicSubscription("topic1", 1),
+                new ClientTopicSubscription("topic2", 2)
         ));
         verify(subscriptionTrie, times(2)).put(any(), any());
     }

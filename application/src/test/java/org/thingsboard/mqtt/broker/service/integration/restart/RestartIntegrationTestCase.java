@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
@@ -59,8 +60,8 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     private static final int NUMBER_OF_MSGS_IN_SEQUENCE = 50;
     private static final String TEST_TOPIC = "test/restart/topic";
-    private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new TopicSubscription("A", 0),
-            new TopicSubscription("A/1", 0), new TopicSubscription("A/2", 1), new TopicSubscription("B", 1));
+    private static final List<TopicSubscription> TEST_TOPIC_SUBSCRIPTIONS = Arrays.asList(new ClientTopicSubscription("A", 0),
+            new ClientTopicSubscription("A/1", 0), new ClientTopicSubscription("A/2", 1), new ClientTopicSubscription("B", 1));
 
     @Autowired
     private ClientSessionCache clientSessionCache;

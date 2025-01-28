@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
@@ -183,7 +184,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {
         String dummyClientId = BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX + UUID.randomUUID();
-        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new TopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
+        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new ClientTopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
         return dummyClientId;
     }
 

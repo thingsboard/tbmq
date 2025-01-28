@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.util.TopicSubscriptionsUtil;
@@ -34,8 +35,8 @@ public class TopicSubscriptionsUtilTest {
 
     @Test
     public void testGetSubscriptionsUpdate_0() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 0));
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("3", 0));
+        Set<TopicSubscription> prevSubscriptions = Set.of(new ClientTopicSubscription("1", 0), new ClientTopicSubscription("2", 0));
+        Set<TopicSubscription> newSubscriptions = Set.of(new ClientTopicSubscription("1", 1), new ClientTopicSubscription("3", 0));
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
         Set<TopicSubscription> toSubscribe = subscriptionsUpdate.getToSubscribe();
@@ -56,8 +57,8 @@ public class TopicSubscriptionsUtilTest {
 
     @Test
     public void testGetSubscriptionsUpdate_1() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0, "s1"), new TopicSubscription("2", 0));
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1, "s2"), new TopicSubscription("2", 0, "s3"));
+        Set<TopicSubscription> prevSubscriptions = Set.of(new ClientTopicSubscription("1", 0, "s1"), new ClientTopicSubscription("2", 0));
+        Set<TopicSubscription> newSubscriptions = Set.of(new ClientTopicSubscription("1", 1, "s2"), new ClientTopicSubscription("2", 0, "s3"));
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
         Set<TopicSubscription> toSubscribe = subscriptionsUpdate.getToSubscribe();
@@ -78,7 +79,7 @@ public class TopicSubscriptionsUtilTest {
     @Test
     public void testGetSubscriptionsUpdate_2() {
         Set<TopicSubscription> prevSubscriptions = Set.of();
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("1", 1), new TopicSubscription("2", 2));
+        Set<TopicSubscription> newSubscriptions = Set.of(new ClientTopicSubscription("1", 1), new ClientTopicSubscription("2", 2));
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
         Set<TopicSubscription> toSubscribe = subscriptionsUpdate.getToSubscribe();
@@ -97,14 +98,14 @@ public class TopicSubscriptionsUtilTest {
     @Test
     public void testGetSubscriptionsUpdate_3() {
         Set<TopicSubscription> prevSubscriptions = Set.of(
-                new TopicSubscription("1", 0, new SubscriptionOptions()),
-                new TopicSubscription("2", 1,
+                new ClientTopicSubscription("1", 0, new SubscriptionOptions()),
+                new ClientTopicSubscription("2", 1,
                         new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE))
         );
         Set<TopicSubscription> newSubscriptions = Set.of(
-                new TopicSubscription("1", 0,
+                new ClientTopicSubscription("1", 0,
                         new SubscriptionOptions(true, false, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE_IF_NOT_YET_EXISTS)),
-                new TopicSubscription("2", 0, "s3"));
+                new ClientTopicSubscription("2", 0, "s3"));
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
         Set<TopicSubscription> toSubscribe = subscriptionsUpdate.getToSubscribe();
@@ -130,13 +131,13 @@ public class TopicSubscriptionsUtilTest {
     @Test
     public void testGetSubscriptionsUpdate_4() {
         Set<TopicSubscription> prevSubscriptions = Set.of(
-                new TopicSubscription("1", 0, null, new SubscriptionOptions(), -1),
-                new TopicSubscription("2", 1, "shared",
+                new ClientTopicSubscription("1", 0, null, new SubscriptionOptions(), -1),
+                new ClientTopicSubscription("2", 1, "shared",
                         new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE), 1)
         );
         Set<TopicSubscription> newSubscriptions = Set.of(
-                new TopicSubscription("1", 0, null, new SubscriptionOptions(), 1),
-                new TopicSubscription("2", 1, "shared",
+                new ClientTopicSubscription("1", 0, null, new SubscriptionOptions(), 1),
+                new ClientTopicSubscription("2", 1, "shared",
                         new SubscriptionOptions(true, true, SubscriptionOptions.RetainHandlingPolicy.SEND_AT_SUBSCRIBE), 2)
         );
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
@@ -166,8 +167,8 @@ public class TopicSubscriptionsUtilTest {
 
     @Test
     public void testGetSubscriptionsUpdate_5() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 0), new TopicSubscription("2", 2));
-        Set<TopicSubscription> newSubscriptions = Set.of(new TopicSubscription("3", 1));
+        Set<TopicSubscription> prevSubscriptions = Set.of(new ClientTopicSubscription("1", 0), new ClientTopicSubscription("2", 2));
+        Set<TopicSubscription> newSubscriptions = Set.of(new ClientTopicSubscription("3", 1));
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
         Set<TopicSubscription> toSubscribe = subscriptionsUpdate.getToSubscribe();
@@ -188,7 +189,7 @@ public class TopicSubscriptionsUtilTest {
 
     @Test
     public void testGetSubscriptionsUpdate_6() {
-        Set<TopicSubscription> prevSubscriptions = Set.of(new TopicSubscription("1", 2), new TopicSubscription("2", 0));
+        Set<TopicSubscription> prevSubscriptions = Set.of(new ClientTopicSubscription("1", 2), new ClientTopicSubscription("2", 0));
         Set<TopicSubscription> newSubscriptions = Set.of();
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionsUpdate = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
 
@@ -208,15 +209,15 @@ public class TopicSubscriptionsUtilTest {
     @Test
     public void testGetSubscriptionsUpdate_7() {
         Set<TopicSubscription> prevSubscriptions = Set.of(
-                new TopicSubscription("1", 0, "s1"),
-                new TopicSubscription("2", 1, new SubscriptionOptions(false, true, SubscriptionOptions.RetainHandlingPolicy.DONT_SEND_AT_SUBSCRIBE)),
-                new TopicSubscription("3", 2, null, new SubscriptionOptions(), 5),
-                new TopicSubscription("4", 2, null, new SubscriptionOptions(), 2));
+                new ClientTopicSubscription("1", 0, "s1"),
+                new ClientTopicSubscription("2", 1, new SubscriptionOptions(false, true, SubscriptionOptions.RetainHandlingPolicy.DONT_SEND_AT_SUBSCRIBE)),
+                new ClientTopicSubscription("3", 2, null, new SubscriptionOptions(), 5),
+                new ClientTopicSubscription("4", 2, null, new SubscriptionOptions(), 2));
 
         Set<TopicSubscription> newSubscriptions = Set.of(
-                new TopicSubscription("1", 0, null, new SubscriptionOptions(), 1),
-                new TopicSubscription("2", 2),
-                new TopicSubscription("3", 1));
+                new ClientTopicSubscription("1", 0, null, new SubscriptionOptions(), 1),
+                new ClientTopicSubscription("2", 2),
+                new ClientTopicSubscription("3", 1));
 
         TopicSubscriptionsUtil.SubscriptionsUpdate subscriptionUpdates = TopicSubscriptionsUtil.getSubscriptionsUpdate(prevSubscriptions, newSubscriptions);
         Set<TopicSubscription> toSubscribe = subscriptionUpdates.getToSubscribe();

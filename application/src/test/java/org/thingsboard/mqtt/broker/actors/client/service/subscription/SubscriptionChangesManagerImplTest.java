@@ -21,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
@@ -119,10 +120,10 @@ public class SubscriptionChangesManagerImplTest {
     }
 
     private TopicSubscription getTopicSubs(String topic, int qos) {
-        return new TopicSubscription(topic, qos);
+        return new ClientTopicSubscription(topic, qos);
     }
 
     private TopicSubscription getTopicSubs(String topic, int qos, String shareName, SubscriptionOptions options, int subscriptionId) {
-        return new TopicSubscription(topic, qos, shareName, options, subscriptionId);
+        return new ClientTopicSubscription(topic, qos, shareName, options, subscriptionId);
     }
 }

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dto;
 import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 
@@ -33,7 +34,7 @@ public class SubscriptionInfoDtoTest {
     public void fromSubscription_ShouldCreateSubscriptionInfoDto() {
         SubscriptionOptions options = SubscriptionOptions.newInstance();
         SubscriptionOptionsDto optionsDto = SubscriptionOptionsDto.fromSubscriptionOptions(options);
-        TopicSubscription topicSubscription = new TopicSubscription("test/topic", 1, options);
+        TopicSubscription topicSubscription = new ClientTopicSubscription("test/topic", 1, options);
 
         SubscriptionInfoDto dto = SubscriptionInfoDto.fromTopicSubscription(topicSubscription);
 
@@ -48,7 +49,7 @@ public class SubscriptionInfoDtoTest {
     @Test
     public void getTopicFilter_ShouldReturnCorrectFilterForSharedSubscription() {
         SubscriptionOptions options = SubscriptionOptions.newInstance();
-        TopicSubscription topicSubscription = new TopicSubscription("test/topic", 1, "shareName", options, 1);
+        TopicSubscription topicSubscription = new ClientTopicSubscription("test/topic", 1, "shareName", options, 1);
 
         String topicFilter = SubscriptionInfoDto.getTopicFilter(topicSubscription);
         SubscriptionInfoDto dto = SubscriptionInfoDto.fromTopicSubscription(topicSubscription);
@@ -61,7 +62,7 @@ public class SubscriptionInfoDtoTest {
     @Test
     public void getTopicFilter_ShouldReturnCorrectFilterForNonSharedSubscription() {
         SubscriptionOptions options = SubscriptionOptions.newInstance();
-        TopicSubscription topicSubscription = new TopicSubscription("test/topic", 1, options);
+        TopicSubscription topicSubscription = new ClientTopicSubscription("test/topic", 1, options);
 
         String topicFilter = SubscriptionInfoDto.getTopicFilter(topicSubscription);
 

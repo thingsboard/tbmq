@@ -22,8 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
@@ -82,15 +82,15 @@ public class SharedSubscriptionCacheServiceImplTest {
     @Test
     public void givenNonSharedSubscriptions_whenPutSubscriptions_thenNothingAdded() {
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 1),
-                new TopicSubscription("/test/topic/2", 1),
-                new TopicSubscription("/test/topic/3", 1)
+                new ClientTopicSubscription("/test/topic/1", 1),
+                new ClientTopicSubscription("/test/topic/2", 1),
+                new ClientTopicSubscription("/test/topic/3", 1)
         ));
 
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("/test/topic/4", 2),
-                new TopicSubscription("/test/topic/5", 2),
-                new TopicSubscription("/test/topic/6", 2)
+                new ClientTopicSubscription("/test/topic/4", 2),
+                new ClientTopicSubscription("/test/topic/5", 2),
+                new ClientTopicSubscription("/test/topic/6", 2)
         ));
 
         assertEquals(0, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -99,9 +99,9 @@ public class SharedSubscriptionCacheServiceImplTest {
     @Test
     public void givenDifferentClientsAndSubscriptions_whenPutSubscriptions_thenAddedSuccessfully() {
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 1, "g1"),
-                new TopicSubscription("/test/topic/2", 1, "g2"),
-                new TopicSubscription("/test/topic/3", 1)
+                new ClientTopicSubscription("/test/topic/1", 1, "g1"),
+                new ClientTopicSubscription("/test/topic/2", 1, "g2"),
+                new ClientTopicSubscription("/test/topic/3", 1)
         ));
 
         assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -117,9 +117,9 @@ public class SharedSubscriptionCacheServiceImplTest {
         assertEquals(1, sharedSubscriptions.getApplicationSubscriptions().size());
 
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("/test/topic/1", 2, "g1"),
-                new TopicSubscription("/test/topic/2", 0, "g2"),
-                new TopicSubscription("/test/topic/3", 1)
+                new ClientTopicSubscription("/test/topic/1", 2, "g1"),
+                new ClientTopicSubscription("/test/topic/2", 0, "g2"),
+                new ClientTopicSubscription("/test/topic/3", 1)
         ));
 
         assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -135,7 +135,7 @@ public class SharedSubscriptionCacheServiceImplTest {
         when(clientSessionInfo1.isAppClient()).thenReturn(false);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 1, "g1")
+                new ClientTopicSubscription("/test/topic/1", 1, "g1")
         ));
 
         assertEquals(1, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -147,7 +147,7 @@ public class SharedSubscriptionCacheServiceImplTest {
         assertEquals(1, sharedSubscriptions.getDeviceSubscriptions().stream().toList().get(0).getQos());
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 2, "g1")
+                new ClientTopicSubscription("/test/topic/1", 2, "g1")
         ));
 
         assertEquals(1, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -164,13 +164,13 @@ public class SharedSubscriptionCacheServiceImplTest {
         when(clientSessionInfo1.isAppClient()).thenReturn(false);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 2, "g1"),
-                new TopicSubscription("#", 0, "g2"),
-                new TopicSubscription("/test/topic/+", 1, "g3")
+                new ClientTopicSubscription("/test/topic/1", 2, "g1"),
+                new ClientTopicSubscription("#", 0, "g2"),
+                new ClientTopicSubscription("/test/topic/+", 1, "g3")
         ));
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("/test/topic/1", 1, "g1"),
-                new TopicSubscription("/test/topic/+", 2, "g3")
+                new ClientTopicSubscription("/test/topic/1", 1, "g1"),
+                new ClientTopicSubscription("/test/topic/+", 2, "g3")
         ));
 
         assertEquals(3, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
@@ -182,11 +182,11 @@ public class SharedSubscriptionCacheServiceImplTest {
                 .get(new TopicSharedSubscription("/test/topic/+", "g2"));
         assertNull(sharedSubscriptions);
 
-        sharedSubscriptionCache.remove(CLIENT_ID_1, new TopicSubscription("#", 0, "g2"));
+        sharedSubscriptionCache.remove(CLIENT_ID_1, new ClientTopicSubscription("#", 0, "g2"));
         assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
 
         when(clientSessionCache.getClientSessionInfo(CLIENT_ID_2)).thenReturn(null);
-        sharedSubscriptionCache.remove(CLIENT_ID_2, new TopicSubscription("/test/topic/1", 0, "g1"));
+        sharedSubscriptionCache.remove(CLIENT_ID_2, new ClientTopicSubscription("/test/topic/1", 0, "g1"));
 
         assertEquals(2, sharedSubscriptionCache.getSharedSubscriptionsMap().size());
         sharedSubscriptions = sharedSubscriptionCache.getSharedSubscriptionsMap()
@@ -209,13 +209,13 @@ public class SharedSubscriptionCacheServiceImplTest {
         when(clientSessionInfo2.isAppClient()).thenReturn(false);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("/test/topic/1", 2, "g1"),
-                new TopicSubscription("#", 0, "g2"),
-                new TopicSubscription("/test/topic/+", 1, "g3")
+                new ClientTopicSubscription("/test/topic/1", 2, "g1"),
+                new ClientTopicSubscription("#", 0, "g2"),
+                new ClientTopicSubscription("/test/topic/+", 1, "g3")
         ));
 
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("/test/topic/1", 1, "g1")
+                new ClientTopicSubscription("/test/topic/1", 1, "g1")
         ));
 
         SharedSubscriptions sharedSubscriptions = sharedSubscriptionCache.get(Set.of(
@@ -244,8 +244,8 @@ public class SharedSubscriptionCacheServiceImplTest {
     @Test
     public void givenSameClient_whenCheckIsAnyOtherDeviceClientConnected_thenFalse() {
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("something", 2, "g1"),
-                new TopicSubscription("#", 0, "g2")
+                new ClientTopicSubscription("something", 2, "g1"),
+                new ClientTopicSubscription("#", 0, "g2")
         ));
 
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
@@ -260,11 +260,11 @@ public class SharedSubscriptionCacheServiceImplTest {
         when(clientSessionInfo1.isConnected()).thenReturn(false);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("something", 2, "g1"),
-                new TopicSubscription("#", 0, "g2")
+                new ClientTopicSubscription("something", 2, "g1"),
+                new ClientTopicSubscription("#", 0, "g2")
         ));
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("something", 2, "g1")
+                new ClientTopicSubscription("something", 2, "g1")
         ));
 
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
@@ -278,11 +278,11 @@ public class SharedSubscriptionCacheServiceImplTest {
         when(clientSessionInfo2.isAppClient()).thenReturn(false);
 
         sharedSubscriptionCache.put(CLIENT_ID_1, List.of(
-                new TopicSubscription("something", 2, "g1"),
-                new TopicSubscription("#", 0, "g2")
+                new ClientTopicSubscription("something", 2, "g1"),
+                new ClientTopicSubscription("#", 0, "g2")
         ));
         sharedSubscriptionCache.put(CLIENT_ID_2, List.of(
-                new TopicSubscription("something", 2, "g1")
+                new ClientTopicSubscription("something", 2, "g1")
         ));
 
         TopicSharedSubscription topicSharedSubscription = new TopicSharedSubscription("something", "g1");
