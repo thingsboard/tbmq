@@ -19,13 +19,21 @@ public interface TopicSubscription {
 
     String getTopicFilter();
 
-    int getQos();
+    default int getQos() {
+        return 1;
+    }
 
-    String getShareName();
+    default String getShareName() {
+        return null;
+    }
 
-    SubscriptionOptions getOptions();
+    default SubscriptionOptions getOptions() {
+        return null;
+    }
 
-    int getSubscriptionId();
+    default int getSubscriptionId() {
+        return -1;
+    }
 
     default boolean isSharedSubscription() {
         return false;

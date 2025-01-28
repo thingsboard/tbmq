@@ -67,10 +67,12 @@ public class ClientTopicSubscription implements TopicSubscription {
         return Objects.hash(topicFilter);
     }
 
+    @Override
     public boolean isSharedSubscription() {
         return shareName != null;
     }
 
+    @Override
     public boolean isCommonSubscription() {
         return !isSharedSubscription();
     }
