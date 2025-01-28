@@ -41,9 +41,6 @@ import { MatButton } from '@angular/material/button';
 import { animate, AnimationEvent, AnimationTriggerMetadata, state, style, transition, trigger, } from '@angular/animations';
 import { onParentScrollOrWindowResize } from '@core/utils';
 import { ToastNotificationService } from '@app/core/services/toast-notification.service';
-import { FlexModule } from '@angular/flex-layout/flex';
-import { NgClass } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TranslateModule } from '@ngx-translate/core';
 import Timeout = NodeJS.Timeout;
 
@@ -274,7 +271,7 @@ export type ToastAnimationState = 'default' | 'opened' | 'closing';
     templateUrl: 'snack-bar-component.html',
     styleUrls: ['snack-bar-component.scss'],
     animations: [toastAnimations.showHideToast],
-    imports: [FlexModule, NgClass, ExtendedModule, MatButton, TranslateModule]
+    imports: [MatButton, TranslateModule]
 })
 export class TbSnackBarComponent implements AfterViewInit, OnDestroy {
 

@@ -24,7 +24,7 @@
           <mat-header-cell mat-sort-header *matHeaderCellDef>
             {{ column.title | translate }}
           </mat-header-cell>
-          <mat-cell *matCellDef="let entity; let row = index" [ngStyle]="cellStyle(entity, column, row)">
+          <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
             @if (column.key === 'key') {
               <span translate>{{configParamsTranslationMap.get(entity.key)}}</span>
             }

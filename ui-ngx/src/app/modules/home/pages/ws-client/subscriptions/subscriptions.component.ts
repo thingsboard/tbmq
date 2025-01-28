@@ -31,14 +31,13 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 
 import { SubscriptionComponent } from './subscription.component';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
     selector: 'tb-ws-subscriptions',
     templateUrl: './subscriptions.component.html',
     styleUrls: ['./subscriptions.component.scss'],
-    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, SubscriptionComponent, FlexModule, MatProgressSpinner]
+    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, SubscriptionComponent, MatProgressSpinner]
 })
 export class SubscriptionsComponent implements OnInit {
 

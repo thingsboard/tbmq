@@ -19,7 +19,6 @@ import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, WebSocketConnection } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -31,7 +30,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-connections',
     templateUrl: './connections.component.html',
     styleUrls: ['./connections.component.scss'],
-    imports: [FlexModule, MatTooltip, MatIconButton, MatIcon, SelectConnectionComponent, AsyncPipe, TranslateModule]
+    imports: [MatTooltip, MatIconButton, MatIcon, SelectConnectionComponent, AsyncPipe, TranslateModule]
 })
 export class ConnectionsComponent {
 

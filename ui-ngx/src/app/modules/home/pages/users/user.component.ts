@@ -22,9 +22,7 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { User } from '@shared/models/user.model';
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatButton } from '@angular/material/button';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
@@ -36,7 +34,7 @@ import { AsyncPipe } from '@angular/common';
     selector: 'tb-user',
     templateUrl: './user.component.html',
     styleUrls: ['./user.component.scss'],
-    imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, AsyncPipe]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, AsyncPipe]
 })
 export class UserComponent extends EntityComponent<User> {
 

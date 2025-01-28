@@ -19,7 +19,6 @@ import { UntypedFormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InstructionsService } from '@core/http/instructions.service';
 import { MatCard, MatCardContent } from '@angular/material/card';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatDialogContent } from '@angular/material/dialog';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 
@@ -28,7 +27,7 @@ import { TbMarkdownComponent } from '@shared/components/markdown.component';
     templateUrl: './getting-started-guide.component.html',
     styleUrls: ['./getting-started-guide.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatCardContent, FlexModule, MatDialogContent, TbMarkdownComponent]
+    imports: [MatCard, MatCardContent, MatDialogContent, TbMarkdownComponent]
 })
 export class GettingStartedGuideComponent implements OnInit {
 

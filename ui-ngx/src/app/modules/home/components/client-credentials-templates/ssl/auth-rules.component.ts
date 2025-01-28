@@ -31,10 +31,8 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, Mat
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton, MatButton } from '@angular/material/button';
 
@@ -54,7 +52,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
         }
     ],
     styleUrls: ['./auth-rules.component.scss'],
-    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, FlexModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, ExtendedModule, MatTooltip, MatIconButton, MatButton]
+    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, MatTooltip, MatIconButton, MatButton]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

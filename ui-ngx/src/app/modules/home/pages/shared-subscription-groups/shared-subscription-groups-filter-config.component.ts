@@ -44,7 +44,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { takeUntil } from 'rxjs/operators';
@@ -69,7 +68,7 @@ export interface SharedSubscriptionFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput]
 })
 export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

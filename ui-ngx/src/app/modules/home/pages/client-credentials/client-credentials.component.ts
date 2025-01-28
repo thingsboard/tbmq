@@ -25,9 +25,7 @@ import { ClientType, clientTypeTranslationMap } from '@shared/models/client.mode
 import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormField, MatLabel, MatError } from '@angular/material/form-field';
 import { appearance } from '@shared/models/constants';
 import { isDefinedAndNotNull } from '@core/utils';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatButton } from '@angular/material/button';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
@@ -49,7 +47,7 @@ import { MqttCredentialsScramComponent } from '../../components/client-credentia
             useValue: appearance
         }
     ],
-    imports: [FlexModule, MatButton, ExtendedModule, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe]
 })
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
 

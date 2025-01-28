@@ -24,12 +24,10 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { isNotEmptyStr } from '@core/utils';
 import { MatToolbar } from '@angular/material/toolbar';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { CdkScrollable } from '@angular/cdk/scrolling';
 import { JsonObjectEditComponent } from '../json-object-edit.component';
 
 export interface JsonObjectEditDialogData {
@@ -43,7 +41,7 @@ export interface JsonObjectEditDialogData {
 @Component({
     selector: 'tb-object-edit-dialog',
     templateUrl: './json-object-edit-dialog.component.html',
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, FlexModule, MatIconButton, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, JsonObjectEditComponent, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, JsonObjectEditComponent, MatDialogActions, MatButton, AsyncPipe, TranslateModule]
 })
 export class JsonObjectEditDialogComponent extends DialogComponent<JsonObjectEditDialogComponent, object> {
 

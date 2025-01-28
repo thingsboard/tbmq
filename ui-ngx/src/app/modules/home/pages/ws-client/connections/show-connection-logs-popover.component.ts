@@ -25,16 +25,14 @@ import { Subscription } from 'rxjs';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { NgStyle, DatePipe } from '@angular/common';
-import { FlexModule } from '@angular/flex-layout/flex';
-import { ExtendedModule } from '@angular/flex-layout/extended';
+import { DatePipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-show-connection-logs-popover',
     templateUrl: './show-connection-logs-popover.component.html',
     styleUrls: ['./show-connection-logs-popover.component.scss'],
-    imports: [TranslateModule, MatIconButton, MatIcon, FlexModule, NgStyle, ExtendedModule, MatTooltip, DatePipe]
+    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, DatePipe]
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

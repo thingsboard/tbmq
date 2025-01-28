@@ -31,8 +31,6 @@ import { SubscriptSizing, MatFormField, MatLabel } from '@angular/material/form-
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Interval, IntervalMath, TimeInterval } from '@shared/models/time/time.models';
 import { isDefined } from '@core/utils';
-import { FlexModule } from '@angular/flex-layout/flex';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatInput } from '@angular/material/input';
@@ -52,7 +50,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
             multi: true
         }
     ],
-    imports: [FlexModule, ExtendedModule, TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatSlideToggle]
+    imports: [TranslateModule, MatCheckbox, FormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MatSlideToggle]
 })
 export class TimeintervalComponent implements OnInit, ControlValueAccessor {
 

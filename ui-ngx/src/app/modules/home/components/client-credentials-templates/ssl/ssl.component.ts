@@ -24,7 +24,6 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { AuthRulesComponent } from './auth-rules.component';
@@ -44,7 +43,7 @@ import { AuthRulesComponent } from './auth-rules.component';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatError, MatSlideToggle, AuthRulesComponent]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, MatSlideToggle, AuthRulesComponent]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 

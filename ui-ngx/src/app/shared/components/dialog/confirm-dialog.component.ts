@@ -16,8 +16,6 @@
 
 import {Component, Inject} from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose } from '@angular/material/dialog';
-import { CdkScrollable } from '@angular/cdk/scrolling';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatButton } from '@angular/material/button';
 
 export interface ConfirmDialogData {
@@ -32,7 +30,7 @@ export interface ConfirmDialogData {
     selector: 'tb-confirm-dialog',
     templateUrl: './confirm-dialog.component.html',
     styleUrls: ['./confirm-dialog.component.scss'],
-    imports: [MatDialogTitle, CdkScrollable, MatDialogContent, MatDialogActions, FlexModule, MatButton, MatDialogClose]
+    imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton, MatDialogClose]
 })
 export class ConfirmDialogComponent {
   constructor(public dialogRef: MatDialogRef<ConfirmDialogComponent>,

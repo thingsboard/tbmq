@@ -30,7 +30,7 @@
           <div class="flex flex-1 flex-row gap-2">
             <span class="date">{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
             <section class="flex flex-row items-center gap-2">
-              <span [ngStyle]="setStyle(log.status)" translate>
+              <span [style]="setStyle(log.status)" translate>
                 {{ connectionStatusTranslationMap.get(log.status) }}
               </span>
               @if (log.details) {

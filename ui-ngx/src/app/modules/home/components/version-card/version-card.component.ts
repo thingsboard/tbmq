@@ -17,19 +17,17 @@
 import { Component, OnInit } from '@angular/core';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ConfigService } from '@core/http/config.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-version-card',
     templateUrl: './version-card.component.html',
     styleUrls: ['./version-card.component.scss'],
-    imports: [FlexModule, CardTitleButtonComponent, TranslateModule, NgTemplateOutlet, MatButton, ExtendedModule, MatTooltip]
+    imports: [CardTitleButtonComponent, TranslateModule, NgTemplateOutlet, MatButton, MatTooltip]
 })
 export class VersionCardComponent implements OnInit {
 

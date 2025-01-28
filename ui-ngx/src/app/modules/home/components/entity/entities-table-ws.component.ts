@@ -58,13 +58,11 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
 import { MatCheckbox } from '@angular/material/checkbox';
-import { ExtendedModule } from '@angular/flex-layout/extended';
-import { NgClass, NgStyle, NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIconButton } from '@angular/material/button';
 import { TbIconComponent } from '@shared/components/icon.component';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIcon } from '@angular/material/icon';
 
@@ -73,7 +71,7 @@ import { MatIcon } from '@angular/material/icon';
     templateUrl: './entities-table-ws.component.html',
     styleUrls: ['./entities-table-ws.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, ExtendedModule, MatSortHeader, NgClass, NgStyle, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, FlexModule, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
+    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
 

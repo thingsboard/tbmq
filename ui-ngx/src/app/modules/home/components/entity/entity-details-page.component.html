@@ -37,7 +37,7 @@
             matTooltip="{{ 'action.apply-changes' | translate }}"
             matTooltipPosition="above"
             color="accent" class="tb-btn-header"
-            [ngClass]="{'tb-hide': !isEdit}"
+            [class.tb-hide]="!isEdit"
             (click)="onApplyDetails()">
             <mat-icon class="material-icons">done</mat-icon>
           </button>
@@ -55,7 +55,7 @@
   </mat-toolbar>
   <mat-card-content class="flex flex-1">
     <mat-tab-group mat-stretch-tabs="false" class="tb-absolute-fill size-full"
-                   [ngClass]="{'tb-headless': hideDetailsTabs()}"
+                   [class.tb-headless]="hideDetailsTabs()"
                    [(selectedIndex)]="selectedTab">
       <mat-tab label="{{ 'details.details' | translate }}">
         <tb-anchor #entityDetailsForm></tb-anchor>

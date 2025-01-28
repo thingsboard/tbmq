@@ -18,12 +18,10 @@
 <div class="tb-toast flex flex-row items-center"
      [@showHideAnimation]="{value: animationState, params: animationParams}"
      (@showHideAnimation.done)="onHideFinished($event)"
-     [ngClass]="{
-          'error-toast': notification.type === 'error',
-          'warn-toast': notification.type === 'warn',
-          'success-toast': notification.type === 'success',
-          'info-toast': notification.type === 'info'
-     }">
+     [class.error-toast]="notification.type === 'error'"
+     [class.warn-toast]="notification.type === 'warn'"
+     [class.success-toast]="notification.type === 'success'"
+     [class.info-toast]="notification.type === 'info'">
   <div class="toast-text" [innerHTML]="notification.message"></div>
   <button #actionButton type="button" mat-button (click)="action($event)">{{ 'action.close' | translate }}</button>
 </div>

@@ -38,11 +38,9 @@ import { map } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MessageFilterConfigComponent } from './message-filter-config.component';
 import { MatButton, MatIconButton } from '@angular/material/button';
-import { NgClass, AsyncPipe } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
+import { AsyncPipe } from '@angular/common';
 import { MessagesComponent } from './messages.component';
 import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -60,7 +58,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
-    imports: [TranslateModule, ToggleSelectComponent, FormsModule, FlexModule, MessageFilterConfigComponent, MatButton, NgClass, ExtendedModule, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
 })
 export class MessangerComponent implements OnInit {
 

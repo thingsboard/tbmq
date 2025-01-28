@@ -28,7 +28,6 @@ import { ConfigService } from '@core/http/config.service';
 import { animatedScroll } from "@core/utils";
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
-import { FlexModule } from '@angular/flex-layout/flex';
 
 import { MatButton } from '@angular/material/button';
 
@@ -37,7 +36,7 @@ import { MatButton } from '@angular/material/button';
     templateUrl: './getting-started.component.html',
     styleUrls: ['./getting-started.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FlexModule, MatButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, MatButton]
 })
 export class GettingStartedComponent implements OnInit, AfterViewInit {
 

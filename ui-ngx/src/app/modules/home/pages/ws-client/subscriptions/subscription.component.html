@@ -21,7 +21,7 @@
     (mouseleave)="onMouseLeave()">
     <section class="flex max-w-70% flex-[70%] flex-row items-center gap-2">
       <section class="subscription-row-label flex flex-row items-center gap-2">
-        <div class="label-color" [ngStyle]="{backgroundColor: subscription().configuration.color}"></div>
+        <div class="label-color" [style]="{backgroundColor: subscription().configuration.color}"></div>
         <span class="label tb-pointer"
           [matTooltip]="'action.edit' | translate"
           (click)="openSubscriptionDetails($event)">
@@ -31,11 +31,11 @@
       <span class="label qos">{{ 'mqtt-client-session.qos' | translate }} {{ subscription().configuration.qos }}</span>
     </section>
     <section>
-      <div [ngClass]="{ 'action-buttons-container': showActions }"
+      <div [class.action-buttons-container]="showActions"
            class="flex flex-row justify-end gap-2 xs:hidden">
         @for (actionDescriptor of hiddenActions; track actionDescriptor) {
           <div
-            class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
+            class="action-buttons" [class.show-buttons]="showActions"
             matTooltipPosition="above"
             matTooltip="{{ actionDescriptor.name }}">
             @if (actionDescriptor.isEnabled(subscription())) {
@@ -61,7 +61,7 @@
             <button mat-menu-item
               [class.!hidden]="!actionDescriptor.isEnabled(subscription())"
               (click)="actionDescriptor.onAction($event, subscription())">
-              <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+              <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
               <span>{{ actionDescriptor.name }}</span>
             </button>
           }

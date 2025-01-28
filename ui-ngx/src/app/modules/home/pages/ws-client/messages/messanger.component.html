@@ -38,14 +38,14 @@
   </section>
 </section>
 
-<section class="tb-messages-container" [ngClass]="{'limit-height': (isLtLg | async)}">
+<section class="tb-messages-container" [class.limit-height]="isLtLg | async">
   <tb-messages style="overflow: auto"></tb-messages>
 </section>
 
 <div [formGroup]="messangerFormGroup" class="mat-padding flex flex-col">
   <section class="flex flex-row flex-nowrap items-center gap-4"
-    [ngClass]="{'wrap': (isLtLg | async)}">
-    <mat-form-field class="flex flex-1" [ngClass]="{'topic-mat-form-field': (isLtLg | async)}"
+    [class.wrap]="isLtLg | async">
+    <mat-form-field class="flex flex-1" [class.topic-mat-form-field]="isLtLg | async"
                     style="min-width: 250px !important; width: 100%" hideRequiredMarker>
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic">

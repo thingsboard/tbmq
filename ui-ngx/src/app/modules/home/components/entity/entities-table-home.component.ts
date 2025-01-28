@@ -63,9 +63,7 @@ import { MediaBreakpoints } from '@shared/models/constants';
 import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page.model";
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatToolbar } from '@angular/material/toolbar';
-import { ExtendedModule } from '@angular/flex-layout/extended';
-import { FlexModule } from '@angular/flex-layout/flex';
-import { NgStyle, NgClass, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -84,7 +82,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './entities-table-home.component.html',
     styleUrls: ['./entities-table-home.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FullscreenDirective, MatToolbar, ExtendedModule, FlexModule, MatIconButton, MatTooltip, MatIcon, MatFormField, MatInput, FormsModule, NgStyle, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, NgClass, CopyButtonComponent, TbIconComponent, MatMenuTrigger, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
+    imports: [FullscreenDirective, MatToolbar, MatIconButton, MatTooltip, MatIcon, MatFormField, MatInput, FormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, CopyButtonComponent, TbIconComponent, MatMenuTrigger, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableHomeComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 

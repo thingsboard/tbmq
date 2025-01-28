@@ -33,7 +33,6 @@ import { DEFAULT_QOS, QoS, QosTranslation, QosTypes } from '../models/session.mo
 import { isDefinedAndNotNull } from '@core/utils';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatOption, MatSelect } from '@angular/material/select';
 
 @Component({
@@ -47,7 +46,7 @@ import { MatOption, MatSelect } from '@angular/material/select';
             multi: true
         }
     ],
-    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, ExtendedModule, MatSelect, MatOption]
+    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatSelect, MatOption]
 })
 export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 

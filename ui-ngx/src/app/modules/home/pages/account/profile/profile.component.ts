@@ -30,7 +30,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute } from '@angular/router';
 import { MatCard, MatCardHeader, MatCardContent } from '@angular/material/card';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { AsyncPipe, DatePipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
@@ -43,7 +42,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-profile',
     templateUrl: './profile.component.html',
     styleUrls: ['./profile.component.scss'],
-    imports: [MatCard, MatCardHeader, FlexModule, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MatButton, AsyncPipe, DatePipe]
+    imports: [MatCard, MatCardHeader, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MatButton, AsyncPipe, DatePipe]
 })
 export class ProfileComponent extends PageComponent implements OnInit, HasConfirmForm {
 

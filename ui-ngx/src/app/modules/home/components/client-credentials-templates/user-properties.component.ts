@@ -30,7 +30,6 @@ import { Subject } from 'rxjs';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketUserProperties } from '@shared/models/ws-client.model';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { MatFormField, MatLabel } from '@angular/material/form-field';
@@ -38,7 +37,6 @@ import { MatInput } from '@angular/material/input';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 export interface UserProperties {
   props: UserPropertiesObject[];
@@ -65,7 +63,7 @@ export interface UserPropertiesObject {
         }
     ],
     styleUrls: ['./user-properties.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, FlexModule, TranslateModule, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, ExtendedModule]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton]
 })
 export class UserPropertiesComponent implements ControlValueAccessor, Validator, OnDestroy, OnInit, OnChanges {
 

@@ -23,12 +23,10 @@ import {
   WebSocketConnection,
   WebSocketTimeUnit
 } from '@shared/models/ws-client.model';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatSelect } from '@angular/material/select';
 
 import { MatOption } from '@angular/material/core';
@@ -58,7 +56,7 @@ import { NgTemplateOutlet } from '@angular/common';
         }
     ],
     styleUrls: ['./last-will.component.scss'],
-  imports: [FormsModule, ReactiveFormsModule, FlexModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatSelect, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent, NgTemplateOutlet]
+  imports: [FormsModule, ReactiveFormsModule, MatFormField, MatLabel, TranslateModule, MatInput, CopyButtonComponent, MatSuffix, MatSelect, MatOption, ValueInputComponent, MatSlideToggle, MatIcon, MatTooltip, QosSelectComponent, NgTemplateOutlet]
 })
 export class LastWillComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

@@ -47,7 +47,6 @@ import { MediaBreakpoints } from '@app/shared/models/constants';
 import { Subscription } from 'rxjs/internal/Subscription';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { MatToolbar } from '@angular/material/toolbar';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -60,7 +59,7 @@ import { MatDivider } from '@angular/material/divider';
     templateUrl: './add-entity-dialog.component.html',
     providers: [{ provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent }],
     styleUrls: ['./add-entity-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
                                       implements OnInit, AfterViewInit {

@@ -52,7 +52,6 @@ import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -80,7 +79,7 @@ export interface SessionFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 

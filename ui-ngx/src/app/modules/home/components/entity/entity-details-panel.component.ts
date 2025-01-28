@@ -43,10 +43,7 @@ import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { EntityTabsComponent } from '@home/components/entity/entity-tabs.component';
 import { deepClone, mergeDeep } from '@core/utils';
 import { DetailsPanelComponent } from '../details-panel.component';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
-import { NgClass } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
@@ -54,7 +51,7 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './entity-details-panel.component.html',
     styleUrls: ['./entity-details-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DetailsPanelComponent, FlexModule, HelpComponent, MatTabGroup, NgClass, ExtendedModule, MatTab, TbAnchorComponent, TranslateModule]
+    imports: [DetailsPanelComponent, HelpComponent, MatTabGroup, MatTab, TbAnchorComponent, TranslateModule]
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {
 

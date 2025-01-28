@@ -18,9 +18,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
 import { MatAnchor } from '@angular/material/button';
-import { NgClass, NgStyle } from '@angular/common';
 import { TbIconComponent } from '@shared/components/icon.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MenuLinkComponent } from './menu-link.component';
 import { NospacePipe } from '@shared/pipe/nospace.pipe';
 import { TranslateModule } from '@ngx-translate/core';
@@ -30,7 +28,7 @@ import { TranslateModule } from '@ngx-translate/core';
     templateUrl: './menu-toggle.component.html',
     styleUrls: ['./menu-toggle.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatAnchor, TbIconComponent, NgClass, ExtendedModule, NgStyle, MenuLinkComponent, NospacePipe, TranslateModule]
+    imports: [MatAnchor, TbIconComponent, MenuLinkComponent, NospacePipe, TranslateModule]
 })
 export class MenuToggleComponent {
 

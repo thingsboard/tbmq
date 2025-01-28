@@ -23,7 +23,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Constants } from '@shared/models/constants';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@core/http/auth.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { LogoComponent } from '@shared/components/logo.component';
 import { AsyncPipe } from '@angular/common';
@@ -42,7 +41,7 @@ import { FooterComponent } from '@shared/components/footer.component';
     selector: 'tb-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    imports: [FlexModule, MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, MatError, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe]
+    imports: [MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, MatError, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe]
 })
 export class LoginComponent extends PageComponent {
 

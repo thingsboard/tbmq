@@ -29,7 +29,6 @@ import { MediaBreakpoints } from '@shared/models/constants';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { SettingsService } from '@core/http/settings.service';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConnectionsComponent } from './connections/connections.component';
@@ -43,7 +42,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-ws-client',
     templateUrl: './ws-client.component.html',
     styleUrls: ['./ws-client.component.scss'],
-    imports: [NgTemplateOutlet, FlexModule, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe, MatButton]
+    imports: [NgTemplateOutlet, MatIcon, TranslateModule, ConnectionsComponent, SubscriptionsComponent, HelpPageComponent, ConnectionControllerComponent, MessangerComponent, AsyncPipe, MatButton]
 })
 export class WsClientComponent extends PageComponent implements OnInit {
 

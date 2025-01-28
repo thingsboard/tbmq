@@ -31,13 +31,12 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { ConnectionComponent } from './connection.component';
-import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
     selector: 'tb-show-connections-popover',
     templateUrl: './show-select-connection-popover.component.html',
     styleUrls: [],
-    imports: [TranslateModule, MatIconButton, MatIcon, ConnectionComponent, FlexModule, MatButton, AsyncPipe]
+    imports: [TranslateModule, MatIconButton, MatIcon, ConnectionComponent, MatButton, AsyncPipe]
 })
 export class ShowSelectConnectionPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

@@ -32,10 +32,8 @@ import { DialogService } from '@core/services/dialog.service';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ColorPickerPanelComponent } from '@shared/components/color-picker/color-picker-panel.component';
-import { NgStyle, NgClass } from '@angular/common';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatInput } from '@angular/material/input';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { CdkOverlayOrigin } from '@angular/cdk/overlay';
@@ -52,7 +50,7 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
             multi: true
         }
     ],
-  imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, NgStyle, ExtendedModule, MatInput, MatIconButton, MatSuffix, MatError, MatButton, NgClass, CdkOverlayOrigin]
+  imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, MatInput, MatIconButton, MatSuffix, MatError, MatButton, CdkOverlayOrigin]
 })
 export class ColorInputComponent extends PageComponent implements OnInit, ControlValueAccessor {
 

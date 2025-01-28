@@ -56,7 +56,6 @@ import { DEFAULT_OVERLAY_POSITIONS } from '@shared/models/overlay.models';
 import { fromEvent } from 'rxjs';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DATE_LOCALE } from '@angular/material/core';
@@ -79,7 +78,7 @@ import { MAT_DATE_LOCALE } from '@angular/material/core';
           useValue: 'en-GB'
         }
     ],
-    imports: [MatButton, MatIcon, MatTooltip, ExtendedModule, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
+    imports: [MatButton, MatIcon, MatTooltip, TranslateModule, MatDatepickerModule, MatNativeDatetimeModule]
 })
 export class TimewindowComponent implements ControlValueAccessor {
 

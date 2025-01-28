@@ -22,13 +22,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
 import { SubscriptionService } from '@core/http/subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
-import { NgClass } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
     selector: 'tb-subscriptions-table',
     templateUrl: './subscriptions-table.component.html',
-    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent]
 })
 export class SubscriptionsTableComponent implements OnInit {
 

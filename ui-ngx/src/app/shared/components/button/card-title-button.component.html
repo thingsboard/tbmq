@@ -16,7 +16,7 @@
 
 -->
 <div class="flex flex-row items-center justify-between">
-  <section (click)="navigate()" [ngClass]="!disabled() ? 'tb-title-link-active' : 'tb-title-link-disabled'">
+  <section (click)="navigate()" [class]="!disabled() ? 'tb-title-link-active' : 'tb-title-link-disabled'">
     <span>{{ title()?.label | translate}}</span>
   </section>
   @if (title()?.docsLink) {

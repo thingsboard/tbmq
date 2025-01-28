@@ -38,13 +38,11 @@ import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-
 import { BroadcastService } from '@core/services/broadcast.service';
 import { MatCard, MatCardContent } from '@angular/material/card';
 import { MatToolbar } from '@angular/material/toolbar';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatFabButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { HelpComponent } from '@shared/components/help.component';
-import { NgClass, AsyncPipe } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
+import { AsyncPipe } from '@angular/common';
 import { MatTabGroup, MatTab } from '@angular/material/tabs';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 
@@ -53,7 +51,7 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
     templateUrl: './entity-details-page.component.html',
     styleUrls: ['./entity-details-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatCard, MatToolbar, FlexModule, MatIconButton, MatTooltip, MatIcon, HelpComponent, MatFabButton, NgClass, ExtendedModule, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
+    imports: [MatCard, MatToolbar, MatIconButton, MatTooltip, MatIcon, HelpComponent, MatFabButton, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
 })
 export class EntityDetailsPageComponent extends EntityDetailsPanelComponent implements IEntityDetailsPageComponent, OnInit, OnDestroy {
 

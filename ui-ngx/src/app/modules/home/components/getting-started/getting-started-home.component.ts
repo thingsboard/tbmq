@@ -37,7 +37,6 @@ import {
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
 import { ConfigService } from '@core/http/config.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatStepper, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { AsyncPipe } from '@angular/common';
@@ -55,7 +54,7 @@ import { MatIcon } from '@angular/material/icon';
             useValue: { displayDefaultIndicatorType: false }
         }
     ],
-    imports: [FlexModule, CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
+    imports: [CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
 

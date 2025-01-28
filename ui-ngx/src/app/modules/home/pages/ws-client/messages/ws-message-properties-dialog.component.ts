@@ -22,8 +22,6 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { FormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { PublishMessageProperties, TimeUnitTypeTranslationMap, WebSocketTimeUnit } from '@shared/models/ws-client.model';
-import { CdkScrollable } from '@angular/cdk/scrolling';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatIconButton } from '@angular/material/button';
@@ -44,7 +42,7 @@ export interface WsMessagePropertiesDialogData {
     selector: 'tb-ws-message-properties-dialog',
     templateUrl: './ws-message-properties-dialog.component.html',
     styleUrls: ['./ws-message-properties-dialog.component.scss'],
-    imports: [CdkScrollable, MatDialogContent, FlexModule, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, MatOption, UserPropertiesComponent]
+    imports: [MatDialogContent, MatIcon, TranslateModule, MatIconButton, MatDialogClose, FormsModule, ReactiveFormsModule, MatSlideToggle, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatSelect, MatOption, UserPropertiesComponent]
 })
 export class WsMessagePropertiesDialogComponent extends DialogComponent<WsMessagePropertiesDialogData> implements OnInit, OnDestroy {
 

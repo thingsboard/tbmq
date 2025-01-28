@@ -24,7 +24,6 @@ import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '@core/http/auth.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatCard, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
@@ -39,7 +38,7 @@ import { MatButton } from '@angular/material/button';
     selector: 'tb-create-password',
     templateUrl: './create-password.component.html',
     styleUrls: ['./create-password.component.scss'],
-    imports: [FlexModule, MatCard, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, AsyncPipe]
+    imports: [MatCard, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, AsyncPipe]
 })
 export class CreatePasswordComponent extends PageComponent implements OnInit, OnDestroy {
 

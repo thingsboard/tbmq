@@ -20,15 +20,13 @@ import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
 import { MatIconButton } from '@angular/material/button';
-import { NgClass, NgStyle } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
     selector: 'tb-copy-button',
     styleUrls: ['copy-button.component.scss'],
     templateUrl: './copy-button.component.html',
-    imports: [MatIconButton, NgClass, ExtendedModule, MatTooltip, MatIcon, NgStyle]
+    imports: [MatIconButton, MatTooltip, MatIcon]
 })
 export class CopyButtonComponent {
 

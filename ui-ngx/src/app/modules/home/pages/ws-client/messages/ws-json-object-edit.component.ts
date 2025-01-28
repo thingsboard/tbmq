@@ -40,14 +40,10 @@ import { ActionNotificationHide, ActionNotificationShow } from '@core/notificati
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { CancelAnimationFrame, RafService } from '@core/services/raf.service';
-import { guid, isDefinedAndNotNull, isEmptyStr, isObject, isUndefined } from '@core/utils';
+import { guid, isDefinedAndNotNull, isObject, isUndefined } from '@core/utils';
 import { ResizeObserver } from '@juggle/resize-observer';
 import { getAce } from '@shared/models/ace/ace.models';
-import { coerceBoolean } from '@shared/decorators/coercion';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
-import { NgClass, NgStyle } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
@@ -70,7 +66,7 @@ import { TranslateModule } from '@ngx-translate/core';
             multi: true,
         }
     ],
-    imports: [FlexModule, FullscreenDirective, NgClass, ExtendedModule, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, NgStyle, TranslateModule]
+    imports: [FullscreenDirective, MatButton, MatIconButton, MatTooltip, MatIcon, ToastDirective, TranslateModule]
 })
 export class WsJsonObjectEditComponent implements OnInit, ControlValueAccessor, Validator, OnDestroy, OnChanges {
 

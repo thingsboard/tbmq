@@ -17,7 +17,6 @@
 import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { QuickTimeInterval, QuickTimeIntervalTranslationMap } from '@shared/models/time/time.models';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatSelect } from '@angular/material/select';
@@ -35,7 +34,7 @@ import { MatOption } from '@angular/material/core';
             multi: true
         }
     ],
-    imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, MatOption]
+    imports: [MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, MatOption]
 })
 export class QuickTimeIntervalComponent implements ControlValueAccessor {
 

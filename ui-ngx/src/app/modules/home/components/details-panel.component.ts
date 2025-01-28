@@ -14,16 +14,14 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, Input, OnDestroy, input, output} from '@angular/core';
-import {PageComponent} from '@shared/components/page.component';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {UntypedFormGroup} from '@angular/forms';
-import {Subscription} from 'rxjs';
+import { ChangeDetectorRef, Component, Input, OnDestroy, input, output } from '@angular/core';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { UntypedFormGroup } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { MatToolbar } from '@angular/material/toolbar';
-import { NgStyle, NgClass, AsyncPipe } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
-import { FlexModule } from '@angular/flex-layout/flex';
+import { AsyncPipe } from '@angular/common';
 import { MatIconButton, MatFabButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -33,7 +31,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-details-panel',
     templateUrl: './details-panel.component.html',
     styleUrls: ['./details-panel.component.scss'],
-    imports: [MatToolbar, NgStyle, ExtendedModule, FlexModule, MatIconButton, MatIcon, MatFabButton, MatTooltip, NgClass, AsyncPipe, TranslateModule]
+    imports: [MatToolbar, MatIconButton, MatIcon, MatFabButton, MatTooltip, AsyncPipe, TranslateModule]
 })
 export class DetailsPanelComponent extends PageComponent implements OnDestroy {
 

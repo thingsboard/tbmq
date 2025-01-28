@@ -189,16 +189,16 @@
                 </mat-checkbox>
               </mat-cell>
             </ng-container>
-            @for (column of entityColumns; track trackByColumnKey(column)) {
+            @for (column of entityColumns; track trackByColumnKey) {
               <ng-container [matColumnDef]="column.key">
-                <mat-header-cell [ngClass]="{'mat-number-cell': column.isNumberColumn}"
-                  *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
+                <mat-header-cell [class.mat-number-cell]="column.isNumberColumn"
+                                 *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
                 {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
-                <mat-cell [ngClass]="{'mat-number-cell': column.isNumberColumn, 'mat-cell': true}"
+                <mat-cell class="mat-cell" [class.mat-number-cell]="column.isNumberColumn"
                   *matCellDef="let entity; let row = index"
                   [matTooltip]="cellTooltip(entity, column, row)"
                   matTooltipPosition="above"
-                  [ngStyle]="cellStyle(entity, column, row)">
+                  [style]="cellStyle(entity, column, row)">
                   <div class="flex flex-row" style="align-items: center;">
                     <span [innerHTML]="cellContent(entity, column, row)"></span>
                     @if (column.actionCell) {
@@ -222,7 +222,7 @@
                             matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
                             matTooltipPosition="above"
                             (click)="column.actionCell.onAction($event, entity)">
-                            <tb-icon [ngStyle]="column.actionCell.style">{{column.actionCell}}</tb-icon>
+                            <tb-icon [style]="column.actionCell.style">{{column.actionCell}}</tb-icon>
                           </button>
                         }
                       }
@@ -234,13 +234,13 @@
             @for (column of chipsColumns; track trackByColumnKey(column)) {
               <ng-container [matColumnDef]="column.key">
                 <mat-header-cell
-                  *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
+                  *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
                 {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
                 <mat-cell
                   *matCellDef="let entity; let row = index"
                   [matTooltip]="cellTooltip(entity, column, row)"
                   matTooltipPosition="above"
-                  [ngStyle]="cellStyle(entity, column, row)">
+                  [style]="cellStyle(entity, column, row)">
                   <mat-chip-set>
                     @for (value of cellChipsContent(entity, column, row); track value) {
                       <mat-chip
@@ -248,7 +248,7 @@
                         [matTooltip]="cellChipTooltip(value, entity, column)"
                         removable="false">
                         <div class="flex flex-1 flex-row gap-2" style="cursor: pointer;">
-                          <span [ngStyle]="cellChipIconColor(value, entity, column)">&#8226;</span>
+                          <span [style]="cellChipIconColor(value, entity, column)">&#8226;</span>
                           <span>{{ value }}</span>
                         </div>
                       </mat-chip>
@@ -259,28 +259,32 @@
             }
             @for (column of actionColumns; track trackByColumnKey(column)) {
               <ng-container [matColumnDef]="column.key">
-                <mat-header-cell *matHeaderCellDef [ngStyle]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
+                <mat-header-cell *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
                 <mat-cell *matCellDef="let entity; let row = index"
-                  [ngStyle]="cellStyle(entity, column, row)">
+                  [style]="cellStyle(entity, column, row)">
                   <button mat-icon-button [disabled]="isLoading$ | async"
                     [class.!hidden]="!column.actionDescriptor.isEnabled(entity)"
                     matTooltip="{{ column.actionDescriptor.nameFunction ? column.actionDescriptor.nameFunction(entity) : column.actionDescriptor.name }}"
                     matTooltipPosition="above"
                     (click)="column.actionDescriptor.onAction($event, entity)">
-                    <tb-icon [ngStyle]="column.actionDescriptor.style">{{column.actionDescriptor}}</tb-icon>
+                    <tb-icon [style]="column.actionDescriptor.style">{{column.actionDescriptor}}</tb-icon>
                   </button>
                 </mat-cell>
               </ng-container>
             }
             <ng-container matColumnDef="actions" stickyEnd>
-              <mat-header-cell *matHeaderCellDef [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 48) + 'px',
-                                                                    maxWidth: (cellActionDescriptors.length * 48) + 'px',
-                                                                    width: (cellActionDescriptors.length * 48) + 'px' }">
-                {{ entitiesTableConfig().actionsColumnTitle ? (entitiesTableConfig().actionsColumnTitle | translate) : '' }}
+              <mat-header-cell *matHeaderCellDef>
+                @if (cellActionDescriptors.length) {
+                  <div class="gt-md:!hidden" style="min-width: 48px;">
+                    {{ entitiesTableConfig().actionsColumnTitle ? (entitiesTableConfig().actionsColumnTitle | translate) : '' }}
+                  </div>
+                  <div class="lt-lg:!hidden"
+                       [style.min-width]="(cellActionDescriptors.length * 48) + 'px'">
+                    {{ entitiesTableConfig().actionsColumnTitle ? (entitiesTableConfig().actionsColumnTitle | translate) : '' }}
+                  </div>
+                }
               </mat-header-cell>
-              <mat-cell *matCellDef="let entity" [ngStyle.gt-md]="{ minWidth: (cellActionDescriptors.length * 48) + 'px',
-                                                                    maxWidth: (cellActionDescriptors.length * 48) + 'px',
-                                                                    width: (cellActionDescriptors.length * 48) + 'px' }">
+              <mat-cell *matCellDef="let entity">
                 <div [class.lt-lg:!hidden]="cellActionDescriptors.length !== 1" class="flex flex-row items-stretch justify-end"
                      [style.min-width]="(cellActionDescriptors.length * 48) + 'px'">
                   @for (actionDescriptor of cellActionDescriptors; track actionDescriptor) {
@@ -288,7 +292,7 @@
                       matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}"
                       matTooltipPosition="above"
                       (click)="actionDescriptor.onAction($event, entity)">
-                      <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+                      <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
                     </button>
                   }
                 </div>
@@ -305,7 +309,7 @@
                           [disabled]="isLoading$ | async"
                           [class.!hidden]="!actionDescriptor.isEnabled(entity)"
                           (click)="actionDescriptor.onAction($event, entity)">
-                          <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+                          <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
                           <span>{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}</span>
                         </button>
                       }
@@ -314,13 +318,12 @@
                 }
               </mat-cell>
             </ng-container>
-            <mat-header-row [ngClass]="{'mat-row-select': selectionEnabled}" *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+            <mat-header-row [class.mat-row-select]="selectionEnabled" *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
             <mat-row [class.!hidden]="dataSource.dataLoading"
-                     [ngClass]="{'mat-row-select': selectionEnabled,
-                                 'mat-selected': dataSource.selection.isSelected(entity),
-                                 'tb-current-entity': dataSource.isCurrentEntity(entity),
-                                 'tb-pointer': entitiesTableConfig().rowPointer}"
-            *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
+                     [class.mat-row-select]="selectionEnabled"
+                     [class.mat-selected]="dataSource.selection.isSelected(entity)"
+                     [class.tb-current-entity]="dataSource.isCurrentEntity(entity)"
+                     *matRowDef="let entity; columns: displayedColumns;" (click)="onRowClick($event, entity)"></mat-row>
           </table>
           <span [class.!hidden]="!(!(isLoading$ | async) && (dataSource.isEmpty() | async) && !dataSource.dataLoading)"
                 class="no-data-found flex flex-row items-center justify-center">{{ translations.noEntities | translate }}</span>

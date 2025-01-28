@@ -15,14 +15,12 @@
 ///
 
 import { AfterViewInit, ChangeDetectorRef, Component } from '@angular/core';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { HomeChartsComponent } from '../../components/home-charts/home-charts.component';
 import { HomeCardsSessionsCredentialsComponent } from '../../components/home-cards-sessions-credentials/home-cards-sessions-credentials.component';
 import { CardConfigComponent } from '../../components/card-config/card-config.component';
 import { KafkaBrokersHomeTableComponent } from '../../components/kafka-tables/kafka-brokers-home-table.component';
 import { KafkaTablesTabGroupComponent } from '../../components/kafka-tables/kafka-tables-tab-group.component';
 import { GettingStartedHomeComponent } from '../../components/getting-started/getting-started-home.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { QuickLinksComponent } from '../../components/quick-links/quick-links.component';
 import { VersionCardComponent } from '../../components/version-card/version-card.component';
 
@@ -30,7 +28,7 @@ import { VersionCardComponent } from '../../components/version-card/version-card
     selector: 'tb-home-overview',
     templateUrl: './home-overview.component.html',
     styleUrls: ['./home-overview.component.scss'],
-    imports: [FlexModule, HomeChartsComponent, HomeCardsSessionsCredentialsComponent, CardConfigComponent, KafkaBrokersHomeTableComponent, KafkaTablesTabGroupComponent, GettingStartedHomeComponent, ExtendedModule, QuickLinksComponent, VersionCardComponent]
+    imports: [HomeChartsComponent, HomeCardsSessionsCredentialsComponent, CardConfigComponent, KafkaBrokersHomeTableComponent, KafkaTablesTabGroupComponent, GettingStartedHomeComponent, QuickLinksComponent, VersionCardComponent]
 })
 export class HomeOverviewComponent implements AfterViewInit {
 

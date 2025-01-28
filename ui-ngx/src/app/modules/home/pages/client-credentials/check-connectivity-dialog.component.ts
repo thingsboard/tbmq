@@ -27,13 +27,10 @@ import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatIconButton, MatButton, MatAnchor } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { CdkScrollable } from '@angular/cdk/scrolling';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTabGroup, MatTab, MatTabLabel, MatTabContent } from '@angular/material/tabs';
 import { TbMarkdownComponent } from '@shared/components/markdown.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -85,7 +82,7 @@ export interface MqttCommandConfig {
     selector: 'tb-check-connectivity-dialog',
     templateUrl: './check-connectivity-dialog.component.html',
     styleUrls: ['./check-connectivity-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, FlexModule, MatIconButton, MatIcon, CdkScrollable, MatDialogContent, ToggleHeaderComponent, ExtendedModule, ToggleOption, NgTemplateOutlet, MatTabGroup, MatTab, MatTabLabel, MatTabContent, TbMarkdownComponent, MatDialogActions, MatSlideToggle, FormsModule, MatButton, MatProgressSpinner, MatAnchor, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, MatIconButton, MatIcon, MatDialogContent, ToggleHeaderComponent, ToggleOption, NgTemplateOutlet, MatTabGroup, MatTab, MatTabLabel, MatTabContent, TbMarkdownComponent, MatDialogActions, MatSlideToggle, FormsModule, MatButton, MatProgressSpinner, MatAnchor, AsyncPipe]
 })
 export class CheckConnectivityDialogComponent extends
   DialogComponent<CheckConnectivityDialogComponent> implements OnInit, OnDestroy {

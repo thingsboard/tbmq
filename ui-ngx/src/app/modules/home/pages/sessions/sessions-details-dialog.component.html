@@ -67,8 +67,8 @@
                 <mat-label translate>mqtt-client-session.connected-status</mat-label>
                 <input matInput class="hidden" formControlName="connectionState">
                 <span style="vertical-align: bottom; font-size: 32px; padding-right: 8px"
-                [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">&#8226;</span>
-                <span [ngStyle]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">{{ entityForm.get('connectionState')?.value | titlecase }}</span>
+                [style]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">&#8226;</span>
+                <span [style]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">{{ entityForm.get('connectionState')?.value | titlecase }}</span>
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.keep-alive</mat-label>

@@ -20,13 +20,11 @@ import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
-import { NgClass } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
     selector: 'tb-kafka-consumer-groups-table',
     templateUrl: './kafka-consumer-groups-table.component.html',
-    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent]
 })
 export class KafkaConsumerGroupsTableComponent implements OnInit {
 

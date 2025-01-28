@@ -16,7 +16,7 @@
 
 -->
 <form [formGroup]="timewindowForm" (ngSubmit)="update()">
-  <mat-tab-group dynamicHeight="true" [ngClass]="{'tb-headless': historyOnly}"
+  <mat-tab-group dynamicHeight="true" [class.tb-headless]="historyOnly"
     (selectedTabChange)="onTimewindowTypeChange()" [(selectedIndex)]="timewindow.selectedTab">
     <mat-tab label="{{ 'timewindow.realtime' | translate }}">
       <section class="flex">

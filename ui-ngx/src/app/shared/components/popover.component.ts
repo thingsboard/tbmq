@@ -58,8 +58,6 @@ import { distinctUntilChanged, take, takeUntil } from 'rxjs/operators';
 import { isNotEmptyStr, onParentScrollOrWindowResize } from '@core/utils';
 import { animate, AnimationBuilder, AnimationMetadata, style } from '@angular/animations';
 import { coerceBoolean } from '@shared/decorators/coercion';
-import { NgClass, NgStyle } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TbComponentOutletDirective } from './directives/component-outlet.directive';
 
 export type TbPopoverTrigger = 'click' | 'focus' | 'hover' | null;
@@ -329,14 +327,14 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
           #popover
           class="tb-popover"
           [class.tb-popover-rtl]="dir === 'rtl'"
-          [ngClass]="classMap"
-          [ngStyle]="tbOverlayStyle"
+          [class]="classMap"
+          [style]="tbOverlayStyle"
           >
           <div class="tb-popover-content">
             <div class="tb-popover-arrow">
               <span class="tb-popover-arrow-content"></span>
             </div>
-            <div class="tb-popover-inner" [ngStyle]="tbPopoverInnerStyle" role="tooltip">
+            <div class="tb-popover-inner" [style]="tbPopoverInnerStyle" role="tooltip">
               @if (tbShowCloseButton) {
                 <div class="tb-popover-close-button" (click)="closeButtonClick($event)">×</div>
               }
@@ -364,7 +362,7 @@ readonly showCloseButton = input(true, { alias: "tbPopoverShowCloseButton" });
       </div>
     </ng-template>
     `,
-    imports: [CdkConnectedOverlay, NgClass, ExtendedModule, NgStyle, TbComponentOutletDirective]
+    imports: [CdkConnectedOverlay, TbComponentOutletDirective]
 })
 export class TbPopoverComponent<T = any> implements OnDestroy, OnInit {
 

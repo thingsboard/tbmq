@@ -55,17 +55,14 @@ import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { HelpComponent } from '@shared/components/help.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { CdkScrollable } from '@angular/cdk/scrolling';
 import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
@@ -86,7 +83,7 @@ export interface ConnectionDialogData {
     selector: 'tb-connection-wizard',
     templateUrl: './connection-wizard-dialog.component.html',
     styleUrls: ['./connection-wizard-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, FlexModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, CdkScrollable, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, ExtendedModule, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 

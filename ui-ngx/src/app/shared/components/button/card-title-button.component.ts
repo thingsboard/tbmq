@@ -17,9 +17,6 @@
 import { AfterViewInit, Component, input, model, signal } from '@angular/core';
 import { HomePageTitle, homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
-import { FlexModule } from '@angular/flex-layout/flex';
-import { NgClass } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
@@ -28,7 +25,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-card-title-button',
     styleUrls: ['card-title-button.component.scss'],
     templateUrl: './card-title-button.component.html',
-    imports: [FlexModule, NgClass, ExtendedModule, MatIcon, MatTooltip, TranslateModule]
+    imports: [MatIcon, MatTooltip, TranslateModule]
 })
 export class CardTitleButtonComponent implements AfterViewInit {
 

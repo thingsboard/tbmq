@@ -28,11 +28,9 @@ import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { MatToolbar } from '@angular/material/toolbar';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { SideMenuComponent } from './menu/side-menu.component';
 import { GettingStartedMenuLinkComponent } from './pages/getting-started/getting-started-menu-link.component';
 import { MatIconButton } from '@angular/material/button';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
 import { AsyncPipe } from '@angular/common';
@@ -45,7 +43,7 @@ import { RouterOutlet } from '@angular/router';
     selector: 'tb-home',
     templateUrl: './home.component.html',
     styleUrls: ['./home.component.scss'],
-    imports: [MatSidenavContainer, MatSidenav, MatToolbar, FlexModule, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, ExtendedModule, MatIcon, BreadcrumbComponent, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 

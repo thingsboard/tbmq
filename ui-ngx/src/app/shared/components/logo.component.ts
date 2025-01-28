@@ -15,13 +15,11 @@
 ///
 
 import {Component} from '@angular/core';
-import { FlexModule } from '@angular/flex-layout/flex';
 
 @Component({
     selector: 'tb-logo',
     templateUrl: './logo.component.html',
-    styleUrls: ['./logo.component.scss'],
-    imports: [FlexModule]
+    styleUrls: ['./logo.component.scss']
 })
 export class LogoComponent {
 

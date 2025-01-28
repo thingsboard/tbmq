@@ -32,16 +32,13 @@ import { MarkdownService, PrismPlugin } from 'ngx-markdown';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { deepClone, guid, isDefinedAndNotNull } from '@core/utils';
 import { Observable, of, ReplaySubject } from 'rxjs';
-import { NgClass, NgStyle } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 let defaultMarkdownStyle;
 
 @Component({
     selector: 'tb-markdown',
     templateUrl: './markdown.component.html',
-    styleUrls: ['./markdown.component.scss'],
-    imports: [ExtendedModule, NgClass, NgStyle]
+    styleUrls: ['./markdown.component.scss']
 })
 export class TbMarkdownComponent implements OnChanges {
 
@@ -97,7 +94,7 @@ export class TbMarkdownComponent implements OnChanges {
     if (markdownClassValue) {
       markdownClass += ` ${markdownClassValue}`;
     }
-    let template = `<div [ngStyle]="style" class="${markdownClass}">${compiled}</div>`;
+    let template = `<div [style]="style" class="${markdownClass}">${compiled}</div>`;
     const containerClass = this.containerClass();
     if (containerClass) {
       template = `<div class="${containerClass}" style="width: 100%; height: 100%;">${template}</div>`;

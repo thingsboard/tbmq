@@ -33,9 +33,9 @@
       [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
       <div [id]="statsChartType + 'container'" #chartElement class="mat-padding chart-container" >
         <mat-divider [class.!hidden]="!isFullscreen"></mat-divider>
-        <section class="flex flex-row items-center justify-between" [ngStyle]="{'padding-right': isFullscreen ? '20px' : 0}">
+        <section class="flex flex-row items-center justify-between" [style]="{'padding-right': isFullscreen ? '20px' : 0}">
           <span class="flex flex-1"></span>
-          <span [ngStyle]="{paddingLeft: statsChartType === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(statsChartType) | translate }}</span>
+          <span [style]="{paddingLeft: statsChartType === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(statsChartType) | translate }}</span>
           <span class="flex flex-1"></span>
           @if (statsChartType === 'processedBytes') {
             <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
@@ -62,7 +62,7 @@
             <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
           </button>
         </section>
-        <section [ngStyle]="{'height': chartContainerHeight}">
+        <section [style]="{'height': chartContainerHeight}">
           <canvas [id]="statsChartType + chartPage" [height]="chartHeight"></canvas>
         </section>
         @if (showLegend) {

@@ -17,7 +17,6 @@
 import { Component, forwardRef, input, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { FixedWindow } from '@shared/models/time/time.models';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatDatetimepickerModule } from '@mat-datetimepicker/core';
@@ -34,7 +33,7 @@ import { MatInput } from '@angular/material/input';
             multi: true
         }
     ],
-    imports: [FlexModule, MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
+    imports: [MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
 })
 export class DatetimePeriodComponent implements ControlValueAccessor {
 

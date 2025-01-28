@@ -24,9 +24,7 @@ import { guid } from '@core/utils';
 import { BroadcastService } from '@core/services/broadcast.service';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { UtilsService } from '@core/services/utils.service';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { TbIconComponent } from './icon.component';
 
 @Component({
@@ -34,7 +32,7 @@ import { TbIconComponent } from './icon.component';
     templateUrl: './breadcrumb.component.html',
     styleUrls: ['./breadcrumb.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FlexModule, ExtendedModule, RouterLink, NgTemplateOutlet, TbIconComponent, AsyncPipe, TranslateModule]
+    imports: [RouterLink, NgTemplateOutlet, TbIconComponent, AsyncPipe, TranslateModule]
 })
 export class BreadcrumbComponent implements OnInit, OnDestroy {
 

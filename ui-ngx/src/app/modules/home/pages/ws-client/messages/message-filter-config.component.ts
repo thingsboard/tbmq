@@ -42,7 +42,6 @@ import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } 
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatFormField } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatChipListbox, MatChipOption } from '@angular/material/chips';
@@ -69,7 +68,7 @@ export interface MessageFilterConfigData {
             multi: true
         }
     ],
-    imports: [NgTemplateOutlet, MatButton, MatIcon, FormsModule, FlexModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatTooltip]
+    imports: [NgTemplateOutlet, MatButton, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatTooltip]
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 

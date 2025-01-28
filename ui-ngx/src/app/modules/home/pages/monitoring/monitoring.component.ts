@@ -69,13 +69,11 @@ import {
 } from '@core/utils';
 import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { MatToolbar } from '@angular/material/toolbar';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatDivider } from '@angular/material/divider';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -88,7 +86,7 @@ Chart.register([Zoom]);
     selector: 'tb-monitoring',
     templateUrl: './monitoring.component.html',
     styleUrls: ['./monitoring.component.scss'],
-    imports: [MatToolbar, FlexModule, TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ExtendedModule, NgStyle, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
+    imports: [MatToolbar, TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
 })
 export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
 

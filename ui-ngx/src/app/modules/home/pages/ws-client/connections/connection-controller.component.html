@@ -18,7 +18,7 @@
 <div class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" translate>ws-client.connections.connection-status</span>
-    <span class="status" cdkOverlayOrigin #trigger="cdkOverlayOrigin" [ngStyle]="setStyle()"
+    <span class="status" cdkOverlayOrigin #trigger="cdkOverlayOrigin" [style]="setStyle()"
       (mouseover)="showStatusLogs($event, trigger)" (mouseleave)="clearTimeout()">
       {{ getStatus() | translate }}{{ errorMessage | lowercase }}
     </span>

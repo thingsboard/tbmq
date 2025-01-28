@@ -36,12 +36,10 @@ import { ENTER, TAB } from "@angular/cdk/keycodes";
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 
-import { FlexModule } from '@angular/flex-layout/flex';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { TbErrorComponent } from '@shared/components/tb-error.component';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
@@ -62,7 +60,7 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
         }
     ],
     styleUrls: ['./basic.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ExtendedModule, MatIconButton, MatTooltip, MatIcon, MatError, FlexModule, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatIconButton, MatTooltip, MatIcon, MatError, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 

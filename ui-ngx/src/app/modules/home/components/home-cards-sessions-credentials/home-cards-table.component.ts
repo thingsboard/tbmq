@@ -20,7 +20,6 @@ import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -28,7 +27,7 @@ import { TranslateModule } from '@ngx-translate/core';
     selector: 'tb-home-cards-table',
     templateUrl: './home-cards-table.component.html',
     styleUrls: ['home-cards-table.component.scss'],
-    imports: [FlexModule, CardTitleButtonComponent, TranslateModule]
+    imports: [CardTitleButtonComponent, TranslateModule]
 })
 export class HomeCardsTableComponent {
 

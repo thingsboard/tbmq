@@ -21,13 +21,12 @@ import { AppState } from '@core/core.state';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MatButton } from '@angular/material/button';
 import { ClipboardModule } from 'ngx-clipboard';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
     selector: 'tb-copy-content-button',
     templateUrl: './copy-content-button.component.html',
-    imports: [MatButton, ClipboardModule, ExtendedModule, MatIcon, TranslateModule]
+    imports: [MatButton, ClipboardModule, MatIcon, TranslateModule]
 })
 export class CopyContentButtonComponent {
 

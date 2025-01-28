@@ -19,12 +19,10 @@ import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBui
 import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { TranslateModule } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { FlexModule } from '@angular/flex-layout/flex';
 import { MatLabel, MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
 
 import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 import { SubscriptionOptionsComponent } from './subscription-options.component';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -47,7 +45,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
             useExisting: forwardRef(() => SubscriptionsComponent),
             multi: true
         }],
-    imports: [TranslateModule, FlexModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, ExtendedModule, MatError, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton]
+    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, MatError, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton]
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 

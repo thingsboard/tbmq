@@ -17,17 +17,17 @@
 -->
 <button mat-icon-button
   type="button"
-  [ngClass]="buttonClass()"
+  [class]="buttonClass()"
   [color]="color()"
   [disabled]="disabled()"
   [matTooltip]="matTooltipText"
   [matTooltipPosition]="matTooltipPosition"
   (click)="copy($event)">
   @if (!copied) {
-    <mat-icon [svgIcon]="mdiIcon()" [ngStyle]="style()">
+    <mat-icon [svgIcon]="mdiIcon()" [style]="style()">
       {{ icon() }}
     </mat-icon>
   } @else {
-    <mat-icon [ngStyle]="style()" class="copied">done</mat-icon>
+    <mat-icon [style]="style()" class="copied">done</mat-icon>
   }
 </button>

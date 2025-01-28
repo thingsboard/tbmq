@@ -17,18 +17,17 @@
 import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { RetainedMessagesTableConfig } from '@home/pages/retained-messages/retained-messages-table-config';
 import { DialogService } from '@core/services/dialog.service';
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute } from '@angular/router';
-import { ExtendedModule } from '@angular/flex-layout/extended';
 
 @Component({
     selector: 'tb-retained-messages-table',
     templateUrl: './retained-messages-table.component.html',
-    imports: [EntitiesTableComponent, NgClass, ExtendedModule]
+    imports: [EntitiesTableComponent]
 })
 export class RetainedMessagesTableComponent implements OnInit {
 

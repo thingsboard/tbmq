@@ -25,7 +25,7 @@
             {{ column.title | translate }}
           </mat-header-cell>
           <mat-cell *matCellDef="let entity; let row = index"
-            [ngStyle]="cellStyle(entity, column, row)">
+            [style]="cellStyle(entity, column, row)">
             <span [innerHTML]="cellContent(entity, column, row)"></span>
           </mat-cell>
         </ng-container>
