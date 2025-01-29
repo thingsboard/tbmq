@@ -15,7 +15,7 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container tb-home-padding flex flex-1">
+<div class="tb-home-card-container tb-home-padding">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <mat-vertical-stepper #matStepper class="tb-get-started" [linear]="false" (selectionChange)="selectStep($event)">
     @for (step of steps | async; track step; let index = $index) {
