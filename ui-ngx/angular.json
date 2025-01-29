@@ -61,11 +61,6 @@
                 "glob": "worker-javascript.js",
                 "input": "./node_modules/ace-builds/src-noconflict/",
                 "output": "/"
-              },
-              {
-                "glob": "**/*",
-                "input": "node_modules/tinymce",
-                "output": "/assets/tinymce/"
               }
             ],
             "styles": [
@@ -75,7 +70,6 @@
               "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
               "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css",
               "node_modules/rc-select/assets/index.less",
-              "node_modules/jstree-bootstrap-theme/dist/themes/proton/style.min.css",
               "node_modules/prismjs/themes/prism.css",
               "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
               "node_modules/ace-diff/dist/ace-diff.min.css"
@@ -86,8 +80,6 @@
               ]
             },
             "scripts": [
-              "node_modules/tinycolor2/dist/tinycolor-min.js",
-              "node_modules/split.js/dist/split.min.js",
               "node_modules/systemjs/dist/system.min.js",
               "node_modules/marked/lib/marked.umd.js",
               "node_modules/prismjs/prism.js",
