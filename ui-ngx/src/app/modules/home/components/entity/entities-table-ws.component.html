@@ -32,7 +32,7 @@
       </mat-checkbox>
     </mat-cell>
   </ng-container>
-  @for (column of entityColumns; track trackByColumnKey(column)) {
+  @for (column of entityColumns; track column.key) {
     <ng-container [matColumnDef]="column.key" sticky>
       <mat-header-cell [class.mat-number-cell]="column.isNumberColumn"
         *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
@@ -70,7 +70,7 @@
       </mat-cell>
     </ng-container>
   }
-  @for (column of actionColumns; track trackByColumnKey(column)) {
+  @for (column of actionColumns; track column.key) {
     <ng-container [matColumnDef]="column.key" sticky>
       <mat-header-cell *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable"> {{ column.title | translate }} </mat-header-cell>
       <mat-cell *matCellDef="let entity; let row = index"

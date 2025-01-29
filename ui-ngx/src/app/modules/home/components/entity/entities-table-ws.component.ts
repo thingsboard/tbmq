@@ -401,10 +401,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     return res;
   }
 
-  trackByColumnKey(column: EntityColumn<BaseData>) {
-    return column.key;
-  }
-
   private calcDefaultPageSize(): number {
     if (this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl'])) {
       return 15;

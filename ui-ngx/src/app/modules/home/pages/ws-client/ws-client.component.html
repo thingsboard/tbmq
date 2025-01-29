@@ -18,8 +18,8 @@
 @if ((connections | async)?.length) {
   <ng-container *ngTemplateOutlet="hasConnections"></ng-container>
 } @else {
-  @defer {
-    <section style="width: 100%; height: 100%;">
+  <section style="width: 100%; height: 100%;">
+    @if ((isLoading$ | async) === false) {
       <div class="add-connection-container">
         <button class="add-connection-btn flex flex-1 items-center justify-start"
                 (click)="addConnection($event)">
@@ -27,8 +27,8 @@
           <span translate>ws-client.connections.add-connection</span>
         </button>
       </div>
-    </section>
-  }
+    }
+  </section>
 }
 
 <ng-template #hasConnections>

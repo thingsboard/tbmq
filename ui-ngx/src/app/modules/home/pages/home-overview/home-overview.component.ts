@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { HomeChartsComponent } from '../../components/home-charts/home-charts.component';
 import { HomeCardsSessionsCredentialsComponent } from '../../components/home-cards-sessions-credentials/home-cards-sessions-credentials.component';
 import { CardConfigComponent } from '../../components/card-config/card-config.component';
@@ -23,6 +23,9 @@ import { KafkaTablesTabGroupComponent } from '../../components/kafka-tables/kafk
 import { GettingStartedHomeComponent } from '../../components/getting-started/getting-started-home.component';
 import { QuickLinksComponent } from '../../components/quick-links/quick-links.component';
 import { VersionCardComponent } from '../../components/version-card/version-card.component';
+import { PageComponent } from '@shared/components/page.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
 
 @Component({
     selector: 'tb-home-overview',
@@ -30,12 +33,9 @@ import { VersionCardComponent } from '../../components/version-card/version-card
     styleUrls: ['./home-overview.component.scss'],
     imports: [HomeChartsComponent, HomeCardsSessionsCredentialsComponent, CardConfigComponent, KafkaBrokersHomeTableComponent, KafkaTablesTabGroupComponent, GettingStartedHomeComponent, QuickLinksComponent, VersionCardComponent]
 })
-export class HomeOverviewComponent implements AfterViewInit {
+export class HomeOverviewComponent extends PageComponent {
 
-  constructor(private cd: ChangeDetectorRef) {
-  }
-
-  ngAfterViewInit(): void {
-    this.cd.detectChanges();
+  constructor(protected store: Store<AppState>) {
+    super(store);
   }
 }

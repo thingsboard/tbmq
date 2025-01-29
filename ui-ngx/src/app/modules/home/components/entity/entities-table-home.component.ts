@@ -583,10 +583,6 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     return res;
   }
 
-  trackByColumnKey(column: EntityColumn<BaseData>) {
-    return column.key;
-  }
-
   calcTableHeight(): string {
     return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
   }

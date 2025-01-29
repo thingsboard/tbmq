@@ -676,8 +676,4 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     }
     return res;
   }
-
-  trackByColumnKey(column: EntityColumn<BaseData>) {
-    return column.key;
-  }
 }

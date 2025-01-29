@@ -23,7 +23,7 @@
       : (breadcrumb.label | translate) }}
     </h1>
   }
-  @for (breadcrumb of breadcrumbs$ | async; track trackByBreadcrumbs; let isLast = $last) {
+  @for (breadcrumb of breadcrumbs$ | async; track breadcrumb.id; let isLast = $last) {
     <span class="flex lt-md:!hidden">
       @switch (isLast) {
         @case (false) {

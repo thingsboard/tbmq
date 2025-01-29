@@ -18,7 +18,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import { BreadCrumb, BreadCrumbConfig } from './breadcrumb';
 import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink } from '@angular/router';
-import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { guid } from '@core/utils';
 import { BroadcastService } from '@core/services/broadcast.service';
@@ -137,9 +137,5 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       return this.buildBreadCrumbs(route.firstChild, newBreadcrumbs, lastChild);
     }
     return newBreadcrumbs;
-  }
-
-  trackByBreadcrumbs(index: number, breadcrumb: BreadCrumb){
-    return breadcrumb.id;
   }
 }
