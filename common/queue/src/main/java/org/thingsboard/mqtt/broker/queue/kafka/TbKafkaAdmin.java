@@ -412,6 +412,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
+    //todo: maybe execute this periodically using scheduler. During kill of the node there can be at least 2 groups (downlinks)
+    // that will not be deleted if the state is Stable (since consumers could not gracefully leave the groups)
     @Override
     public void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix) {
         long start = System.nanoTime();
@@ -439,14 +441,14 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+                log.debug("Found {} old consumer group(s) to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
             }
             KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
             deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
                 if (deleteThrowable == null) {
                     long end = System.nanoTime();
                     if (log.isDebugEnabled()) {
-                        log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
+                        log.debug("[{}] Deletion processing of old consumer group(s) took {} nanos", groupIdsToDelete, end - start);
                     }
                 } else {
                     log.warn("Failed to delete old consumer groups!", deleteThrowable);
