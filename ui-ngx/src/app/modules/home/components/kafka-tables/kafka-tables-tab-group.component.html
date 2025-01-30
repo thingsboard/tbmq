@@ -17,7 +17,7 @@
 -->
 <section>
   <div class="tabs-toolbar">
-    <tb-toggle-header #kafkaTable [value]="KafkaTable.TOPICS">
+    <tb-toggle-header #kafkaTable [value]="KafkaTable.TOPICS" useSelectOnMdLg="false">
       <tb-toggle-option [value]="KafkaTable.TOPICS">
         {{ kafkaTableTranslationMap.get(KafkaTable.TOPICS) | translate }}
       </tb-toggle-option>
