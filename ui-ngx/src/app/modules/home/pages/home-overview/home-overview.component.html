@@ -16,7 +16,7 @@
 
 -->
 <div class="tb-home-overview flex flex-row gap-3 lt-lg:flex-col">
-  <div class="flex max-w-70% flex-col gap-3">
+  <div class="flex max-w-70% flex-col gap-3 lt-lg:max-w-100%">
     @defer {
       <tb-home-charts></tb-home-charts>
     }
@@ -37,12 +37,12 @@
       <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
     }
   </div>
-  <div class="flex max-w-30% flex-col gap-3 lt-lg:flex-auto">
+  <div class="flex max-w-30% flex-col gap-3 lt-lg:max-w-100%">
     @defer {
-      <tb-getting-started class="tb-home-card xs:hidden"></tb-getting-started>
+      <tb-getting-started class="tb-home-card xs:!hidden"></tb-getting-started>
     }
     @defer {
-      <tb-quick-links class="tb-home-card" [class.lt-lg:!hidden]="true"></tb-quick-links>
+      <tb-quick-links class="tb-home-card lt-lg:!hidden"></tb-quick-links>
     }
     @defer {
       <tb-version-card class="tb-home-card"></tb-version-card>

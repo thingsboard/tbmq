@@ -36,7 +36,7 @@ import { CdkOverlayOrigin } from '@angular/cdk/overlay';
     templateUrl: './connection-controller.component.html',
     styleUrls: ['./connection-controller.component.scss'],
     providers: [TbPopoverService],
-  imports: [TranslateModule, NgTemplateOutlet, MatButton, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
+    imports: [TranslateModule, NgTemplateOutlet, MatButton, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
