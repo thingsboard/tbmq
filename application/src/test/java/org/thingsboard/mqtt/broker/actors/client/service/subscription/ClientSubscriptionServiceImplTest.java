@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -205,11 +206,15 @@ public class ClientSubscriptionServiceImplTest {
         return clientSubscriptions;
     }
 
-    private Map<String, Set<TopicSubscription>> getClientTopicSubscriptions() {
+    private Map<SubscriptionsSourceKey, Set<TopicSubscription>> getClientTopicSubscriptions() {
         return Map.of(
-                "clientId1", Sets.newHashSet(getTopicSubscription("topic1")),
-                "clientId2", Sets.newHashSet(getTopicSubscription("topic2"))
+                newSubscriptionsSourceKey("clientId1"), Sets.newHashSet(getTopicSubscription("topic1")),
+                newSubscriptionsSourceKey("clientId2"), Sets.newHashSet(getTopicSubscription("topic2"))
         );
+    }
+
+    private SubscriptionsSourceKey newSubscriptionsSourceKey(String id) {
+        return SubscriptionsSourceKey.newInstance(id);
     }
 
     private TopicSubscription getTopicSubscription(String topic) {

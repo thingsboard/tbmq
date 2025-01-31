@@ -112,6 +112,11 @@ message ClientSessionEventResponseProto {
 
 message ClientSubscriptionsProto {
   repeated TopicSubscriptionProto subscriptions = 1;
+  optional SubscriptionsSourceProto source = 2;
+}
+
+enum SubscriptionsSourceProto {
+  MQTT_CLIENT = 0;
 }
 
 message DisconnectClientCommandProto {

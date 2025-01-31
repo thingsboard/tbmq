@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.adaptor;
 
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
@@ -45,6 +46,7 @@ import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.gen.queue.SessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionsSourceProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
@@ -52,6 +54,8 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttQosUtil;
@@ -62,7 +66,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
@@ -380,8 +383,8 @@ public class ProtoConverter {
     }
 
     public static DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId,
-                                                                                              boolean newSessionCleanStart,
-                                                                                              String reasonType) {
+                                                                                  boolean newSessionCleanStart,
+                                                                                  String reasonType) {
         return DisconnectClientCommandProto.newBuilder()
                 .setSessionIdMSB(sessionId.getMostSignificantBits())
                 .setSessionIdLSB(sessionId.getLeastSignificantBits())
@@ -402,15 +405,20 @@ public class ProtoConverter {
      */
 
     public static ClientSubscriptionsProto convertToClientSubscriptionsProto(Collection<TopicSubscription> topicSubscriptions) {
-        List<TopicSubscriptionProto> topicSubscriptionsProto = topicSubscriptions.stream()
-                .map(topicSubscription -> topicSubscription.getShareName() == null ?
-                        getTopicSubscriptionProto(topicSubscription) :
-                        getTopicSubscriptionProtoWithShareName(topicSubscription))
-                .collect(Collectors.toList());
-        return ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
+        List<TopicSubscriptionProto> topicSubscriptionsProto = new ArrayList<>(topicSubscriptions.size());
+        SubscriptionsSourceProto source = SubscriptionsSourceProto.MQTT_CLIENT;
+        for (TopicSubscription topicSubscription : topicSubscriptions) {
+            topicSubscriptionsProto.add(topicSubscription.getShareName() == null ?
+                    getTopicSubscriptionProto(topicSubscription) :
+                    getTopicSubscriptionProtoWithShareName(topicSubscription));
+        }
+        return ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).setSource(source).build();
     }
 
     private static SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {
+        if (topicSubscription.getOptions() == null) {
+            return SubscriptionOptionsProto.getDefaultInstance();
+        }
         return SubscriptionOptionsProto.newBuilder()
                 .setNoLocal(topicSubscription.getOptions().isNoLocal())
                 .setRetainAsPublish(topicSubscription.getOptions().isRetainAsPublish())
@@ -447,16 +455,25 @@ public class ProtoConverter {
         }
     }
 
-    public static Set<TopicSubscription> convertProtoToClientSubscriptions(ClientSubscriptionsProto clientSubscriptionsProto) {
-        return clientSubscriptionsProto.getSubscriptionsList().stream()
-                .map(topicSubscriptionProto -> ClientTopicSubscription.builder()
-                        .qos(topicSubscriptionProto.getQos())
-                        .topicFilter(topicSubscriptionProto.getTopic())
-                        .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
-                        .options(createSubscriptionOptions(topicSubscriptionProto))
-                        .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
-                        .build())
-                .collect(Collectors.toSet());
+    public static SourcedSubscriptions convertProtoToClientSubscriptions(ClientSubscriptionsProto clientSubscriptionsProto) {
+        SubscriptionsSource source = getSubscriptionsSource(clientSubscriptionsProto);
+        Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(clientSubscriptionsProto.getSubscriptionsCount());
+        for (TopicSubscriptionProto topicSubscriptionProto : clientSubscriptionsProto.getSubscriptionsList()) {
+            TopicSubscription subscription = ClientTopicSubscription.builder()
+                    .qos(topicSubscriptionProto.getQos())
+                    .topicFilter(topicSubscriptionProto.getTopic())
+                    .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
+                    .options(createSubscriptionOptions(topicSubscriptionProto))
+                    .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
+                    .build();
+            subscriptions.add(subscription);
+        }
+        return new SourcedSubscriptions(source, subscriptions);
+    }
+
+    private static SubscriptionsSource getSubscriptionsSource(ClientSubscriptionsProto clientSubscriptionsProto) {
+        var proto = clientSubscriptionsProto.hasSource() ? clientSubscriptionsProto.getSource() : SubscriptionsSourceProto.MQTT_CLIENT;
+        return SubscriptionsSource.valueOf(proto.name());
     }
 
     private static SubscriptionOptions createSubscriptionOptions(TopicSubscriptionProto topicSubscriptionProto) {

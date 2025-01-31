@@ -35,6 +35,8 @@ import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.ClientSubscriptionConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,7 +87,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     }
 
     @Override
-    public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
+    public Map<SubscriptionsSourceKey, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
         log.debug("Starting subscriptions initLoad");
         long startTime = System.nanoTime();
         long totalMessageCount = 0L;
@@ -95,7 +97,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
         List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages;
         boolean encounteredDummyClient = false;
-        Map<String, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
         do {
             try {
                 messages = clientSubscriptionsConsumer.poll(pollDuration);
@@ -104,15 +106,15 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                 totalMessageCount += packSize;
                 for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
                     String clientId = msg.getKey();
-                    Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
+                    SourcedSubscriptions sourcedSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
                         encounteredDummyClient = true;
-                    } else if (clientSubscriptions.isEmpty()) {
+                    } else if (sourcedSubscriptions.getSubscriptions().isEmpty()) {
                         // this means Kafka log compaction service haven't cleared empty message yet
                         log.trace("[{}] Encountered empty ClientSubscriptions.", clientId);
-                        allSubscriptions.remove(clientId);
+                        allSubscriptions.remove(SubscriptionsSourceKey.newInstance(clientId));
                     } else {
-                        allSubscriptions.put(clientId, clientSubscriptions);
+                        allSubscriptions.put(new SubscriptionsSourceKey(clientId, sourcedSubscriptions.getSource()), sourcedSubscriptions.getSubscriptions());
                     }
                 }
                 clientSubscriptionsConsumer.commitSync();
@@ -156,7 +158,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
                             continue;
                         }
                         String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
-                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
+                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue()).getSubscriptions();
                         boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
                         if (accepted) {
                             acceptedSubscriptions++;

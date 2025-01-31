@@ -49,6 +49,7 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -154,7 +155,7 @@ public class BrokerInitializer {
     }
 
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
-        Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
         removeSubscriptionIfSessionIsAbsent(allClientSessions, allClientSubscriptions);
@@ -164,11 +165,10 @@ public class BrokerInitializer {
     }
 
     private void removeSubscriptionIfSessionIsAbsent(Map<String, ClientSessionInfo> allClientSessions,
-                                                     Map<String, Set<TopicSubscription>> allClientSubscriptions) {
-        Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
-        for (String clientId : loadedClientIds) {
-            if (!allClientSessions.containsKey(clientId)) {
-                allClientSubscriptions.remove(clientId);
+                                                     Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions) {
+        for (SubscriptionsSourceKey sourceKey : new HashSet<>(allClientSubscriptions.keySet())) {
+            if (!allClientSessions.containsKey(sourceKey.getId())) {
+                allClientSubscriptions.remove(sourceKey);
             }
         }
     }

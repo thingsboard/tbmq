@@ -44,6 +44,7 @@ import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
@@ -177,7 +178,8 @@ public class ProtoConverterTest {
                 .orElse(null);
         assertNotNull(topicSubscriptionProto);
 
-        Set<TopicSubscription> output = ProtoConverter.convertProtoToClientSubscriptions(clientSubscriptionsProto);
+        SourcedSubscriptions sourcedSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(clientSubscriptionsProto);
+        Set<TopicSubscription> output = sourcedSubscriptions.getSubscriptions();
 
         TopicSubscription topicSubscription = output
                 .stream()

@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.service.subscription.data;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.util.Map;
-import java.util.Set;
+@Data
+@EqualsAndHashCode(exclude = "source")
+public class SubscriptionsSourceKey {
 
-public interface ClientSubscriptionConsumer {
+    private final String id;
+    private final SubscriptionsSource source;
 
-    Map<SubscriptionsSourceKey, Set<TopicSubscription>> initLoad() throws QueuePersistenceException;
-
-    void listen(ClientSubscriptionChangesCallback callback);
-
+    public static SubscriptionsSourceKey newInstance(String id) {
+        return new SubscriptionsSourceKey(id, SubscriptionsSource.MQTT_CLIENT);
+    }
 }

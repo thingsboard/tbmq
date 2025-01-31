@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -57,8 +58,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     @Override
-    public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
-        this.clientSubscriptionsMap = new ConcurrentHashMap<>(clientTopicSubscriptions);
+    public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
+        this.clientSubscriptionsMap = new ConcurrentHashMap<>();
+        clientTopicSubscriptions.forEach((key, value) -> this.clientSubscriptionsMap.put(key.getId(), value));
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
