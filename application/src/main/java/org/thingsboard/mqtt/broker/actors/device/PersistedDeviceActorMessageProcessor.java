@@ -74,8 +74,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     @Setter
     private volatile ClientSessionCtx sessionCtx;
-    @Setter
-    private volatile long lastPersistedMsgSentPacketId = 0L;
     private volatile UUID stopActorCommandUUID;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
@@ -174,7 +172,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                 if (!isDup) {
                     inFlightPacketIds.add(persistedMessage.getPacketId());
                 }
-                lastPersistedMsgSentPacketId = persistedMessage.getPacketId();
                 if (msgExpiryResult.isMsgExpiryIntervalPresent()) {
                     MqttPropertiesUtil.addMsgExpiryIntervalToProps(persistedMessage.getProperties(), msgExpiryResult.getMsgExpiryInterval());
                 }
@@ -190,7 +187,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processDeviceDisconnect(TbActorCtx actorCtx) {
         this.sessionCtx = null;
-        this.lastPersistedMsgSentPacketId = 0L;
         long delayMs = TimeUnit.MINUTES.toMillis(deviceActorConfig.getWaitBeforeActorStopMinutes());
         this.stopActorCommandUUID = UUID.randomUUID();
         systemContext.scheduleMsgWithDelay(actorCtx, new StopDeviceActorCommandMsg(stopActorCommandUUID), delayMs);
@@ -198,13 +194,6 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void process(IncomingPublishMsg msg) {
         DevicePublishMsg publishMsg = msg.getPublishMsg();
-        if (publishMsg.getPacketId() <= lastPersistedMsgSentPacketId) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Message was already sent to client, ignoring message {}.", clientId, publishMsg.getPacketId());
-            }
-            return;
-        }
-
         MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
         if (msgExpiryResult.isExpired()) {
             return;
@@ -219,7 +208,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
             clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to device client");
         } catch (Exception e) {
             log.warn("[{}] Failed to send PUBLISH msg", clientId, e);
-            disconnect("Failed to send PUBLISH msg");
+            if (sessionCtx != null) disconnect("Failed to send PUBLISH msg");
         }
     }
 
