@@ -14,47 +14,43 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
-import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR, UntypedFormGroup,
-  ValidationErrors,
-  Validator, Validators
-} from '@angular/forms';
+import { AfterViewInit, Component, forwardRef, OnDestroy, input, model, viewChild } from '@angular/core';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ClientCredentials, SslMqttCredentials } from '@shared/models/credentials.model';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { AuthRulesComponent } from './auth-rules.component';
 
 @Component({
-  selector: 'tb-mqtt-credentials-ssl',
-  templateUrl: './ssl.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MqttCredentialsSslComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => MqttCredentialsSslComponent),
-      multi: true,
-    }],
-  styleUrls: []
+    selector: 'tb-mqtt-credentials-ssl',
+    templateUrl: './ssl.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MqttCredentialsSslComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => MqttCredentialsSslComponent),
+            multi: true,
+        }
+    ],
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, MatSlideToggle, AuthRulesComponent]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 
-  @ViewChild('copyBtn')
-  copyBtn: CopyButtonComponent;
+  readonly copyBtn = viewChild<CopyButtonComponent>('copyBtn');
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   credentialsMqttFormGroup: UntypedFormGroup;
   certificateCnHint = 'mqtt-client-credentials.hint-ssl-cert-common-name';
@@ -91,8 +87,8 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.credentialsMqttFormGroup.disable({emitEvent: false});
     } else {
       this.credentialsMqttFormGroup.enable({emitEvent: false});
@@ -122,7 +118,7 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
   }
 
   onClickTbCopyButton(value: string) {
-    this.copyBtn.copy(value);
+    this.copyBtn().copy(value);
   }
 
   private updateCertificateCnView(value: boolean = false) {

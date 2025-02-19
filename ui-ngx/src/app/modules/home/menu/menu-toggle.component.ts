@@ -14,32 +14,33 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
 import { Router } from '@angular/router';
-import { Store } from '@ngrx/store';
-import { AppState } from '@core/core.state';
+import { MatAnchor } from '@angular/material/button';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { MenuLinkComponent } from './menu-link.component';
+import { NospacePipe } from '@shared/pipe/nospace.pipe';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-menu-toggle',
-  templateUrl: './menu-toggle.component.html',
-  styleUrls: ['./menu-toggle.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-menu-toggle',
+    templateUrl: './menu-toggle.component.html',
+    styleUrls: ['./menu-toggle.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatAnchor, TbIconComponent, MenuLinkComponent, NospacePipe, TranslateModule]
 })
-export class MenuToggleComponent implements OnInit {
+export class MenuToggleComponent {
 
-  @Input() section: MenuSection;
+  readonly section = input<MenuSection>();
 
-  constructor(private router: Router,
-              private store: Store<AppState>) {
-  }
-
-  ngOnInit() {
+  constructor(private router: Router) {
   }
 
   sectionHeight(): string {
-    if (this.section.opened || (!this.section.opened && this.router.url.indexOf(this.section.path) > -1)) {
-      return this.section.pages.length * 40 + 'px';
+    const section = this.section();
+    if (section.opened || (!section.opened && this.router.url.indexOf(section.path) > -1)) {
+      return section.pages.length * 40 + 'px';
     } else {
       return '0px';
     }
@@ -47,8 +48,7 @@ export class MenuToggleComponent implements OnInit {
 
   toggleSection(event: MouseEvent) {
     event.stopPropagation();
-    this.section.opened = !this.section.opened;
-    // this.store.dispatch(new ActionPreferencesUpdateOpenedMenuSection({path: this.section.path, opened: this.section.opened}));
+    this.section().opened = !this.section().opened;
   }
 
   trackBySectionPages(index: number, section: MenuSection){

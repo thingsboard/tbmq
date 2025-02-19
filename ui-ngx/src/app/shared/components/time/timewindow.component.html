@@ -15,42 +15,45 @@
     limitations under the License.
 
 -->
-<button *ngIf="asButton && !strokedButton && !flatButton"
-        [disabled]="timewindowDisabled"
-        type="button"
-        mat-raised-button color="primary"
-        (click)="toggleTimewindow($event)">
-  <mat-icon class="material-icons">query_builder</mat-icon>
-  <span>{{displayValue()}}</span>
-</button>
-<button *ngIf="asButton && strokedButton"
-        [disabled]="timewindowDisabled"
-        type="button"
-        mat-stroked-button color="primary"
-        (click)="toggleTimewindow($event)">
-  <mat-icon class="material-icons">query_builder</mat-icon>
-  <span>{{displayValue()}}</span>
-</button>
-<button *ngIf="asButton && flatButton"
-        [disabled]="timewindowDisabled"
-        type="button"
-        mat-button
-        (click)="toggleTimewindow($event)">
-  <mat-icon class="material-icons">query_builder</mat-icon>
-  <span>{{displayValue()}}</span>
-</button>
-<section *ngIf="!asButton"
-         class="tb-timewindow"
-         [class]="{'no-padding': noPadding}"
-         matTooltip="{{ 'timewindow.edit' | translate }}"
-         [matTooltipPosition]="tooltipPosition"
-         [style]="timewindowComponentStyle"
-         (click)="toggleTimewindow($event)">
-  <tb-icon *ngIf="computedTimewindowStyle.showIcon && computedTimewindowStyle.iconPosition === 'left'"
-           [style]="timewindowIconStyle">{{ computedTimewindowStyle.icon }}</tb-icon>
-  <div class="tb-timewindow-label" [fxHide]="hideLabel">
-    {{innerValue?.displayValue}} <span [fxShow]="innerValue?.displayTimezoneAbbr !== ''">| <span class="timezone-abbr">{{innerValue?.displayTimezoneAbbr}}</span></span>
-  </div>
-  <tb-icon *ngIf="computedTimewindowStyle.showIcon && computedTimewindowStyle.iconPosition === 'right'"
-           [style]="timewindowIconStyle">{{ computedTimewindowStyle.icon }}</tb-icon>
-</section>
+@if (asButton() && !strokedButton() && !flatButton()) {
+  <button
+    [disabled]="timewindowDisabled"
+    type="button"
+    mat-raised-button color="primary"
+    (click)="toggleTimewindow($event)">
+    <mat-icon class="material-icons">query_builder</mat-icon>
+    <span>{{displayValue()}}</span>
+  </button>
+}
+@if (asButton() && strokedButton()) {
+  <button
+    [disabled]="timewindowDisabled"
+    type="button"
+    mat-stroked-button color="primary"
+    (click)="toggleTimewindow($event)">
+    <mat-icon class="material-icons">query_builder</mat-icon>
+    <span>{{displayValue()}}</span>
+  </button>
+}
+@if (asButton() && flatButton()) {
+  <button
+    [disabled]="timewindowDisabled"
+    type="button"
+    mat-button
+    (click)="toggleTimewindow($event)">
+    <mat-icon class="material-icons">query_builder</mat-icon>
+    <span>{{displayValue()}}</span>
+  </button>
+}
+@if (!asButton()) {
+  <section
+    class="tb-timewindow"
+    [class]="{'no-padding': noPadding()}"
+    matTooltip="{{ 'timewindow.edit' | translate }}"
+    [matTooltipPosition]="tooltipPosition()"
+    (click)="toggleTimewindow($event)">
+    <div class="tb-timewindow-label" [class.!hidden]="hideLabel()">
+      {{innerValue?.displayValue}} <span [class.!hidden]="innerValue?.displayTimezoneAbbr === ''">| <span class="timezone-abbr">{{innerValue?.displayTimezoneAbbr}}</span></span>
+    </div>
+  </section>
+}

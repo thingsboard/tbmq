@@ -20,21 +20,27 @@ import {
   ConfigParams,
   ConfigParamsTranslationMap,
 } from '@shared/models/config.model';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
 import { map } from 'rxjs/operators';
 import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'tb-card-config',
-  templateUrl: './card-config.component.html',
-  styleUrls: ['./card-config.component.scss']
+    selector: 'tb-card-config',
+    templateUrl: './card-config.component.html',
+    styleUrls: ['./card-config.component.scss'],
+    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
 })
 export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
@@ -69,17 +75,6 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;
-  }
-
-  onCopied() {
-    const message = this.translate.instant('action.on-copied');
-    this.store.dispatch(new ActionNotificationShow({
-      message,
-      type: 'success',
-      duration: 1000,
-      verticalPosition: 'top',
-      horizontalPosition: 'left'
-    }));
   }
 
   gotoDocs(page: string){

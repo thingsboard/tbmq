@@ -37,7 +37,7 @@ import {
 } from '@shared/models/subscription.model';
 import { SubscriptionService } from '@core/http/subscription.service';
 import { SubscriptionsTableHeaderComponent } from '@home/pages/subscriptions/subscriptions-table-header.component';
-import { mqttQoSTypes } from '@shared/models/session.model';
+import { QoS, QosAsNum, QosTranslation } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
 import { ClientSessionService } from '@core/http/client-session.service';
 
@@ -66,7 +66,9 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.tableTitle = this.translate.instant('subscription.subscriptions');
     this.entitiesDeleteEnabled = false;
     this.addEnabled = false;
+    this.rowPointer = true;
     this.defaultSortOrder = {property: 'clientId', direction: Direction.DESC};
+    this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity.clientId, 1);
 
     this.columns.push(
       new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%',
@@ -103,17 +105,12 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
           onAction: ($event, entity) => entity.subscription.topicFilter,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px', entity => {
-        const qos = mqttQoSTypes.find(el => el.value === entity.subscription.qos).name;
-        return this.translate.instant(qos);
-      }),
+      new EntityTableColumn<ClientSubscription>('qos', 'mqtt-client-session.qos', '120px',
+          entity => QosAsNum(entity.subscription.qos) + ' - ' + this.translate.instant(QosTranslation.get(QosAsNum(entity.subscription.qos) as unknown as QoS))),
       new EntityTableColumn<ClientSubscription>('noLocal', 'subscription.nl', '120px', entity => checkBoxCell(entity.subscription?.options?.noLocal)),
       new EntityTableColumn<ClientSubscription>('retainAsPublish', 'subscription.rap', '120px', entity => checkBoxCell(entity.subscription?.options?.retainAsPublish)),
       new EntityTableColumn<ClientSubscription>('retainHandling', 'subscription.rh', '120px', entity => entity.subscription?.options?.retainHandling.toString(),
-        undefined, undefined, undefined, entity => {
-          const rh = this.rhOptions.find(el => el.value === entity.subscription?.options.retainHandling).name;
-          return this.translate.instant(rh);
-        }),
+        undefined, undefined, undefined, entity => this.rhOptions.find(el => el.value === entity.subscription?.options.retainHandling).name),
       new EntityTableColumn<ClientSubscription>('subscriptionId', 'subscription.subscription-id', '120px',
           entity => entity.subscription.subscriptionId ? entity.subscription.subscriptionId.toString() : ''),
     );
@@ -226,8 +223,8 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     return actions;
   }
 
-  private showSessionDetails($event: Event, clientId: string) {
-    this.clientSessionService.openSessionDetailsDialog($event, clientId).subscribe(
+  private showSessionDetails($event: Event, clientId: string, selectedTab = 0): boolean {
+    this.clientSessionService.openSessionDetailsDialog($event, clientId, {selectedTab}).subscribe(
       (dialog) => {
         dialog.afterClosed().subscribe((res) => {
           if (res) {
@@ -238,5 +235,6 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
         });
       }
     );
+    return false;
   }
 }

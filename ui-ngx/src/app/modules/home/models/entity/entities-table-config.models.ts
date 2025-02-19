@@ -28,7 +28,6 @@ import { PageLink } from '@shared/models/page/page-link';
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
-import { ClientType } from '@shared/models/client.model';
 import { IEntitiesTableComponent } from './entity-table-component.models';
 import { DAY, historyInterval } from '@shared/models/time/time.models';
 import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
@@ -86,8 +85,7 @@ export class BaseEntityTableColumn<T extends BaseData> {
               public title: string,
               public width: string = '0px',
               public sortable: boolean = true,
-              public ignoreTranslate: boolean = false,
-              public mobileHide: boolean = false) {
+              public ignoreTranslate: boolean = false) {
   }
 }
 

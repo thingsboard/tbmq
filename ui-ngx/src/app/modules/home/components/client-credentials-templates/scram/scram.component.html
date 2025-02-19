@@ -19,45 +19,51 @@
   <fieldset class="fields-group">
     <legend class="group-title" translate>mqtt-client-credentials.authentication</legend>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-credentials.hint-credentials-type-scram' | translate }}"></div>
-    <div fxLayout="column">
-      <div fxLayout="row" fxLayout.xs="column" fxLayoutGap.gt-xs="8px">
-        <mat-form-field fxFlex class="mat-block">
+    <div class="flex flex-col">
+      <div class="flex flex-row xs:flex-col gt-xs:gap-2">
+        <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
           <tb-copy-button #copyUsernameBtn
-                          (click)="onClickTbCopyButton('userName')"
-                          [fxShow]="credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
-                          [copyText]="credentialsMqttFormGroup.get('userName').value">
+            (click)="onClickTbCopyButton('userName')"
+            [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
+            [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <button mat-icon-button matSuffix
-                  [matTooltip]="'action.regenerate' | translate"
-                  matTooltipPosition="above"
-                  (click)="regenerate('userName')">
+            [matTooltip]="'action.regenerate' | translate"
+            matTooltipPosition="above"
+            (click)="regenerate('userName')">
             <mat-icon>
               repeat
             </mat-icon>
           </button>
-          <mat-error *ngIf="credentialsMqttFormGroup.get('userName').hasError('required')">
-            {{ 'mqtt-client-credentials.user-name-required' | translate }}
-          </mat-error>
+          @if (credentialsMqttFormGroup.get('userName').hasError('required')) {
+            <mat-error>
+              {{ 'mqtt-client-credentials.user-name-required' | translate }}
+            </mat-error>
+          }
         </mat-form-field>
-        <mat-form-field fxFlex class="mat-block">
+        <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.password</mat-label>
           <input matInput formControlName="password"
-                 autocomplete="new-password" name="new-password"
-                 type="password">
+            autocomplete="new-password" name="new-password"
+            type="password">
           <tb-toggle-password matSuffix></tb-toggle-password>
-          <mat-error *ngIf="credentialsMqttFormGroup.get('password').hasError('required')">
-            {{ 'mqtt-client-credentials.password-required' | translate }}
-          </mat-error>
+          @if (credentialsMqttFormGroup.get('password').hasError('required')) {
+            <mat-error>
+              {{ 'mqtt-client-credentials.password-required' | translate }}
+            </mat-error>
+          }
         </mat-form-field>
       </div>
-      <mat-form-field fxFlex class="mat-block">
+      <mat-form-field class="flex flex-1">
         <mat-label translate>mqtt-client-credentials.select-sha</mat-label>
         <mat-select formControlName="algorithm" (selectionChange)="algorithmChanged()">
-          <mat-option *ngFor="let sha of shaTypes" [value]="sha">
-            <span>{{ shaTypeTranslations.get(sha) | translate }}</span>
-          </mat-option>
+          @for (sha of shaTypes; track sha) {
+            <mat-option [value]="sha">
+              <span>{{ shaTypeTranslations.get(sha) | translate }}</span>
+            </mat-option>
+          }
         </mat-select>
         <mat-hint [innerHtml]="'mqtt-client-credentials.hint-credentials-scram-sha' | translate"></mat-hint>
       </mat-form-field>
@@ -73,54 +79,62 @@
       <div class="tb-hint" style="padding-top: 0" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
       <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
     </section>
-    <div fxFlex fxLayout="column" formGroupName="authRules" style="margin-top: 8px">
+    <div class="mt:2 flex flex-1 flex-col" formGroupName="authRules">
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
         <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
-          <mat-chip-row
-            *ngFor="let rule of pubRulesSet" [value]="rule"
-            [editable]="!disabled"
-            (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
-            [removable]="!disabled"
-            (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
-            {{ rule }}
-            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
-              <mat-icon>close</mat-icon>
-            </button>
-          </mat-chip-row>
+          @for (rule of pubRulesSet; track rule) {
+            <mat-chip-row
+              [value]="rule"
+              [editable]="!disabled()"
+              (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
+              [removable]="!disabled()"
+              (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+              {{ rule }}
+              @if (!disabled()) {
+                <button matChipRemove aria-label="'remove' + rule">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-chip-row>
+          }
           <input matInput type="text"
-                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                 matChipInputAddOnBlur
-                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                 [matChipInputFor]="chipListPub"
-                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+            matChipInputAddOnBlur
+            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+            [matChipInputFor]="chipListPub"
+            (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
         </mat-chip-grid>
-        <mat-icon [fxShow]="!pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+        <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
           warning
         </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
         <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
-          <mat-chip-row
-            *ngFor="let rule of subRulesSet" [value]="rule"
-            [editable]="!disabled"
-            (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
-            [removable]="!disabled"
-            (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
-            {{ rule }}
-            <button *ngIf="!disabled" matChipRemove aria-label="'remove' + rule">
-              <mat-icon>close</mat-icon>
-            </button>
-          </mat-chip-row>
+          @for (rule of subRulesSet; track rule) {
+            <mat-chip-row
+              [value]="rule"
+              [editable]="!disabled()"
+              (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
+              [removable]="!disabled()"
+              (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+              {{ rule }}
+              @if (!disabled()) {
+                <button matChipRemove aria-label="'remove' + rule">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-chip-row>
+          }
           <input matInput type="text"
-                 placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                 matChipInputAddOnBlur
-                 [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                 [matChipInputFor]="chipListSub"
-                 (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+            placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+            matChipInputAddOnBlur
+            [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+            [matChipInputFor]="chipListSub"
+            (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
         </mat-chip-grid>
-        <mat-icon [fxShow]="!subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+        <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
           warning
         </mat-icon>
       </mat-form-field>

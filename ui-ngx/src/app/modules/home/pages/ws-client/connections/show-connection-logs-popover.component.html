@@ -23,22 +23,27 @@
 </section>
 
 <div style="overflow: auto; height: 100%" class="mat-padding">
-  <div *ngIf="statusLogs?.length; else noLogs" >
-    <section class="container">
-      <div *ngFor="let log of statusLogs" fxFlex fxLayout="row" fxLayoutGap="8px">
-        <span class="date">{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
-        <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-          <span [ngStyle]="setStyle(log.status)" translate>
-            {{ connectionStatusTranslationMap.get(log.status) }}
-          </span>
-          <span class="details" *ngIf="log.details" [matTooltip]="log.details">
-            {{ log.details }}</span>
-        </section>
-      </div>
-    </section>
-  </div>
-  <ng-template #noLogs>
+  @if (statusLogs?.length) {
+    <div >
+      <section class="container">
+        @for (log of statusLogs; track log) {
+          <div class="flex flex-1 flex-row gap-2">
+            <span class="date">{{log.createdTime | date:'yyyy-MM-dd HH:mm:ss' }}</span>
+            <section class="flex flex-row items-center gap-2">
+              <span [style]="setStyle(log.status)" translate>
+                {{ connectionStatusTranslationMap.get(log.status) }}
+              </span>
+              @if (log.details) {
+                <span class="details" [matTooltip]="log.details">
+                {{ log.details }}</span>
+              }
+            </section>
+          </div>
+        }
+      </section>
+    </div>
+  } @else {
     <div style="text-align: center; margin-top: 80px" translate>ws-client.connections.no-logs</div>
-  </ng-template>
+  }
 </div>
 

@@ -20,23 +20,23 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input,
+  model, Input,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { coerceBoolean } from '@shared/decorators/coercion';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isNotEmptyStr } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
@@ -45,6 +45,14 @@ import {
   credentialsTypeTranslationMap,
   CredentialsType
 } from '@shared/models/credentials.model';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatFormField, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { takeUntil } from 'rxjs/operators';
 
 export const CLIENT_CREDENTIALS_FILTER_CONFIG_DATA = new InjectionToken<any>('ClientCredentialsFilterConfigData');
 
@@ -56,34 +64,27 @@ export interface ClientCredentialsFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-client-credentials-filter-config',
-  templateUrl: './client-credentials-filter-config.component.html',
-  styleUrls: ['./client-credentials-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ClientCredentialsFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-client-credentials-filter-config',
+    templateUrl: './client-credentials-filter-config.component.html',
+    styleUrls: ['./client-credentials-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ClientCredentialsFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSuffix]
 })
 export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('clientCredentialsFilterPanel')
-  clientCredentialsFilterPanel: TemplateRef<any>;
-
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
+  readonly clientCredentialsFilterPanel = viewChild<TemplateRef<any>>('clientCredentialsFilterPanel');
 
   @Input()
   initialClientCredentialsFilterConfig: ClientCredentialsFilterConfig;
+
+  disabled = model<boolean>();
+  readonly buttonMode = input(true);
 
   clientTypes = Object.values(ClientType);
   clientTypeTranslationMap = clientTypeTranslationMap;
@@ -100,12 +101,12 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
 
   private clientCredentialsFilterConfig: ClientCredentialsFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(CLIENT_CREDENTIALS_FILTER_CONFIG_DATA)
               private data: ClientCredentialsFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -130,13 +131,13 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
       username: [null, []],
       certificateCn: [null, []]
     });
-    this.clientCredentialsFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.clientCredentialsFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.clientCredentialsConfigUpdated(this.clientCredentialsFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateClientCredentialsConfigForm(this.clientCredentialsFilterConfig);
     }
@@ -144,7 +145,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
@@ -154,8 +156,8 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.clientCredentialsFilterConfigForm.disable({emitEvent: false});
     } else {
       this.clientCredentialsFilterConfigForm.enable({emitEvent: false});
@@ -192,7 +194,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
     this.clientCredentialsFilterOverlayRef.backdropClick().subscribe(() => {
       this.clientCredentialsFilterOverlayRef.dispose();
     });
-    this.clientCredentialsFilterOverlayRef.attach(new TemplatePortal(this.clientCredentialsFilterPanel,
+    this.clientCredentialsFilterOverlayRef.attach(new TemplatePortal(this.clientCredentialsFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.clientCredentialsFilterOverlayRef.updatePosition();
@@ -224,16 +226,17 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   reset() {
-    if (this.initialClientCredentialsFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialClientCredentialsFilterConfig = this.initialClientCredentialsFilterConfig;
+    if (initialClientCredentialsFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const clientCredentialsFilterConfig = this.clientCredentialsFilterConfigFromFormValue(this.clientCredentialsFilterConfigForm.value);
-        if (!clientCredentialsFilterConfigEquals(clientCredentialsFilterConfig, this.initialClientCredentialsFilterConfig)) {
-          this.updateClientCredentialsConfigForm(this.initialClientCredentialsFilterConfig);
+        if (!clientCredentialsFilterConfigEquals(clientCredentialsFilterConfig, initialClientCredentialsFilterConfig)) {
+          this.updateClientCredentialsConfigForm(initialClientCredentialsFilterConfig);
           this.clientCredentialsFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!clientCredentialsFilterConfigEquals(this.clientCredentialsFilterConfig, this.initialClientCredentialsFilterConfig)) {
-          this.clientCredentialsFilterConfig = this.initialClientCredentialsFilterConfig;
+        if (!clientCredentialsFilterConfigEquals(this.clientCredentialsFilterConfig, initialClientCredentialsFilterConfig)) {
+          this.clientCredentialsFilterConfig = initialClientCredentialsFilterConfig;
           this.updateButtonDisplayValue();
           this.updateClientCredentialsConfigForm(this.clientCredentialsFilterConfig);
           this.propagateChange(this.clientCredentialsFilterConfig);
@@ -271,7 +274,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.clientCredentialsFilterConfig?.clientTypeList?.length) {

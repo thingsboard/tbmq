@@ -18,17 +18,27 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { UntypedFormBuilder } from '@angular/forms';
+import { UntypedFormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
-import { ActivatedRoute } from '@angular/router';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '@core/http/auth.service';
+import { MatCard, MatCardTitle, MatCardSubtitle, MatCardContent } from '@angular/material/card';
+import { AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { ToastDirective } from '@shared/components/toast.directive';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-reset-password',
-  templateUrl: './reset-password.component.html',
-  styleUrls: ['./reset-password.component.scss']
+    selector: 'tb-reset-password',
+    templateUrl: './reset-password.component.html',
+    styleUrls: ['./reset-password.component.scss'],
+    imports: [MatCard, MatCardTitle, TranslateModule, MatCardSubtitle, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, AsyncPipe]
 })
 export class ResetPasswordComponent extends PageComponent implements OnInit, OnDestroy {
 

@@ -16,35 +16,36 @@
 
 import { Component, Input } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { MatError } from '@angular/material/form-field';
 
 @Component({
-  selector: 'tb-error',
-  template: `
+    selector: 'tb-error',
+    template: `
   <div [@animation]="state" style="margin-top:0; font-size:.75rem">
       <mat-error >
       {{message}}
     </mat-error>
     </div>
   `,
-  styles: [`
+    styles: [`
     :host {
         height: 24px;
     }
   `],
-  animations: [
-    trigger('animation', [
-      state('show', style({
-        opacity: 1,
-      })),
-      state('hide',   style({
-        opacity: 0,
-        transform: 'translateY(-1rem)'
-      })),
-      transition('show => hide', animate('200ms ease-out')),
-      transition('* => show', animate('200ms ease-in'))
-
-    ]),
-  ]
+    animations: [
+        trigger('animation', [
+            state('show', style({
+                opacity: 1,
+            })),
+            state('hide', style({
+                opacity: 0,
+                transform: 'translateY(-1rem)'
+            })),
+            transition('show => hide', animate('200ms ease-out')),
+            transition('* => show', animate('200ms ease-in'))
+        ]),
+    ],
+    imports: [MatError]
 })
 export class TbErrorComponent {
   errorValue: any;

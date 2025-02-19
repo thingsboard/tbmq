@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
@@ -24,13 +24,13 @@ import { SubscriptionService } from '@core/http/subscription.service';
 import { ClientSessionService } from '@core/http/client-session.service';
 
 @Component({
-  selector: 'tb-subscriptions-table',
-  templateUrl: './subscriptions-table.component.html'
+    selector: 'tb-subscriptions-table',
+    templateUrl: './subscriptions-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class SubscriptionsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -41,7 +41,7 @@ export class SubscriptionsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -51,14 +51,14 @@ export class SubscriptionsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.subscriptionsTableConfig && this.subscriptionsTableConfig.entityId !== entityId) {
       this.subscriptionsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   subscriptionsTableConfig: SubscriptionsTableConfig;
 

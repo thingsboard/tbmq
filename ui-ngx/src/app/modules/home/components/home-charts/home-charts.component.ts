@@ -14,14 +14,15 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { retry, Subject, timer } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { StatsService } from '@core/http/stats.service';
 import { calculateFixedWindowTimeMs, FixedWindow } from '@shared/models/time/time.models';
 import { TimeService } from '@core/services/time.service';
 import { shareReplay, switchMap, takeUntil } from 'rxjs/operators';
 import {
+  CHART_ALL,
   chartJsParams,
   ChartPage,
   ChartTooltipTranslationMap,
@@ -33,21 +34,29 @@ import {
 import Chart from 'chart.js/auto';
 import { HOME_CHARTS_DURATION, HomePageTitleType, POLLING_INTERVAL } from '@shared/models/home-page.model';
 import { ResizeObserver } from '@juggle/resize-observer';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgxHmCarouselComponent, NgxHmCarouselItemDirective } from 'ngx-hm-carousel';
+import { FormsModule } from '@angular/forms';
+import { MatTooltip } from '@angular/material/tooltip';
+import 'chartjs-adapter-moment';
 
 @Component({
-  selector: 'tb-home-charts',
-  templateUrl: './home-charts.component.html',
-  styleUrls: ['./home-charts.component.scss']
+    selector: 'tb-home-charts',
+    templateUrl: './home-charts.component.html',
+    styleUrls: ['./home-charts.component.scss'],
+    imports: [CardTitleButtonComponent, MatIconButton, MatIcon, NgxHmCarouselComponent, FormsModule, NgxHmCarouselItemDirective, MatTooltip, TranslateModule]
 })
 export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
 
-  @ViewChild('homeChartsContainer', {static: true}) homeChartsContainer: ElementRef;
+  readonly homeChartsContainer = viewChild<ElementRef>('homeChartsContainer');
 
   cardType = HomePageTitleType.MONITORING;
-  chartPage: ChartPage = 'home';
+  chartPage = ChartPage.home;
   charts = {};
-  statsCharts = Object.values(StatsChartType);
-  statChartTypeTranslationMap = StatsChartTypeTranslationMap;
+  chartKeys = CHART_ALL;
+  chartTypeTranslationMap = StatsChartTypeTranslationMap;
   chartWidth: string;
   chartHeight: string;
   chartsCarouselIndex = 0;
@@ -111,8 +120,7 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
         pointBackgroundColor: color,
         pointHoverBackgroundColor: color,
         pointHoverBorderColor: color,
-        pointRadius: 0,
-        chartType
+        pointRadius: 0
       };
       const params = {...chartJsParams(this.chartPage), ...{data: {datasets: [dataSet]}}};
       this.charts[chartType] = new Chart(ctx, params as any);
@@ -174,6 +182,6 @@ export class HomeChartsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.chartWidth = chartWidthPx + 'px';
       this.chartHeight = (chartWidthPx * 0.5) + 'px';
     });
-    resizeObserver.observe(this.homeChartsContainer.nativeElement);
+    resizeObserver.observe(this.homeChartsContainer().nativeElement);
   }
 }

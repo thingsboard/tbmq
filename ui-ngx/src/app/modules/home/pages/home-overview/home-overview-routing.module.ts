@@ -17,12 +17,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { HomeOverviewComponent } from '@home/pages/home-overview/home-overview.component';
 
 const routes: Routes = [
   {
     path: 'home',
-    component: HomeOverviewComponent,
+    loadComponent: () => import('@home/pages/home-overview/home-overview.component').then(m => m.HomeOverviewComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'home.home',

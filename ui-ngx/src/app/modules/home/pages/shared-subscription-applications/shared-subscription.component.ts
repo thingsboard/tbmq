@@ -14,24 +14,31 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject, ViewChild } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { ChangeDetectorRef, Component, Inject, viewChild } from '@angular/core';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { SharedSubscription } from "@shared/models/shared-subscription.model";
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'tb-shared-subscriptions',
-  templateUrl: './shared-subscription.component.html',
-  styleUrls: ['./shared-subscription.component.scss']
+    selector: 'tb-shared-subscriptions',
+    templateUrl: './shared-subscription.component.html',
+    styleUrls: ['./shared-subscription.component.scss'],
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, CopyButtonComponent, MatSuffix, AsyncPipe]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
 
-  @ViewChild('copyBtn')
-  copyBtn: CopyButtonComponent;
+  readonly copyBtn = viewChild<CopyButtonComponent>('copyBtn');
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: SharedSubscription,
@@ -61,6 +68,6 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
   }
 
   onClickTbCopyButton(value: string) {
-    this.copyBtn.copy(value);
+    this.copyBtn().copy(value);
   }
 }

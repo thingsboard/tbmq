@@ -16,33 +16,35 @@
 
 -->
 <form [formGroup]="userPropertiesFormGroup">
-  <fieldset fxLayout="column" class="fields-group" style="padding: 0 16px 16px 16px" [disabled]="mqttVersion !== 5">
+  <fieldset class="fields-group flex flex-col" style="padding: 0 16px 16px 16px" [disabled]="mqttVersion() !== 5">
     <legend class="group-title" translate>ws-client.connections.user-properties</legend>
-    <div fxLayout="column">
+    <div class="flex flex-col">
       <section class="container">
-        <div formArrayName="props" *ngFor="let control of userPropertiesFormArray.controls; let $index = index">
-            <div [formGroupName]="$index" fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="center center">
-              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+        @for (control of userPropertiesFormArray.controls; track control) {
+          <div formArrayName="props">
+            <div [formGroupName]="$index" class="flex flex-1 flex-row items-center justify-center gap-4">
+              <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
                 <mat-label translate>ws-client.connections.key</mat-label>
                 <input matInput formControlName="k">
               </mat-form-field>
-              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+              <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
                 <mat-label translate>ws-client.connections.value</mat-label>
                 <input matInput formControlName="v" type="text">
               </mat-form-field>
               <button mat-icon-button color="warn" type="button" (click)="removeRule($index)"
-                      matTooltip="{{ 'ws-client.connections.remove-user-property' | translate }}"
-                      matTooltipPosition="above">
+                matTooltip="{{ 'ws-client.connections.remove-user-property' | translate }}"
+                matTooltipPosition="above">
                 <mat-icon>remove_circle_outline</mat-icon>
               </button>
             </div>
-        </div>
+          </div>
+        }
       </section>
       <div class="mat-block">
         <button mat-stroked-button color="primary"
-                [fxShow]="!disabled"
-                (click)="addRule()"
-                type="button">
+          [class.!hidden]="disabled()"
+          (click)="addRule()"
+          type="button">
           {{ 'ws-client.connections.add-user-property' | translate }}
         </button>
       </div>

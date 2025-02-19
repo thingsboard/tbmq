@@ -14,23 +14,10 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy } from '@angular/core';
-import {
-  AbstractControl,
-  ControlValueAccessor,
-  FormBuilder,
-  FormControl,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormArray,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, OnDestroy, input, model } from '@angular/core';
+import { AbstractControl, ControlValueAccessor, FormBuilder, FormControl, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormArray, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject, Subscription } from 'rxjs';
-import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import {
   ANY_CHARACTERS,
   AuthRulePatternsType,
@@ -40,34 +27,40 @@ import {
   SslCredentialsAuthRules
 } from '@shared/models/credentials.model';
 import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
+import { TranslateModule } from '@ngx-translate/core';
+
+import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton, MatButton } from '@angular/material/button';
 
 @Component({
-  selector: 'tb-auth-rules',
-  templateUrl: './auth-rules.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => AuthRulesComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => AuthRulesComponent),
-      multi: true,
-    }],
-  styleUrls: ['./auth-rules.component.scss']
+    selector: 'tb-auth-rules',
+    templateUrl: './auth-rules.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => AuthRulesComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => AuthRulesComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./auth-rules.component.scss'],
+    imports: [FormsModule, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, TranslateModule, MatExpansionPanelDescription, MatError, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatChipGrid, MatChipRow, MatChipRemove, MatIcon, MatChipInput, MatSuffix, MatTooltip, MatIconButton, MatButton]
 })
 export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   rulesMappingFormGroup: UntypedFormGroup;
-
   pubRulesArray: string[][] = [];
   subRulesArray: string[][] = [];
   separatorKeysCodes = [ENTER, TAB];
@@ -129,8 +122,8 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.rulesMappingFormGroup.disable({emitEvent: false});
     } else {
       this.rulesMappingFormGroup.enable({emitEvent: false});
@@ -182,7 +175,7 @@ export class AuthRulesComponent implements ControlValueAccessor, Validator, OnDe
         });
         this.subRulesArray[index] = authRulesMapping[rule].subAuthRulePatterns ? authRulesMapping[rule].subAuthRulePatterns : [];
         this.pubRulesArray[index] = authRulesMapping[rule].pubAuthRulePatterns ? authRulesMapping[rule].pubAuthRulePatterns : [];
-        if (this.disabled) {
+        if (this.disabled()) {
           rulesControl.disable();
         }
         rulesControls.push(rulesControl);

@@ -78,8 +78,8 @@ export class ClientSessionService {
     return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getSessionMetrics(clientId: string, config?: RequestConfig): Observable<PageData<SessionMetrics>> {
-    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true, config).pipe(
+  public getSessionMetrics(clientId: string): Observable<PageData<SessionMetrics>> {
+    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true).pipe(
       map((metrics) => {
         const data = [];
         for (const [key, value] of Object.entries(metrics)) {
@@ -103,7 +103,7 @@ export class ClientSessionService {
     return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
   }
 
-  public openSessionDetailsDialog($event: Event, clientId: string): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {
+  public openSessionDetailsDialog($event: Event, clientId: string, data?: any): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {
     if ($event) {
       $event.stopPropagation();
     }
@@ -113,7 +113,8 @@ export class ClientSessionService {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            session
+            session,
+            ...data
           }
         }
       ))

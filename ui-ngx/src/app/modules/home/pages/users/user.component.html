@@ -15,38 +15,42 @@
     limitations under the License.
 
 -->
-<div class="tb-details-buttons" fxLayout.xs="column">
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+<div class="tb-details-buttons flex flex-row xs:flex-col">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <button mat-raised-button color="primary"
-            [disabled]="(isLoading$ | async)"
-            (click)="onEntityAction($event, 'open')"
-            [fxShow]="!isEdit && !isDetailsPage">
+      [disabled]="(isLoading$ | async)"
+      (click)="onEntityAction($event, 'open')"
+      [class.!hidden]="!(!isEdit && !isDetailsPage)">
       {{'common.open-details-page' | translate }}
     </button>
     <button mat-raised-button color="primary"
-            [disabled]="(isLoading$ | async)"
-            (click)="onEntityAction($event, 'delete')"
-            [fxShow]="!hideDelete() && !isEdit">
+      [disabled]="(isLoading$ | async)"
+      (click)="onEntityAction($event, 'delete')"
+      [class.!hidden]="!(!hideDelete() && !isEdit)">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>user.delete</span>
     </button>
   </div>
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <tb-copy-content-button [cbContent]="entity?.id" [isEdit]="isEdit"></tb-copy-content-button>
   </div>
 </div>
-<div class="mat-padding" fxLayout="column">
+<div class="mat-padding flex flex-col">
   <form [formGroup]="entityForm">
     <fieldset [disabled]="(isLoading$ | async) || !isEdit">
       <mat-form-field class="mat-block">
         <mat-label translate>user.email</mat-label>
         <input matInput formControlName="email" required>
-        <mat-error *ngIf="entityForm.get('email').hasError('email')">
-          {{ 'user.invalid-email-format' | translate }}
-        </mat-error>
-        <mat-error *ngIf="entityForm.get('email').hasError('required')">
-          {{ 'user.email-required' | translate }}
-        </mat-error>
+        @if (entityForm.get('email').hasError('email')) {
+          <mat-error>
+            {{ 'user.invalid-email-format' | translate }}
+          </mat-error>
+        }
+        @if (entityForm.get('email').hasError('required')) {
+          <mat-error>
+            {{ 'user.email-required' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
       <mat-form-field class="mat-block">
         <mat-label translate>user.first-name</mat-label>
@@ -56,7 +60,7 @@
         <mat-label translate>user.last-name</mat-label>
         <input matInput formControlName="lastName">
       </mat-form-field>
-      <div formGroupName="additionalInfo" fxLayout="column">
+      <div formGroupName="additionalInfo" class="flex flex-col">
         <mat-form-field class="mat-block">
           <mat-label translate>user.description</mat-label>
           <textarea matInput formControlName="description" rows="2"></textarea>

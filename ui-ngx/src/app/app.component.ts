@@ -30,17 +30,17 @@ import { combineLatest } from 'rxjs';
 import { getCurrentAuthState, selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
 import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
 import { AuthService } from '@core/http/auth.service';
-import { isMobileApp } from '@core/utils';
-import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
+import { ChangePasswordDialogComponent } from '@home/pages/account/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
 import { AuthState } from '@core/auth/auth.models';
 
 @Component({
-  selector: 'tb-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+    selector: 'tb-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    imports: [RouterOutlet]
 })
 export class AppComponent {
 

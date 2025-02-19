@@ -21,11 +21,11 @@ import {
   ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
-  Input,
   OnChanges,
   OnInit,
   SimpleChanges,
-  ViewChild,
+  input, model,
+  viewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -33,12 +33,12 @@ import { AppState } from '@core/core.state';
 import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
 import { catchError, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { forkJoin, fromEvent, merge, Observable, of, Subscription } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
@@ -61,20 +61,34 @@ import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page.model";
+import { FullscreenDirective } from '@shared/components/fullscreen.directive';
+import { MatToolbar } from '@angular/material/toolbar';
+import { AsyncPipe } from '@angular/common';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { FormsModule } from '@angular/forms';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
-  selector: 'tb-entities-table-home',
-  templateUrl: './entities-table-home.component.html',
-  styleUrls: ['./entities-table-home.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entities-table-home',
+    templateUrl: './entities-table-home.component.html',
+    styleUrls: ['./entities-table-home.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [FullscreenDirective, MatToolbar, MatIconButton, MatTooltip, MatIcon, MatFormField, MatInput, FormsModule, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, CopyButtonComponent, TbIconComponent, MatMenuTrigger, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatDivider, MatPaginator, AsyncPipe, TranslateModule]
 })
 export class EntitiesTableHomeComponent extends PageComponent implements AfterViewInit, OnInit, OnChanges {
 
-  @Input()
-  entitiesTableConfig: EntityTableConfig<BaseData>;
+  entitiesTableConfig = model<EntityTableConfig<BaseData>>();
 
-  @Input()
-  cardType: HomePageTitleType;
+  readonly cardType = input<HomePageTitleType>();
 
   translations: EntityTypeTranslation;
 
@@ -111,12 +125,11 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   isFullscreen = false;
   hidePageSize: Observable<boolean>;
 
-  @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
+  readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeaderAnchor');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
+  readonly paginator = viewChild(MatPaginator);
+  readonly sort = viewChild(MatSort);
 
-  @ViewChild('searchInput') searchInputField: ElementRef;
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-
-  @ViewChild(MatSort) sort: MatSort;
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
@@ -135,8 +148,9 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   ngOnInit() {
-    if (this.entitiesTableConfig) {
-      this.init(this.entitiesTableConfig);
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig) {
+      this.init(entitiesTableConfig);
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
     }
@@ -155,30 +169,31 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
     this.isDetailsOpen = false;
-    this.entitiesTableConfig = entitiesTableConfig;
-    if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
-      const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
+    this.entitiesTableConfig.set(entitiesTableConfig);
+    const entitiesTableConfigValue = this.entitiesTableConfig();
+    if (entitiesTableConfigValue.headerComponent) {
+      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(entitiesTableConfigValue.headerComponent);
+      const viewContainerRef = this.entityTableHeaderAnchor().viewContainerRef;
       viewContainerRef.clear();
       const componentRef = viewContainerRef.createComponent(componentFactory);
       const headerComponent = componentRef.instance;
-      headerComponent.entitiesTableConfig = this.entitiesTableConfig;
+      headerComponent.entitiesTableConfig = entitiesTableConfigValue;
     }
 
     // @ts-ignore
-    this.entitiesTableConfig.table = this;
-    this.translations = this.entitiesTableConfig.entityTranslations;
+    entitiesTableConfigValue.table = this;
+    this.translations = entitiesTableConfigValue.entityTranslations;
 
-    this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
-    this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
-    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.headerActionDescriptors = [...entitiesTableConfigValue.headerActionDescriptors];
+    this.groupActionDescriptors = [...entitiesTableConfigValue.groupActionDescriptors];
+    this.cellActionDescriptors = [...entitiesTableConfigValue.cellActionDescriptors];
 
-    if (this.entitiesTableConfig.entitiesDeleteEnabled) {
+    if (entitiesTableConfigValue.entitiesDeleteEnabled) {
       this.cellActionDescriptors.push(
         {
           name: this.translate.instant('action.delete'),
           icon: 'mdi:trash-can-outline',
-          isEnabled: entity => this.entitiesTableConfig.deleteEnabled(entity),
+          isEnabled: entity => this.entitiesTableConfig().deleteEnabled(entity),
           onAction: ($event, entity) => this.deleteEntity($event, entity)
         }
       );
@@ -195,29 +210,29 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     const enabledGroupActionDescriptors =
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
-    this.selectionEnabled = this.entitiesTableConfig.selectionEnabled && enabledGroupActionDescriptors.length;
+    this.selectionEnabled = entitiesTableConfigValue.selectionEnabled && enabledGroupActionDescriptors.length;
 
     this.columnsUpdated();
 
     let sortOrder: SortOrder = null;
-    if (this.entitiesTableConfig.defaultSortOrder) {
+    if (entitiesTableConfigValue.defaultSortOrder) {
       sortOrder = {
-        property: this.entitiesTableConfig.defaultSortOrder.property,
-        direction: this.entitiesTableConfig.defaultSortOrder.direction
+        property: entitiesTableConfigValue.defaultSortOrder.property,
+        direction: entitiesTableConfigValue.defaultSortOrder.direction
       };
     }
 
-    this.displayPagination = this.entitiesTableConfig.displayPagination;
+    this.displayPagination = entitiesTableConfigValue.displayPagination;
     this.hidePageSize = this.breakpointObserver.observe(MediaBreakpoints['xs']).pipe(map(({matches}) => matches));
     this.defaultPageSize = this.calcDefaultPageSize();
     this.pageSizeOptions = [5, 10, 15, 20];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
-    this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
-    if (this.entitiesTableConfig.onLoadAction) {
-      this.entitiesTableConfig.onLoadAction(this.route);
+    this.dataSource = entitiesTableConfigValue.dataSource(this.dataLoaded.bind(this));
+    if (entitiesTableConfigValue.onLoadAction) {
+      entitiesTableConfigValue.onLoadAction(this.route);
     }
-    if (this.entitiesTableConfig.loadDataOnInit) {
+    if (entitiesTableConfigValue.loadDataOnInit) {
       this.dataSource.loadEntities(this.pageLink);
     }
     if (this.viewInited) {
@@ -229,13 +244,13 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   ngAfterViewInit() {
 
-    fromEvent(this.searchInputField.nativeElement, 'keyup')
+    fromEvent(this.searchInputField().nativeElement, 'keyup')
       .pipe(
         debounceTime(150),
         distinctUntilChanged(),
         tap(() => {
           if (this.displayPagination) {
-            this.paginator.pageIndex = 0;
+            this.paginator().pageIndex = 0;
           }
           this.updateData();
         })
@@ -256,10 +271,10 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+      this.sortSubscription = this.sort().sortChange.subscribe(() => this.paginator().pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort.sortChange, this.paginator.page)
-      : this.sort.sortChange) as Observable<any>)
+    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort().sortChange, this.paginator().page)
+      : this.sort().sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
@@ -267,7 +282,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   addEnabled() {
-    return this.entitiesTableConfig.addEnabled;
+    return this.entitiesTableConfig().addEnabled;
   }
 
   updateData(closeDetails: boolean = true) {
@@ -275,15 +290,16 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator.pageIndex;
-      this.pageLink.pageSize = this.paginator.pageSize;
+      this.pageLink.page = this.paginator().pageIndex;
+      this.pageLink.pageSize = this.paginator().pageSize;
     } else {
       this.pageLink.page = 0;
     }
-    if (this.sort.active) {
+    const sort = this.sort();
+    if (sort.active) {
       this.pageLink.sortOrder = {
-        property: this.sort.active,
-        direction: Direction[this.sort.direction.toUpperCase()]
+        property: sort.active,
+        direction: Direction[sort.direction.toUpperCase()]
       };
     } else {
       this.pageLink.sortOrder = null;
@@ -303,7 +319,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   onRowClick($event: Event, entity) {
-    if (!this.entitiesTableConfig.handleRowClick($event, entity)) {
+    if (!this.entitiesTableConfig().handleRowClick($event, entity)) {
       this.toggleEntityDetails($event, entity);
     }
   }
@@ -322,15 +338,16 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   addEntity($event: Event) {
     let entity$: Observable<BaseData>;
-    if (this.entitiesTableConfig.addEntity) {
-      entity$ = this.entitiesTableConfig.addEntity();
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig.addEntity) {
+      entity$ = entitiesTableConfig.addEntity();
     } else {
       entity$ = this.dialog.open<AddEntityDialogComponent, AddEntityDialogData<BaseData>,
         BaseData>(AddEntityDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
         data: {
-          entitiesTableConfig: this.entitiesTableConfig
+          entitiesTableConfig: entitiesTableConfig
         }
       }).afterClosed();
     }
@@ -338,7 +355,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       (entity) => {
         if (entity) {
           this.updateData();
-          this.entitiesTableConfig.entityAdded(entity);
+          this.entitiesTableConfig().entityAdded(entity);
         }
       }
     );
@@ -346,7 +363,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   onEntityUpdated(entity: BaseData) {
     this.updateData(false);
-    this.entitiesTableConfig.entityUpdated(entity);
+    this.entitiesTableConfig().entityUpdated(entity);
   }
 
   onEntityAction(action: EntityAction<BaseData>) {
@@ -360,17 +377,17 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntityTitle(entity),
-      this.entitiesTableConfig.deleteEntityContent(entity),
+      this.entitiesTableConfig().deleteEntityTitle(entity),
+      this.entitiesTableConfig().deleteEntityContent(entity),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
     ).subscribe((result) => {
       if (result) {
-        this.entitiesTableConfig.deleteEntity(entity.id).subscribe(
+        this.entitiesTableConfig().deleteEntity(entity.id).subscribe(
           () => {
             this.updateData();
-            this.entitiesTableConfig.entitiesDeleted([entity.id]);
+            this.entitiesTableConfig().entitiesDeleted([entity.id]);
           }
         );
       }
@@ -382,8 +399,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.entitiesTableConfig.deleteEntitiesTitle(entities.length),
-      this.entitiesTableConfig.deleteEntitiesContent(entities.length),
+      this.entitiesTableConfig().deleteEntitiesTitle(entities.length),
+      this.entitiesTableConfig().deleteEntitiesContent(entities.length),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
@@ -391,8 +408,9 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
       if (result) {
         const tasks: Observable<string>[] = [];
         entities.forEach((entity) => {
-          if (this.entitiesTableConfig.deleteEnabled(entity)) {
-            tasks.push(this.entitiesTableConfig.deleteEntity(entity.id).pipe(
+          const entitiesTableConfig = this.entitiesTableConfig();
+          if (entitiesTableConfig.deleteEnabled(entity)) {
+            tasks.push(entitiesTableConfig.deleteEntity(entity.id).pipe(
               map(() => entity.id),
               catchError(() => of(null)
               )));
@@ -401,7 +419,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
         forkJoin(tasks).subscribe(
           (ids) => {
             this.updateData();
-            this.entitiesTableConfig.entitiesDeleted(ids.filter(id => id !== null));
+            this.entitiesTableConfig().entitiesDeleted(ids.filter(id => id !== null));
           }
         );
       }
@@ -412,8 +430,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.textSearchMode = true;
     this.pageLink.textSearch = '';
     setTimeout(() => {
-      this.searchInputField.nativeElement.focus();
-      this.searchInputField.nativeElement.setSelectionRange(0, 0);
+      this.searchInputField().nativeElement.focus();
+      this.searchInputField().nativeElement.setSelectionRange(0, 0);
     }, 10);
   }
 
@@ -422,7 +440,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      this.paginator().pageIndex = 0;
     }
     if (updateData) {
       this.updateData();
@@ -433,11 +451,12 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     this.textSearchMode = false;
     this.pageLink.textSearch = null;
     if (this.displayPagination) {
-      this.paginator.pageIndex = 0;
+      this.paginator().pageIndex = 0;
     }
-    const sortable = this.sort.sortables.get(this.entitiesTableConfig.defaultSortOrder.property);
-    this.sort.active = sortable.id;
-    this.sort.direction = this.entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
+    const sortable = this.sort().sortables.get(this.entitiesTableConfig().defaultSortOrder.property);
+    const sort = this.sort();
+    sort.active = sortable.id;
+    sort.direction = this.entitiesTableConfig().defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
     if (update) {
       this.updatedRouterParamsAndData({}, '');
     }
@@ -459,10 +478,10 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   columnsUpdated(resetData: boolean = false) {
-    this.entityColumns = this.entitiesTableConfig.columns.filter(
+    this.entityColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityTableColumn)
       .map(column => column as EntityTableColumn<BaseData>);
-    this.actionColumns = this.entitiesTableConfig.columns.filter(
+    this.actionColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityActionTableColumn)
       .map(column => column as EntityActionTableColumn<BaseData>);
 
@@ -471,7 +490,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     if (this.selectionEnabled) {
       this.displayedColumns.push('select');
     }
-    this.entitiesTableConfig.columns.forEach(
+    this.entitiesTableConfig().columns.forEach(
       (column) => {
         this.displayedColumns.push(column.key);
       }
@@ -487,7 +506,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   headerCellStyle(column: EntityColumn<BaseData>) {
-    const index = this.entitiesTableConfig.columns.indexOf(column);
+    const index = this.entitiesTableConfig().columns.indexOf(column);
     let res = this.headerCellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};
@@ -506,7 +525,7 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   clearCellCache(col: number, row: number) {
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const index = row * this.entitiesTableConfig().columns.length + col;
     this.cellContentCache[index] = undefined;
     this.cellTooltipCache[index] = undefined;
     this.cellStyleCache[index] = undefined;
@@ -514,8 +533,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellContentCache[index];
       if (isUndefined(res)) {
         res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
@@ -529,8 +548,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
 
   cellTooltip(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellTooltipCache[index];
       if (isUndefined(res)) {
         res = column.cellTooltipFunction(entity, column.key);
@@ -545,8 +564,8 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
   }
 
   cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
-    const col = this.entitiesTableConfig.columns.indexOf(column);
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const col = this.entitiesTableConfig().columns.indexOf(column);
+    const index = row * this.entitiesTableConfig().columns.length + col;
     let res = this.cellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};
@@ -564,20 +583,12 @@ export class EntitiesTableHomeComponent extends PageComponent implements AfterVi
     return res;
   }
 
-  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
-    return column.key;
-  }
-
-  trackByEntityId(index: number, entity: any) {
-    return entity.id;
-  }
-
   calcTableHeight(): string {
     return this.breakpointObserver.isMatched(MediaBreakpoints['gt-xxl']) ? '300px' : '150px';
   }
 
   navigate() {
-    this.router.navigate([this.homePageTitleResources.get(this.cardType).link]);
+    this.router.navigate([this.homePageTitleResources.get(this.cardType()).link]);
   }
 
   private calcDefaultPageSize(): number {

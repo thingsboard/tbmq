@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 @import 'constants';
-@import '../../../../../../theme';
 
 :host {
   display: flex;
   flex: 1 1 auto;
-  min-height: 0px;
+  min-height: 0;
   flex-direction: column;
   height: 100%;
 
@@ -85,15 +84,6 @@
       z-index: 1;
       border: 1px solid rgba(0, 0, 0, 0.12);
       border-radius: 4px;
-    }
-
-    .mat-badge-content {
-      display: grid;
-      min-width: min-content;
-      text-align: center;
-      align-items: center;
-      padding: 1px;
-      top: -20px;
     }
   }
 }

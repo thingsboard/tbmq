@@ -14,7 +14,6 @@
 /// limitations under the License.
 ///
 
-import { CanColor, mixinColor } from '@angular/material/core';
 import {
   AfterContentInit,
   AfterViewChecked,
@@ -25,14 +24,28 @@ import {
   Inject,
   OnDestroy,
   Renderer2,
-  ViewChild,
-  ViewEncapsulation
+  ViewEncapsulation,
+  viewChild
 } from '@angular/core';
 import { MAT_ICON_LOCATION, MatIconLocation, MatIconRegistry } from '@angular/material/icon';
 import { Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { isSvgIcon, splitIconName } from '@shared/models/icon.models';
 import { ContentObserver } from '@angular/cdk/observers';
+
+export interface CanColor {
+  color: string;
+}
+
+export function mixinColor<T extends new (...args: any[]) => {}>(base: T): T & (new (...args: any[]) => CanColor) {
+  return class extends base {
+    color: string;
+    constructor(...args: any[]) {
+      super(...args);
+      this.color = 'primary'; // Default color
+    }
+  };
+}
 
 const _TbIconBase = mixinColor(
   class {
@@ -60,34 +73,32 @@ const funcIriAttributeSelector = funcIriAttributes.map(attr => `[${attr}]`).join
 const funcIriPattern = /^url\(['"]?#(.*?)['"]?\)$/;
 
 @Component({
-  template: '<span style="display: none;" #iconNameContent><ng-content></ng-content></span>',
-  selector: 'tb-icon',
-  exportAs: 'tbIcon',
-  styleUrls: [],
-  // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
-  inputs: ['color'],
-  // eslint-disable-next-line @angular-eslint/no-host-metadata-property
-  host: {
-    role: 'img',
-    class: 'mat-icon notranslate',
-    '[attr.data-mat-icon-type]': '!_useSvgIcon ? "font" : "svg"',
-    '[attr.data-mat-icon-name]': '_svgName',
-    '[attr.data-mat-icon-namespace]': '_svgNamespace',
-    '[class.mat-icon-no-color]': 'color !== "primary" && color !== "accent" && color !== "warn"',
-  },
-  encapsulation: ViewEncapsulation.None,
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    template: '<span style="display: none;" #iconNameContent><ng-content></ng-content></span>',
+    selector: 'tb-icon',
+    exportAs: 'tbIcon',
+    // eslint-disable-next-line @angular-eslint/no-inputs-metadata-property
+    inputs: ['color'],
+    // eslint-disable-next-line @angular-eslint/no-host-metadata-property
+    host: {
+        role: 'img',
+        class: 'mat-icon notranslate',
+        '[attr.data-mat-icon-type]': '!_useSvgIcon ? "font" : "svg"',
+        '[attr.data-mat-icon-name]': '_svgName',
+        '[attr.data-mat-icon-namespace]': '_svgNamespace',
+        '[class.mat-icon-no-color]': 'color !== "primary" && color !== "accent" && color !== "warn"',
+    },
+    encapsulation: ViewEncapsulation.None,
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TbIconComponent extends _TbIconBase
                              implements AfterContentInit, AfterViewChecked, CanColor, OnDestroy {
 
-  @ViewChild('iconNameContent', {static: true})
-  _iconNameContent: ElementRef;
+  readonly _iconNameContent = viewChild<ElementRef>('iconNameContent');
 
   private icon: string;
 
   get viewValue(): string {
-    return (this._iconNameContent?.nativeElement.textContent || '').trim();
+    return (this._iconNameContent()?.nativeElement.textContent || '').trim();
   }
 
   private _contentChanges = Subscription.EMPTY;
@@ -117,7 +128,7 @@ export class TbIconComponent extends _TbIconBase
   ngAfterContentInit(): void {
     this.icon = this.viewValue;
     this._updateIcon();
-    this._contentChanges = this.contentObserver.observe(this._iconNameContent.nativeElement)
+    this._contentChanges = this.contentObserver.observe(this._iconNameContent().nativeElement)
       .subscribe(() => {
        const content = this.viewValue;
         if (this.icon !== content) {
@@ -169,7 +180,7 @@ export class TbIconComponent extends _TbIconBase
       const iconName = splitIconName(rawName)[1];
       this._textElement = this.renderer.createText(iconName);
       const elem: HTMLElement = this._elementRef.nativeElement;
-      this.renderer.insertBefore(elem, this._textElement, this._iconNameContent.nativeElement);
+      this.renderer.insertBefore(elem, this._textElement, this._iconNameContent().nativeElement);
       const fontSetClasses = (
         this._iconRegistry.getDefaultFontSetClass()
       ).filter(className => className.length > 0);
@@ -225,7 +236,7 @@ export class TbIconComponent extends _TbIconBase
     this._previousPath = path;
     this._cacheChildrenWithExternalReferences(svg);
     this._prependPathToReferences(path);
-    this.renderer.insertBefore(this._elementRef.nativeElement, svg, this._iconNameContent.nativeElement);
+    this.renderer.insertBefore(this._elementRef.nativeElement, svg, this._iconNameContent().nativeElement);
   }
 
   private _clearSvgElement() {

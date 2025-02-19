@@ -16,20 +16,23 @@
 
 import {
   Component,
-  EventEmitter,
   Input, OnChanges,
   OnDestroy, OnInit,
-  Output, SimpleChanges
+  output,
+  SimpleChanges
 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { share } from 'rxjs/operators';
 import { HelpService } from '@core/services/help.service';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { TbMarkdownComponent } from './markdown.component';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'tb-help-markdown',
-  templateUrl: './help-markdown.component.html',
-  styleUrls: ['./help-markdown.component.scss']
+    selector: 'tb-help-markdown',
+    templateUrl: './help-markdown.component.html',
+    styleUrls: ['./help-markdown.component.scss'],
+    imports: [TbMarkdownComponent, AsyncPipe]
 })
 export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
 
@@ -43,7 +46,7 @@ export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
 
   @Input() style: { [klass: string]: any } = {};
 
-  @Output() markdownReady = new EventEmitter<void>();
+  readonly markdownReady = output<void>();
 
   markdownText = new BehaviorSubject<string>(null);
 
@@ -100,7 +103,7 @@ export class HelpMarkdownComponent implements OnDestroy, OnInit, OnChanges {
   }
 
   onMarkdownReady() {
-    this.markdownReady.next();
+    this.markdownReady.emit();
   }
 
   markdownClick($event: MouseEvent) {

@@ -24,14 +24,16 @@
 <div style="overflow: auto; height: 100%">
   <div style="overflow: auto">
     <section style="min-height: 100px; overflow: auto; padding: 6px 0;">
-      <div *ngFor="let connection of (connections$ | async); trackBy: trackById">
-        <tb-connection (connectionUpdated)="updateData(true)" [connection]="connection"></tb-connection>
-      </div>
+      @for (connection of (connections$ | async); track trackById(connection)) {
+        <div>
+          <tb-connection (connectionUpdated)="updateData(true)" [connection]="connection"></tb-connection>
+        </div>
+      }
     </section>
   </div>
 </div>
-<section style="padding: 0 16px 0 16px" fxLayoutAlign="center center">
-  <button fxFlex mat-stroked-button color="primary" (click)="addConnection($event)">
+<section style="padding: 0 16px 0 16px" class="flex flex-row items-center justify-center">
+  <button class="flex flex-1" mat-stroked-button color="primary" (click)="addConnection($event)">
     <mat-icon class="material-icons">add</mat-icon>
     {{ 'ws-client.connections.add-connection' | translate }}
   </button>

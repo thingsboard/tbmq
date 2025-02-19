@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -25,13 +25,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'tb-retained-messages-table',
-  templateUrl: './retained-messages-table.component.html'
+    selector: 'tb-retained-messages-table',
+    templateUrl: './retained-messages-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class RetainedMessagesTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -43,7 +43,7 @@ export class RetainedMessagesTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -53,14 +53,14 @@ export class RetainedMessagesTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.retainedMessagesTableConfig && this.retainedMessagesTableConfig.entityId !== entityId) {
       this.retainedMessagesTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   retainedMessagesTableConfig: RetainedMessagesTableConfig;
 

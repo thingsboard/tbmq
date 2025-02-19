@@ -17,13 +17,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { KafkaTopicsTableComponent } from '@home/pages/kafka-management/kafka-topics-table.component';
-import { KafkaConsumerGroupsTableComponent } from '@home/pages/kafka-management/kafka-consumer-groups-table.component';
-import { KafkaBrokersTableComponent } from '@home/pages/kafka-management/kafka-brokers-table.component';
 
 const routes: Routes = [
   {
     path: 'kafka',
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       breadcrumb: {
@@ -44,7 +42,7 @@ const routes: Routes = [
       },
       {
         path: 'topics',
-        component: KafkaTopicsTableComponent,
+        loadComponent: () => import('@home/pages/kafka-management/kafka-topics-table.component').then(m => m.KafkaTopicsTableComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'kafka.topics-title',
@@ -56,7 +54,7 @@ const routes: Routes = [
       },
       {
         path: 'consumer-groups',
-        component: KafkaConsumerGroupsTableComponent,
+        loadComponent: () => import('@home/pages/kafka-management/kafka-consumer-groups-table.component').then(m => m.KafkaConsumerGroupsTableComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'kafka.consumer-groups-title',
@@ -68,7 +66,7 @@ const routes: Routes = [
       },
       {
         path: 'brokers',
-        component: KafkaBrokersTableComponent,
+        loadComponent: () => import('@home/pages/kafka-management/kafka-brokers-table.component').then(m => m.KafkaBrokersTableComponent),
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'kafka.brokers-title',

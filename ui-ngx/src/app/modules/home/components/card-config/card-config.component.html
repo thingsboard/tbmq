@@ -15,40 +15,44 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
+<div class="tb-home-card-container tb-home-padding flex !flex-1">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
-  <section fxFlex class="tb-config-table" fxFlex.lt-lg="auto">
+  <section class="tb-config-table">
     <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
-      <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-        <mat-header-cell mat-sort-header *matHeaderCellDef>
-          {{ column.title | translate }}
-        </mat-header-cell>
-        <mat-cell *matCellDef="let entity; let row = index" [ngStyle]="cellStyle(entity, column, row)">
-          <span *ngIf="column.key === 'key'" translate>{{configParamsTranslationMap.get(entity.key)}}</span>
-          <span *ngIf="column.key === 'value'">
-            {{ formatBytesToValue(entity) }}
-            <mat-icon *ngIf="showCopyButton(entity, configParams)"
-                      class="tb-config-icon"
-                      ngxClipboard
-                      (cbOnSuccess)="onCopied()"
-                      [cbContent]="entity.value"
-                      style="color: #0a5b25"
-                      matTooltip="{{'config.copy-port' | translate}} {{entity.value}}">
-              content_copy
-            </mat-icon>
-            <section class="tb-warning-icon" *ngIf="showWarningIcon(entity, configParams)">
-                 <mat-icon (click)="gotoDocs('security/#authentication')"
-                           [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))"
-                           style="color: #ff9a00"
-                           class="tb-config-icon">warning
-                 </mat-icon>
-            </section>
-          </span>
-        </mat-cell>
-      </ng-container>
+      @for (column of columns; track column) {
+        <ng-container [matColumnDef]="column.key">
+          <mat-header-cell mat-sort-header *matHeaderCellDef>
+            {{ column.title | translate }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
+            @if (column.key === 'key') {
+              <span translate>{{configParamsTranslationMap.get(entity.key)}}</span>
+            }
+            @if (column.key === 'value') {
+              <span>
+                {{ formatBytesToValue(entity) }}
+                <tb-copy-button [class.!hidden]="!showCopyButton(entity, configParams)"
+                  [copyText]="entity.value"
+                  [buttonClass]="{'tb-mat-12': true}"
+                  [style]="{display: 'inline'}"
+                  class="tb-config-icon">
+                </tb-copy-button>
+                @if (showWarningIcon(entity, configParams)) {
+                  <section class="tb-warning-icon">
+                    <mat-icon (click)="gotoDocs('security/#authentication')"
+                      [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))">
+                      warning
+                    </mat-icon>
+                  </section>
+                }
+              </span>
+            }
+          </mat-cell>
+        </ng-container>
+      }
       <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </table>
-    <div fxFlex></div>
+    <div class="flex flex-1"></div>
   </section>
 </div>

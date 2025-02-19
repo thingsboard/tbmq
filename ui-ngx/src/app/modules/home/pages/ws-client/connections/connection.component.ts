@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, OnInit, input, output } from '@angular/core';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
@@ -24,19 +24,21 @@ import { DialogService } from '@core/services/dialog.service';
 import { ConnectionDialogData, ConnectionWizardDialogComponent } from '@home/components/wizard/connection-wizard-dialog.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { ClientSessionService } from '@core/http/client-session.service';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
-  selector: 'tb-connection',
-  templateUrl: './connection.component.html',
-  styleUrls: ['./connection.component.scss']
+    selector: 'tb-connection',
+    templateUrl: './connection.component.html',
+    styleUrls: ['./connection.component.scss'],
+    imports: [MatTooltip, MatIconButton, TbIconComponent]
 })
 export class ConnectionComponent implements OnInit {
 
-  @Input()
-  connection: WebSocketConnectionDto;
+  readonly connection = input<WebSocketConnectionDto>();
 
-  @Output()
-  connectionUpdated = new EventEmitter<void>();
+  readonly connectionUpdated = output<void>();
 
   selectedConnection: WebSocketConnectionDto;
   showActions = false;
@@ -68,7 +70,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   selectConnection() {
-    this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(connection => {
+    this.webSocketConnectionService.getWebSocketConnectionById(this.connection().id).subscribe(connection => {
       this.mqttJsClientService.selectConnection(connection);
     });
   }
@@ -80,7 +82,7 @@ export class ConnectionComponent implements OnInit {
   }
 
   private isConnectionConnected() {
-    return this.mqttJsClientService.isConnectionConnected(this.connection.id);
+    return this.mqttJsClientService.isConnectionConnected(this.connection().id);
   }
 
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketConnectionDto>> {
@@ -116,15 +118,15 @@ export class ConnectionComponent implements OnInit {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('ws-client.connections.delete-connection-title', {connectionName: this.connection.name}),
-      this.translate.instant('ws-client.connections.delete-connection-text', {connectionName: this.connection.name}),
+      this.translate.instant('ws-client.connections.delete-connection-title', {connectionName: this.connection().name}),
+      this.translate.instant('ws-client.connections.delete-connection-text', {connectionName: this.connection().name}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
     ).subscribe((result) => {
       if (result) {
-        this.webSocketConnectionService.deleteWebSocketConnection(this.connection.id).subscribe(() => {
-          this.mqttJsClientService.disconnectClient(this.connection);
+        this.webSocketConnectionService.deleteWebSocketConnection(this.connection().id).subscribe(() => {
+          this.mqttJsClientService.disconnectClient(this.connection());
           this.connectionUpdated.emit();
           this.mqttJsClientService.onConnectionsUpdated(true);
         });

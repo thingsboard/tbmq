@@ -194,6 +194,18 @@
       "port-required": "Port is required."
     }
   },
+  "aggregation": {
+    "aggregation": "Aggregation",
+    "function": "Data aggregation function",
+    "limit": "Max values",
+    "group-interval": "Grouping interval",
+    "min": "Min",
+    "max": "Max",
+    "avg": "Average",
+    "sum": "Sum",
+    "count": "Count",
+    "none": "None"
+  },
   "confirm-on-exit": {
     "message": "You have unsaved changes. Are you sure you want to leave this page?",
     "html-message": "You have unsaved changes.<br/>Are you sure you want to leave this page?",
@@ -383,6 +395,44 @@
       "de_DE": "Deutsch"
     }
   },
+  "legend": {
+    "direction": "Direction",
+    "position": "Position",
+    "show-values": "Show values",
+    "min-option": "Min",
+    "max-option": "Max",
+    "average-option": "Average",
+    "total-option": "Total",
+    "latest-option": "Latest",
+    "sort-legend": "Sort datakeys in legend",
+    "show-max": "Show max value",
+    "show-min": "Show min value",
+    "show-avg": "Show average value",
+    "show-total": "Show total value",
+    "show-latest": "Show latest value",
+    "settings": "Legend settings",
+    "min": "min",
+    "max": "max",
+    "avg": "avg",
+    "total": "total",
+    "latest": "latest",
+    "Min": "Min",
+    "Max": "Max",
+    "Avg": "Avg",
+    "Total": "Total",
+    "Latest": "Latest",
+    "comparison-time-ago": {
+        "previousInterval": "(previous interval)",
+        "customInterval": "(custom interval)",
+        "days": "(day ago)",
+        "weeks": "(week ago)",
+        "months": "(month ago)",
+        "years": "(year ago)"
+    },
+    "column-title": "Column title",
+    "label": "Label",
+    "value": "Value"
+  },
   "monitoring": {
     "monitoring": "Monitoring",
     "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points."
@@ -493,9 +543,9 @@
   },
   "mqtt-client-session": {
     "add": "Add session",
-    "add-topic": "Add Topic",
-    "add-subscription": "Add Subscription",
-    "add-subscription-to-client": "Add Subscription to Client",
+    "add-topic": "Add topic",
+    "add-subscription": "Add subscription",
+    "add-subscription-to-client": "Add subscription to client",
     "add-topic-filter-prompt": "Please add topic filter",
     "connect": "Connect",
     "connected": "Connected",
@@ -573,9 +623,9 @@
     "remove-sessions-title": "Are you sure you want to remove { count, plural, =1 {1 Session} other {# Sessions} }?",
     "remove-subscription": "Remove subscription",
     "qos": "QoS",
-    "qos-at-most-once": "0 - At most once",
-    "qos-at-least-once": "1 - At least once",
-    "qos-exactly-once": "2 - Exactly once",
+    "qos-at-most-once": "At most once",
+    "qos-at-least-once": "At least once",
+    "qos-exactly-once": "Exactly once",
     "should-be-persistent": "Application client should be persistent",
     "should-be-persistent-tip": "The client is persistent when: MQTT v.3 -> cleanSession=false. MQTT v.5 -> sessionExpiryInterval > 0 or (sessionExpiryInterval = 0 and cleanStart = false).",
     "filter-title": "Filter"
@@ -699,6 +749,12 @@
       "current-half-year-so-far": "Current half year so far",
       "current-year": "Current year",
       "current-year-so-far": "Current year so far"
+    },
+    "type": {
+      "week": "Week (Sun - Sat)",
+      "week-iso": "Week (Mon - Sun)",
+      "month": "Month",
+      "quarter": "Quarter"
     }
   },
   "timeunit": {
@@ -1114,7 +1170,7 @@
     "clear-empty-subscription-nodes-text": "Be careful, after the confirmation will be cleared all empty <a target='_blank' href='https://thingsboard.io/docs/mqtt-broker/user-guide/ui/subscriptions/#clearing-empty-subscription-nodes'>subscription</a> nodes.",
     "clear-empty-subscription-nodes-title": "Clear empty subscription nodes?",
     "color": "Color",
-    "copy-topic": "Copy Topic Filter",
+    "copy-topic": "Copy topic filter",
     "delete-subscription": "Delete Subscription",
     "delete-subscription-text": "Be careful, after the confirmation the subscription with topic filter '{{topic}}' and all related data will become unrecoverable.",
     "delete-subscription-title": "Are you sure you want to delete the subscription with topic filter '{{topic}}'?",

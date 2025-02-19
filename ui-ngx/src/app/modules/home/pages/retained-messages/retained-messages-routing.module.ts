@@ -17,12 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { RetainedMessagesTableComponent } from '@home/pages/retained-messages/retained-messages-table.component';
+
 
 const routes: Routes = [
   {
     path: 'retained-messages',
-    component: RetainedMessagesTableComponent,
+    loadComponent: () => import('@home/pages/retained-messages/retained-messages-table.component').then(m => m.RetainedMessagesTableComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'retained-message.retained-messages',

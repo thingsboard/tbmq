@@ -15,7 +15,8 @@
 ///
 
 import {Component, Inject} from '@angular/core';
-import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose } from '@angular/material/dialog';
+import { MatButton } from '@angular/material/button';
 
 export interface AlertDialogData {
   title: string;
@@ -24,9 +25,10 @@ export interface AlertDialogData {
 }
 
 @Component({
-  selector: 'tb-alert-dialog',
-  templateUrl: './alert-dialog.component.html',
-  styleUrls: ['./alert-dialog.component.scss']
+    selector: 'tb-alert-dialog',
+    templateUrl: './alert-dialog.component.html',
+    styleUrls: ['./alert-dialog.component.scss'],
+    imports: [MatDialogTitle, MatDialogContent, MatDialogActions, MatButton, MatDialogClose]
 })
 export class AlertDialogComponent {
   constructor(public dialogRef: MatDialogRef<AlertDialogComponent>,

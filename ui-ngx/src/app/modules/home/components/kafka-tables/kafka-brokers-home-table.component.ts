@@ -21,11 +21,15 @@ import { KafkaService } from '@core/http/kafka.service';
 import { KafkaBroker } from '@shared/models/kafka.model';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntitiesTableHomeNoPagination } from '@home/components/entity/entities-table-no-pagination.component';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-kafka-brokers-table',
-  templateUrl: './kafka-brokers-home-table.component.html',
-  styleUrls: ['./kafka-brokers-home-table.component.scss']
+    selector: 'tb-kafka-brokers-table',
+    templateUrl: './kafka-brokers-home-table.component.html',
+    styleUrls: ['./kafka-brokers-home-table.component.scss'],
+    imports: [CardTitleButtonComponent, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, TranslateModule]
 })
 export class KafkaBrokersHomeTableComponent extends EntitiesTableHomeNoPagination<KafkaBroker> {
 

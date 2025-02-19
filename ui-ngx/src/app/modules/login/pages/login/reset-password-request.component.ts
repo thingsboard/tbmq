@@ -18,15 +18,25 @@ import { Component, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
-import { UntypedFormBuilder, Validators } from '@angular/forms';
+import { UntypedFormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { AuthService } from '@core/http/auth.service';
+import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
+import { AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { ToastDirective } from '@shared/components/toast.directive';
+import { MatFormField, MatLabel, MatPrefix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { MatButton } from '@angular/material/button';
+import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'tb-reset-password-request',
-  templateUrl: './reset-password-request.component.html',
-  styleUrls: ['./reset-password-request.component.scss']
+    selector: 'tb-reset-password-request',
+    templateUrl: './reset-password-request.component.html',
+    styleUrls: ['./reset-password-request.component.scss'],
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, ToastDirective, MatFormField, MatLabel, MatInput, MatIcon, MatPrefix, MatError, MatButton, RouterLink, AsyncPipe]
 })
 export class ResetPasswordRequestComponent extends PageComponent implements OnInit {
 

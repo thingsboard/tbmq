@@ -20,49 +20,22 @@
   flex: 1;
   min-height: 150px;
 
-  .tb-config-icon {
-    font-size: inherit;
-    height: 13px;
-    margin-left: 4px;
-    cursor: pointer;
-  }
-
   .tb-warning-icon {
     position: relative;
     display: inline-block;
     text-align: left;
+
+    mat-icon {
+      font-size: inherit;
+      height: 12px;
+      margin-left: 4px;
+      color: #ff9a00;
+    }
   }
 
   .tb-config-table {
+    flex: 1 1 0 !important;
     overflow: auto;
-
-    .mat-tab {
-      overflow: auto;
-    }
-
-    .mat-row, .mat-header-row {
-      cursor: unset;
-      height: 1.375em;
-    }
-
-    .mat-paginator-container {
-      flex-wrap: nowrap;
-    }
-
-    .mat-cell {
-      padding: 0;
-    }
-
-    .mat-header-cell {
-      color: rgba(0, 0, 0, 0.38);
-      font-size: 0.75em;
-      font-weight: 400;
-      padding: 0;
-
-      /*@media #{$mat-lt-xl} {
-        font-size: 10px;
-      }*/
-    }
   }
 }
 

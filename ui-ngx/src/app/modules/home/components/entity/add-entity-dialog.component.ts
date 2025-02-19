@@ -23,11 +23,11 @@ import {
   Inject,
   Injector,
   OnInit,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  viewChild
 } from '@angular/core';
 import { ErrorStateMatcher } from '@angular/material/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { UntypedFormGroup } from '@angular/forms';
@@ -40,26 +40,34 @@ import { AddEntityDialogData } from '@home/models/entity/entity-component.models
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
-import { MatStepper } from '@angular/material/stepper';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { MatStepper, MatStepperIcon, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@app/shared/models/constants';
 import { Subscription } from 'rxjs/internal/Subscription';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
+import { MatToolbar } from '@angular/material/toolbar';
+import { HelpComponent } from '@shared/components/help.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
-  selector: 'tb-add-entity-dialog',
-  templateUrl: './add-entity-dialog.component.html',
-  providers: [{provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent}],
-  styleUrls: ['./add-entity-dialog.component.scss']
+    selector: 'tb-add-entity-dialog',
+    templateUrl: './add-entity-dialog.component.html',
+    providers: [{ provide: ErrorStateMatcher, useExisting: AddEntityDialogComponent }],
+    styleUrls: ['./add-entity-dialog.component.scss'],
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, MatStepLabel, TbAnchorComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogComponent, BaseData>
                                       implements OnInit, AfterViewInit {
 
-  @ViewChild('addGroupEntityWizardStepper') addGroupEntityWizardStepper: MatStepper;
-  @ViewChild('detailsFormStep', {read: ViewContainerRef}) detailsFormStepContainerRef: ViewContainerRef;
-  @ViewChild('entityDetailsForm') entityDetailsFormAnchor: TbAnchorComponent;
-  @ViewChild('ownersAndGroupPanel') ownersAndGroup: ElementRef;
+  readonly addGroupEntityWizardStepper = viewChild<MatStepper>('addGroupEntityWizardStepper');
+  readonly detailsFormStepContainerRef = viewChild('detailsFormStep', { read: ViewContainerRef });
+  readonly entityDetailsFormAnchor = viewChild<TbAnchorComponent>('entityDetailsForm');
+  readonly ownersAndGroup = viewChild<ElementRef>('ownersAndGroupPanel');
 
   @HostBinding('style')
   style = this.data.entitiesTableConfig.addDialogStyle;
@@ -116,7 +124,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   ngAfterViewInit() {
-    const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
+    const viewContainerRef = this.entityDetailsFormAnchor().viewContainerRef;
     viewContainerRef.clear();
 
     const injector: Injector = Injector.create(
@@ -131,7 +139,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
             useValue: this.entitiesTableConfig
           }
         ],
-        parent: this.addDialogOwnerAndGroupWizard ? this.detailsFormStepContainerRef.injector : null
+        parent: this.addDialogOwnerAndGroupWizard ? this.detailsFormStepContainerRef().injector : null
       }
     );
     const componentRef = viewContainerRef.createComponent(
@@ -187,11 +195,11 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   previousStep(): void {
-    this.addGroupEntityWizardStepper.previous();
+    this.addGroupEntityWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addGroupEntityWizardStepper.next();
+    this.addGroupEntityWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -204,7 +212,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   }
 
   get maxStepperIndex(): number {
-    return this.addGroupEntityWizardStepper?._steps?.length - 1;
+    return this.addGroupEntityWizardStepper()?._steps?.length - 1;
   }
 
   allValid(): boolean {
@@ -212,10 +220,10 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
       this.detailsForm.markAllAsTouched();
       return this.detailsForm.valid;
     }
-    return !this.addGroupEntityWizardStepper.steps.find((item, index) => {
+    return !this.addGroupEntityWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addGroupEntityWizardStepper.selectedIndex = index;
+        this.addGroupEntityWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

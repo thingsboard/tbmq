@@ -44,9 +44,9 @@ import {
   UnauthorizedClientTableHeaderComponent
 } from '@home/pages/unauthorized-client/unauthorized-client-table-header.component';
 import {
-  EventContentDialogV2ComponentDialogData,
-  EventContentDialogV2Component
-} from '@home/components/event/event-content-dialog-v2.component';
+  EventContentDialogComponentDialogData,
+  EventContentDialogComponent
+} from '@home/components/event/event-content-dialog.component';
 
 export class UnauthorizedClientTableConfig extends EntityTableConfig<UnauthorizedClient, TimePageLink> {
 
@@ -294,7 +294,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
+    this.dialog.open<EventContentDialogComponent, EventContentDialogComponentDialogData>(EventContentDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

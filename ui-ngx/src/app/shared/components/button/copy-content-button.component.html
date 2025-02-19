@@ -18,8 +18,8 @@
 <button mat-raised-button
         ngxClipboard
         (cbOnSuccess)="onCopied()"
-        [cbContent]="cbContent"
-        [fxShow]="!isEdit">
+        [cbContent]="cbContent()"
+        [class.!hidden]="isEdit()">
   <mat-icon svgIcon="mdi:content-copy"></mat-icon>
-  <span translate>{{title}}</span>
+  <span translate>{{title()}}</span>
 </button>

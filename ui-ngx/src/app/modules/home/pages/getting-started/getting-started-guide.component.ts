@@ -18,12 +18,16 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { UntypedFormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InstructionsService } from '@core/http/instructions.service';
+import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatDialogContent } from '@angular/material/dialog';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
 
 @Component({
-  selector: 'tb-getting-started-guide',
-  templateUrl: './getting-started-guide.component.html',
-  styleUrls: ['./getting-started-guide.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-getting-started-guide',
+    templateUrl: './getting-started-guide.component.html',
+    styleUrls: ['./getting-started-guide.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatCard, MatCardContent, MatDialogContent, TbMarkdownComponent]
 })
 export class GettingStartedGuideComponent implements OnInit {
 

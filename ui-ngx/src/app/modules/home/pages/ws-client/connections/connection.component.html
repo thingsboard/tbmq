@@ -15,28 +15,30 @@
     limitations under the License.
 
 -->
-<section fxLayout="row" fxLayoutAlign="space-between start" class="connection"
-         (click)="selectConnection()"
-         [ngClass]="{'active': (connection?.id === selectedConnection?.id)}">
-  <section fxFlex fxLayout="row" fxLayoutAlign="space-between center"
-           (mouseenter)="onCommentMouseEnter()"
-           (mouseleave)="onCommentMouseLeave()">
-      <section fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
-        <div class="status" [ngStyle]="setStyle()"></div>
-        <span class="label">{{ connection.name }}</span>
-      </section>
-      <div fxFlex fxLayout="row" fxLayoutAlign="end" fxLayoutGap="8px">
-        <div *ngFor="let actionDescriptor of hiddenActions"
-             class="action-buttons" [ngClass]="{ 'show-buttons': showActions }"
-             matTooltipPosition="above"
-             matTooltip="{{ actionDescriptor.name }}">
-          <button mat-icon-button class="tb-mat-24"
-                  *ngIf="actionDescriptor.isEnabled(connection)"
-                  [disabled]="!actionDescriptor.isEnabled(connection)"
-                  (click)="actionDescriptor.onAction($event, connection)">
-            <tb-icon [ngStyle]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
-          </button>
-        </div>
-      </div>
+<section class="connection" (click)="selectConnection()"
+         [class.active]="connection()?.id === selectedConnection?.id">
+  <section class="flex flex-1 flex-row items-center justify-between"
+    (mouseenter)="onCommentMouseEnter()"
+    (mouseleave)="onCommentMouseLeave()">
+    <section class="flex flex-row items-center gap-2">
+      <div class="status" [style]="setStyle()"></div>
+      <span class="label">{{ connection().name }}</span>
     </section>
+    <div class="flex flex-1 flex-row justify-end gap-2">
+      @for (actionDescriptor of hiddenActions; track actionDescriptor) {
+        <div
+          class="action-buttons" [class.show-buttons]="showActions"
+          matTooltipPosition="above"
+          matTooltip="{{ actionDescriptor.name }}">
+          @if (actionDescriptor.isEnabled(connection())) {
+            <button mat-icon-button class="tb-mat-24"
+              [disabled]="!actionDescriptor.isEnabled(connection())"
+              (click)="actionDescriptor.onAction($event, connection())">
+              <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </section>
 </section>

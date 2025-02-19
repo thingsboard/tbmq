@@ -29,14 +29,14 @@ import { User } from '@shared/models/user.model';
 import { UserComponent } from '@home/pages/users/user.component';
 import { UserService } from '@core/http/user.service';
 import { AuthorityTranslationMap } from '@shared/models/authority.enum';
-import { getCurrentAuthUser, selectAuth } from '@core/auth/auth.selectors';
+import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { EntityAction } from '@home/models/entity/entity-component.models';
-import { ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
 @Injectable()
-export class UsersTableConfigResolver implements Resolve<EntityTableConfig<User>> {
+export class UsersTableConfigResolver {
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();

@@ -18,41 +18,44 @@
 <div class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
   <section class="tb-ws-client-title-toolbar">
     <span class="tb-ws-client-title" translate>ws-client.connections.connection-status</span>
-    <span class="status" #showConnectionStatusLogs [ngStyle]="setStyle()"
-          (mouseover)="showStatusLogs($event, showConnectionStatusLogs)" (mouseleave)="clearTimeout()">
+    <span class="status" cdkOverlayOrigin #trigger="cdkOverlayOrigin" [style]="setStyle()"
+      (mouseover)="showStatusLogs($event, trigger)" (mouseleave)="clearTimeout()">
       {{ getStatus() | translate }}{{ errorMessage | lowercase }}
     </span>
   </section>
-  <ng-container *ngIf="isConnected; else disconnected">
+  @if (isConnected) {
     <ng-container *ngTemplateOutlet="connected"></ng-container>
-  </ng-container>
+  } @else {
+    <section class="flex flex-row gap-4">
+      @if (isPasswordRequired && !reconnecting) {
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label translate>mqtt-client-credentials.password</mat-label>
+          <input matInput [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
+          <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"
+            class="tb-mat-20" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
+            <mat-icon>{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
+          </button>
+        </mat-form-field>
+      }
+      @if (reconnecting) {
+        <button mat-button color="primary"
+          (click)="disconnect()">
+          <span translate>action.cancel</span>
+        </button>
+      }
+      <button mat-raised-button (click)="onClick()"
+        cdkFocusInitial
+        [disabled]="(isPasswordRequired && !password?.length) || reconnecting || connecting"
+        [color]="!isConnected ? 'primary' : 'warn'">
+        <span translate>{{ actionLabel }}</span>
+      </button>
+    </section>
+  }
 </div>
 
 <ng-template #connected>
   <button mat-stroked-button (click)="onClick()"
-          [color]="!isConnected ? 'primary' : 'warn'">
+    [color]="!isConnected ? 'primary' : 'warn'">
     <span translate>{{ actionLabel }}</span>
   </button>
-</ng-template>
-<ng-template #disconnected>
-  <section fxLayout="row" fxLayoutGap="16px">
-    <mat-form-field *ngIf="isPasswordRequired && !reconnecting" appearance="outline" subscriptSizing="dynamic">
-      <mat-label translate>mqtt-client-credentials.password</mat-label>
-      <input matInput [(ngModel)]="password" [type]="!isPasswordVisible ? 'password' : 'text'" required>
-      <button mat-icon-button matSuffix (click)="isPasswordVisible = !isPasswordVisible"
-              class="tb-mat-20" [attr.aria-label]="'Hide password'" [attr.aria-pressed]="!isPasswordVisible">
-        <mat-icon>{{ isPasswordVisible ? 'visibility' : 'visibility_off' }}</mat-icon>
-      </button>
-    </mat-form-field>
-    <button mat-button color="primary" *ngIf="reconnecting"
-            (click)="disconnect()">
-      <span translate>action.cancel</span>
-    </button>
-    <button mat-raised-button (click)="onClick()"
-            cdkFocusInitial
-            [disabled]="(isPasswordRequired && !password?.length) || reconnecting || connecting"
-            [color]="!isConnected ? 'primary' : 'warn'">
-      <span translate>{{ actionLabel }}</span>
-    </button>
-  </section>
 </ng-template>

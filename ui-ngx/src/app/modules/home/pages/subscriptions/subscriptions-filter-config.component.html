@@ -15,40 +15,110 @@
     limitations under the License.
 
 -->
-<ng-container *ngIf="panelMode; else componentMode">
-  <ng-container *ngTemplateOutlet="subscriptionsFilterPanel"></ng-container>
-</ng-container>
-<ng-template #componentMode>
-  <ng-container *ngIf="buttonMode; else subscriptionFilter">
+@if (panelMode) {
+  <ng-container *ngTemplateOutlet="subscriptionsFilterPanel()"></ng-container>
+} @else {
+  @if (buttonMode()) {
     <button color="primary"
-            matTooltip="{{buttonDisplayTooltip}}"
-            matTooltipPosition="above"
-            mat-stroked-button
-            (click)="toggleFilterPanel($event)">
+      matTooltip="{{buttonDisplayTooltip}}"
+      matTooltipPosition="above"
+      mat-stroked-button
+      (click)="toggleFilterPanel($event)">
       <mat-icon>filter_list</mat-icon>{{buttonDisplayValue}}
     </button>
-  </ng-container>
-</ng-template>
+  } @else {
+    <div class="tb-form-panel tb-subscriptions-filter-config-component no-padding no-border" [formGroup]="subscriptionsFilterConfigForm">
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>mqtt-client.client-id</div>
+        <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+          <input matInput type="text" style="max-width: 200px;" formControlName="clientId">
+        </mat-form-field>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>shared-subscription.topic-filter</div>
+        <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+          <input matInput type="text" style="max-width: 200px;" formControlName="topicFilter">
+        </mat-form-field>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>mqtt-client-session.qos</div>
+        <mat-chip-listbox multiple formControlName="qosList">
+          @for (mqttQoS of qosTypes; track mqttQoS) {
+            <mat-chip-option [value]="mqttQoS">
+              {{ mqttQoS }} - {{ qosTranslation.get(mqttQoS) | translate}}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>subscription.nl</div>
+        <mat-chip-listbox multiple formControlName="noLocalList">
+          @for (value of booleanList; track value) {
+            <mat-chip-option [value]="value">
+              {{ value }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>subscription.rap</div>
+        <mat-chip-listbox multiple formControlName="retainAsPublishList">
+          @for (value of booleanList; track value) {
+            <mat-chip-option [value]="value">
+              {{ value }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>subscription.rh</div>
+        <mat-chip-listbox multiple formControlName="retainHandlingList">
+          @for (option of rhOptions; track option) {
+            <mat-chip-option [value]="option.value">
+              {{ option.value }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row column-xs">
+        <div class="fixed-title-width" translate>subscription.subscription-id</div>
+        <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
+          <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
+          @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('min')) {
+            <mat-error>
+              {{ 'subscription.subscription-identifier-min' | translate }}
+            </mat-error>
+          }
+          @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('max')) {
+            <mat-error>
+              {{ 'subscription.subscription-identifier-max' | translate }}
+            </mat-error>
+          }
+        </mat-form-field>
+      </div>
+    </div>
+  }
+}
 <ng-template #subscriptionsPanel>
-  <form fxLayout="column" class="mat-content mat-padding" (ngSubmit)="update()">
+  <form class="mat-content mat-padding flex flex-col" (ngSubmit)="update()">
     <ng-container *ngTemplateOutlet="subscriptionFilter"></ng-container>
-    <div fxLayout="row" class="tb-panel-actions" fxLayoutAlign="end center">
+    <div class="tb-panel-actions flex flex-row items-center justify-end">
       <button type="button"
-              mat-button
-              color="primary"
-              (click)="reset()">
+        mat-button
+        color="primary"
+        (click)="reset()">
         {{ 'action.reset' | translate }}
       </button>
-      <span fxFlex></span>
+      <span class="flex flex-1"></span>
       <button type="button"
-              mat-button
-              (click)="cancel()">
+        mat-button
+        (click)="cancel()">
         {{ 'action.cancel' | translate }}
       </button>
       <button type="submit"
-              mat-raised-button
-              color="primary"
-              [disabled]="subscriptionsFilterConfigForm.invalid || !subscriptionsFilterConfigForm.dirty">
+        mat-raised-button
+        color="primary"
+        [disabled]="subscriptionsFilterConfigForm.invalid || !subscriptionsFilterConfigForm.dirty">
         {{ 'action.update' | translate }}
       </button>
     </div>
@@ -71,45 +141,57 @@
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>mqtt-client-session.qos</div>
       <mat-chip-listbox multiple formControlName="qosList">
-        <mat-chip-option *ngFor="let qos of qosList" [value]="qoSValuesMap.get(qos.value)">
-          {{ qos.name | translate }}
-        </mat-chip-option>
+        @for (mqttQoS of qosTypes; track mqttQoS) {
+          <mat-chip-option [value]="mqttQoS">
+            {{ mqttQoS }} - {{ qosTranslation.get(mqttQoS) | translate}}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>subscription.nl</div>
       <mat-chip-listbox multiple formControlName="noLocalList">
-        <mat-chip-option *ngFor="let value of booleanList" [value]="value">
-          {{ value }}
-        </mat-chip-option>
+        @for (value of booleanList; track value) {
+          <mat-chip-option [value]="value">
+            {{ value }}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>subscription.rap</div>
       <mat-chip-listbox multiple formControlName="retainAsPublishList">
-        <mat-chip-option *ngFor="let value of booleanList" [value]="value">
-          {{ value }}
-        </mat-chip-option>
+        @for (value of booleanList; track value) {
+          <mat-chip-option [value]="value">
+            {{ value }}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>subscription.rh</div>
       <mat-chip-listbox multiple formControlName="retainHandlingList">
-        <mat-chip-option *ngFor="let option of rhOptions" [value]="option.value">
-          {{ option.value }}
-        </mat-chip-option>
+        @for (option of rhOptions; track option) {
+          <mat-chip-option [value]="option.value">
+            {{ option.value }}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
     <div class="tb-form-row column-xs">
       <div class="fixed-title-width" translate>subscription.subscription-id</div>
       <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
         <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
-        <mat-error *ngIf="subscriptionsFilterConfigForm.get('subscriptionId').hasError('min')">
-          {{ 'subscription.subscription-identifier-min' | translate }}
-        </mat-error>
-        <mat-error *ngIf="subscriptionsFilterConfigForm.get('subscriptionId').hasError('max')">
-          {{ 'subscription.subscription-identifier-max' | translate }}
-        </mat-error>
+        @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('min')) {
+          <mat-error>
+            {{ 'subscription.subscription-identifier-min' | translate }}
+          </mat-error>
+        }
+        @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('max')) {
+          <mat-error>
+            {{ 'subscription.subscription-identifier-max' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
     </div>
   </div>

@@ -15,19 +15,23 @@
 ///
 
 import { PageComponent } from '@shared/components/page.component';
-import { Component, EventEmitter, Input, OnInit, Output, ViewEncapsulation } from '@angular/core';
+import { Component, Input, OnInit, ViewEncapsulation, output } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormControl } from '@angular/forms';
+import { UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { coerceBoolean } from '@shared/decorators/coercion';
+import { ColorPickerComponent } from './color-picker.component';
+
+import { MatButton } from '@angular/material/button';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-color-picker-panel',
-  templateUrl: './color-picker-panel.component.html',
-  providers: [],
-  styleUrls: ['./color-picker-panel.component.scss'],
-  encapsulation: ViewEncapsulation.None
+    selector: 'tb-color-picker-panel',
+    templateUrl: './color-picker-panel.component.html',
+    styleUrls: ['./color-picker-panel.component.scss'],
+    encapsulation: ViewEncapsulation.None,
+    imports: [ColorPickerComponent, FormsModule, ReactiveFormsModule, MatButton, TranslateModule]
 })
 export class ColorPickerPanelComponent extends PageComponent implements OnInit {
 
@@ -39,10 +43,15 @@ export class ColorPickerPanelComponent extends PageComponent implements OnInit {
   colorClearButton = false;
 
   @Input()
+  @coerceBoolean()
+  colorCancelButton = false;
+
+  @Input()
   popover: TbPopoverComponent<ColorPickerPanelComponent>;
 
-  @Output()
-  colorSelected = new EventEmitter<string>();
+  readonly colorSelected = output<string>();
+
+  readonly colorCancelDialog = output();
 
   colorPickerControl: UntypedFormControl;
 
@@ -61,4 +70,11 @@ export class ColorPickerPanelComponent extends PageComponent implements OnInit {
   clearColor() {
     this.colorSelected.emit(null);
   }
-}
+
+  cancelColor() {
+    if (this.popover) {
+      this.popover.hide();
+    } else {
+      this.colorCancelDialog.emit();
+    }
+  }}

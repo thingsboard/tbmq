@@ -20,27 +20,34 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, model, booleanAttribute, Input,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 import { ClientSubscriptionFilterConfig, subscriptionsFilterConfigEquals } from '@shared/models/subscription.model';
-import { mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
 import { RhOptions } from '@shared/models/ws-client.model';
+import { takeUntil } from 'rxjs/operators';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
 
 export const SUBSCRIPTIONS_FILTER_CONFIG_DATA = new InjectionToken<any>('SubscriptionsFilterConfigData');
 
@@ -52,38 +59,32 @@ export interface SubscriptionsFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-subscriptions-filter-config',
-  templateUrl: './subscriptions-filter-config.component.html',
-  styleUrls: ['./subscriptions-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SubscriptionsFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-subscriptions-filter-config',
+    templateUrl: './subscriptions-filter-config.component.html',
+    styleUrls: ['./subscriptions-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SubscriptionsFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatError]
 })
 export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('subscriptionsPanel')
-  subscriptionsFilterPanel: TemplateRef<any>;
-
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
+  readonly subscriptionsFilterPanel = viewChild<TemplateRef<any>>('subscriptionsPanel');
 
   @Input()
   initialClientSubscriptionFilterConfig: ClientSubscriptionFilterConfig;
 
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
+
   booleanList = [true, false];
-  qosList = mqttQoSTypes;
-  qoSValuesMap = mqttQoSValuesMap;
+  qosTypes = QosTypes;
+  qosTranslation = QosTranslation;
   rhOptions = RhOptions;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-session.filter-title');
@@ -95,12 +96,12 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
 
   private subscriptionsFilterConfig: ClientSubscriptionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SUBSCRIPTIONS_FILTER_CONFIG_DATA)
               private data: SubscriptionsFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -126,13 +127,13 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
       retainHandlingList: [null, []],
       subscriptionId: [null, []],
     });
-    this.subscriptionsFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.subscriptionsFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.subscriptionsConfigUpdated(this.subscriptionsFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSubscriptionsConfigForm(this.subscriptionsFilterConfig);
     }
@@ -140,6 +141,8 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {
@@ -150,8 +153,8 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.subscriptionsFilterConfigForm.disable({emitEvent: false});
     } else {
       this.subscriptionsFilterConfigForm.enable({emitEvent: false});
@@ -188,7 +191,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
     this.subscriptionsFilterOverlayRef.backdropClick().subscribe(() => {
       this.subscriptionsFilterOverlayRef.dispose();
     });
-    this.subscriptionsFilterOverlayRef.attach(new TemplatePortal(this.subscriptionsFilterPanel,
+    this.subscriptionsFilterOverlayRef.attach(new TemplatePortal(this.subscriptionsFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.subscriptionsFilterOverlayRef.updatePosition();
@@ -220,16 +223,17 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   }
 
   reset() {
-    if (this.initialClientSubscriptionFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialClientSubscriptionFilterConfig = this.initialClientSubscriptionFilterConfig;
+    if (initialClientSubscriptionFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const subscriptionFilterConfig = this.subscriptionsFilterConfigFromFormValue(this.subscriptionsFilterConfigForm.value);
-        if (!subscriptionsFilterConfigEquals(subscriptionFilterConfig, this.initialClientSubscriptionFilterConfig)) {
-          this.updateSubscriptionsConfigForm(this.initialClientSubscriptionFilterConfig);
+        if (!subscriptionsFilterConfigEquals(subscriptionFilterConfig, initialClientSubscriptionFilterConfig)) {
+          this.updateSubscriptionsConfigForm(initialClientSubscriptionFilterConfig);
           this.subscriptionsFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!subscriptionsFilterConfigEquals(this.subscriptionsFilterConfig, this.initialClientSubscriptionFilterConfig)) {
-          this.subscriptionsFilterConfig = this.initialClientSubscriptionFilterConfig;
+        if (!subscriptionsFilterConfigEquals(this.subscriptionsFilterConfig, initialClientSubscriptionFilterConfig)) {
+          this.subscriptionsFilterConfig = initialClientSubscriptionFilterConfig;
           this.updateButtonDisplayValue();
           this.updateSubscriptionsConfigForm(this.subscriptionsFilterConfig);
           this.propagateChange(this.subscriptionsFilterConfig);
@@ -269,7 +273,7 @@ export class SubscriptionsFilterConfigComponent implements OnInit, OnDestroy, Co
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.subscriptionsFilterConfig?.clientId?.length) {

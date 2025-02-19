@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, input, output, viewChild } from '@angular/core';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogService } from '@core/services/dialog.service';
@@ -28,31 +28,30 @@ import {
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
 import { ClipboardService } from 'ngx-clipboard';
-import { MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { TbIconComponent } from '@shared/components/icon.component';
 
 @Component({
-  selector: 'tb-subscription',
-  templateUrl: './subscription.component.html',
-  styleUrls: ['./subscription.component.scss']
+    selector: 'tb-subscription',
+    templateUrl: './subscription.component.html',
+    styleUrls: ['./subscription.component.scss'],
+    imports: [MatTooltip, MatIconButton, MatIcon, MatMenuTrigger, MatMenu, MatMenuItem, TbIconComponent, TranslateModule]
 })
-export class SubscriptionComponent implements OnInit {
+export class SubscriptionComponent {
 
-  @Input()
-  subscription: WebSocketSubscription;
+  readonly subscription = input<WebSocketSubscription>();
+  readonly subscriptions = input<WebSocketSubscription[]>();
+  readonly connection = input<WebSocketConnection>();
 
-  @Input()
-  subscriptions: WebSocketSubscription[];
+  readonly subscriptionUpdated = output<void>();
 
-  @Input()
-  connection: WebSocketConnection;
-
-  @Output()
-  subscriptionUpdated = new EventEmitter<void>();
-
-  @ViewChild(MatMenuTrigger) trigger: MatMenuTrigger;
+  readonly trigger = viewChild(MatMenuTrigger);
 
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
@@ -67,15 +66,16 @@ export class SubscriptionComponent implements OnInit {
 
   }
 
-  ngOnInit() {
-  }
-
   onMouseEnter(): void {
     this.showActions = true;
   }
 
   onMouseLeave(): void {
     this.showActions = false;
+  }
+
+  openSubscriptionDetails($event: Event) {
+    this.edit($event, this.subscription());
   }
 
   private configureCellHiddenActions(): Array<CellActionDescriptor<WebSocketSubscription>> {
@@ -133,8 +133,8 @@ export class SubscriptionComponent implements OnInit {
       $event.stopPropagation();
     }
     this.dialogService.confirm(
-      this.translate.instant('subscription.delete-subscription-title', {topic: this.subscription.configuration.topicFilter}),
-      this.translate.instant('subscription.delete-subscription-text', {topic: this.subscription.configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-title', {topic: this.subscription().configuration.topicFilter}),
+      this.translate.instant('subscription.delete-subscription-text', {topic: this.subscription().configuration.topicFilter}),
       this.translate.instant('action.no'),
       this.translate.instant('action.yes'),
       true
@@ -159,8 +159,8 @@ export class SubscriptionComponent implements OnInit {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            mqttVersion: this.connection.configuration.mqttVersion,
-            subscriptions: this.subscriptions,
+            mqttVersion: this.connection().configuration.mqttVersion,
+            subscriptions: this.subscriptions(),
             subscription
           }
         }).afterClosed()
@@ -184,7 +184,7 @@ export class SubscriptionComponent implements OnInit {
   }
 
   private closeMenu() {
-    this.trigger.closeMenu();
+    this.trigger().closeMenu();
   }
 
 }

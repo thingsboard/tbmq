@@ -20,23 +20,24 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model,
+  Input,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import {
   ConnectionState,
   connectionStateTranslationMap,
@@ -46,6 +47,17 @@ import {
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { NumericOperation, numericOperationTranslationMap } from '@shared/models/query/query.models';
+import { takeUntil } from 'rxjs/operators';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { EntitySubTypeListComponent } from '@shared/components/entity/entity-subtype-list.component';
 
 export const SESSION_FILTER_CONFIG_DATA = new InjectionToken<any>('SessionFilterConfigData');
 
@@ -57,34 +69,28 @@ export interface SessionFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-session-filter-config',
-  templateUrl: './session-filter-config.component.html',
-  styleUrls: ['./session-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SessionFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-session-filter-config',
+    templateUrl: './session-filter-config.component.html',
+    styleUrls: ['./session-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SessionFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatChipListbox, MatChipOption, MatFormField, MatInput, MatSelect, MatOption, EntitySubTypeListComponent]
 })
 export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('sessionFilterPanel')
-  sessionFilterPanel: TemplateRef<any>;
-
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
+  readonly sessionFilterPanel = viewChild<TemplateRef<any>>('sessionFilterPanel');
 
   @Input()
   initialSessionFilterConfig: SessionFilterConfig;
+
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   connectionStates = [ConnectionState.CONNECTED, ConnectionState.DISCONNECTED];
   connectionStateTranslationMap= connectionStateTranslationMap;
@@ -106,12 +112,12 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
 
   private sessionFilterConfig: SessionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SESSION_FILTER_CONFIG_DATA)
               private data: SessionFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -138,13 +144,13 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
       subscriptionOperation: [null, []],
       clientIpAddress: [null, []],
     });
-    this.sessionFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.sessionFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.sessionConfigUpdated(this.sessionFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSessionConfigForm(this.sessionFilterConfig);
     }
@@ -152,7 +158,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
@@ -162,8 +169,8 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.sessionFilterConfigForm.disable({emitEvent: false});
     } else {
       this.sessionFilterConfigForm.enable({emitEvent: false});
@@ -200,7 +207,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.sessionFilterOverlayRef.backdropClick().subscribe(() => {
       this.sessionFilterOverlayRef.dispose();
     });
-    this.sessionFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel,
+    this.sessionFilterOverlayRef.attach(new TemplatePortal(this.sessionFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.sessionFilterOverlayRef.updatePosition();
@@ -232,16 +239,17 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   reset() {
-    if (this.initialSessionFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialSessionFilterConfig = this.initialSessionFilterConfig;
+    if (initialSessionFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const sessionFilterConfig = this.sessionFilterConfigFromFormValue(this.sessionFilterConfigForm.value);
-        if (!sessionFilterConfigEquals(sessionFilterConfig, this.initialSessionFilterConfig)) {
-          this.updateSessionConfigForm(this.initialSessionFilterConfig);
+        if (!sessionFilterConfigEquals(sessionFilterConfig, initialSessionFilterConfig)) {
+          this.updateSessionConfigForm(initialSessionFilterConfig);
           this.sessionFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!sessionFilterConfigEquals(this.sessionFilterConfig, this.initialSessionFilterConfig)) {
-          this.sessionFilterConfig = this.initialSessionFilterConfig;
+        if (!sessionFilterConfigEquals(this.sessionFilterConfig, initialSessionFilterConfig)) {
+          this.sessionFilterConfig = initialSessionFilterConfig;
           this.updateButtonDisplayValue();
           this.updateSessionConfigForm(this.sessionFilterConfig);
           this.propagateChange(this.sessionFilterConfig);
@@ -282,7 +290,7 @@ export class SessionFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.sessionFilterConfig?.connectedStatusList?.length) {

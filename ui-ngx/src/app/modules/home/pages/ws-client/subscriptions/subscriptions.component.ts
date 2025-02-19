@@ -14,9 +14,9 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { Connection, WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
+import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
 import { map } from 'rxjs/operators';
 import {
@@ -25,13 +25,21 @@ import {
 } from '@home/pages/ws-client/subscriptions/subscription-dialog.component';
 import { isDefinedAndNotNull } from '@core/utils';
 import { WebSocketSubscriptionService } from '@core/http/ws-subscription.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+
+import { SubscriptionComponent } from './subscription.component';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'tb-ws-subscriptions',
-  templateUrl: './subscriptions.component.html',
-  styleUrls: ['./subscriptions.component.scss']
+    selector: 'tb-ws-subscriptions',
+    templateUrl: './subscriptions.component.html',
+    styleUrls: ['./subscriptions.component.scss'],
+    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, SubscriptionComponent, MatProgressSpinner]
 })
-export class SubscriptionsComponent {
+export class SubscriptionsComponent implements OnInit {
 
   subscriptions: WebSocketSubscription[];
   connection: WebSocketConnection;
@@ -94,7 +102,7 @@ export class SubscriptionsComponent {
       });
   }
 
-  trackById(index: number, item: Connection): string {
+  trackById(item: WebSocketSubscription): string {
     return item.id;
   }
 }

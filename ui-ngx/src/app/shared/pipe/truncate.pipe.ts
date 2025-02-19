@@ -17,7 +17,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { isString } from '@core/utils';
 
-@Pipe({ name: 'truncate' })
+@Pipe({
+    name: 'truncate',
+})
 export class TruncatePipe implements PipeTransform {
   transform(text: string, wordwise: boolean, max: any, tail: string): string {
     if (!text) { return ''; }

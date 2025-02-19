@@ -28,3 +28,26 @@ export interface MenuSection {
   isNew?: boolean;
   opened?: boolean;
 }
+
+export enum MenuId {
+  home = 'home',
+  sessions = 'sessions',
+  subscriptions = 'subscriptions',
+  client_credentials = 'client_credentials',
+  unauthorized_clients = 'unauthorized_clients',
+  web_socket_client = 'web_socket_client',
+  retained_messages = 'retained_messages',
+  shared_subscriptions_management = 'shared_subscriptions_management',
+  shared_subscriptions = 'shared_subscriptions',
+  shared_subscriptions_application = 'shared_subscriptions_application',
+  kafka_management = 'kafka_management',
+  kafka_topics = 'kafka_topics',
+  kafka_consumer_groups = 'kafka_consumer_groups',
+  kafka_brokers = 'kafka_brokers',
+  monitoring = 'monitoring',
+  users = 'users',
+  mail_server = 'mail_server',
+  system_settings = 'system_settings',
+  system_settings_general = 'system_settings_general',
+  system_settings_security = 'system_settings_security',
+}

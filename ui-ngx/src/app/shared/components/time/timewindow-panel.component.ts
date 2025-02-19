@@ -28,10 +28,22 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TimeService } from '@core/services/time.service';
 import { isDefined } from '@core/utils';
 import { OverlayRef } from '@angular/cdk/overlay';
+import { MatTabGroup, MatTab } from '@angular/material/tabs';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { MatRadioGroup, MatRadioButton } from '@angular/material/radio';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { TimeintervalComponent } from './timeinterval.component';
+import { QuickTimeIntervalComponent } from './quick-time-interval.component';
+import { DatetimePeriodComponent } from './datetime-period.component';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MatButton } from '@angular/material/button';
 
 export interface TimewindowPanelData {
   historyOnly: boolean;
@@ -46,40 +58,27 @@ export interface TimewindowPanelData {
 export const TIMEWINDOW_PANEL_DATA = new InjectionToken<any>('TimewindowPanelData');
 
 @Component({
-  selector: 'tb-timewindow-panel',
-  templateUrl: './timewindow-panel.component.html',
-  styleUrls: ['./timewindow-panel.component.scss']
+    selector: 'tb-timewindow-panel',
+    templateUrl: './timewindow-panel.component.html',
+    styleUrls: ['./timewindow-panel.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, MatTabGroup, MatTab, MatRadioGroup, MatRadioButton, TranslateModule, MatCheckbox, TimeintervalComponent, QuickTimeIntervalComponent, DatetimePeriodComponent, NgTemplateOutlet, MatFormField, MatLabel, MatSelect, MatOption, MatButton, AsyncPipe]
 })
 export class TimewindowPanelComponent extends PageComponent implements OnInit {
 
   historyOnly = false;
-
   forAllTimeEnabled = false;
-
   quickIntervalOnly = false;
-
-  aggregation = false;
-
+  aggregation = true;
   timezone = false;
-
   isEdit = false;
-
   timewindow: Timewindow;
-
   timewindowForm: UntypedFormGroup;
-
   historyTypes = HistoryWindowType;
-
   realtimeTypes = RealtimeWindowType;
-
   timewindowTypes = TimewindowType;
-
   aggregationTypes = AggregationType;
-
   aggregations = Object.keys(AggregationType);
-
   aggregationTypesTranslations = aggregationTranslations;
-
   result: Timewindow;
 
   constructor(@Inject(TIMEWINDOW_PANEL_DATA) public data: TimewindowPanelData,
@@ -184,6 +183,38 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
         Validators.max(this.maxDatapointsLimit())]);
     }
     this.timewindowForm.get('aggregation.limit').updateValueAndValidity({emitEvent: false});
+  }
+
+  onTimewindowTypeChange() {
+    this.timewindowForm.markAsDirty();
+    const timewindowFormValue = this.timewindowForm.getRawValue();
+    if (this.timewindow.selectedTab === TimewindowType.REALTIME) {
+      if (timewindowFormValue.history.historyType !== HistoryWindowType.FIXED) {
+        this.timewindowForm.get('realtime').patchValue({
+          realtimeType: Object.keys(RealtimeWindowType).includes(HistoryWindowType[timewindowFormValue.history.historyType]) ?
+            RealtimeWindowType[HistoryWindowType[timewindowFormValue.history.historyType]] :
+            timewindowFormValue.realtime.realtimeType,
+          timewindowMs: timewindowFormValue.history.timewindowMs,
+          quickInterval: timewindowFormValue.history.quickInterval.startsWith('CURRENT') ?
+            timewindowFormValue.history.quickInterval : timewindowFormValue.realtime.quickInterval
+        });
+        setTimeout(() => this.timewindowForm.get('realtime.interval').patchValue(timewindowFormValue.history.interval));
+      }
+    } else {
+      this.timewindowForm.get('history').patchValue({
+        historyType: HistoryWindowType[RealtimeWindowType[timewindowFormValue.realtime.realtimeType]],
+        timewindowMs: timewindowFormValue.realtime.timewindowMs,
+        quickInterval: timewindowFormValue.realtime.quickInterval
+      });
+      setTimeout(() => this.timewindowForm.get('history.interval').patchValue(timewindowFormValue.realtime.interval));
+    }
+    this.timewindowForm.patchValue({
+      aggregation: {
+        type: timewindowFormValue.aggregation.type,
+        limit: timewindowFormValue.aggregation.limit
+      },
+      timezone: timewindowFormValue.timezone
+    });
   }
 
   update() {

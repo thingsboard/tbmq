@@ -20,26 +20,33 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model, Input,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { SharedSubscriptionFilterConfig, sharedSubscriptionFilterConfigEquals } from '@shared/models/shared-subscription.model';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { takeUntil } from 'rxjs/operators';
 
 export const SHARED_SUBSCRIPTION_FILTER_CONFIG_DATA = new InjectionToken<any>('SharedSubscriptionFilterConfigData');
 
@@ -51,34 +58,28 @@ export interface SharedSubscriptionFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-shared-subscription-groups-filter-config',
-  templateUrl: './shared-subscription-groups-filter-config.component.html',
-  styleUrls: ['./shared-subscription-groups-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => SharedSubscriptionGroupsFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-shared-subscription-groups-filter-config',
+    templateUrl: './shared-subscription-groups-filter-config.component.html',
+    styleUrls: ['./shared-subscription-groups-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => SharedSubscriptionGroupsFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput]
 })
 export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('sharedSubscriptionFilterPanel')
-  sharedSubscriptionFilterPanel: TemplateRef<any>;
-
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
+  readonly sharedSubscriptionFilterPanel = viewChild<TemplateRef<any>>('sharedSubscriptionFilterPanel');
 
   @Input()
   initialSharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
+
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   ClientType = ClientType;
   clientTypes = [ClientType.APPLICATION, ClientType.DEVICE];
@@ -95,12 +96,12 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
 
   private sharedSubscriptionFilterConfig: SharedSubscriptionFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(SHARED_SUBSCRIPTION_FILTER_CONFIG_DATA)
               private data: SharedSubscriptionFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -122,13 +123,13 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
       topicFilter: [null, []],
       clientIdSearch: [null, []]
     });
-    this.sharedSubscriptionFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.sharedSubscriptionFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.sharedSubscriptionConfigUpdated(this.sharedSubscriptionFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateSharedSubscriptionConfigForm(this.sharedSubscriptionFilterConfig);
     }
@@ -136,7 +137,8 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   }
 
   ngOnDestroy(): void {
-  }
+    this.destroy$.next();
+    this.destroy$.complete();}
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
@@ -146,8 +148,8 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.sharedSubscriptionFilterConfigForm.disable({emitEvent: false});
     } else {
       this.sharedSubscriptionFilterConfigForm.enable({emitEvent: false});
@@ -184,7 +186,7 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
     this.sharedSubscriptionFilterOverlayRef.backdropClick().subscribe(() => {
       this.sharedSubscriptionFilterOverlayRef.dispose();
     });
-    this.sharedSubscriptionFilterOverlayRef.attach(new TemplatePortal(this.sharedSubscriptionFilterPanel,
+    this.sharedSubscriptionFilterOverlayRef.attach(new TemplatePortal(this.sharedSubscriptionFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.sharedSubscriptionFilterOverlayRef.updatePosition();
@@ -216,16 +218,17 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   }
 
   reset() {
-    if (this.initialSharedSubscriptionFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialSharedSubscriptionFilterConfig = this.initialSharedSubscriptionFilterConfig;
+    if (initialSharedSubscriptionFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const sharedSubscriptionFilterConfig = this.sharedSubscriptionFilterConfigFromFormValue(this.sharedSubscriptionFilterConfigForm.value);
-        if (!sharedSubscriptionFilterConfigEquals(sharedSubscriptionFilterConfig, this.initialSharedSubscriptionFilterConfig)) {
-          this.updateSharedSubscriptionConfigForm(this.initialSharedSubscriptionFilterConfig);
+        if (!sharedSubscriptionFilterConfigEquals(sharedSubscriptionFilterConfig, initialSharedSubscriptionFilterConfig)) {
+          this.updateSharedSubscriptionConfigForm(initialSharedSubscriptionFilterConfig);
           this.sharedSubscriptionFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!sharedSubscriptionFilterConfigEquals(this.sharedSubscriptionFilterConfig, this.initialSharedSubscriptionFilterConfig)) {
-          this.sharedSubscriptionFilterConfig = this.initialSharedSubscriptionFilterConfig;
+        if (!sharedSubscriptionFilterConfigEquals(this.sharedSubscriptionFilterConfig, initialSharedSubscriptionFilterConfig)) {
+          this.sharedSubscriptionFilterConfig = initialSharedSubscriptionFilterConfig;
           this.updateButtonDisplayValue();
           this.updateSharedSubscriptionConfigForm(this.sharedSubscriptionFilterConfig);
           this.propagateChange(this.sharedSubscriptionFilterConfig);
@@ -257,7 +260,7 @@ export class SharedSubscriptionGroupsFilterConfigComponent implements OnInit, On
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.sharedSubscriptionFilterConfig?.shareNameSearch?.length) {

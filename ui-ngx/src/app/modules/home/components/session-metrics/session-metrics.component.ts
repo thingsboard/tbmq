@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import {
@@ -29,20 +29,27 @@ import {
   SessionMetricsTable,
   SessionMetricsTranslationMap
 } from '@shared/models/session.model';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
+import { DatePipe } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-session-metrics',
-  templateUrl: './session-metrics.component.html',
-  styleUrls: ['./session-metrics.component.scss']
+    selector: 'tb-session-metrics',
+    templateUrl: './session-metrics.component.html',
+    styleUrls: ['./session-metrics.component.scss'],
+    imports: [MatIconButton, MatTooltip, MatIcon, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, DatePipe]
 })
 export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<SessionMetricsTable> {
 
-  @Input()
-  entity: DetailedClientSessionInfo;
+  readonly entity = input<DetailedClientSessionInfo>();
 
   sessionMetricsTranslationMap = SessionMetricsTranslationMap;
 
-  fetchEntities$ = () => this.clientSessionService.getSessionMetrics(this.entity.clientId);
+  fetchEntities$ = () => this.clientSessionService.getSessionMetrics(this.entity().clientId);
 
   constructor(protected store: Store<AppState>,
               private clientSessionService: ClientSessionService,
@@ -61,7 +68,7 @@ export class SessionMetricsComponent extends EntitiesTableHomeNoPagination<Sessi
   }
 
   deleteSessionMetrics() {
-    this.clientSessionService.deleteSessionMetrics(this.entity.clientId).subscribe(() => {
+    this.clientSessionService.deleteSessionMetrics(this.entity().clientId).subscribe(() => {
       this.updateData();
     })
   }

@@ -15,10 +15,10 @@
  */
 /* You can add global styles to this file, and also import other style files */
 
-@import '~typeface-roboto/index.css';
-@import '~font-awesome/css/font-awesome.min.css';
+@import 'typeface-roboto/index.css';
+@import 'font-awesome/css/font-awesome.min.css';
 @import 'theme.scss';
-@import './scss/constants';
+@import 'constants';
 @import './scss/animations';
 @import './scss/mixins';
 @import './scss/fonts';
@@ -74,7 +74,7 @@ body {
   line-height: normal;
 }
 
-a:not(.mat-mdc-button-base) {
+a:not(.mat-mdc-button-base, .mdc-tab) {
   font-weight: 400;
   color: #106cc8;
   text-decoration: none;
@@ -85,7 +85,7 @@ a:not(.mat-mdc-button-base) {
 
 a:hover,
 a:focus {
-  &:not(.mat-mdc-button-base) {
+  &:not(.mat-mdc-button-base, .mdc-tab) {
     border-bottom: 1px solid #4054b2;
   }
 }
@@ -232,7 +232,7 @@ div {
 }
 
 .tb-hint {
-  padding: 0 8px 8px;
+  padding: 0 16px 16px;
   font-size: var(--mdc-typography-caption-font-size, 12px);
   line-height: var(--mdc-typography-caption-line-height, 20px);
   font-weight: var(--mdc-typography-caption-font-weight, 400);
@@ -327,34 +327,6 @@ pre.tb-highlight {
   z-index: 0;
 }
 
-mat-label {
-  &.tb-title {
-    font-size: 13px;
-    font-weight: 400;
-    color: #666;
-    pointer-events: none;
-
-    &.no-padding {
-      padding-bottom: 0;
-    }
-
-    &.tb-required::after {
-      font-size: 13px;
-      color: rgba(0, 0, 0, .54);
-      vertical-align: top;
-      content: " *";
-    }
-
-    &.tb-error {
-      color: rgb(221, 44, 0);
-
-      &.tb-required::after {
-        color: rgb(221, 44, 0);
-      }
-    }
-  }
-}
-
 .tb-error-messages {
   height: 24px; //30px
   margin-top: -6px;
@@ -367,6 +339,14 @@ mat-label {
   font-size: 12px;
   line-height: 14px;
   color: rgb(221, 44, 0);
+}
+
+.mat-mdc-tooltip.tb-error-tooltip {
+  .mdc-tooltip__surface {
+    background-color: #fff2f3;
+    box-shadow: -2px 2px 4px 0px rgba(0,0,0,0.2);
+    color: rgba(209, 39, 48, 1);
+  }
 }
 
 .tb-autocomplete {
@@ -385,58 +365,6 @@ mat-label {
       .tb-not-found-content {
         padding: 8px 16px 7px;
         border-bottom: 1px solid #eee;
-      }
-    }
-  }
-}
-
-.tb-ace-doc-tooltip {
-  code {
-    color: #444;
-    &.title {
-      font-size: 14px;
-    }
-  }
-  div.tb-function-info {
-    font-size: 14px;
-  }
-  div.tb-function-return {
-    font-size: 1rem;
-    letter-spacing: 0.03rem;
-    color: #444;
-    code {
-      font-size: 14px;
-      letter-spacing: normal;
-    }
-  }
-  div.tb-api-title {
-    font-weight: bold;
-    font-size: 16px;
-    color: #6e6e6e;
-    padding-top: 12px;
-    padding-bottom: 12px;
-  }
-  table.tb-api-table {
-    width: 100%;
-    border-collapse: collapse;
-    tr {
-      border-bottom: 1px solid #a8a8a8;
-      &:last-child {
-        border-bottom: none;
-      }
-      td {
-        font-size: 14px;
-        line-height: 1.6rem;
-        &:first-child {
-          font-weight: 600;
-          padding-left: 16px;
-          width: 20%;
-        }
-        &.arg-description {
-          font-size: 1rem;
-          letter-spacing: .03rem;
-          color: #444;
-        }
       }
     }
   }
@@ -516,6 +444,40 @@ mat-label {
     letter-spacing: .01em;
   }
 
+  mat-label {
+    &.tb-title {
+      font-size: 13px;
+      font-weight: 400;
+      color: #666;
+      pointer-events: none;
+
+      &.no-padding {
+        padding-bottom: 0;
+      }
+
+      &.tb-required::after {
+        font-size: 13px;
+        color: rgba(0, 0, 0, .54);
+        vertical-align: top;
+        content: " *";
+      }
+
+      &.tb-error {
+        color: rgb(221, 44, 0);
+
+        &.tb-required::after {
+          color: rgb(221, 44, 0);
+        }
+      }
+    }
+  }
+
+  mat-icon {
+    &.tb-error {
+      color: rgb(221, 44, 0);
+    }
+  }
+
   .mat-mdc-tooltip {
     white-space: pre-line;
   }
@@ -571,8 +533,9 @@ mat-label {
 
   button.mat-mdc-menu-item {
     overflow: hidden;
-    .mdc-list-item__primary-text {
+    .mat-mdc-menu-item-text {
       flex: 1;
+      display: flex;
       .tb-alt-text {
         float: right;
       }
@@ -633,13 +596,8 @@ mat-label {
   // Material table
 
   .mat-toolbar.mat-primary {
-    button.mat-mdc-icon-button {
-      .mat-icon {
-        color: white;
-      }
-    }
     .mat-mdc-select-value, .mat-mdc-select-arrow, .mat-mdc-select-arrow:after {
-      color: white;
+      color: inherit;
     }
     .mat-mdc-text-field-wrapper {
       &.mdc-text-field--outlined {
@@ -703,24 +661,11 @@ mat-label {
     table-layout: auto;
     border-collapse: separate;
     margin: 0;
-  }
-
-  .tb-table-widget {
-    .mat-mdc-table {
-      .mat-mdc-row {
-        font-size: 13px;
-      }
-
-      .mat-mdc-cell {
-        background-color: transparent;
-        color: inherit;
-        font-size: inherit;
-        font-family: inherit;
-        font-weight: inherit;
-        line-height: inherit;
-        letter-spacing: inherit;
-        text-transform: inherit;
-      }
+    .mat-mdc-header-row {
+      height: 56px;
+    }
+    .mat-mdc-footer-row, .mat-mdc-row {
+      height: 52px;
     }
   }
 
@@ -761,10 +706,6 @@ mat-label {
 
       &.tb-current-entity {
         background-color: #e9e9e9;
-      }
-
-      &.tb-pointer {
-        cursor: pointer;
       }
     }
   }
@@ -874,18 +815,14 @@ mat-label {
   }
 
   .mat-toolbar-tools {
-    //font-size: 20px;
     letter-spacing: .005em;
-    //box-sizing: border-box;
     font-weight: 400;
     display: flex;
     align-items: center;
     flex-direction: row;
     width: 100%;
     height: 64px;
-    //max-height: 64px;
     padding: 0 16px;
-    //margin: 0;
   }
 
   .mat-icon {
@@ -904,6 +841,9 @@ mat-label {
     &.tb-mat-20 {
       @include tb-mat-icon-size(20);
     }
+    &.tb-mat-24 {
+      @include tb-mat-icon-size(24);
+    }
     &.tb-mat-28 {
       @include tb-mat-icon-size(28);
     }
@@ -919,6 +859,18 @@ mat-label {
   }
 
   .mat-mdc-icon-button {
+    &.tb-mat-12 {
+      @include tb-mat-icon-button-size(12);
+      .mat-icon {
+        @include tb-mat-icon-size(12);
+      }
+    }
+    &.tb-mat-16 {
+      @include tb-mat-icon-button-size(16);
+      .mat-icon {
+        @include tb-mat-icon-size(16);
+      }
+    }
     &.tb-mat-20 {
       @include tb-mat-icon-button-size(20);
       .mat-icon {
@@ -1041,6 +993,9 @@ mat-label {
         margin-bottom: 0;
         padding: 8px;
       }
+      .mdc-dialog__surface {
+        display: block;
+      }
     }
     @media #{$mat-lt-lg} {
       max-width: 90vw !important;
@@ -1131,10 +1086,6 @@ mat-label {
     }
   }
 
-  .tb-primary-background {
-    background-color: $primary;
-  }
-
   .tb-color-preview {
     cursor: pointer;
     box-sizing: border-box;
@@ -1194,6 +1145,100 @@ mat-label {
     padding-bottom: 6px;
     line-height: 1.5;
     white-space: pre-line;
+  }
+
+  .tb-time-series-chart-legend {
+      display: flex;
+      width: 100%;
+      align-items: flex-start;
+      align-self: stretch;
+      column-gap: 16px;
+      row-gap: 8px;
+      flex-wrap: wrap;
+      overflow: auto;
+      max-width: 100%;
+      padding: 0 2px 0 2px;
+      max-height: calc(35% - 8px);
+
+      .tb-time-series-chart-legend-table {
+        border-spacing: 0;
+        table-layout: fixed;
+        &.vertical {
+          width: 100%;
+          table-layout: auto;
+          tbody {
+            th {
+              width: 95%;
+            }
+          }
+        }
+        th, td {
+          &:not(:last-child) {
+            padding-right: 16px;
+          }
+        }
+        thead tr, tbody tr:not(:last-child) {
+          th, td {
+            padding-bottom: 8px;
+          }
+        }
+        .tb-time-series-chart-legend-item {
+          align-items: flex-end;
+          &.left {
+            align-items: flex-start;
+          }
+        }
+      }
+      .tb-time-series-chart-legend-item {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        user-select: none;
+        .tb-time-series-chart-legend-item-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: #ccc;
+          white-space: nowrap;
+          cursor: pointer;
+          .tb-time-series-chart-legend-item-label-circle {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ccc;
+          }
+          .tb-time-series-chart-legend-item-label-text {
+            font-size: 12px;
+            line-height: 16px;
+            font-weight: 400;
+            color: rgba(0, 0, 0, 0.76);
+          }
+        }
+      }
+      .tb-time-series-chart-legend-type-label {
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 16px;
+        color: rgba(0, 0, 0, 0.38);
+        white-space: nowrap;
+        text-align: left;
+        &.right {
+          text-align: right;
+        }
+      }
+      .tb-time-series-chart-legend-value {
+        font-weight: 500;
+        line-height: 16px;
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.87);
+        white-space: nowrap;
+        text-align: right;
+      }
+    }
+
+  .tb-pointer {
+    cursor: pointer;
   }
 
   // TinyMCE
@@ -1317,5 +1362,13 @@ mat-label {
 }
 
 .home-page-material-icons {
-  color: rgba(0,0,0,0.54);
+  color: rgba(0,0,0,0.54) !important;
 }
+
+/***************
+ * TAILWIND CSS
+ ***************/
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

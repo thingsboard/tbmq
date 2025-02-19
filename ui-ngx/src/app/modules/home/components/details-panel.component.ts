@@ -14,27 +14,34 @@
 /// limitations under the License.
 ///
 
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output} from '@angular/core';
-import {PageComponent} from '@shared/components/page.component';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {UntypedFormGroup} from '@angular/forms';
-import {Subscription} from 'rxjs';
+import { ChangeDetectorRef, Component, Input, OnDestroy, input, output } from '@angular/core';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { UntypedFormGroup } from '@angular/forms';
+import { Subscription } from 'rxjs';
+import { MatToolbar } from '@angular/material/toolbar';
+import { AsyncPipe } from '@angular/common';
+import { MatIconButton, MatFabButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-details-panel',
-  templateUrl: './details-panel.component.html',
-  styleUrls: ['./details-panel.component.scss']
+    selector: 'tb-details-panel',
+    templateUrl: './details-panel.component.html',
+    styleUrls: ['./details-panel.component.scss'],
+    imports: [MatToolbar, MatIconButton, MatIcon, MatFabButton, MatTooltip, AsyncPipe, TranslateModule]
 })
 export class DetailsPanelComponent extends PageComponent implements OnDestroy {
 
-  @Input() headerHeightPx = 100;
-  @Input() headerTitle = '';
-  @Input() headerSubtitle = '';
-  @Input() isReadOnly = false;
-  @Input() isAlwaysEdit = false;
-  @Input() isShowSearch = false;
-  @Input() backgroundColor = '#FFF';
+  readonly headerHeightPx = input(100);
+  readonly headerTitle = input('');
+  readonly headerSubtitle = input('');
+  readonly isReadOnly = input(false);
+  readonly isAlwaysEdit = input(false);
+  readonly isShowSearch = input(false);
+  readonly backgroundColor = input('#FFF');
 
   private theFormValue: UntypedFormGroup;
   private formSubscription: Subscription = null;
@@ -57,24 +64,18 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
     return this.theFormValue;
   }
 
-  @Output()
-  closeDetails = new EventEmitter<void>();
-  @Output()
-  toggleDetailsEditMode = new EventEmitter<boolean>();
-  @Output()
-  applyDetails = new EventEmitter<void>();
-  @Output()
-  closeSearch = new EventEmitter<void>();
+  readonly closeDetails = output<void>();
+  readonly toggleDetailsEditMode = output<boolean>();
+  readonly applyDetails = output<void>();
+  readonly closeSearch = output<void>();
+  readonly isEditChange = output<boolean>();
 
   isEditValue = false;
   showSearchPane = false;
 
-  @Output()
-  isEditChange = new EventEmitter<boolean>();
-
   @Input()
   get isEdit() {
-    return this.isAlwaysEdit || this.isEditValue;
+    return this.isAlwaysEdit() || this.isEditValue;
   }
 
   set isEdit(val: boolean) {
@@ -101,7 +102,7 @@ export class DetailsPanelComponent extends PageComponent implements OnDestroy {
   }
 
   onToggleDetailsEditMode() {
-    if (!this.isAlwaysEdit) {
+    if (!this.isAlwaysEdit()) {
       this.isEdit = !this.isEdit;
     }
     this.toggleDetailsEditMode.emit(this.isEditValue);

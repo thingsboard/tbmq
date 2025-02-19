@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { User } from '@shared/models/user.model';
 import { Authority } from '@shared/models/authority.enum';
 import { select, Store } from '@ngrx/store';
@@ -23,16 +23,22 @@ import { selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { AuthService } from "@core/http/auth.service";
+import { AsyncPipe } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatIconButton } from '@angular/material/button';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-user-menu',
-  templateUrl: './user-menu.component.html',
-  styleUrls: ['./user-menu.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-user-menu',
+    templateUrl: './user-menu.component.html',
+    styleUrls: ['./user-menu.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatIcon, MatIconButton, MatMenuTrigger, MatMenu, MatMenuItem, TranslateModule, AsyncPipe]
 })
-export class UserMenuComponent implements OnInit, OnDestroy {
+export class UserMenuComponent {
 
-  @Input() displayUserInfo: boolean;
+  readonly displayUserInfo = input<boolean>();
 
   authority$ = this.store.pipe(
     select(selectAuthUser),
@@ -52,12 +58,6 @@ export class UserMenuComponent implements OnInit, OnDestroy {
   constructor(private store: Store<AppState>,
               private router: Router,
               private authService: AuthService) {
-  }
-
-  ngOnInit(): void {
-  }
-
-  ngOnDestroy(): void {
   }
 
   getAuthorityName(user: User): string {

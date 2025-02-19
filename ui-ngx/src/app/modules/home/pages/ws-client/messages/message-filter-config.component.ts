@@ -20,29 +20,33 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input, OnChanges,
+  OnChanges,
   OnDestroy,
   OnInit,
   Optional, SimpleChanges,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
-import { coerceBoolean } from '@shared/decorators/coercion';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
-
-import { TranslateService } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
-import {
-  WsQoSTranslationMap,
-  WsQoSTypes
-} from '@shared/models/session.model';
+import { fromEvent, Subject, Subscription } from 'rxjs';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import { MessageFilterConfig, MessageFilterDefaultConfig, WebSocketConnection } from '@shared/models/ws-client.model';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { MatTooltip } from '@angular/material/tooltip';
+import { takeUntil } from 'rxjs/operators';
 
 export const MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('MessageFilterConfigData');
 
@@ -54,63 +58,47 @@ export interface MessageFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-message-filter-config',
-  templateUrl: './message-filter-config.component.html',
-  styleUrls: ['./message-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MessageFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-message-filter-config',
+    templateUrl: './message-filter-config.component.html',
+    styleUrls: ['./message-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MessageFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption, MatTooltip]
 })
 export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor, OnChanges {
 
-  @ViewChild('messageFilterPanel')
-  filterPanel: TemplateRef<any>;
+  readonly filterPanel = viewChild<TemplateRef<any>>('messageFilterPanel');
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
-  @Input()
-  connectionChanged: WebSocketConnection;
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
+  readonly connectionChanged = input<WebSocketConnection>();
 
   initialFilterConfig: MessageFilterConfig = MessageFilterDefaultConfig;
 
-  qosOptions = WsQoSTypes;
+  qosTypes = QosTypes;
+  qosTranslation = QosTranslation;
   retainedOptions = [true, false];
-
   panelMode = false;
-
   buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');
-
   filterConfigForm: UntypedFormGroup;
-
   filterOverlayRef: OverlayRef;
-
   panelResult: MessageFilterConfig = null;
-
   entityType = EntityType;
-
-  wsQoSTranslationMap = WsQoSTranslationMap;
 
   private filterConfig: MessageFilterConfig;
   private resizeWindows: Subscription;
-
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(MESSAGE_FILTER_CONFIG_DATA)
               private data: MessageFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -132,19 +120,21 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
       qosList: [null, []],
       retainList: [null, []]
     });
-    this.filterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.filterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.configUpdated(this.filterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateConfigForm(this.filterConfig);
     }
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -166,8 +156,8 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.filterConfigForm.disable({emitEvent: false});
     } else {
       this.filterConfigForm.enable({emitEvent: false});
@@ -204,7 +194,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
     this.filterOverlayRef.backdropClick().subscribe(() => {
       this.filterOverlayRef.dispose();
     });
-    this.filterOverlayRef.attach(new TemplatePortal(this.filterPanel,
+    this.filterOverlayRef.attach(new TemplatePortal(this.filterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.filterOverlayRef.updatePosition();
@@ -266,7 +256,7 @@ export class MessageFilterConfigComponent implements OnInit, OnDestroy, ControlV
   }
 
   private updateButtonDisplayValue() {
-      if (this.buttonMode) {
+      if (this.buttonMode()) {
         const filterTextParts: string[] = [];
         if (this.filterConfig?.qosList?.length) {
           filterTextParts.push(`${this.filterConfig.qosList.join(', ')}`);

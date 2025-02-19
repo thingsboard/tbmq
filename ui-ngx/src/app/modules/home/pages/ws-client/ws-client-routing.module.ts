@@ -17,12 +17,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { WsClientComponent } from '@home/pages/ws-client/ws-client.component';
 
 const routes: Routes = [
   {
     path: 'ws-client',
-    component: WsClientComponent,
+    loadComponent: () => import('@home/pages/ws-client/ws-client.component').then(m => m.WsClientComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'ws-client.ws-client',

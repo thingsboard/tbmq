@@ -14,52 +14,13 @@
  * limitations under the License.
  */
 @import 'constants';
-@import '../../../../../theme';
 
 :host::ng-deep {
+  display: flex;
+  flex: 1 0 0;
+
   .mat-expansion-panel-body {
     padding: 0 22px 16px;
-  }
-
-  .step-expansion-header {
-    flex: 1 1 0;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-
-    .step-icon {
-      text-align: center;
-      background-color: $tb-primary-color;
-      border: 1px solid transparent;
-      border-radius: 20px;
-      height: 22px;
-      width: 22px;
-      line-height: 1.6em;
-    }
-
-    .step-active {
-      color: #fff;
-      content: inherit;
-    }
-
-    .step-done {
-      color: #fff;
-      line-height: 0.9em;
-    }
-
-    .step-done:before {
-      content: 'check';
-      font-size: 1.25em;
-      padding-left: 2px;
-    }
-
-    .step-not-done {
-      background-color: transparent;
-      border: 1px solid #6c6c6c;
-      color: #6c6c6c;
-      content: inherit;
-    }
   }
 
   .mat-expansion-panel button {
@@ -119,51 +80,6 @@
       padding-left: 0;
       text-align: justify;
     }
-    /*.tb-command-code {
-      .code-wrapper {
-          padding: 0;
-          pre[class*=language-] {
-            margin: 0;
-            //padding: 9px 38px 9px 16px;
-            padding-right: 38px;
-            padding-bottom: 4px;
-            background: #F3F6FA;
-            border: #305680;
-            border-radius: 6px;
-            border: none;
-            overflow: scroll;
-
-            &::-webkit-scrollbar {
-              width: 4px;
-              height: 4px;
-            }
-          }
-        button.clipboard-btn {
-          right: -2px;
-          p {
-            color: #305680;
-          }
-          p, div {
-            background-color: #F3F6FA;
-          }
-          div {
-            img {
-              display: none;
-            }
-            &:after {
-              content: "";
-              position: initial;
-              display: block;
-              width: 18px;
-              height: 18px;
-              background: #305680;
-              mask-image: url(/assets/copy-code-icon.svg);
-              mask-repeat: no-repeat;
-            }
-          }
-        }
-      }
-    }*/
   }
 
   .tb-get-started .mat-step-icon-content, .mat-step-icon .mat-icon {
@@ -182,52 +98,6 @@
   .mat-mdc-outlined-button {
     white-space: nowrap;
   }
-
-  /*@media #{$mat-lt-xl} {
-    .tb-get-started {
-      .mat-vertical-stepper-header {
-        padding: 4px;
-      }
-      .mat-step-label, .mat-step-label.mat-step-label-selected {
-        font-size: 11px;
-        line-height: 13px;
-      }
-      .mat-step-icon-content, .mat-step-icon .mat-icon {
-        font-size: 11px;
-      }
-      .mat-vertical-content {
-        padding: 0 12px 12px 12px;
-        p, li {
-          font-size: 11px;
-          line-height: 13px;
-          em {
-            font-size: 11px;
-          }
-        }
-        .tb-markdown-view {
-          .code-wrapper {
-            code[class*="language-"], pre[class*="language-"] {
-              font-size: 11px;
-            }
-          }
-        }
-      }
-      .mat-step-label.mat-step-label-selected {
-        font-size: 0.85em;
-      }
-      .mat-step-icon {
-        width: 20px;
-        height: 20px;
-      }
-      .mat-step-icon .mat-icon {
-        height: 11px;
-        width: 11px;
-      }
-      .mat-raised-button {
-        font-size: 0.85em;
-      }
-    }
-  }*/
 }
 
 :host ::ng-deep {
@@ -241,8 +111,6 @@
           border-color: $tb-primary-color;
           padding-right: 38px;
           overflow: scroll;
-          //padding-bottom: 4px;
-
           &::-webkit-scrollbar {
             width: 4px;
             height: 4px;

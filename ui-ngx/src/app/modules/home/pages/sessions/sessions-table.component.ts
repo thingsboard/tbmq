@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { ClientSessionService } from '@core/http/client-session.service';
@@ -24,13 +24,13 @@ import { DialogService } from '@core/services/dialog.service';
 import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
-  selector: 'tb-sessions-table',
-  templateUrl: './sessions-table.component.html'
+    selector: 'tb-sessions-table',
+    templateUrl: './sessions-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class SessionsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -42,7 +42,7 @@ export class SessionsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -52,14 +52,14 @@ export class SessionsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.sessionsTableConfig && this.sessionsTableConfig.entityId !== entityId) {
       this.sessionsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   sessionsTableConfig: SessionsTableConfig;
 

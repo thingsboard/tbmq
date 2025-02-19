@@ -15,18 +15,30 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container tb-home-padding" fxLayoutGap="8px">
-  <section fxLayout="row" class="title-container" fxLayoutAlign="space-between flex-end">
+<div class="tb-home-card-container tb-home-padding flex flex-row gap-2">
+  <section class="title-container flex flex-row items-end justify-between">
     <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
     <a (click)="gotoDocs('docs/contact-us')" translate>version.contact-us</a>
   </section>
   <section class="cards">
-    <ng-container *ngIf="updatesAvailable; else noUpdatesAvailableTemplate">
+    @if (updatesAvailable) {
       <ng-container *ngTemplateOutlet="updatesAvailableTemplate"></ng-container>
-    </ng-container>
+    } @else {
+      <div class="version-container">
+        <section class="flex flex-col gap-2.5">
+          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
+            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
+          </section>
+          <section class="flex flex-1 flex-row items-end justify-between">
+            <span>{{ currentReleaseVersion }}</span>
+            <span class="tb-title-no-updates" translate>version.no-updates</span>
+          </section>
+        </section>
+      </div>
+    }
     <ng-template #updatesAvailableTemplate>
       <div class="version-container">
-        <section fxLayout="column" fxLayoutGap="10px">
+        <section class="flex flex-col gap-2.5">
           <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
             <span class="tb-title-link">{{ 'version.current' | translate }}</span>
           </section>
@@ -34,33 +46,20 @@
         </section>
       </div>
       <div class="version-container">
-        <div fxLayout="row" fxLayoutAlign="space-between start" fxLayoutGap.lt-lg="12px">
-          <section fxLayout="column" fxLayoutGap="10px">
+        <div class="flex flex-row justify-between lt-lg:gap-3">
+          <section class="flex flex-col gap-2.5">
             <section class="tb-title-link-container" (click)="gotoGithub(latestReleaseVersion)">
               <span class="tb-title-link">{{ 'version.available' | translate }}</span>
             </section>
             <span>{{ latestReleaseVersion }}</span>
           </section>
-          <button [fxHide.lt-md]="true" mat-raised-button color="primary"
-                  [disabled]="!updatesAvailable"
-                  (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
-                  matTooltip="{{'version.upgrade-instructions' | translate}}">
+          <button [class.lt-md:!hidden]="true" mat-raised-button color="primary"
+            [disabled]="!updatesAvailable"
+            (click)="gotoDocs('docs/mqtt-broker/install/upgrade-instructions')"
+            matTooltip="{{'version.upgrade-instructions' | translate}}">
             {{'version.upgrade' | translate}}
           </button>
         </div>
-      </div>
-    </ng-template>
-    <ng-template #noUpdatesAvailableTemplate>
-      <div class="version-container">
-        <section fxLayout="column" fxLayoutGap="10px">
-          <section class="tb-title-link-container" (click)="gotoGithub(currentReleaseVersion)">
-            <span class="tb-title-link">{{ 'version.current' | translate }}</span>
-          </section>
-          <section fxFlex fxLayout="row" fxLayoutAlign="space-between flex-end">
-            <span>{{ currentReleaseVersion }}</span>
-            <span class="tb-title-no-updates" translate>version.no-updates</span>
-          </section>
-        </section>
       </div>
     </ng-template>
   </section>

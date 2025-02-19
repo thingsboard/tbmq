@@ -15,30 +15,34 @@
     limitations under the License.
 
 -->
-<div fxLayout="column" tb-fullscreen [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" [ngClass]="{'fill-height': fillHeight}">
+<div class="flex flex-col" tb-fullscreen [fullscreen]="fullscreen" (fullscreenChanged)="onFullscreen()" [class.fill-height]="fillHeight()">
   <div class="tb-json-object-toolbar">
     <label class="tb-title no-padding toolbar-label"
-           [ngClass]="{'tb-required': jsonRequired,
-                       'tb-readonly': readonly,
-                       'tb-error': !objectValid}">{{ !objectValid ? label : '' }}</label>
-    <span fxFlex></span>
+           [class.tb-required]="jsonRequired()"
+           [class.tb-readonly]="readonly()"
+           [class.tb-error]="!objectValid">{{ !objectValid ? label() : '' }}</label>
+    <span class="flex flex-1"></span>
     <section class="toolbar-buttons">
-      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="beautifyJSON()">
-        {{'js-func.tidy' | translate }}
-      </button>
-      <button type="button" mat-button *ngIf="!readonly && !disabled && jsonFormatSelected" (click)="minifyJSON()">
-        {{'js-func.mini' | translate }}
-      </button>
+      @if (!readonly() && !disabled() && jsonFormatSelected()) {
+        <button type="button" mat-button (click)="beautifyJSON()">
+          {{'js-func.tidy' | translate }}
+        </button>
+      }
+      @if (!readonly() && !disabled() && jsonFormatSelected()) {
+        <button type="button" mat-button (click)="minifyJSON()">
+          {{'js-func.mini' | translate }}
+        </button>
+      }
       <button mat-icon-button class="tb-mat-32 fullscreen-btn"
-              (click)="fullscreen = !fullscreen"
-              matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-              matTooltipPosition="above">
+        (click)="fullscreen = !fullscreen"
+        matTooltip="{{(fullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
+        matTooltipPosition="above">
         <mat-icon class="material-icons">{{ fullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       </button>
     </section>
   </div>
   <div id="tb-json-panel" tb-toast toastTarget="{{toastTargetId}}"
-       class="tb-json-object-panel" fxLayout="column">
-    <div #jsonEditor id="tb-json-input" [ngStyle]="editorStyle" [ngClass]="{'fill-height': fillHeight}"></div>
+    class="tb-json-object-panel flex flex-col">
+    <div #jsonEditor id="tb-json-input" [style]="editorStyle()" [class.fill-height]="fillHeight()"></div>
   </div>
 </div>

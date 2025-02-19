@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { TranslateService } from '@ngx-translate/core';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
@@ -25,13 +25,13 @@ import { ClientSessionService } from "@core/http/client-session.service";
 import { MatDialog } from "@angular/material/dialog";
 
 @Component({
-  selector: 'tb-shared-subsriptions-groups-table',
-  templateUrl: './shared-subsription-groups-table.component.html'
+    selector: 'tb-shared-subsriptions-groups-table',
+    templateUrl: './shared-subsription-groups-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class SharedSubsriptionGroupsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -43,7 +43,7 @@ export class SharedSubsriptionGroupsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -53,14 +53,14 @@ export class SharedSubsriptionGroupsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.sharedSubscriptionsTableConfig && this.sharedSubscriptionsTableConfig.entityId !== entityId) {
       this.sharedSubscriptionsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   sharedSubscriptionsTableConfig: SharedSubscriptionGroupsTableConfig;
 
