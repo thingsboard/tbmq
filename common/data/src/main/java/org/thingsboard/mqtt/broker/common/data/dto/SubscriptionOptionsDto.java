@@ -38,6 +38,9 @@ public final class SubscriptionOptionsDto {
     }
 
     public static SubscriptionOptionsDto fromSubscriptionOptions(SubscriptionOptions options) {
+        if (options == null) {
+            return newInstance();
+        }
         return new SubscriptionOptionsDto(options.isNoLocal(), options.isRetainAsPublish(), options.getRetainHandling().value());
     }
 

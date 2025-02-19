@@ -55,6 +55,10 @@ public class ThingsBoardExecutors {
         return newWorkStealingPool(parallelism, clazz.getSimpleName());
     }
 
+    public static ExecutorService initSingleExecutorService(String serviceName) {
+        return Executors.newSingleThreadExecutor(ThingsBoardThreadFactory.forName(serviceName));
+    }
+
     public static ExecutorService initExecutorService(int threadsCount, String serviceName) {
         if (threadsCount <= 0) {
             threadsCount = Math.max(1, Runtime.getRuntime().availableProcessors());
@@ -68,6 +72,14 @@ public class ThingsBoardExecutors {
 
     public static ExecutorService initCachedExecutorService(String serviceName) {
         return Executors.newCachedThreadPool(ThingsBoardThreadFactory.forName(serviceName));
+    }
+
+    public static ScheduledExecutorService newSingleScheduledThreadPool(String name) {
+        return initScheduledExecutorService(1, name);
+    }
+
+    public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize, String name) {
+        return initScheduledExecutorService(corePoolSize, name);
     }
 
     public static ScheduledExecutorService initScheduledExecutorService(int threadsCount, String serviceName) {

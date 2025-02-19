@@ -21,14 +21,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
+import org.thingsboard.mqtt.broker.service.subscription.integration.IntegrationSubscription;
 
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -59,6 +62,15 @@ public class SubscriptionServiceImplTest {
                 new ClientTopicSubscription("topic2", 2)
         ));
         verify(subscriptionTrie, times(2)).put(any(), any());
+    }
+
+    @Test
+    public void givenIntegrationTopicSubscriptions_whenSubscribe_thenOk() {
+        subscriptionService.subscribe("clientId", Set.of(
+                new IntegrationTopicSubscription("topic1")
+        ));
+        IntegrationSubscription value = new IntegrationSubscription("clientId");
+        verify(subscriptionTrie, times(1)).put(eq("topic1"), eq(value));
     }
 
     @Test

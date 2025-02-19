@@ -44,6 +44,10 @@
             <artifactId>util</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common</groupId>
+            <artifactId>stats</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
         </dependency>

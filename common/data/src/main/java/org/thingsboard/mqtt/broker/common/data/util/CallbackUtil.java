@@ -21,6 +21,16 @@ import java.util.function.Consumer;
 
 public class CallbackUtil {
 
+    public static final BasicCallback EMPTY = new BasicCallback() {
+        @Override
+        public void onSuccess() {
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+        }
+    };
+
     public static BasicCallback createCallback(Runnable onSuccess, Consumer<Throwable> onFailure) {
         return new BasicCallback() {
             @Override

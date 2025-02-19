@@ -20,6 +20,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public interface ClientSubscriptionCache {
 
@@ -29,4 +30,5 @@ public interface ClientSubscriptionCache {
 
     Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
 
+    Set<String> getIntegrationSubscriptions(UUID integrationId);
 }

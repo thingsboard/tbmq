@@ -19,6 +19,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.BaseData;
 
 import java.util.UUID;
 
@@ -32,6 +33,19 @@ public abstract class BaseSqlEntity<D> implements BaseEntity<D> {
 
     @Column(name = ModelConstants.CREATED_TIME_PROPERTY)
     protected long createdTime;
+
+    public BaseSqlEntity() {
+    }
+
+    public BaseSqlEntity(BaseData domain) {
+        this.id = domain.getId();
+        this.createdTime = domain.getCreatedTime();
+    }
+
+    public BaseSqlEntity(BaseSqlEntity<?> entity) {
+        this.id = entity.id;
+        this.createdTime = entity.createdTime;
+    }
 
     @Override
     public void setCreatedTime(long createdTime) {

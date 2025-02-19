@@ -27,8 +27,8 @@ import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 

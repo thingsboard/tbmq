@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -26,6 +27,7 @@ import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.integration.IntegrationSubscription;
 
 import java.util.Collection;
 import java.util.List;
@@ -49,15 +51,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
         }
         for (TopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptionTrie.put(
-                    topicSubscription.getTopicFilter(),
-                    new ClientSubscription(
-                            clientId,
-                            topicSubscription.getQos(),
-                            topicSubscription.getShareName(),
-                            topicSubscription.getOptions(),
-                            topicSubscription.getSubscriptionId())
-            );
+            if (topicSubscription instanceof IntegrationTopicSubscription) {
+                subscriptionTrie.put(topicSubscription.getTopicFilter(), new IntegrationSubscription(clientId));
+            } else {
+                subscriptionTrie.put(
+                        topicSubscription.getTopicFilter(),
+                        new ClientSubscription(
+                                clientId,
+                                topicSubscription.getQos(),
+                                topicSubscription.getShareName(),
+                                topicSubscription.getOptions(),
+                                topicSubscription.getSubscriptionId())
+                );
+            }
         }
     }
 

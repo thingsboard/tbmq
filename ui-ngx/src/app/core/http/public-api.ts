@@ -25,3 +25,4 @@ export * from './instructions.service';
 export * from './config.service';
 export * from './kafka.service';
 export * from './settings.service';
+export * from './integration.service';

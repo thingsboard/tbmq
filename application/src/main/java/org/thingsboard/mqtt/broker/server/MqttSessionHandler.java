@@ -48,6 +48,7 @@ import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.exception.ProtocolViolationException;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
@@ -281,7 +282,7 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     }
 
     private String generateClientId() {
-        return UUID.randomUUID().toString().replaceAll("-", BrokerConstants.EMPTY_STR);
+        return UUIDUtil.randomUuidToString();
     }
 
     private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {

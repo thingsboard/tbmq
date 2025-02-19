@@ -23,9 +23,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class HomePageConsumerKafkaSettings {
 
-    @Value("${queue.kafka.home-page.consumer-config}")
+    @Value("${queue.kafka.home-page.consumer-config:}")
     private String consumerProperties;
-    @Value("${queue.kafka.home-page.kafka-response-timeout-ms}")
+    @Value("${queue.kafka.home-page.kafka-response-timeout-ms:1000}")
     private long kafkaResponseTimeoutMs;
 
 }

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ import static org.thingsboard.mqtt.broker.adaptor.ProtoConverter.updatePublishMs
 @RequiredArgsConstructor
 public class DownLinkProxyImpl implements DownLinkProxy {
 
+    @Getter
     private final ServiceInfoProvider serviceInfoProvider;
     private final DownLinkQueuePublisher queuePublisher;
     private final BasicDownLinkProcessor basicDownLinkProcessor;

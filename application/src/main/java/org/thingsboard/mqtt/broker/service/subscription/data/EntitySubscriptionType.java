@@ -18,5 +18,6 @@ package org.thingsboard.mqtt.broker.service.subscription.data;
 public enum EntitySubscriptionType {
 
     DEFAULT,
+    INTEGRATION,
 
 }

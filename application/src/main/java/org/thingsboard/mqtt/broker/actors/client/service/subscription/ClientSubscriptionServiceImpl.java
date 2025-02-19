@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
@@ -35,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
@@ -163,6 +165,14 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
+    public void clearSubscriptionsAndPersist(String clientId) {
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Cleared subscriptions", clientId),
+                t -> log.warn("[{}] Failed to clear subscriptions", clientId, t));
+        clearSubscriptionsAndPersist(clientId, callback);
+    }
+
+    @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Clearing all subscriptions.", clientId);
@@ -202,6 +212,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
+    }
+
+    @Override
+    public Set<String> getIntegrationSubscriptions(UUID integrationId) {
+        Set<TopicSubscription> subscriptions = clientSubscriptionsMap.getOrDefault(UUIDUtil.uuidToString(integrationId), Collections.emptySet());
+        return subscriptions.stream().map(TopicSubscription::getTopicFilter).collect(Collectors.toSet());
     }
 
     @Override

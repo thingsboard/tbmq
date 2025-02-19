@@ -28,7 +28,7 @@
     <packaging>pom</packaging>
 
     <name>TBMQ Docker Images</name>
-    <url>https://thingsboard.io</url>
+    <url>https://thingsboard.io/products/mqtt-broker/</url>
     <description>TBMQ Docker Images</description>
 
     <properties>

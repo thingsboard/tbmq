@@ -20,3 +20,4 @@ set -e
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
 kubectl delete -f tb-broker.yml
+kubectl delete -f tbmq-ie.yml

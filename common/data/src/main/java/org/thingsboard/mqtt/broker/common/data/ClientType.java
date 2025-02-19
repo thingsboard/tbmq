@@ -19,4 +19,5 @@ public enum ClientType {
 
     DEVICE,
     APPLICATION,
+    INTEGRATION
 }

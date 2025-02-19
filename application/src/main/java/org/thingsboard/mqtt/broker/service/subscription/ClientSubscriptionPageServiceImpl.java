@@ -22,6 +22,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientSubscriptionQuery;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
 import org.thingsboard.mqtt.broker.dto.ClientSubscriptionInfoDto;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,6 +71,7 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
         return allClientSubscriptions
                 .entrySet()
                 .parallelStream()
+                .filter(this::filterOutIntegrationSubscriptions)
                 .filter(subscritionsEntry -> filterClientSubscriptionsByTextSearch(query.getPageLink().getTextSearch(), subscritionsEntry.getKey()))
                 .filter(subscritionsEntry -> filterClientSubscriptionsByClientId(query, subscritionsEntry.getKey()))
                 .flatMap(subscritionsEntry ->
@@ -136,6 +139,10 @@ public class ClientSubscriptionPageServiceImpl implements ClientSubscriptionPage
                 .clientId(clientId)
                 .subscription(SubscriptionInfoDto.fromTopicSubscription(topicSubscription))
                 .build();
+    }
+
+    private boolean filterOutIntegrationSubscriptions(Entry<String, Set<TopicSubscription>> entry) {
+        return entry.getValue().stream().anyMatch(ts -> !(ts instanceof IntegrationTopicSubscription));
     }
 
 }

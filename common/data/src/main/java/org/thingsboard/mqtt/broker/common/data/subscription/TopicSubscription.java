@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.common.data.subscription;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public interface TopicSubscription {
 
     String getTopicFilter();
@@ -35,10 +37,12 @@ public interface TopicSubscription {
         return -1;
     }
 
+    @JsonIgnore
     default boolean isSharedSubscription() {
         return false;
     }
 
+    @JsonIgnore
     default boolean isCommonSubscription() {
         return true;
     }

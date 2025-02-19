@@ -38,6 +38,9 @@ readonly MY_VOLUMES=(
   "tbmq-haproxy-config"
   "tbmq-haproxy-letsencrypt"
   "tbmq-haproxy-certs-d"
+  "tbmq-ie1-logs"
+  "tbmq-ie2-logs"
+  "tbmq-ie-config"
 )
 
 function additionalComposeCacheArgs() {

@@ -40,6 +40,8 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
 
+    void clearSubscriptionsAndPersist(String clientId);
+
     void clearSubscriptionsAndPersist(String clientId, BasicCallback callback);
 
     void clearSubscriptionsInternally(String clientId);

@@ -30,6 +30,7 @@ export enum EntityType {
   SUBSCRIPTION = 'SUBSCRIPTION',
   WS_MESSAGE = 'WS_MESSAGE',
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
+  INTEGRATION = 'INTEGRATION',
 }
 
 export interface EntityTypeTranslation {
@@ -229,6 +230,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         selectedEntities: 'unauthorized-client.selected-unauthorized-clients'
       }
     ],
+    [
+      EntityType.INTEGRATION,
+      {
+        type: 'entity.type-integration',
+        typePlural: 'entity.type-integrations',
+        list: 'entity.list-of-integrations',
+        nameStartsWith: 'entity.integration-name-starts-with',
+        details: 'integration.integration-details',
+        add: 'integration.add',
+        noEntities: 'integration.no-integrations-text',
+        search: 'integration.search',
+        selectedEntities: 'integration.selected-integrations'
+      }
+    ],
   ]
 );
 
@@ -281,6 +296,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       {
         helpLinkId: 'unauthorizedClient'
       }
-    ]
+    ],
+    [
+      EntityType.INTEGRATION,
+      {
+        helpLinkId: 'integrations'
+      }
+    ],
   ]
 );

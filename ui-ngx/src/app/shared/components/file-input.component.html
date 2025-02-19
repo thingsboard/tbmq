@@ -1,0 +1,69 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="tb-container">
+  @if (label()) {
+    <label class="tb-title"
+           [class.tb-required]="!disabled() && required()"
+           [class.pointer-event]="hint()"
+           tb-hint-tooltip-icon="{{ hint() }}">{{ label() }}
+    </label>
+  }
+  <ng-container #flow="flow"
+                [flowConfig]="{allowDuplicateUploads: true}">
+    <div class="tb-file-select-container">
+      <div class="tb-file-clear-container">
+        <button mat-icon-button color="primary"
+                type="button"
+                (click)="clearFile()"
+                class="tb-file-clear-btn"
+                matTooltip="{{ 'action.remove' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+      <div class="drop-area tb-flow-drop"
+           flowDrop
+           [flow]="flow.flowJs">
+        <div class="upload-label">
+          <mat-icon class="tb-mat-32">cloud_upload</mat-icon>
+          <span>{{ dropLabel() }}</span>
+          <button type="button" mat-button color="primary" class="browse-file">
+            <label
+              for="{{inputId()}}">{{ (multipleFile ? 'file-input.browse-files' : 'file-input.browse-file') | translate}}</label>
+          </button>
+          <input class="file-input" flowButton #flowInput type="file" [flow]="flow.flowJs"
+                 [flowAttributes]="{accept: accept()}" id="{{inputId()}}">
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <div class="tb-file-info-container">
+    @if (!fileName && required() && requiredAsError()) {
+      <tb-error class="tb-file-name" error="{{ noFileText() | translate }}"></tb-error>
+    }
+    @if (!fileName && !requiredAsError()) {
+      <div class="tb-file-name" translate>{{ noFileText() }}</div>
+    }
+    @if (fileName) {
+      <div class="tb-file-name" [title]="fileName">{{ fileName }}</div>
+    }
+    @if (maxSizeByte() && !disabled()) {
+      <div class="tb-file-hint" translate [translateParams]="{ size: maxSizeByte() | fileSize }">dashboard.maximum-upload-file-size</div>
+    }
+  </div>
+</div>

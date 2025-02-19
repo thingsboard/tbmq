@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.Applicat
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
@@ -72,6 +73,7 @@ public class MsgPersistenceManagerImplTest {
     DevicePersistenceProcessor devicePersistenceProcessor;
     ClientLogger clientLogger;
     RateLimitService rateLimitService;
+    IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
     MsgPersistenceManagerImpl msgPersistenceManager;
 
     @Before
@@ -83,10 +85,12 @@ public class MsgPersistenceManagerImplTest {
         devicePersistenceProcessor = mock(DevicePersistenceProcessor.class);
         clientLogger = mock(ClientLogger.class);
         rateLimitService = mock(RateLimitService.class);
+        integrationMsgQueuePublisher = mock(IntegrationMsgQueuePublisher.class);
 
         msgPersistenceManager = spy(new MsgPersistenceManagerImpl(
                 genericClientSessionCtxManager, applicationMsgQueuePublisher, applicationPersistenceProcessor,
-                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger, rateLimitService));
+                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger,
+                rateLimitService, integrationMsgQueuePublisher));
 
         ctx = mock(ClientSessionCtx.class);
         sessionInfo = mock(SessionInfo.class);
@@ -109,7 +113,8 @@ public class MsgPersistenceManagerImplTest {
                         createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
                         createSubscription("topic4", 2, "appClientId4", ClientType.APPLICATION)
                 ),
-                Collections.emptySet()
+                Collections.emptySet(),
+                Collections.emptyList()
         );
 
         msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);

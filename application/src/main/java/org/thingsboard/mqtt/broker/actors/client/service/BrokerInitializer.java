@@ -55,6 +55,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource.MQTT_CLIENT;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -167,8 +169,10 @@ public class BrokerInitializer {
     private void removeSubscriptionIfSessionIsAbsent(Map<String, ClientSessionInfo> allClientSessions,
                                                      Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions) {
         for (SubscriptionsSourceKey sourceKey : new HashSet<>(allClientSubscriptions.keySet())) {
-            if (!allClientSessions.containsKey(sourceKey.getId())) {
-                allClientSubscriptions.remove(sourceKey);
+            if (MQTT_CLIENT.equals(sourceKey.getSource())) {
+                if (!allClientSessions.containsKey(sourceKey.getId())) {
+                    allClientSubscriptions.remove(sourceKey);
+                }
             }
         }
     }

@@ -45,6 +45,7 @@ export enum MenuId {
   kafka_consumer_groups = 'kafka_consumer_groups',
   kafka_brokers = 'kafka_brokers',
   monitoring = 'monitoring',
+  integrations = 'integrations',
   users = 'users',
   mail_server = 'mail_server',
   system_settings = 'system_settings',

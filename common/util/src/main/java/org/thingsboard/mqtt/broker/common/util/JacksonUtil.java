@@ -132,4 +132,12 @@ public class JacksonUtil {
             throw new IllegalArgumentException("Invalid request payload", e);
         }
     }
+
+    public static JsonNode fromBytes(byte[] bytes) {
+        try {
+            return OBJECT_MAPPER.readTree(bytes);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("The given byte[] value cannot be transformed to Json object: " + Arrays.toString(bytes), e);
+        }
+    }
 }
