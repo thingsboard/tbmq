@@ -29,6 +29,7 @@ import { HomeOverviewRoutingModule } from '@home/pages/home-overview/home-overvi
 import { GettingStartedRoutingModule } from '@home/pages/getting-started/getting-started-routing.module';
 import { KafkaManagementRoutingModule } from '@home/pages/kafka-management/kafka-management-routing.module';
 import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routing.module';
+import { IntegrationRoutingModule } from "@home/pages/integration/integration-routing.module";
 
 @NgModule({
   exports: [
@@ -45,7 +46,8 @@ import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routi
     WsClientRoutingModule,
     AccountRoutingModule,
     GettingStartedRoutingModule,
-    MonitoringRoutingModule
+    MonitoringRoutingModule,
+    IntegrationRoutingModule,
   ]
 })
 export class HomePagesRoutingModule {

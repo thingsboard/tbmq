@@ -194,11 +194,13 @@
                 <mat-header-cell [class.mat-number-cell]="column.isNumberColumn"
                                  *matHeaderCellDef [style]="headerCellStyle(column)" mat-sort-header [disabled]="!column.sortable">
                 {{ column.ignoreTranslate ? column.title : (column.title | translate) }} </mat-header-cell>
-                <mat-cell class="mat-cell" [class.mat-number-cell]="column.isNumberColumn"
-                  *matCellDef="let entity; let row = index"
-                  [matTooltip]="cellTooltip(entity, column, row)"
-                  matTooltipPosition="above"
-                  [style]="cellStyle(entity, column, row)">
+                <mat-cell class="mat-cell"
+                          [class.wrap]="column.key === 'createdTime'"
+                          [class.mat-number-cell]="column.isNumberColumn"
+                          *matCellDef="let entity; let row = index"
+                          [matTooltip]="cellTooltip(entity, column, row)"
+                          matTooltipPosition="above"
+                          [style]="cellStyle(entity, column, row)">
                   <div class="flex flex-row" style="align-items: center;">
                     <span [innerHTML]="cellContent(entity, column, row)"></span>
                     @if (column.actionCell) {
@@ -267,7 +269,9 @@
                     matTooltip="{{ column.actionDescriptor.nameFunction ? column.actionDescriptor.nameFunction(entity) : column.actionDescriptor.name }}"
                     matTooltipPosition="above"
                     (click)="column.actionDescriptor.onAction($event, entity)">
-                    <tb-icon [style]="column.actionDescriptor.style">{{column.actionDescriptor}}</tb-icon>
+                    <tb-icon [style]="column.actionDescriptor.style">
+                      {{column.actionDescriptor.iconFunction ? column.actionDescriptor.iconFunction(entity) : column.actionDescriptor.icon}}
+                    </tb-icon>
                   </button>
                 </mat-cell>
               </ng-container>
@@ -292,7 +296,7 @@
                       matTooltip="{{ actionDescriptor.nameFunction ? actionDescriptor.nameFunction(entity) : actionDescriptor.name }}"
                       matTooltipPosition="above"
                       (click)="actionDescriptor.onAction($event, entity)">
-                      <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.icon}}</tb-icon>
+                      <tb-icon [style]="actionDescriptor.style">{{actionDescriptor.iconFunction ? actionDescriptor.iconFunction(entity) : actionDescriptor.icon}}</tb-icon>
                     </button>
                   }
                 </div>

@@ -17,4 +17,5 @@
 export interface BaseData {
   id?: string;
   createdTime?: number;
+  name?: string;
 }
