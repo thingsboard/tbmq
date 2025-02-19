@@ -281,7 +281,7 @@ pre.tb-highlight {
   letter-spacing: normal;
 }
 
-.tb-timewindow-panel, .tb-legend-config-panel, .tb-filter-panel {
+.tb-timewindow-panel, .tb-legend-config-panel, .tb-filter-panel, .tb-panel-container {
   overflow: hidden;
   background: #fff;
   border-radius: 4px;
@@ -1363,6 +1363,21 @@ pre.tb-highlight {
 
 .home-page-material-icons {
   color: rgba(0,0,0,0.54) !important;
+}
+
+.security-setting {
+  box-shadow: none;
+  border: 1px groove rgba(0, 0, 0, .25);
+  border-radius: 4px;
+  margin-bottom: 8px;
+
+  p {
+    font-size: 16px;
+    margin: 0;
+    display: block;
+    font-weight: 500;
+    color: rgba(0,0,0,0.87);
+  }
 }
 
 /***************
