@@ -50,7 +50,7 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
                 .builder()
                 .entityId(lifecycleMsg.getIntegrationId())
                 .serviceId(context.getServiceId())
-                .method("OnMsgProcess")
+                .method("onMsgProcess")
                 .error(throwable == null ? "Unspecified server error" : throwable.getMessage())
                 .build();
     }

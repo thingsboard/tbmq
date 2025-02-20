@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.AnonymousCredentials;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
 
@@ -39,9 +40,11 @@ public class HttpIntegrationConfig {
     private int maxParallelRequestsCount;
     private ClientCredentials credentials;
     private int maxInMemoryBufferSizeInKb;
+    private ContentType payloadContentType;
+    private boolean sendBinaryOnParseFailure;
 
     public HttpIntegrationConfig(String restEndpointUrl) {
-        this(restEndpointUrl, "POST", Map.of("Content-Type", "application/json"), 0, 0, null, 256);
+        this(restEndpointUrl, "POST", Map.of("Content-Type", "application/json"), 0, 0, null, 256, ContentType.BINARY, true);
     }
 
     public ClientCredentials getCredentials() {

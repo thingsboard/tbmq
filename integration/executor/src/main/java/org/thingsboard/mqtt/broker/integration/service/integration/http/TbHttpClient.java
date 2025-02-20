@@ -166,7 +166,7 @@ public class TbHttpClient {
 
             if ((HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method) ||
                     HttpMethod.PATCH.equals(method))) {
-                request.body(BodyInserters.fromValue(getData(msg)));
+                request.body(BodyInserters.fromValue(constructBody(msg)));
             }
 
             processRequest(request, callback);
@@ -198,19 +198,27 @@ public class TbHttpClient {
         return uri;
     }
 
-    private Object getData(PublishIntegrationMsgProto msg) {
+    private Object constructBody(PublishIntegrationMsgProto msg) {
         ObjectNode request = JacksonUtil.newObjectNode();
 
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
         try {
-            String payloadStr = publishMsgProto.getPayload().toStringUtf8();
-            request.put("payload", payloadStr);
-        } catch (Exception ignored) {
+            switch (config.getPayloadContentType()) {
+                case JSON -> request.set("payload", JacksonUtil.fromBytes(publishMsgProto.getPayload().toByteArray()));
+                case TEXT -> request.put("payload", publishMsgProto.getPayload().toStringUtf8());
+                case BINARY -> request.put("payload", publishMsgProto.getPayload().toByteArray());
+            }
+        } catch (Exception e) {
+            if (config.isSendBinaryOnParseFailure()) {
+                log.warn("Failed to parse msg payload to {}: {}", config.getPayloadContentType(), msg, e);
+                request.put("payload", publishMsgProto.getPayload().toByteArray());
+            } else {
+                throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType());
+            }
         }
 
         request.put("topicName", publishMsgProto.getTopicName());
         request.put("clientId", publishMsgProto.getClientId());
-        request.put("payloadBytes", publishMsgProto.getPayload().toByteArray());
         request.put("eventType", "PUBLISH_MSG");
         request.put("qos", publishMsgProto.getQos());
         request.put("retain", publishMsgProto.getRetain());
