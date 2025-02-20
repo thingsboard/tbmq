@@ -212,12 +212,14 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
           new EntityTableColumn<Event>('messagesProcessed', 'event.messages-processed', '50%',
             (entity) => entity.body.messagesProcessed + '',
             () => ({}),
-            false
+            false,
+            () => ({}), () => undefined, true
           ),
           new EntityTableColumn<Event>('errorsOccurred', 'event.errors-occurred', '50%',
             (entity) => entity.body.errorsOccurred + '',
             () => ({}),
-            false
+            false,
+            () => ({}), () => undefined, true
           )
         );
         break;

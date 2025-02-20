@@ -66,7 +66,6 @@ export class EventFilterPanelComponent {
 
   private msgDirectionTypes = ['IN', 'OUT'];
   private statusTypes = ['Success', 'Failure'];
-  private msgTypes = ['Uplink', 'Downlink'];
   private entityTypes = Object.keys(EntityType);
 
   showColumns: FilterEntityColumn[] = [];
@@ -90,7 +89,7 @@ export class EventFilterPanelComponent {
   }
 
   isSelector(key: string): string {
-    return ['msgDirectionType', 'status', 'type', 'entityName'].includes(key) ? key : '';
+    return ['msgDirectionType', 'status', 'entityName'].includes(key) ? key : '';
   }
 
   isNumberFields(key: string): string {
@@ -103,8 +102,6 @@ export class EventFilterPanelComponent {
         return this.msgDirectionTypes;
       case 'status':
         return this.statusTypes;
-      case 'type':
-        return this.msgTypes;
       case 'entityName':
         return this.entityTypes;
     }

@@ -39,7 +39,7 @@
       <div class="tb-entity-table-content tb-outlined-border flex flex-col">
         <mat-toolbar class="mat-mdc-table-toolbar" [class.!hidden]="!(!textSearchMode && dataSource.selection.isEmpty())">
           <div class="mat-toolbar-tools">
-            <div class="title-container flex flex-row items-center xs:flex-col xs:justify-center">
+            <div class="title-container flex flex-row items-center justify-start xs:flex-col xs:items-start xs:justify-center">
               @if (entitiesTableConfig().tableTitle) {
                 <span class="tb-entity-table-title">{{ entitiesTableConfig().tableTitle }}</span>
               }
@@ -100,7 +100,7 @@
                         [disabled]="isLoading$ | async"
                         [class.!hidden]="!actionDescriptor.isEnabled()"
                         (click)="actionDescriptor.onAction($event)">
-                        <mat-icon>{{actionDescriptor.icon}}</mat-icon>
+                        <tb-icon matMenuItemIcon>{{actionDescriptor.icon}}</tb-icon>
                         <span>{{ actionDescriptor.name }}</span>
                       </button>
                     }
@@ -158,7 +158,7 @@
               <span class="tb-entity-table-info">
                 {{ translations.selectedEntities | translate:{count: dataSource.selection.selected.length} }}
               </span>
-              <span class="flex flex-1"></span>
+              <span class="flex-1"></span>
               @for (actionDescriptor of groupActionDescriptors; track actionDescriptor) {
                 <button mat-icon-button [disabled]="isLoading$ | async"
                   [class.!hidden]="!actionDescriptor.isEnabled"
@@ -201,35 +201,33 @@
                           [matTooltip]="cellTooltip(entity, column, row)"
                           matTooltipPosition="above"
                           [style]="cellStyle(entity, column, row)">
-                  <div class="flex flex-row" style="align-items: center;">
-                    <span [innerHTML]="cellContent(entity, column, row)"></span>
-                    @if (column.actionCell) {
-                      @switch (column.actionCell.type) {
-                        @case (cellActionType.COPY_BUTTON) {
-                          <tb-copy-button
-                            class="mat-cell-copy"
-                            [buttonClass]="{'tb-mat-32': true}"
-                            [disabled]="isLoading$ | async"
-                            [class.!hidden]="!column.actionCell.isEnabled(entity)"
-                            [copyText]="column.actionCell.onAction(null, entity)"
-                            tooltipText="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
-                            tooltipPosition="above"
-                            [icon]="column.actionCell.icon"
-                            [style]="{padding: '4px', 'font-size': '16px', color: 'rgba(0,0,0,.87)'}">
-                          </tb-copy-button>
-                        }
-                        @default {
-                          <button mat-icon-button [disabled]="isLoading$ | async"
-                            [class.!hidden]="!column.actionCell.isEnabled(entity)"
-                            matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
-                            matTooltipPosition="above"
-                            (click)="column.actionCell.onAction($event, entity)">
-                            <tb-icon [style]="column.actionCell.style">{{column.actionCell}}</tb-icon>
-                          </button>
-                        }
+                  <span [innerHTML]="cellContent(entity, column, row)"></span>
+                  @if (column.actionCell) {
+                    @switch (column.actionCell.type) {
+                      @case (cellActionType.COPY_BUTTON) {
+                        <tb-copy-button
+                          class="mat-cell-copy"
+                          [buttonClass]="{'tb-mat-32': true}"
+                          [disabled]="isLoading$ | async"
+                          [class.!hidden]="!column.actionCell.isEnabled(entity)"
+                          [copyText]="column.actionCell.onAction(null, entity)"
+                          tooltipText="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
+                          tooltipPosition="above"
+                          [icon]="column.actionCell.icon"
+                          [style]="{padding: '4px', 'font-size': '16px', color: 'rgba(0,0,0,.87)'}">
+                        </tb-copy-button>
+                      }
+                      @default {
+                        <button mat-icon-button [disabled]="isLoading$ | async"
+                          [class.!hidden]="!column.actionCell.isEnabled(entity)"
+                          matTooltip="{{ column.actionCell.nameFunction ? column.actionCell.nameFunction(entity) : column.actionCell.name }}"
+                          matTooltipPosition="above"
+                          (click)="column.actionCell.onAction($event, entity)">
+                          <tb-icon [style]="column.actionCell.style">{{column.actionCell}}</tb-icon>
+                        </button>
                       }
                     }
-                  </div>
+                  }
                 </mat-cell>
               </ng-container>
             }
