@@ -82,8 +82,6 @@ public class TbIntegrationExecutorEventStorageService implements EventStorageSer
                 .setEventSourceIdLSB(entityId.getLeastSignificantBits());
 
         apiService.sendEventData(entityId, builder.build(), EMPTY_CALLBACK);
-
-        // Do we need to save time series data as well?
     }
 
     @Override
