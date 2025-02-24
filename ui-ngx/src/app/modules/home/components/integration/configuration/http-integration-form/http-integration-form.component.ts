@@ -34,7 +34,7 @@ import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import { IntegrationCredentialType } from '@shared/models/integration.models';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatOption, MatSelect } from '@angular/material/select';
 import {
@@ -52,6 +52,10 @@ import {
 } from '@angular/material/expansion';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatInput } from '@angular/material/input';
+import { MatSlideToggle } from "@angular/material/slide-toggle";
+import { ContentType, contentTypesMap } from "@shared/models/constants";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
 
 @Component({
   selector: 'tb-http-integration-form',
@@ -74,7 +78,11 @@ import { MatInput } from '@angular/material/input';
     NgTemplateOutlet,
     MatInput,
     MatError,
-    MatLabel
+    MatLabel,
+    MatHint,
+    MatSlideToggle,
+    MatIcon,
+    MatTooltip
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -96,6 +104,9 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
   httpRequestTypes = Object.keys(HttpRequestType);
   IntegrationCredentialType = IntegrationCredentialType;
   isNew: boolean;
+  contentTypes = Object.keys(ContentType);
+  contentTypeTranslation = (value: string) => contentTypesMap.get(value as ContentType).name;
+  isBinaryContentType = true;
 
   readonly MemoryBufferSizeInKbLimit = 25000;
   private propagateChangePending = false;
@@ -126,6 +137,8 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
         readTimeoutMs: [0, []],
         maxParallelRequestsCount: [0, []],
         maxInMemoryBufferSizeInKb: [256, [Validators.min(1), Validators.max(this.MemoryBufferSizeInKbLimit)]],
+        payloadContentType: [ContentType.BINARY, []],
+        sendBinaryOnParseFailure: [true, []],
       })
     });
     this.clientConfigurationFormGroup.get('restEndpointUrl').valueChanges.pipe(
@@ -136,6 +149,8 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
     ).subscribe(() => {
       this.updateModels(this.baseHttpIntegrationConfigForm.getRawValue());
     });
+    this.clientConfigurationFormGroup.get('payloadContentType')
+      .valueChanges.subscribe(value => this.isBinaryContentType = value === ContentType.BINARY);
   }
 
   writeValue(value: HttpIntegration) {

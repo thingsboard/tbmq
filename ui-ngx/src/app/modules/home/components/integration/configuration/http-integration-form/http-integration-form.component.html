@@ -75,6 +75,28 @@
       </mat-expansion-panel-header>
       <ng-template matExpansionPanelContent>
         <section class=" flex flex-col gap-3">
+          <mat-form-field class="flex flex-1" appearance="outline">
+            <mat-label translate>integration.select-content-type</mat-label>
+            <mat-select formControlName="payloadContentType">
+              @for (value of contentTypes; track value) {
+                <mat-option [value]="value">
+                  <span>{{ contentTypeTranslation(value) | translate }}</span>
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint [innerHtml]="'integration.select-content-type-hint' | translate"></mat-hint>
+          </mat-form-field>
+          @if (!isBinaryContentType) {
+            <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
+              <mat-slide-toggle formControlName="sendBinaryOnParseFailure">
+                <span translate>integration.send-binary-on-failure</span>
+              </mat-slide-toggle>
+              <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                        [matTooltip]="'integration.send-binary-on-failure-hint' | translate"
+                        matTooltipPosition="right">
+                info</mat-icon>
+            </section>
+          }
           <mat-form-field class="mat-block" subscriptSizing="dynamic" appearance="outline">
             <mat-label translate>integration.read-timeout</mat-label>
             <input type="number" step="1" min="0" matInput formControlName="readTimeoutMs">

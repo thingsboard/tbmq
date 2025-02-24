@@ -231,6 +231,11 @@
   "color": {
     "color": "Color"
   },
+  "content-type": {
+      "json": "JSON",
+      "text": "Text",
+      "binary": "Binary (Base64)"
+  },
   "details": {
     "details": "Details",
     "edit-mode": "Edit mode",
@@ -857,7 +862,11 @@
     "disable": "Disable integration",
     "inactive-subscription": "The integration subscription is inactive. Try to update or restart integration to sync subscriptions.",
     "restart-title": "Are you sure you want to restart the integration '{{name}}'?",
-    "restart-text": "After the confirmation the integration process will be reinitialized."
+    "restart-text": "After the confirmation the integration process will be reinitialized.",
+    "select-content-type": "Payload content type",
+    "select-content-type-hint": "Select how to format the payload content before sending",
+    "send-binary-on-failure": "Send as binary on parsing error",
+    "send-binary-on-failure-hint": "Enable this option to send the message with a binary payload if JSON or Text parsing fails. If disabled, the message will not be sent on parsing failure."
   },
   "language": {
     "language": "Language",
