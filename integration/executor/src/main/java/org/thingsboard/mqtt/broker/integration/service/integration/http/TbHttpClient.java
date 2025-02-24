@@ -217,7 +217,7 @@ public class TbHttpClient {
                         config.getPayloadContentType(), msg, e);
                 request.put("payload", publishMsgProto.getPayload().toByteArray());
             } else {
-                throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType());
+                throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType() + ": " + msg);
             }
         }
 
