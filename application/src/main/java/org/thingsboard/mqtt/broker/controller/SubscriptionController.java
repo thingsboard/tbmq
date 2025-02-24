@@ -144,6 +144,7 @@ public class SubscriptionController extends BaseController {
     @RequestMapping(value = "integration", params = {"integrationId"}, method = RequestMethod.GET)
     @ResponseBody
     public Set<String> getIntegrationSubscriptions(@RequestParam String integrationId) throws ThingsboardException {
-        return checkNotNull(clientSubscriptionCache.getIntegrationSubscriptions(toUUID(integrationId)));
+        toUUID(integrationId); // check if integrationId is UUID
+        return checkNotNull(clientSubscriptionCache.getIntegrationSubscriptions(integrationId));
     }
 }

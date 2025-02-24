@@ -13,21 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.api.stats;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.common.stats.StatsCounter;
+import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
+import java.util.UUID;
 
-public interface ClientSubscriptionCache {
+public interface IntegrationProcessorStats {
 
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
+    UUID getIntegrationUuid();
 
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
+    void log(int totalMsgCount, IntegrationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
 
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
+    List<StatsCounter> getStatsCounters();
 
-    Set<String> getIntegrationSubscriptions(String integrationId);
+    void reset();
+
+    boolean isActive();
+
+    void disable();
 }

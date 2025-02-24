@@ -13,21 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.api.callback;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+public interface IntegrationMsgCallback {
 
-import java.util.Map;
-import java.util.Set;
+    void onSuccess();
 
-public interface ClientSubscriptionCache {
-
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
-
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
-
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
-
-    Set<String> getIntegrationSubscriptions(String integrationId);
+    void onFailure(Throwable t);
 }

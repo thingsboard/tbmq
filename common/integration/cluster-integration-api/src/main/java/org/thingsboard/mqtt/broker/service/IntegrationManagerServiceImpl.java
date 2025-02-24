@@ -525,13 +525,16 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
         integrations.values().forEach(state -> {
             if (state.getLifecycleMsg() != null && state.getCurrentState() != null && ComponentLifecycleEvent.FAILED.equals(state.getCurrentState())) {
                 if (state.getUpdateLock().tryLock()) {
+                    boolean success = true;
                     try {
                         processUpdateEvent(state, state.getLifecycleMsg());
                     } catch (Exception e) {
                         log.warn("[{}] Failed to re-initialize the integration", state.getIntegrationId(), e);
+                        success = false;
                     } finally {
                         state.getUpdateLock().unlock();
                     }
+                    onIntegrationStateUpdate(state, ComponentLifecycleEvent.FAILED, success);
                 }
             }
         });

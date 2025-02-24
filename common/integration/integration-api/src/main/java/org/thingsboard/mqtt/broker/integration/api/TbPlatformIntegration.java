@@ -19,6 +19,9 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
+
+import java.util.UUID;
 
 public interface TbPlatformIntegration {
 
@@ -36,9 +39,11 @@ public interface TbPlatformIntegration {
 
     void destroyAndClearData();
 
-    void process(PublishIntegrationMsgProto msg);
+    void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback);
 
     IntegrationStatistics popStatistics();
 
     String getIntegrationId();
+
+    UUID getIntegrationUuid();
 }

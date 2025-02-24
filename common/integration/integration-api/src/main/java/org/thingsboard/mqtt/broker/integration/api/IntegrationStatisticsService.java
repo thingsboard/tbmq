@@ -18,8 +18,15 @@ package org.thingsboard.mqtt.broker.integration.api;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
+import org.thingsboard.mqtt.broker.integration.api.stats.IntegrationProcessorStats;
+
+import java.util.UUID;
 
 public interface IntegrationStatisticsService {
+
+    IntegrationProcessorStats createIntegrationProcessorStats(UUID integrationId);
+
+    void clearIntegrationProcessorStats(UUID integrationId);
 
     MessagesStats createIeUplinkPublishStats();
 

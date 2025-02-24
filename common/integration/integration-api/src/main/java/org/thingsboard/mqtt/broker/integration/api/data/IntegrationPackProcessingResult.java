@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.api.data;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import lombok.Getter;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
-public interface ClientSubscriptionCache {
+public class IntegrationPackProcessingResult {
 
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
+    @Getter
+    private final Map<UUID, PublishIntegrationMsgProto> pendingMap;
+    @Getter
+    private final Map<UUID, PublishIntegrationMsgProto> failedMap;
 
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
-
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
-
-    Set<String> getIntegrationSubscriptions(String integrationId);
+    public IntegrationPackProcessingResult(IntegrationPackProcessingContext ctx) {
+        this.pendingMap = new HashMap<>(ctx.getPendingMap());
+        this.failedMap = new HashMap<>(ctx.getFailedMap());
+    }
 }

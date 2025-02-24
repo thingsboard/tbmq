@@ -21,7 +21,7 @@ public interface IntegrationMsgProcessor {
 
     void startProcessingIntegrationMessages(TbPlatformIntegration integration);
 
-    void stopProcessingPersistedMessages(String integrationId);
+    void stopProcessingIntegrationMessages(String integrationId);
 
     void clearIntegrationMessages(String integrationId);
 

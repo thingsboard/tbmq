@@ -19,15 +19,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
+import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
 @Slf4j
 public abstract class AbstractHttpIntegration extends AbstractIntegration {
 
     @Override
-    public void process(PublishIntegrationMsgProto msg) {
-        var callback = createCallback();
+    public void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback integrationMsgCallback) {
+        var callback = createBasicCallback(integrationMsgCallback);
         try {
             doProcess(msg, callback);
         } catch (Exception e) {
@@ -36,12 +38,16 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
         }
     }
 
-    private BasicCallback createCallback() {
+    private BasicCallback createBasicCallback(IntegrationMsgCallback callback) {
         return CallbackUtil.createCallback(
-                () -> integrationStatistics.incMessagesProcessed(),
+                () -> {
+                    integrationStatistics.incMessagesProcessed();
+                    callback.onSuccess();
+                },
                 throwable -> {
                     integrationStatistics.incErrorsOccurred();
                     context.saveErrorEvent(getErrorEvent(throwable));
+                    callback.onFailure(throwable);
                 });
     }
 
@@ -51,8 +57,22 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
                 .entityId(lifecycleMsg.getIntegrationId())
                 .serviceId(context.getServiceId())
                 .method("onMsgProcess")
-                .error(throwable == null ? "Unspecified server error" : throwable.getMessage())
+                .error(getError(throwable))
                 .build();
+    }
+
+    private String getError(Throwable throwable) {
+        return throwable == null ? "Unspecified server error" : getRealErrorMsg(throwable);
+    }
+
+    private String getRealErrorMsg(Throwable throwable) {
+        if (StringUtils.isNotEmpty(throwable.getMessage())) {
+            return throwable.getMessage();
+        }
+        if (StringUtils.isNotEmpty(throwable.getCause().getMessage())) {
+            return throwable.getCause().getMessage();
+        }
+        return throwable.getCause().toString();
     }
 
     protected abstract void doProcess(PublishIntegrationMsgProto msg, BasicCallback callback) throws Exception;

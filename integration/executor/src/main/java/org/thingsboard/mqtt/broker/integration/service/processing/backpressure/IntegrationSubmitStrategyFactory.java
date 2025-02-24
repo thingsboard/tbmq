@@ -13,21 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.util;
+package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
-public class IntegrationUtil {
+@Component
+@Slf4j
+public class IntegrationSubmitStrategyFactory {
 
-    private static final String IE_MSG_TOPIC_PREFIX = "tbmq.msg.ie.";
-    private static final String IE_CONSUMER_GROUP_PREFIX = "ie-msg-consumer-group-";
-
-    public static String getIntegrationTopic(String integrationId) {
-        return IE_MSG_TOPIC_PREFIX + UUIDUtil.strUuidReplaceHyphen(integrationId);
-    }
-
-    public static String getIntegrationConsumerGroup(String integrationId) {
-        return IE_CONSUMER_GROUP_PREFIX + UUIDUtil.strUuidReplaceHyphen(integrationId);
+    public IntegrationSubmitStrategy newInstance(String integrationId) {
+        return new BurstIntegrationSubmitStrategy(integrationId);
     }
 
 }

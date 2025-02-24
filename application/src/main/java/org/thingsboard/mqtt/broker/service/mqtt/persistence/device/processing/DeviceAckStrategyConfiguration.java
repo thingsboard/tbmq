@@ -23,7 +23,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "queue.device-persisted-msg.ack-strategy")
 @Data
 public class DeviceAckStrategyConfiguration {
+
     private DeviceAckStrategyType type;
     private int retries;
     private int pauseBetweenRetries;
+
 }

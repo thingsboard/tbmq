@@ -277,12 +277,8 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     private boolean getClientIdOrElseGenerate(MqttConnectMessage connectMessage) {
         clientId = connectMessage.payload().clientIdentifier();
         boolean generated = StringUtils.isEmpty(clientId);
-        clientId = generated ? generateClientId() : clientId;
+        clientId = generated ? UUIDUtil.randomUuid() : clientId;
         return generated;
-    }
-
-    private String generateClientId() {
-        return UUIDUtil.randomUuidToString();
     }
 
     private MqttVersion getMqttVersion(MqttConnectMessage connectMessage) {

@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
-import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -67,6 +66,6 @@ public class Integration extends BaseData {
 
     @JsonIgnore
     public String getIdStr() {
-        return UUIDUtil.uuidToString(getId());
+        return getId().toString();
     }
 }

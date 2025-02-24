@@ -21,6 +21,6 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 
 public interface IntegrationMsgQueuePublisher {
 
-    void sendMsg(String clientId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback);
+    void sendMsg(String integrationId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback);
 
 }

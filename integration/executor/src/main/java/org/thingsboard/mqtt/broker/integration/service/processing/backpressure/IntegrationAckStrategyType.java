@@ -13,21 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+public enum IntegrationAckStrategyType {
 
-import java.util.Map;
-import java.util.Set;
+    SKIP_ALL,
+    RETRY_ALL,
+    ;
 
-public interface ClientSubscriptionCache {
-
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
-
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
-
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
-
-    Set<String> getIntegrationSubscriptions(String integrationId);
 }

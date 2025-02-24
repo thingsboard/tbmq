@@ -54,4 +54,8 @@ public class HttpIntegrationConfig {
     public Map<String, String> getHeaders() {
         return CollectionUtils.isEmpty(headers) ? Map.of() : headers;
     }
+
+    public ContentType getPayloadContentType() {
+        return Objects.requireNonNullElse(payloadContentType, ContentType.BINARY);
+    }
 }

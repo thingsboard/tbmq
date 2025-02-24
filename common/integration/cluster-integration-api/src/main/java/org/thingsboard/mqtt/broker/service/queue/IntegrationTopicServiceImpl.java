@@ -36,7 +36,7 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
     @Override
     public String createTopic(String integrationId) {
         log.debug("[{}] Creating IE msg topic", integrationId);
-        String ieTopic = integrationHelperService.getIeTopic(integrationId);
+        String ieTopic = integrationHelperService.getIntegrationTopic(integrationId);
         queueAdmin.createTopic(ieTopic, integrationMsgQueueProvider.getTopicConfigs());
         return ieTopic;
     }
@@ -45,7 +45,7 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
     public void deleteTopic(String integrationId, BasicCallback callback) {
         log.debug("[{}] Deleting IE msg topic", integrationId);
         deleteConsumerGroup(integrationId);
-        String ieTopic = integrationHelperService.getIeTopic(integrationId);
+        String ieTopic = integrationHelperService.getIntegrationTopic(integrationId);
         queueAdmin.deleteTopic(ieTopic, callback);
     }
 
@@ -63,7 +63,7 @@ public class IntegrationTopicServiceImpl implements IntegrationTopicService {
 
     @Override
     public String getConsumerGroup(String integrationId) {
-        return integrationHelperService.getIeConsumerGroup(integrationId);
+        return integrationHelperService.getIntegrationConsumerGroup(integrationId);
     }
 
 }

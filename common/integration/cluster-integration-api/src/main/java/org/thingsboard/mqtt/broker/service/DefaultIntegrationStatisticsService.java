@@ -33,15 +33,20 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationStatisticsKey;
 import org.thingsboard.mqtt.broker.integration.api.data.IntegrationStatisticsMetricName;
+import org.thingsboard.mqtt.broker.integration.api.stats.IntegrationProcessorStats;
+import org.thingsboard.mqtt.broker.integration.api.stats.IntegrationProcessorStatsImpl;
 import org.thingsboard.mqtt.broker.queue.TbmqOrIntegrationExecutorComponent;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,6 +58,7 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     private static final String STATS_KEY_COUNTER = StatsType.INTEGRATION.getPrintName() + "_stats_counter";
     private static final String STATS_KEY_GAUGE = StatsType.INTEGRATION.getPrintName() + "_stats_gauge";
 
+    private final Map<UUID, IntegrationProcessorStats> managedIntegrationProcessorStats = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, DefaultCounter> counters = new ConcurrentHashMap<>();
     private final Map<IntegrationStatisticsKey, AtomicLong> gauges = new ConcurrentHashMap<>();
     private final List<MessagesStats> managedStats = new CopyOnWriteArrayList<>();
@@ -77,6 +83,23 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
     }
 
     @Override
+    public IntegrationProcessorStats createIntegrationProcessorStats(UUID integrationId) {
+        log.trace("Creating IntegrationProcessorStats, integrationId - {}", integrationId);
+        IntegrationProcessorStats stats = new IntegrationProcessorStatsImpl(integrationId, statsFactory);
+        managedIntegrationProcessorStats.put(integrationId, stats);
+        return stats;
+    }
+
+    @Override
+    public void clearIntegrationProcessorStats(UUID integrationId) {
+        log.trace("Clearing IntegrationProcessorStats, integrationId - {}", integrationId);
+        IntegrationProcessorStats stats = managedIntegrationProcessorStats.get(integrationId);
+        if (stats != null && stats.isActive()) {
+            stats.disable();
+        }
+    }
+
+    @Override
     public MessagesStats createIeUplinkPublishStats() {
         log.trace("Creating IeUplinkPublishStats");
         MessagesStats stats = statsFactory.createMessagesStats(StatsType.IE_UPLINK_PRODUCER.getPrintName());
@@ -89,6 +112,8 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
         try {
             if (ComponentLifecycleEvent.STARTED.equals(state)) {
                 incrementCounter(new IntegrationStatisticsKey(IntegrationStatisticsMetricName.START, success, integrationType));
+            } else if (ComponentLifecycleEvent.STOPPED.equals(state)) {
+                incrementCounter(new IntegrationStatisticsKey(IntegrationStatisticsMetricName.STOP, success, integrationType));
             } else if (!success || ComponentLifecycleEvent.FAILED.equals(state)) {
                 incrementCounter(new IntegrationStatisticsKey(IntegrationStatisticsMetricName.START, false, integrationType));
             }
@@ -131,13 +156,13 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
         if (!counters.isEmpty()) {
             StringBuilder stats = new StringBuilder();
             counters.forEach((key, value) -> stats.append(key).append(" = [").append(value.get()).append("] "));
-            log.info("Integration Stats: {}", stats);
+            log.info("Current Period Integration Stats: {}", stats);
             reset();
         }
         if (!gauges.isEmpty()) {
             StringBuilder gaugeLogBuilder = new StringBuilder();
             gauges.forEach((key, value) -> gaugeLogBuilder.append(key).append(" = [").append(value.get()).append("] "));
-            log.info("Gauges Stats: {}", gaugeLogBuilder);
+            log.info("Integration Gauges Stats Summary: {}", gaugeLogBuilder);
         }
         for (MessagesStats stats : managedStats) {
             String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
@@ -146,6 +171,18 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
                     StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
             log.info("[{}] Integration Queue Stats: {}", stats.getName(), statsStr);
             stats.reset();
+        }
+        for (IntegrationProcessorStats stats : new ArrayList<>(managedIntegrationProcessorStats.values())) {
+            String msgStatsStr = stats.getStatsCounters().stream()
+                    .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                    .collect(Collectors.joining(" "));
+            log.info("[{}][{}] Integration Processing Stats: {}", StatsType.INTEGRATION_PROCESSOR.getPrintName(), stats.getIntegrationUuid(), msgStatsStr);
+            if (!stats.isActive()) {
+                log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
+                managedIntegrationProcessorStats.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
+            } else {
+                stats.reset();
+            }
         }
     }
 

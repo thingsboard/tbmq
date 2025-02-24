@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
 
-public interface ClientSubscriptionCache {
+@Data
+public class IntegrationProcessingDecision {
 
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
+    private final boolean commit;
+    private final Map<UUID, PublishIntegrationMsgProto> reprocessMap;
 
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
-
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
-
-    Set<String> getIntegrationSubscriptions(String integrationId);
 }

@@ -59,16 +59,16 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
     }
 
     @Override
-    public void sendMsg(String clientId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback) {
-        clientLogger.logEvent(clientId, this.getClass(), "Start waiting for IE msg to be persisted");
-        String ieQueueTopic = integrationHelperService.getIeTopic(clientId);
+    public void sendMsg(String integrationId, TbProtoQueueMsg<PublishIntegrationMsgProto> queueMsg, PublishMsgCallback callback) {
+        clientLogger.logEvent(integrationId, this.getClass(), "Start waiting for IE msg to be persisted");
+        String ieQueueTopic = integrationHelperService.getIntegrationTopic(integrationId);
         this.publisher.send(queueMsg,
                 new TbQueueCallback() {
                     @Override
                     public void onSuccess(TbQueueMsgMetadata metadata) {
-                        clientLogger.logEvent(clientId, this.getClass(), "Persisted msg in IE Queue");
+                        clientLogger.logEvent(integrationId, this.getClass(), "Persisted msg in IE Queue");
                         if (isTraceEnabled) {
-                            log.trace("[{}] Successfully sent publish msg to the ie queue.", clientId);
+                            log.trace("[{}] Successfully sent publish msg to the ie queue.", integrationId);
                         }
                         callback.onSuccess();
                     }
@@ -76,7 +76,7 @@ public class IntegrationMsgQueuePublisherImpl implements IntegrationMsgQueuePubl
                     @Override
                     public void onFailure(Throwable t) {
                         log.error("[{}] Failed to send publish msg to the ie queue for MQTT topic {}.",
-                                clientId, queueMsg.getValue().getPublishMsgProto().getTopicName(), t);
+                                integrationId, queueMsg.getValue().getPublishMsgProto().getTopicName(), t);
                         callback.onFailure(t);
                     }
                 },

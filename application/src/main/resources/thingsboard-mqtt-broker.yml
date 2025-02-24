@@ -529,7 +529,7 @@ queue:
       # Kafka topic properties separated by semicolon for `tbmq.msg.ie` topics
       topic-properties: "${TB_KAFKA_IE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.ie` topics
-      additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+      additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added

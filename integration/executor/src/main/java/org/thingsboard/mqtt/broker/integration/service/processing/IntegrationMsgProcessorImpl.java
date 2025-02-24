@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.processing;
 
+import com.google.common.collect.Maps;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -24,21 +25,36 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
+import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingContext;
+import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingResult;
+import org.thingsboard.mqtt.broker.integration.api.stats.IntegrationProcessorStats;
 import org.thingsboard.mqtt.broker.integration.service.data.IntegrationHolder;
+import org.thingsboard.mqtt.broker.integration.service.processing.backpressure.IntegrationAckStrategy;
+import org.thingsboard.mqtt.broker.integration.service.processing.backpressure.IntegrationAckStrategyFactory;
+import org.thingsboard.mqtt.broker.integration.service.processing.backpressure.IntegrationProcessingDecision;
+import org.thingsboard.mqtt.broker.integration.service.processing.backpressure.IntegrationSubmitStrategy;
+import org.thingsboard.mqtt.broker.integration.service.processing.backpressure.IntegrationSubmitStrategyFactory;
+import org.thingsboard.mqtt.broker.integration.service.processing.callback.BaseIntegrationMsgCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationMsgQueueProvider;
 import org.thingsboard.mqtt.broker.service.queue.IntegrationTopicService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static java.lang.Long.MAX_VALUE;
 
 @Service
 @Slf4j
@@ -49,6 +65,9 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private final IntegrationMsgQueueProvider integrationMsgQueueProvider;
     private final IntegrationTopicService integrationTopicService;
+    private final IntegrationAckStrategyFactory ackStrategyFactory;
+    private final IntegrationSubmitStrategyFactory submitStrategyFactory;
+    private final Optional<IntegrationStatisticsService> statsService;
 
     private volatile boolean stopped = false;
     private ExecutorService integrationMsgsConsumerExecutor;
@@ -56,6 +75,8 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     @Value("${queue.integration-msg.poll-interval:100}")
     private long pollDuration;
+    @Value("${queue.integration-msg.pack-processing-timeout:30000}")
+    private long packProcessingTimeout;
 
     @PostConstruct
     public void init() {
@@ -82,7 +103,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         String integrationId = integration.getIntegrationId();
 
         String integrationTopic = integrationTopicService.createTopic(integrationId);
-        log.debug("[{}] Starting ie messages processing.", integrationId);
+        log.debug("[{}] Starting integration messages processing", integrationId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer = initConsumer(integrationId, integrationTopic);
         IntegrationHolder integrationHolder = new IntegrationHolder(integration);
         Future<?> future = integrationMsgsConsumerExecutor.submit(() -> {
@@ -97,23 +118,24 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     }
 
     @Override
-    public void stopProcessingPersistedMessages(String integrationId) {
-        log.debug("[{}] Stopping ie messages processing.", integrationId);
+    public void stopProcessingIntegrationMessages(String integrationId) {
+        log.debug("[{}] Stopping integration messages processing", integrationId);
         IntegrationHolder integrationHolder = integrations.remove(integrationId);
         if (integrationHolder == null) {
             log.warn("[{}] Cannot find integration for integrationId", integrationId);
         } else {
             try {
                 stopIntegrationCancelTask(integrationHolder);
+                statsService.ifPresent(svc -> svc.clearIntegrationProcessorStats(integrationHolder.getIntegrationUuid()));
             } catch (Exception e) {
-                log.warn("[{}] Exception stopping future for client.", integrationId, e);
+                log.warn("[{}] Exception stopping future for integration", integrationId, e);
             }
         }
     }
 
     @Override
     public void clearIntegrationMessages(String integrationId) {
-        log.debug("[{}] Clearing consumer group and topic for IE", integrationId);
+        log.debug("[{}] Clearing consumer group and topic for integration", integrationId);
         taskExecutor.schedule(() -> {
             try {
                 integrationTopicService.deleteTopic(integrationId, CallbackUtil.createCallback(
@@ -121,7 +143,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
                         }, throwable -> {
                         }));
             } catch (Exception e) {
-                log.warn("[{}] Exception clearing consumer group and topic for IE", integrationId, e);
+                log.warn("[{}] Exception clearing consumer group and topic for integration", integrationId, e);
             }
         }, 10, TimeUnit.SECONDS);
     }
@@ -138,7 +160,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
             }
             return consumer;
         } catch (Exception e) {
-            log.error("[{}] Failed to init ie consumer", integrationId, e);
+            log.error("[{}] Failed to init integration consumer", integrationId, e);
             consumer.unsubscribeAndClose();
             throw e;
         }
@@ -154,19 +176,52 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     private void processMessages(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer,
                                  IntegrationHolder integrationHolder) {
+        final AtomicLong counter = new AtomicLong(0);
+
+        IntegrationProcessorStats stats = statsService
+                .map(svc -> svc.createIntegrationProcessorStats(integrationHolder.getIntegrationUuid()))
+                .orElse(null);
+
         while (isProcessorActive(integrationHolder)) {
             try {
                 List<TbProtoQueueMsg<PublishIntegrationMsgProto>> messages = consumer.poll(pollDuration);
                 if (messages.isEmpty()) {
                     continue;
                 }
-                //todo: add reprocessing logic
 
-                log.debug("[{}] Start sending the pack of messages {}", integrationHolder.getIntegrationId(), messages.size());
-                for (TbProtoQueueMsg<PublishIntegrationMsgProto> message : messages) {
-                    integrationHolder.getIntegration().process(message.getValue());
+                IntegrationAckStrategy ackStrategy = ackStrategyFactory.newInstance(integrationHolder.getIntegrationId());
+                IntegrationSubmitStrategy submitStrategy = submitStrategyFactory.newInstance(integrationHolder.getIntegrationId());
+
+                long packId = counter.incrementAndGet();
+                if (packId == MAX_VALUE) {
+                    counter.set(0);
                 }
-                consumer.commitSync();
+
+                var pendingMsgMap = toPendingMsgMap(messages, packId);
+                submitStrategy.init(pendingMsgMap);
+
+                while (isProcessorActive(integrationHolder)) {
+                    IntegrationPackProcessingContext ctx = new IntegrationPackProcessingContext(integrationHolder.getIntegrationId(), submitStrategy.getPendingMap());
+                    int totalMsgCount = pendingMsgMap.size();
+
+                    submitStrategy.process(entry -> integrationHolder.getIntegration().process(entry.getValue(), new BaseIntegrationMsgCallback(entry.getKey(), ctx)));
+
+                    if (isProcessorActive(integrationHolder)) {
+                        ctx.await(packProcessingTimeout, TimeUnit.MILLISECONDS);
+                    }
+                    IntegrationPackProcessingResult result = new IntegrationPackProcessingResult(ctx);
+                    ctx.cleanup();
+                    IntegrationProcessingDecision decision = ackStrategy.analyze(result);
+
+                    if (stats != null) stats.log(totalMsgCount, result, decision.isCommit());
+
+                    if (decision.isCommit()) {
+                        consumer.commitSync();
+                        break;
+                    } else {
+                        submitStrategy.update(decision.getReprocessMap());
+                    }
+                }
             } catch (Exception e) {
                 if (isProcessorActive(integrationHolder)) {
                     log.warn("[{}] Failed to process messages from queue.", integrationHolder.getIntegrationId(), e);
@@ -192,4 +247,13 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         integration.setStopped(true);
     }
 
+    private Map<UUID, PublishIntegrationMsgProto> toPendingMsgMap(List<TbProtoQueueMsg<PublishIntegrationMsgProto>> msgs, long packId) {
+        Map<UUID, PublishIntegrationMsgProto> map = Maps.newLinkedHashMapWithExpectedSize(msgs.size());
+        int i = 0;
+        for (var msg : msgs) {
+            UUID id = new UUID(packId, i++);
+            map.put(id, msg.getValue());
+        }
+        return map;
+    }
 }

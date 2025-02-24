@@ -29,6 +29,15 @@ queue:
   integration-msg:
     # Interval in milliseconds to poll messages from 'tbmq.msg.ie' topics
     poll-interval: "${TB_IE_MSG_POLL_INTERVAL:1000}"
+    # Timeout in milliseconds for processing the pack of messages
+    pack-processing-timeout: "${TB_IE_MSG_PACK_PROCESSING_TIMEOUT:30000}"
+    ack-strategy:
+      # Processing strategy for 'tbmq.msg.ie' topics. Can be: SKIP_ALL, RETRY_ALL
+      type: "${TB_IE_MSG_ACK_STRATEGY_TYPE:SKIP_ALL}"
+      # Number of retries, 0 is unlimited. Use for RETRY_ALL processing strategy
+      retries: "${TB_IE_MSG_ACK_STRATEGY_RETRIES:5}"
+      # Time in seconds to wait in consumer thread before retries
+      pause-between-retries: "${TB_IE_MSG_ACK_STRATEGY_PAUSE_BETWEEN_RETRIES:1}"
 
   kafka:
     # List of kafka bootstrap servers used to establish connection
@@ -106,7 +115,7 @@ queue:
       # Kafka topic properties separated by semicolon for `tbmq.msg.ie` topics
       topic-properties: "${TB_KAFKA_IE_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.ie` topics
-      additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+      additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
     # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
@@ -188,7 +197,7 @@ event:
     rate-limits:
       # If true rate limits will be active
       enabled: "${EVENT_ERROR_RATE_LIMITS_ENABLED:true}"
-      # No more than 50000 messages per hour for all integrations
-      integration: "${EVENT_ERROR_RATE_LIMITS_INTEGRATION:50000:3600}"
+      # No more than 5000 messages per hour or 100 messages per minute for all integrations
+      integration: "${EVENT_ERROR_RATE_LIMITS_INTEGRATION:5000:3600,100:60}"
       # Time (in minutes) to prevent duplicate persistence of rate limit events once the error event rate limit is reached
       ttl-minutes: "${EVENT_ERROR_RATE_LIMITS_TTL:60}"

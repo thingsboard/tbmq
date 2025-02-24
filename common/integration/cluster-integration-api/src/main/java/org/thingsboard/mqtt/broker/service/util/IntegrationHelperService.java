@@ -17,8 +17,8 @@ package org.thingsboard.mqtt.broker.service.util;
 
 public interface IntegrationHelperService {
 
-    String getIeTopic(String clientId);
+    String getIntegrationTopic(String integrationId);
 
-    String getIeConsumerGroup(String clientId);
+    String getIntegrationConsumerGroup(String integrationId);
 
 }

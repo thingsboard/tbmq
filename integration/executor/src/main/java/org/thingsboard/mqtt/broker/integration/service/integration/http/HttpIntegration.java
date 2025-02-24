@@ -21,7 +21,6 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
-import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
@@ -93,7 +92,7 @@ public class HttpIntegration extends AbstractHttpIntegration {
             log.debug("Integration was not initialized properly. Skip stopProcessingPersistedMessages");
             return;
         }
-        context.stopProcessingPersistedMessages(UUIDUtil.uuidToString(lifecycleMsg.getIntegrationId()));
+        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
     }
 
     private void clearIntegrationMessages() {
@@ -101,6 +100,6 @@ public class HttpIntegration extends AbstractHttpIntegration {
             log.debug("Integration was not initialized properly. Skip clearIntegrationMessages");
             return;
         }
-        context.clearIntegrationMessages(UUIDUtil.uuidToString(lifecycleMsg.getIntegrationId()));
+        context.clearIntegrationMessages(lifecycleMsg.getIntegrationId().toString());
     }
 }

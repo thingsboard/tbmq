@@ -22,16 +22,16 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.HYPHEN;
 
 public class UUIDUtil {
 
-    public static String uuidToString(UUID uuid) {
-        return toString(uuid);
+    public static String strUuidReplaceHyphen(String uuid) {
+        return uuidReplaceHyphen(uuid);
     }
 
-    public static String randomUuidToString() {
-        return toString(UUID.randomUUID());
+    public static String randomUuid() {
+        return uuidReplaceHyphen(UUID.randomUUID().toString());
     }
 
-    private static String toString(UUID uuid) {
-        return uuid.toString().replaceAll(HYPHEN, EMPTY_STR);
+    private static String uuidReplaceHyphen(String uuid) {
+        return uuid.replace(HYPHEN, EMPTY_STR);
     }
 
     public static UUID stringToUuid(String uuidStr) {

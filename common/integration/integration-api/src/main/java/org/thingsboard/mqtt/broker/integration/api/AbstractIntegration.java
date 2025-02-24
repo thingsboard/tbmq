@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
-import org.thingsboard.mqtt.broker.common.data.util.UUIDUtil;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
@@ -32,6 +31,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 
 @Slf4j
 public abstract class AbstractIntegration implements TbPlatformIntegration {
@@ -101,7 +101,12 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     @Override
     public String getIntegrationId() {
-        return UUIDUtil.uuidToString(lifecycleMsg.getIntegrationId());
+        return getIntegrationUuid().toString();
+    }
+
+    @Override
+    public UUID getIntegrationUuid() {
+        return lifecycleMsg.getIntegrationId();
     }
 
     protected <T> T getClientConfiguration(Integration configuration, Class<T> clazz) {

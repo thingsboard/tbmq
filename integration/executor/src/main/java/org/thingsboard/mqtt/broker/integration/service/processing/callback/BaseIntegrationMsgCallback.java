@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.integration;
+package org.thingsboard.mqtt.broker.integration.service.processing.callback;
 
-import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.EntitySessionInfo;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
+import org.thingsboard.mqtt.broker.integration.api.data.IntegrationPackProcessingContext;
 
 import java.util.UUID;
 
-@Data
-public class IntegrationSessionInfo implements EntitySessionInfo {
+@Slf4j
+@RequiredArgsConstructor
+public class BaseIntegrationMsgCallback implements IntegrationMsgCallback {
 
-    private final String integrationId;
-    private final String serviceId;
+    private final UUID id;
+    private final IntegrationPackProcessingContext ctx;
 
     @Override
-    public String getClientId() {
-        return integrationId;
+    public void onSuccess() {
+        ctx.onSuccess(id);
     }
 
     @Override
-    public ClientType getType() {
-        return ClientType.INTEGRATION;
-    }
-
-    @Override
-    public UUID getSessionId() {
-        return UUID.fromString(integrationId);
+    public void onFailure(Throwable t) {
+        ctx.onFailure(id);
     }
 }

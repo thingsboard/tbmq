@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.subscription;
+package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
-public interface ClientSubscriptionCache {
+public interface IntegrationSubmitStrategy {
 
-    Set<TopicSubscription> getClientSubscriptions(String clientId);
+    void init(Map<UUID, PublishIntegrationMsgProto> messages);
 
-    Set<TopicSharedSubscription> getClientSharedSubscriptions(String clientId);
+    ConcurrentMap<UUID, PublishIntegrationMsgProto> getPendingMap();
 
-    Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
+    void process(Consumer<Map.Entry<UUID, PublishIntegrationMsgProto>> msgConsumer);
 
-    Set<String> getIntegrationSubscriptions(String integrationId);
+    void update(Map<UUID, PublishIntegrationMsgProto> reprocessMap);
+
+    String getIntegrationId();
 }

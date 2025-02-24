@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
 
+import java.util.UUID;
 import java.util.concurrent.Future;
 
 @Data
@@ -31,5 +32,10 @@ public class IntegrationHolder {
     @JsonIgnore
     public String getIntegrationId() {
         return integration.getIntegrationId();
+    }
+
+    @JsonIgnore
+    public UUID getIntegrationUuid() {
+        return integration.getIntegrationUuid();
     }
 }

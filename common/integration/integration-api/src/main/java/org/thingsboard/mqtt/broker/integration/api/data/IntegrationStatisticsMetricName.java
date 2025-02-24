@@ -20,6 +20,7 @@ import lombok.Getter;
 public enum IntegrationStatisticsMetricName {
 
     START("start"),
+    STOP("stop"),
     MSGS_UPLINK("msgUplink"),
     MSGS_DOWNLINK("msgDownlink");
 

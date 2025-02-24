@@ -64,13 +64,13 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     }
 
     @Override
-    public void stopProcessingPersistedMessages(String id) {
-        integrationMsgProcessor.stopProcessingPersistedMessages(id);
+    public void stopProcessingPersistedMessages(String integrationId) {
+        integrationMsgProcessor.stopProcessingIntegrationMessages(integrationId);
     }
 
     @Override
-    public void clearIntegrationMessages(String id) {
-        integrationMsgProcessor.clearIntegrationMessages(id);
+    public void clearIntegrationMessages(String integrationId) {
+        integrationMsgProcessor.clearIntegrationMessages(integrationId);
     }
 
     @Override

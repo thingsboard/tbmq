@@ -13,26 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.util;
+package org.thingsboard.mqtt.broker.integration.service.processing.backpressure;
 
 import lombok.Data;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConfigurationProperties(prefix = "queue.integration-msg.ack-strategy")
 @Data
-public class IntegrationHelperServiceImpl implements IntegrationHelperService {
+public class IntegrationAckStrategyConfiguration {
 
-    @Value("${queue.kafka.kafka-prefix:}")
-    private String kafkaPrefix;
+    private IntegrationAckStrategyType type;
+    private int retries;
+    private int pauseBetweenRetries;
 
-    @Override
-    public String getIntegrationTopic(String integrationId) {
-        return kafkaPrefix + IntegrationUtil.getIntegrationTopic(integrationId);
-    }
-
-    @Override
-    public String getIntegrationConsumerGroup(String integrationId) {
-        return kafkaPrefix + IntegrationUtil.getIntegrationConsumerGroup(integrationId);
-    }
 }

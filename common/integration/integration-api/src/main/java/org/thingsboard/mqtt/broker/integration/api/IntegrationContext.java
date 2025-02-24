@@ -37,9 +37,9 @@ public interface IntegrationContext {
 
     void startProcessingIntegrationMessages(TbPlatformIntegration integration);
 
-    void stopProcessingPersistedMessages(String id);
+    void stopProcessingPersistedMessages(String integrationId);
 
-    void clearIntegrationMessages(String id);
+    void clearIntegrationMessages(String integrationId);
 
     void onUplinkMessageProcessed(boolean success);
 

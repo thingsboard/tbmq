@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -65,6 +67,7 @@ public class TbHttpClient {
     private static final String STATUS_CODE = "statusCode";
     private static final String STATUS_REASON = "statusReason";
     private static final String ERROR = "error";
+    private static final String CAUSE = "cause";
     private static final String ERROR_BODY = "error_body";
 
     private static final String MAX_IN_MEMORY_BUFFER_SIZE_IN_KB = "tb.ie.http.maxInMemoryBufferSizeInKb";
@@ -154,7 +157,7 @@ public class TbHttpClient {
     public void processMessage(PublishIntegrationMsgProto msg, BasicCallback callback) {
         try {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
-                log.warn("[{}][{}] Timeout during waiting for reply!", ctx.getLifecycleMsg().getIntegrationId(), ctx.getLifecycleMsg().getName());
+                log.warn("[{}][{}] Timeout during waiting for reply!", getId(), getName());
                 callback.onFailure(new RuntimeException("Timeout during waiting for reply!"));
             }
 
@@ -171,7 +174,7 @@ public class TbHttpClient {
 
             processRequest(request, callback);
         } catch (InterruptedException e) {
-            log.warn("[{}][{}] Interrupted while trying to acquire the lock", ctx.getLifecycleMsg().getIntegrationId(), ctx.getLifecycleMsg().getName(), e);
+            log.warn("[{}][{}] Interrupted while trying to acquire the lock", getId(), getName(), e);
             callback.onFailure(e);
         }
     }
@@ -210,7 +213,8 @@ public class TbHttpClient {
             }
         } catch (Exception e) {
             if (config.isSendBinaryOnParseFailure()) {
-                log.warn("Failed to parse msg payload to {}: {}", config.getPayloadContentType(), msg, e);
+                log.warn("[{}][{}] Failed to parse msg payload to {}: {}", getId(), getName(),
+                        config.getPayloadContentType(), msg, e);
                 request.put("payload", publishMsgProto.getPayload().toByteArray());
             } else {
                 throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType());
@@ -241,7 +245,7 @@ public class TbHttpClient {
         result.put(STATUS_CODE, response.getStatusCode().value() + "");
         result.put(STATUS_REASON, httpStatus.getReasonPhrase());
         headersToMetaData(response.getHeaders(), metadata::put);
-        log.debug("processResponse {}", result);
+        log.debug("[{}][{}] processResponse {}", getId(), getName(), result);
     }
 
     private ObjectNode processFailureResponse(ResponseEntity<String> response) {
@@ -255,7 +259,7 @@ public class TbHttpClient {
         result.put(STATUS_REASON, httpStatus.getReasonPhrase());
         result.put(ERROR_BODY, response.getBody());
         headersToMetaData(response.getHeaders(), metadata::put);
-        log.debug("processFailureResponse {}", result);
+        log.warn("[{}][{}] processFailureResponse {}", getId(), getName(), result);
         return result;
     }
 
@@ -266,8 +270,12 @@ public class TbHttpClient {
             result.put(STATUS, restClientResponseException.getStatusText());
             result.put(STATUS_CODE, restClientResponseException.getStatusCode().value() + "");
             result.put(ERROR_BODY, restClientResponseException.getResponseBodyAsString());
+        } else if (e.getCause() instanceof ReadTimeoutException) {
+            result.put(CAUSE, "ReadTimeoutException");
+            log.warn("[{}][{}] processException {}", getId(), getName(), result);
+            return;
         }
-        log.warn("processException {}", result, e);
+        log.warn("[{}][{}] processException {}", getId(), getName(), result, e);
     }
 
     void headersToMetaData(Map<String, List<String>> headers, BiConsumer<String, String> consumer) {
@@ -309,7 +317,7 @@ public class TbHttpClient {
 
             processRequest(request, ctx.getCallback());
         } catch (InterruptedException e) {
-            log.warn("[{}][{}] Interrupted while trying to acquire the lock on check connection", ctx.getLifecycleMsg().getIntegrationId(), ctx.getLifecycleMsg().getName(), e);
+            log.warn("[{}][{}] Interrupted while trying to acquire the lock on check connection", getId(), getName(), e);
             ctx.getCallback().onFailure(e);
         }
     }
@@ -340,4 +348,11 @@ public class TbHttpClient {
                 });
     }
 
+    private UUID getId() {
+        return ctx.getLifecycleMsg().getIntegrationId();
+    }
+
+    private String getName() {
+        return ctx.getLifecycleMsg().getName();
+    }
 }
