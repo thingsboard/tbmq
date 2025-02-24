@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.integration.service.api;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -45,9 +46,11 @@ class DefaultIntegrationRateLimitServiceTest {
     private DefaultIntegrationRateLimitService rateLimitServiceImpl;
     private UUID integrationId;
 
+    private AutoCloseable autoCloseable;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        autoCloseable = MockitoAnnotations.openMocks(this);
         rateLimitServiceImpl = new DefaultIntegrationRateLimitService(rateLimitService);
 
         // Set private field values for testing
@@ -56,6 +59,11 @@ class DefaultIntegrationRateLimitServiceTest {
         ReflectionTestUtils.setField(rateLimitServiceImpl, "deduplicationDurationMs", 60000L);
 
         integrationId = UUID.randomUUID();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        autoCloseable.close();
     }
 
     @Test
