@@ -20,7 +20,7 @@ import { QoS } from '@shared/models/session.model';
 export enum IntegrationType {
   HTTP = 'HTTP',
   // MQTT = 'MQTT',
-  // KAFKA = 'KAFKA',
+  KAFKA = 'KAFKA',
 }
 
 export interface IntegrationTypeInfo {
@@ -52,7 +52,7 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
         icon: 'assets/integration-icon/mqtt.svg',
         checkConnection: true
       }
-    ],
+    ],*/
     [
       IntegrationType.KAFKA,
       {
@@ -61,15 +61,15 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
         icon: 'assets/integration-icon/kafka.svg',
         hideDownlink: true
       }
-    ],*/
+    ],
   ]
 );
 
 const integrationHelpLinkMap = new Map<IntegrationType, string>(
   [
     [IntegrationType.HTTP, 'integrationHttp'],
-    /*[IntegrationType.MQTT, 'integrationMqtt'],
-    [IntegrationType.KAFKA, 'integrationKafka'],*/
+    /*[IntegrationType.MQTT, 'integrationMqtt'],*/
+    [IntegrationType.KAFKA, 'integrationKafka'],
   ]
 );
 

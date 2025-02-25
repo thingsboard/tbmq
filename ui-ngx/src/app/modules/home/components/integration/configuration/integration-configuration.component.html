@@ -31,13 +31,13 @@
                                 [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
                                 [allowLocalNetwork]="allowLocalNetwork()">
       </tb-mqtt-integration-form>
-    }
+    }-->
     @case (integrationTypes.KAFKA) {
-      <tb-mqtt-integration-form formControlName="configuration"
+      <tb-kafka-integration-form formControlName="configuration"
                                 [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
                                 [allowLocalNetwork]="allowLocalNetwork()">
-      </tb-mqtt-integration-form>
-    }-->
+      </tb-kafka-integration-form>
+    }
   @default {
     Not Found!!
   }

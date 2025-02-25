@@ -30,29 +30,38 @@ import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import { KafkaIntegration } from '@shared/models/integration.models';
 import { privateNetworkAddressValidator } from '@home/components/integration/integration.models';
-import { MatFormField } from '@angular/material/form-field';
+import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgTemplateOutlet } from '@angular/common';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatExpansionPanel, MatExpansionPanelContent, MatExpansionPanelDescription } from '@angular/material/expansion';
-import { HeaderFilterMapComponent } from '@shared/components/header-filter-map.component';
+import {
+  MatExpansionPanel,
+  MatExpansionPanelContent,
+  MatExpansionPanelDescription,
+  MatExpansionPanelHeader
+} from '@angular/material/expansion';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 
 @Component({
   selector: 'tb-kafka-integration-form',
   templateUrl: './kafka-integration-form.component.html',
-  styleUrls: [],
+  styleUrls: ['./kafka-integration-form.component.scss'],
   imports: [
     ReactiveFormsModule,
     MatFormField,
     MatInput,
-    MatSlideToggle,
+    MatLabel,
     TranslateModule,
     MatExpansionPanel,
+    MatExpansionPanelHeader,
     MatExpansionPanelDescription,
     MatExpansionPanelContent,
-    HeaderFilterMapComponent,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    MatSelect,
+    MatOption,
+    MatError,
+    KeyValMapComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -68,19 +77,28 @@ import { HeaderFilterMapComponent } from '@shared/components/header-filter-map.c
 export class KafkaIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator {
 
   kafkaIntegrationConfigForm: UntypedFormGroup;
+  ackValues: string[] = ['all', '-1', '0', '1'];
+  compressionValues: string[] = ['none', 'gzip', 'snappy', 'lz4', 'zstd'];
 
   private propagateChange = (v: any) => { };
 
   constructor(private fb: UntypedFormBuilder) {
     super();
     this.kafkaIntegrationConfigForm = this.fb.group({
-      groupId: ['', [Validators.required]],
-      clientId: ['', [Validators.required]],
-      topics: ['my-topic-output', [Validators.required]],
+      topic: ['tbmq', [Validators.required]],
+      key: [null, []],
       bootstrapServers: ['localhost:9092', [Validators.required]],
-      pollInterval: [5000, [Validators.required]],
-      autoCreateTopics: [false],
-      otherProperties: [null]
+      clientIdPrefix: [null, []],
+      retries: [0, [Validators.min(0)]],
+      batchSize: [16384, [Validators.min(0)]],
+      linger: [0, [Validators.min(0)]],
+      bufferMemory: [33554432, [Validators.min(0)]],
+      compression: ['none', [Validators.required]],
+      acks: ['-1', [Validators.required]],
+      keySerializer: ['org.apache.kafka.common.serialization.StringSerializer', [Validators.required]],
+      valueSerializer: ['org.apache.kafka.common.serialization.StringSerializer', [Validators.required]],
+      otherProperties: [null, []],
+      kafkaHeaders: [null, []],
     });
     this.kafkaIntegrationConfigForm.valueChanges.pipe(
       takeUntil(this.destroy$)

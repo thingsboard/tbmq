@@ -16,63 +16,31 @@
 
 -->
 <section [formGroup]="kafkaIntegrationConfigForm">
-  <div class="flex flex-col gt-sm:flex-row gt-sm:gap-2">
-    <mat-form-field class="mat-block flex-1">
-      <mat-label translate>integration.group-id</mat-label>
-      <input matInput formControlName="groupId" required>
-      @if (kafkaIntegrationConfigForm.get('groupId').hasError('required')) {
-        <mat-error translate>integration.group-id-required
-        </mat-error>
+  <div class="flex flex-col">
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.topic-name</mat-label>
+      <input matInput formControlName="topic">
+      @if (kafkaIntegrationConfigForm.get('topic').hasError('required')) {
+        <mat-error translate>integration.topic-name-required</mat-error>
       }
     </mat-form-field>
-    <mat-form-field class="mat-block flex-1">
-      <mat-label translate>integration.client-id</mat-label>
-      <input matInput formControlName="clientId" required>
-      @if (kafkaIntegrationConfigForm.get('clientId').hasError('required')) {
-        <mat-error translate>integration.client-id-required
-        </mat-error>
-      }
+    <mat-form-field class="mat-block" appearance="outline" subscriptSizing="dynamic">
+      <mat-label translate>integration.key</mat-label>
+      <input matInput formControlName="key">
     </mat-form-field>
-  </div>
-  <div class="flex flex-col gt-sm:flex-row gt-sm:gap-2">
-    <mat-form-field class="mat-block flex-1">
+    <div class="tb-hint" innerHTML="{{ 'integration.key-hint' | translate }}"></div>
+    <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.bootstrap-servers</mat-label>
       <input matInput formControlName="bootstrapServers" required>
       @if (kafkaIntegrationConfigForm.get('bootstrapServers').hasError('required')) {
-        <mat-error translate>
-          integration.bootstrap-servers-required
-        </mat-error>
-      }
-      @if (kafkaIntegrationConfigForm.get('bootstrapServers').hasError('privateNetwork')) {
-        <mat-error translate>
-          integration.host-private
-        </mat-error>
+        <mat-error>{{'integration.bootstrap-servers-required' | translate }}</mat-error>
       }
     </mat-form-field>
-    <mat-form-field class="mat-block flex-1">
-      <mat-label translate>integration.poll-interval</mat-label>
-      <input matInput type="number" required formControlName="pollInterval" step="1">
-      @if (kafkaIntegrationConfigForm.get('pollInterval').hasError('required')) {
-        <mat-error translate>
-        integration.poll-interval-required</mat-error>
-      }
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.client-id-prefix</mat-label>
+      <input matInput formControlName="clientIdPrefix">
     </mat-form-field>
   </div>
-  <mat-form-field class="mat-block">
-    <mat-label translate>integration.topics</mat-label>
-    <input matInput formControlName="topics" required>
-    @if (kafkaIntegrationConfigForm.get('topics').hasError('required')) {
-      <mat-error translate>integration.topics-required
-      </mat-error>
-    }
-  </mat-form-field>
-
-  <mat-slide-toggle class="checkbox" [aria-label]="'integration.enable-ssl' | translate"
-                    style="margin-bottom: 16px;"
-                    formControlName="autoCreateTopics">
-    {{ 'integration.auto-create-topics' | translate }}
-  </mat-slide-toggle>
-
   <mat-expansion-panel class="configuration-panel">
     <mat-expansion-panel-header>
       <mat-panel-description class="flex items-stretch justify-end" translate>
@@ -80,13 +48,88 @@
       </mat-panel-description>
     </mat-expansion-panel-header>
     <ng-template matExpansionPanelContent>
-      <fieldset class="fields-group">
-        <legend class="group-title" translate>integration.other-properties</legend>
-        <tb-header-filter-map formControlName="otherProperties" isStrokedButton="true"></tb-header-filter-map>
-      </fieldset>
-      <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate">
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.retries</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="retries">
+        @if (kafkaIntegrationConfigForm.get('retries').hasError('min')) {
+          <mat-error>{{ 'integration.min-retries-message' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.batch-size-bytes</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="batchSize">
+        @if (kafkaIntegrationConfigForm.get('batchSize').hasError('min')) {
+          <mat-error>{{ 'integration.min-batch-size-bytes-message' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.linger-ms</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="linger">
+        @if (kafkaIntegrationConfigForm.get('linger').hasError('min')) {
+          <mat-error>{{ 'integration.min-linger-ms-message' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.buffer-memory-bytes</mat-label>
+        <input type="number" step="1" min="0" matInput formControlName="bufferMemory">
+        @if (kafkaIntegrationConfigForm.get('bufferMemory').hasError('min')) {
+          <mat-error>{{ 'integration.min-buffer-memory-message' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.acks</mat-label>
+        <mat-select formControlName="acks" required>
+          @for (ackValue of ackValues; track ackValue) {
+            <mat-option [value]="ackValue">
+              {{ ackValue }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.compression</mat-label>
+        <mat-select formControlName="compression" required>
+          @for (value of compressionValues; track value) {
+            <mat-option [value]="value">
+              {{ value }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.key-serializer</mat-label>
+        <input required matInput formControlName="keySerializer">
+        @if (kafkaIntegrationConfigForm.get('keySerializer').hasError('required')) {
+          <mat-error>{{ 'integration.key-serializer-required' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.value-serializer</mat-label>
+        <input required matInput formControlName="valueSerializer">
+        @if (kafkaIntegrationConfigForm.get('valueSerializer').hasError('required')) {
+          <mat-error>{{ 'integration.value-serializer-required' | translate }}</mat-error>
+        }
+      </mat-form-field>
+      <section class="security-setting mat-padding">
+        <p translate>integration.other-properties</p>
+        <tb-key-val-map
+          class="security-setting-content"
+          isStrokedButton="true"
+          addText="integration.add-property"
+          noDataText="integration.no-properties"
+          formControlName="otherProperties">
+        </tb-key-val-map>
+      </section>
+      <section class="security-setting mat-padding">
+        <p translate>integration.kafka-headers</p>
+        <tb-key-val-map
+          class="security-setting-content"
+          isStrokedButton="true"
+          formControlName="kafkaHeaders">
+        </tb-key-val-map>
+      </section>
+      <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
       </ng-container>
     </ng-template>
   </mat-expansion-panel>
-
 </section>
