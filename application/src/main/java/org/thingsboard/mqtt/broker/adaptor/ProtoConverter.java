@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
@@ -63,6 +64,7 @@ import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -408,6 +410,9 @@ public class ProtoConverter {
         List<TopicSubscriptionProto> topicSubscriptionsProto = new ArrayList<>(topicSubscriptions.size());
         SubscriptionsSourceProto source = SubscriptionsSourceProto.MQTT_CLIENT;
         for (TopicSubscription topicSubscription : topicSubscriptions) {
+            if (topicSubscription instanceof IntegrationTopicSubscription) {
+                source = SubscriptionsSourceProto.INTEGRATION;
+            }
             topicSubscriptionsProto.add(topicSubscription.getShareName() == null ?
                     getTopicSubscriptionProto(topicSubscription) :
                     getTopicSubscriptionProtoWithShareName(topicSubscription));
@@ -459,13 +464,18 @@ public class ProtoConverter {
         SubscriptionsSource source = getSubscriptionsSource(clientSubscriptionsProto);
         Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(clientSubscriptionsProto.getSubscriptionsCount());
         for (TopicSubscriptionProto topicSubscriptionProto : clientSubscriptionsProto.getSubscriptionsList()) {
-            TopicSubscription subscription = ClientTopicSubscription.builder()
-                    .qos(topicSubscriptionProto.getQos())
-                    .topicFilter(topicSubscriptionProto.getTopic())
-                    .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
-                    .options(createSubscriptionOptions(topicSubscriptionProto))
-                    .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
-                    .build();
+            TopicSubscription subscription;
+            if (SubscriptionsSource.INTEGRATION.equals(source)) {
+                subscription = new IntegrationTopicSubscription(topicSubscriptionProto.getTopic());
+            } else {
+                subscription = ClientTopicSubscription.builder()
+                        .qos(topicSubscriptionProto.getQos())
+                        .topicFilter(topicSubscriptionProto.getTopic())
+                        .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
+                        .options(createSubscriptionOptions(topicSubscriptionProto))
+                        .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
+                        .build();
+            }
             subscriptions.add(subscription);
         }
         return new SourcedSubscriptions(source, subscriptions);

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.common.data;
 
 public interface BasicCallback {
+
     void onSuccess();
 
     void onFailure(Throwable t);

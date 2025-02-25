@@ -87,7 +87,7 @@ spec:
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "true"
             - name: TB_KAFKA_SERVERS
-              value: "kafka-headless:9092"
+              value: "kafka:9092"
           #            Uncomment the following lines to enable two-way MQTTS
           #            - name: LISTENER_SSL_ENABLED
           #              value: "true"

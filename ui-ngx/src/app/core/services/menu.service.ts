@@ -82,6 +82,13 @@ export class MenuService {
         icon: 'mdi:filter-outline'
       },
       {
+        id: MenuId.integrations,
+        name: 'integration.integrations',
+        type: 'link',
+        path: '/integrations',
+        icon: 'input'
+      },
+      {
         id: MenuId.client_credentials,
         name: 'mqtt-client-credentials.credentials',
         type: 'link',

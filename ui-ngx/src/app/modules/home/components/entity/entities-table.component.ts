@@ -26,7 +26,8 @@ import {
   OnInit,
   SimpleChanges,
   model,
-  viewChild
+  viewChild,
+  ViewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -127,10 +128,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
   isDetailsOpen = false;
   detailsPanelOpened = new EventEmitter<boolean>();
 
+  @ViewChild(MatPaginator) paginator: MatPaginator;
+  @ViewChild(MatSort) sort: MatSort;
   readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeader');
   readonly searchInputField = viewChild<ElementRef>('searchInput');
-  readonly paginator = viewChild(MatPaginator);
-  readonly sort = viewChild(MatSort);
 
   textSearch = this.fb.control('', {nonNullable: true});
 
@@ -263,7 +264,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
     ).subscribe(value => {
       this.pageLink.textSearch = isNotEmptyStr(value) ? value.trim() : null;
       if (this.displayPagination) {
-        this.paginator().pageIndex = 0;
+        this.paginator.pageIndex = 0;
       }
       this.updateData();
     });
@@ -282,10 +283,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      this.sortSubscription = this.sort().sortChange.subscribe(() => this.paginator().pageIndex = 0);
+      this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort().sortChange, this.paginator().page)
-      : this.sort().sortChange) as Observable<any>)
+    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort.sortChange, this.paginator.page)
+      : this.sort.sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
@@ -306,12 +307,12 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator().pageIndex;
-      this.pageLink.pageSize = this.paginator().pageSize;
+      this.pageLink.page = this.paginator.pageIndex;
+      this.pageLink.pageSize = this.paginator.pageSize;
     } else {
       this.pageLink.page = 0;
     }
-    const sort = this.sort();
+    const sort = this.sort;
     if (sort.active) {
       this.pageLink.sortOrder = {
         property: sort.active,
@@ -475,7 +476,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
 
   onTimewindowChange() {
     if (this.displayPagination) {
-      this.paginator().pageIndex = 0;
+      this.paginator.pageIndex = 0;
     }
     this.updateData();
   }
@@ -502,10 +503,10 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
       this.timewindow = entitiesTableConfig.defaultTimewindowInterval;
     }
     if (this.displayPagination) {
-      this.paginator().pageIndex = 0;
+      this.paginator.pageIndex = 0;
     }
-    const sortable = this.sort().sortables.get(entitiesTableConfig.defaultSortOrder.property);
-    const sort = this.sort();
+    const sortable = this.sort.sortables.get(entitiesTableConfig.defaultSortOrder.property);
+    const sort = this.sort;
     sort.active = sortable.id;
     sort.direction = entitiesTableConfig.defaultSortOrder.direction === Direction.ASC ? 'asc' : 'desc';
     if (update) {

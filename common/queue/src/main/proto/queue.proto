@@ -117,6 +117,7 @@ message ClientSubscriptionsProto {
 
 enum SubscriptionsSourceProto {
   MQTT_CLIENT = 0;
+  INTEGRATION = 1;
 }
 
 message DisconnectClientCommandProto {

@@ -53,7 +53,7 @@
         <button [disabled]="(isLoading$ | async) || theForm?.invalid || !theForm?.dirty"
           mat-fab
           matTooltip="{{ 'action.apply-changes' | translate }}"
-          matTooltipPosition="above"
+          matTooltipPosition="below"
           color="accent" class="tb-btn-header mat-fab-bottom-right"
           [class.tb-hide]="!isEdit"
           (click)="onApplyDetails()">
@@ -62,7 +62,7 @@
         <button [disabled]="(isLoading$ | async) || (isAlwaysEdit() && !theForm?.dirty)"
           mat-fab
           matTooltip="{{ (isAlwaysEdit() ? 'action.decline-changes' : (isEdit ? 'action.decline-changes' : 'details.toggle-edit-mode')) | translate }}"
-          matTooltipPosition="above"
+          matTooltipPosition="below"
           color="accent" class="tb-btn-header mat-fab-bottom-right"
           (click)="onToggleDetailsEditMode()">
           <mat-icon class="material-icons">{{isEdit ? 'close' : 'edit'}}</mat-icon>

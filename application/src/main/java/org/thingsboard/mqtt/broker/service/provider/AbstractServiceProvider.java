@@ -51,4 +51,8 @@ public abstract class AbstractServiceProvider {
         log.info("[{}] Could not find all service ids, proceeding with {} task!", serviceId, logMsg);
         return true;
     }
+
+    protected boolean isCurrentNodeShouldCleanUpEvents() {
+        return isThisNodeResponsibleForTask(getServiceId(), "events cleanup");
+    }
 }

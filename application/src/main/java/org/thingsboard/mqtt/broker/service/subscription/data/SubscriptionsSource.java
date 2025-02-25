@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.subscription.data;
 
 public enum SubscriptionsSource {
 
-    MQTT_CLIENT
+    MQTT_CLIENT,
+    INTEGRATION
 
 }

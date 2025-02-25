@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.processing.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.processing.MsgProcessingCallback;
@@ -38,6 +37,7 @@ public class PersistentMsgSubscriptions {
     private List<Subscription> deviceSubscriptions;
     private List<Subscription> applicationSubscriptions;
     private Set<Subscription> allApplicationSharedSubscriptions;
+    private List<Subscription> integrationSubscriptions;
 
     public PersistentMsgSubscriptions() {
         this.processSubscriptionsInParallel = false;
@@ -55,7 +55,8 @@ public class PersistentMsgSubscriptions {
     public boolean isNotEmpty() {
         return !CollectionUtils.isEmpty(deviceSubscriptions) ||
                 !CollectionUtils.isEmpty(applicationSubscriptions) ||
-                !CollectionUtils.isEmpty(allApplicationSharedSubscriptions);
+                !CollectionUtils.isEmpty(allApplicationSharedSubscriptions) ||
+                !CollectionUtils.isEmpty(integrationSubscriptions);
     }
 
     public void addToDevices(Subscription subscription, int size) {
@@ -72,6 +73,13 @@ public class PersistentMsgSubscriptions {
         applicationSubscriptions.add(subscription);
     }
 
+    public void addToIntegrations(Subscription subscription, int size) {
+        if (integrationSubscriptions == null) {
+            integrationSubscriptions = initArrayList(size);
+        }
+        integrationSubscriptions.add(subscription);
+    }
+
     private List<Subscription> initArrayList(int size) {
         return processSubscriptionsInParallel ? Collections.synchronizedList(new ArrayList<>(size)) : new ArrayList<>(size);
     }
@@ -81,9 +89,13 @@ public class PersistentMsgSubscriptions {
                                      MsgProcessingCallback callback) {
         if (isNonPersistentByPubQos(publishMsgProto)) {
             if (processSubscriptionsInParallel) {
-                subscriptions.parallelStream().forEach(callback::accept);
+                subscriptions.parallelStream().forEach(subscription -> {
+                    addToIntegrations(subscription, subscriptions.size());
+                    callback.accept(subscription);
+                });
             } else {
                 for (Subscription subscription : subscriptions) {
+                    addToIntegrations(subscription, subscriptions.size());
                     callback.accept(subscription);
                 }
             }
@@ -105,10 +117,10 @@ public class PersistentMsgSubscriptions {
 
     private void processSubscription(Subscription subscription, int size, MsgProcessingCallback callback) {
         if (isPersistentBySubInfo(subscription)) {
-            if (ClientType.APPLICATION == subscription.getClientSessionInfo().getType()) {
-                addToApplications(subscription, size);
-            } else {
-                addToDevices(subscription, size);
+            switch (subscription.getClientType()) {
+                case APPLICATION -> addToApplications(subscription, size);
+                case DEVICE -> addToDevices(subscription, size);
+                case INTEGRATION -> addToIntegrations(subscription, size);
             }
         } else {
             callback.accept(subscription);

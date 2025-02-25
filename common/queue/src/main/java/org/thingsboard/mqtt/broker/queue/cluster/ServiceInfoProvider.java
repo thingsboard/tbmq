@@ -15,11 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.queue.cluster;
 
+import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
+
+import java.util.List;
 
 public interface ServiceInfoProvider {
 
     String getServiceId();
 
     ServiceInfo getServiceInfo();
+
+    String getServiceType();
+
+    List<IntegrationType> getSupportedIntegrationTypes();
 }

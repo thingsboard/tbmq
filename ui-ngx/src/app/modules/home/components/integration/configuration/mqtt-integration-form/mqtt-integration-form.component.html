@@ -1,0 +1,122 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="mqttIntegrationConfigForm" class="flex flex-col">
+  <fieldset formGroupName="clientConfiguration">
+    <div class="flex flex-row xs:flex-col gt-xs:gap-2">
+      <mat-form-field class="mat-block flex-1" appearance="outline">
+        <mat-label translate>integration.host</mat-label>
+        <input matInput required formControlName="host">
+        @if (mqttIntegrationConfigForm.get('clientConfiguration.host').hasError('required')) {
+          <mat-error translate>
+            integration.host-required
+          </mat-error>
+        }
+        @if (mqttIntegrationConfigForm.get('clientConfiguration.host').hasError('privateNetwork')) {
+          <mat-error translate>
+            integration.host-private
+          </mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block flex-1" appearance="outline">
+        <mat-label translate>integration.port</mat-label>
+        <input matInput type="number" step="1" min="1" max="65535" required formControlName="port">
+        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('required')) {
+          <mat-error translate>integration.port-required
+          </mat-error>
+        }
+        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('min')) {
+          <mat-error translate>integration.port-range</mat-error>
+        }
+        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('max')) {
+          <mat-error translate>integration.port-range</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <section class="flex flex-col gap-4">
+      <tb-http-topic-filters formControlName="topicFilters">
+      </tb-http-topic-filters>
+      <tb-integration-credentials formControlName="credentials" passwordOptional
+        [allowCredentialTypes]="[IntegrationCredentialType.Anonymous, IntegrationCredentialType.Basic, IntegrationCredentialType.CertPEM]">
+        <mat-slide-toggle class="checkbox" [aria-label]="'integration.enable-ssl' | translate" formControlName="ssl">
+          {{ 'integration.enable-ssl' | translate }}
+        </mat-slide-toggle>
+      </tb-integration-credentials>
+    </section>
+  </fieldset>
+  <mat-expansion-panel class="configuration-panel" formGroupName="clientConfiguration">
+    <mat-expansion-panel-header>
+      <mat-panel-description class="flex items-stretch justify-end" translate>
+        integration.advanced-settings
+      </mat-panel-description>
+    </mat-expansion-panel-header>
+    <ng-template matExpansionPanelContent>
+      <div class="row flex flex-col gap-2 mb-4">
+        <mat-slide-toggle class="checkbox" [aria-label]="'integration.clean-session' | translate"
+          formControlName="cleanSession">
+          {{ 'integration.clean-session' | translate }}
+        </mat-slide-toggle>
+        <mat-slide-toggle class="checkbox" [aria-label]="'integration.retained-message' | translate"
+          formControlName="retainedMessage">
+          {{ 'integration.retained-message' | translate }}
+        </mat-slide-toggle>
+      </div>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.client-id</mat-label>
+        <input matInput formControlName="clientId" autocomplete="new-clientId">
+      </mat-form-field>
+      <div class="tb-hint client-id" [class.invisible]="mqttIntegrationConfigForm.get('clientConfiguration.clientId').errors" translate>
+        integration.client-id-hint
+      </div>
+      <section class="row flex flex-row xs:flex-col gt-xs:gap-2">
+        <mat-form-field class="mat-block flex-1" appearance="outline">
+          <mat-label translate>integration.max-bytes-in-message</mat-label>
+          <input matInput type="number" formControlName="maxBytesInMessage">
+          @if (mqttIntegrationConfigForm.get('clientConfiguration.maxBytesInMessage').hasError('min')) {
+            <mat-error translate>
+              integration.max-bytes-in-message-range
+            </mat-error>
+          }
+          @if (mqttIntegrationConfigForm.get('clientConfiguration.maxBytesInMessage').hasError('max')) {
+            <mat-error translate>
+              integration.max-bytes-in-message-range
+            </mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block flex-1" appearance="outline">
+          <mat-label translate>integration.connect-timeout</mat-label>
+          <input matInput type="number" step="1" min="1" max="200" required formControlName="connectTimeoutSec">
+          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('required')) {
+            <mat-error translate>
+              integration.connect-timeout-required
+            </mat-error>
+          }
+          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('min')) {
+            <mat-error translate>integration.connect-timeout-range
+            </mat-error>
+          }
+          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('max')) {
+            <mat-error translate>integration.connect-timeout-range
+            </mat-error>
+          }
+        </mat-form-field>
+      </section>
+      <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
+      </ng-container>
+    </ng-template>
+  </mat-expansion-panel>
+</section>

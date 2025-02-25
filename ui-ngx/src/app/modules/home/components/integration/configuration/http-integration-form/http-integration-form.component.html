@@ -1,0 +1,134 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="baseHttpIntegrationConfigForm">
+  <section formGroupName="clientConfiguration">
+    @if (!isNew) {
+      <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
+    }
+    <mat-form-field class="mat-block flex-1" appearance="outline">
+      <mat-label translate>integration.endpoint-url</mat-label>
+      <input matInput formControlName="restEndpointUrl" required>
+      <tb-copy-button matSuffix
+                      [class.!hidden]="!baseHttpIntegrationConfigForm.get('clientConfiguration')?.get('restEndpointUrl')?.value?.length"
+                      [copyText]="baseHttpIntegrationConfigForm.get('clientConfiguration')?.get('restEndpointUrl')?.value">
+      </tb-copy-button>
+      @if (baseHttpIntegrationConfigForm.get('clientConfiguration').get('restEndpointUrl').hasError('required')) {
+        <mat-error translate>
+          integration.endpoint-url-required
+        </mat-error>
+      }
+      @if (baseHttpIntegrationConfigForm.get('clientConfiguration').get('restEndpointUrl').hasError('privateNetwork')) {
+        <mat-error translate>
+          integration.url-private
+        </mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field class="mat-block flex-1" appearance="outline">
+      <mat-label translate>integration.request-method</mat-label>
+      <mat-select formControlName="requestMethod">
+        @for (requestType of httpRequestTypes; track requestType) {
+          <mat-option [value]="requestType">
+            {{ requestType }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <section class="flex flex-col gap-4">
+      <tb-integration-credentials formControlName="credentials" [passwordOptional]="false"
+                                  [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
+                                                           IntegrationCredentialType.Basic,
+                                                           IntegrationCredentialType.CertPEM]">
+      </tb-integration-credentials>
+      <section class="security-setting mat-padding">
+        <p translate>integration.headers</p>
+        <tb-header-filter-map
+          class="security-setting-content"
+          noDataText="integration.no-headers-filter"
+          keyPlaceholderText="integration.header"
+          isStrokedButton="true"
+          formControlName="headers">
+        </tb-header-filter-map>
+      </section>
+    </section>
+    <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
+    </ng-container>
+    <mat-expansion-panel class="configuration-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-description class="flex items-stretch justify-end" translate>
+          integration.advanced-settings
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <section class=" flex flex-col gap-3">
+          <mat-form-field class="flex flex-1" appearance="outline">
+            <mat-label translate>integration.select-content-type</mat-label>
+            <mat-select formControlName="payloadContentType">
+              @for (value of contentTypes; track value) {
+                <mat-option [value]="value">
+                  <span>{{ contentTypeTranslation(value) | translate }}</span>
+                </mat-option>
+              }
+            </mat-select>
+            <mat-hint [innerHtml]="'integration.select-content-type-hint' | translate"></mat-hint>
+          </mat-form-field>
+          @if (!isBinaryContentType) {
+            <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
+              <mat-slide-toggle formControlName="sendBinaryOnParseFailure">
+                <span translate>integration.send-binary-on-failure</span>
+              </mat-slide-toggle>
+              <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                        [matTooltip]="'integration.send-binary-on-failure-hint' | translate"
+                        matTooltipPosition="right">
+                info</mat-icon>
+            </section>
+          }
+          <mat-form-field class="mat-block" subscriptSizing="dynamic" appearance="outline">
+            <mat-label translate>integration.read-timeout</mat-label>
+            <input type="number" step="1" min="0" matInput formControlName="readTimeoutMs">
+            <mat-hint translate>integration.read-timeout-hint</mat-hint>
+          </mat-form-field>
+          <mat-form-field class="mat-block" subscriptSizing="dynamic" appearance="outline">
+            <mat-label translate>integration.max-parallel-requests-count</mat-label>
+            <input type="number" step="1" min="0" matInput formControlName="maxParallelRequestsCount">
+            <mat-hint translate>integration.max-parallel-requests-count-hint</mat-hint>
+          </mat-form-field>
+          <mat-form-field class="mat-block" subscriptSizing="dynamic" appearance="outline">
+            <mat-label translate>integration.max-response-size</mat-label>
+            <input type="text" min="1" [max]="MemoryBufferSizeInKbLimit" inputmode="numeric" pattern="[0-9]*" matInput formControlName="maxInMemoryBufferSizeInKb">
+            <mat-hint translate>integration.max-response-size-hint</mat-hint>
+            @if (clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('min') ||
+            clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('max')) {
+              <mat-error>{{ 'integration.memory-buffer-size-range' | translate: { max: MemoryBufferSizeInKbLimit } }}</mat-error>
+            }
+          </mat-form-field>
+          <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
+          </ng-container>
+        </section>
+      </ng-template>
+    </mat-expansion-panel>
+  </section>
+  <ng-template #topicFilters>
+    <section class="mb-6" [formGroup]="baseHttpIntegrationConfigForm">
+      <section class="security-setting mat-padding">
+        <p translate>integration.topic-filters</p>
+        <tb-http-topic-filters [isEdit]="isEdit()" [integration]="integration()" formControlName="topicFilters">
+        </tb-http-topic-filters>
+      </section>
+    </section>
+  </ng-template>
+</section>

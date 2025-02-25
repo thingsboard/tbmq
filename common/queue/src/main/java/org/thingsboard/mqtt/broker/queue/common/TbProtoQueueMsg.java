@@ -19,6 +19,8 @@ import lombok.Data;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 
+import java.util.UUID;
+
 @Data
 public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> implements TbQueueMsg {
 
@@ -34,6 +36,10 @@ public class TbProtoQueueMsg<T extends com.google.protobuf.GeneratedMessageV3> i
 
     public TbProtoQueueMsg(T value, TbQueueMsgHeaders headers) {
         this(null, value, headers);
+    }
+
+    public TbProtoQueueMsg(UUID key, T value) {
+        this(key.toString(), value);
     }
 
     public TbProtoQueueMsg(String key, T value) {

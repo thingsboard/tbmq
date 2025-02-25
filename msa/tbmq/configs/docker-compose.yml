@@ -72,6 +72,11 @@ services:
       - "8083:8083"
       - "1883:1883"
       - "8084:8084"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       TB_SERVICE_ID: tbmq
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker
@@ -84,6 +89,23 @@ services:
     volumes:
       - tbmq-logs:/var/log/thingsboard-mqtt-broker
       - tbmq-data:/data
+  tbmq-integration-executor:
+    restart: always
+    image: "thingsboard/tbmq-integration-executor:2.0.1"
+    depends_on:
+      - kafka
+      - tbmq
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
+    environment:
+      TB_SERVICE_ID: tbmq-ie
+      TB_KAFKA_SERVERS: kafka:9092
+      #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
+    volumes:
+      - tbmq-ie-logs:/var/log/tbmq-integration-executor
 
 volumes:
   tbmq-postgres-data:
@@ -95,4 +117,6 @@ volumes:
   tbmq-logs:
     external: true
   tbmq-data:
+    external: true
+  tbmq-ie-logs:
     external: true

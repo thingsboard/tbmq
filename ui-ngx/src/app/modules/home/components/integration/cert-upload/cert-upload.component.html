@@ -1,0 +1,43 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div [formGroup]="form()">
+  <fieldset [disabled]="disabled()">
+    <tb-file-input [existingFileName]="form().get('caCertFileName')?.value"
+                   formControlName="caCert"
+                   [required]="!ignoreCaCert()"
+                   dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                   [label]="'integration.ca-cert' | translate"
+                   (fileNameChanged)="form()?.get('caCertFileName').patchValue($event)"
+                   inputId="ca-cert">
+    </tb-file-input>
+    <tb-file-input [existingFileName]="form().get('certFileName')?.value"
+                   formControlName="cert"
+                   dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                   [label]="'integration.cert' | translate"
+                   (fileNameChanged)="form()?.get('certFileName').patchValue($event)"
+                   inputId="cert">
+    </tb-file-input>
+    <tb-file-input [existingFileName]="form().get('privateKeyFileName')?.value"
+                   formControlName="privateKey"
+                   dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                   [label]="'integration.private-key' | translate"
+                   (fileNameChanged)="form()?.get('privateKeyFileName').patchValue($event)"
+                   inputId="private-key">
+    </tb-file-input>
+  </fieldset>
+</div>

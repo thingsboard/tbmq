@@ -163,6 +163,14 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
+    public void clearSubscriptionsAndPersist(String clientId) {
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Cleared subscriptions", clientId),
+                t -> log.warn("[{}] Failed to clear subscriptions", clientId, t));
+        clearSubscriptionsAndPersist(clientId, callback);
+    }
+
+    @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Clearing all subscriptions.", clientId);
@@ -202,6 +210,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
+    }
+
+    @Override
+    public Set<String> getIntegrationSubscriptions(String integrationId) {
+        Set<TopicSubscription> subscriptions = clientSubscriptionsMap.getOrDefault(integrationId, Collections.emptySet());
+        return subscriptions.stream().map(TopicSubscription::getTopicFilter).collect(Collectors.toSet());
     }
 
     @Override

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.Subscripti
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.integration.IntegrationSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
@@ -47,6 +48,7 @@ import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimer
 import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.data.EntitySubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
@@ -244,6 +246,16 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     }
 
     private Subscription convertToSubscription(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
+        if (EntitySubscriptionType.INTEGRATION.equals(clientSubscription.getValue().getType())) {
+            return new Subscription(
+                    clientSubscription.getTopicFilter(),
+                    clientSubscription.getValue().getQos(),
+                    getIntegrationSessionInfo(clientSubscription),
+                    clientSubscription.getValue().getShareName(),
+                    clientSubscription.getValue().getOptions(),
+                    clientSubscription.getValue().getSubscriptionId()
+            );
+        }
         String clientId = clientSubscription.getValue().getClientId();
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
@@ -257,6 +269,13 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getShareName(),
                 clientSubscription.getValue().getOptions(),
                 clientSubscription.getValue().getSubscriptionId());
+    }
+
+    private IntegrationSessionInfo getIntegrationSessionInfo(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
+        return new IntegrationSessionInfo(
+                clientSubscription.getValue().getClientId(),
+                downLinkProxy.getServiceInfoProvider().getServiceId()
+        );
     }
 
     private boolean isNoLocalOptionMet(ValueWithTopicFilter<EntitySubscription> clientSubscriptionWithTopicFilter,

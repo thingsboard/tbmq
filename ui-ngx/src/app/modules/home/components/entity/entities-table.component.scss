@@ -72,6 +72,10 @@
         white-space: nowrap;
       }
 
+      .mat-cell.wrap {
+        white-space: wrap;
+      }
+
       .mat-cell:hover .mat-cell-copy {
         visibility: visible;
       }

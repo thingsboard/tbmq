@@ -24,10 +24,12 @@
     <packaging>pom</packaging>
 
     <name>TBMQ</name>
-    <url>https://thingsboard.io</url>
+    <url>https://thingsboard.io/products/mqtt-broker/</url>
     <inceptionYear>2016</inceptionYear>
 
     <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <main.dir>${basedir}</main.dir>
         <pkg.disabled>true</pkg.disabled>
         <pkg.process-resources.phase>none</pkg.process-resources.phase>
@@ -37,6 +39,7 @@
         <pkg.unixLogFolder>/var/log/${pkg.name}</pkg.unixLogFolder>
         <pkg.installFolder>/usr/share/${pkg.name}</pkg.installFolder>
         <spring-boot.version>3.2.12</spring-boot.version>
+        <spring-data.version>3.2.12</spring-data.version>
         <spring.version>6.1.15</spring.version>
         <spring-security.version>6.2.8</spring-security.version>
         <jupiter.version>5.10.5
@@ -52,6 +55,7 @@
         <grpc.version>1.63.0</grpc.version>
         <lombok.version>1.18.32</lombok.version>
         <netty.version>4.1.115.Final</netty.version>
+        <reactor-netty.version>1.1.18</reactor-netty.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <dbunit.version>2.7.3</dbunit.version>
         <spring-test-dbunit.version>1.3.0</spring-test-dbunit.version>
@@ -63,7 +67,6 @@
         <jar-plugin.version>3.4.0</jar-plugin.version>
         <freemarker.version>2.3.32</freemarker.version>
         <mail.version>2.0.1</mail.version>
-        <snakeyaml.version>2.2</snakeyaml.version>
         <jakarta-annotation.version>3.0.0</jakarta-annotation.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <paho-client.version>1.2.5</paho-client.version>
@@ -94,6 +97,7 @@
     <modules>
         <module>common</module>
         <module>dao</module>
+        <module>integration</module>
         <module>application</module>
         <module>msa</module>
         <module>ui-ngx</module>
@@ -242,6 +246,10 @@
                                                 <excludes>
                                                     <exclude>${pkg.name}.conf</exclude>
                                                 </excludes>
+                                                <filtering>true</filtering>
+                                            </resource>
+                                            <resource>
+                                                <directory>config</directory>
                                                 <filtering>true</filtering>
                                             </resource>
                                         </resources>
@@ -821,6 +829,16 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.thingsboard.mqtt-broker.common.integration</groupId>
+                <artifactId>integration-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.thingsboard.mqtt-broker.common.integration</groupId>
+                <artifactId>cluster-integration-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.thingsboard.mqtt-broker</groupId>
                 <artifactId>dao</artifactId>
                 <version>${project.version}</version>
@@ -1025,6 +1043,11 @@
                 <version>${spring.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <version>${spring-boot.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-context-support</artifactId>
                 <version>${spring.version}</version>
@@ -1087,6 +1110,11 @@
                 <version>${netty.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.projectreactor.netty</groupId>
+                <artifactId>reactor-netty-http</artifactId>
+                <version>${reactor-netty.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
@@ -1118,6 +1146,11 @@
                 <version>${spring-data-redis.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-commons</artifactId>
+                <version>${spring-data.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
@@ -1141,11 +1174,6 @@
                 <groupId>com.bucket4j</groupId>
                 <artifactId>bucket4j_jdk17-redis-common</artifactId>
                 <version>${bucket4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1320,6 +1348,14 @@
         <repository>
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>jenkins</id>
+            <name>Jenkins Repository</name>
+            <url>https://repo.jenkins-ci.org/releases</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 </project>

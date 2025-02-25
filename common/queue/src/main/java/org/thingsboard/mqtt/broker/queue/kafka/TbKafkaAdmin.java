@@ -77,7 +77,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private boolean enableTopicDeletion;
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
-    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
+    @Value("${queue.kafka.client-session-event-response.topic-prefix:tbmq.client.session.event.response}")
     private String clientSessionEventRespTopicPrefix;
 
     private final Admin client;
@@ -177,16 +177,9 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void deleteConsumerGroup(String groupId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteConsumerGroup {}", groupId);
-        }
-        try {
-            doDeleteConsumerGroups(List.of(groupId));
-        } catch (InterruptedException | ExecutionException e) {
-            log.warn("Failed to delete Kafka consumer group {}", groupId, e);
-            throw new RuntimeException(e);
-        }
+    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException {
+        log.trace("Executing deleteConsumerGroup {}", groupId);
+        doDeleteConsumerGroups(List.of(groupId));
     }
 
     private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException {

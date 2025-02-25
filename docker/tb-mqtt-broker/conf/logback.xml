@@ -24,7 +24,7 @@
         <file>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>/var/log/thingsboard-mqtt-broker//thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/var/log/thingsboard-mqtt-broker/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <maxFileSize>100MB</maxFileSize>
             <maxHistory>30</maxHistory>

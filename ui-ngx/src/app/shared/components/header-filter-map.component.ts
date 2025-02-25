@@ -1,0 +1,164 @@
+///
+/// Copyright © 2016-2025 The Thingsboard Authors
+///
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
+///
+///     http://www.apache.org/licenses/LICENSE-2.0
+///
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
+///
+
+import { Component, forwardRef, Input, OnDestroy, OnInit, input } from '@angular/core';
+import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, Validator, Validators, ValidationErrors, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { SubscriptSizing, MatFormField, MatLabel } from '@angular/material/form-field';
+import { isDefinedAndNotNull, isEqual } from '@core/utils';
+import { TranslateModule } from '@ngx-translate/core';
+import { AsyncPipe } from '@angular/common';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+
+@Component({
+    selector: 'tb-header-filter-map',
+    templateUrl: './header-filter-map.component.html',
+    styleUrls: ['./header-filter-map.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => HeaderFilterMapComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => HeaderFilterMapComponent),
+            multi: true,
+        }
+    ],
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe]
+})
+export class HeaderFilterMapComponent extends PageComponent implements ControlValueAccessor, OnInit, OnDestroy, Validator {
+
+  @Input() disabled: boolean;
+
+  readonly isValueRequired = input(true);
+  readonly titleText = input<string>();
+  readonly keyPlaceholderText = input<string>();
+  readonly valuePlaceholderText = input<string>();
+  readonly noDataText = input<string>();
+  readonly singlePredefinedKey = input<string>();
+  readonly isStrokedButton = input(false);
+  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+
+  kvListFormGroup: UntypedFormGroup;
+  private destroy$ = new Subject<void>();
+  private propagateChange = null;
+
+  constructor(protected store: Store<AppState>,
+              private fb: UntypedFormBuilder) {
+    super(store);
+  }
+
+  ngOnInit(): void {
+    this.kvListFormGroup = this.fb.group({
+      keyVals: this.fb.array([])
+    });
+
+    this.kvListFormGroup.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.updateModel());
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  keyValsFormArray(): UntypedFormArray {
+    return this.kvListFormGroup.get('keyVals') as UntypedFormArray;
+  }
+
+  registerOnChange(fn: any): void {
+    this.propagateChange = fn;
+  }
+
+  registerOnTouched(fn: any): void {
+  }
+
+  setDisabledState?(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+    if (this.disabled) {
+      this.kvListFormGroup.disable({emitEvent: false});
+    } else {
+      this.kvListFormGroup.enable({emitEvent: false});
+    }
+  }
+
+  writeValue(keyValMap: {[key: string]: string}): void {
+    const keyValsControls: Array<AbstractControl> = [];
+    if (keyValMap && !isEqual(keyValMap, {})) {
+      for (const property of Object.keys(keyValMap)) {
+        if (Object.prototype.hasOwnProperty.call(keyValMap, property)) {
+          keyValsControls.push(this.fb.group({
+            key: [property, [Validators.required]],
+            value: [keyValMap[property], this.isValueRequired() ? [Validators.required] : []]
+          }));
+        }
+      }
+    }
+    this.kvListFormGroup.setControl('keyVals', this.fb.array(keyValsControls), {emitEvent: false});
+    if (this.isSinglePredefinedKey && !keyValsControls.length) {
+      this.addKeyVal();
+    }
+    if (this.disabled) {
+      this.kvListFormGroup.disable({emitEvent: false});
+    } else {
+      this.kvListFormGroup.enable({emitEvent: false});
+    }
+  }
+
+  public removeKeyVal(index: number) {
+    (this.kvListFormGroup.get('keyVals') as UntypedFormArray).removeAt(index);
+  }
+
+  public addKeyVal() {
+    const keyValsFormArray = this.kvListFormGroup.get('keyVals') as UntypedFormArray;
+    const keyValsFormArrayLength = keyValsFormArray.length;
+    keyValsFormArray.push(this.fb.group({
+      key: [keyValsFormArrayLength === 0 ? 'Content-Type' : null, [Validators.required]],
+      value: [keyValsFormArrayLength === 0 ? 'application/json' : null, this.isValueRequired() ? [Validators.required] : []]
+    }));
+  }
+
+  public validate(): ValidationErrors | null {
+    return this.kvListFormGroup.valid ? null : { keyVals: { valid: false } };
+  }
+
+  get isSingleMode(): boolean {
+    return isDefinedAndNotNull(this.singlePredefinedKey());
+  }
+
+  get isSinglePredefinedKey(): boolean {
+    return isDefinedAndNotNull(this.singlePredefinedKey());
+  }
+
+  private updateModel() {
+    const kvList: {key: string; value: string}[] = this.kvListFormGroup.get('keyVals').value;
+    const keyValMap: {[key: string]: string} = {};
+    kvList.forEach((entry) => {
+      keyValMap[entry.key] = entry.value;
+    });
+    this.propagateChange(keyValMap);
+  }
+}

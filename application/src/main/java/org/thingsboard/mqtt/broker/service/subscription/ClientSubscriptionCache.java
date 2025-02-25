@@ -29,4 +29,5 @@ public interface ClientSubscriptionCache {
 
     Map<String, Set<TopicSubscription>> getAllClientSubscriptions();
 
+    Set<String> getIntegrationSubscriptions(String integrationId);
 }

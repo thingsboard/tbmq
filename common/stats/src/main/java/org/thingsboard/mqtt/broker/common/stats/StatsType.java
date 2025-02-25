@@ -54,6 +54,10 @@ public enum StatsType {
 
     QUEUE_PRODUCER("producer"),
     QUEUE_CONSUMER("consumer"),
+
+    IE_UPLINK_PRODUCER("ie.uplink.published"),
+    INTEGRATION("integration"),
+    INTEGRATION_PROCESSOR("integrationProcessor"),
     ;
 
     private final String printName;

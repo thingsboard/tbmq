@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.queue.provider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
@@ -55,6 +56,9 @@ public abstract class AbstractQueueFactory {
     protected String kafkaPrefix;
 
     protected Map<String, String> validateAndConfigurePartitionsForTopic(String topicProperties, String topicName) {
+        if (StringUtils.isEmpty(topicProperties)) {
+            return Map.of();
+        }
         var topicConfigs = QueueUtil.getConfigs(topicProperties);
         String configuredPartitions = topicConfigs.get(QueueConstants.PARTITIONS);
         if (configuredPartitions != null && Integer.parseInt(configuredPartitions) != 1) {
@@ -65,6 +69,9 @@ public abstract class AbstractQueueFactory {
     }
 
     protected Map<String, String> validateAndConfigureCleanupPolicyForTopic(String topicProperties, String topicName) {
+        if (StringUtils.isEmpty(topicProperties)) {
+            return Map.of();
+        }
         var topicConfigs = QueueUtil.getConfigs(topicProperties);
         String configuredLogCleanupPolicy = topicConfigs.get(CLEANUP_POLICY_PROPERTY);
         if (configuredLogCleanupPolicy != null && !configuredLogCleanupPolicy.equals(COMPACT_POLICY)) {

@@ -144,6 +144,7 @@ public class BrokerConstants {
     public static final String COMMA = ",";
     public static final String COLON = ":";
     public static final String SEMICOLON = ";";
+    public static final String HYPHEN = "-";
 
     //client session event constants
     public static final String REQUEST_ID_HEADER = "requestId";

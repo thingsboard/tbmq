@@ -34,3 +34,12 @@ managedNodeGroups:
     ssh:
       allow: true
       publicKeyName: 'dlandiak' # Note, use your own public key name here
+  - name: tbmq-ie
+    instanceType: m7a.large
+    desiredCapacity: 2
+    maxSize: 2
+    minSize: 1
+    labels: { role: tbmq-ie }
+    ssh:
+      allow: true
+      publicKeyName: 'dlandiak' # Note, use your own public key name here
