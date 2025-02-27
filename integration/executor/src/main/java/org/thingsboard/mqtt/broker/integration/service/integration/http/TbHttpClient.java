@@ -43,7 +43,6 @@ import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.BasicCredentials;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.CredentialsType;
-import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -154,7 +153,7 @@ public class TbHttpClient {
         }
     }
 
-    public void processMessage(PublishIntegrationMsgProto msg, BasicCallback callback) {
+    public void processMessage(PublishIntegrationMsgProto msg, ObjectNode requestBody, BasicCallback callback) {
         try {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
                 log.warn("[{}][{}] Timeout during waiting for reply!", getId(), getName());
@@ -169,7 +168,7 @@ public class TbHttpClient {
 
             if ((HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method) ||
                     HttpMethod.PATCH.equals(method))) {
-                request.body(BodyInserters.fromValue(constructBody(msg)));
+                request.body(BodyInserters.fromValue(constructBody(msg, requestBody)));
             }
 
             processRequest(request, callback);
@@ -201,9 +200,7 @@ public class TbHttpClient {
         return uri;
     }
 
-    private Object constructBody(PublishIntegrationMsgProto msg) {
-        ObjectNode request = JacksonUtil.newObjectNode();
-
+    private Object constructBody(PublishIntegrationMsgProto msg, ObjectNode request) {
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
         try {
             switch (config.getPayloadContentType()) {
@@ -220,18 +217,6 @@ public class TbHttpClient {
                 throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType() + ": " + msg);
             }
         }
-
-        request.put("topicName", publishMsgProto.getTopicName());
-        request.put("clientId", publishMsgProto.getClientId());
-        request.put("eventType", "PUBLISH_MSG");
-        request.put("qos", publishMsgProto.getQos());
-        request.put("retain", publishMsgProto.getRetain());
-        request.put("tbmqIeNode", ctx.getServiceId());
-        request.put("tbmqNode", msg.getTbmqNode());
-        request.put("ts", msg.getTimestamp());
-        request.set("props", IntegrationProtoConverter.fromProto(publishMsgProto.getUserPropertiesList()));
-        request.set("metadata", JacksonUtil.valueToTree(ieMetaData.getKvMap()));
-
         return request;
     }
 

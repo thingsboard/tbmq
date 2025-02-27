@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -34,12 +33,10 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
-import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 
 import java.util.Properties;
 import java.util.UUID;
@@ -117,7 +114,7 @@ public class KafkaIntegration extends AbstractIntegration {
             properties.put(k, v);
         });
         this.producer = getKafkaProducer(properties);
-        startProcessingIntegrationMessages();
+        startProcessingIntegrationMessages(this);
     }
 
     private String constructClientId() {
@@ -129,21 +126,7 @@ public class KafkaIntegration extends AbstractIntegration {
     }
 
     @Override
-    public void destroy() {
-        stopProcessingPersistedMessages();
-    }
-
-    @Override
-    public void destroyAndClearData() {
-        stopProcessingPersistedMessages();
-        clearIntegrationMessages();
-    }
-
-    private void startProcessingIntegrationMessages() {
-        context.startProcessingIntegrationMessages(this);
-    }
-
-    private void stopProcessingPersistedMessages() {
+    public void doStopProcessingPersistedMessages() {
         if (this.producer != null) {
             try {
                 this.producer.close();
@@ -151,20 +134,6 @@ public class KafkaIntegration extends AbstractIntegration {
                 log.error("[{}][{}] Failed to close Kafka producer", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), e);
             }
         }
-
-        if (lifecycleMsg == null) {
-            log.debug("Integration was not initialized properly. Skip stopProcessingPersistedMessages");
-            return;
-        }
-        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
-    }
-
-    private void clearIntegrationMessages() {
-        if (lifecycleMsg == null) {
-            log.debug("Integration was not initialized properly. Skip clearIntegrationMessages");
-            return;
-        }
-        context.clearIntegrationMessages(lifecycleMsg.getIntegrationId().toString());
     }
 
     @Override
@@ -180,7 +149,7 @@ public class KafkaIntegration extends AbstractIntegration {
             Headers headers = new RecordHeaders();
             config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
 
-            ProducerRecord<String, String> kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), constructBody(msg), headers);
+            ProducerRecord<String, String> kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), constructValue(msg), headers);
             producer.send(kvProducerRecord, (metadata, e) -> {
                 if (e == null) {
                     log.debug("processRecord success {}{}{}", metadata.topic(),
@@ -197,23 +166,8 @@ public class KafkaIntegration extends AbstractIntegration {
         }
     }
 
-    private String constructBody(PublishIntegrationMsgProto msg) {
-        PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
-
-        ObjectNode request = JacksonUtil.newObjectNode();
-        request.put("payload", publishMsgProto.getPayload().toByteArray());
-        request.put("topicName", publishMsgProto.getTopicName());
-        request.put("clientId", publishMsgProto.getClientId());
-        request.put("eventType", "PUBLISH_MSG");
-        request.put("qos", publishMsgProto.getQos());
-        request.put("retain", publishMsgProto.getRetain());
-        request.put("tbmqIeNode", context.getServiceId());
-        request.put("tbmqNode", msg.getTbmqNode());
-        request.put("ts", msg.getTimestamp());
-        request.set("props", IntegrationProtoConverter.fromProto(publishMsgProto.getUserPropertiesList()));
-        request.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
-
-        return JacksonUtil.toString(request);
+    private String constructValue(PublishIntegrationMsgProto msg) {
+        return JacksonUtil.toString(constructBody(msg));
     }
 
     private UUID getId() {
