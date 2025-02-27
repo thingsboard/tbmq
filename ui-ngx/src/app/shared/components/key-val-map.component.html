@@ -18,16 +18,20 @@
 <section class="tb-kv-map flex flex-col" [formGroup]="kvListFormGroup">
   <label translate class="tb-title">{{ titleText() }}</label>
   @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
-    <div class="flex flex-row items-center justify-start gap-2"
-      formArrayName="keyVals"
-      >
+    <div class="flex flex-row items-center justify-start gap-2" formArrayName="keyVals">
       <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
         subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+        @if ($index === 0 && keyLabel()) {
+          <mat-label translate>{{keyLabel()}}</mat-label>
+        }
         <input [formControl]="keyValControl.get('key')" matInput required
           placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'key-val.key') | translate }}"/>
       </mat-form-field>
       <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
         subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+        @if ($index === 0 && valueLabel()) {
+          <mat-label translate>{{valueLabel()}}</mat-label>
+        }
         <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
           placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'key-val.value') | translate }}"/>
       </mat-form-field>
@@ -57,7 +61,7 @@
         type="button" style="width: 100%"
         matTooltip="{{ 'key-val.add-entry' | translate }}"
         matTooltipPosition="above">
-        {{ 'action.add' | translate }}
+        {{ addText() | translate }}
       </button>
     }
   </div>

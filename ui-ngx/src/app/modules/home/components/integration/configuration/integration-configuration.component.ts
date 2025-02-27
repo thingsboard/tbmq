@@ -39,6 +39,9 @@ import { takeUntil } from 'rxjs/operators';
 import {
   HttpIntegrationFormComponent
 } from '@home/components/integration/configuration/http-integration-form/http-integration-form.component';
+import {
+  KafkaIntegrationFormComponent
+} from '@home/components/integration/configuration/kafka-integration-form/kafka-integration-form.component';
 
 @Component({
   selector: 'tb-integration-configuration',
@@ -47,7 +50,8 @@ import {
   encapsulation: ViewEncapsulation.None,
   imports: [
     ReactiveFormsModule,
-    HttpIntegrationFormComponent
+    HttpIntegrationFormComponent,
+    KafkaIntegrationFormComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

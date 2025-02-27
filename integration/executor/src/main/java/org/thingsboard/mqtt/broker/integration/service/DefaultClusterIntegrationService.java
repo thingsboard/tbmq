@@ -32,10 +32,10 @@ import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationValidationRequestProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
-import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
-import org.thingsboard.mqtt.broker.queue.provider.integration.HttpIntegrationDownlinkQueueFactory;
+import org.thingsboard.mqtt.broker.queue.provider.integration.IntegrationDownlinkQueueProvider;
 import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 
@@ -57,9 +57,10 @@ public class DefaultClusterIntegrationService {
     private final ConcurrentMap<TopicPartition, Boolean> partitionRestorationMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<TopicPartition, ConcurrentMap<UUID, IntegrationLifecycleMsg>> integrationStateMap = new ConcurrentHashMap<>();
 
-    private final HttpIntegrationDownlinkQueueFactory httpIntegrationDownlinkQueueFactory;
-    private final ServiceInfoProvider serviceInfoProvider;
+    private final IntegrationDownlinkQueueProvider integrationDownlinkQueueProvider;
     private final IntegrationManagerService integrationManagerService;
+
+    private Map<IntegrationType, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>>> consumers;
 
     @Value("${queue.integration-downlink.poll-interval}")
     private long pollDuration;
@@ -67,17 +68,15 @@ public class DefaultClusterIntegrationService {
     private volatile boolean stopped = false;
     private ExecutorService consumersExecutor;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> httpIntegrationDownlinkConsumer;
-
     @PostConstruct
     public void init() {
         log.info("Initializing DefaultClusterIntegrationService");
         this.consumersExecutor = ThingsBoardExecutors.initCachedExecutorService("ie-downlink-service");
-//        for (IntegrationType integrationType : serviceInfoProvider.getSupportedIntegrationTypes()) {
-        for (IntegrationType integrationType : List.of(IntegrationType.HTTP)) {
-            this.httpIntegrationDownlinkConsumer = httpIntegrationDownlinkQueueFactory.createConsumer(serviceInfoProvider.getServiceId());
-            httpIntegrationDownlinkConsumer.subscribe(new TbConsumerRebalanceListener(httpIntegrationDownlinkConsumer, integrationType));
-            launchConsumer(httpIntegrationDownlinkConsumer);
+        consumers = integrationDownlinkQueueProvider.getIeDownlinkConsumers();
+        for (var integrationTypeConsumerEntry : consumers.entrySet()) {
+            var consumer = integrationTypeConsumerEntry.getValue();
+            consumer.subscribe(new TbConsumerRebalanceListener(consumer, integrationTypeConsumerEntry.getKey()));
+            launchConsumer(consumer);
         }
     }
 
@@ -88,8 +87,9 @@ public class DefaultClusterIntegrationService {
         if (consumersExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(consumersExecutor, "IE downlink consumer");
         }
-        if (httpIntegrationDownlinkConsumer != null) {
-            httpIntegrationDownlinkConsumer.unsubscribeAndClose();
+        // Note, deliberately closing consumers here for the correct shutdown process
+        if (!CollectionUtils.isEmpty(consumers)) {
+            consumers.values().forEach(TbQueueConsumer::unsubscribeAndClose);
         }
     }
 

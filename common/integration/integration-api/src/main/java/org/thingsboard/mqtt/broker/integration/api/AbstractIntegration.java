@@ -16,14 +16,20 @@
 package org.thingsboard.mqtt.broker.integration.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.api.util.ExceptionUtil;
+import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -61,8 +67,15 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         }
     }
 
-    protected ContentType getDefaultUplinkContentType() {
-        return ContentType.JSON;
+    @Override
+    public void destroy() {
+        stopProcessingPersistedMessages();
+    }
+
+    @Override
+    public void destroyAndClearData() {
+        stopProcessingPersistedMessages();
+        clearIntegrationMessages();
     }
 
     @Override
@@ -109,6 +122,80 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         return lifecycleMsg.getIntegrationId();
     }
 
+    protected void startProcessingIntegrationMessages(TbPlatformIntegration integration) {
+        context.startProcessingIntegrationMessages(integration);
+    }
+
+    protected void stopProcessingPersistedMessages() {
+        doStopProcessingPersistedMessages();
+
+        if (lifecycleMsg == null) {
+            log.debug("[{}] Integration was not initialized properly. Skip stopProcessingPersistedMessages", this.getClass());
+            return;
+        }
+        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
+    }
+
+    protected void clearIntegrationMessages() {
+        if (lifecycleMsg == null) {
+            log.debug("[{}] Integration was not initialized properly. Skip clearIntegrationMessages", this.getClass());
+            return;
+        }
+        context.clearIntegrationMessages(lifecycleMsg.getIntegrationId().toString());
+    }
+
+    protected ObjectNode constructBody(PublishIntegrationMsgProto msg) {
+        PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
+
+        ObjectNode request = JacksonUtil.newObjectNode();
+        request.put("payload", publishMsgProto.getPayload().toByteArray());
+        request.put("topicName", publishMsgProto.getTopicName());
+        request.put("clientId", publishMsgProto.getClientId());
+        request.put("eventType", "PUBLISH_MSG");
+        request.put("qos", publishMsgProto.getQos());
+        request.put("retain", publishMsgProto.getRetain());
+        request.put("tbmqIeNode", context.getServiceId());
+        request.put("tbmqNode", msg.getTbmqNode());
+        request.put("ts", msg.getTimestamp());
+        request.set("props", IntegrationProtoConverter.fromProto(publishMsgProto.getUserPropertiesList()));
+        request.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
+
+        return request;
+    }
+
+    protected void handleMsgProcessingFailure(Throwable throwable) {
+        integrationStatistics.incErrorsOccurred();
+        context.saveErrorEvent(getErrorEvent(throwable));
+    }
+
+    private ErrorEvent getErrorEvent(Throwable throwable) {
+        return ErrorEvent
+                .builder()
+                .entityId(lifecycleMsg.getIntegrationId())
+                .serviceId(context.getServiceId())
+                .method("onMsgProcess")
+                .error(getError(throwable))
+                .build();
+    }
+
+    private String getError(Throwable throwable) {
+        return throwable == null ? "Unspecified server error" : getRealErrorMsg(throwable);
+    }
+
+    private String getRealErrorMsg(Throwable throwable) {
+        if (StringUtils.isNotEmpty(throwable.getMessage())) {
+            return throwable.getMessage();
+        }
+        if (StringUtils.isNotEmpty(throwable.getCause().getMessage())) {
+            return throwable.getCause().getMessage();
+        }
+        return throwable.getCause().toString();
+    }
+
+    protected ContentType getDefaultUplinkContentType() {
+        return ContentType.JSON;
+    }
+
     protected <T> T getClientConfiguration(Integration configuration, Class<T> clazz) {
         JsonNode clientConfiguration = configuration.getConfiguration().get("clientConfiguration");
         return getClientConfiguration(clientConfiguration, clazz);
@@ -132,6 +219,10 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void doCheckConnection(Integration integration, IntegrationContext ctx) throws ThingsboardException {
+
+    }
+
+    protected void doStopProcessingPersistedMessages() {
 
     }
 

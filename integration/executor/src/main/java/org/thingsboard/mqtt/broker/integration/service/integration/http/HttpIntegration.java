@@ -61,45 +61,19 @@ public class HttpIntegration extends AbstractHttpIntegration {
         var httpIntegrationConfig = getClientConfiguration(lifecycleMsg, HttpIntegrationConfig.class);
         tbHttpClient = new TbHttpClient(httpIntegrationConfig, context, metadataTemplate);
 
-        startProcessingIntegrationMessages();
+        startProcessingIntegrationMessages(this);
     }
 
     @Override
     protected void doProcess(PublishIntegrationMsgProto msg, BasicCallback callback) {
-        tbHttpClient.processMessage(msg, callback);
+        tbHttpClient.processMessage(msg, constructBody(msg), callback);
     }
 
     @Override
-    public void destroy() {
-        stopProcessingPersistedMessages();
-    }
-
-    @Override
-    public void destroyAndClearData() {
-        stopProcessingPersistedMessages();
-        clearIntegrationMessages();
-    }
-
-    private void startProcessingIntegrationMessages() {
-        context.startProcessingIntegrationMessages(this);
-    }
-
-    private void stopProcessingPersistedMessages() {
+    public void doStopProcessingPersistedMessages() {
         if (tbHttpClient != null) {
             tbHttpClient.destroy();
         }
-        if (lifecycleMsg == null) {
-            log.debug("Integration was not initialized properly. Skip stopProcessingPersistedMessages");
-            return;
-        }
-        context.stopProcessingPersistedMessages(lifecycleMsg.getIntegrationId().toString());
     }
 
-    private void clearIntegrationMessages() {
-        if (lifecycleMsg == null) {
-            log.debug("Integration was not initialized properly. Skip clearIntegrationMessages");
-            return;
-        }
-        context.clearIntegrationMessages(lifecycleMsg.getIntegrationId().toString());
-    }
 }

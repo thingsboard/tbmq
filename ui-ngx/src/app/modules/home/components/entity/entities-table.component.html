@@ -201,7 +201,7 @@
                           [matTooltip]="cellTooltip(entity, column, row)"
                           matTooltipPosition="above"
                           [style]="cellStyle(entity, column, row)">
-                  <div class="flex flex-row" style="align-items: center;">
+                  <div [class]="{ 'flex': column?.actionCell?.type, 'items-center': column?.actionCell?.type }">
                     <span [innerHTML]="cellContent(entity, column, row)"></span>
                     @if (column.actionCell) {
                       @switch (column.actionCell.type) {

@@ -46,7 +46,7 @@ import { MatIcon } from '@angular/material/icon';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatLabel]
 })
 export class KeyValMapComponent extends PageComponent implements ControlValueAccessor, OnInit, OnDestroy, Validator {
 
@@ -58,6 +58,9 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
   readonly valuePlaceholderText = input<string>();
   readonly noDataText = input<string>();
   readonly singlePredefinedKey = input<string>();
+  readonly addText = input<string>('action.add');
+  readonly keyLabel = input<string>('key-val.key');
+  readonly valueLabel = input<string>('key-val.value');
   readonly isStrokedButton = input(false);
   readonly subscriptSizing = input<SubscriptSizing>('fixed');
 

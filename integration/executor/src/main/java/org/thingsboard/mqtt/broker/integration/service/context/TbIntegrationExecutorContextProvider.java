@@ -44,6 +44,7 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     private final EventStorageService eventStorageService;
     private final IntegrationRateLimitService rateLimitService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final ExternalCallExecutorService externalCallExecutorService;
 
     @Override
     public IntegrationContext buildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg) {
@@ -58,7 +59,7 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     private TbIntegrationExecutorIntegrationContext doBuildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg, BasicCallback callback) {
         return new TbIntegrationExecutorIntegrationContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(),
                 logSettingsComponent, sharedEventLoopGroupService, eventStorageService, rateLimitService,
-                serviceInfoProvider.getServiceId(), callback);
+                serviceInfoProvider.getServiceId(), callback, externalCallExecutorService);
     }
 
     private IntegrationStatisticsService getStatisticsService() {

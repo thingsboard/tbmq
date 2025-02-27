@@ -15,18 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider.integration;
 
-import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-import java.util.Map;
+public interface KafkaIntegrationDownlinkQueueFactory {
 
-public interface IntegrationDownlinkQueueProvider {
+    TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> createProducer(String serviceId);
 
-    TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> getIeDownlinkProducer(IntegrationType type);
-
-    Map<IntegrationType, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>>> getIeDownlinkConsumers();
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> createConsumer(String consumerId);
 
 }
