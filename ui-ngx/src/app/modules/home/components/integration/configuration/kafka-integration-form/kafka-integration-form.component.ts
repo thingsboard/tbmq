@@ -114,7 +114,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
     this.kafkaIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
-        topic: ['tbmq-messages', [Validators.required]],
+        topic: ['tbmq.messages', [Validators.required]],
         key: [null, []],
         bootstrapServers: ['localhost:9092', [Validators.required]],
         clientIdPrefix: [null, []],
