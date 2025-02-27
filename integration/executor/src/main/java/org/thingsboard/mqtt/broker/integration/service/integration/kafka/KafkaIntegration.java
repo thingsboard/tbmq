@@ -154,14 +154,17 @@ public class KafkaIntegration extends AbstractIntegration {
                 if (e == null) {
                     log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
                             metadata.partition(), metadata.offset());
+                    integrationStatistics.incMessagesProcessed();
                     callback.onSuccess();
                 } else {
                     log.warn("[{}][{}] processException", getId(), getName(), e);
+                    handleMsgProcessingFailure(e);
                     callback.onFailure(e);
                 }
             });
         } catch (Exception e) {
             log.warn("[{}][{}] Failed to process message: {}", getId(), getName(), msg, e);
+            handleMsgProcessingFailure(e);
             callback.onFailure(e);
         }
     }

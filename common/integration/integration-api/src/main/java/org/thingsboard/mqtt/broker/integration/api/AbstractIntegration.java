@@ -18,9 +18,11 @@ package org.thingsboard.mqtt.broker.integration.api;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
@@ -159,6 +161,35 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         request.set("metadata", JacksonUtil.valueToTree(metadataTemplate.getKvMap()));
 
         return request;
+    }
+
+    protected void handleMsgProcessingFailure(Throwable throwable) {
+        integrationStatistics.incErrorsOccurred();
+        context.saveErrorEvent(getErrorEvent(throwable));
+    }
+
+    private ErrorEvent getErrorEvent(Throwable throwable) {
+        return ErrorEvent
+                .builder()
+                .entityId(lifecycleMsg.getIntegrationId())
+                .serviceId(context.getServiceId())
+                .method("onMsgProcess")
+                .error(getError(throwable))
+                .build();
+    }
+
+    private String getError(Throwable throwable) {
+        return throwable == null ? "Unspecified server error" : getRealErrorMsg(throwable);
+    }
+
+    private String getRealErrorMsg(Throwable throwable) {
+        if (StringUtils.isNotEmpty(throwable.getMessage())) {
+            return throwable.getMessage();
+        }
+        if (StringUtils.isNotEmpty(throwable.getCause().getMessage())) {
+            return throwable.getCause().getMessage();
+        }
+        return throwable.getCause().toString();
     }
 
     protected ContentType getDefaultUplinkContentType() {
