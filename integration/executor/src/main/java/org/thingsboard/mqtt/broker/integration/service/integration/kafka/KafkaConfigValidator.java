@@ -23,7 +23,7 @@ import java.util.Map;
 
 public class KafkaConfigValidator {
 
-    private static final String SSL = "ssl";
+    private static final String SSL = "ssl.";
 
     public static void validate(KafkaIntegrationConfig kafkaIntegrationConfig) {
         validateBootstrapServers(kafkaIntegrationConfig.getBootstrapServers());
