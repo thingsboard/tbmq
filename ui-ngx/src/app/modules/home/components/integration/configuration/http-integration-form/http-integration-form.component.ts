@@ -128,7 +128,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
       restEndpointUrlValidators.push(privateNetworkAddressValidator);
     }
     this.baseHttpIntegrationConfigForm = this.fb.group({
-      topicFilters: [['#'], Validators.required],
+      topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
         restEndpointUrl: [baseUrl(), restEndpointUrlValidators],
         requestMethod: [HttpRequestType.POST],

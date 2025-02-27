@@ -34,8 +34,11 @@
     }-->
     @case (integrationTypes.KAFKA) {
       <tb-kafka-integration-form formControlName="configuration"
-                                [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
-                                [allowLocalNetwork]="allowLocalNetwork()">
+        [integration]="integration()"
+        [isEdit]="isEdit()"
+        [executeRemotelyTemplate]="executeRemotelyTemplate()"
+        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
+        [allowLocalNetwork]="allowLocalNetwork()">
       </tb-kafka-integration-form>
     }
   @default {
