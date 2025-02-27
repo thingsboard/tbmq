@@ -99,7 +99,7 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     }
 
     @Override
-    public BasicCallback getCallback() {
+    public BasicCallback getCheckConnectionCallback() {
         return callback != null ? callback : CallbackUtil.EMPTY;
     }
 

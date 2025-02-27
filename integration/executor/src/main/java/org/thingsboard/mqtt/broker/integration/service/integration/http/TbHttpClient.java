@@ -302,10 +302,10 @@ public class TbHttpClient {
                     .uri(uri)
                     .headers(this::prepareHeaders);
 
-            processRequest(request, ctx.getCallback());
+            processRequest(request, ctx.getCheckConnectionCallback());
         } catch (InterruptedException e) {
             log.warn("[{}][{}] Interrupted while trying to acquire the lock on check connection", getId(), getName(), e);
-            ctx.getCallback().onFailure(e);
+            ctx.getCheckConnectionCallback().onFailure(e);
         }
     }
 

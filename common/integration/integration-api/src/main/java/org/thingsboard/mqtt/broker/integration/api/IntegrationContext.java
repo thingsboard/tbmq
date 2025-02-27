@@ -46,7 +46,7 @@ public interface IntegrationContext {
 
     void saveErrorEvent(ErrorEvent errorEvent);
 
-    BasicCallback getCallback();
+    BasicCallback getCheckConnectionCallback();
 
     ListeningExecutor getExternalCallExecutor();
 }

@@ -74,12 +74,12 @@ public class KafkaIntegration extends AbstractIntegration {
                         .names()
                         .whenComplete((topicNames, throwable) -> {
                             if (throwable != null) {
-                                ctx.getCallback().onFailure(throwable);
+                                ctx.getCheckConnectionCallback().onFailure(throwable);
                             } else {
                                 if (topicNames.contains(kafkaConfig.getTopic())) {
-                                    ctx.getCallback().onSuccess();
+                                    ctx.getCheckConnectionCallback().onSuccess();
                                 } else {
-                                    ctx.getCallback().onFailure(new ThingsboardException("Configured topic is missing on the external brokers!", ThingsboardErrorCode.GENERAL));
+                                    ctx.getCheckConnectionCallback().onFailure(new ThingsboardException("Configured topic is missing on the external brokers!", ThingsboardErrorCode.GENERAL));
                                 }
                             }
                         });
