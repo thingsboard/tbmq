@@ -152,7 +152,7 @@ public class KafkaIntegration extends AbstractIntegration {
             ProducerRecord<String, String> kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), constructValue(msg), headers);
             producer.send(kvProducerRecord, (metadata, e) -> {
                 if (e == null) {
-                    log.debug("processRecord success {}{}{}", metadata.topic(),
+                    log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
                             metadata.partition(), metadata.offset());
                     callback.onSuccess();
                 } else {
