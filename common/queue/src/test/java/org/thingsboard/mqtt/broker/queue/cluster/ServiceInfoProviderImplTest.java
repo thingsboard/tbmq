@@ -24,7 +24,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
 import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 
 import java.net.InetAddress;
@@ -105,11 +104,11 @@ class ServiceInfoProviderImplTest {
     void testGetSupportedIntegrationTypes_withTBMQIntegrationExecutorAndSupportedAllExcludedMqtt() {
         serviceInfoProvider.setServiceTypeStr("tbmq-integration-executor");
         serviceInfoProvider.setSupportedIntegrationsStr("ALL");
-        serviceInfoProvider.setExcludedIntegrationsStr("MQTT");
+        serviceInfoProvider.setExcludedIntegrationsStr("KAFKA");
         serviceInfoProvider.init();
 
         List<IntegrationType> supportedTypes = serviceInfoProvider.getSupportedIntegrationTypes();
-        assertThat(supportedTypes).containsExactlyInAnyOrder(Arrays.stream(IntegrationType.values()).filter(type -> !type.equals(IntegrationType.MQTT)).toArray(IntegrationType[]::new));
+        assertThat(supportedTypes).containsExactlyInAnyOrder(Arrays.stream(IntegrationType.values()).filter(type -> !type.equals(IntegrationType.KAFKA)).toArray(IntegrationType[]::new));
     }
 
     @Test
@@ -148,8 +147,8 @@ class ServiceInfoProviderImplTest {
 
     @Test
     void testGetIntegrationTypes_withValidTypes() {
-        List<IntegrationType> types = serviceInfoProvider.getIntegrationTypes("HTTP,MQTT", "Error");
-        assertThat(types).containsExactlyInAnyOrder(IntegrationType.HTTP, IntegrationType.MQTT);
+        List<IntegrationType> types = serviceInfoProvider.getIntegrationTypes("HTTP,KAFKA", "Error");
+        assertThat(types).containsExactlyInAnyOrder(IntegrationType.HTTP, IntegrationType.KAFKA);
     }
 
     @Test

@@ -19,12 +19,20 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationType;
+import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.TbmqIntegrationExecutorComponent;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.TBMQ_IE_NOT_IMPLEMENTED;
 
@@ -34,12 +42,39 @@ import static org.thingsboard.mqtt.broker.queue.constants.QueueConstants.TBMQ_IE
 @TbmqIntegrationExecutorComponent
 public class ExecutorIntegrationDownlinkQueueProvider implements IntegrationDownlinkQueueProvider {
 
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final @Lazy HttpIntegrationDownlinkQueueFactory httpIntegrationDownlinkQueueFactory;
+    private final @Lazy KafkaIntegrationDownlinkQueueFactory kafkaIntegrationDownlinkQueueFactory;
+
+    private Map<IntegrationType, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>>> consumers;
+
     @PostConstruct
     public void init() {
+        var supportedIntegrationTypes = serviceInfoProvider.getSupportedIntegrationTypes();
+        log.info("Initializing ExecutorIntegrationDownlinkQueueProvider: {}", supportedIntegrationTypes);
+        if (CollectionUtils.isEmpty(supportedIntegrationTypes)) {
+            return;
+        }
+        consumers = new HashMap<>();
+
+        String serviceId = serviceInfoProvider.getServiceId();
+        for (IntegrationType integrationType : supportedIntegrationTypes) {
+            consumers.put(integrationType, getConsumer(integrationType, serviceId));
+        }
+    }
+
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> getConsumer(IntegrationType integrationType, String serviceId) {
+        return switch (integrationType) {
+            case HTTP -> httpIntegrationDownlinkQueueFactory.createConsumer(serviceId);
+            case KAFKA -> kafkaIntegrationDownlinkQueueFactory.createConsumer(serviceId);
+//            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
+            default -> throw new ThingsboardRuntimeException("Unsupported integration type: " + integrationType);
+        };
     }
 
     @PreDestroy
     public void destroy() {
+        // No need to destroy consumers here!
     }
 
     @Override
@@ -47,4 +82,8 @@ public class ExecutorIntegrationDownlinkQueueProvider implements IntegrationDown
         throw new RuntimeException(TBMQ_IE_NOT_IMPLEMENTED);
     }
 
+    @Override
+    public Map<IntegrationType, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>>> getIeDownlinkConsumers() {
+        return consumers == null ? Map.of() : consumers;
+    }
 }

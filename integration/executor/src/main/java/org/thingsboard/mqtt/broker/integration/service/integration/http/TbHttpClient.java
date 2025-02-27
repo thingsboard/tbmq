@@ -236,16 +236,18 @@ public class TbHttpClient {
     }
 
     private void processResponse(ResponseEntity<String> response) {
-        ObjectNode result = JacksonUtil.newObjectNode();
-        ObjectNode metadata = JacksonUtil.newObjectNode();
-        result.set("metadata", metadata);
+        if (log.isDebugEnabled()) {
+            ObjectNode result = JacksonUtil.newObjectNode();
+            ObjectNode metadata = JacksonUtil.newObjectNode();
+            result.set("metadata", metadata);
 
-        HttpStatus httpStatus = (HttpStatus) response.getStatusCode();
-        result.put(STATUS, httpStatus.name());
-        result.put(STATUS_CODE, response.getStatusCode().value() + "");
-        result.put(STATUS_REASON, httpStatus.getReasonPhrase());
-        headersToMetaData(response.getHeaders(), metadata::put);
-        log.debug("[{}][{}] processResponse {}", getId(), getName(), result);
+            HttpStatus httpStatus = (HttpStatus) response.getStatusCode();
+            result.put(STATUS, httpStatus.name());
+            result.put(STATUS_CODE, response.getStatusCode().value() + "");
+            result.put(STATUS_REASON, httpStatus.getReasonPhrase());
+            headersToMetaData(response.getHeaders(), metadata::put);
+            log.debug("[{}][{}] processResponse {}", getId(), getName(), result);
+        }
     }
 
     private ObjectNode processFailureResponse(ResponseEntity<String> response) {

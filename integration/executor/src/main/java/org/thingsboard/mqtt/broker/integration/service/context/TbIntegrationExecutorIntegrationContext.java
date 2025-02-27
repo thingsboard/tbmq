@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
+import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.integration.api.TbPlatformIntegration;
@@ -47,6 +48,7 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     private final IntegrationRateLimitService rateLimitService;
     private final String serviceId;
     private final BasicCallback callback;
+    private final ExternalCallExecutorService externalCallExecutorService;
 
     @Override
     public EventLoopGroup getSharedEventLoop() {
@@ -99,5 +101,10 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     @Override
     public BasicCallback getCallback() {
         return callback != null ? callback : CallbackUtil.EMPTY;
+    }
+
+    @Override
+    public ListeningExecutor getExternalCallExecutor() {
+        return externalCallExecutorService;
     }
 }
