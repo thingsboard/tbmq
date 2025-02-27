@@ -53,6 +53,14 @@ public class KafkaIntegrationConfig {
         return StringUtils.isEmpty(clientIdPrefix) ? "tbmq-ie-kafka-producer" : clientIdPrefix;
     }
 
+    public int getBatchSize() {
+        return batchSize == 0 ? 16_384 : batchSize;
+    }
+
+    public int getBufferMemory() {
+        return bufferMemory == 0 ? 33_554_432 : bufferMemory;
+    }
+
     public String getKeySerializer() {
         return StringUtils.isEmpty(keySerializer) ? StringSerializer.class.getName() : keySerializer;
     }
