@@ -141,10 +141,10 @@ service:
   id: "${TB_SERVICE_ID:}"
   integrations:
     # Allow to enable integration on microservice integration executor.
-    # Allowed values: HTTP, KAFKA. By default, ALL
+    # Allowed values: HTTP, KAFKA, MQTT. By default, ALL
     supported: "${TB_SERVICE_INTEGRATIONS_SUPPORTED:ALL}"
     # List of integrations to exclude from processing on service/microservice integration executor.
-    # Allowed values: HTTP, KAFKA. By default, NONE
+    # Allowed values: HTTP, KAFKA, MQTT. By default, NONE
     excluded: "${TB_SERVICE_INTEGRATIONS_EXCLUDED:NONE}"
 
 # Integration common parameters
