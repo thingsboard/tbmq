@@ -26,12 +26,15 @@
         [allowLocalNetwork]="allowLocalNetwork()">
       </tb-http-integration-form>
     }
-    <!--@case (integrationTypes.MQTT) {
+    @case (integrationTypes.MQTT) {
       <tb-mqtt-integration-form formControlName="configuration"
-                                [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
-                                [allowLocalNetwork]="allowLocalNetwork()">
+        [integration]="integration()"
+        [isEdit]="isEdit()"
+        [executeRemotelyTemplate]="executeRemotelyTemplate()"
+        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
+        [allowLocalNetwork]="allowLocalNetwork()">
       </tb-mqtt-integration-form>
-    }-->
+    }
     @case (integrationTypes.KAFKA) {
       <tb-kafka-integration-form formControlName="configuration"
         [integration]="integration()"
