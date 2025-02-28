@@ -20,7 +20,7 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
     }
-    <mat-form-field class="mat-block flex-1" appearance="outline">
+    <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.endpoint-url</mat-label>
       <input matInput formControlName="restEndpointUrl" required>
       <tb-copy-button matSuffix
@@ -38,7 +38,7 @@
         </mat-error>
       }
     </mat-form-field>
-    <mat-form-field class="mat-block flex-1" appearance="outline">
+    <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.request-method</mat-label>
       <mat-select formControlName="requestMethod">
         @for (requestType of httpRequestTypes; track requestType) {
@@ -48,7 +48,7 @@
         }
       </mat-select>
     </mat-form-field>
-    <section class="flex flex-col gap-4">
+    <section class="mb-3 flex flex-col gap-3">
       <tb-integration-credentials formControlName="credentials" [passwordOptional]="false"
                                   [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
                                                            IntegrationCredentialType.Basic,
