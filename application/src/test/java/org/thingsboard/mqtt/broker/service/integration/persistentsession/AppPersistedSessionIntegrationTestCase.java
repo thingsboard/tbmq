@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
+import com.google.common.util.concurrent.Futures;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
@@ -99,8 +100,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(true);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
         persistedClient.disconnect();
         credentialsService.deleteCredentials(applicationCredentials.getId());
@@ -112,15 +112,13 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
         awaitUntilDisconnected();
@@ -146,8 +144,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         Awaitility
                 .await()
@@ -163,20 +160,17 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
@@ -201,28 +195,24 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         List<TopicSubscription> newTopicSubscriptions = Arrays.asList(new ClientTopicSubscription("C/1", 1), new ClientTopicSubscription("C/2", 0));
         String[] newTopicNames = getTopicNames(newTopicSubscriptions);
         int[] newQoSLevels = getQoSLevels(newTopicSubscriptions);
         for (int i = 0; i < newTopicNames.length; i++) {
-            persistedClient.on(newTopicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(newQoSLevels[i])).get();
+            persistedClient.on(newTopicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(newQoSLevels[i])).get();
         }
 
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
@@ -236,21 +226,18 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
         config.setCleanSession(true);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         ClientSession persistedClientSession = clientSessionCache.getClientSession(TEST_CLIENT_ID);
@@ -272,25 +259,21 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(TEST_CLIENT_ID);
         config.setCleanSession(false);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
 
         String[] topicNames = getTopicNames(TEST_TOPIC_SUBSCRIPTIONS);
         int[] qoSLevels = getQoSLevels(TEST_TOPIC_SUBSCRIPTIONS);
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
 
         config.setCleanSession(true);
-        persistedClient = MqttClient.create(config, (s, byteBuf) -> {
-        });
+        persistedClient = createMqttClient(config);
         persistedClient.connect("localhost", mqttPort).get();
         for (int i = 0; i < topicNames.length; i++) {
-            persistedClient.on(topicNames[i], (s, byteBuf) -> {
-            }, MqttQoS.valueOf(qoSLevels[i])).get();
+            persistedClient.on(topicNames[i], (s, byteBuf) -> Futures.immediateVoidFuture(), MqttQoS.valueOf(qoSLevels[i])).get();
         }
         persistedClient.disconnect();
         awaitUntilDisconnected();
@@ -301,6 +284,10 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
         Assert.assertNull(clientSessionCtx);
         Set<TopicSubscription> persistedTopicSubscriptions = clientSubscriptionCache.getClientSubscriptions(TEST_CLIENT_ID);
         Assert.assertTrue(persistedTopicSubscriptions.isEmpty());
+    }
+
+    private MqttClient createMqttClient(MqttClientConfig config) {
+        return MqttClient.create(config, (s, byteBuf) -> Futures.immediateVoidFuture(), externalExecutorService);
     }
 
     private void awaitUntilDisconnected() {

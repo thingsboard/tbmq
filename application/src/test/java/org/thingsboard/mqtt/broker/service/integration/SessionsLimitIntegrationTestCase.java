@@ -73,7 +73,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test
     public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClient_thenRefuseNewConnection() throws Throwable {
-        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_1"), null);
+        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_1"), null, externalExecutorService);
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
@@ -82,7 +82,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
             return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
         });
 
-        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null);
+        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_2"), null, externalExecutorService);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_2");
         Assert.assertNull(clientSessionInfo2);
@@ -92,7 +92,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
 
     @Test
     public void givenSessionsLimitSetTo1And1Client_whenTryConnectAnotherClientWithSameClientId_thenAllowConnection() throws Throwable {
-        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        MqttClient client1 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
         client1.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         Assert.assertTrue(client1.isConnected());
 
@@ -101,7 +101,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
             return clientSessionInfo1 != null && clientSessionInfo1.isConnected();
         });
 
-        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null);
+        MqttClient client2 = MqttClient.create(getConfig("test_sessions_limit_same_client"), null, externalExecutorService);
         client2.connect(LOCALHOST, mqttPort).get(30, TimeUnit.SECONDS);
         ClientSessionInfo clientSessionInfo2 = clientSessionService.getClientSessionInfo("test_sessions_limit_same_client");
         Assert.assertNotNull(clientSessionInfo2);

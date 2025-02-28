@@ -15,108 +15,207 @@
     limitations under the License.
 
 -->
-<section [formGroup]="mqttIntegrationConfigForm" class="flex flex-col">
-  <fieldset formGroupName="clientConfiguration">
-    <div class="flex flex-row xs:flex-col gt-xs:gap-2">
-      <mat-form-field class="mat-block flex-1" appearance="outline">
-        <mat-label translate>integration.host</mat-label>
-        <input matInput required formControlName="host">
-        @if (mqttIntegrationConfigForm.get('clientConfiguration.host').hasError('required')) {
-          <mat-error translate>
-            integration.host-required
-          </mat-error>
-        }
-        @if (mqttIntegrationConfigForm.get('clientConfiguration.host').hasError('privateNetwork')) {
-          <mat-error translate>
-            integration.host-private
-          </mat-error>
-        }
-      </mat-form-field>
-      <mat-form-field class="mat-block flex-1" appearance="outline">
-        <mat-label translate>integration.port</mat-label>
-        <input matInput type="number" step="1" min="1" max="65535" required formControlName="port">
-        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('required')) {
-          <mat-error translate>integration.port-required
-          </mat-error>
-        }
-        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('min')) {
-          <mat-error translate>integration.port-range</mat-error>
-        }
-        @if (mqttIntegrationConfigForm.get('clientConfiguration.port').hasError('max')) {
-          <mat-error translate>integration.port-range</mat-error>
-        }
-      </mat-form-field>
-    </div>
-    <section class="flex flex-col gap-4">
-      <tb-http-topic-filters formControlName="topicFilters">
-      </tb-http-topic-filters>
-      <tb-integration-credentials formControlName="credentials" passwordOptional
-        [allowCredentialTypes]="[IntegrationCredentialType.Anonymous, IntegrationCredentialType.Basic, IntegrationCredentialType.CertPEM]">
-        <mat-slide-toggle class="checkbox" [aria-label]="'integration.enable-ssl' | translate" formControlName="ssl">
-          {{ 'integration.enable-ssl' | translate }}
-        </mat-slide-toggle>
-      </tb-integration-credentials>
-    </section>
-  </fieldset>
-  <mat-expansion-panel class="configuration-panel" formGroupName="clientConfiguration">
-    <mat-expansion-panel-header>
-      <mat-panel-description class="flex items-stretch justify-end" translate>
-        integration.advanced-settings
-      </mat-panel-description>
-    </mat-expansion-panel-header>
-    <ng-template matExpansionPanelContent>
-      <div class="row flex flex-col gap-2 mb-4">
-        <mat-slide-toggle class="checkbox" [aria-label]="'integration.clean-session' | translate"
-          formControlName="cleanSession">
-          {{ 'integration.clean-session' | translate }}
-        </mat-slide-toggle>
-        <mat-slide-toggle class="checkbox" [aria-label]="'integration.retained-message' | translate"
-          formControlName="retainedMessage">
-          {{ 'integration.retained-message' | translate }}
-        </mat-slide-toggle>
-      </div>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.client-id</mat-label>
-        <input matInput formControlName="clientId" autocomplete="new-clientId">
-      </mat-form-field>
-      <div class="tb-hint client-id" [class.invisible]="mqttIntegrationConfigForm.get('clientConfiguration.clientId').errors" translate>
-        integration.client-id-hint
-      </div>
-      <section class="row flex flex-row xs:flex-col gt-xs:gap-2">
-        <mat-form-field class="mat-block flex-1" appearance="outline">
-          <mat-label translate>integration.max-bytes-in-message</mat-label>
-          <input matInput type="number" formControlName="maxBytesInMessage">
-          @if (mqttIntegrationConfigForm.get('clientConfiguration.maxBytesInMessage').hasError('min')) {
-            <mat-error translate>
-              integration.max-bytes-in-message-range
-            </mat-error>
-          }
-          @if (mqttIntegrationConfigForm.get('clientConfiguration.maxBytesInMessage').hasError('max')) {
-            <mat-error translate>
-              integration.max-bytes-in-message-range
-            </mat-error>
+<section [formGroup]="mqttIntegrationConfigForm">
+  <section formGroupName="clientConfiguration">
+    @if (!isNew) {
+      <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
+    }
+    <div class="flex flex-col">
+      <section class="flex flex-row gap-2">
+        <mat-form-field class="flex-1" appearance="outline">
+          <mat-label translate>admin.settings.host</mat-label>
+          <input matInput formControlName="host" required>
+          @if (clientConfigurationFormGroup.get('host').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'admin.settings.host-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
           }
         </mat-form-field>
-        <mat-form-field class="mat-block flex-1" appearance="outline">
-          <mat-label translate>integration.connect-timeout</mat-label>
-          <input matInput type="number" step="1" min="1" max="200" required formControlName="connectTimeoutSec">
-          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('required')) {
-            <mat-error translate>
-              integration.connect-timeout-required
-            </mat-error>
-          }
-          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('min')) {
-            <mat-error translate>integration.connect-timeout-range
-            </mat-error>
-          }
-          @if (mqttIntegrationConfigForm.get('clientConfiguration.connectTimeoutSec').hasError('max')) {
-            <mat-error translate>integration.connect-timeout-range
-            </mat-error>
+        <mat-form-field class="flex-1" appearance="outline">
+          <mat-label translate>admin.settings.port</mat-label>
+          <input matInput formControlName="port">
+          @if (clientConfigurationFormGroup.get('port').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'admin.settings.port-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          } @else if (clientConfigurationFormGroup.get('port').hasError('pattern')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'admin.settings.port-pattern' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          } @else if (clientConfigurationFormGroup.get('port').hasError('min') || clientConfigurationFormGroup.get('port').hasError('max')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'admin.settings.port-range' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
           }
         </mat-form-field>
       </section>
-      <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
-      </ng-container>
-    </ng-template>
-  </mat-expansion-panel>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.topic-name</mat-label>
+        <input matInput formControlName="topicName">
+        @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipPosition="above"
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.client-id</mat-label>
+        <input matInput formControlName="clientId">
+        <button mat-icon-button matSuffix
+                [disabled]="!isNew && !isEdit()"
+                [matTooltip]="'action.regenerate' | translate"
+                matTooltipPosition="above"
+                (click)="generateClientId()">
+          <mat-icon>
+            repeat
+          </mat-icon>
+        </button>
+        <mat-icon matSuffix class="cursor-pointer"
+                  matTooltipPosition="above"
+                  aria-hidden="false"
+                  aria-label="help-icon"
+                  color="primary"
+                  matTooltip="{{ 'integration.client-id-hint' | translate }}">
+          help
+        </mat-icon>
+        @if (clientConfigurationFormGroup.get('clientId').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipPosition="above"
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.client-id-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+      </mat-form-field>
+      <tb-integration-credentials formControlName="credentials" [passwordOptional]="false"
+                                  [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
+                                                           IntegrationCredentialType.Basic,
+                                                           IntegrationCredentialType.CertPEM]">
+        @if (displayEnableSsl()) {
+          <mat-slide-toggle formControlName="ssl">
+            {{ 'integration.enable-ssl' | translate }}
+          </mat-slide-toggle>
+        }
+      </tb-integration-credentials>
+    </div>
+    <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
+    </ng-container>
+    <mat-expansion-panel class="configuration-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-description class="flex items-stretch justify-end" translate>
+          integration.advanced-settings
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.keep-alive-sec</mat-label>
+          <input matInput formControlName="keepAliveSec" type="number" min="0" max="65535">
+          <mat-icon matSuffix class="cursor-pointer"
+                    matTooltipPosition="above"
+                    aria-hidden="false"
+                    aria-label="help-icon"
+                    color="primary"
+                    matTooltip="{{ 'mqtt-client-session.keep-alive-hint' | translate }}">
+            help
+          </mat-icon>
+          @if (clientConfigurationFormGroup.get('keepAliveSec').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'mqtt-client-session.keep-alive-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.connect-timeout-sec</mat-label>
+          <input matInput formControlName="connectTimeoutSec" type="number" min="0">
+          <mat-icon matSuffix class="cursor-pointer"
+                    matTooltipPosition="above"
+                    aria-hidden="false"
+                    aria-label="help-icon"
+                    color="primary"
+                    matTooltip="{{ 'ws-client.connections.connect-timeout-hint' | translate }}">
+            help
+          </mat-icon>
+          @if (clientConfigurationFormGroup.get('connectTimeoutSec').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'ws-client.connections.connect-timeout-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.reconnect-period-sec</mat-label>
+          <input matInput formControlName="reconnectPeriodSec" type="number" min="0">
+          <mat-icon matSuffix class="cursor-pointer"
+                    matTooltipPosition="above"
+                    aria-hidden="false"
+                    aria-label="help-icon"
+                    color="primary"
+                    matTooltip="{{ 'ws-client.connections.reconnect-period-hint' | translate }}">
+            help
+          </mat-icon>
+          @if (clientConfigurationFormGroup.get('reconnectPeriodSec').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'ws-client.connections.reconnect-period-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>ws-client.connections.mqtt-version</mat-label>
+          <mat-select formControlName="mqttVersion">
+            @for (mqttVersion of mqttVersions; track mqttVersion) {
+              <mat-option [value]="mqttVersion.value">
+                {{ mqttVersion.name }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
+        </tb-qos-select>
+        <mat-slide-toggle formControlName="retained">
+          {{ 'ws-client.last-will.retain' | translate }}
+        </mat-slide-toggle>
+      </ng-template>
+    </mat-expansion-panel>
+  </section>
+  <ng-template #topicFilters>
+    <section class="mb-6" [formGroup]="mqttIntegrationConfigForm">
+      <section class="security-setting mat-padding">
+        <p translate>integration.topic-filters</p>
+        <tb-http-topic-filters [isEdit]="isEdit()" [integration]="integration()" formControlName="topicFilters">
+        </tb-http-topic-filters>
+      </section>
+    </section>
+  </ng-template>
 </section>

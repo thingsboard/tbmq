@@ -13,24 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.integration;
+package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+public class MqttIntegration {
 
-@AllArgsConstructor
-@Getter
-public enum IntegrationType {
-
-    HTTP,
-    MQTT,
-    KAFKA,
-    ;
-
-    // Identifies if the Integration instance is one per cluster
-    private final boolean singleton;
-
-    IntegrationType() {
-        this(true);
-    }
 }

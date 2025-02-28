@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import com.google.common.util.concurrent.Futures;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import lombok.extern.slf4j.Slf4j;
@@ -61,13 +62,13 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         String clientId = RandomStringUtils.randomAlphabetic(10);
         MqttClientConfig config = getConfig(clientId, true);
 
-        MqttClient client = MqttClient.create(config, null);
+        MqttClient client = MqttClient.create(config, null, externalExecutorService);
         connectClient(client);
         subscribeClient(client);
 
         sessionAndSubsPresent(clientId);
 
-        MqttClient clientTakenOver = MqttClient.create(config, null);
+        MqttClient clientTakenOver = MqttClient.create(config, null, externalExecutorService);
         connectClient(clientTakenOver);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
@@ -81,13 +82,13 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         String clientId = RandomStringUtils.randomAlphabetic(10);
         MqttClientConfig config = getConfig(clientId, false);
 
-        MqttClient client = MqttClient.create(config, null);
+        MqttClient client = MqttClient.create(config, null, externalExecutorService);
         connectClient(client);
         subscribeClient(client);
 
         sessionAndSubsPresent(clientId);
 
-        MqttClient clientTakenOver = MqttClient.create(config, null);
+        MqttClient clientTakenOver = MqttClient.create(config, null, externalExecutorService);
         connectClient(clientTakenOver);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
@@ -101,14 +102,14 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         String clientId = RandomStringUtils.randomAlphabetic(10);
         MqttClientConfig config = getConfig(clientId, false);
 
-        MqttClient client = MqttClient.create(config, null);
+        MqttClient client = MqttClient.create(config, null, externalExecutorService);
         connectClient(client);
         subscribeClient(client);
 
         sessionAndSubsPresent(clientId);
 
         config = getConfig(clientId, true);
-        MqttClient clientTakenOver = MqttClient.create(config, null);
+        MqttClient clientTakenOver = MqttClient.create(config, null, externalExecutorService);
         connectClient(clientTakenOver);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
@@ -122,14 +123,14 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
         String clientId = RandomStringUtils.randomAlphabetic(10);
         MqttClientConfig config = getConfig(clientId, true);
 
-        MqttClient client = MqttClient.create(config, null);
+        MqttClient client = MqttClient.create(config, null, externalExecutorService);
         connectClient(client);
         subscribeClient(client);
 
         sessionAndSubsPresent(clientId);
 
         config = getConfig(clientId, false);
-        MqttClient clientTakenOver = MqttClient.create(config, null);
+        MqttClient clientTakenOver = MqttClient.create(config, null, externalExecutorService);
         connectClient(clientTakenOver);
 
         Set<TopicSubscription> clientSubscriptions = clientSubscriptionCache.getClientSubscriptions(clientId);
@@ -155,8 +156,7 @@ public class SessionTakenOverIntegrationTestCase extends AbstractPubSubIntegrati
     }
 
     private MqttHandler getHandler() {
-        return (s, byteBuf) -> {
-        };
+        return (s, byteBuf) -> Futures.immediateVoidFuture();
     }
 
     private void sessionAndSubsPresent(String clientId) {

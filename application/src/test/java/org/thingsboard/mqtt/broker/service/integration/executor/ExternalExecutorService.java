@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.integration;
+package org.thingsboard.mqtt.broker.service.integration.executor;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.springframework.stereotype.Component;
+import org.thingsboard.common.util.AbstractListeningExecutor;
 
-@AllArgsConstructor
-@Getter
-public enum IntegrationType {
+@Component
+public class ExternalExecutorService extends AbstractListeningExecutor {
 
-    HTTP,
-    MQTT,
-    KAFKA,
-    ;
-
-    // Identifies if the Integration instance is one per cluster
-    private final boolean singleton;
-
-    IntegrationType() {
-        this(true);
+    @Override
+    protected int getThreadPollSize() {
+        return 10;
     }
+
 }
+

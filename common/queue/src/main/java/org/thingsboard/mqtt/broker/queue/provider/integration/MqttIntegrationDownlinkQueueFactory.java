@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.integration;
+package org.thingsboard.mqtt.broker.queue.provider.integration;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import org.thingsboard.mqtt.broker.gen.integration.DownlinkIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-@AllArgsConstructor
-@Getter
-public enum IntegrationType {
+public interface MqttIntegrationDownlinkQueueFactory {
 
-    HTTP,
-    MQTT,
-    KAFKA,
-    ;
+    TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> createProducer(String serviceId);
 
-    // Identifies if the Integration instance is one per cluster
-    private final boolean singleton;
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> createConsumer(String consumerId);
 
-    IntegrationType() {
-        this(true);
-    }
 }

@@ -19,7 +19,7 @@ import { QoS } from '@shared/models/session.model';
 
 export enum IntegrationType {
   HTTP = 'HTTP',
-  // MQTT = 'MQTT',
+  MQTT = 'MQTT',
   KAFKA = 'KAFKA',
 }
 
@@ -44,7 +44,7 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
         checkConnection: true
       }
     ],
-    /*[
+    [
       IntegrationType.MQTT,
       {
         name: 'integration.type-mqtt',
@@ -52,7 +52,7 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
         icon: 'assets/integration-icon/mqtt.svg',
         checkConnection: true
       }
-    ],*/
+    ],
     [
       IntegrationType.KAFKA,
       {
@@ -68,7 +68,7 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
 const integrationHelpLinkMap = new Map<IntegrationType, string>(
   [
     [IntegrationType.HTTP, 'integrationHttp'],
-    /*[IntegrationType.MQTT, 'integrationMqtt'],*/
+    [IntegrationType.MQTT, 'integrationMqtt'],
     [IntegrationType.KAFKA, 'integrationKafka'],
   ]
 );
@@ -204,12 +204,16 @@ export interface MqttIntegration extends Topics {
   clientConfiguration: {
     host: string;
     port: number;
-    cleanSession: boolean
+    topicName: string;
     ssl: boolean;
-    connectTimeoutSec: number
     clientId: string;
-    maxBytesInMessage: number;
     credentials: Credentials | BasicCredentials | CertPemCredentials;
+    connectTimeoutSec: number;
+    reconnectPeriodSec: number;
+    keepAliveSec: number;
+    mqttVersion: string;
+    qos: QoS;
+    retained: boolean;
   };
 }
 

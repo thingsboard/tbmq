@@ -617,7 +617,7 @@
     "client-id-prefix": "Client ID prefix",
     "client-id-prefix-required": "Client ID prefix is required.",
     "client-id-prefix-hint": "Optional. Specifies the prefix for the Kafka client ID. If not set, the default prefix 'tbmq-ie-kafka-producer' will be used.",
-    "client-id-hint": "Optional. Leave empty for auto-generated client ID. Be careful when specifying the Client ID. Majority of the MQTT brokers will not allow multiple connections with the same client ID. To connect to such brokers, your MQTT client ID must be unique.",
+    "client-id-hint": "Identifier of the client. Should be unique to not conflict with other client IDs on the target broker.",
     "charset-encoding": "Charset encoding",
     "charset-us-ascii": "US-ASCII",
     "charset-iso-8859-1": "ISO-8859-1",
@@ -692,6 +692,8 @@
     "add-topic-filter-prompt": "Please add topic filter",
     "topic": "Topic",
     "topic-required": "Topic is required",
+    "topic-name": "Topic name",
+    "topic-name-required": "Topic name is required",
     "mqtt-qos": "QoS",
     "mqtt-qos-required": "QoS is required",
     "mqtt-qos-range": "QoS values range is from 0 to 2",
@@ -891,7 +893,10 @@
     "no-properties": "No properties",
     "add-property": "Add property",
     "kafka-headers": "Kafka headers",
-    "compression": "Compression"
+    "compression": "Compression",
+    "keep-alive-sec": "Keep alive (sec)",
+    "connect-timeout-sec": "Connect timeout (sec)",
+    "reconnect-period-sec": "Reconnect period (sec)"
   },
   "language": {
     "language": "Language",
