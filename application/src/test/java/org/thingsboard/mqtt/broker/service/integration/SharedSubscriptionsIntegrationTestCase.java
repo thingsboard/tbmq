@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration;
 
+import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -78,7 +79,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
                 client.disconnect();
                 Thread.sleep(50);
             }
-            client = MqttClient.create(config, null);
+            client = MqttClient.create(config, null, externalExecutorService);
             client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
             client.disconnect();
         }
@@ -437,7 +438,7 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         MqttClientConfig config = new MqttClientConfig();
         config.setCleanSession(cleanSession);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
-        MqttClient client = MqttClient.create(config, handler);
+        MqttClient client = MqttClient.create(config, handler, externalExecutorService);
         client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
         return client;
     }
@@ -446,11 +447,15 @@ public class SharedSubscriptionsIntegrationTestCase extends AbstractPubSubIntegr
         return (s, byteBuf) -> {
             integer.incrementAndGet();
             latch.countDown();
+            return Futures.immediateVoidFuture();
         };
     }
 
     private MqttHandler getHandler(AtomicInteger integer) {
-        return (s, byteBuf) -> integer.incrementAndGet();
+        return (s, byteBuf) -> {
+            integer.incrementAndGet();
+            return Futures.immediateVoidFuture();
+        };
     }
 
     private void disconnectClient(MqttClient client) {
