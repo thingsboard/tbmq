@@ -92,8 +92,8 @@ class ServiceInfoProviderImplTest {
     @Test
     void testGetSupportedIntegrationTypes_withTBMQIntegrationExecutor() {
         serviceInfoProvider.setServiceTypeStr("tbmq-integration-executor");
-        serviceInfoProvider.setSupportedIntegrationsStr("HTTP,MQTT");
-        serviceInfoProvider.setExcludedIntegrationsStr("MQTT");
+        serviceInfoProvider.setSupportedIntegrationsStr("HTTP,KAFKA");
+        serviceInfoProvider.setExcludedIntegrationsStr("KAFKA");
         serviceInfoProvider.init();
 
         List<IntegrationType> supportedTypes = serviceInfoProvider.getSupportedIntegrationTypes();
