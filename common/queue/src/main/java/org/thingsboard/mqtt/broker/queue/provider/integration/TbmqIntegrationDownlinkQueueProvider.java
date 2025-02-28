@@ -67,7 +67,7 @@ public class TbmqIntegrationDownlinkQueueProvider implements IntegrationDownlink
         return switch (type) {
             case HTTP -> httpIntegrationDownlinkProducer;
             case KAFKA -> kafkaIntegrationDownlinkProducer;
-//            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
+            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
             default -> throw new ThingsboardRuntimeException("Unsupported integration type: " + type);
         };
     }

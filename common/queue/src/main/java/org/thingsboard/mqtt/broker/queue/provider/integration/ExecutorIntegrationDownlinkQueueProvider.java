@@ -67,7 +67,7 @@ public class ExecutorIntegrationDownlinkQueueProvider implements IntegrationDown
         return switch (integrationType) {
             case HTTP -> httpIntegrationDownlinkQueueFactory.createConsumer(serviceId);
             case KAFKA -> kafkaIntegrationDownlinkQueueFactory.createConsumer(serviceId);
-//            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
+            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
             default -> throw new ThingsboardRuntimeException("Unsupported integration type: " + integrationType);
         };
     }
