@@ -41,15 +41,18 @@ public class TbmqIntegrationDownlinkQueueProvider implements IntegrationDownlink
 
     private final HttpIntegrationDownlinkQueueFactory httpIntegrationDownlinkQueueFactory;
     private final KafkaIntegrationDownlinkQueueFactory kafkaIntegrationDownlinkQueueFactory;
+    private final MqttIntegrationDownlinkQueueFactory mqttIntegrationDownlinkQueueFactory;
     private final ServiceInfoProvider serviceInfoProvider;
 
     private TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> httpIntegrationDownlinkProducer;
     private TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> kafkaIntegrationDownlinkProducer;
+    private TbQueueProducer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>> mqttIntegrationDownlinkProducer;
 
     @PostConstruct
     public void init() {
         this.httpIntegrationDownlinkProducer = httpIntegrationDownlinkQueueFactory.createProducer(serviceInfoProvider.getServiceId());
         this.kafkaIntegrationDownlinkProducer = kafkaIntegrationDownlinkQueueFactory.createProducer(serviceInfoProvider.getServiceId());
+        this.mqttIntegrationDownlinkProducer = mqttIntegrationDownlinkQueueFactory.createProducer(serviceInfoProvider.getServiceId());
     }
 
     @PreDestroy
@@ -60,6 +63,9 @@ public class TbmqIntegrationDownlinkQueueProvider implements IntegrationDownlink
         if (kafkaIntegrationDownlinkProducer != null) {
             kafkaIntegrationDownlinkProducer.stop();
         }
+        if (mqttIntegrationDownlinkProducer != null) {
+            mqttIntegrationDownlinkProducer.stop();
+        }
     }
 
     @Override
@@ -67,7 +73,7 @@ public class TbmqIntegrationDownlinkQueueProvider implements IntegrationDownlink
         return switch (type) {
             case HTTP -> httpIntegrationDownlinkProducer;
             case KAFKA -> kafkaIntegrationDownlinkProducer;
-            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
+            case MQTT -> mqttIntegrationDownlinkProducer;
             default -> throw new ThingsboardRuntimeException("Unsupported integration type: " + type);
         };
     }
