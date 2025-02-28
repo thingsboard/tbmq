@@ -17,9 +17,7 @@ package org.thingsboard.mqtt.broker.integration.service.integration.http;
 
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
@@ -45,34 +43,9 @@ public abstract class AbstractHttpIntegration extends AbstractIntegration {
                     callback.onSuccess();
                 },
                 throwable -> {
-                    integrationStatistics.incErrorsOccurred();
-                    context.saveErrorEvent(getErrorEvent(throwable));
+                    handleMsgProcessingFailure(throwable);
                     callback.onFailure(throwable);
                 });
-    }
-
-    private ErrorEvent getErrorEvent(Throwable throwable) {
-        return ErrorEvent
-                .builder()
-                .entityId(lifecycleMsg.getIntegrationId())
-                .serviceId(context.getServiceId())
-                .method("onMsgProcess")
-                .error(getError(throwable))
-                .build();
-    }
-
-    private String getError(Throwable throwable) {
-        return throwable == null ? "Unspecified server error" : getRealErrorMsg(throwable);
-    }
-
-    private String getRealErrorMsg(Throwable throwable) {
-        if (StringUtils.isNotEmpty(throwable.getMessage())) {
-            return throwable.getMessage();
-        }
-        if (StringUtils.isNotEmpty(throwable.getCause().getMessage())) {
-            return throwable.getCause().getMessage();
-        }
-        return throwable.getCause().toString();
     }
 
     protected abstract void doProcess(PublishIntegrationMsgProto msg, BasicCallback callback) throws Exception;

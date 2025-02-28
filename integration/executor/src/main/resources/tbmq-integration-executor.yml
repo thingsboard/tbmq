@@ -93,6 +93,13 @@ queue:
         additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_HTTP_ADDITIONAL_CONSUMER_CONFIG:}"
         # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.http` topic
         additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_HTTP_ADDITIONAL_PRODUCER_CONFIG:}"
+      kafka:
+        # Kafka topic properties separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        topic-properties: "${TB_KAFKA_IE_DOWNLINK_KAFKA_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
+        # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_CONSUMER_CONFIG:}"
+        # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.kafka` topic
+        additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-uplink:
       # Topic for sending messages/events from integration executors to tbmq
       topic: "${TB_KAFKA_IE_UPLINK_TOPIC:tbmq.ie.uplink}"
@@ -134,10 +141,10 @@ service:
   id: "${TB_SERVICE_ID:}"
   integrations:
     # Allow to enable integration on microservice integration executor.
-    # Allowed values: HTTP, MQTT. By default, ALL
+    # Allowed values: HTTP, KAFKA. By default, ALL
     supported: "${TB_SERVICE_INTEGRATIONS_SUPPORTED:ALL}"
     # List of integrations to exclude from processing on service/microservice integration executor.
-    # Allowed values: HTTP, MQTT. By default, NONE
+    # Allowed values: HTTP, KAFKA. By default, NONE
     excluded: "${TB_SERVICE_INTEGRATIONS_EXCLUDED:NONE}"
 
 # Integration common parameters
@@ -171,6 +178,9 @@ integrations:
     lifecycle-threads-count: "${INTEGRATIONS_MANAGE_LIFECYCLE_THREADS:4}"
     # Number of threads in the pool to process integration validation requests
     command-threads-count: "${INTEGRATIONS_MANAGE_COMMAND_THREADS:4}"
+  external:
+    # Number of threads in the pool dedicated to handling external operations, such as producing messages to Kafka topics
+    threads-count: "${INTEGRATIONS_EXTERNAL_THREADS:10}"
 
 # Management parameters
 management:

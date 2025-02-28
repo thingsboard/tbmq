@@ -20,7 +20,7 @@ import { QoS } from '@shared/models/session.model';
 export enum IntegrationType {
   HTTP = 'HTTP',
   // MQTT = 'MQTT',
-  // KAFKA = 'KAFKA',
+  KAFKA = 'KAFKA',
 }
 
 export interface IntegrationTypeInfo {
@@ -52,24 +52,24 @@ export const integrationTypeInfoMap = new Map<IntegrationType, IntegrationTypeIn
         icon: 'assets/integration-icon/mqtt.svg',
         checkConnection: true
       }
-    ],
+    ],*/
     [
       IntegrationType.KAFKA,
       {
         name: 'integration.type-kafka',
         description: 'integration.type-kafka-description',
         icon: 'assets/integration-icon/kafka.svg',
-        hideDownlink: true
+        checkConnection: true
       }
-    ],*/
+    ],
   ]
 );
 
 const integrationHelpLinkMap = new Map<IntegrationType, string>(
   [
     [IntegrationType.HTTP, 'integrationHttp'],
-    /*[IntegrationType.MQTT, 'integrationMqtt'],
-    [IntegrationType.KAFKA, 'integrationKafka'],*/
+    /*[IntegrationType.MQTT, 'integrationMqtt'],*/
+    [IntegrationType.KAFKA, 'integrationKafka'],
   ]
 );
 
@@ -156,12 +156,10 @@ export const IntegrationCredentialTypeTranslation = new Map<IntegrationCredentia
 ]);
 
 export interface Topics {
-  topicFilters: Array<MqttTopicFilter>;
-  downlinkTopicPattern: string;
+  topicFilters: Array<string>;
 }
 
-export interface HttpIntegration {
-  topicFilters: Array<string>;
+export interface HttpIntegration extends Topics {
   clientConfiguration: {
     restEndpointUrl: string;
     requestMethod: HttpRequestType;
@@ -183,19 +181,26 @@ export enum HttpRequestType {
   // CONNECT = 'CONNECT'
 }
 
-export interface KafkaIntegration {
+export interface KafkaIntegration extends Topics {
   clientConfiguration: {
-    groupId: string;
+    topic: string;
+    key: string;
     clientId: string;
-    topics: string;
     bootstrapServers: string;
-    pollInterval: number;
-    autoCreateTopics: boolean
-    otherProperties?: {[key: string]: string} | null;
+    clientIdPrefix: string;
+    retries: number;
+    batchSize: number;
+    linger: number;
+    bufferMemory: number;
+    compression: string;
+    acks: string;
+    kafkaHeadersCharset: string;
+    kafkaHeaders: {[key: string]: string} | null;
+    otherProperties: {[key: string]: string} | null;
   };
 }
 
-export interface MqttIntegration extends Topics{
+export interface MqttIntegration extends Topics {
   clientConfiguration: {
     host: string;
     port: number;
@@ -217,3 +222,23 @@ export interface DebugSettings {
   allEnabled?: boolean;
   allEnabledUntil?: number;
 }
+
+export const ToByteStandartCharsetTypes = [
+  'US-ASCII',
+  'ISO-8859-1',
+  'UTF-8',
+  'UTF-16BE',
+  'UTF-16LE',
+  'UTF-16'
+];
+
+export const ToByteStandartCharsetTypeTranslations = new Map<string, string>(
+  [
+    ['US-ASCII', 'integration.charset-us-ascii'],
+    ['ISO-8859-1', 'integration.charset-iso-8859-1'],
+    ['UTF-8', 'integration.charset-utf-8'],
+    ['UTF-16BE', 'integration.charset-utf-16be'],
+    ['UTF-16LE', 'integration.charset-utf-16le'],
+    ['UTF-16', 'integration.charset-utf-16'],
+  ]
+);

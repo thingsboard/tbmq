@@ -35,7 +35,6 @@ import { Observable, Subject } from 'rxjs';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
-import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { IntegrationService } from '@core/http/integration.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { HelpComponent } from '@shared/components/help.component';
@@ -162,8 +161,6 @@ export class IntegrationWizardDialogComponent extends
     this.integrationTopicFilterForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required]
     });
-
-    this.defaultIntegration();
   }
 
   ngOnDestroy() {
@@ -294,9 +291,5 @@ export class IntegrationWizardDialogComponent extends
     } else {
       return true;
     }
-  }
-
-  private defaultIntegration() {
-    this.integrationWizardForm.get('type').patchValue(IntegrationType.HTTP);
   }
 }

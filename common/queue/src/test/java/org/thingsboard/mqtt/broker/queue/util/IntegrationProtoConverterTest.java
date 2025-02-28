@@ -44,13 +44,13 @@ class IntegrationProtoConverterTest {
         UUID integrationId = UUID.randomUUID();
         Integration integration = new Integration();
         integration.setId(integrationId);
-        integration.setType(IntegrationType.MQTT);
+        integration.setType(IntegrationType.KAFKA);
 
         IntegrationMsgProto proto = IntegrationProtoConverter.toProto(integration, ComponentLifecycleEvent.DELETED);
 
         assertEquals(integrationId.getMostSignificantBits(), proto.getIntegrationIdMSB());
         assertEquals(integrationId.getLeastSignificantBits(), proto.getIntegrationIdLSB());
-        assertEquals("MQTT", proto.getType());
+        assertEquals("KAFKA", proto.getType());
         assertEquals(ComponentLifecycleEventProto.forNumber(ComponentLifecycleEvent.DELETED.ordinal()), proto.getEvent());
     }
 
@@ -104,8 +104,8 @@ class IntegrationProtoConverterTest {
         Integration integration = new Integration();
         integration.setId(integrationId);
         integration.setCreatedTime(123456789L);
-        integration.setType(IntegrationType.MQTT);
-        integration.setName("MQTTIntegration");
+        integration.setType(IntegrationType.KAFKA);
+        integration.setName("KAFKAIntegration");
         integration.setEnabled(true);
         integration.setConfiguration(JacksonUtil.newObjectNode().put("configKey", "configValue"));
         integration.setAdditionalInfo(JacksonUtil.newObjectNode().put("infoKey", "infoValue"));
@@ -115,8 +115,8 @@ class IntegrationProtoConverterTest {
         assertEquals(integrationId.getMostSignificantBits(), proto.getIntegrationIdMSB());
         assertEquals(integrationId.getLeastSignificantBits(), proto.getIntegrationIdLSB());
         assertEquals(123456789L, proto.getCreatedTime());
-        assertEquals("MQTT", proto.getType());
-        assertEquals("MQTTIntegration", proto.getName());
+        assertEquals("KAFKA", proto.getType());
+        assertEquals("KAFKAIntegration", proto.getName());
         assertTrue(proto.getEnabled());
         assertEquals("{\"configKey\":\"configValue\"}", proto.getConfiguration());
         assertEquals("{\"infoKey\":\"infoValue\"}", proto.getAdditionalInfo());

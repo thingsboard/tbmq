@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef } from '@angular/core';
+import { Component, forwardRef, input, OnInit } from '@angular/core';
 import {
   ControlValueAccessor,
   UntypedFormBuilder,
@@ -28,31 +28,53 @@ import {
 import { isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
-import { KafkaIntegration } from '@shared/models/integration.models';
+import {
+  Integration,
+  KafkaIntegration,
+  ToByteStandartCharsetTypes,
+  ToByteStandartCharsetTypeTranslations
+} from '@shared/models/integration.models';
 import { privateNetworkAddressValidator } from '@home/components/integration/integration.models';
-import { MatFormField } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgTemplateOutlet } from '@angular/common';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatExpansionPanel, MatExpansionPanelContent, MatExpansionPanelDescription } from '@angular/material/expansion';
-import { HeaderFilterMapComponent } from '@shared/components/header-filter-map.component';
+import {
+  MatExpansionPanel,
+  MatExpansionPanelContent,
+  MatExpansionPanelDescription,
+  MatExpansionPanelHeader
+} from '@angular/material/expansion';
+import { MatOption, MatSelect } from '@angular/material/select';
+import { KeyValMapComponent } from '@shared/components/key-val-map.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import {
+  HttpTopicFiltersComponent
+} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
 
 @Component({
   selector: 'tb-kafka-integration-form',
   templateUrl: './kafka-integration-form.component.html',
-  styleUrls: [],
+  styleUrls: ['./kafka-integration-form.component.scss'],
   imports: [
     ReactiveFormsModule,
     MatFormField,
     MatInput,
-    MatSlideToggle,
+    MatLabel,
     TranslateModule,
     MatExpansionPanel,
+    MatExpansionPanelHeader,
     MatExpansionPanelDescription,
     MatExpansionPanelContent,
-    HeaderFilterMapComponent,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    MatSelect,
+    MatOption,
+    KeyValMapComponent,
+    MatSuffix,
+    MatIcon,
+    MatTooltip,
+    HttpTopicFiltersComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -65,38 +87,76 @@ import { HeaderFilterMapComponent } from '@shared/components/header-filter-map.c
     multi: true,
   }]
 })
-export class KafkaIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator {
+export class KafkaIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator, OnInit {
+
+  integration = input<Integration>();
+  isEdit = input<boolean>();
 
   kafkaIntegrationConfigForm: UntypedFormGroup;
+  ackValues: string[] = ['all', '-1', '0', '1'];
+  compressionValues: string[] = ['none', 'gzip', 'snappy', 'lz4', 'zstd'];
+  ToByteStandartCharsetTypesValues = ToByteStandartCharsetTypes;
+  ToByteStandartCharsetTypeTranslationMap = ToByteStandartCharsetTypeTranslations;
+  isNew: boolean;
 
+  private propagateChangePending = false;
   private propagateChange = (v: any) => { };
+
+  get clientConfigurationFormGroup() {
+    return this.kafkaIntegrationConfigForm.get('clientConfiguration') as UntypedFormGroup;
+  }
 
   constructor(private fb: UntypedFormBuilder) {
     super();
+  }
+
+  ngOnInit() {
     this.kafkaIntegrationConfigForm = this.fb.group({
-      groupId: ['', [Validators.required]],
-      clientId: ['', [Validators.required]],
-      topics: ['my-topic-output', [Validators.required]],
-      bootstrapServers: ['localhost:9092', [Validators.required]],
-      pollInterval: [5000, [Validators.required]],
-      autoCreateTopics: [false],
-      otherProperties: [null]
+      topicFilters: [['tbmq/#'], Validators.required],
+      clientConfiguration: this.fb.group({
+        topic: ['tbmq.messages', [Validators.required]],
+        key: [null, []],
+        bootstrapServers: ['localhost:9092', [Validators.required]],
+        clientIdPrefix: [null, []],
+        retries: [0, [Validators.min(0)]],
+        batchSize: [16384, [Validators.min(0)]],
+        linger: [0, [Validators.min(0)]],
+        bufferMemory: [33554432, [Validators.min(0)]],
+        compression: ['none', [Validators.required]],
+        acks: ['-1', [Validators.required]],
+        // keySerializer: ['org.apache.kafka.common.serialization.StringSerializer', [Validators.required]],
+        // valueSerializer: ['org.apache.kafka.common.serialization.StringSerializer', [Validators.required]],
+        otherProperties: [null, []],
+        kafkaHeaders: [null, []],
+        kafkaHeadersCharset: ['UTF-8', []],
+      })
     });
     this.kafkaIntegrationConfigForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(() => {
       this.updateModels(this.kafkaIntegrationConfigForm.getRawValue());
     });
+    this.updateModels(this.kafkaIntegrationConfigForm.getRawValue());
   }
 
   writeValue(value: KafkaIntegration) {
     if (isDefinedAndNotNull(value?.clientConfiguration)) {
-      this.kafkaIntegrationConfigForm.reset(value.clientConfiguration, {emitEvent: false});
+      this.isNew = false;
+      this.kafkaIntegrationConfigForm.reset(value);
+    } else {
+      this.isNew = true;
+      this.propagateChangePending = true;
     }
   }
 
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
+    if (this.propagateChangePending) {
+      this.propagateChangePending = false;
+      setTimeout(() => {
+        this.updateModels(this.kafkaIntegrationConfigForm.getRawValue());
+      }, 0);
+    }
   }
 
   registerOnTouched(fn: any) { }
@@ -111,7 +171,10 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
   }
 
   private updateModels(value) {
-    this.propagateChange({clientConfiguration: value});
+    if (this.isNew) {
+      delete value.topicFilters;
+    }
+    this.propagateChange(value);
   }
 
   validate(): ValidationErrors | null {
@@ -122,10 +185,10 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
 
   updatedValidationPrivateNetwork() {
     if (this.allowLocalNetwork) {
-      this.kafkaIntegrationConfigForm.get('bootstrapServers').removeValidators(privateNetworkAddressValidator);
+      this.clientConfigurationFormGroup.get('bootstrapServers').removeValidators(privateNetworkAddressValidator);
     } else {
-      this.kafkaIntegrationConfigForm.get('bootstrapServers').addValidators(privateNetworkAddressValidator);
+      this.clientConfigurationFormGroup.get('bootstrapServers').addValidators(privateNetworkAddressValidator);
     }
-    this.kafkaIntegrationConfigForm.get('bootstrapServers').updateValueAndValidity({emitEvent: false});
+    this.clientConfigurationFormGroup.get('bootstrapServers').updateValueAndValidity({emitEvent: false});
   }
 }

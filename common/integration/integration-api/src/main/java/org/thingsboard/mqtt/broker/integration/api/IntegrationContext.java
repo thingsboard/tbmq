@@ -19,6 +19,7 @@ import io.netty.channel.EventLoopGroup;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
+import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
 public interface IntegrationContext {
 
@@ -45,5 +46,7 @@ public interface IntegrationContext {
 
     void saveErrorEvent(ErrorEvent errorEvent);
 
-    BasicCallback getCallback();
+    BasicCallback getCheckConnectionCallback();
+
+    ListeningExecutor getExternalCallExecutor();
 }

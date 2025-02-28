@@ -107,7 +107,7 @@ public class IntegrationServiceImplTest extends AbstractServiceTest {
         integration.setType(IntegrationType.HTTP);
         integration.setConfiguration(getIntegrationConfiguration());
         Integration savedIntegration = integrationService.saveIntegration(integration);
-        savedIntegration.setType(IntegrationType.MQTT);
+        savedIntegration.setType(IntegrationType.KAFKA);
         Assertions.assertThrows(DataValidationException.class, () -> integrationService.saveIntegration(savedIntegration));
 
         integrationService.deleteIntegration(savedIntegration);

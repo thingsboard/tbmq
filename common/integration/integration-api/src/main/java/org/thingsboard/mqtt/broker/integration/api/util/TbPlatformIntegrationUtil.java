@@ -24,8 +24,8 @@ public class TbPlatformIntegrationUtil {
         return switch (type) {
             case HTTP ->
                     newInstance("org.thingsboard.mqtt.broker.integration.service.integration.http.HttpIntegration");
-            case MQTT ->
-                    newInstance("org.thingsboard.mqtt.broker.integration.service.integration.mqtt.MqttIntegration");
+//            case MQTT ->
+//                    newInstance("org.thingsboard.mqtt.broker.integration.service.integration.mqtt.MqttIntegration");
             case KAFKA ->
                     newInstance("org.thingsboard.mqtt.broker.integration.service.integration.kafka.KafkaIntegration");
         };
