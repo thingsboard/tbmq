@@ -162,6 +162,8 @@ integrations:
     # Integration statistic persistence frequency in milliseconds
     persist-frequency: "${INTEGRATIONS_STATISTICS_PERSIST_FREQUENCY:3600000}"
   init:
+    # Maximum connection timeout allowed for integrations in seconds. Any greater user defined timeout will be reduced down to this limit
+    connection-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_TIMEOUT_SEC:15}"
     # Connection check timeout for API request in seconds
     connection-check-api-request-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_CHECK_API_REQUEST_TIMEOUT_SEC:20}"
   reinit:
@@ -188,6 +190,10 @@ integrations:
   external:
     # Number of threads in the pool dedicated to handling external operations, such as producing messages to Kafka topics
     threads-count: "${INTEGRATIONS_EXTERNAL_THREADS:10}"
+  netty:
+    # Netty shared worker group threads count. Defaults to 0 meaning the threads count is number of availableProcessors * 2.
+    # Used to send messages to external MQTT brokers using MQTT bridge (integration)
+    threads-count: "${INTEGRATIONS_NETTY_SHARED_GROUP_THREADS:0}"
 
 # Management parameters
 management:

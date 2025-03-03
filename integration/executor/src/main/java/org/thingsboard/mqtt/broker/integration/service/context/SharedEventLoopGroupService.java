@@ -20,6 +20,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -30,9 +31,12 @@ public class SharedEventLoopGroupService {
 
     private EventLoopGroup sharedEventLoopGroup;
 
+    @Value("${integrations.netty.threads-count:0}")
+    private int threadsCount;
+
     @PostConstruct
     public void init() {
-        this.sharedEventLoopGroup = new NioEventLoopGroup();
+        this.sharedEventLoopGroup = new NioEventLoopGroup(threadsCount);
     }
 
     @PreDestroy

@@ -49,4 +49,6 @@ public interface IntegrationContext {
     BasicCallback getCheckConnectionCallback();
 
     ListeningExecutor getExternalCallExecutor();
+
+    int getIntegrationConnectTimeoutSec();
 }

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.context;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
@@ -46,6 +47,9 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
     private final ServiceInfoProvider serviceInfoProvider;
     private final ExternalCallExecutorService externalCallExecutorService;
 
+    @Value("${integrations.init.connection-timeout-sec:10}")
+    private int integrationConnectTimeoutSec;
+
     @Override
     public IntegrationContext buildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg) {
         return doBuildIntegrationContext(lifecycleMsg, null);
@@ -56,10 +60,10 @@ public class TbIntegrationExecutorContextProvider implements IntegrationContextP
         return doBuildIntegrationContext(IntegrationLifecycleMsg.fromIntegration(integration), callback);
     }
 
-    private TbIntegrationExecutorIntegrationContext doBuildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg, BasicCallback callback) {
-        return new TbIntegrationExecutorIntegrationContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(),
+    private IntegrationContext doBuildIntegrationContext(IntegrationLifecycleMsg lifecycleMsg, BasicCallback callback) {
+        return new IntegrationExecutorContext(lifecycleMsg, integrationMsgProcessor, getStatisticsService(),
                 logSettingsComponent, sharedEventLoopGroupService, eventStorageService, rateLimitService,
-                serviceInfoProvider.getServiceId(), callback, externalCallExecutorService);
+                serviceInfoProvider.getServiceId(), callback, externalCallExecutorService, integrationConnectTimeoutSec);
     }
 
     private IntegrationStatisticsService getStatisticsService() {
