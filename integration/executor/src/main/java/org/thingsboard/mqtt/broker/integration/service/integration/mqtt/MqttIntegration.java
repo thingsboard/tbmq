@@ -78,8 +78,7 @@ public class MqttIntegration extends AbstractIntegration {
             }
             MqttClient mqttClient = null;
             try {
-                // If check connection is used when client is already connected - two sessions will conflict. That's why client ID is adjusted here
-                mqttIntegrationConfig.setClientId(mqttIntegrationConfig.getClientId() + RandomStringUtils.randomAlphabetic(5));
+                updateConfigBeforeCheckConnection(mqttIntegrationConfig);
                 mqttClient = initClient(mqttIntegrationConfig);
             } finally {
                 if (mqttClient != null) {
@@ -152,8 +151,9 @@ public class MqttIntegration extends AbstractIntegration {
         clientConfig.setTimeoutSeconds(mqttIntegrationConfig.getKeepAliveSec());
         clientConfig.setProtocolVersion(getMqttVersion(mqttIntegrationConfig));
         prepareAuthConfigWhenBasic(mqttIntegrationConfig, clientConfig);
-        clientConfig.setReconnect(mqttIntegrationConfig.getReconnectPeriodSec() != 0);
-        clientConfig.setReconnectDelay(mqttIntegrationConfig.getReconnectPeriodSec());
+        boolean reconnect = mqttIntegrationConfig.getReconnectPeriodSec() != 0;
+        clientConfig.setReconnect(reconnect);
+        clientConfig.setReconnectDelay(reconnect ? mqttIntegrationConfig.getReconnectPeriodSec() : 5);
 
         MqttClient client = getMqttClient(clientConfig);
         client.setEventLoop(context.getSharedEventLoop());
@@ -195,6 +195,13 @@ public class MqttIntegration extends AbstractIntegration {
 
     MqttClient getMqttClient(MqttClientConfig clientConfig) {
         return MqttClient.create(clientConfig, null, null);
+    }
+
+    private void updateConfigBeforeCheckConnection(MqttIntegrationConfig mqttIntegrationConfig) {
+        // If check connection is used when client is already connected - two sessions will conflict. That's why client ID is adjusted here
+        mqttIntegrationConfig.setClientId(mqttIntegrationConfig.getClientId() + RandomStringUtils.randomAlphabetic(5));
+        // Disable reconnection
+        mqttIntegrationConfig.setReconnectPeriodSec(0);
     }
 
 }
