@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.MqttConnectResult;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -109,7 +108,7 @@ public class MqttIntegration extends AbstractIntegration {
             try {
                 this.client.disconnect();
             } catch (Exception e) {
-                log.error("[{}][{}] Failed to close Kafka producer", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), e);
+                log.error("[{}][{}] Failed to disconnect MQTT client", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), e);
             }
         }
     }
@@ -131,10 +130,6 @@ public class MqttIntegration extends AbstractIntegration {
                             }
                         }
                 );
-    }
-
-    private String constructValue(PublishIntegrationMsgProto msg) {
-        return JacksonUtil.toString(constructBody(msg));
     }
 
     private UUID getId() {

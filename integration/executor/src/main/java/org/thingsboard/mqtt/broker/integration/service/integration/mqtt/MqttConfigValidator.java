@@ -19,6 +19,9 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
 import java.util.Set;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MULTI_LEVEL_WILDCARD;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SINGLE_LEVEL_WILDCARD;
+
 public class MqttConfigValidator {
 
     private static final Set<Integer> SUPPORTED_MQTT_VERSIONS = Set.of(3, 4, 5);
@@ -31,9 +34,7 @@ public class MqttConfigValidator {
         if (mqttIntegrationConfig.getPort() < 1 || mqttIntegrationConfig.getPort() > 65535) {
             throw new IllegalArgumentException("Port must be between 1 and 65535");
         }
-        if (StringUtils.isEmpty(mqttIntegrationConfig.getTopicName())) {
-            throw new IllegalArgumentException("Topic name is required");
-        }
+        validateTopicName(mqttIntegrationConfig);
         if (StringUtils.isEmpty(mqttIntegrationConfig.getClientId())) {
             throw new IllegalArgumentException("Client ID is required");
         }
@@ -47,6 +48,20 @@ public class MqttConfigValidator {
         validateMqttQoS(mqttIntegrationConfig.getQos());
         if (mqttIntegrationConfig.getKeepAliveSec() < 0) {
             throw new IllegalArgumentException("Keep Alive (seconds) must not be less than 0");
+        }
+    }
+
+    private static void validateTopicName(MqttIntegrationConfig mqttIntegrationConfig) {
+        var topicName = mqttIntegrationConfig.getTopicName();
+        if (StringUtils.isEmpty(topicName)) {
+            throw new IllegalArgumentException("Topic name is required");
+        }
+        if (topicName.contains(MULTI_LEVEL_WILDCARD)
+                || topicName.contains(SINGLE_LEVEL_WILDCARD)) {
+            throw new IllegalArgumentException("Topic name cannot contain wildcard characters");
+        }
+        if (topicName.startsWith("$")) {
+            throw new IllegalArgumentException("Topic name cannot start with $ character");
         }
     }
 

@@ -31,7 +31,6 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -167,10 +166,6 @@ public class KafkaIntegration extends AbstractIntegration {
             handleMsgProcessingFailure(e);
             callback.onFailure(e);
         }
-    }
-
-    private String constructValue(PublishIntegrationMsgProto msg) {
-        return JacksonUtil.toString(constructBody(msg));
     }
 
     private UUID getId() {

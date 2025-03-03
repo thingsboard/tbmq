@@ -59,6 +59,36 @@ class MqttConfigValidatorTest {
     }
 
     @Test
+    void testSingleWildcardTopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("abc/+");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validate(config));
+        assertEquals("Topic name cannot contain wildcard characters", exception.getMessage());
+    }
+
+    @Test
+    void testMultiWildcardTopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("abc/#");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validate(config));
+        assertEquals("Topic name cannot contain wildcard characters", exception.getMessage());
+    }
+
+    @Test
+    void test$TopicThrowsException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("$abc/abc");
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                MqttConfigValidator.validate(config));
+        assertEquals("Topic name cannot start with $ character", exception.getMessage());
+    }
+
+    @Test
     void testEmptyClientIdThrowsException() {
         MqttIntegrationConfig config = createValidConfig();
         config.setClientId("");
