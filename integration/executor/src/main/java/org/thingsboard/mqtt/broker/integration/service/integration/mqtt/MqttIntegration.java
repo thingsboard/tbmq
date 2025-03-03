@@ -96,7 +96,9 @@ public class MqttIntegration extends AbstractIntegration {
         try {
             this.client = initClient(config);
         } catch (Exception e) {
-            this.client.disconnect();
+            if (this.client != null) {
+                this.client.disconnect();
+            }
             throw e;
         }
         startProcessingIntegrationMessages(this);
