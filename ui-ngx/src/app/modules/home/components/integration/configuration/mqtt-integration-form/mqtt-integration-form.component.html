@@ -77,6 +77,14 @@
             warning
           </mat-icon>
         }
+        <mat-icon matSuffix class="cursor-pointer"
+                  matTooltipPosition="above"
+                  aria-hidden="false"
+                  aria-label="help-icon"
+                  color="primary"
+                  matTooltip="{{ 'integration.topic-name-hint' | translate }}">
+          help
+        </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block" appearance="outline">
         <mat-label translate>integration.client-id</mat-label>
@@ -108,7 +116,9 @@
           </mat-icon>
         }
       </mat-form-field>
-      <tb-integration-credentials formControlName="credentials" [passwordOptional]="false"
+      <tb-integration-credentials formControlName="credentials"
+                                  [passwordOptional]="true"
+                                  [userNameOptional]="true"
                                   [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
                                                            IntegrationCredentialType.Basic,
                                                            IntegrationCredentialType.CertPEM]">
@@ -203,9 +213,11 @@
         </mat-form-field>
         <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
         </tb-qos-select>
-        <mat-slide-toggle formControlName="retained">
+        <mat-slide-toggle class="mb-4" formControlName="retained">
           {{ 'ws-client.last-will.retain' | translate }}
         </mat-slide-toggle>
+        <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
+        </ng-container>
       </ng-template>
     </mat-expansion-panel>
   </section>
