@@ -240,6 +240,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   }
 
   onCloseEntityDetails() {
+    this.currentEntityId = null;
     this.closeEntityDetails.emit();
   }
 
