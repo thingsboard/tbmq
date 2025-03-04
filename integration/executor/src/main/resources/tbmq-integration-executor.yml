@@ -177,6 +177,8 @@ integrations:
     graceful-timeout-ms: "${INTEGRATIONS_DESTROY_TIMEOUT_MS:1000}"
     # The number of iterations to attempt a graceful shutdown before forcefully stopping the process
     count: "${INTEGRATIONS_DESTROY_COUNT:10}"
+    # The maximum duration (in milliseconds) to wait before forcefully stopping the application if the graceful shutdown process has not started or exceeds the allowed time
+    forced-shutdown-timeout-ms: "${INTEGRATIONS_DESTROY_FORCED_SHUTDOWN_TIMEOUT_MS:15000}"
   # Enable/disable integrations local network hosts
   allow-local-network-hosts: "${INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS:true}"
   uplink:

@@ -122,6 +122,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
     private int gracefulShutdownTimeoutMs;
     @Value("${integrations.destroy.count:10}")
     private int gracefulShutdownIterations;
+    @Value("${integrations.destroy.forced-shutdown-timeout-ms:15000}")
+    private int forcedShutdownTimeoutMs;
 
     private ScheduledExecutorService lifecycleExecutorService;
     private ScheduledExecutorService reInitExecutorService;
@@ -152,8 +154,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
         log.info("Destroying IntegrationManagerService");
         integrations.forEach((uuid, integrationState) -> handleStopIntegrationLifecycleMsg(integrationState.getLifecycleMsg()));
         try {
-            stopLatch.await();
-            log.info("IE manager service graceful-stop has ended!");
+            boolean await = stopLatch.await(forcedShutdownTimeoutMs, TimeUnit.MILLISECONDS);
+            log.info(await ? "IE manager service graceful-stop has ended!" : "IE manager service graceful-stop has failed. Executing forceful shutdown!");
         } catch (InterruptedException e) {
             log.error("IE manager service graceful stop was interrupted", e);
         }
