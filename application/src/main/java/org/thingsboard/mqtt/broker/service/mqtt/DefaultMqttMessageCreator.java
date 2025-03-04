@@ -132,7 +132,11 @@ public class DefaultMqttMessageCreator implements MqttMessageGenerator {
             MqttPropertiesUtil.addResponseInfoToProps(properties, responseInfo);
         }
         MqttPropertiesUtil.addReceiveMaxToProps(properties, maxInFlightMessages);
-        MqttPropertiesUtil.addAuthMethodToProps(properties, MqttPropertiesUtil.getAuthenticationMethodValue(msg.getProperties()));
+
+        String authMethod = MqttPropertiesUtil.getAuthenticationMethodValue(msg.getProperties());
+        if (authMethod != null) {
+            MqttPropertiesUtil.addAuthMethodToProps(properties, authMethod);
+        }
         MqttConnAckVariableHeader mqttConnAckVariableHeader =
                 new MqttConnAckVariableHeader(CONNECTION_ACCEPTED, sessionPresent, properties);
         return new MqttConnAckMessage(mqttFixedHeader, mqttConnAckVariableHeader);
