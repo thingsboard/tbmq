@@ -76,14 +76,12 @@ public class MqttIntegration extends AbstractIntegration {
                 log.debug("[{}] Reduce MQTT integration connection timeout (s) to the limit [{}]", integration.getId(), mqttIntegrationConfig.getConnectTimeoutSec());
                 mqttIntegrationConfig.setConnectTimeoutSec(ctx.getIntegrationConnectTimeoutSec());
             }
-            MqttClient mqttClient = null;
+            updateConfigBeforeCheckConnection(mqttIntegrationConfig);
+            this.client = createMqttClient(mqttIntegrationConfig);
             try {
-                updateConfigBeforeCheckConnection(mqttIntegrationConfig);
-                mqttClient = initClient(mqttIntegrationConfig);
+                connectClient(mqttIntegrationConfig);
             } finally {
-                if (mqttClient != null) {
-                    mqttClient.disconnect();
-                }
+                this.client.disconnect();
             }
             ctx.getCheckConnectionCallback().onSuccess();
         } catch (Exception e) {
@@ -94,15 +92,9 @@ public class MqttIntegration extends AbstractIntegration {
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
         super.init(params);
-        config = getClientConfiguration(lifecycleMsg, MqttIntegrationConfig.class);
-        try {
-            this.client = initClient(config);
-        } catch (Exception e) {
-            if (this.client != null) {
-                this.client.disconnect();
-            }
-            throw e;
-        }
+        this.config = getClientConfiguration(this.lifecycleMsg, MqttIntegrationConfig.class);
+        this.client = createMqttClient(this.config);
+        connectClient(this.config);
         startProcessingIntegrationMessages(this);
     }
 
@@ -144,19 +136,7 @@ public class MqttIntegration extends AbstractIntegration {
         return context.getLifecycleMsg().getName();
     }
 
-    private MqttClient initClient(MqttIntegrationConfig mqttIntegrationConfig) throws Exception {
-        MqttClientConfig clientConfig = new MqttClientConfig(getSslContext(mqttIntegrationConfig));
-        clientConfig.setOwnerId("tbmq");
-        clientConfig.setClientId(mqttIntegrationConfig.getClientId());
-        clientConfig.setTimeoutSeconds(mqttIntegrationConfig.getKeepAliveSec());
-        clientConfig.setProtocolVersion(getMqttVersion(mqttIntegrationConfig));
-        prepareAuthConfigWhenBasic(mqttIntegrationConfig, clientConfig);
-        boolean reconnect = mqttIntegrationConfig.getReconnectPeriodSec() != 0;
-        clientConfig.setReconnect(reconnect);
-        clientConfig.setReconnectDelay(reconnect ? mqttIntegrationConfig.getReconnectPeriodSec() : 5);
-
-        MqttClient client = getMqttClient(clientConfig);
-        client.setEventLoop(context.getSharedEventLoop());
+    private void connectClient(MqttIntegrationConfig mqttIntegrationConfig) throws Exception {
         Promise<MqttConnectResult> connectFuture = client.connect(mqttIntegrationConfig.getHost(), mqttIntegrationConfig.getPort());
         MqttConnectResult result;
         try {
@@ -171,6 +151,21 @@ public class MqttIntegration extends AbstractIntegration {
             String hostPort = mqttIntegrationConfig.getHost() + ":" + mqttIntegrationConfig.getPort();
             throw new RuntimeException(String.format("Failed to connect to MQTT broker at %s. Result code is: %s", hostPort, result.getReturnCode()));
         }
+    }
+
+    private MqttClient createMqttClient(MqttIntegrationConfig mqttIntegrationConfig) throws SSLException {
+        MqttClientConfig clientConfig = new MqttClientConfig(getSslContext(mqttIntegrationConfig));
+        clientConfig.setOwnerId("tbmq");
+        clientConfig.setClientId(mqttIntegrationConfig.getClientId());
+        clientConfig.setTimeoutSeconds(mqttIntegrationConfig.getKeepAliveSec());
+        clientConfig.setProtocolVersion(getMqttVersion(mqttIntegrationConfig));
+        prepareAuthConfigWhenBasic(mqttIntegrationConfig, clientConfig);
+        boolean reconnect = mqttIntegrationConfig.getReconnectPeriodSec() != 0;
+        clientConfig.setReconnect(reconnect);
+        clientConfig.setReconnectDelay(reconnect ? mqttIntegrationConfig.getReconnectPeriodSec() : 5);
+
+        MqttClient client = getMqttClient(clientConfig);
+        client.setEventLoop(context.getSharedEventLoop());
         return client;
     }
 
