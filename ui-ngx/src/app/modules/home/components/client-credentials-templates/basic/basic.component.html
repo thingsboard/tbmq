@@ -22,17 +22,17 @@
     <mat-form-field class="mat-block">
       <mat-label translate>mqtt-client.client-id</mat-label>
       <input matInput formControlName="clientId">
-      <tb-copy-button #copyClientIdBtn
-        (click)="onClickTbCopyButton('clientId')"
-        [class.!hidden]="!credentialsMqttFormGroup.get('clientId')?.value?.length" matSuffix
+      <tb-copy-button matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup.get('clientId')?.value?.length"
         [copyText]="credentialsMqttFormGroup.get('clientId').value">
       </tb-copy-button>
       <button mat-icon-button matSuffix
+        [class.hidden]="disabled()"
         [matTooltip]="'action.regenerate' | translate"
         matTooltipPosition="above"
         (click)="regenerate('clientId')">
         <mat-icon>
-          repeat
+          autorenew
         </mat-icon>
       </button>
       @if (credentialsMqttFormGroup.get('clientId').hasError('pattern')) {
@@ -46,17 +46,17 @@
         <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
-          <tb-copy-button matSuffix #copyUsernameBtn
-            (click)="onClickTbCopyButton('userName')"
+          <tb-copy-button matSuffix
             [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
             [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <button mat-icon-button matSuffix
+            [class.hidden]="disabled()"
             [matTooltip]="'action.regenerate' | translate"
             matTooltipPosition="above"
             (click)="regenerate('userName')">
             <mat-icon>
-              repeat
+              autorenew
             </mat-icon>
           </button>
           @if (credentialsMqttFormGroup.get('userName').hasError('required')) {

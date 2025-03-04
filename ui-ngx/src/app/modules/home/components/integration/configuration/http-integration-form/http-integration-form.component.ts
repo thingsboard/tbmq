@@ -34,7 +34,7 @@ import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import { IntegrationCredentialType } from '@shared/models/integration.models';
-import { MatError, MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatOption, MatSelect } from '@angular/material/select';
 import {
@@ -77,12 +77,11 @@ import { MatTooltip } from "@angular/material/tooltip";
     MatExpansionPanelHeader,
     NgTemplateOutlet,
     MatInput,
-    MatError,
     MatLabel,
-    MatHint,
     MatSlideToggle,
     MatIcon,
-    MatTooltip
+    MatTooltip,
+    MatSuffix
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

@@ -27,7 +27,6 @@
           <input matInput formControlName="host" required>
           @if (clientConfigurationFormGroup.get('host').hasError('required')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'admin.settings.host-required' | translate }}"
                       class="tb-error">
@@ -40,7 +39,6 @@
           <input matInput formControlName="port">
           @if (clientConfigurationFormGroup.get('port').hasError('required')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'admin.settings.port-required' | translate }}"
                       class="tb-error">
@@ -48,7 +46,6 @@
             </mat-icon>
           } @else if (clientConfigurationFormGroup.get('port').hasError('pattern')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'admin.settings.port-pattern' | translate }}"
                       class="tb-error">
@@ -56,7 +53,6 @@
             </mat-icon>
           } @else if (clientConfigurationFormGroup.get('port').hasError('min') || clientConfigurationFormGroup.get('port').hasError('max')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'admin.settings.port-range' | translate }}"
                       class="tb-error">
@@ -70,45 +66,37 @@
         <input matInput formControlName="topicName">
         @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
           <mat-icon matSuffix
-                    matTooltipPosition="above"
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'integration.topic-name-required' | translate }}"
                     class="tb-error">
             warning
           </mat-icon>
         }
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.topic-name-hint' | translate }}">
+        <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
           help
         </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block" appearance="outline">
         <mat-label translate>integration.client-id</mat-label>
         <input matInput formControlName="clientId">
+        <tb-copy-button matSuffix
+                        [class.!hidden]="!clientConfigurationFormGroup.get('clientId')?.value?.length"
+                        [copyText]="clientConfigurationFormGroup.get('clientId').value">
+        </tb-copy-button>
         <button mat-icon-button matSuffix
-                [disabled]="!isNew && !isEdit()"
+                [class.hidden]="!isNew && !isEdit()"
                 [matTooltip]="'action.regenerate' | translate"
                 matTooltipPosition="above"
                 (click)="generateClientId()">
           <mat-icon>
-            repeat
+            autorenew
           </mat-icon>
         </button>
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.client-id-hint' | translate }}">
+        <mat-icon matSuffix matTooltip="{{ 'integration.client-id-hint' | translate }}">
           help
         </mat-icon>
         @if (clientConfigurationFormGroup.get('clientId').hasError('required')) {
           <mat-icon matSuffix
-                    matTooltipPosition="above"
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'integration.client-id-required' | translate }}"
                     class="tb-error">
@@ -141,17 +129,11 @@
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.keep-alive-sec</mat-label>
           <input matInput formControlName="keepAliveSec" type="number" min="0" max="65535">
-          <mat-icon matSuffix class="cursor-pointer"
-                    matTooltipPosition="above"
-                    aria-hidden="false"
-                    aria-label="help-icon"
-                    color="primary"
-                    matTooltip="{{ 'mqtt-client-session.keep-alive-hint' | translate }}">
+          <mat-icon matSuffix matTooltip="{{ 'mqtt-client-session.keep-alive-hint' | translate }}">
             help
           </mat-icon>
           @if (clientConfigurationFormGroup.get('keepAliveSec').hasError('required')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'mqtt-client-session.keep-alive-required' | translate }}"
                       class="tb-error">
@@ -162,17 +144,11 @@
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.connect-timeout-sec</mat-label>
           <input matInput formControlName="connectTimeoutSec" type="number" min="0">
-          <mat-icon matSuffix class="cursor-pointer"
-                    matTooltipPosition="above"
-                    aria-hidden="false"
-                    aria-label="help-icon"
-                    color="primary"
-                    matTooltip="{{ 'ws-client.connections.connect-timeout-hint' | translate }}">
+          <mat-icon matSuffix matTooltip="{{ 'ws-client.connections.connect-timeout-hint' | translate }}">
             help
           </mat-icon>
           @if (clientConfigurationFormGroup.get('connectTimeoutSec').hasError('required')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'ws-client.connections.connect-timeout-required' | translate }}"
                       class="tb-error">
@@ -183,17 +159,11 @@
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.reconnect-period-sec</mat-label>
           <input matInput formControlName="reconnectPeriodSec" type="number" min="0">
-          <mat-icon matSuffix class="cursor-pointer"
-                    matTooltipPosition="above"
-                    aria-hidden="false"
-                    aria-label="help-icon"
-                    color="primary"
-                    matTooltip="{{ 'ws-client.connections.reconnect-period-hint' | translate }}">
+          <mat-icon matSuffix matTooltip="{{ 'ws-client.connections.reconnect-period-hint' | translate }}">
             help
           </mat-icon>
           @if (clientConfigurationFormGroup.get('reconnectPeriodSec').hasError('required')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'ws-client.connections.reconnect-period-required' | translate }}"
                       class="tb-error">

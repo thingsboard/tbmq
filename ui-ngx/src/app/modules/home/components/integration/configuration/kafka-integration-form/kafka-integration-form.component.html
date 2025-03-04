@@ -26,7 +26,6 @@
         <input matInput formControlName="bootstrapServers" required>
         @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
           <mat-icon matSuffix
-                    matTooltipPosition="above"
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
                     class="tb-error">
@@ -39,7 +38,6 @@
         <input matInput formControlName="topic">
         @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
           <mat-icon matSuffix
-                    matTooltipPosition="above"
                     matTooltipClass="tb-error-tooltip"
                     matTooltip="{{ 'integration.topic-required' | translate }}"
                     class="tb-error">
@@ -50,24 +48,14 @@
       <mat-form-field class="mat-block" appearance="outline">
         <mat-label translate>integration.key</mat-label>
         <input matInput formControlName="key">
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.key-hint' | translate }}">
+        <mat-icon matSuffix matTooltip="{{ 'integration.key-hint' | translate }}">
           help
         </mat-icon>
       </mat-form-field>
       <mat-form-field class="mat-block" appearance="outline">
         <mat-label translate>integration.client-id-prefix</mat-label>
         <input matInput formControlName="clientIdPrefix">
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.client-id-prefix-hint' | translate }}">
+        <mat-icon matSuffix matTooltip="{{ 'integration.client-id-prefix-hint' | translate }}">
           help
         </mat-icon>
       </mat-form-field>
@@ -86,7 +74,6 @@
           <input type="number" step="1" min="0" matInput formControlName="retries">
           @if (clientConfigurationFormGroup.get('retries').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-retries-message' | translate }}"
                       class="tb-error">
@@ -99,7 +86,6 @@
           <input type="number" step="1" min="0" matInput formControlName="batchSize">
           @if (clientConfigurationFormGroup.get('batchSize').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-batch-size-bytes-message' | translate }}"
                       class="tb-error">
@@ -112,7 +98,6 @@
           <input type="number" step="1" min="0" matInput formControlName="linger">
           @if (clientConfigurationFormGroup.get('linger').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-linger-ms-message' | translate }}"
                       class="tb-error">
@@ -125,7 +110,6 @@
           <input type="number" step="1" min="0" matInput formControlName="bufferMemory">
           @if (clientConfigurationFormGroup.get('bufferMemory').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-buffer-memory-message' | translate }}"
                       class="tb-error">
