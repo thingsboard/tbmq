@@ -55,7 +55,7 @@ public class MqttConfigValidator {
         var topicName = mqttIntegrationConfig.getTopicName();
         if (StringUtils.isEmpty(topicName)) {
             if (!mqttIntegrationConfig.isUseMsgTopicName()) {
-                throw new IllegalArgumentException("Topic name is required when useMsgTopicName is disabled!");
+                throw new IllegalArgumentException("Topic name is required when Dynamic topic name option is disabled");
             } else {
                 return;
             }

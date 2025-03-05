@@ -56,7 +56,7 @@ class MqttConfigValidatorTest {
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 MqttConfigValidator.validate(config));
-        assertEquals("Topic name is required when useMsgTopicName is disabled!", exception.getMessage());
+        assertEquals("Topic name is required when Dynamic topic name option is disabled", exception.getMessage());
     }
 
     @Test
