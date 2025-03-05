@@ -61,21 +61,32 @@
           }
         </mat-form-field>
       </section>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.topic-name</mat-label>
-        <input matInput formControlName="topicName">
-        @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
-          <mat-icon matSuffix
-                    matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'integration.topic-name-required' | translate }}"
-                    class="tb-error">
-            warning
+      <section class="flex gap-4">
+        <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
+          <mat-slide-toggle formControlName="useMsgTopicName">
+            <span translate>integration.topic-name-dynamic</span>
+          </mat-slide-toggle>
+          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                    [matTooltip]="'integration.topic-name-dynamic-hint' | translate"
+                    matTooltipPosition="right">
+            info</mat-icon>
+        </section>
+        <mat-form-field class="flex-1" appearance="outline">
+          <mat-label translate>integration.topic-name</mat-label>
+          <input matInput formControlName="topicName">
+          @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+          <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
+            help
           </mat-icon>
-        }
-        <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
+        </mat-form-field>
+      </section>
       <mat-form-field class="mat-block" appearance="outline">
         <mat-label translate>integration.client-id</mat-label>
         <input matInput formControlName="clientId">
@@ -181,8 +192,19 @@
             }
           </mat-select>
         </mat-form-field>
-        <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
-        </tb-qos-select>
+        <section class="flex gap-4">
+          <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
+            <mat-slide-toggle formControlName="useMsgQoS">
+              <span translate>integration.mqtt-qos-dynamic</span>
+            </mat-slide-toggle>
+            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                      [matTooltip]="'integration.mqtt-qos-dynamic-hint' | translate"
+                      matTooltipPosition="right">
+              info</mat-icon>
+          </section>
+          <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
+          </tb-qos-select>
+        </section>
         <mat-slide-toggle class="mb-4" formControlName="retained">
           {{ 'ws-client.last-will.retain' | translate }}
         </mat-slide-toggle>

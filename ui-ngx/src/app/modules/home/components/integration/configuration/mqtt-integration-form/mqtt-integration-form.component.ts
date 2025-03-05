@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, input, OnInit } from '@angular/core';
 import {
   ControlValueAccessor,
   UntypedFormBuilder,
@@ -98,7 +98,7 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     multi: true,
   }]
 })
-export class MqttIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator, OnInit {
+export class MqttIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator, OnInit, AfterViewInit {
 
   integration = input<Integration>();
   isEdit = input<boolean>();
@@ -125,30 +125,35 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
       clientConfiguration: this.fb.group({
         host: [null, [Validators.required]],
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
-        topicName: ['tbmq/messages', [Validators.required]],
+        topicName: ['tbmq/messages', []],
+        useMsgTopicName: [true, []],
         clientId: [clientIdRandom(), [Validators.required]],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
         ssl: [false, [Validators.required]],
         connectTimeoutSec: [10, [Validators.required]],
         reconnectPeriodSec: [5, [Validators.required]],
         mqttVersion: [4, []],
-        qos: [QoS.AT_LEAST_ONCE, [Validators.required]],
+        qos: [QoS.AT_LEAST_ONCE, []],
+        useMsgQoS: [true, []],
         retained: [false, []],
         keepAliveSec: [60, [Validators.required]],
       })
     });
-    this.mqttIntegrationConfigForm.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.updateModels(this.mqttIntegrationConfigForm.getRawValue());
-    });
-    this.updateModels(this.mqttIntegrationConfigForm.getRawValue());
+    this.initFormListeners();
+  }
+
+  ngAfterViewInit() {
+    if (this.isNew) {
+      this.clientConfigurationFormGroup.get('topicName').disable();
+      this.clientConfigurationFormGroup.get('qos').disable();
+    }
   }
 
   writeValue(value: MqttIntegration) {
     if (isDefinedAndNotNull(value?.clientConfiguration)) {
       this.isNew = false;
       this.mqttIntegrationConfigForm.reset(value);
+      this.updateView(value);
     } else {
       this.isNew = true;
       this.propagateChangePending = true;
@@ -195,5 +200,49 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
 
   displayEnableSsl() {
     return this.clientConfigurationFormGroup.get('credentials').value?.type !== 'cert.PEM';
+  }
+
+  private initFormListeners() {
+    this.mqttIntegrationConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.updateModels(this.mqttIntegrationConfigForm.getRawValue());
+      });
+
+    this.clientConfigurationFormGroup.get('useMsgQoS').valueChanges
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('qos').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('qos').enable({emitEvent: false});
+          }
+          this.clientConfigurationFormGroup.get('qos').updateValueAndValidity({emitEvent: false});
+        }
+      });
+
+    this.clientConfigurationFormGroup.get('useMsgTopicName').valueChanges
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('topicName').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('topicName').enable({emitEvent: false});
+            this.clientConfigurationFormGroup.get('topicName').setValidators(Validators.required);
+          }
+          this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity({emitEvent: false});
+        }
+      });
+  }
+
+  private updateView(value: MqttIntegration) {
+    if (value.clientConfiguration.useMsgTopicName) {
+      this.clientConfigurationFormGroup.get('topicName').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity({emitEvent: false});
+    }
+    if (value.clientConfiguration.useMsgQoS) {
+      this.clientConfigurationFormGroup.get('qos').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('qos').updateValueAndValidity({emitEvent: false});
+    }
   }
 }
