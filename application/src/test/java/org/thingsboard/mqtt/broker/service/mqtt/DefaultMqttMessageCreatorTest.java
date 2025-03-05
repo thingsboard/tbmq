@@ -15,10 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
+
+import java.util.UUID;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DefaultMqttMessageCreatorTest {
 
@@ -51,6 +64,31 @@ public class DefaultMqttMessageCreatorTest {
         mqttMessageCreator.setServerResponseInfo("test/");
         String responseInfo = mqttMessageCreator.getResponseInfo(1);
         Assert.assertEquals("test/", responseInfo);
+    }
+
+    @Test
+    public void givenMqttConnAckMsg_whenEnhancedAuthIsNull_thenMqttConnAckMsgDoesNotContainAuthMethod() {
+        // setup mock
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+
+        ClientActorStateInfo clientActorState = mock(ClientActorStateInfo.class);
+        when(clientActorState.getCurrentSessionCtx()).thenReturn(ctx);
+
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(ctx.getInitializerName()).thenReturn("TCP");
+
+        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
+        when(ctx.getTopicAliasCtx()).thenReturn(topicAliasCtx);
+        when(topicAliasCtx.getMaxTopicAlias()).thenReturn(1);
+
+        when(ctx.getClientId()).thenReturn("testClient");
+
+        // test
+        ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, 0, MqttProperties.NO_PROPERTIES);
+        MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
+
+        Assert.assertNull(msg.variableHeader().properties().getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));
     }
 
 }
