@@ -696,7 +696,7 @@
     "topic-name-required": "Topic name is required",
     "topic-name-hint": "The topic name defines where the message will be published",
     "topic-name-dynamic": "Dynamic topic name",
-    "topic-name-dynamic-hint": "The topic name will be used from the message",
+    "topic-name-dynamic-hint": "If enabled, the topic name from the incoming message will be used",
     "mqtt-qos": "QoS",
     "mqtt-qos-required": "QoS is required",
     "mqtt-qos-range": "QoS values range is from 0 to 2",
