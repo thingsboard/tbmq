@@ -21,6 +21,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -30,9 +32,10 @@ import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
 import java.util.UUID;
 
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class DefaultMqttMessageCreatorTest {
 
     DefaultMqttMessageCreator mqttMessageCreator = new DefaultMqttMessageCreator();
@@ -72,17 +75,15 @@ public class DefaultMqttMessageCreatorTest {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
 
         ClientActorStateInfo clientActorState = mock(ClientActorStateInfo.class);
-        when(clientActorState.getCurrentSessionCtx()).thenReturn(ctx);
+        given(clientActorState.getCurrentSessionCtx()).willReturn(ctx);
 
         SessionInfo sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        when(ctx.getInitializerName()).thenReturn("TCP");
+        given(ctx.getSessionInfo()).willReturn(sessionInfo);
+        given(ctx.getInitializerName()).willReturn("TCP");
 
         TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
-        when(ctx.getTopicAliasCtx()).thenReturn(topicAliasCtx);
-        when(topicAliasCtx.getMaxTopicAlias()).thenReturn(1);
-
-        when(ctx.getClientId()).thenReturn("testClient");
+        given(ctx.getTopicAliasCtx()).willReturn(topicAliasCtx);
+        given(topicAliasCtx.getMaxTopicAlias()).willReturn(1);
 
         // test
         ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, 0, MqttProperties.NO_PROPERTIES);
