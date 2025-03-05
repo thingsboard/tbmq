@@ -214,6 +214,8 @@ export interface MqttIntegration extends Topics {
     mqttVersion: string;
     qos: QoS;
     retained: boolean;
+    useMsgTopicName: boolean;
+    useMsgQoS: boolean;
   };
 }
 
