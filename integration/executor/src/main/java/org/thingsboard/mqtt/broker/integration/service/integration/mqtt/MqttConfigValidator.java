@@ -54,7 +54,14 @@ public class MqttConfigValidator {
     private static void validateTopicName(MqttIntegrationConfig mqttIntegrationConfig) {
         var topicName = mqttIntegrationConfig.getTopicName();
         if (StringUtils.isEmpty(topicName)) {
-            throw new IllegalArgumentException("Topic name is required");
+            if (!mqttIntegrationConfig.isUseMsgTopicName()) {
+                throw new IllegalArgumentException("Topic name is required when useMsgTopicName is disabled!");
+            } else {
+                return;
+            }
+        }
+        if (mqttIntegrationConfig.isUseMsgTopicName()) {
+            return;
         }
         if (topicName.contains(MULTI_LEVEL_WILDCARD)
                 || topicName.contains(SINGLE_LEVEL_WILDCARD)) {

@@ -33,6 +33,7 @@ public class MqttIntegrationConfig {
     private String host;
     private int port;
     private String topicName;
+    private boolean useMsgTopicName;
     private String clientId;
     private ClientCredentials credentials;
     private boolean ssl;
@@ -41,6 +42,7 @@ public class MqttIntegrationConfig {
     private int reconnectPeriodSec;
     private int mqttVersion; // Allowed values: 3, 4, 5. See io.netty.handler.codec.mqtt.MqttVersion
     private int qos; // Allowed values: 0, 1, 2. See org.thingsboard.mqtt.broker.common.data.MqttQoS
+    private boolean useMsgQoS;
     private boolean retained;
     private int keepAliveSec; // Value 0 disables Keep Alive mechanism
 

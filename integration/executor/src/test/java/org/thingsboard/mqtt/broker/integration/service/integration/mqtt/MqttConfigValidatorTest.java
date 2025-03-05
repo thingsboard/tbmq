@@ -52,10 +52,29 @@ class MqttConfigValidatorTest {
     void testEmptyTopicThrowsException() {
         MqttIntegrationConfig config = createValidConfig();
         config.setTopicName("");
+        config.setUseMsgTopicName(false);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 MqttConfigValidator.validate(config));
-        assertEquals("Topic name is required", exception.getMessage());
+        assertEquals("Topic name is required when useMsgTopicName is disabled!", exception.getMessage());
+    }
+
+    @Test
+    void testEmptyTopicDoesNotThrowException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("");
+        config.setUseMsgTopicName(true);
+
+        assertDoesNotThrow(() -> MqttConfigValidator.validate(config));
+    }
+
+    @Test
+    void testSingleWildcardTopicDoesNotThrowException() {
+        MqttIntegrationConfig config = createValidConfig();
+        config.setTopicName("abc/+");
+        config.setUseMsgTopicName(true);
+
+        assertDoesNotThrow(() -> MqttConfigValidator.validate(config));
     }
 
     @Test
