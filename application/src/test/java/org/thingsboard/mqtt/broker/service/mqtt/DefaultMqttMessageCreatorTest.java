@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,27 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttProperties;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import org.thingsboard.mqtt.broker.session.TopicAliasCtx;
 
+import java.util.UUID;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+
+@RunWith(MockitoJUnitRunner.class)
 public class DefaultMqttMessageCreatorTest {
 
     DefaultMqttMessageCreator mqttMessageCreator = new DefaultMqttMessageCreator();
@@ -51,6 +67,29 @@ public class DefaultMqttMessageCreatorTest {
         mqttMessageCreator.setServerResponseInfo("test/");
         String responseInfo = mqttMessageCreator.getResponseInfo(1);
         Assert.assertEquals("test/", responseInfo);
+    }
+
+    @Test
+    public void givenMqttConnAckMsg_whenEnhancedAuthIsNull_thenMqttConnAckMsgDoesNotContainAuthMethod() {
+        // setup mock
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+
+        ClientActorStateInfo clientActorState = mock(ClientActorStateInfo.class);
+        given(clientActorState.getCurrentSessionCtx()).willReturn(ctx);
+
+        SessionInfo sessionInfo = mock(SessionInfo.class);
+        given(ctx.getSessionInfo()).willReturn(sessionInfo);
+        given(ctx.getInitializerName()).willReturn("TCP");
+
+        TopicAliasCtx topicAliasCtx = mock(TopicAliasCtx.class);
+        given(ctx.getTopicAliasCtx()).willReturn(topicAliasCtx);
+        given(topicAliasCtx.getMaxTopicAlias()).willReturn(1);
+
+        // test
+        ConnectionAcceptedMsg connectionAcceptedMsg = new ConnectionAcceptedMsg(UUID.randomUUID(), true, null, 0, MqttProperties.NO_PROPERTIES);
+        MqttConnAckMessage msg = mqttMessageCreator.createMqttConnAckMsg(clientActorState, connectionAcceptedMsg);
+
+        Assert.assertNull(msg.variableHeader().properties().getProperty(BrokerConstants.AUTHENTICATION_METHOD_PROP_ID));
     }
 
 }

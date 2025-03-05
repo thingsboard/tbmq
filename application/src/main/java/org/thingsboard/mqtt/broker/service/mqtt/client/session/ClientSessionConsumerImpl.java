@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
@@ -64,7 +64,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionConsumer;
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionInfoProto>> clientSessionConsumer;
 
     @PostConstruct
     public void init() {
@@ -83,7 +83,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
         String dummySessionClientId = persistDummySession();
         clientSessionConsumer.assignOrSubscribe();
 
-        List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages;
+        List<TbProtoQueueMsg<ClientSessionInfoProto>> messages;
         boolean encounteredDummySession = false;
         Map<String, ClientSessionInfo> allClientSessions = new HashMap<>();
         do {
@@ -92,7 +92,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
                 int packSize = messages.size();
                 log.debug("Read {} client session messages from single poll", packSize);
                 totalMessageCount += packSize;
-                for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
+                for (TbProtoQueueMsg<ClientSessionInfoProto> msg : messages) {
                     String clientId = msg.getKey();
                     if (isClientSessionInfoProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
@@ -134,11 +134,11 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> messages = clientSessionConsumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<ClientSessionInfoProto>> messages = clientSessionConsumer.poll(pollDuration);
                     if (messages.isEmpty()) {
                         continue;
                     }
-                    for (TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> msg : messages) {
+                    for (TbProtoQueueMsg<ClientSessionInfoProto> msg : messages) {
                         String clientId = msg.getKey();
                         String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
                         if (isClientSessionInfoProtoEmpty(msg.getValue())) {
@@ -177,7 +177,7 @@ public class ClientSessionConsumerImpl implements ClientSessionConsumer {
         persistenceService.persistClientSessionInfoSync(clientId, QueueConstants.EMPTY_CLIENT_SESSION_INFO_PROTO);
     }
 
-    private boolean isClientSessionInfoProtoEmpty(QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
+    private boolean isClientSessionInfoProtoEmpty(ClientSessionInfoProto clientSessionInfoProto) {
         return clientSessionInfoProto.getSessionInfo().getClientInfo().getClientId().isEmpty()
                 && clientSessionInfoProto.getSessionInfo().getClientInfo().getClientType().isEmpty();
     }

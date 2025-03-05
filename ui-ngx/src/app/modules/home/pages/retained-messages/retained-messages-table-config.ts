@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import {
 import { RetainedMsgService } from '@core/http/retained-msg.service';
 import { forkJoin, Observable } from 'rxjs';
 import { MatDialog } from '@angular/material/dialog';
-import { WsQoSTranslationMap } from '@shared/models/session.model';
+import { QosTranslation } from '@shared/models/session.model';
 import { deepClone, isDefinedAndNotNull } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { PageData } from '@shared/models/page/page-data';
@@ -44,9 +44,9 @@ import {
 } from '@home/pages/retained-messages/retained-messages-table-header.component';
 import { forAllTimeInterval } from '@shared/models/time/time.models';
 import {
-  EventContentDialogV2ComponentDialogData,
-  EventContentDialogV2Component
-} from '@home/components/event/event-content-dialog-v2.component';
+  EventContentDialogComponentDialogData,
+  EventContentDialogComponent
+} from '@home/components/event/event-content-dialog.component';
 
 export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessage> {
 
@@ -111,9 +111,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
           onAction: ($event, entity) => entity.topic,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%',
-        (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))
-      )
+      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos + ' - ' + this.translate.instant(QosTranslation.get(entity.qos)))
     );
 
     this.entitiesFetchFunction = pageLink => this.fetchRetainedMessages(pageLink as TimePageLink);
@@ -263,7 +261,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
+    this.dialog.open<EventContentDialogComponent, EventContentDialogComponentDialogData>(EventContentDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionEventQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.ClientSessionEventConsumerStats;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ClientSessionEventConsumerImpl implements ClientSessionEventConsumer {
 
-    private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
+    private final List<TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionEventProto>>> eventConsumers = new ArrayList<>();
 
     private final ClientSessionEventQueueFactory clientSessionEventQueueFactory;
     private final ClientSessionCallbackMsgFactory callbackMsgFactory;
@@ -80,10 +80,10 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         consumersExecutor.submit(() -> processClientSessionEvents(eventConsumer, stats));
     }
 
-    private void processClientSessionEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> consumer, ClientSessionEventConsumerStats stats) {
+    private void processClientSessionEvents(TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSessionEventProto>> consumer, ClientSessionEventConsumerStats stats) {
         while (!stopped) {
             try {
-                List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<ClientSessionEventProto>> msgs = consumer.poll(pollDuration);
                 if (msgs.isEmpty()) {
                     continue;
                 } else {
@@ -111,9 +111,9 @@ public class ClientSessionEventConsumerImpl implements ClientSessionEventConsume
         log.info("Client Session Event Consumer stopped.");
     }
 
-    private void processMessages(List<TbProtoQueueMsg<QueueProtos.ClientSessionEventProto>> msgs) {
+    private void processMessages(List<TbProtoQueueMsg<ClientSessionEventProto>> msgs) {
         CountDownLatch latch = new CountDownLatch(msgs.size());
-        for (TbProtoQueueMsg<QueueProtos.ClientSessionEventProto> msg : msgs) {
+        for (TbProtoQueueMsg<ClientSessionEventProto> msg : msgs) {
             String clientId = msg.getKey();
 
             ClientCallback callback = new ClientCallback() {

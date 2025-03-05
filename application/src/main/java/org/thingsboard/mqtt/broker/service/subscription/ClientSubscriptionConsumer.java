@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package org.thingsboard.mqtt.broker.service.subscription;
 
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.Map;
 import java.util.Set;
 
 public interface ClientSubscriptionConsumer {
 
-    Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException;
+    Map<SubscriptionsSourceKey, Set<TopicSubscription>> initLoad() throws QueuePersistenceException;
 
     void listen(ClientSubscriptionChangesCallback callback);
 

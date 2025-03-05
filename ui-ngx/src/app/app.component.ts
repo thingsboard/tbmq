@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -30,17 +30,17 @@ import { combineLatest } from 'rxjs';
 import { getCurrentAuthState, selectIsAuthenticated, selectIsUserLoaded } from '@core/auth/auth.selectors';
 import { distinctUntilChanged, filter, map, skip } from 'rxjs/operators';
 import { AuthService } from '@core/http/auth.service';
-import { isMobileApp } from '@core/utils';
-import { ChangePasswordDialogComponent } from '@home/pages/profile/change-password-dialog.component';
+import { ChangePasswordDialogComponent } from '@home/pages/account/profile/change-password-dialog.component';
 import { MatDialog } from '@angular/material/dialog';
-import { Router } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { svgIcons, svgIconsUrl } from '@shared/models/icon.models';
 import { AuthState } from '@core/auth/auth.models';
 
 @Component({
-  selector: 'tb-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+    selector: 'tb-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    imports: [RouterOutlet]
 })
 export class AppComponent {
 

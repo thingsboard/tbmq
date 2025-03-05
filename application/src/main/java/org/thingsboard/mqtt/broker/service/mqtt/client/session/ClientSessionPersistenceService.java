@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 
 public interface ClientSessionPersistenceService {
-    void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback);
+    void persistClientSessionInfoAsync(String clientId, ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback);
 
-    void persistClientSessionInfoSync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException;
+    void persistClientSessionInfoSync(String clientId, ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException;
 }

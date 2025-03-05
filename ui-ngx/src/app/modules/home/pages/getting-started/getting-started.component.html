@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,14 +23,16 @@
   </mat-card-header>
   <mat-card-content>
     <div class="tb-form-panel no-border no-padding">
-      <div class="info-container" fxLayout="column" fxLayoutGap="16px">
+      <div class="info-container flex flex-col gap-4">
         <span class="content info" translate>getting-started.guide.info-text</span>
         <a class="content read-more" href="https://thingsboard.io/docs/mqtt-broker" translate>action.read-more</a>
         <span class="version">{{"getting-started.guide.current-version" | translate}} {{currentReleaseVersion}}</span>
-        <section fxLayout="row" fxLayoutGap="8px">
-          <button mat-stroked-button color="primary" *ngFor="let action of actions" (click)="navigateNewTab(action)">
-            <span translate>{{action.title}}</span>
-          </button>
+        <section class="flex flex-row gap-2">
+          @for (action of actions; track action) {
+            <button mat-stroked-button color="primary" (click)="navigateNewTab(action)">
+              <span translate>{{action.title}}</span>
+            </button>
+          }
         </section>
       </div>
     </div>
@@ -47,14 +49,16 @@
     <div class="tb-form-panel no-border no-padding">
       <span class="content info" translate>getting-started.guide.guide-text</span>
       <div class="guides-container">
-        <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
-             *ngFor="let guide of guides" (click)="navigate(guide)">
-          <div class="guide">
-            <img [src]="guide.img" [alt]="guide.subtitle">
-            <span translate>{{guide.subtitle}}</span>
+        @for (guide of guides; track guide) {
+          <div class="flex flex-col items-center gap-2"
+               (click)="navigate(guide)">
+            <div class="guide">
+              <img [src]="guide.img" [alt]="guide.subtitle">
+              <span translate>{{guide.subtitle}}</span>
+            </div>
+            <span style="font-weight: 500" translate>{{guide.title}}</span>
           </div>
-          <span style="font-weight: 500" translate>{{guide.title}}</span>
-        </div>
+        }
       </div>
     </div>
   </mat-card-content>
@@ -70,13 +74,15 @@
     <div class="tb-form-panel no-border no-padding">
       <span class="content info" translate>getting-started.guide.docs-text</span>
       <div class="guides-container">
-        <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
-             *ngFor="let guide of docs" (click)="navigateNewTab(guide)">
-          <div class="guide">
-            <img [src]="guide.img" [alt]="guide.title">
-            <span class="doc-title" translate>{{guide.title}}</span>
+        @for (guide of docs; track guide) {
+          <div class="flex flex-col items-center gap-2"
+            (click)="navigateNewTab(guide)">
+            <div class="guide">
+              <img [src]="guide.img" [alt]="guide.title">
+              <span class="doc-title" translate>{{guide.title}}</span>
+            </div>
           </div>
-        </div>
+        }
       </div>
     </div>
   </mat-card-content>
@@ -92,13 +98,15 @@
     <div class="tb-form-panel no-border no-padding">
       <span class="content info" translate>getting-started.guide.mqtt-features-text</span>
       <div class="guides-container">
-        <div fxLayout="column" fxLayoutGap="8px" fxLayoutAlign="flex-start center"
-             *ngFor="let guide of features" (click)="navigateNewTab(guide)">
-          <div class="guide">
-            <img [src]="guide.img" [alt]="guide.title">
-            <span class="doc-title" translate>{{guide.title}}</span>
+        @for (guide of features; track guide) {
+          <div class="flex flex-col items-center gap-2"
+            (click)="navigateNewTab(guide)">
+            <div class="guide">
+              <img [src]="guide.img" [alt]="guide.title">
+              <span class="doc-title" translate>{{guide.title}}</span>
+            </div>
           </div>
-        </div>
+        }
       </div>
     </div>
   </mat-card-content>

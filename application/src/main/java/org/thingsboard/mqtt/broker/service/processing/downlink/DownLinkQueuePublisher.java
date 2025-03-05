@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package org.thingsboard.mqtt.broker.service.processing.downlink;
 
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 interface DownLinkQueuePublisher {
 
-    void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg);
+    void publishBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg);
 
     void publishPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg msg);
 }

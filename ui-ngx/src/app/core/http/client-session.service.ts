@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -78,8 +78,8 @@ export class ClientSessionService {
     return this.http.get<ClientSessionCredentials>(`/api/client-session/details?clientId=${encodeURIComponent(clientId)}`, defaultHttpOptionsFromConfig(config));
   }
 
-  public getSessionMetrics(clientId: string, config?: RequestConfig): Observable<PageData<SessionMetrics>> {
-    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true, config).pipe(
+  public getSessionMetrics(clientId: string): Observable<PageData<SessionMetrics>> {
+    return this.statsService.getLatestTimeseries(clientId, SessionMetricsList, true).pipe(
       map((metrics) => {
         const data = [];
         for (const [key, value] of Object.entries(metrics)) {
@@ -103,7 +103,7 @@ export class ClientSessionService {
     return this.statsService.deleteLatestTimeseries(clientId, SessionMetricsList, true, config);
   }
 
-  public openSessionDetailsDialog($event: Event, clientId: string): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {
+  public openSessionDetailsDialog($event: Event, clientId: string, data?: any): Observable<MatDialogRef<SessionsDetailsDialogComponent, boolean>> {
     if ($event) {
       $event.stopPropagation();
     }
@@ -113,7 +113,8 @@ export class ClientSessionService {
           disableClose: true,
           panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
           data: {
-            session
+            session,
+            ...data
           }
         }
       ))

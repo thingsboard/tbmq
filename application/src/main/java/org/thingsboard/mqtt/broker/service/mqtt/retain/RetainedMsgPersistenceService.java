@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@ package org.thingsboard.mqtt.broker.service.mqtt.retain;
 
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 
 public interface RetainedMsgPersistenceService {
 
-    void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback);
+    void persistRetainedMsgAsync(String topic, RetainedMsgProto retainedMsgProto, BasicCallback callback);
 
-    void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval);
+    void persistRetainedMsgAsync(String topic, RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval);
 
-    void persistRetainedMsgSync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) throws QueuePersistenceException;
+    void persistRetainedMsgSync(String topic, RetainedMsgProto retainedMsgProto) throws QueuePersistenceException;
 
 }

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,25 +14,30 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, input, model } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { FixedWindow } from '@shared/models/time/time.models';
+import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatDatetimepickerModule } from '@mat-datetimepicker/core';
+import { MatInput } from '@angular/material/input';
 
 @Component({
-  selector: 'tb-datetime-period',
-  templateUrl: './datetime-period.component.html',
-  styleUrls: ['./datetime-period.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => DatetimePeriodComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-datetime-period',
+    templateUrl: './datetime-period.component.html',
+    styleUrls: ['./datetime-period.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => DatetimePeriodComponent),
+            multi: true
+        }
+    ],
+    imports: [MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
 })
-export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
+export class DatetimePeriodComponent implements ControlValueAccessor {
 
-  @Input() disabled: boolean;
+  disabled = model<boolean>();
 
   modelValue: FixedWindow;
 
@@ -52,9 +57,6 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
   constructor() {
   }
 
-  ngOnInit(): void {
-  }
-
   registerOnChange(fn: any): void {
     this.propagateChange = fn;
     if (this.changePending && this.propagateChange) {
@@ -67,7 +69,7 @@ export class DatetimePeriodComponent implements OnInit, ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(datePeriod: FixedWindow): void {

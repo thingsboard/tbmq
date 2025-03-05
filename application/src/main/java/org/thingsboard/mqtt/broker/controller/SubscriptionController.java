@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,4 +140,11 @@ public class SubscriptionController extends BaseController {
         }
     }
 
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "integration", params = {"integrationId"}, method = RequestMethod.GET)
+    @ResponseBody
+    public Set<String> getIntegrationSubscriptions(@RequestParam String integrationId) throws ThingsboardException {
+        toUUID(integrationId); // check if integrationId is UUID
+        return checkNotNull(clientSubscriptionCache.getIntegrationSubscriptions(integrationId));
+    }
 }

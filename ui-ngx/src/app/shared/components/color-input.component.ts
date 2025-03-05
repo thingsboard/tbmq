@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 import {
   ChangeDetectorRef,
   Component,
-  ElementRef,
   forwardRef,
   Input,
   OnInit,
@@ -27,31 +26,31 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import {
-  ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
-  UntypedFormBuilder,
-  UntypedFormGroup,
-  Validators
-} from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBooleanProperty } from '@angular/cdk/coercion';
 import { DialogService } from '@core/services/dialog.service';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { TbPopoverService } from '@shared/components/popover.service';
 import { ColorPickerPanelComponent } from '@shared/components/color-picker/color-picker-panel.component';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
-  selector: 'tb-color-input',
-  templateUrl: './color-input.component.html',
-  styleUrls: ['./color-input.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ColorInputComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-color-input',
+    templateUrl: './color-input.component.html',
+    styleUrls: ['./color-input.component.scss'],
+    providers: [
+        TbPopoverService,
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ColorInputComponent),
+            multi: true
+        }
+    ],
+  imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatIcon, MatPrefix, MatInput, MatIconButton, MatSuffix, MatError, MatButton, CdkOverlayOrigin]
 })
 export class ColorInputComponent extends PageComponent implements OnInit, ControlValueAccessor {
 
@@ -104,7 +103,6 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
 
   constructor(protected store: Store<AppState>,
               private dialogs: DialogService,
-              private translate: TranslateService,
               private popoverService: TbPopoverService,
               private renderer: Renderer2,
               private viewContainerRef: ViewContainerRef,
@@ -165,41 +163,40 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
     $event.stopPropagation();
     if (!this.disabled && !this.readonly) {
       this.dialogs.colorPicker(this.colorFormGroup.get('color').value,
-          this.colorClearButton).subscribe(
-          (result) => {
-            if (!result?.canceled) {
-              this.colorFormGroup.patchValue(
-                  {color: result?.color}, {emitEvent: true}
-              );
-              this.cd.markForCheck();
-            }
+        this.colorClearButton).subscribe(
+        (result) => {
+          if (!result?.canceled) {
+            this.colorFormGroup.patchValue(
+              {color: result?.color}, {emitEvent: true}
+            );
+            this.cd.markForCheck();
           }
+        }
       );
     }
   }
 
-  openColorPickerPopup($event: Event, element?: ElementRef) {
+  openColorPickerPopup($event: Event, trigger?: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
     if (!this.disabled && !this.readonly) {
-      const trigger = element ? element.nativeElement : $event.target;
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {
         const colorPickerPopover = this.popoverService.displayPopover(trigger, this.renderer,
-            this.viewContainerRef, ColorPickerPanelComponent, 'left', true, null,
-            {
-              color: this.colorFormGroup.get('color').value,
-              colorClearButton: this.colorClearButton
-            },
-            {},
-            {}, {}, true);
+          this.viewContainerRef, ColorPickerPanelComponent, 'left', true, null,
+          {
+            color: this.colorFormGroup.get('color').value,
+            colorClearButton: this.colorClearButton
+          },
+          {},
+          {}, {}, true);
         colorPickerPopover.tbComponentRef.instance.popover = colorPickerPopover;
         colorPickerPopover.tbComponentRef.instance.colorSelected.subscribe((color) => {
           colorPickerPopover.hide();
           this.colorFormGroup.patchValue(
-              {color}, {emitEvent: true}
+            {color}, {emitEvent: true}
           );
           this.cd.markForCheck();
         });

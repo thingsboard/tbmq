@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 ///
 
 import { animate, AnimationTriggerMetadata, style, transition, trigger } from '@angular/animations';
-import { ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
+import { CdkOverlayOrigin, ConnectedOverlayPositionChange } from '@angular/cdk/overlay';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { POSITION_MAP } from '@shared/models/overlay.models';
 
@@ -67,6 +67,6 @@ export interface PropertyMapping {
 }
 
 export interface PopoverWithTrigger {
-  trigger: Element;
+  trigger: CdkOverlayOrigin;
   popoverComponent: TbPopoverComponent;
 }

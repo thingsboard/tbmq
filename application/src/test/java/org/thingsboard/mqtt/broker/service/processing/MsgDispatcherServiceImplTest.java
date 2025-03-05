@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,10 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -37,13 +36,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
+import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessorImpl;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
+import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheServiceImpl;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 
@@ -56,6 +55,9 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -63,8 +65,6 @@ import static org.mockito.Mockito.when;
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = MsgDispatcherServiceImpl.class)
 public class MsgDispatcherServiceImplTest {
-
-    static final String TOPIC = "topic";
 
     @MockBean
     SubscriptionService subscriptionService;
@@ -81,13 +81,11 @@ public class MsgDispatcherServiceImplTest {
     @MockBean
     PublishMsgQueuePublisher publishMsgQueuePublisher;
     @MockBean
-    SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    DeviceSharedSubscriptionProcessorImpl deviceSharedSubscriptionProcessor;
     @MockBean
-    SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    SharedSubscriptionCacheServiceImpl sharedSubscriptionCacheService;
     @MockBean
     TbMessageStatsReportClient tbMessageStatsReportClient;
-    @MockBean
-    ServiceInfoProvider serviceInfoProvider;
     @MockBean
     RateLimitService rateLimitService;
     @SpyBean
@@ -106,12 +104,12 @@ public class MsgDispatcherServiceImplTest {
     public void testApplyTotalMsgsRateLimits_whenTotalMsgsLimitDisabled() {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(false);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(list, result);
     }
@@ -121,12 +119,12 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(0L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(List.of(), result);
     }
@@ -136,12 +134,12 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(3L))).thenReturn(3L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(list, result);
     }
@@ -151,14 +149,14 @@ public class MsgDispatcherServiceImplTest {
         when(rateLimitService.isTotalMsgsLimitEnabled()).thenReturn(true);
         when(rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(eq(5L))).thenReturn(2L);
 
-        List<ValueWithTopicFilter<ClientSubscription>> list = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> list = List.of(
                 newValueWithTopicFilter("c1", 0, "t1"),
                 newValueWithTopicFilter("c2", 1, "t2"),
                 newValueWithTopicFilter("c3", 2, "t3"),
                 newValueWithTopicFilter("c4", 0, "t4"),
                 newValueWithTopicFilter("c5", 1, "t5")
         );
-        List<ValueWithTopicFilter<ClientSubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
+        List<ValueWithTopicFilter<EntitySubscription>> result = msgDispatcherService.applyTotalMsgsRateLimits(list);
 
         assertEquals(2, result.size());
         assertEquals("t1", result.get(0).getTopicFilter());
@@ -188,23 +186,8 @@ public class MsgDispatcherServiceImplTest {
     }
 
     @Test
-    public void testConvertToSharedSubscriptionList() {
-        Set<Subscription> subscriptions = Set.of(
-                newSubscription(0, "group1"),
-                newSubscription(1, "group1"),
-                newSubscription(2, "group2"),
-                newSubscription(0, "group2"),
-                newSubscription(1, "group3"),
-                newSubscription(2, "group3")
-        );
-        List<SharedSubscription> sharedSubscriptionList = msgDispatcherService.toSharedSubscriptionList(subscriptions);
-        assertEquals(3, sharedSubscriptionList.size());
-        sharedSubscriptionList.forEach(sharedSubscription -> assertEquals(2, sharedSubscription.getSubscriptions().size()));
-    }
-
-    @Test
     public void testCollectSubscriptions4() {
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 new ValueWithTopicFilter<>(
                         new ClientSubscription(
                                 "clientId1",
@@ -226,7 +209,7 @@ public class MsgDispatcherServiceImplTest {
     public void testCollectSubscriptions3() {
         when(clientSessionCache.getClientSessionInfo("clientId1")).thenReturn(ClientSessionInfo.builder().clientId("clientId1").build());
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+")
         );
         assertEquals(1, before.size());
@@ -241,7 +224,7 @@ public class MsgDispatcherServiceImplTest {
             when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
         }
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 0, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 0, "#"),
                 newValueWithTopicFilter("clientId3", 2, "topic/+/+"),
@@ -271,7 +254,7 @@ public class MsgDispatcherServiceImplTest {
             when(clientSessionCache.getClientSessionInfo("clientId" + i)).thenReturn(ClientSessionInfo.builder().clientId("clientId" + i).build());
         }
 
-        List<ValueWithTopicFilter<ClientSubscription>> before = List.of(
+        List<ValueWithTopicFilter<EntitySubscription>> before = List.of(
                 newValueWithTopicFilter("clientId1", 1, "+/test/+"),
                 newValueWithTopicFilter("clientId2", 1, "#"),
                 newValueWithTopicFilter("clientId3", 1, "topic/+/+"),
@@ -283,29 +266,6 @@ public class MsgDispatcherServiceImplTest {
 
         List<Subscription> result = msgDispatcherService.collectSubscriptions(before, null);
         assertEquals(6, result.size());
-    }
-
-    @Test
-    public void testFindAnyConnectedSubscription() {
-        List<Subscription> subscriptions = List.of(
-                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
-        );
-        Subscription subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
-        assertNull(subscription);
-
-        subscriptions = List.of(
-                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(true).build()),
-                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
-        );
-        subscription = msgDispatcherService.findAnyConnectedSubscription(subscriptions);
-        assertEquals("topic3", subscription.getTopicFilter());
     }
 
     @Test
@@ -326,12 +286,14 @@ public class MsgDispatcherServiceImplTest {
         mockClientSessionCacheGetClientSession("clientId4", clientSessionInfo4);
 
         var topic = "topic/test";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName(topic)
                 .build();
 
         when(sharedSubscriptionCacheService.sharedSubscriptionsInitialized()).thenReturn(true);
+        when(deviceSharedSubscriptionProcessor.getTargetSubscriptions(anySet(), anyInt())).thenCallRealMethod();
+        when(sharedSubscriptionCacheService.getSubscriptions(anyList())).thenCallRealMethod();
 
         when(sharedSubscriptionCacheService.get(
                 Set.of(
@@ -369,11 +331,9 @@ public class MsgDispatcherServiceImplTest {
 
     @Test
     public void testProcessBasicAndCollectPersistentSubscriptionsWhenNoSubscriptions() {
-        MsgSubscriptions msgSubscriptions = new MsgSubscriptions(
-                null, null, null
-        );
+        MsgSubscriptions msgSubscriptions = new MsgSubscriptions();
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName("topic/test")
                 .build();
@@ -428,7 +388,7 @@ public class MsgDispatcherServiceImplTest {
                         new Subscription("+/topic/1", 2, clientSessionInfo6)
                 )
         );
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto
+        PublishMsgProto publishMsgProto = PublishMsgProto
                 .newBuilder()
                 .setTopicName("topic/test")
                 .setQos(2)
@@ -462,15 +422,11 @@ public class MsgDispatcherServiceImplTest {
         when(clientSessionInfo.getClientId()).thenReturn(clientId);
     }
 
-    private Subscription newSubscription(int mqttQoSValue, String shareName) {
-        return new Subscription(TOPIC, mqttQoSValue, clientSessionInfo, shareName, SubscriptionOptions.newInstance());
-    }
-
-    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {
+    private ValueWithTopicFilter<EntitySubscription> newValueWithTopicFilter(String clientId, int qos, String topic) {
         return newValueWithTopicFilter(clientId, qos, null, topic);
     }
 
-    private ValueWithTopicFilter<ClientSubscription> newValueWithTopicFilter(String clientId, int qos, String shareName, String topic) {
+    private ValueWithTopicFilter<EntitySubscription> newValueWithTopicFilter(String clientId, int qos, String shareName, String topic) {
         return new ValueWithTopicFilter<>(newClientSubscription(clientId, qos, shareName), topic);
     }
 

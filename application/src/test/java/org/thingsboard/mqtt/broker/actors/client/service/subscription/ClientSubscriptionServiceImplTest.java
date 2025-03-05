@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -204,22 +206,26 @@ public class ClientSubscriptionServiceImplTest {
         return clientSubscriptions;
     }
 
-    private Map<String, Set<TopicSubscription>> getClientTopicSubscriptions() {
+    private Map<SubscriptionsSourceKey, Set<TopicSubscription>> getClientTopicSubscriptions() {
         return Map.of(
-                "clientId1", Sets.newHashSet(getTopicSubscription("topic1")),
-                "clientId2", Sets.newHashSet(getTopicSubscription("topic2"))
+                newSubscriptionsSourceKey("clientId1"), Sets.newHashSet(getTopicSubscription("topic1")),
+                newSubscriptionsSourceKey("clientId2"), Sets.newHashSet(getTopicSubscription("topic2"))
         );
     }
 
+    private SubscriptionsSourceKey newSubscriptionsSourceKey(String id) {
+        return SubscriptionsSourceKey.newInstance(id);
+    }
+
     private TopicSubscription getTopicSubscription(String topic) {
-        return new TopicSubscription(topic, 1);
+        return new ClientTopicSubscription(topic, 1);
     }
 
     private TopicSubscription getSharedTopicSubscription(String topic) {
-        return new TopicSubscription(topic, 1, "sharedGroup");
+        return new ClientTopicSubscription(topic, 1, "sharedGroup");
     }
 
     private TopicSubscription getSharedTopicSubscription(String topic, int qos) {
-        return new TopicSubscription(topic, qos, "sharedGroup");
+        return new ClientTopicSubscription(topic, qos, "sharedGroup");
     }
 }

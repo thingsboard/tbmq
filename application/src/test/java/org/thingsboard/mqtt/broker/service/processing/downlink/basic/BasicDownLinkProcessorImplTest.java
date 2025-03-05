@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -64,7 +64,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenPublishMsg_whenProcessAndNoSession_thenDoNothing() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(null);
 
@@ -77,7 +77,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenPublishMsg_whenProcessAndRateLimitsNotReached_thenPublishMsg() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
@@ -91,7 +91,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenPublishMsg_whenProcessAndRateLimitsReached_thenDisconnectClient() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(false);
@@ -105,7 +105,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenSubscriptionAndPublishMsg_whenProcessAndNoSession_thenDoNothing() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(null);
 
@@ -118,7 +118,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenSubscriptionAndPublishMsg_whenProcessAndRateLimitsNotReached_thenPublishMsg() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(true);
@@ -132,7 +132,7 @@ public class BasicDownLinkProcessorImplTest {
     @Test
     public void givenSubscriptionAndPublishMsg_whenProcessAndRateLimitsReached_thenDisconnectClient() {
         String clientId = "clientId";
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder().build();
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder().build();
 
         when(clientSessionCtxService.getClientSessionCtx(clientId)).thenReturn(new ClientSessionCtx());
         when(rateLimitService.checkOutgoingLimits(clientId, publishMsgProto)).thenReturn(false);

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,39 +14,38 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, Input } from '@angular/core';
+import { AfterViewInit, Component, input, model, signal } from '@angular/core';
 import { HomePageTitle, homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-card-title-button',
-  styleUrls: ['card-title-button.component.scss'],
-  templateUrl: './card-title-button.component.html'
+    selector: 'tb-card-title-button',
+    styleUrls: ['card-title-button.component.scss'],
+    templateUrl: './card-title-button.component.html',
+    imports: [MatIcon, MatTooltip, TranslateModule]
 })
 export class CardTitleButtonComponent implements AfterViewInit {
 
-  @Input()
-  cardType: HomePageTitleType;
-
-  @Input()
-  disabled = false;
-
-  homePageTitleResources = homePageTitleConfig;
-
-  title: HomePageTitle;
+  title = signal<HomePageTitle>(null);
+  readonly cardType = model<HomePageTitleType>();
+  readonly disabled = input(false);
+  readonly homePageTitleResources = homePageTitleConfig;
 
   constructor(private router: Router) {
   }
 
   ngAfterViewInit() {
-    this.title = this.homePageTitleResources.get(this.cardType);
+    this.title.set(this.homePageTitleResources.get(this.cardType()));
   }
 
   navigate() {
-    this.router.navigate([this.title.link]);
+    this.router.navigate([this.title().link]);
   }
 
   gotoDocs(){
-    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title.docsLink}`, '_blank');
+    window.open(`https://thingsboard.io/docs/mqtt-broker/${this.title().docsLink}`, '_blank');
   }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
@@ -37,8 +36,9 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.HistoricalDataQueueFactory;
 
@@ -84,7 +84,7 @@ public class HistoricalStatsTotalConsumer {
 
     private ExecutorService sessionsProcessingExecutor;
     private ExecutorService totalStatsProcessingExecutor;
-    private TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> consumer;
+    private TbQueueConsumer<TbProtoQueueMsg<ToUsageStatsMsgProto>> consumer;
     @Setter
     private Map<String, TsMsgTotalPair> totalStatsMap;
 
@@ -108,11 +108,11 @@ public class HistoricalStatsTotalConsumer {
     private void processHistoricalDataTotalStats() {
         while (!stopped) {
             try {
-                List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = consumer.poll(pollDuration);
                 if (msgs.isEmpty()) {
                     continue;
                 }
-                for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+                for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
                     processSaveHistoricalStatsTotal(msg);
                 }
                 consumer.commitSync();
@@ -150,7 +150,7 @@ public class HistoricalStatsTotalConsumer {
         }, throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
     }
 
-    private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
+    private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
         TsMsgTotalPair pair = calculatePairUsingProvidedMsg(msg);
         TsKvEntry tsKvEntry = new BasicTsKvEntry(pair.getTs(), new LongDataEntry(key, pair.getTotalMsgCounter()));
@@ -163,7 +163,7 @@ public class HistoricalStatsTotalConsumer {
         }, throwable -> log.error("[{}] Failed to save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue(), throwable));
     }
 
-    protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
+    protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         TsMsgTotalPair pair = getTotalMessageCounterPair(msg);
         if (pair.getTs() < msg.getValue().getTs()) {
             pair.setTs(msg.getValue().getTs());
@@ -174,7 +174,7 @@ public class HistoricalStatsTotalConsumer {
         return pair;
     }
 
-    protected TsMsgTotalPair getTotalMessageCounterPair(TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg) {
+    protected TsMsgTotalPair getTotalMessageCounterPair(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
         String key = msg.getValue().getUsageStats().getKey();
         TsMsgTotalPair msgTotalPair = totalStatsMap.get(key);
         if (msgTotalPair.isEmpty()) {

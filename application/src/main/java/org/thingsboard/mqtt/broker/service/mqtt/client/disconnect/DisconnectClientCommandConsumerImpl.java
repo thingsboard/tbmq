@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DisconnectClientCommandQueueFactory;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -53,7 +53,7 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
     @Value("${queue.disconnect-client-command.poll-interval}")
     private long pollDuration;
 
-    private TbQueueConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumer;
+    private TbQueueConsumer<TbProtoQueueMsg<DisconnectClientCommandProto>> consumer;
 
     @Override
     public void startConsuming() {
@@ -64,11 +64,11 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
     private void processDisconnectCommands() {
         while (!stopped) {
             try {
-                List<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> msgs = consumer.poll(pollDuration);
+                List<TbProtoQueueMsg<DisconnectClientCommandProto>> msgs = consumer.poll(pollDuration);
                 if (msgs.isEmpty()) {
                     continue;
                 }
-                for (TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg : msgs) {
+                for (TbProtoQueueMsg<DisconnectClientCommandProto> msg : msgs) {
                     processClientDisconnect(msg);
                 }
                 consumer.commitSync();
@@ -88,9 +88,9 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
         log.info("Disconnect Client Command Consumer stopped.");
     }
 
-    private void processClientDisconnect(TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto> msg) {
+    private void processClientDisconnect(TbProtoQueueMsg<DisconnectClientCommandProto> msg) {
         String clientId = msg.getKey();
-        QueueProtos.DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
+        DisconnectClientCommandProto disconnectClientCommandProto = msg.getValue();
         UUID sessionId = new UUID(disconnectClientCommandProto.getSessionIdMSB(), disconnectClientCommandProto.getSessionIdLSB());
         boolean newSessionCleanStart = disconnectClientCommandProto.getNewSessionCleanStart();
         DisconnectReasonType disconnectReasonType = getDisconnectReasonType(disconnectClientCommandProto);
@@ -100,7 +100,7 @@ public class DisconnectClientCommandConsumerImpl implements DisconnectClientComm
                 newSessionCleanStart));
     }
 
-    private DisconnectReasonType getDisconnectReasonType(QueueProtos.DisconnectClientCommandProto proto) {
+    private DisconnectReasonType getDisconnectReasonType(DisconnectClientCommandProto proto) {
         return proto.hasReasonType() ? DisconnectReasonType.valueOf(proto.getReasonType()) : DisconnectReasonType.ON_CONFLICTING_SESSIONS;
     }
 

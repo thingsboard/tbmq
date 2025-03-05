@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
 /// limitations under the License.
 ///
 
-import {NgModule} from '@angular/core';
-import {RouterModule, Routes} from '@angular/router';
-
-import {HomeComponent} from './home.component';
-import {AuthGuard} from '@core/guards/auth.guard';
-import {StoreModule} from '@ngrx/store';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from '@core/guards/auth.guard';
+import { StoreModule } from '@ngrx/store';
 
 const routes: Routes = [
-  { path: '',
-    component: HomeComponent,
+  {
+    path: '',
+    loadComponent: () => import('./home.component').then(m => m.HomeComponent),
     data: {
       title: 'home.home',
       breadcrumb: {
@@ -32,7 +31,7 @@ const routes: Routes = [
     },
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
-    loadChildren: () => import('./pages/home-pages.module').then(m => m.HomePagesModule)
+    loadChildren: () => import('./pages/home-pages-routing.module').then(m => m.HomePagesRoutingModule)
   }
 ];
 

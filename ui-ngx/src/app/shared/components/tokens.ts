@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,11 +14,8 @@
 /// limitations under the License.
 ///
 
-import { InjectionToken, Type } from '@angular/core';
+import { InjectionToken } from '@angular/core';
 import { ComponentType } from '@angular/cdk/portal';
 
 export const HELP_MARKDOWN_COMPONENT_TOKEN: InjectionToken<ComponentType<any>> =
   new InjectionToken<ComponentType<any>>('HELP_MARKDOWN_COMPONENT_TOKEN');
-
-export const SHARED_MODULE_TOKEN: InjectionToken<Type<any>> =
-  new InjectionToken<Type<any>>('SHARED_MODULE_TOKEN');

@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,38 +15,66 @@
     limitations under the License.
 
 -->
-<ng-container *ngIf="panelMode; else componentMode">
+@if (panelMode) {
   <ng-container *ngTemplateOutlet="messageFilterPanel"></ng-container>
-</ng-container>
-<ng-template #componentMode>
-  <ng-container *ngIf="buttonMode; else sessionFilter">
+} @else {
+  @if (buttonMode()) {
     <button color="primary" mat-stroked-button
-            (click)="toggleFilterPanel($event)">
+      (click)="toggleFilterPanel($event)">
       <mat-icon>filter_list</mat-icon>
       <span class="filter-text">{{buttonDisplayValue}}</span>
     </button>
-  </ng-container>
-</ng-template>
+  } @else {
+    <div class="tb-form-panel tb-session-filter-config-component no-padding no-border" [formGroup]="filterConfigForm">
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>retained-message.topic</div>
+        <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+          <input matInput type="text" style="max-width: 200px;" formControlName="topic">
+        </mat-form-field>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>retained-message.qos</div>
+        <mat-chip-listbox multiple formControlName="qosList">
+          @for (mqttQoS of qosTypes; track mqttQoS) {
+            <mat-chip-option [value]="mqttQoS" [matTooltip]="qosTranslation.get(mqttQoS) | translate">
+              {{ mqttQoS }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>ws-client.messages.retained</div>
+        <mat-chip-listbox multiple formControlName="retainList">
+          @for (value of retainedOptions; track value) {
+            <mat-chip-option [value]="value">
+              {{ value }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+    </div>
+  }
+}
 <ng-template #messageFilterPanel>
-  <form fxLayout="column" class="mat-content mat-padding" (ngSubmit)="update()">
+  <form class="mat-content mat-padding flex flex-col" (ngSubmit)="update()">
     <ng-container *ngTemplateOutlet="sessionFilter"></ng-container>
-    <div fxLayout="row" class="tb-panel-actions" fxLayoutAlign="end center">
+    <div class="tb-panel-actions flex flex-row items-center justify-end">
       <button type="button"
-              mat-button
-              color="primary"
-              (click)="reset()">
+        mat-button
+        color="primary"
+        (click)="reset()">
         {{ 'action.reset' | translate }}
       </button>
-      <span fxFlex></span>
+      <span class="flex flex-1"></span>
       <button type="button"
-              mat-button
-              (click)="cancel()">
+        mat-button
+        (click)="cancel()">
         {{ 'action.cancel' | translate }}
       </button>
       <button type="submit"
-              mat-raised-button
-              color="primary"
-              [disabled]="filterConfigForm.invalid || !filterConfigForm.dirty">
+        mat-raised-button
+        color="primary"
+        [disabled]="filterConfigForm.invalid || !filterConfigForm.dirty">
         {{ 'action.update' | translate }}
       </button>
     </div>
@@ -63,17 +91,21 @@
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>retained-message.qos</div>
       <mat-chip-listbox multiple formControlName="qosList">
-        <mat-chip-option *ngFor="let value of qosOptions" [value]="value" [matTooltip]="wsQoSTranslationMap.get(value) | translate">
-          {{ value }}
-        </mat-chip-option>
+        @for (mqttQoS of qosTypes; track mqttQoS) {
+          <mat-chip-option [value]="mqttQoS" [matTooltip]="qosTranslation.get(mqttQoS) | translate">
+            {{ mqttQoS }}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
     <div class="tb-form-row space-between column-xs">
       <div class="fixed-title-width" translate>ws-client.messages.retained</div>
       <mat-chip-listbox multiple formControlName="retainList">
-        <mat-chip-option *ngFor="let value of retainedOptions" [value]="value">
-          {{ value }}
-        </mat-chip-option>
+        @for (value of retainedOptions; track value) {
+          <mat-chip-option [value]="value">
+            {{ value }}
+          </mat-chip-option>
+        }
       </mat-chip-listbox>
     </div>
   </div>

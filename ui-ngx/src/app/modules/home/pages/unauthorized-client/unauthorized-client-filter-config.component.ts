@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,28 +20,36 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
   OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import {
   UnauthorizedClientFilterConfig,
   unauthorizedClientFilterConfigEquals
 } from '@shared/models/unauthorized-client.model';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { takeUntil } from 'rxjs/operators';
 
 export const UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA = new InjectionToken<any>('UnauthorizedClientFilterConfigData');
 
@@ -53,34 +61,26 @@ export interface UnauthorizedClientFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-unauthorized-client-filter-config',
-  templateUrl: './unauthorized-client-filter-config.component.html',
-  styleUrls: ['./unauthorized-client-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => UnauthorizedClientFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-unauthorized-client-filter-config',
+    templateUrl: './unauthorized-client-filter-config.component.html',
+    styleUrls: ['./unauthorized-client-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => UnauthorizedClientFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption]
 })
 export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('unauthorizedClientPanel')
-  unauthorizedClientFilterPanel: TemplateRef<any>;
+  readonly unauthorizedClientFilterPanel = viewChild<TemplateRef<any>>('unauthorizedClientPanel');
 
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
-
-  @Input()
-  initialUnauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
+  disabled = model<boolean>();
+  initialUnauthorizedClientFilterConfig = model<UnauthorizedClientFilterConfig>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
 
   passwordProvidedList = [true, false];
   tlsUsedList = [true, false];
@@ -94,12 +94,12 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
 
   private unauthorizedClientFilterConfig: UnauthorizedClientFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(UNAUTHORIZED_CLIENT_FILTER_CONFIG_DATA)
               private data: UnauthorizedClientFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -111,9 +111,9 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
     if (this.data) {
       this.panelMode = this.data.panelMode;
       this.unauthorizedClientFilterConfig = this.data.unauthorizedClientFilterConfig;
-      this.initialUnauthorizedClientFilterConfig = this.data.initialUnauthorizedClientFilterConfig;
-      if (this.panelMode && !this.initialUnauthorizedClientFilterConfig) {
-        this.initialUnauthorizedClientFilterConfig = deepClone(this.unauthorizedClientFilterConfig);
+      this.initialUnauthorizedClientFilterConfig.set(this.data.initialUnauthorizedClientFilterConfig);
+      if (this.panelMode && !this.initialUnauthorizedClientFilterConfig()) {
+        this.initialUnauthorizedClientFilterConfig.set(deepClone(this.unauthorizedClientFilterConfig));
       }
     }
     this.unauthorizedClientFilterConfigForm = this.fb.group({
@@ -124,20 +124,22 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
       username: [null, []],
       reason: [null, []],
     });
-    this.unauthorizedClientFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.unauthorizedClientFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.unauthorizedClientConfigUpdated(this.unauthorizedClientFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
     }
-    this.initialUnauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigForm.getRawValue();
+    this.initialUnauthorizedClientFilterConfig.set(this.unauthorizedClientFilterConfigForm.getRawValue());
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {
@@ -148,8 +150,8 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.unauthorizedClientFilterConfigForm.disable({emitEvent: false});
     } else {
       this.unauthorizedClientFilterConfigForm.enable({emitEvent: false});
@@ -158,8 +160,8 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
 
   writeValue(unauthorizedClientFilterConfig?: UnauthorizedClientFilterConfig): void {
     this.unauthorizedClientFilterConfig = unauthorizedClientFilterConfig;
-    if (!this.initialUnauthorizedClientFilterConfig && unauthorizedClientFilterConfig) {
-      this.initialUnauthorizedClientFilterConfig = deepClone(unauthorizedClientFilterConfig);
+    if (!this.initialUnauthorizedClientFilterConfig() && unauthorizedClientFilterConfig) {
+      this.initialUnauthorizedClientFilterConfig.set(deepClone(unauthorizedClientFilterConfig));
     }
     this.updateButtonDisplayValue();
     this.updateUnauthorizedClientConfigForm(unauthorizedClientFilterConfig);
@@ -186,7 +188,7 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
     this.unauthorizedClientFilterOverlayRef.backdropClick().subscribe(() => {
       this.unauthorizedClientFilterOverlayRef.dispose();
     });
-    this.unauthorizedClientFilterOverlayRef.attach(new TemplatePortal(this.unauthorizedClientFilterPanel,
+    this.unauthorizedClientFilterOverlayRef.attach(new TemplatePortal(this.unauthorizedClientFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.unauthorizedClientFilterOverlayRef.updatePosition();
@@ -218,16 +220,17 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   reset() {
-    if (this.initialUnauthorizedClientFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialUnauthorizedClientFilterConfig = this.initialUnauthorizedClientFilterConfig();
+    if (initialUnauthorizedClientFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const unauthorizedClientFilterConfig = this.unauthorizedClientFilterConfigFromFormValue(this.unauthorizedClientFilterConfigForm.value);
-        if (!unauthorizedClientFilterConfigEquals(unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
-          this.updateUnauthorizedClientConfigForm(this.initialUnauthorizedClientFilterConfig);
+        if (!unauthorizedClientFilterConfigEquals(unauthorizedClientFilterConfig, initialUnauthorizedClientFilterConfig)) {
+          this.updateUnauthorizedClientConfigForm(initialUnauthorizedClientFilterConfig);
           this.unauthorizedClientFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!unauthorizedClientFilterConfigEquals(this.unauthorizedClientFilterConfig, this.initialUnauthorizedClientFilterConfig)) {
-          this.unauthorizedClientFilterConfig = this.initialUnauthorizedClientFilterConfig;
+        if (!unauthorizedClientFilterConfigEquals(this.unauthorizedClientFilterConfig, initialUnauthorizedClientFilterConfig)) {
+          this.unauthorizedClientFilterConfig = initialUnauthorizedClientFilterConfig;
           this.updateButtonDisplayValue();
           this.updateUnauthorizedClientConfigForm(this.unauthorizedClientFilterConfig);
           this.propagateChange(this.unauthorizedClientFilterConfig);
@@ -265,7 +268,7 @@ export class UnauthorizedClientFilterConfigComponent implements OnInit, OnDestro
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.unauthorizedClientFilterConfig?.clientId?.length) {

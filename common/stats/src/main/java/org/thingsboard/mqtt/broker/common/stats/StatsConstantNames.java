@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,11 +33,11 @@ public class StatsConstantNames {
     public static final String TMP_TIMEOUT_PUBLISH = "tmpTimeoutPublish";
     public static final String TMP_TIMEOUT_PUBREL = "tmpTimeoutPubRel";
 
-
     public static final String SUCCESSFUL_ITERATIONS = "successfulIterations";
     public static final String FAILED_ITERATIONS = "failedIterations";
 
     public static final String CLIENT_ID_TAG = "clientId";
+    public static final String INTEGRATION_ID_TAG = "integrationId";
     public static final String CONSUMER_ID_TAG = "consumerId";
 
     public static final String TOTAL_SUBSCRIPTIONS = "totalSubscriptions";
@@ -50,4 +50,5 @@ public class StatsConstantNames {
 
     public static final String STATS_NAME_TAG = "statsName";
     public static final String QUEUE_SIZE = "queueSize";
+
 }

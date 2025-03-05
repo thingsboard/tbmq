@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -26,14 +26,14 @@ import { parse } from '@messageformat/parser';
 export class TranslateDefaultCompiler extends TranslateMessageFormatCompiler {
 
   constructor(
-      @Optional()
-      @Inject(MESSAGE_FORMAT_CONFIG)
-          config?: MessageFormatConfig
+    @Optional()
+    @Inject(MESSAGE_FORMAT_CONFIG)
+      config?: MessageFormatConfig
   ) {
     super(config);
   }
 
-  public compile(value: string, lang: string): (params: any) => string {
+  public compile(value: string, lang: string): any {
     return this.defaultCompile(value, lang);
   }
 
@@ -66,14 +66,14 @@ export class TranslateDefaultCompiler extends TranslateMessageFormatCompiler {
     let tokens: any[];
     try {
       tokens = parse(src.replace(/\{\{/g, '{').replace(/\}\}/g, '}'),
-          {cardinal: [], ordinal: []});
+        {cardinal: [], ordinal: []});
     } catch (e) {
       console.warn(`Failed to parse source: ${src}`);
       console.error(e);
       return false;
     }
     const res = tokens.filter(
-        (value) => typeof value !== 'string' && value.type === 'plural'
+      (value) => typeof value !== 'string' && value.type === 'plural'
     );
     return res.length > 0;
   }

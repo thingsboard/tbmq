@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +42,7 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     @Value("${queue.retained-msg.acknowledge-wait-timeout-ms}")
     private long ackTimeoutMs;
 
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgProducer;
+    private final TbQueueProducer<TbProtoQueueMsg<RetainedMsgProto>> retainedMsgProducer;
     private final ServiceInfoProvider serviceInfoProvider;
 
     public RetainedMsgPersistenceServiceImpl(RetainedMsgQueueFactory retainedMsgQueueFactory, ServiceInfoProvider serviceInfoProvider) {
@@ -51,7 +51,7 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     }
 
     @Override
-    public void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback) {
+    public void persistRetainedMsgAsync(String topic, RetainedMsgProto retainedMsgProto, BasicCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting retained msg asynchronously - {}", topic, retainedMsgProto);
         }
@@ -73,7 +73,7 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     }
 
     @Override
-    public void persistRetainedMsgAsync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval) {
+    public void persistRetainedMsgAsync(String topic, RetainedMsgProto retainedMsgProto, BasicCallback callback, int messageExpiryInterval) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting retained msg asynchronously - {} with expiry interval {}", topic, retainedMsgProto, messageExpiryInterval);
         }
@@ -95,7 +95,7 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
     }
 
     @Override
-    public void persistRetainedMsgSync(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) throws QueuePersistenceException {
+    public void persistRetainedMsgSync(String topic, RetainedMsgProto retainedMsgProto) throws QueuePersistenceException {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting retained msg synchronously - {}", topic, retainedMsgProto);
         }
@@ -137,14 +137,14 @@ public class RetainedMsgPersistenceServiceImpl implements RetainedMsgPersistence
         }
     }
 
-    private TbProtoQueueMsg<QueueProtos.RetainedMsgProto> generateRequest(String topic, QueueProtos.RetainedMsgProto retainedMsgProto) {
-        TbProtoQueueMsg<QueueProtos.RetainedMsgProto> request = new TbProtoQueueMsg<>(topic, retainedMsgProto);
+    private TbProtoQueueMsg<RetainedMsgProto> generateRequest(String topic, RetainedMsgProto retainedMsgProto) {
+        TbProtoQueueMsg<RetainedMsgProto> request = new TbProtoQueueMsg<>(topic, retainedMsgProto);
         request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }
 
-    private TbProtoQueueMsg<QueueProtos.RetainedMsgProto> generateRequest(String topic, QueueProtos.RetainedMsgProto retainedMsgProto, int messageExpiryInterval) {
-        TbProtoQueueMsg<QueueProtos.RetainedMsgProto> request = generateRequest(topic, retainedMsgProto);
+    private TbProtoQueueMsg<RetainedMsgProto> generateRequest(String topic, RetainedMsgProto retainedMsgProto, int messageExpiryInterval) {
+        TbProtoQueueMsg<RetainedMsgProto> request = generateRequest(topic, retainedMsgProto);
         request.getHeaders().put(BrokerConstants.MESSAGE_EXPIRY_INTERVAL, BytesUtil.integerToBytes(messageExpiryInterval));
         return request;
     }

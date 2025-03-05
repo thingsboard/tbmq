@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import {
   ClientSubscriptionFilterConfig,
 } from '@shared/models/subscription.model';
 import { SubscriptionsTableConfig } from '@home/pages/subscriptions/subscriptions-table-config';
+import { SubscriptionsFilterConfigComponent } from './subscriptions-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-subscriptions-table-header',
-  templateUrl: './subscriptions-table-header.component.html',
-  styleUrls: ['./subscriptions-table-header.component.scss']
+    selector: 'tb-subscriptions-table-header',
+    templateUrl: './subscriptions-table-header.component.html',
+    styleUrls: ['./subscriptions-table-header.component.scss'],
+    imports: [SubscriptionsFilterConfigComponent, FormsModule]
 })
 export class SubscriptionsTableHeaderComponent extends EntityTableHeaderComponent<ClientSubscription> {
 

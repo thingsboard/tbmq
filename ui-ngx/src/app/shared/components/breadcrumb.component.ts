@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,25 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { BehaviorSubject, Subject, Subscription } from 'rxjs';
 import { BreadCrumb, BreadCrumbConfig } from './breadcrumb';
-import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router } from '@angular/router';
-import { distinctUntilChanged, filter, map, tap } from 'rxjs/operators';
-import { TranslateService } from '@ngx-translate/core';
+import { ActivatedRoute, ActivatedRouteSnapshot, NavigationEnd, Router, RouterLink } from '@angular/router';
+import { distinctUntilChanged, filter, map } from 'rxjs/operators';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { guid } from '@core/utils';
 import { BroadcastService } from '@core/services/broadcast.service';
 import { ActiveComponentService } from '@core/services/active-component.service';
 import { UtilsService } from '@core/services/utils.service';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { TbIconComponent } from './icon.component';
 
 @Component({
-  selector: 'tb-breadcrumb',
-  templateUrl: './breadcrumb.component.html',
-  styleUrls: ['./breadcrumb.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-breadcrumb',
+    templateUrl: './breadcrumb.component.html',
+    styleUrls: ['./breadcrumb.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [RouterLink, NgTemplateOutlet, TbIconComponent, AsyncPipe, TranslateModule]
 })
 export class BreadcrumbComponent implements OnInit, OnDestroy {
 
@@ -134,9 +137,5 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
       return this.buildBreadCrumbs(route.firstChild, newBreadcrumbs, lastChild);
     }
     return newBreadcrumbs;
-  }
-
-  trackByBreadcrumbs(index: number, breadcrumb: BreadCrumb){
-    return breadcrumb.id;
   }
 }

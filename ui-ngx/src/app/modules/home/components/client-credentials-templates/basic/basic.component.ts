@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,56 +14,61 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, ChangeDetectorRef, Component, forwardRef, Input, OnDestroy, ViewChild } from '@angular/core';
 import {
-  ControlValueAccessor,
-  FormBuilder,
-  NG_VALIDATORS,
-  NG_VALUE_ACCESSOR,
-  UntypedFormGroup,
-  ValidationErrors,
-  Validator,
-  ValidatorFn,
-  Validators
-} from '@angular/forms';
+  AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  forwardRef,
+  OnDestroy,
+  input,
+  model,
+  viewChild
+} from '@angular/core';
+import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ANY_CHARACTERS, AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
-import { MatChipEditedEvent, MatChipInputEvent } from '@angular/material/chips';
+import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientIdRandom, clientUserNameRandom } from '@shared/models/ws-client.model';
 import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { TranslateModule } from '@ngx-translate/core';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { TbErrorComponent } from '@shared/components/tb-error.component';
+import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } from '@angular/material/expansion';
 
 @Component({
-  selector: 'tb-mqtt-credentials-basic',
-  templateUrl: './basic.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MqttCredentialsBasicComponent),
-      multi: true
-    },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => MqttCredentialsBasicComponent),
-      multi: true,
-    }],
-  styleUrls: ['./basic.component.scss']
+    selector: 'tb-mqtt-credentials-basic',
+    templateUrl: './basic.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MqttCredentialsBasicComponent),
+            multi: true
+        },
+        {
+            provide: NG_VALIDATORS,
+            useExisting: forwardRef(() => MqttCredentialsBasicComponent),
+            multi: true,
+        }
+    ],
+    styleUrls: ['./basic.component.scss'],
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatIconButton, MatTooltip, MatIcon, MatError, TogglePasswordComponent, TbErrorComponent, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput]
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  @ViewChild('copyClientIdBtn')
-  copyClientIdBtn: CopyButtonComponent;
+  readonly copyClientIdBtn = viewChild<CopyButtonComponent>('copyClientIdBtn');
+  readonly copyUsernameBtn = viewChild<CopyButtonComponent>('copyUsernameBtn');
 
-  @ViewChild('copyUsernameBtn')
-  copyUsernameBtn: CopyButtonComponent;
-
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entity: ClientCredentials;
+  disabled = model<boolean>();
+  readonly entity = input<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
@@ -110,8 +115,8 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
   registerOnTouched(fn: any): void {}
 
   setDisabledState(isDisabled: boolean) {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.credentialsMqttFormGroup.disable({emitEvent: false});
     } else {
       this.credentialsMqttFormGroup.enable({emitEvent: false});
@@ -222,9 +227,9 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
 
   onClickTbCopyButton(value: string) {
     if (value === 'clientId') {
-      this.copyClientIdBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+      this.copyClientIdBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     } else if (value === 'userName') {
-      this.copyUsernameBtn.copy(this.credentialsMqttFormGroup.get(value)?.value);
+      this.copyUsernameBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     }
   }
 

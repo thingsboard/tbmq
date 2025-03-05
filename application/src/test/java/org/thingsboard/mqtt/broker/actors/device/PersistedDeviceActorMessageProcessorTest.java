@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
@@ -281,7 +282,6 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(publishMsgDeliveryService, never()).sendPubRelMsgToClient(any(), anyInt());
 
         assertEquals(1, persistedDeviceActorMessageProcessor.getInFlightPacketIds().size());
-        assertEquals(101L, persistedDeviceActorMessageProcessor.getLastPersistedMsgSentPacketId());
     }
 
     @Test
@@ -291,15 +291,6 @@ public class PersistedDeviceActorMessageProcessorTest {
 
         assertNull(persistedDeviceActorMessageProcessor.getSessionCtx());
         assertNotNull(persistedDeviceActorMessageProcessor.getStopActorCommandUUID());
-    }
-
-    @Test
-    public void givenDevicePublishMsg_whenSerialNumberIsLessThanLastPersistedMsgSentSerialNumber_thenStopProcessing() {
-        DevicePublishMsg devicePublishMsg = DevicePublishMsg.builder().packetId(0).build();
-
-        persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
-
-        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
     @Test
@@ -395,6 +386,37 @@ public class PersistedDeviceActorMessageProcessorTest {
         verify(deviceMsgService).updatePacketReceived(eq(SS_TEST_KEY), eq(200));
         verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
 
+        assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
+    }
+
+    @Test
+    public void givenPacketReceivedNoDeliveryEventMsg_whenProcessPacketReceivedNoDelivery_thenVerifiedMethodExecution() {
+        when(deviceMsgService.removePersistedMessage(anyString(), anyInt())).thenReturn(CompletableFuture.completedStage("OK"));
+        persistedDeviceActorMessageProcessor.getInFlightPacketIds().add(1);
+
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        persistedDeviceActorMessageProcessor.setSessionCtx(ctx);
+
+        persistedDeviceActorMessageProcessor.processPacketReceivedNoDelivery(new PacketReceivedNoDeliveryEventMsg(1));
+
+        verify(deviceMsgService).removePersistedMessage(eq(CLIENT_ID), eq(1));
+        assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
+    }
+
+    @Test
+    public void givenPacketReceivedNoDeliveryEventMsgForSharedSubscription_whenProcessPacketReceivedNoDelivery_thenVerifiedMethodExecution() {
+        when(deviceMsgService.removePersistedMessage(anyString(), anyInt())).thenReturn(CompletableFuture.completedStage("OK"));
+        persistedDeviceActorMessageProcessor.getInFlightPacketIds().add(1);
+
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        persistedDeviceActorMessageProcessor.setSessionCtx(ctx);
+
+        Map<Integer, SharedSubscriptionPublishPacket> sentPacketIdsFromSharedSubscription = persistedDeviceActorMessageProcessor.getSentPacketIdsFromSharedSubscription();
+        sentPacketIdsFromSharedSubscription.put(1, new SharedSubscriptionPublishPacket(SS_TEST_KEY, 200));
+
+        persistedDeviceActorMessageProcessor.processPacketReceivedNoDelivery(new PacketReceivedNoDeliveryEventMsg(1));
+
+        verify(deviceMsgService).removePersistedMessage(eq(SS_TEST_KEY), eq(200));
         assertTrue(persistedDeviceActorMessageProcessor.getInFlightPacketIds().isEmpty());
     }
 

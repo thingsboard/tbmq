@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, ViewChild } from '@angular/core';
+import { Component, Input, viewChild } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
@@ -22,11 +22,13 @@ import { MessagesTableConfig } from '@home/pages/ws-client/messages/messages-tab
 import { MatDialog } from '@angular/material/dialog';
 import { DatePipe } from '@angular/common';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { EntitiesTableWsComponent } from '@home/components/entity/entities-table-ws.component';
 
 @Component({
-  selector: 'tb-messages',
-  templateUrl: './messages.component.html',
-  styleUrls: ['./messages.component.scss']
+    selector: 'tb-messages',
+    templateUrl: './messages.component.html',
+    styleUrls: ['./messages.component.scss'],
+    imports: [EntitiesTableWsComponent]
 })
 export class MessagesComponent {
   activeValue = false;
@@ -39,7 +41,7 @@ export class MessagesComponent {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -49,14 +51,14 @@ export class MessagesComponent {
     this.entityIdValue = entityId;
     if (this.messagesTableConfig && this.messagesTableConfig.entityId !== entityId) {
       this.messagesTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   messagesTableConfig: MessagesTableConfig;
 

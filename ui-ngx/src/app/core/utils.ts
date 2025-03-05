@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -619,3 +619,65 @@ export const randomStringFromRegex = (pattern: string): string => {
   randexp.max = 10;
   return randexp.gen().replace(/[!'#$%^&*()+\-=?:;"№`ʼ~,<>|{}]/g, '');
 }
+
+export const unwrapModule = (module: any) : any => {
+  if ('default' in module && Object.keys(module).length === 1) {
+    return module.default;
+  } else {
+    return module;
+  }
+};
+
+export type DataEntry = [number, any, [number, number]?];
+
+export const calculateMin = (data: any): number => {
+  if (data.length > 0) {
+    let result = Number(data[0].value);
+    for (let i = 1; i < data.length; i++) {
+      result = Math.min(result, Number(data[i].value));
+    }
+    return result || 0;
+  } else {
+    return null;
+  }
+};
+
+export const calculateMax = (data: any): number => {
+  if (data.length > 0) {
+    let result = Number(data[0].value);
+    for (let i = 1; i < data.length; i++) {
+      result = Math.max(result, Number(data[i].value));
+    }
+    return result || 0;
+  } else {
+    return null;
+  }
+};
+
+export const calculateTotal = (data: any): number => {
+  if (data.length > 0) {
+    let result = 0;
+    data.forEach((dataRow) => {
+      result += Number(dataRow.value);
+    });
+    return result || 0;
+  } else {
+    return null;
+  }
+};
+
+export const calculateAvg = (data: any): number => {
+  if (data.length > 0) {
+    return calculateTotal(data) / data.length || 0;
+  } else {
+    return null;
+  }
+};
+
+export const calculateLatest = (data: any): number => {
+  if (data.length > 0) {
+    return Number(data[data.length - 1].value) || 0;
+  } else {
+    return null;
+  }
+};

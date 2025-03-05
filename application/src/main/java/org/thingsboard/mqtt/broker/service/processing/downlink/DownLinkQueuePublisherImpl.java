@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientPublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
@@ -53,20 +55,20 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     @Value("${mqtt.handler.downlink_msg_callback_threads:2}")
     private int threadsCount;
 
-    private TbPublishServiceImpl<QueueProtos.ClientPublishMsgProto> basicPublisher;
-    private TbPublishServiceImpl<QueueProtos.DevicePublishMsgProto> persistentPublisher;
+    private TbPublishServiceImpl<ClientPublishMsgProto> basicPublisher;
+    private TbPublishServiceImpl<DevicePublishMsgProto> persistentPublisher;
 
     private ExecutorService callbackProcessor;
 
     @PostConstruct
     public void init() {
         this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "downlink-msg-callback-processor");
-        this.basicPublisher = TbPublishServiceImpl.<QueueProtos.ClientPublishMsgProto>builder()
+        this.basicPublisher = TbPublishServiceImpl.<ClientPublishMsgProto>builder()
                 .queueName("basicDownlink")
                 .producer(downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .build();
         this.basicPublisher.init();
-        this.persistentPublisher = TbPublishServiceImpl.<QueueProtos.DevicePublishMsgProto>builder()
+        this.persistentPublisher = TbPublishServiceImpl.<DevicePublishMsgProto>builder()
                 .queueName("persistentDownlink")
                 .producer(downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .build();
@@ -74,9 +76,9 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     }
 
     @Override
-    public void publishBasicMsg(String targetServiceId, String clientId, QueueProtos.PublishMsgProto msg) {
+    public void publishBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(targetServiceId);
-        QueueProtos.ClientPublishMsgProto clientPublishMsgProto = QueueProtos.ClientPublishMsgProto.newBuilder()
+        ClientPublishMsgProto clientPublishMsgProto = ClientPublishMsgProto.newBuilder()
                 .setClientId(clientId)
                 .setPublishMsg(msg)
                 .build();
@@ -107,7 +109,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     public void publishPersistentMsg(String targetServiceId, String clientId, DevicePublishMsg devicePublishMsg) {
         String topic = downLinkPublisherHelper.getPersistentDownLinkServiceTopic(targetServiceId);
         clientLogger.logEvent(clientId, this.getClass(), "Putting msg to persistent down-link queue");
-        QueueProtos.DevicePublishMsgProto msg = ProtoConverter.toDevicePublishMsgProto(devicePublishMsg);
+        DevicePublishMsgProto msg = ProtoConverter.toDevicePublishMsgProto(devicePublishMsg);
         persistentPublisher.send(new TbProtoQueueMsg<>(clientId, msg, MqttPropertiesUtil.createHeaders(devicePublishMsg)),
                 new TbQueueCallback() {
                     @Override

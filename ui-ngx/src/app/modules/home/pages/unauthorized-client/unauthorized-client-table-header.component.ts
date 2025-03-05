@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { UnauthorizedClient } from '@shared/models/unauthorized-client.model';
 import { UnauthorizedClientTableConfig } from '@home/pages/unauthorized-client/unauthorized-client-table-config';
+import { UnauthorizedClientFilterConfigComponent } from './unauthorized-client-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-session-table-header',
-  templateUrl: './unauthorized-client-table-header.component.html',
-  styleUrls: ['./unauthorized-client-table-header.component.scss']
+    selector: 'tb-session-table-header',
+    templateUrl: './unauthorized-client-table-header.component.html',
+    styleUrls: ['./unauthorized-client-table-header.component.scss'],
+    imports: [UnauthorizedClientFilterConfigComponent, FormsModule]
 })
 export class UnauthorizedClientTableHeaderComponent extends EntityTableHeaderComponent<UnauthorizedClient> {
 

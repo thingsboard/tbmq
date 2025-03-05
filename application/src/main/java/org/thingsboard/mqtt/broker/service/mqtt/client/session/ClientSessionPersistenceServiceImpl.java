@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,17 @@ import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSessionQueueFactory;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class ClientSessionPersistenceServiceImpl implements ClientSessionPersistenceService {
 
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto>> clientSessionProducer;
+    private final TbQueueProducer<TbProtoQueueMsg<ClientSessionInfoProto>> clientSessionProducer;
     private final ServiceInfoProvider serviceInfoProvider;
 
     public ClientSessionPersistenceServiceImpl(ClientSessionQueueFactory clientSessionQueueFactory, ServiceInfoProvider serviceInfoProvider) {
@@ -51,7 +51,7 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
     private long ackTimeoutMs;
 
     @Override
-    public void persistClientSessionInfoAsync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback) {
+    public void persistClientSessionInfoAsync(String clientId, ClientSessionInfoProto clientSessionInfoProto, BasicCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client session asynchronously - {}", clientId, clientSessionInfoProto);
         }
@@ -74,7 +74,7 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
     }
 
     @Override
-    public void persistClientSessionInfoSync(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException {
+    public void persistClientSessionInfoSync(String clientId, ClientSessionInfoProto clientSessionInfoProto) throws QueuePersistenceException {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client session synchronously - {}", clientId, clientSessionInfoProto);
         }
@@ -116,8 +116,8 @@ public class ClientSessionPersistenceServiceImpl implements ClientSessionPersist
         }
     }
 
-    private TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> generateRequest(String clientId, QueueProtos.ClientSessionInfoProto clientSessionInfoProto) {
-        TbProtoQueueMsg<QueueProtos.ClientSessionInfoProto> request = new TbProtoQueueMsg<>(clientId, clientSessionInfoProto);
+    private TbProtoQueueMsg<ClientSessionInfoProto> generateRequest(String clientId, ClientSessionInfoProto clientSessionInfoProto) {
+        TbProtoQueueMsg<ClientSessionInfoProto> request = new TbProtoQueueMsg<>(clientId, clientSessionInfoProto);
         request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }

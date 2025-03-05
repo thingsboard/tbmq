@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -30,18 +30,28 @@ import { EntityTableConfig } from '@home/models/entity/entities-table-config.mod
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UntypedFormGroup } from '@angular/forms';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityDetailsPanelComponent } from '@home/components/entity/entity-details-panel.component';
 import { DialogService } from '@core/services/dialog.service';
 import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
 import { BroadcastService } from '@core/services/broadcast.service';
+import { MatCard, MatCardContent } from '@angular/material/card';
+import { MatToolbar } from '@angular/material/toolbar';
+import { MatIconButton, MatFabButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { HelpComponent } from '@shared/components/help.component';
+import { AsyncPipe } from '@angular/common';
+import { MatTabGroup, MatTab } from '@angular/material/tabs';
+import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 
 @Component({
-  selector: 'tb-entity-details-page',
-  templateUrl: './entity-details-page.component.html',
-  styleUrls: ['./entity-details-page.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entity-details-page',
+    templateUrl: './entity-details-page.component.html',
+    styleUrls: ['./entity-details-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatCard, MatToolbar, MatIconButton, MatTooltip, MatIcon, HelpComponent, MatFabButton, MatCardContent, MatTabGroup, MatTab, TbAnchorComponent, AsyncPipe, TranslateModule]
 })
 export class EntityDetailsPageComponent extends EntityDetailsPanelComponent implements IEntityDetailsPageComponent, OnInit, OnDestroy {
 

@@ -1,5 +1,5 @@
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,3 +19,5 @@ set -e
 docker run --rm -v tbmq-config:/config -v ./tb-mqtt-broker/conf:/src-config busybox sh -c "cp /src-config/* /config"
 
 docker run --rm -v tbmq-haproxy-config:/config -v ./haproxy/config:/src-config busybox sh -c "cp /src-config/haproxy.cfg /config"
+
+docker run --rm -v tbmq-ie-config:/config -v ./tbmq-integration-executor/conf:/src-config busybox sh -c "cp /src-config/* /config"

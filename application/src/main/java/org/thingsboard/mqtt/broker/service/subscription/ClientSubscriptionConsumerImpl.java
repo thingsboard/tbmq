@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
 import org.thingsboard.mqtt.broker.service.stats.ClientSubscriptionConsumerStats;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,7 +76,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsConsumer;
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ClientSubscriptionsProto>> clientSubscriptionsConsumer;
 
     @PostConstruct
     public void init() {
@@ -84,7 +87,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
     }
 
     @Override
-    public Map<String, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
+    public Map<SubscriptionsSourceKey, Set<TopicSubscription>> initLoad() throws QueuePersistenceException {
         log.debug("Starting subscriptions initLoad");
         long startTime = System.nanoTime();
         long totalMessageCount = 0L;
@@ -92,26 +95,26 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         String dummyClientId = persistDummyClientSubscriptions();
         clientSubscriptionsConsumer.assignOrSubscribe();
 
-        List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages;
+        List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages;
         boolean encounteredDummyClient = false;
-        Map<String, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> allSubscriptions = new HashMap<>();
         do {
             try {
                 messages = clientSubscriptionsConsumer.poll(pollDuration);
                 int packSize = messages.size();
                 log.debug("Read {} subscription messages from single poll", packSize);
                 totalMessageCount += packSize;
-                for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
+                for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
                     String clientId = msg.getKey();
-                    Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
+                    SourcedSubscriptions sourcedSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
                     if (dummyClientId.equals(clientId)) {
                         encounteredDummyClient = true;
-                    } else if (clientSubscriptions.isEmpty()) {
+                    } else if (sourcedSubscriptions.getSubscriptions().isEmpty()) {
                         // this means Kafka log compaction service haven't cleared empty message yet
                         log.trace("[{}] Encountered empty ClientSubscriptions.", clientId);
-                        allSubscriptions.remove(clientId);
+                        allSubscriptions.remove(SubscriptionsSourceKey.newInstance(clientId));
                     } else {
-                        allSubscriptions.put(clientId, clientSubscriptions);
+                        allSubscriptions.put(new SubscriptionsSourceKey(clientId, sourcedSubscriptions.getSource()), sourcedSubscriptions.getSubscriptions());
                     }
                 }
                 clientSubscriptionsConsumer.commitSync();
@@ -141,21 +144,21 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> messages = clientSubscriptionsConsumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<ClientSubscriptionsProto>> messages = clientSubscriptionsConsumer.poll(pollDuration);
                     if (messages.isEmpty()) {
                         continue;
                     }
                     stats.logTotal(messages.size());
                     int acceptedSubscriptions = 0;
                     int ignoredSubscriptions = 0;
-                    for (TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> msg : messages) {
+                    for (TbProtoQueueMsg<ClientSubscriptionsProto> msg : messages) {
                         String clientId = msg.getKey();
                         if (clientId.startsWith(BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX)) {
                             ignoredSubscriptions++;
                             continue;
                         }
                         String serviceId = bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
-                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue());
+                        Set<TopicSubscription> clientSubscriptions = ProtoConverter.convertProtoToClientSubscriptions(msg.getValue()).getSubscriptions();
                         boolean accepted = callback.accept(clientId, serviceId, clientSubscriptions);
                         if (accepted) {
                             acceptedSubscriptions++;
@@ -183,7 +186,7 @@ public class ClientSubscriptionConsumerImpl implements ClientSubscriptionConsume
 
     private String persistDummyClientSubscriptions() throws QueuePersistenceException {
         String dummyClientId = BrokerConstants.SYSTEM_DUMMY_CLIENT_ID_PREFIX + UUID.randomUUID();
-        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new TopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
+        persistenceService.persistClientSubscriptionsSync(dummyClientId, Collections.singleton(new ClientTopicSubscription(BrokerConstants.SYSTEM_DUMMY_TOPIC_FILTER, 0)));
         return dummyClientId;
     }
 

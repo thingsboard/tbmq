@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,12 @@ import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.dto.SubscriptionOptionsDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
-import org.thingsboard.mqtt.broker.dao.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.dao.service.DefaultTopicValidationService;
 import org.thingsboard.mqtt.broker.dto.SubscriptionInfoDto;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
@@ -174,7 +175,7 @@ public class ClientSubscriptionAdminServiceImplTest {
         ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
         when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
 
-        Set<TopicSubscription> currentSubscriptions = Set.of(new TopicSubscription("unsubscribe", 1));
+        Set<TopicSubscription> currentSubscriptions = Set.of(new ClientTopicSubscription("unsubscribe", 1));
         when(clientSubscriptionCache.getClientSubscriptions("clientId")).thenReturn(currentSubscriptions);
 
         clientSubscriptionAdminService.updateSubscriptions("clientId", Collections.emptyList());
@@ -210,7 +211,7 @@ public class ClientSubscriptionAdminServiceImplTest {
         ClientSessionInfo clientSessionInfo = mock(ClientSessionInfo.class);
         when(clientSessionCache.getClientSessionInfo("clientId")).thenReturn(clientSessionInfo);
 
-        Set<TopicSubscription> currentSubscriptions = Set.of(new TopicSubscription("old", 0));
+        Set<TopicSubscription> currentSubscriptions = Set.of(new ClientTopicSubscription("old", 0));
         when(clientSubscriptionCache.getClientSubscriptions("clientId")).thenReturn(currentSubscriptions);
 
         List<SubscriptionInfoDto> subscriptions = List.of(

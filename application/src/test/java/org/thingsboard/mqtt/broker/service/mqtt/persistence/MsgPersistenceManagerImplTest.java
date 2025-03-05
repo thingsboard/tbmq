@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.Applicat
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
@@ -72,6 +73,7 @@ public class MsgPersistenceManagerImplTest {
     DevicePersistenceProcessor devicePersistenceProcessor;
     ClientLogger clientLogger;
     RateLimitService rateLimitService;
+    IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
     MsgPersistenceManagerImpl msgPersistenceManager;
 
     @Before
@@ -83,10 +85,12 @@ public class MsgPersistenceManagerImplTest {
         devicePersistenceProcessor = mock(DevicePersistenceProcessor.class);
         clientLogger = mock(ClientLogger.class);
         rateLimitService = mock(RateLimitService.class);
+        integrationMsgQueuePublisher = mock(IntegrationMsgQueuePublisher.class);
 
         msgPersistenceManager = spy(new MsgPersistenceManagerImpl(
                 genericClientSessionCtxManager, applicationMsgQueuePublisher, applicationPersistenceProcessor,
-                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger, rateLimitService));
+                deviceMsgQueuePublisher, devicePersistenceProcessor, clientLogger,
+                rateLimitService, integrationMsgQueuePublisher));
 
         ctx = mock(ClientSessionCtx.class);
         sessionInfo = mock(SessionInfo.class);
@@ -100,6 +104,7 @@ public class MsgPersistenceManagerImplTest {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
         PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
+                false,
                 List.of(
                         createSubscription("topic1", 1, "devClientId1", ClientType.DEVICE),
                         createSubscription("topic2", 2, "devClientId2", ClientType.DEVICE)
@@ -108,7 +113,8 @@ public class MsgPersistenceManagerImplTest {
                         createSubscription("topic3", 1, "appClientId3", ClientType.APPLICATION),
                         createSubscription("topic4", 2, "appClientId4", ClientType.APPLICATION)
                 ),
-                Collections.emptySet()
+                Collections.emptySet(),
+                Collections.emptyList()
         );
 
         msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, null);
@@ -195,11 +201,7 @@ public class MsgPersistenceManagerImplTest {
     public void testProcessPublishWhenNoSubscriptions() {
         PublishMsgProto publishMsgProto = PublishMsgProto.getDefaultInstance();
         PublishMsgWithId publishMsgWithId = new PublishMsgWithId(UUID.randomUUID(), publishMsgProto, new DefaultTbQueueMsgHeaders());
-        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions(
-                null,
-                null,
-                null
-        );
+        PersistentMsgSubscriptions persistentMsgSubscriptions = new PersistentMsgSubscriptions();
 
         PublishMsgCallback callback = mock(PublishMsgCallback.class);
         msgPersistenceManager.processPublish(publishMsgWithId, persistentMsgSubscriptions, callback);

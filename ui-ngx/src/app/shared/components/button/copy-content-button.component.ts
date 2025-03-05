@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,26 +14,25 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
+import { MatButton } from '@angular/material/button';
+import { ClipboardModule } from 'ngx-clipboard';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-copy-content-button',
-  templateUrl: './copy-content-button.component.html'
+    selector: 'tb-copy-content-button',
+    templateUrl: './copy-content-button.component.html',
+    imports: [MatButton, ClipboardModule, MatIcon, TranslateModule]
 })
 export class CopyContentButtonComponent {
 
-  @Input()
-  title = 'action.copy-id';
-
-  @Input()
-  cbContent: string;
-
-  @Input()
-  isEdit: boolean;
+  readonly title = input('action.copy-id');
+  readonly cbContent = input<string>();
+  readonly isEdit = input<boolean>();
 
   constructor(private store: Store<AppState>,
               private translate: TranslateService) {

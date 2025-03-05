@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ export enum EntityType {
   SUBSCRIPTION = 'SUBSCRIPTION',
   WS_MESSAGE = 'WS_MESSAGE',
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
+  INTEGRATION = 'INTEGRATION',
 }
 
 export interface EntityTypeTranslation {
@@ -143,7 +144,6 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         typePlural: 'kafka.topics',
         list: 'kafka.list-of-topics',
         details: 'details.details',
-        add: 'kafka.add-topic',
         noEntities: 'kafka.no-kafka-topic-text',
         search: 'kafka.search-topic',
         selectedEntities: 'kafka.selected-kafka-topic'
@@ -156,7 +156,6 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         typePlural: 'kafka.consumer-groups',
         list: 'kafka.list-of-consumer-groups',
         details: 'details.details',
-        add: 'kafka.add-consumer-group',
         noEntities: 'kafka.no-consumer-groups-text',
         search: 'kafka.search-consumer-group',
         selectedEntities: 'kafka.selected-consumer-groups'
@@ -231,6 +230,20 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         selectedEntities: 'unauthorized-client.selected-unauthorized-clients'
       }
     ],
+    [
+      EntityType.INTEGRATION,
+      {
+        type: 'entity.type-integration',
+        typePlural: 'entity.type-integrations',
+        list: 'entity.list-of-integrations',
+        nameStartsWith: 'entity.integration-name-starts-with',
+        details: 'integration.integration-details',
+        add: 'integration.add',
+        noEntities: 'integration.no-integrations-text',
+        search: 'integration.search',
+        selectedEntities: 'integration.selected-integrations'
+      }
+    ],
   ]
 );
 
@@ -283,6 +296,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       {
         helpLinkId: 'unauthorizedClient'
       }
-    ]
+    ],
+    [
+      EntityType.INTEGRATION,
+      {
+        helpLinkId: 'integrations'
+      }
+    ],
   ]
 );

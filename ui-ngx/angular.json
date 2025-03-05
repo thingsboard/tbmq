@@ -18,12 +18,20 @@
       },
       "architect": {
         "build": {
-          "builder": "@angular-builders/custom-webpack:browser",
+          "builder": "@angular-builders/custom-esbuild:application",
           "options": {
-            "outputPath": "target/generated-resources/public",
+            "plugins": ["./esbuild/tb-esbuild-plugins.ts"],
+            "loader": {
+                ".raw": "text"
+            },
+            "outputPath": {
+                "base": "target/generated-resources/public",
+                "media": ".",
+                "browser": ""
+            },
             "index": "src/index.html",
-            "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
+            "browser": "src/main.ts",
+            "polyfills": ["src/polyfills.ts"],
             "tsConfig": "src/tsconfig.app.json",
             "aot": true,
             "assets": [
@@ -53,12 +61,7 @@
                 "glob": "worker-javascript.js",
                 "input": "./node_modules/ace-builds/src-noconflict/",
                 "output": "/"
-              },
-              {
-                "glob": "**/*",
-                "input": "node_modules/tinymce",
-                "output": "/assets/tinymce/"
-              },
+              }
             ],
             "styles": [
               "src/styles.scss",
@@ -67,7 +70,6 @@
               "node_modules/tooltipster/dist/css/tooltipster.bundle.min.css",
               "node_modules/tooltipster/dist/css/plugins/tooltipster/sideTip/themes/tooltipster-sideTip-shadow.min.css",
               "node_modules/rc-select/assets/index.less",
-              "node_modules/jstree-bootstrap-theme/dist/themes/proton/style.min.css",
               "node_modules/prismjs/themes/prism.css",
               "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.css",
               "node_modules/ace-diff/dist/ace-diff.min.css"
@@ -78,8 +80,6 @@
               ]
             },
             "scripts": [
-              "node_modules/tinycolor2/dist/tinycolor-min.js",
-              "node_modules/split.js/dist/split.min.js",
               "node_modules/systemjs/dist/system.min.js",
               "node_modules/marked/lib/marked.umd.js",
               "node_modules/prismjs/prism.js",
@@ -90,47 +90,8 @@
               "node_modules/prismjs/components/prism-typescript.min.js",
               "node_modules/prismjs/plugins/line-numbers/prism-line-numbers.min.js"
             ],
-            "customWebpackConfig": {
-              "path": "./extra-webpack.config.js"
-            },
             "allowedCommonJsDependencies": [
-              "hammerjs",
-              "react",
-              "react-dom",
-              "reactcss",
-              "react-ace",
-              "schema-inspector",
-              "@flowjs/flow.js",
-              "@material-ui/icons/Add",
-              "@material-ui/icons/Clear",
-              "js-beautify",
-              "mousetrap",
-              "prop-types",
-              "react-is",
-              "hoist-non-react-statics",
-              "classnames",
-              "raf",
-              "moment-timezone",
-              "tinycolor2",
-              "json-schema-defaults",
-              "lodash",
-              "jquery",
-              "jquery.terminal",
-              "tooltipster",
-              "jstree",
-              "qrcode",
-              "wcwidth",
-              "ace-diff",
-              "messageformat-parser",
-              "html2canvas",
-              "jszip",
-              "moment",
-              "ace",
-              "ace-builds",
-              "diff-match-patch",
-              "tv4",
-              "@messageformat/parser",
-              "chart.js"
+              "*"
             ]
           },
           "configurations": {
@@ -153,8 +114,6 @@
               "sourceMap": false,
               "namedChunks": false,
               "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": false,
               "budgets": [
                 {
                   "type": "initial",
@@ -164,7 +123,6 @@
               ]
             },
             "development": {
-              "buildOptimizer": false,
               "optimization": {
                 "scripts": false,
                 "styles": {
@@ -173,7 +131,6 @@
                 },
                 "fonts": false
               },
-              "vendorChunk": true,
               "extractLicenses": false,
               "sourceMap": true,
               "namedChunks": true
@@ -181,41 +138,25 @@
           }
         },
         "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server",
+          "builder": "@angular-builders/custom-esbuild:dev-server",
           "options": {
-            "browserTarget": "tbmq:build",
+            "buildTarget": "tbmq:build",
             "proxyConfig": "proxy.conf.js"
           },
           "configurations": {
             "production": {
-              "browserTarget": "tbmq:build:production"
+              "buildTarget": "tbmq:build:production"
             },
             "development": {
-              "browserTarget": "tbmq:build:development"
+              "buildTarget": "tbmq:build:development"
             }
-          }
+          },
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "builder": "@angular/build:extract-i18n",
           "options": {
-            "browserTarget": "tbmq:build"
-          }
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "src/test.ts",
-            "polyfills": "src/polyfills.ts",
-            "tsConfig": "src/tsconfig.spec.json",
-            "karmaConfig": "src/karma.conf.js",
-            "styles": [
-              "src/styles.scss"
-            ],
-            "scripts": [],
-            "assets": [
-              "src/favicon.ico",
-              "src/assets"
-            ]
+            "buildTarget": "tbmq:build"
           }
         },
         "lint": {
@@ -225,25 +166,6 @@
               "src/**/*.ts",
               "src/**/*.html"
             ]
-          }
-        }
-      }
-    },
-    "tbmq-e2e": {
-      "root": "e2e/",
-      "projectType": "application",
-      "prefix": "",
-      "architect": {
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "tbmq:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "tbmq:serve:production"
-            }
           }
         }
       }

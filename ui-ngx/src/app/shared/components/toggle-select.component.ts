@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,46 +14,40 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, HostBinding, Input } from '@angular/core';
+import { booleanAttribute, Component, forwardRef, HostBinding, input, model } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { _ToggleBase, ToggleHeaderAppearance } from '@shared/components/toggle-header.component';
-import { coerceBoolean } from '@shared/decorators/coercion';
+import { ToggleHeaderComponent } from './toggle-header.component';
 
 @Component({
-  selector: 'tb-toggle-select',
-  templateUrl: './toggle-select.component.html',
-  styleUrls: [],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => ToggleSelectComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-toggle-select',
+    templateUrl: './toggle-select.component.html',
+    styleUrls: ['./toggle-select.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => ToggleSelectComponent),
+            multi: true
+        }
+    ],
+    imports: [ToggleHeaderComponent]
 })
 export class ToggleSelectComponent extends _ToggleBase implements ControlValueAccessor {
 
   @HostBinding('style.maxWidth')
   get maxWidth() { return '100%'; }
 
-  @Input()
-  @coerceBoolean()
-  disabled: boolean;
-
-  @Input()
-  selectMediaBreakpoint;
-
-  @Input()
-  appearance: ToggleHeaderAppearance = 'stroked';
-
-  @Input()
-  @coerceBoolean()
-  disablePagination = false;
+  disabled = model<boolean>();
+  readonly selectMediaBreakpoint = input<string>();
+  readonly appearance = input<ToggleHeaderAppearance>('stroked');
+  readonly disablePagination = input(false, {transform: booleanAttribute});
+  readonly fillHeight = input(false, {transform: booleanAttribute});
+  readonly extraPadding = input(false, {transform: booleanAttribute});
+  readonly primaryBackground = input(false, {transform: booleanAttribute});
 
   modelValue: any;
-
   private propagateChange = null;
 
   constructor(protected store: Store<AppState>) {
@@ -68,7 +62,7 @@ export class ToggleSelectComponent extends _ToggleBase implements ControlValueAc
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(value: any): void {

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
 /// limitations under the License.
 ///
 
-import {Component, HostListener, Input} from '@angular/core';
-import {PageComponent} from '@shared/components/page.component';
-import {Store} from '@ngrx/store';
-import {AppState} from '@core/core.state';
-import {speedDialFabAnimations} from '@shared/animations/speed-dial-fab.animations';
-import {coerceBooleanProperty} from '@angular/cdk/coercion';
+import { Component, HostListener, Input } from '@angular/core';
+import { PageComponent } from '@shared/components/page.component';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { speedDialFabAnimations } from '@shared/animations/speed-dial-fab.animations';
+import { coerceBooleanProperty } from '@angular/cdk/coercion';
+import { AsyncPipe } from '@angular/common';
+import { MatFabButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface FooterFabButton {
   name: string;
@@ -34,10 +39,11 @@ export interface FooterFabButtons {
 }
 
 @Component({
-  selector: 'tb-footer-fab-buttons',
-  templateUrl: './footer-fab-buttons.component.html',
-  styleUrls: ['./footer-fab-buttons.component.scss'],
-  animations: speedDialFabAnimations
+    selector: 'tb-footer-fab-buttons',
+    templateUrl: './footer-fab-buttons.component.html',
+    styleUrls: ['./footer-fab-buttons.component.scss'],
+    animations: speedDialFabAnimations,
+    imports: [MatFabButton, MatTooltip, MatIcon, AsyncPipe, TranslateModule]
 })
 export class FooterFabButtonsComponent extends PageComponent {
 

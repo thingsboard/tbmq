@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import {
   ComponentFactoryResolver,
   ElementRef,
   EventEmitter,
-  Input,
   OnInit,
-  ViewChild,
+  model,
+  viewChild
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -31,12 +31,12 @@ import { AppState } from '@core/core.state';
 import { MAX_SAFE_PAGE_SIZE, PageLink } from '@shared/models/page/page-link';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
-import { MatSort } from '@angular/material/sort';
+import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
 import { tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
 import { merge, Observable, Subscription } from 'rxjs';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
 import {
@@ -56,17 +56,26 @@ import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
+import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
+import { MatCheckbox } from '@angular/material/checkbox';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatIconButton } from '@angular/material/button';
+import { TbIconComponent } from '@shared/components/icon.component';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-entities-table-ws',
-  templateUrl: './entities-table-ws.component.html',
-  styleUrls: ['./entities-table-ws.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entities-table-ws',
+    templateUrl: './entities-table-ws.component.html',
+    styleUrls: ['./entities-table-ws.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
 export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
 
-  @Input()
-  entitiesTableConfig: EntityTableConfig<BaseData>;
+  entitiesTableConfig = model<EntityTableConfig<BaseData>>();
 
   translations: EntityTypeTranslation;
 
@@ -103,12 +112,11 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   isFullscreen = false;
   hidePageSize = false;
 
-  @ViewChild('entityTableHeaderAnchor', {static: true}) entityTableHeaderAnchor: TbAnchorComponent;
+  readonly entityTableHeaderAnchor = viewChild<TbAnchorComponent>('entityTableHeaderAnchor');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
+  readonly paginator = viewChild(MatPaginator);
+  readonly sort = viewChild(MatSort);
 
-  @ViewChild('searchInput') searchInputField: ElementRef;
-  @ViewChild(MatPaginator) paginator: MatPaginator;
-
-  @ViewChild(MatSort) sort: MatSort;
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
@@ -126,8 +134,9 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   ngOnInit() {
-    if (this.entitiesTableConfig) {
-      this.init(this.entitiesTableConfig);
+    const entitiesTableConfig = this.entitiesTableConfig();
+    if (entitiesTableConfig) {
+      this.init(entitiesTableConfig);
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
     }
@@ -135,49 +144,50 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
     this.isDetailsOpen = false;
-    this.entitiesTableConfig = entitiesTableConfig;
-    if (this.entitiesTableConfig.headerComponent) {
-      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.headerComponent);
-      const viewContainerRef = this.entityTableHeaderAnchor.viewContainerRef;
+    this.entitiesTableConfig.set(entitiesTableConfig);
+    const entitiesTableConfigValue = this.entitiesTableConfig();
+    if (entitiesTableConfigValue.headerComponent) {
+      const componentFactory = this.componentFactoryResolver.resolveComponentFactory(entitiesTableConfigValue.headerComponent);
+      const viewContainerRef = this.entityTableHeaderAnchor().viewContainerRef;
       viewContainerRef.clear();
       const componentRef = viewContainerRef.createComponent(componentFactory);
       const headerComponent = componentRef.instance;
-      headerComponent.entitiesTableConfig = this.entitiesTableConfig;
+      headerComponent.entitiesTableConfig = entitiesTableConfigValue;
     }
 
     // @ts-ignore
-    this.entitiesTableConfig.table = this;
-    this.translations = this.entitiesTableConfig.entityTranslations;
+    entitiesTableConfigValue.table = this;
+    this.translations = entitiesTableConfigValue.entityTranslations;
 
-    this.headerActionDescriptors = [...this.entitiesTableConfig.headerActionDescriptors];
-    this.groupActionDescriptors = [...this.entitiesTableConfig.groupActionDescriptors];
-    this.cellActionDescriptors = [...this.entitiesTableConfig.cellActionDescriptors];
+    this.headerActionDescriptors = [...entitiesTableConfigValue.headerActionDescriptors];
+    this.groupActionDescriptors = [...entitiesTableConfigValue.groupActionDescriptors];
+    this.cellActionDescriptors = [...entitiesTableConfigValue.cellActionDescriptors];
 
     const enabledGroupActionDescriptors =
       this.groupActionDescriptors.filter((descriptor) => descriptor.isEnabled);
 
-    this.selectionEnabled = this.entitiesTableConfig.selectionEnabled && enabledGroupActionDescriptors.length;
+    this.selectionEnabled = entitiesTableConfigValue.selectionEnabled && enabledGroupActionDescriptors.length;
 
     this.columnsUpdated();
 
     let sortOrder: SortOrder = null;
-    if (this.entitiesTableConfig.defaultSortOrder) {
+    if (entitiesTableConfigValue.defaultSortOrder) {
       sortOrder = {
-        property: this.entitiesTableConfig.defaultSortOrder.property,
-        direction: this.entitiesTableConfig.defaultSortOrder.direction
+        property: entitiesTableConfigValue.defaultSortOrder.property,
+        direction: entitiesTableConfigValue.defaultSortOrder.direction
       };
     }
 
-    this.displayPagination = this.entitiesTableConfig.displayPagination;
+    this.displayPagination = entitiesTableConfigValue.displayPagination;
     this.defaultPageSize = this.calcDefaultPageSize();
     this.pageSizeOptions = [3, 10, 15, 30];
     this.pageLink = new PageLink(10, 0, null, sortOrder);
     this.pageLink.pageSize = this.displayPagination ? this.defaultPageSize : MAX_SAFE_PAGE_SIZE;
-    this.dataSource = this.entitiesTableConfig.dataSource(this.dataLoaded.bind(this));
-    if (this.entitiesTableConfig.onLoadAction) {
-      this.entitiesTableConfig.onLoadAction(this.route);
+    this.dataSource = entitiesTableConfigValue.dataSource(this.dataLoaded.bind(this));
+    if (entitiesTableConfigValue.onLoadAction) {
+      entitiesTableConfigValue.onLoadAction(this.route);
     }
-    if (this.entitiesTableConfig.loadDataOnInit) {
+    if (entitiesTableConfigValue.loadDataOnInit) {
       this.dataSource.loadEntities(this.pageLink);
     }
     if (this.viewInited) {
@@ -190,8 +200,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   ngAfterViewInit() {
     this.mqttJsClientService.connection$.subscribe(
       () => {
-        this.paginator.pageIndex = 0;
-        this.init(this.entitiesTableConfig);
+        this.paginator().pageIndex = 0;
+        this.init(this.entitiesTableConfig());
       }
     );
     this.updatePaginationSubscriptions();
@@ -209,10 +219,10 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.updateDataSubscription = null;
     }
     if (this.displayPagination) {
-      this.sortSubscription = this.sort.sortChange.subscribe(() => this.paginator.pageIndex = 0);
+      this.sortSubscription = this.sort().sortChange.subscribe(() => this.paginator().pageIndex = 0);
     }
-    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort.sortChange, this.paginator.page)
-      : this.sort.sortChange) as Observable<any>)
+    this.updateDataSubscription = ((this.displayPagination ? merge(this.sort().sortChange, this.paginator().page)
+      : this.sort().sortChange) as Observable<any>)
       .pipe(
         tap(() => this.updateData())
       )
@@ -224,15 +234,16 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.isDetailsOpen = false;
     }
     if (this.displayPagination) {
-      this.pageLink.page = this.paginator.pageIndex;
-      this.pageLink.pageSize = this.paginator.pageSize;
+      this.pageLink.page = this.paginator().pageIndex;
+      this.pageLink.pageSize = this.paginator().pageSize;
     } else {
       this.pageLink.page = 0;
     }
-    if (this.sort.active) {
+    const sort = this.sort();
+    if (sort.active) {
       this.pageLink.sortOrder = {
-        property: this.sort.active,
-        direction: Direction[this.sort.direction.toUpperCase()]
+        property: sort.active,
+        direction: Direction[sort.direction.toUpperCase()]
       };
     } else {
       this.pageLink.sortOrder = null;
@@ -252,7 +263,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   onRowClick($event: Event, entity) {
-    if (!this.entitiesTableConfig.handleRowClick($event, entity)) {
+    if (!this.entitiesTableConfig().handleRowClick($event, entity)) {
       this.toggleEntityDetails($event, entity);
     }
   }
@@ -285,10 +296,10 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   columnsUpdated(resetData: boolean = false) {
-    this.entityColumns = this.entitiesTableConfig.columns.filter(
+    this.entityColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityTableColumn)
       .map(column => column as EntityTableColumn<BaseData>);
-    this.actionColumns = this.entitiesTableConfig.columns.filter(
+    this.actionColumns = this.entitiesTableConfig().columns.filter(
       (column) => column instanceof EntityActionTableColumn)
       .map(column => column as EntityActionTableColumn<BaseData>);
 
@@ -297,7 +308,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     if (this.selectionEnabled) {
       this.displayedColumns.push('select');
     }
-    this.entitiesTableConfig.columns.forEach(
+    this.entitiesTableConfig().columns.forEach(
       (column) => {
         this.displayedColumns.push(column.key);
       }
@@ -313,7 +324,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   headerCellStyle(column: EntityColumn<BaseData>) {
-    const index = this.entitiesTableConfig.columns.indexOf(column);
+    const index = this.entitiesTableConfig().columns.indexOf(column);
     let res = this.headerCellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};
@@ -332,7 +343,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   clearCellCache(col: number, row: number) {
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const index = row * this.entitiesTableConfig().columns.length + col;
     this.cellContentCache[index] = undefined;
     this.cellTooltipCache[index] = undefined;
     this.cellStyleCache[index] = undefined;
@@ -340,8 +351,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   cellContent(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellContentCache[index];
       if (isUndefined(res)) {
         res = this.domSanitizer.bypassSecurityTrustHtml(column.cellContentFunction(entity, column.key));
@@ -355,8 +366,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
 
   cellTooltip(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
     if (column instanceof EntityTableColumn) {
-      const col = this.entitiesTableConfig.columns.indexOf(column);
-      const index = row * this.entitiesTableConfig.columns.length + col;
+      const col = this.entitiesTableConfig().columns.indexOf(column);
+      const index = row * this.entitiesTableConfig().columns.length + col;
       let res = this.cellTooltipCache[index];
       if (isUndefined(res)) {
         res = column.cellTooltipFunction(entity, column.key);
@@ -371,8 +382,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
-    const col = this.entitiesTableConfig.columns.indexOf(column);
-    const index = row * this.entitiesTableConfig.columns.length + col;
+    const col = this.entitiesTableConfig().columns.indexOf(column);
+    const index = row * this.entitiesTableConfig().columns.length + col;
     let res = this.cellStyleCache[index];
     if (!res) {
       const widthStyle: any = {width: column.width};
@@ -388,14 +399,6 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       this.cellStyleCache[index] = res;
     }
     return res;
-  }
-
-  trackByColumnKey(index, column: EntityTableColumn<BaseData>) {
-    return column.key;
-  }
-
-  trackByEntityId(index: number, entity: any) {
-    return entity.id;
   }
 
   private calcDefaultPageSize(): number {

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import lombok.With;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.EntitySessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
@@ -35,12 +36,12 @@ public class Subscription {
     private final String topicFilter;
     private final int qos;
     @With
-    private final ClientSessionInfo clientSessionInfo;
+    private final EntitySessionInfo clientSessionInfo;
     private final String shareName;
     private final SubscriptionOptions options;
     private final List<Integer> subscriptionIds;
 
-    public Subscription(String topicFilter, int qos, ClientSessionInfo clientSessionInfo, String shareName,
+    public Subscription(String topicFilter, int qos, EntitySessionInfo clientSessionInfo, String shareName,
                         SubscriptionOptions options, int subscriptionId) {
         this(topicFilter, qos, clientSessionInfo, shareName, options,
                 subscriptionId == -1 ? Lists.newArrayList() : Lists.newArrayList(subscriptionId));

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,32 +14,46 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
+import {
+  Component,
+  ElementRef,
+  forwardRef,
+  Input,
+  OnInit,
+  input,
+  model,
+  viewChild
+} from '@angular/core';
+import { ControlValueAccessor, FormBuilder, FormGroup, NG_VALUE_ACCESSOR, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable, ReplaySubject, throwError } from 'rxjs';
 import { debounceTime, map, mergeMap, share } from 'rxjs/operators';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { EntityType } from '@shared/models/entity-type.models';
-import { MatAutocomplete, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { MatChipGrid, MatChipInputEvent } from '@angular/material/chips';
+import { MatAutocomplete, MatAutocompleteSelectedEvent, MatAutocompleteTrigger, MatAutocompleteOrigin } from '@angular/material/autocomplete';
+import { MatChipGrid, MatChipInputEvent, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { COMMA, ENTER, SEMICOLON } from '@angular/cdk/keycodes';
-import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing } from '@angular/material/form-field';
-import { coerceArray, coerceBoolean } from '@shared/decorators/coercion';
+import { FloatLabelType, MatFormFieldAppearance, SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { coerceBoolean } from '@shared/decorators/coercion';
 import { ConfigService } from '@core/http/config.service';
+import { AsyncPipe } from '@angular/common';
+import { MatIcon } from '@angular/material/icon';
+import { MatInput } from '@angular/material/input';
+import { MatOption } from '@angular/material/core';
+import { HighlightPipe } from '@shared/pipe/highlight.pipe';
 
 @Component({
-  selector: 'tb-entity-subtype-list',
-  templateUrl: './entity-subtype-list.component.html',
-  styleUrls: [],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => EntitySubTypeListComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-entity-subtype-list',
+    templateUrl: './entity-subtype-list.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => EntitySubTypeListComponent),
+            multi: true
+        }
+    ],
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatChipGrid, MatChipRow, MatIcon, MatChipRemove, MatInput, MatAutocompleteTrigger, MatChipInput, MatAutocompleteOrigin, MatAutocomplete, MatOption, MatSuffix, MatError, AsyncPipe, TranslateModule, HighlightPipe]
 })
-export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit, AfterViewInit, OnDestroy {
+export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit {
 
   entitySubtypeListFormGroup: FormGroup;
 
@@ -60,40 +74,20 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
     }
   }
 
-  @Input()
-  floatLabel: FloatLabelType = 'auto';
+  disabled = model<boolean>();
+  readonly floatLabel = input<FloatLabelType>('auto');
+  readonly label = input<string>();
+  readonly entityType = input<EntityType>();
+  readonly emptyInputPlaceholder = input<string>();
+  readonly filledInputPlaceholder = input<string>();
+  readonly appearance = input<MatFormFieldAppearance>('fill');
+  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+  readonly additionalClasses = input<Array<string>>();
+  readonly addValueOutOfList = input<boolean>(true);
 
-  @Input()
-  label: string;
-
-  @Input()
-  disabled: boolean;
-
-  @Input()
-  entityType: EntityType;
-
-  @Input()
-  emptyInputPlaceholder: string;
-
-  @Input()
-  filledInputPlaceholder: string;
-
-  @Input()
-  appearance: MatFormFieldAppearance = 'fill';
-
-  @Input()
-  subscriptSizing: SubscriptSizing = 'fixed';
-
-  @Input()
-  @coerceArray()
-  additionalClasses: Array<string>;
-
-  @Input()
-  addValueOutOfList: boolean = true;
-
-  @ViewChild('entitySubtypeInput') entitySubtypeInput: ElementRef<HTMLInputElement>;
-  @ViewChild('entitySubtypeAutocomplete') entitySubtypeAutocomplete: MatAutocomplete;
-  @ViewChild('chipList', {static: true}) chipList: MatChipGrid;
+  readonly entitySubtypeInput = viewChild<ElementRef<HTMLInputElement>>('entitySubtypeInput');
+  readonly entitySubtypeAutocomplete = viewChild<MatAutocomplete>('entitySubtypeAutocomplete');
+  readonly chipList = viewChild<MatChipGrid>('chipList');
 
   entitySubtypeList: Array<string> = [];
   filteredEntitySubtypeList: Observable<Array<string>>;
@@ -122,7 +116,6 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
     });
   }
 
-
   updateValidators() {
     this.entitySubtypeListFormGroup.get('entitySubtypeList').setValidators(this.required ? [Validators.required] : []);
     this.entitySubtypeListFormGroup.get('entitySubtypeList').updateValueAndValidity();
@@ -136,7 +129,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
   }
 
   ngOnInit() {
-    switch (this.entityType) {
+    switch (this.entityType()) {
       case EntityType.MQTT_SESSION:
         this.placeholder = this.required ? this.translate.instant('asset.enter-asset-type')
           : this.translate.instant('asset.any-asset');
@@ -146,11 +139,13 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
         break;
     }
 
-    if (this.emptyInputPlaceholder) {
-      this.placeholder = this.emptyInputPlaceholder;
+    const emptyInputPlaceholder = this.emptyInputPlaceholder();
+    if (emptyInputPlaceholder) {
+      this.placeholder = emptyInputPlaceholder;
     }
-    if (this.filledInputPlaceholder) {
-      this.secondaryPlaceholder = this.filledInputPlaceholder;
+    const filledInputPlaceholder = this.filledInputPlaceholder();
+    if (filledInputPlaceholder) {
+      this.secondaryPlaceholder = filledInputPlaceholder;
     }
 
     this.filteredEntitySubtypeList = this.entitySubtypeListFormGroup.get('entitySubtype').valueChanges.pipe(
@@ -161,14 +156,8 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
     );
   }
 
-  ngAfterViewInit(): void {
-  }
-
-  ngOnDestroy(): void {
-  }
-
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
     if (isDisabled) {
       this.entitySubtypeListFormGroup.disable({emitEvent: false});
     } else {
@@ -195,7 +184,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
       if (!this.modelValue) {
         this.modelValue = [];
       }
-      if (this.addValueOutOfList || this.allEntitySubtypes.includes(entitySubtype)) {
+      if (this.addValueOutOfList() || this.allEntitySubtypes.includes(entitySubtype)) {
         this.modelValue.push(entitySubtype);
         this.entitySubtypeList.push(entitySubtype);
         this.entitySubtypeListFormGroup.get('entitySubtypeList').setValue(this.entitySubtypeList);
@@ -251,7 +240,7 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
   private getEntitySubtypes(searchText?: string): Observable<Array<string>> {
     if (!this.entitySubtypes) {
       let subTypesObservable: Observable<Array<string>>;
-      switch (this.entityType) {
+      switch (this.entityType()) {
         case EntityType.KAFKA_BROKER:
           subTypesObservable = this.configService.getBrokerServiceIds({ignoreLoading: true});
           break;
@@ -284,11 +273,11 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit,
   }
 
   clear(value: string = '') {
-    this.entitySubtypeInput.nativeElement.value = value;
+    this.entitySubtypeInput().nativeElement.value = value;
     this.entitySubtypeListFormGroup.get('entitySubtype').patchValue(value, {emitEvent: true});
     setTimeout(() => {
-      this.entitySubtypeInput.nativeElement.blur();
-      this.entitySubtypeInput.nativeElement.focus();
+      this.entitySubtypeInput().nativeElement.blur();
+      this.entitySubtypeInput().nativeElement.focus();
     }, 0);
   }
 

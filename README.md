@@ -10,15 +10,46 @@ per single cluster node with low latency delivery.
 In the cluster mode, its capabilities are further enhanced, enabling it to support more than [100M
 concurrently connected clients](https://thingsboard.io/docs/mqtt-broker/reference/100m-connections-performance-test/).
 
-At ThingsBoard, we've gained a lot of experience in building scalable IoT applications, which has helped us identify two
-main scenarios for MQTT-based solutions. In the first scenario, numerous devices generate a large volume of messages
-that are consumed by specific applications, resulting in a fan-in pattern. Normally, a few applications are set up to
-handle these lots of incoming data. They must be persistent clients with a Quality of Service (QoS) level set to 1 or 2,
-capable of retaining all the data even when they're temporarily offline due to restarts or upgrades. This ensures
-applications don't miss any single message. On the other hand, the second scenario involves numerous devices subscribing
-to specific updates or notifications that must be delivered. This leads to a few incoming requests that cause a high
-volume of outgoing data. This case is known as a fan-out pattern. Acknowledging these scenarios, we intentionally
-designed TBMQ to be exceptionally well-suited for both.
+At ThingsBoard, we've gained a lot of experience in building scalable IoT applications, which has helped us identify
+three main scenarios for MQTT-based solutions.
+
+* In the first scenario, numerous devices generate a large volume of messages that are consumed by specific
+  applications, resulting in a **fan-in** pattern.
+  Normally, a few applications are set up to handle these lots of incoming data. It must be ensured that they do not
+  miss any single message.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/bbc92bcf-c09b-4141-b71d-d5e469ceeec2" 
+       alt="Diagram showing fan-in communication pattern" 
+       width="600">
+</p>
+
+* The second scenario involves numerous devices subscribing to specific updates or notifications that must be delivered.
+  This leads to a few incoming requests that cause a high volume of outgoing data.
+  This case is known as a **fan-out (broadcast)** pattern.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/85fe89da-ae81-4bef-8d50-c0c21e60b60f" 
+       alt="Diagram showing fan-out communication pattern" 
+       width="600">
+</p>
+
+* The third scenario, **point-to-point (P2P)** communication, is a targeted messaging pattern, primarily used for
+  one-to-one communication.
+  Ideal for use cases such as private messaging or command-based interactions where messages are routed between a single
+  publisher and a specific subscriber through uniquely defined topics.
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/88ce216d-891a-4232-9b4a-8590ded2cdfc" 
+       alt="Diagram showing p2p communication pattern" 
+       width="600"
+       style="margin-left: 10px;">
+</p>
+
+> In all scenarios, persistent clients with a Quality of Service (QoS) level set to 1 or 2 are often utilized to ensure
+> reliable message delivery, even when they're temporarily offline due to restarts or upgrades.
+
+Acknowledging these scenarios, we intentionally designed TBMQ to be exceptionally well-suited for all three.
 
 Our design principles focused on ensuring the broker’s fault tolerance and high availability. Thus, we deliberately
 avoided reliance on master or coordinated processes. We ensured the same functionality across all nodes within the

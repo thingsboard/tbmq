@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import {
   ComponentFactoryResolver,
   ComponentRef,
   ElementRef,
-  Inject,
   Injectable,
   Injector,
   Renderer2,
@@ -28,8 +27,6 @@ import {
 } from '@angular/core';
 import { PopoverPlacement, PopoverWithTrigger } from '@shared/components/popover.models';
 import { TbPopoverComponent } from '@shared/components/popover.component';
-import { ComponentType } from '@angular/cdk/portal';
-import { HELP_MARKDOWN_COMPONENT_TOKEN } from '@shared/components/tokens';
 import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Injectable()
@@ -39,16 +36,15 @@ export class TbPopoverService {
 
   componentFactory: ComponentFactory<TbPopoverComponent> = this.resolver.resolveComponentFactory(TbPopoverComponent);
 
-  constructor(private resolver: ComponentFactoryResolver,
-              @Inject(HELP_MARKDOWN_COMPONENT_TOKEN) private helpMarkdownComponent: ComponentType<any>) {
+  constructor(private resolver: ComponentFactoryResolver) {
   }
 
-  hasPopover(trigger: Element): boolean {
+  hasPopover(trigger: CdkOverlayOrigin): boolean {
     const res = this.findPopoverByTrigger(trigger);
     return res !== null;
   }
 
-  hidePopover(trigger: Element): boolean {
+  hidePopover(trigger: CdkOverlayOrigin): boolean {
     const component: TbPopoverComponent = this.findPopoverByTrigger(trigger);
     if (component && component.tbVisible) {
       component.hide();
@@ -62,7 +58,7 @@ export class TbPopoverService {
     return hostView.createComponent(this.componentFactory);
   }
 
-  displayPopover<T>(trigger: Element, renderer: Renderer2, hostView: ViewContainerRef,
+  displayPopover<T>(trigger: CdkOverlayOrigin, renderer: Renderer2, hostView: ViewContainerRef,
                     componentType: Type<T>, preferredPlacement: PopoverPlacement = 'top', hideOnClickOutside = true,
                     injector?: Injector, context?: any, overlayStyle: any = {}, popoverStyle: any = {}, style?: any,
                     showCloseButton = true): TbPopoverComponent<T> {
@@ -71,7 +67,7 @@ export class TbPopoverService {
       injector, context, overlayStyle, popoverStyle, style, showCloseButton);
   }
 
-  displayPopoverWithComponentRef<T>(componentRef: ComponentRef<TbPopoverComponent>, trigger: Element, renderer: Renderer2,
+  displayPopoverWithComponentRef<T>(componentRef: ComponentRef<TbPopoverComponent>, trigger: CdkOverlayOrigin, renderer: Renderer2,
                                     componentType: Type<T>, preferredPlacement: PopoverPlacement = 'top',
                                     hideOnClickOutside = true, injector?: Injector, context?: any, overlayStyle: any = {},
                                     popoverStyle: any = {}, style?: any, showCloseButton = true): TbPopoverComponent<T> {
@@ -84,8 +80,7 @@ export class TbPopoverService {
       renderer.parentNode(trigger),
       componentRef.location.nativeElement
     );
-    const originElementRef = new ElementRef(trigger);
-    component.setOverlayOrigin(new CdkOverlayOrigin(originElementRef));
+    component.setOverlayOrigin(trigger);
     component.tbPlacement = preferredPlacement;
     component.tbComponentFactory = this.resolver.resolveComponentFactory(componentType);
     component.tbComponentInjector = injector;
@@ -107,83 +102,7 @@ export class TbPopoverService {
     return component;
   }
 
-  toggleHelpPopover(trigger: Element, renderer: Renderer2, hostView: ViewContainerRef, helpId = '',
-                    helpContent = '',
-                    visibleFn: (visible: boolean) => void = () => {},
-                    readyFn: (ready: boolean) => void = () => {},
-                    preferredPlacement: PopoverPlacement = 'bottom',
-                    overlayStyle: any = {}, helpStyle: any = {}) {
-    if (this.hasPopover(trigger)) {
-      this.hidePopover(trigger);
-    } else {
-      readyFn(false);
-      const injector = Injector.create({
-        parent: hostView.injector, providers: []
-      });
-      const componentRef = hostView.createComponent(this.componentFactory);
-      const component = componentRef.instance;
-      this.popoverWithTriggers.push({
-        trigger,
-        popoverComponent: component
-      });
-      renderer.removeChild(
-        renderer.parentNode(trigger),
-        componentRef.location.nativeElement
-      );
-      const originElementRef = new ElementRef(trigger);
-      component.tbAnimationState = 'void';
-      component.tbOverlayStyle = {...overlayStyle, opacity: '0' };
-      component.setOverlayOrigin(new CdkOverlayOrigin(originElementRef));
-      component.tbPlacement = preferredPlacement;
-      component.tbComponentFactory = this.resolver.resolveComponentFactory(this.helpMarkdownComponent);
-      component.tbComponentInjector = injector;
-      component.tbComponentContext = {
-        helpId,
-        helpContent,
-        style: helpStyle,
-        visible: true
-      };
-      component.tbHideOnClickOutside = true;
-      component.tbVisibleChange.subscribe((visible: boolean) => {
-        if (!visible) {
-          visibleFn(false);
-          componentRef.destroy();
-        }
-      });
-      component.tbDestroy.subscribe(() => {
-        this.removePopoverByComponent(component);
-      });
-      const showHelpMarkdownComponent = () => {
-        component.tbOverlayStyle = {...component.tbOverlayStyle, opacity: '1' };
-        component.tbAnimationState = 'active';
-        component.updatePosition();
-        readyFn(true);
-        setTimeout(() => {
-          component.updatePosition();
-        });
-      };
-      const setupHelpMarkdownComponent = (helpMarkdownComponent: any) => {
-        if (helpMarkdownComponent.isMarkdownReady) {
-          showHelpMarkdownComponent();
-        } else {
-          helpMarkdownComponent.markdownReady.subscribe(() => {
-            showHelpMarkdownComponent();
-          });
-        }
-      };
-      if (component.tbComponentRef) {
-        setupHelpMarkdownComponent(component.tbComponentRef.instance);
-      } else {
-        component.tbComponentChange.subscribe((helpMarkdownComponentRef) => {
-          setupHelpMarkdownComponent(helpMarkdownComponentRef.instance);
-        });
-      }
-      component.show();
-      visibleFn(true);
-    }
-  }
-
-  private findPopoverByTrigger(trigger: Element): TbPopoverComponent | null {
+  private findPopoverByTrigger(trigger: CdkOverlayOrigin): TbPopoverComponent | null {
     const res = this.popoverWithTriggers.find(val => this.elementsAreEqualOrDescendant(trigger, val.trigger));
     if (res) {
       return res.popoverComponent;
@@ -199,7 +118,7 @@ export class TbPopoverService {
     }
   }
 
-  private elementsAreEqualOrDescendant(element1: Element, element2: Element): boolean {
-    return element1 === element2 || element1.contains(element2) || element2.contains(element1);
+  private elementsAreEqualOrDescendant(element1: CdkOverlayOrigin, element2: CdkOverlayOrigin): boolean {
+    return element1 === element2 || element1.elementRef.nativeElement.contains(element2) || element2.elementRef.nativeElement.contains(element1);
   }
 }

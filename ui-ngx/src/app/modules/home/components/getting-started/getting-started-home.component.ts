@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
-
-// @ts-nocheck
 
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
@@ -31,7 +29,7 @@ import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { ClientType } from '@shared/models/client.model';
 import { ActionNotificationShow } from '@core/notification/notification.actions';
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   ClientCredentialsWizardDialogComponent
@@ -39,17 +37,24 @@ import {
 import { Router } from '@angular/router';
 import { ConnectionState } from '@shared/models/session.model';
 import { ConfigService } from '@core/http/config.service';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { MatStepper, MatStep, MatStepLabel } from '@angular/material/stepper';
+import { AsyncPipe } from '@angular/common';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
+import { MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
 
 @Component({
-  selector: 'tb-getting-started',
-  templateUrl: './getting-started-home.component.html',
-  styleUrls: ['./getting-started-home.component.scss'],
-  providers: [
-    {
-      provide: STEPPER_GLOBAL_OPTIONS,
-      useValue: { displayDefaultIndicatorType: false }
-    }
-  ]
+    selector: 'tb-getting-started',
+    templateUrl: './getting-started-home.component.html',
+    styleUrls: ['./getting-started-home.component.scss'],
+    providers: [
+        {
+            provide: STEPPER_GLOBAL_OPTIONS,
+            useValue: { displayDefaultIndicatorType: false }
+        }
+    ],
+    imports: [CardTitleButtonComponent, MatStepper, MatStep, MatStepLabel, TbMarkdownComponent, MatButton, MatIcon, AsyncPipe, TranslateModule]
 })
 export class GettingStartedHomeComponent implements OnInit {
 

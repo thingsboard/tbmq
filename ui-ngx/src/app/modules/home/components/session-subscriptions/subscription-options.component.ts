@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,38 +14,40 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, Input, Output, Renderer2, ViewContainerRef } from '@angular/core';
+import { Component, Renderer2, ViewContainerRef, input, output } from '@angular/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import { TbPopoverService } from '@shared/components/popover.service';
 import {
   ShowSubscriptionOptionsPopoverComponent
 } from '@home/components/session-subscriptions/show-subscription-options-popover.component';
 import { AbstractControl } from '@angular/forms';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { TranslateModule } from '@ngx-translate/core';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
-  selector: 'tb-subscription-options',
-  templateUrl: './subscription-options.component.html',
-  styleUrls: []
+    selector: 'tb-subscription-options',
+    templateUrl: './subscription-options.component.html',
+    providers: [TbPopoverService],
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule, CdkOverlayOrigin]
 })
 export class SubscriptionOptionsComponent {
 
-  @Input()
-  subscriptionOptions: AbstractControl;
+  readonly subscriptionOptions = input<AbstractControl>();
 
-  @Output()
-  subscriptionOptionsValue = new EventEmitter<TopicSubscription>();
+  readonly subscriptionOptionsValue = output<TopicSubscription>();
 
   constructor(private renderer: Renderer2,
               private popoverService: TbPopoverService,
               private viewContainerRef: ViewContainerRef) {
   }
 
-  toggleSubscriptionOptionsPopover($event: Event, button: MatButton) {
+  toggleSubscriptionOptionsPopover($event: Event, trigger: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
-    const trigger = button._elementRef.nativeElement;
     if (this.popoverService.hasPopover(trigger)) {
       this.popoverService.hidePopover(trigger);
     } else {
@@ -55,7 +57,7 @@ export class SubscriptionOptionsComponent {
           onClose: () => {
             showNotificationPopover.hide();
           },
-          data: this.subscriptionOptions.getRawValue(),
+          data: this.subscriptionOptions().getRawValue(),
         },
         {maxHeight: '90vh', height: '100%', padding: '10px'},
         {width: '560px', minWidth: '100%', maxWidth: '100%'},

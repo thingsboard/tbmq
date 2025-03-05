@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,14 +20,14 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.thingsboard.mqtt-broker</groupId>
-        <version>2.0.1-SNAPSHOT</version>
+        <version>2.1.0-SNAPSHOT</version>
         <artifactId>mqtt-broker</artifactId>
     </parent>
     <artifactId>application</artifactId>
     <packaging>jar</packaging>
 
     <name>TBMQ Application</name>
-    <url>https://thingsboard.io</url>
+    <url>https://thingsboard.io/products/mqtt-broker/</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -39,7 +39,7 @@
         <pkg.name>thingsboard-mqtt-broker</pkg.name>
         <pkg.win.dist>${project.build.directory}/windows</pkg.win.dist>
         <pkg.copyInstallScripts>true</pkg.copyInstallScripts>
-        <pkg.implementationTitle>ThingsBoard MQTT Broker</pkg.implementationTitle>
+        <pkg.implementationTitle>TBMQ Community Edition</pkg.implementationTitle>
         <pkg.mainClass>org.thingsboard.mqtt.broker.ThingsboardMqttBrokerApplication</pkg.mainClass>
     </properties>
 
@@ -66,6 +66,10 @@
         <dependency>
             <groupId>org.thingsboard.mqtt-broker</groupId>
             <artifactId>dao</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thingsboard.mqtt-broker.common.integration</groupId>
+            <artifactId>cluster-integration-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.thingsboard.mqtt-broker.common</groupId>

@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 -->
 <button mat-icon-button
-        type="button"
-        [ngClass]="{'tb-mat-32': miniButton}"
-        [color]="color"
-        [disabled]="disabled"
-        [matTooltip]="matTooltipText"
-        [matTooltipPosition]="matTooltipPosition"
-        (click)="copy($event)">
-  <mat-icon [svgIcon]="mdiIcon" class="tb-mat-24" [ngStyle]="style" *ngIf="!copied; else copiedTemplate">
-    {{ icon }}
-  </mat-icon>
-  <ng-template #copiedTemplate>
-    <mat-icon [ngStyle]="style" class="copied">done</mat-icon>
-  </ng-template>
+  type="button"
+  [class]="buttonClass()"
+  [color]="color()"
+  [disabled]="disabled()"
+  [matTooltip]="matTooltipText"
+  [matTooltipPosition]="matTooltipPosition"
+  (click)="copy($event)">
+  @if (!copied) {
+    <mat-icon [svgIcon]="mdiIcon()" [style]="style()">
+      {{ icon() }}
+    </mat-icon>
+  } @else {
+    <mat-icon [style]="style()" class="copied">done</mat-icon>
+  }
 </button>

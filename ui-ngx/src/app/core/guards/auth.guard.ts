@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 ///
 
 import { Injectable, NgZone } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, CanActivateChild, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { select, Store } from '@ngrx/store';
 import { AppState } from '../core.state';
 import { selectAuth } from '../auth/auth.selectors';
@@ -25,22 +25,18 @@ import { Observable, of } from 'rxjs';
 import { enterZone } from '@core/operator/enterZone';
 import { Authority } from '@shared/models/authority.enum';
 import { DialogService } from '@core/services/dialog.service';
-import { TranslateService } from '@ngx-translate/core';
-import { UtilsService } from '@core/services/utils.service';
 import { isObject } from '@core/utils';
 import { AuthService } from "@core/http/auth.service";
 
 @Injectable({
   providedIn: 'root'
 })
-export class AuthGuard implements CanActivate, CanActivateChild {
+export class AuthGuard {
 
   constructor(private store: Store<AppState>,
               private router: Router,
               private authService: AuthService,
               private dialogService: DialogService,
-              private utils: UtilsService,
-              private translate: TranslateService,
               private zone: NgZone) {
   }
 

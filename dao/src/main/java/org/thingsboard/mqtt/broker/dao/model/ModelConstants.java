@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,4 +134,36 @@ public class ModelConstants {
     public static final String UNAUTHORIZED_CLIENT_PASSWORD_PROVIDED_PROPERTY = "password_provided";
     public static final String UNAUTHORIZED_CLIENT_TLS_USED_PROPERTY = "tls_used";
     public static final String UNAUTHORIZED_CLIENT_REASON_PROPERTY = "reason";
+
+    /**
+     * Integration constants.
+     */
+    public static final String INTEGRATION_TABLE_NAME = "integration";
+    public static final String INTEGRATION_NAME_PROPERTY = "name";
+    public static final String INTEGRATION_TYPE_PROPERTY = "type";
+    public static final String INTEGRATION_ENABLED_PROPERTY = "enabled";
+    public static final String INTEGRATION_CONFIGURATION_PROPERTY = WEBSOCKET_CONNECTION_CONFIGURATION_PROPERTY;
+    public static final String INTEGRATION_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
+    public static final String INTEGRATION_STATUS_PROPERTY = "status";
+    public static final String INTEGRATION_DISCONNECTED_TIME_PROPERTY = "disconnected_time";
+
+    /**
+     * Event constants.
+     */
+    public static final String ERROR_EVENT_TABLE_NAME = "error_event";
+    public static final String LC_EVENT_TABLE_NAME = "lc_event";
+    public static final String STATS_EVENT_TABLE_NAME = "stats_event";
+
+    public static final String EVENT_SERVICE_ID_PROPERTY = "service_id";
+    public static final String EVENT_ENTITY_ID_PROPERTY = ENTITY_ID_COLUMN;
+
+    public static final String EVENT_MESSAGES_PROCESSED_COLUMN_NAME = "e_messages_processed";
+    public static final String EVENT_ERRORS_OCCURRED_COLUMN_NAME = "e_errors_occurred";
+
+    public static final String EVENT_METHOD_COLUMN_NAME = "e_method";
+
+    public static final String EVENT_TYPE_COLUMN_NAME = "e_type";
+    public static final String EVENT_ERROR_COLUMN_NAME = "e_error";
+    public static final String EVENT_SUCCESS_COLUMN_NAME = "e_success";
+
 }

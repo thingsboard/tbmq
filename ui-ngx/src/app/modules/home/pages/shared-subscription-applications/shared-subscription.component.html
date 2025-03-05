@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,27 +15,27 @@
     limitations under the License.
 
 -->
-<div class="tb-details-buttons" fxLayout.xs="column">
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+<div class="tb-details-buttons xs:flex-col">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <button mat-raised-button color="primary"
-            [disabled]="(isLoading$ | async)"
-            (click)="onEntityAction($event, 'open')"
-            [fxShow]="!isEdit && !isDetailsPage">
+      [disabled]="(isLoading$ | async)"
+      (click)="onEntityAction($event, 'open')"
+      [class.!hidden]="!(!isEdit && !isDetailsPage)">
       {{'common.open-details-page' | translate }}
     </button>
     <button mat-raised-button color="primary"
-            [disabled]="(isLoading$ | async)"
-            (click)="onEntityAction($event, 'delete')"
-            [fxShow]="!isEdit">
+      [disabled]="(isLoading$ | async)"
+      (click)="onEntityAction($event, 'delete')"
+      [class.!hidden]="isEdit">
       <mat-icon svgIcon="mdi:trash-can-outline"></mat-icon>
       <span translate>shared-subscription.delete</span>
     </button>
   </div>
-  <div fxLayout="row" fxLayout.xs="column" style="padding-left: 8px">
+  <div class="flex flex-row pl-2 xs:flex-col">
     <tb-copy-content-button [cbContent]="entity?.id" [isEdit]="isEdit"></tb-copy-content-button>
   </div>
 </div>
-<div class="mat-padding" fxLayout="column">
+<div class="mat-padding flex flex-col">
   <fieldset class="fields-group">
     <legend class="group-title">
       <mat-icon class="material-icons">info_outline</mat-icon>
@@ -47,35 +47,45 @@
       <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.name</mat-label>
         <input matInput formControlName="name" required>
-        <mat-error *ngIf="entityForm.get('name').hasError('required')">
-          {{ 'shared-subscription.name-required' | translate }}
-        </mat-error>
+        @if (entityForm.get('name').hasError('required')) {
+          <mat-error>
+            {{ 'shared-subscription.name-required' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>shared-subscription.topic-filter</mat-label>
         <input matInput formControlName="topicFilter" required>
         <tb-copy-button #copyBtn
-                        (click)="onClickTbCopyButton(entityForm.get('topicFilter')?.value)"
-                        [fxShow]="entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
-                        [copyText]="entityForm.get('topicFilter').value">
+          (click)="onClickTbCopyButton(entityForm.get('topicFilter')?.value)"
+          [class.!hidden]="!entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
+          [copyText]="entityForm.get('topicFilter').value">
         </tb-copy-button>
-        <mat-error *ngIf="entityForm.get('topicFilter').hasError('required')">
-          {{ 'shared-subscription.topic-filter-required' | translate }}
-        </mat-error>
+        @if (entityForm.get('topicFilter').hasError('required')) {
+          <mat-error>
+            {{ 'shared-subscription.topic-filter-required' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
       <div class="tb-hint" [innerHTML]="'shared-subscription.hint-topic-filter' | translate"></div>
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>shared-subscription.partitions</mat-label>
         <input matInput formControlName="partitions" required type="number" min="1" step="1">
-        <mat-error *ngIf="entityForm.get('partitions').hasError('required')">
-          {{ 'shared-subscription.partitions-required' | translate }}
-        </mat-error>
-        <mat-error *ngIf="entityForm.get('partitions').hasError('min')">
-          {{ 'shared-subscription.partitions-min' | translate }}
-        </mat-error>
+        @if (entityForm.get('partitions').hasError('required')) {
+          <mat-error>
+            {{ 'shared-subscription.partitions-required' | translate }}
+          </mat-error>
+        }
+        @if (entityForm.get('partitions').hasError('min')) {
+          <mat-error>
+            {{ 'shared-subscription.partitions-min' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
       <div class="tb-hint" [innerHTML]="'shared-subscription.hint-partitions' | translate"></div>
-      <div *ngIf="!entity?.name" class="tb-hint" [innerHTML]="'shared-subscription.hint-shared-subscription-notes' | translate"></div>
+      @if (!entity?.name) {
+        <div class="tb-hint" [innerHTML]="'shared-subscription.hint-shared-subscription-notes' | translate"></div>
+      }
     </fieldset>
   </form>
 </div>

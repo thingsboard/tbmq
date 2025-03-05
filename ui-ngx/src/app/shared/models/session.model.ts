@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import {
   isDefinedAndNotNull,
   isEmpty,
   isEqualIgnoreUndefined,
-  isNotEmptyStr,
+  isNotEmptyStr, isNumber,
   isUndefinedOrNull
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { SubscriptionOptions } from '@shared/models/ws-client.model';
+import { TopicSubscription } from '@shared/models/ws-client.model';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -53,60 +53,23 @@ export interface ShortClientSessionInfo {
   connected?: boolean;
 }
 
-export interface TopicSubscription extends SubscriptionOptions {
-  topic: string;
-  qos: WsMqttQoSType;
-}
-
-export enum MqttQoS {
-  AT_MOST_ONCE = 'AT_MOST_ONCE',
-  AT_LEAST_ONCE = 'AT_LEAST_ONCE',
-  EXACTLY_ONCE = 'EXACTLY_ONCE'
-}
-
-export interface MqttQoSType {
-  value: MqttQoS;
-  name: string;
-}
-
-export const mqttQoSTypes = [
-  {
-    value: MqttQoS.AT_MOST_ONCE,
-    name: 'mqtt-client-session.qos-at-most-once'
-  },
-  {
-    value: MqttQoS.AT_LEAST_ONCE,
-    name: 'mqtt-client-session.qos-at-least-once'
-  },
-  {
-    value: MqttQoS.EXACTLY_ONCE,
-    name: 'mqtt-client-session.qos-exactly-once'
-  }
-];
-
-export const mqttQoSValuesMap = new Map<MqttQoS, number>(
-  [
-    [MqttQoS.AT_MOST_ONCE, 0],
-    [MqttQoS.AT_LEAST_ONCE, 1],
-    [MqttQoS.EXACTLY_ONCE, 2]
-  ]
-);
-
-export enum WsMqttQoSType {
+export enum QoS {
   AT_MOST_ONCE = 0,
   AT_LEAST_ONCE = 1,
   EXACTLY_ONCE = 2
 }
 
-export const WsQoSTypes = [0, 1, 2];
+export const QosTranslation = new Map<QoS, string>([
+  [QoS.AT_MOST_ONCE, 'mqtt-client-session.qos-at-most-once'],
+  [QoS.AT_LEAST_ONCE, 'mqtt-client-session.qos-at-least-once'],
+  [QoS.EXACTLY_ONCE, 'mqtt-client-session.qos-exactly-once']
+]);
 
-export const WsQoSTranslationMap = new Map<WsMqttQoSType, string>(
-  [
-    [0, 'mqtt-client-session.qos-at-most-once'],
-    [1, 'mqtt-client-session.qos-at-least-once'],
-    [2, 'mqtt-client-session.qos-exactly-once']
-  ]
-);
+export const QosAsNum = (qos: QoS): string => QoS[qos];
+
+export const QosTypes = Object.values(QoS).filter(v => isNumber(v)) as QoS[];
+
+export const DEFAULT_QOS = QoS.AT_LEAST_ONCE;
 
 export enum ConnectionState {
   CONNECTED = 'CONNECTED',

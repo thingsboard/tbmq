@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,5 +22,7 @@ kubectl config set-context $(kubectl config current-context) --namespace=thingsb
 
 kubectl apply -f tb-broker-configmap.yml
 kubectl apply -f tb-broker.yml
+kubectl apply -f tbmq-ie-configmap.yml
+kubectl apply -f tbmq-ie.yml
 
 kubectl apply -f routes.yml

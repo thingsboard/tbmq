@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 
 -->
 <section class="tb-ws-client-title-toolbar mat-padding" style="height: 70px;">
-  <section fxLayout="column" class="tb-ws-client-info-container">
+  <section class="tb-ws-client-info-container flex flex-col">
     <span class="tb-ws-client-title" [matTooltip]="(connection | async)?.name">{{ (connection | async)?.name }}</span>
     <span class="tb-ws-client-subtitle">
       {{'mqtt-client.client-id' | translate }}: {{ (connection | async)?.configuration?.clientId }}
     </span>
   </section>
-  <div fxLayout="row" fxLayoutGap="4px">
+  <div class="flex flex-row gap-1">
     <button mat-icon-button
             [disabled]="!isConnected"
             (click)="openSessions($event)"

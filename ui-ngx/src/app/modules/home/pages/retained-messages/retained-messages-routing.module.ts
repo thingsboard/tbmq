@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { Authority } from '@shared/models/authority.enum';
-import { RetainedMessagesTableComponent } from '@home/pages/retained-messages/retained-messages-table.component';
+
 
 const routes: Routes = [
   {
     path: 'retained-messages',
-    component: RetainedMessagesTableComponent,
+    loadComponent: () => import('@home/pages/retained-messages/retained-messages-table.component').then(m => m.RetainedMessagesTableComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       title: 'retained-message.retained-messages',

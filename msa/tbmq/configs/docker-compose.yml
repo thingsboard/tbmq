@@ -1,5 +1,5 @@
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ services:
     image: "postgres:15"
     ports:
       - "5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       POSTGRES_DB: thingsboard_mqtt_broker
       POSTGRES_PASSWORD: postgres
@@ -30,6 +35,11 @@ services:
     image: "bitnami/kafka:3.5.1"
     ports:
       - "9092"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       KAFKA_CFG_NODE_ID: 0
       KAFKA_CFG_PROCESS_ROLES: controller,broker
@@ -53,7 +63,7 @@ services:
       - tbmq-redis-data:/bitnami/redis/data
   tbmq:
     restart: always
-    image: "thingsboard/tbmq:2.0.0"
+    image: "thingsboard/tbmq:2.0.1"
     depends_on:
       - postgres
       - kafka
@@ -62,6 +72,11 @@ services:
       - "8083:8083"
       - "1883:1883"
       - "8084:8084"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       TB_SERVICE_ID: tbmq
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker
@@ -74,6 +89,23 @@ services:
     volumes:
       - tbmq-logs:/var/log/thingsboard-mqtt-broker
       - tbmq-data:/data
+  tbmq-integration-executor:
+    restart: always
+    image: "thingsboard/tbmq-integration-executor:2.0.1"
+    depends_on:
+      - kafka
+      - tbmq
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
+    environment:
+      TB_SERVICE_ID: tbmq-ie
+      TB_KAFKA_SERVERS: kafka:9092
+      #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
+    volumes:
+      - tbmq-ie-logs:/var/log/tbmq-integration-executor
 
 volumes:
   tbmq-postgres-data:
@@ -85,4 +117,6 @@ volumes:
   tbmq-logs:
     external: true
   tbmq-data:
+    external: true
+  tbmq-ie-logs:
     external: true

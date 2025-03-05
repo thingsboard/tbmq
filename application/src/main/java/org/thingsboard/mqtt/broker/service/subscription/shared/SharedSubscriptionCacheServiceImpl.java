@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCache;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -174,6 +179,34 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return new HashMap<>(sharedSubscriptionsMap);
     }
 
+    @Override
+    public CompositeSubscriptions getSubscriptions(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
+        Set<TopicSharedSubscription> topicSharedSubscriptions = null;
+        List<ValueWithTopicFilter<EntitySubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptions.size());
+
+        for (ValueWithTopicFilter<EntitySubscription> clientSubscription : clientSubscriptions) {
+            topicSharedSubscriptions = processSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+        }
+
+        SharedSubscriptions sharedSubscriptions = this.get(topicSharedSubscriptions);
+        return new CompositeSubscriptions(sharedSubscriptions, commonClientSubscriptions);
+    }
+
+    private Set<TopicSharedSubscription> processSubscription(ValueWithTopicFilter<EntitySubscription> clientSubscription,
+                                                             List<ValueWithTopicFilter<EntitySubscription>> commonClientSubscriptions,
+                                                             Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        var topicFilter = clientSubscription.getTopicFilter();
+        var shareName = clientSubscription.getValue().getShareName();
+
+        if (!StringUtils.isEmpty(shareName)) {
+            topicSharedSubscriptions = initTopicSharedSubscriptionSetIfNull(topicSharedSubscriptions);
+            topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
+        } else {
+            commonClientSubscriptions.add(clientSubscription);
+        }
+        return topicSharedSubscriptions;
+    }
+
     Collection<Subscription> filterSubscriptions(Set<Subscription> subscriptions) {
         if (subscriptions.isEmpty()) {
             return subscriptions;
@@ -243,4 +276,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
         return clientSessionInfo.isAppClient() ? sharedSubscriptions.getDeviceSubscriptions() : sharedSubscriptions.getApplicationSubscriptions();
     }
 
+    private Set<TopicSharedSubscription> initTopicSharedSubscriptionSetIfNull(Set<TopicSharedSubscription> topicSharedSubscriptions) {
+        return topicSharedSubscriptions == null ? new HashSet<>() : topicSharedSubscriptions;
+    }
 }

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,28 +20,37 @@ import {
   forwardRef,
   Inject,
   InjectionToken,
-  Input,
+  OnDestroy,
   OnInit,
   Optional,
   TemplateRef,
-  ViewChild,
-  ViewContainerRef
+  ViewContainerRef,
+  input, booleanAttribute, model, Input,
+  viewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { coerceBoolean } from '@shared/decorators/coercion';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 
-import { TranslateService } from '@ngx-translate/core';
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { deepClone } from '@core/utils';
 import { EntityType } from '@shared/models/entity-type.models';
-import { fromEvent, Subscription } from 'rxjs';
+import { fromEvent, Subject, Subscription } from 'rxjs';
 import { POSITION_MAP } from '@app/shared/models/overlay.models';
 import {
   RetainedMessagesFilterConfig,
   retainedMessagesFilterConfigEquals
 } from '@shared/models/retained-message.model';
-import { mqttQoSTypes, mqttQoSValuesMap } from '@shared/models/session.model';
+import { NgTemplateOutlet } from '@angular/common';
+import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatFormField } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatChipListbox, MatChipOption } from '@angular/material/chips';
+import { QosTranslation, QosTypes } from '@shared/models/session.model';
+import { takeUntil } from 'rxjs/operators';
 
 export const RETAINED_MESSAGE_FILTER_CONFIG_DATA = new InjectionToken<any>('RetainedMessagesFilterConfigData');
 
@@ -53,37 +62,31 @@ export interface RetainedMessagesFilterConfigData {
 
 // @dynamic
 @Component({
-  selector: 'tb-retained-messages-filter-config',
-  templateUrl: './retained-messages-filter-config.component.html',
-  styleUrls: ['./retained-messages-filter-config.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => RetainedMessagesFilterConfigComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-retained-messages-filter-config',
+    templateUrl: './retained-messages-filter-config.component.html',
+    styleUrls: ['./retained-messages-filter-config.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => RetainedMessagesFilterConfigComponent),
+            multi: true
+        }
+    ],
+    imports: [NgTemplateOutlet, MatButton, MatTooltip, MatIcon, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatChipListbox, MatChipOption]
 })
-export class RetainedMessagesFilterConfigComponent implements OnInit, ControlValueAccessor {
+export class RetainedMessagesFilterConfigComponent implements OnInit, OnDestroy, ControlValueAccessor {
 
-  @ViewChild('retainedMessagesPanel')
-  retainedMessagesFilterPanel: TemplateRef<any>;
-
-  @Input() disabled: boolean;
-
-  @coerceBoolean()
-  @Input()
-  buttonMode = true;
-
-  @coerceBoolean()
-  @Input()
-  propagatedFilter = true;
+  readonly retainedMessagesFilterPanel = viewChild<TemplateRef<any>>('retainedMessagesPanel');
 
   @Input()
   initialRetainedMessagesFilterConfig: RetainedMessagesFilterConfig;
 
-  qosList = mqttQoSTypes;
-  qoSValuesMap = mqttQoSValuesMap;
+  disabled = model<boolean>();
+  readonly buttonMode = input(true, {transform: booleanAttribute});
+  readonly propagatedFilter = input(true, {transform: booleanAttribute});
+
+  qosTypes = QosTypes;
+  qosTranslation = QosTranslation;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('retained-message.filter-title');
   buttonDisplayTooltip: string;
@@ -94,12 +97,12 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
 
   private retainedMessagesFilterConfig: RetainedMessagesFilterConfig;
   private resizeWindows: Subscription;
+  private destroy$ = new Subject<void>();
   private propagateChange = (_: any) => {};
 
   constructor(@Optional() @Inject(RETAINED_MESSAGE_FILTER_CONFIG_DATA)
               private data: RetainedMessagesFilterConfigData | undefined,
-              @Optional()
-              private overlayRef: OverlayRef,
+              @Optional() private overlayRef: OverlayRef,
               private fb: UntypedFormBuilder,
               private translate: TranslateService,
               private overlay: Overlay,
@@ -121,17 +124,22 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
       payload: [null, []],
       qosList: [null, []],
     });
-    this.retainedMessagesFilterConfigForm.valueChanges.subscribe(
-      () => {
-        if (!this.buttonMode) {
+    this.retainedMessagesFilterConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        if (!this.buttonMode()) {
           this.retainedMessagesConfigUpdated(this.retainedMessagesFilterConfigForm.value);
         }
-      }
-    );
+      });
     if (this.panelMode) {
       this.updateRetainedMessagesConfigForm(this.retainedMessagesFilterConfig);
     }
     this.initialRetainedMessagesFilterConfig = this.retainedMessagesFilterConfigForm.getRawValue();
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   registerOnChange(fn: any): void {
@@ -142,8 +150,8 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
-    if (this.disabled) {
+    this.disabled.set(isDisabled);
+    if (this.disabled()) {
       this.retainedMessagesFilterConfigForm.disable({emitEvent: false});
     } else {
       this.retainedMessagesFilterConfigForm.enable({emitEvent: false});
@@ -180,7 +188,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
     this.retainedMessagesFilterOverlayRef.backdropClick().subscribe(() => {
       this.retainedMessagesFilterOverlayRef.dispose();
     });
-    this.retainedMessagesFilterOverlayRef.attach(new TemplatePortal(this.retainedMessagesFilterPanel,
+    this.retainedMessagesFilterOverlayRef.attach(new TemplatePortal(this.retainedMessagesFilterPanel(),
       this.viewContainerRef));
     this.resizeWindows = fromEvent(window, 'resize').subscribe(() => {
       this.retainedMessagesFilterOverlayRef.updatePosition();
@@ -212,16 +220,17 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   }
 
   reset() {
-    if (this.initialRetainedMessagesFilterConfig) {
-      if (this.buttonMode || this.panelMode) {
+    const initialRetainedMessagesFilterConfig = this.initialRetainedMessagesFilterConfig;
+    if (initialRetainedMessagesFilterConfig) {
+      if (this.buttonMode() || this.panelMode) {
         const retainedMessagesFilterConfig = this.retainedMessagesFilterConfigFromFormValue(this.retainedMessagesFilterConfigForm.value);
-        if (!retainedMessagesFilterConfigEquals(retainedMessagesFilterConfig, this.initialRetainedMessagesFilterConfig)) {
-          this.updateRetainedMessagesConfigForm(this.initialRetainedMessagesFilterConfig);
+        if (!retainedMessagesFilterConfigEquals(retainedMessagesFilterConfig, initialRetainedMessagesFilterConfig)) {
+          this.updateRetainedMessagesConfigForm(initialRetainedMessagesFilterConfig);
           this.retainedMessagesFilterConfigForm.markAsDirty();
         }
       } else {
-        if (!retainedMessagesFilterConfigEquals(this.retainedMessagesFilterConfig, this.initialRetainedMessagesFilterConfig)) {
-          this.retainedMessagesFilterConfig = this.initialRetainedMessagesFilterConfig;
+        if (!retainedMessagesFilterConfigEquals(this.retainedMessagesFilterConfig, initialRetainedMessagesFilterConfig)) {
+          this.retainedMessagesFilterConfig = initialRetainedMessagesFilterConfig;
           this.updateButtonDisplayValue();
           this.updateRetainedMessagesConfigForm(this.retainedMessagesFilterConfig);
           this.propagateChange(this.retainedMessagesFilterConfig);
@@ -253,7 +262,7 @@ export class RetainedMessagesFilterConfigComponent implements OnInit, ControlVal
   }
 
   private updateButtonDisplayValue() {
-    if (this.buttonMode) {
+    if (this.buttonMode()) {
       const filterTextParts: string[] = [];
       const filterTooltipParts: string[] = [];
       if (this.retainedMessagesFilterConfig?.topicName?.length) {

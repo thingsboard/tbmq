@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -16,27 +16,30 @@
 
 import {
   ComponentFactory, ComponentRef,
-  Directive, EventEmitter, Injector,
-  Input,
-  OnChanges, Output, Renderer2,
+  Directive, Injector,
+  OnChanges, Renderer2,
   SimpleChange,
   SimpleChanges,
-  ViewContainerRef
+  ViewContainerRef,
+  input,
+  output
 } from '@angular/core';
 
 @Directive({
-  // eslint-disable-next-line @angular-eslint/directive-selector
-  selector: '[tbComponentOutlet]',
-  exportAs: 'tbComponentOutlet'
+    // eslint-disable-next-line @angular-eslint/directive-selector
+    selector: '[tbComponentOutlet]',
+    exportAs: 'tbComponentOutlet',
 })
 export class TbComponentOutletDirective<_T = unknown> implements OnChanges {
   private componentRef: ComponentRef<any> | null = null;
   private context = new TbComponentOutletContext();
-  @Input() tbComponentOutletContext: any | null = null;
-  @Input() tbComponentStyle: { [klass: string]: any } | null = null;
-  @Input() tbComponentInjector: Injector | null = null;
-  @Input() tbComponentOutlet: ComponentFactory<any> = null;
-  @Output() componentChange = new EventEmitter<ComponentRef<any>>();
+  readonly tbComponentOutletContext = input<any | null>(null);
+  readonly tbComponentStyle = input<{
+    [klass: string]: any;
+} | null>(null);
+  readonly tbComponentInjector = input<Injector | null>(null);
+  readonly tbComponentOutlet = input<ComponentFactory<any>>(null);
+  readonly componentChange = output<ComponentRef<any>>();
 
   static ngTemplateContextGuard<T>(
     // eslint-disable-next-line @typescript-eslint/naming-convention,no-underscore-dangle,id-blacklist,id-match
@@ -49,22 +52,24 @@ export class TbComponentOutletDirective<_T = unknown> implements OnChanges {
 
   private recreateComponent(): void {
     this.viewContainer.clear();
-    this.componentRef = this.viewContainer.createComponent(this.tbComponentOutlet, 0, this.tbComponentInjector);
-    this.componentChange.next(this.componentRef);
-    if (this.tbComponentOutletContext) {
-      for (const propName of Object.keys(this.tbComponentOutletContext)) {
-        this.componentRef.instance[propName] = this.tbComponentOutletContext[propName];
+    this.componentRef = this.viewContainer.createComponent(this.tbComponentOutlet(), 0, this.tbComponentInjector());
+    this.componentChange.emit(this.componentRef);
+    const tbComponentOutletContext = this.tbComponentOutletContext();
+    if (tbComponentOutletContext) {
+      for (const propName of Object.keys(tbComponentOutletContext)) {
+        this.componentRef.instance[propName] = tbComponentOutletContext[propName];
       }
     }
-    if (this.tbComponentStyle) {
-      for (const propName of Object.keys(this.tbComponentStyle)) {
-        this.renderer.setStyle(this.componentRef.location.nativeElement, propName, this.tbComponentStyle[propName]);
+    const tbComponentStyle = this.tbComponentStyle();
+    if (tbComponentStyle) {
+      for (const propName of Object.keys(tbComponentStyle)) {
+        this.renderer.setStyle(this.componentRef.location.nativeElement, propName, tbComponentStyle[propName]);
       }
     }
   }
 
   private updateContext(): void {
-    const newCtx = this.tbComponentOutletContext;
+    const newCtx = this.tbComponentOutletContext();
     const oldCtx = this.componentRef.instance as any;
     if (newCtx) {
       for (const propName of Object.keys(newCtx)) {

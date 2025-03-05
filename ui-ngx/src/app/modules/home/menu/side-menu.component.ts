@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,12 +17,16 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { MenuService } from '@core/services/menu.service';
 import { MenuSection } from '@core/services/menu.models';
+import { AsyncPipe } from '@angular/common';
+import { MenuLinkComponent } from './menu-link.component';
+import { MenuToggleComponent } from './menu-toggle.component';
 
 @Component({
-  selector: 'tb-side-menu',
-  templateUrl: './side-menu.component.html',
-  styleUrls: ['./side-menu.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-side-menu',
+    templateUrl: './side-menu.component.html',
+    styleUrls: ['./side-menu.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MenuLinkComponent, MenuToggleComponent, AsyncPipe]
 })
 export class SideMenuComponent {
 

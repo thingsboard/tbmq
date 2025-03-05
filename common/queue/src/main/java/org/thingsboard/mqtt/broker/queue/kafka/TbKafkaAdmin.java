@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private boolean enableTopicDeletion;
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
-    @Value("${queue.kafka.client-session-event-response.topic-prefix}")
+    @Value("${queue.kafka.client-session-event-response.topic-prefix:tbmq.client.session.event.response}")
     private String clientSessionEventRespTopicPrefix;
 
     private final Admin client;
@@ -177,16 +177,9 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     }
 
     @Override
-    public void deleteConsumerGroup(String groupId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteConsumerGroup {}", groupId);
-        }
-        try {
-            doDeleteConsumerGroups(List.of(groupId));
-        } catch (InterruptedException | ExecutionException e) {
-            log.warn("Failed to delete Kafka consumer group {}", groupId, e);
-            throw new RuntimeException(e);
-        }
+    public void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException {
+        log.trace("Executing deleteConsumerGroup {}", groupId);
+        doDeleteConsumerGroups(List.of(groupId));
     }
 
     private void doDeleteConsumerGroups(Collection<String> consumerGroups) throws InterruptedException, ExecutionException {
@@ -412,6 +405,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         }
     }
 
+    //todo: maybe execute this periodically using scheduler. During kill of the node there can be at least 2 groups (downlinks)
+    // that will not be deleted if the state is Stable (since consumers could not gracefully leave the groups)
     @Override
     public void deleteOldConsumerGroups(String consumerGroupPrefix, String serviceId, long currentCgSuffix) {
         long start = System.nanoTime();
@@ -439,14 +434,14 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Found {} old consumer groups to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
+                log.debug("Found {} old consumer group(s) to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
             }
             KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
             deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
                 if (deleteThrowable == null) {
                     long end = System.nanoTime();
                     if (log.isDebugEnabled()) {
-                        log.debug("Deletion processing of old consumer groups took {} nanos", end - start);
+                        log.debug("[{}] Deletion processing of old consumer group(s) took {} nanos", groupIdsToDelete, end - start);
                     }
                 } else {
                     log.warn("Failed to delete old consumer groups!", deleteThrowable);

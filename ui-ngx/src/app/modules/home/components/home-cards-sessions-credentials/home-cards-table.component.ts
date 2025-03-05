@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,37 +14,29 @@
 /// limitations under the License.
 ///
 
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ClientCredentialsInfo } from '@shared/models/credentials.model';
 import { ClientSessionStatsInfo } from '@shared/models/session.model';
 import { HomeCardFilter, HomePageTitleType } from '@shared/models/home-page.model';
 import { Router } from '@angular/router';
+import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-home-cards-table',
-  templateUrl: './home-cards-table.component.html',
-  styleUrls: ['home-cards-table.component.scss']
+    selector: 'tb-home-cards-table',
+    templateUrl: './home-cards-table.component.html',
+    styleUrls: ['home-cards-table.component.scss'],
+    imports: [CardTitleButtonComponent, TranslateModule]
 })
 export class HomeCardsTableComponent {
 
-  @Input()
-  isLoading$: Observable<boolean>;
-
-  @Input()
-  cardType: HomePageTitleType;
-
-  @Input()
-  latestValues: ClientSessionStatsInfo | ClientCredentialsInfo;
-
-  @Input()
-  config: HomeCardFilter;
-
-  @Input()
-  docsLink: string;
-
-  @Input()
-  docsTooltip: string;
+  readonly isLoading$ = input<Observable<boolean>>();
+  readonly cardType = input<HomePageTitleType>();
+  readonly latestValues = input<ClientSessionStatsInfo | ClientCredentialsInfo>();
+  readonly config = input<HomeCardFilter[]>();
+  readonly docsLink = input<string>();
+  readonly docsTooltip = input<string>();
 
   constructor(private router: Router) {
   }

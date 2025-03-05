@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,11 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEve
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
@@ -49,10 +49,13 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource.MQTT_CLIENT;
 
 @Slf4j
 @Component
@@ -154,7 +157,7 @@ public class BrokerInitializer {
     }
 
     private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
-        Map<String, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
         removeSubscriptionIfSessionIsAbsent(allClientSessions, allClientSubscriptions);
@@ -164,11 +167,12 @@ public class BrokerInitializer {
     }
 
     private void removeSubscriptionIfSessionIsAbsent(Map<String, ClientSessionInfo> allClientSessions,
-                                                     Map<String, Set<TopicSubscription>> allClientSubscriptions) {
-        Set<String> loadedClientIds = new HashSet<>(allClientSubscriptions.keySet());
-        for (String clientId : loadedClientIds) {
-            if (!allClientSessions.containsKey(clientId)) {
-                allClientSubscriptions.remove(clientId);
+                                                     Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions) {
+        for (SubscriptionsSourceKey sourceKey : new HashSet<>(allClientSubscriptions.keySet())) {
+            if (MQTT_CLIENT.equals(sourceKey.getSource())) {
+                if (!allClientSessions.containsKey(sourceKey.getId())) {
+                    allClientSubscriptions.remove(sourceKey);
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,36 +15,44 @@
     limitations under the License.
 
 -->
-<div fxFlex class="tb-home-card-container tb-home-padding">
-  <section class="metrics" fxFlex fxFlex.lt-lg="auto">
-    <div fxLayout="row" fxLayoutAlign="space-between center">
+<div class="tb-home-card-container tb-home-padding">
+  <section class="metrics flex flex-1 flex-col lt-lg:flex-auto">
+    <div class="flex flex-row items-center justify-between">
       <span>{{'mqtt-client-session.metrics-title' | translate}}</span>
-        <section fxLayout="row" fxLayoutGap="8px" fxLayoutAlign="flex-start center">
-            <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
-                    style="color: rgba(0,0,0,0.54)"
-                    matTooltip="{{'action.clear' | translate}}"
-                    matTooltipPosition="above">
-                <mat-icon class="material-icons">delete_forever</mat-icon>
-            </button>
-            <button mat-icon-button type="button" (click)="updateData()"
-                    style="color: rgba(0,0,0,0.54)"
-                    matTooltip="{{'action.refresh' | translate}}"
-                    matTooltipPosition="above">
-                <mat-icon class="material-icons">refresh</mat-icon>
-            </button>
-        </section>
+      <section class="flex flex-row items-center gap-2">
+        <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
+          style="color: rgba(0,0,0,0.54)"
+          matTooltip="{{'action.clear' | translate}}"
+          matTooltipPosition="above">
+          <mat-icon class="material-icons">delete_forever</mat-icon>
+        </button>
+        <button mat-icon-button type="button" (click)="updateData()"
+          style="color: rgba(0,0,0,0.54)"
+          matTooltip="{{'action.refresh' | translate}}"
+          matTooltipPosition="above">
+          <mat-icon class="material-icons">refresh</mat-icon>
+        </button>
+      </section>
     </div>
     <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
-      <ng-container *ngFor="let column of columns" [matColumnDef]="column.key">
-        <mat-header-cell mat-sort-header *matHeaderCellDef>
-          {{ column.title | translate }}
-        </mat-header-cell>
-        <mat-cell *matCellDef="let entity; let row = index" [ngStyle]="cellStyle(entity, column, row)">
-          <span *ngIf="column.key === 'key'" translate>{{sessionMetricsTranslationMap.get(entity.key)}}</span>
-          <span *ngIf="column.key === 'value'">{{entity.value}}</span>
-          <span *ngIf="column.key === 'ts'">{{entity.ts | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
-        </mat-cell>
-      </ng-container>
+      @for (column of columns; track column) {
+        <ng-container [matColumnDef]="column.key">
+          <mat-header-cell mat-sort-header *matHeaderCellDef>
+            {{ column.title | translate }}
+          </mat-header-cell>
+          <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
+            @if (column.key === 'key') {
+              <span translate>{{sessionMetricsTranslationMap.get(entity.key)}}</span>
+            }
+            @if (column.key === 'value') {
+              <span>{{entity.value}}</span>
+            }
+            @if (column.key === 'ts') {
+              <span>{{entity.ts | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
+            }
+          </mat-cell>
+        </ng-container>
+      }
       <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </table>

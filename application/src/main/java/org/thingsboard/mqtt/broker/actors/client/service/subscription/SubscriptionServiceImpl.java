@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,16 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.SubscriptionTimerStats;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
+import org.thingsboard.mqtt.broker.service.subscription.integration.IntegrationSubscription;
 
 import java.util.Collection;
 import java.util.List;
@@ -34,10 +37,10 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class SubscriptionServiceImpl implements SubscriptionService {
 
-    private final SubscriptionTrie<ClientSubscription> subscriptionTrie;
+    private final SubscriptionTrie<EntitySubscription> subscriptionTrie;
     private final SubscriptionTimerStats subscriptionTimerStats;
 
-    public SubscriptionServiceImpl(SubscriptionTrie<ClientSubscription> subscriptionTrie, StatsManager statsManager) {
+    public SubscriptionServiceImpl(SubscriptionTrie<EntitySubscription> subscriptionTrie, StatsManager statsManager) {
         this.subscriptionTrie = subscriptionTrie;
         this.subscriptionTimerStats = statsManager.getSubscriptionTimerStats();
     }
@@ -48,15 +51,19 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             log.trace("Executing subscribe [{}] [{}]", clientId, topicSubscriptions);
         }
         for (TopicSubscription topicSubscription : topicSubscriptions) {
-            subscriptionTrie.put(
-                    topicSubscription.getTopicFilter(),
-                    new ClientSubscription(
-                            clientId,
-                            topicSubscription.getQos(),
-                            topicSubscription.getShareName(),
-                            topicSubscription.getOptions(),
-                            topicSubscription.getSubscriptionId())
-            );
+            if (topicSubscription instanceof IntegrationTopicSubscription) {
+                subscriptionTrie.put(topicSubscription.getTopicFilter(), new IntegrationSubscription(clientId));
+            } else {
+                subscriptionTrie.put(
+                        topicSubscription.getTopicFilter(),
+                        new ClientSubscription(
+                                clientId,
+                                topicSubscription.getQos(),
+                                topicSubscription.getShareName(),
+                                topicSubscription.getOptions(),
+                                topicSubscription.getSubscriptionId())
+                );
+            }
         }
     }
 
@@ -76,9 +83,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     @Override
-    public List<ValueWithTopicFilter<ClientSubscription>> getSubscriptions(String topic) {
+    public List<ValueWithTopicFilter<EntitySubscription>> getSubscriptions(String topic) {
         long startTime = System.nanoTime();
-        List<ValueWithTopicFilter<ClientSubscription>> subscriptions = subscriptionTrie.get(topic);
+        List<ValueWithTopicFilter<EntitySubscription>> subscriptions = subscriptionTrie.get(topic);
         subscriptionTimerStats.logSubscriptionsLookup(startTime, TimeUnit.NANOSECONDS);
         return subscriptions;
     }

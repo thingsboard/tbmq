@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,14 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.EntitySubscriptionType;
 
 import java.util.Objects;
 
 @AllArgsConstructor
 @Getter
 @ToString
-public class ClientSubscription {
+public class ClientSubscription implements EntitySubscription {
 
     private final String clientId;
     private final int qos;
@@ -48,5 +49,10 @@ public class ClientSubscription {
     @Override
     public int hashCode() {
         return Objects.hash(clientId);
+    }
+
+    @Override
+    public EntitySubscriptionType getType() {
+        return EntitySubscriptionType.DEFAULT;
     }
 }

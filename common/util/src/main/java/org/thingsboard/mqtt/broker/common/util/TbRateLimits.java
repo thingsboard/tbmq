@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package org.thingsboard.mqtt.broker.common.util;
 
 import io.github.bucket4j.Bandwidth;
+import io.github.bucket4j.BandwidthBuilder.BandwidthBuilderBuildStage;
+import io.github.bucket4j.BandwidthBuilder.BandwidthBuilderRefillStage;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.local.LocalBucket;
 import io.github.bucket4j.local.LocalBucketBuilder;
@@ -28,6 +30,10 @@ public class TbRateLimits {
     private final LocalBucket bucket;
 
     public TbRateLimits(String limitsConfiguration) {
+        this(limitsConfiguration, false);
+    }
+
+    public TbRateLimits(String limitsConfiguration, boolean refillIntervally) {
         LocalBucketBuilder builder = Bucket.builder();
         boolean initialized = false;
         for (String limitSrc : limitsConfiguration.split(BrokerConstants.COMMA)) {
@@ -37,7 +43,11 @@ public class TbRateLimits {
             }
             long capacity = Long.parseLong(parts[0]);
             long duration = Long.parseLong(parts[1]);
-            builder.addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, Duration.ofSeconds(duration)).build());
+            BandwidthBuilderRefillStage refillStage = Bandwidth.builder().capacity(capacity);
+            Duration refillDuration = Duration.ofSeconds(duration);
+            BandwidthBuilderBuildStage stage = refillIntervally ?
+                    refillStage.refillIntervally(capacity, refillDuration) : refillStage.refillGreedy(capacity, refillDuration);
+            builder.addLimit(stage.build());
             initialized = true;
         }
         if (initialized) {

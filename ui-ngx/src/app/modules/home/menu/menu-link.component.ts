@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MenuSection } from '@core/services/menu.models';
+import { MatAnchor } from '@angular/material/button';
+import { RouterLinkActive, RouterLink } from '@angular/router';
+
+import { TbIconComponent } from '@shared/components/icon.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-menu-link',
-  templateUrl: './menu-link.component.html',
-  styleUrls: ['./menu-link.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-menu-link',
+    templateUrl: './menu-link.component.html',
+    styleUrls: ['./menu-link.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [MatAnchor, RouterLinkActive, RouterLink, TbIconComponent, TranslateModule]
 })
 export class MenuLinkComponent {
-
-  @Input() section: MenuSection;
-
-  constructor() {
-  }
-
+  readonly section = input<MenuSection>();
 }

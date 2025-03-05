@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,45 +16,45 @@
 
 -->
 <form [formGroup]="formGroup">
-  <mat-toolbar fxLayout="row" color="primary">
+  <mat-toolbar class="flex flex-row" color="primary">
     <h2 translate>{{ title }}</h2>
-    <span fxFlex></span>
+    <span class="flex flex-1"></span>
     <button mat-icon-button
-            [mat-dialog-close]="null"
-            type="button"
-            matTooltip="{{ 'action.close' | translate }}"
-            matTooltipPosition="above">
+      [mat-dialog-close]="null"
+      type="button"
+      matTooltip="{{ 'action.close' | translate }}"
+      matTooltipPosition="above">
       <mat-icon class="material-icons">close</mat-icon>
     </button>
   </mat-toolbar>
-  <mat-progress-bar color="warn" mode="indeterminate" *ngIf="isLoading$ | async">
-  </mat-progress-bar>
-  <div style="height: 4px;" *ngIf="!(isLoading$ | async)"></div>
+  @if (isLoading$ | async) {
+    <mat-progress-bar color="warn" mode="indeterminate">
+    </mat-progress-bar>
+  }
+  @if (!(isLoading$ | async)) {
+    <div style="height: 4px;"></div>
+  }
   <div mat-dialog-content>
-    <section fxFlex fxLayout="row" fxLayoutGap="16px" fxLayoutAlign="flex-start center">
-      <mat-form-field fxFlex class="mat-block">
+    <section class="flex flex-1 flex-row items-center gap-4">
+      <mat-form-field class="flex flex-1">
         <mat-label translate>subscription.topic-filter</mat-label>
         <input matInput required formControlName="topicFilter" placeholder="{{ 'subscription.topic-filter' | translate }}">
         <tb-copy-button matSuffix
-                        [fxShow]="formGroup.get('topicFilter')?.value?.length"
-                        [copyText]="formGroup.get('topicFilter')?.value">
+          [class.!hidden]="!formGroup.get('topicFilter')?.value?.length"
+          [copyText]="formGroup.get('topicFilter')?.value">
         </tb-copy-button>
-        <mat-error *ngIf="formGroup.get('topicFilter').hasError('required')">
-          {{ 'subscription.topic-filter-required' | translate }}
-        </mat-error>
+        @if (formGroup.get('topicFilter').hasError('required')) {
+          <mat-error>
+            {{ 'subscription.topic-filter-required' | translate }}
+          </mat-error>
+        }
       </mat-form-field>
       <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
       </tb-color-input>
     </section>
-    <mat-form-field fxFlex class="mat-block" hideRequiredMarker>
-      <mat-label translate>mqtt-client-session.qos</mat-label>
-      <mat-select formControlName="qos" placeholder="{{ 'mqtt-client-session.qos' | translate }}">
-        <mat-option *ngFor="let qos of qoSTypes" [value]="qos">
-          {{ qoSTranslationMap.get(qos) | translate }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <section formGroupName="options" fxLayout="column" fxLayoutGap="16px">
+    <tb-qos-select formControlName="qos">
+    </tb-qos-select>
+    <section formGroupName="options" class="flex flex-col gap-4">
       <mat-accordion multi="true" class="mat-body-1">
         <mat-expansion-panel>
           <mat-expansion-panel-header>
@@ -63,32 +63,34 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
           <ng-template matExpansionPanelContent>
-            <div fxLayout="column" fxLayoutGap="16px">
-              <mat-form-field fxFlex class="mat-block" subscriptSizing="dynamic">
+            <div class="flex flex-col gap-4">
+              <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
                 <mat-label translate>subscription.rh</mat-label>
                 <mat-select formControlName="retainHandling">
-                  <mat-option *ngFor="let rh of rhOptions" [value]="rh.value">
-                    {{ rh.name }}
-                  </mat-option>
+                  @for (rh of rhOptions; track rh) {
+                    <mat-option [value]="rh.value">
+                      {{ rh.name }}
+                    </mat-option>
+                  }
                 </mat-select>
               </mat-form-field>
-              <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+              <section class="slider flex flex-row items-center gap-2">
                 <mat-slide-toggle formControlName="noLocal">
                   {{ 'subscription.nl' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                          [matTooltip]="'subscription.nl-hint' | translate"
-                          matTooltipPosition="right">
-                  info</mat-icon>
+                  [matTooltip]="'subscription.nl-hint' | translate"
+                  matTooltipPosition="right">
+                info</mat-icon>
               </section>
-              <section class="slider" fxLayout="row" fxLayoutAlign="flex-start center" fxLayoutGap="8px">
+              <section class="slider flex flex-row items-center gap-2">
                 <mat-slide-toggle formControlName="retainAsPublish">
                   {{ 'subscription.rap' | translate }}
                 </mat-slide-toggle>
                 <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                          [matTooltip]="'subscription.rap-hint' | translate"
-                          matTooltipPosition="right">
-                  info</mat-icon>
+                  [matTooltip]="'subscription.rap-hint' | translate"
+                  matTooltipPosition="right">
+                info</mat-icon>
               </section>
               <mat-form-field class="mat-block">
                 <mat-label translate>subscription.subscription-identifier</mat-label>
@@ -96,12 +98,16 @@
                 <mat-icon matSuffix [matTooltip]="'subscription.subscription-identifier-hint' | translate">
                   info
                 </mat-icon>
-                <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('min')">
-                  {{ 'subscription.subscription-identifier-min' | translate }}
-                </mat-error>
-                <mat-error *ngIf="formGroup.get('options.subscriptionId').hasError('max')">
-                  {{ 'subscription.subscription-identifier-max' | translate }}
-                </mat-error>
+                @if (formGroup.get('options.subscriptionId').hasError('min')) {
+                  <mat-error>
+                    {{ 'subscription.subscription-identifier-min' | translate }}
+                  </mat-error>
+                }
+                @if (formGroup.get('options.subscriptionId').hasError('max')) {
+                  <mat-error>
+                    {{ 'subscription.subscription-identifier-max' | translate }}
+                  </mat-error>
+                }
               </mat-form-field>
             </div>
           </ng-template>
@@ -109,16 +115,16 @@
       </mat-accordion>
     </section>
   </div>
-  <div mat-dialog-actions fxLayout="row" fxLayoutAlign="end center">
+  <div mat-dialog-actions class="flex flex-row justify-end items-center">
     <button mat-button color="primary"
-            type="button"
-            [disabled]="(isLoading$ | async)"
-            [mat-dialog-close]="null" cdkFocusInitial>
+      type="button"
+      [disabled]="(isLoading$ | async)"
+      [mat-dialog-close]="null" cdkFocusInitial>
       {{ 'action.cancel' | translate }}
     </button>
     <button mat-raised-button color="primary"
-            (click)="save()"
-            [disabled]="(isLoading$ | async) || formGroup?.invalid">
+      (click)="save()"
+      [disabled]="(isLoading$ | async) || formGroup?.invalid">
       {{ actionButtonLabel | translate }}
     </button>
   </div>

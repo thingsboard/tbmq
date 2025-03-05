@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { SessionsTableConfig } from '@home/pages/sessions/sessions-table-config';
 import { DetailedClientSessionInfo, SessionFilterConfig } from '@shared/models/session.model';
+import { SessionFilterConfigComponent } from './session-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-session-table-header',
-  templateUrl: './session-table-header.component.html',
-  styleUrls: ['./session-table-header.component.scss']
+    selector: 'tb-session-table-header',
+    templateUrl: './session-table-header.component.html',
+    styleUrls: ['./session-table-header.component.scss'],
+    imports: [SessionFilterConfigComponent, FormsModule]
 })
 export class SessionTableHeaderComponent extends EntityTableHeaderComponent<DetailedClientSessionInfo> {
 

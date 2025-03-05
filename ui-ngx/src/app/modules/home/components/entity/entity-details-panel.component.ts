@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -21,21 +21,19 @@ import {
   Component,
   ComponentFactoryResolver,
   ComponentRef,
-  EventEmitter,
   Injector,
   Input,
   OnDestroy,
-  Output,
-  QueryList,
-  ViewChild,
-  ViewChildren
+  output, OutputRefSubscription,
+  viewChild,
+  viewChildren
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { BaseData } from '@shared/models/base-data';
-import { EntityType, EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
+import { EntityTypeResource, EntityTypeTranslation } from '@shared/models/entity-type.models';
 import { UntypedFormGroup } from '@angular/forms';
 import { EntityComponent } from './entity.component';
 import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
@@ -44,23 +42,22 @@ import { Observable, ReplaySubject, Subscription } from 'rxjs';
 import { MatTab, MatTabGroup } from '@angular/material/tabs';
 import { EntityTabsComponent } from '@home/components/entity/entity-tabs.component';
 import { deepClone, mergeDeep } from '@core/utils';
+import { DetailsPanelComponent } from '../details-panel.component';
+import { HelpComponent } from '@shared/components/help.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-entity-details-panel',
-  templateUrl: './entity-details-panel.component.html',
-  styleUrls: ['./entity-details-panel.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'tb-entity-details-panel',
+    templateUrl: './entity-details-panel.component.html',
+    styleUrls: ['./entity-details-panel.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DetailsPanelComponent, HelpComponent, MatTabGroup, MatTab, TbAnchorComponent, TranslateModule]
 })
 export class EntityDetailsPanelComponent extends PageComponent implements AfterViewInit, OnDestroy {
 
-  @Output()
-  closeEntityDetails = new EventEmitter<void>();
-
-  @Output()
-  entityUpdated = new EventEmitter<BaseData>();
-
-  @Output()
-  entityAction = new EventEmitter<EntityAction<BaseData>>();
+  readonly closeEntityDetails = output<void>();
+  readonly entityUpdated = output<BaseData>();
+  readonly entityAction = output<EntityAction<BaseData>>();
 
   entityComponentRef: ComponentRef<EntityComponent<BaseData>>;
   entityComponent: EntityComponent<BaseData>;
@@ -73,15 +70,10 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   isEditValue = false;
   selectedTab = 0;
 
-  entityTypes = EntityType;
-
-  @ViewChild('entityDetailsForm', {static: true}) entityDetailsFormAnchor: TbAnchorComponent;
-
-  @ViewChild('entityTabs', {static: true}) entityTabsAnchor: TbAnchorComponent;
-
-  @ViewChild(MatTabGroup, {static: true}) matTabGroup: MatTabGroup;
-
-  @ViewChildren(MatTab) inclusiveTabs: QueryList<MatTab>;
+  readonly entityDetailsFormAnchor = viewChild<TbAnchorComponent>('entityDetailsForm');
+  readonly entityTabsAnchor = viewChild<TbAnchorComponent>('entityTabs');
+  readonly matTabGroup = viewChild(MatTabGroup);
+  readonly inclusiveTabs = viewChildren(MatTab);
 
   translations: EntityTypeTranslation;
   resources: EntityTypeResource<BaseData>;
@@ -89,7 +81,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   editingEntity: BaseData;
 
   protected currentEntityId: string;
-  protected subscriptions: Subscription[] = [];
+  protected subscriptions: OutputRefSubscription[] = [];
   protected viewInited = false;
   protected pendingTabs: MatTab[];
 
@@ -166,7 +158,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityComponentRef = null;
     }
     const componentFactory = this.componentFactoryResolver.resolveComponentFactory(this.entitiesTableConfig.entityComponent);
-    const viewContainerRef = this.entityDetailsFormAnchor.viewContainerRef;
+    const viewContainerRef = this.entityDetailsFormAnchor().viewContainerRef;
     viewContainerRef.clear();
     const injector: Injector = Injector.create(
       {
@@ -201,7 +193,7 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityTabsComponentRef.destroy();
       this.entityTabsComponentRef = null;
     }
-    const viewContainerRef = this.entityTabsAnchor.viewContainerRef;
+    const viewContainerRef = this.entityTabsAnchor().viewContainerRef;
     viewContainerRef.clear();
     this.entityTabsComponent = null;
     if (this.entitiesTableConfig.entityTabsComponent) {
@@ -210,13 +202,13 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
       this.entityTabsComponent = this.entityTabsComponentRef.instance;
       this.entityTabsComponent.isEdit = this.isEdit;
       this.entityTabsComponent.entitiesTableConfig = this.entitiesTableConfig;
-      this.entityTabsComponent.detailsForm = this.detailsForm;
+      this.entityTabsComponent.detailsForm.set(this.detailsForm);
       this.subscriptions.push(this.entityTabsComponent.entityTabsChanged.subscribe(
         (entityTabs) => {
           if (entityTabs) {
             if (this.viewInited) {
-              this.matTabGroup._tabs.reset([...this.inclusiveTabs.toArray(), ...entityTabs]);
-              this.matTabGroup._tabs.notifyOnChanges();
+              this.matTabGroup()._tabs.reset([...this.inclusiveTabs(), ...entityTabs]);
+              this.matTabGroup()._tabs.notifyOnChanges();
             } else {
               this.pendingTabs = entityTabs;
             }
@@ -312,8 +304,8 @@ export class EntityDetailsPanelComponent extends PageComponent implements AfterV
   ngAfterViewInit(): void {
     this.viewInited = true;
     if (this.pendingTabs) {
-      this.matTabGroup._tabs.reset([...this.inclusiveTabs.toArray(), ...this.pendingTabs]);
-      this.matTabGroup._tabs.notifyOnChanges();
+      this.matTabGroup()._tabs.reset([...this.inclusiveTabs(), ...this.pendingTabs]);
+      this.matTabGroup()._tabs.notifyOnChanges();
       this.pendingTabs = null;
     }
   }

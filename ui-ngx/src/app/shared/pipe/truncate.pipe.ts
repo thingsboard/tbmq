@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
 import { isString } from '@core/utils';
 
-@Pipe({ name: 'truncate' })
+@Pipe({
+    name: 'truncate',
+})
 export class TruncatePipe implements PipeTransform {
   transform(text: string, wordwise: boolean, max: any, tail: string): string {
     if (!text) { return ''; }

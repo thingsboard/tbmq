@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ToUsageStatsMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.UsageStatsKVProto;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 import java.util.ArrayList;
@@ -75,10 +76,10 @@ public class HistoricalStatsTotalConsumerTest {
         var msg3 = buildMessage(INCOMING_MSGS, 25);
         var msg4 = buildMessage(INCOMING_MSGS, 3);
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
@@ -97,10 +98,10 @@ public class HistoricalStatsTotalConsumerTest {
         var msg3 = buildMessage(OUTGOING_MSGS, 25);
         var msg4 = buildMessage(OUTGOING_MSGS, 3);
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
@@ -119,10 +120,10 @@ public class HistoricalStatsTotalConsumerTest {
         var msg3 = buildMessage(DROPPED_MSGS, 25);
         var msg4 = buildMessage(DROPPED_MSGS, 3);
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
@@ -144,10 +145,10 @@ public class HistoricalStatsTotalConsumerTest {
         var msg4 = buildMessageWithDifferentTs(INCOMING_MSGS, 10, nextMsgTs);
         var msg5 = buildMessageWithDifferentTs(INCOMING_MSGS, 13, nextMsgTs);
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
@@ -169,10 +170,10 @@ public class HistoricalStatsTotalConsumerTest {
         var msg4 = buildMessageWithDifferentTs(OUTGOING_MSGS, 10, nextTsMsg);
         var msg5 = buildMessageWithDifferentTs(OUTGOING_MSGS, 13, nextTsMsg);
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5);
         HistoricalStatsTotalConsumer.TsMsgTotalPair results = null;
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             results = historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg);
         }
 
@@ -198,9 +199,9 @@ public class HistoricalStatsTotalConsumerTest {
 
         Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> tsMsgTotalPairMap = new HashMap<>();
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             String key = msg.getValue().getUsageStats().getKey();
             tsMsgTotalPairMap.put(key, historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg));
         }
@@ -237,9 +238,9 @@ public class HistoricalStatsTotalConsumerTest {
 
         Map<String, HistoricalStatsTotalConsumer.TsMsgTotalPair> tsMsgTotalPairMap = new HashMap<>();
 
-        List<TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
+        List<TbProtoQueueMsg<ToUsageStatsMsgProto>> msgs = List.of(msg1, msg2, msg3, msg4, msg5, msg6, msg7, msg8, msg9);
 
-        for (TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> msg : msgs) {
+        for (TbProtoQueueMsg<ToUsageStatsMsgProto> msg : msgs) {
             String key = msg.getValue().getUsageStats().getKey();
             tsMsgTotalPairMap.put(key, historicalStatsTotalConsumer.calculatePairUsingProvidedMsg(msg));
         }
@@ -256,14 +257,14 @@ public class HistoricalStatsTotalConsumerTest {
         verify(timeseriesService, times(3)).findLatest(any(), any());
     }
 
-    private TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> buildMessage(String key, int value) {
+    private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessage(String key, int value) {
 
-        QueueProtos.UsageStatsKVProto statsItem = QueueProtos.UsageStatsKVProto.newBuilder()
+        UsageStatsKVProto statsItem = UsageStatsKVProto.newBuilder()
                 .setKey(key)
                 .setValue(value)
                 .build();
 
-        QueueProtos.ToUsageStatsMsgProto statsMsg = QueueProtos.ToUsageStatsMsgProto.newBuilder()
+        ToUsageStatsMsgProto statsMsg = ToUsageStatsMsgProto.newBuilder()
                 .setTs(ts)
                 .setUsageStats(statsItem)
                 .build();
@@ -271,14 +272,14 @@ public class HistoricalStatsTotalConsumerTest {
         return new TbProtoQueueMsg<>(statsMsg);
     }
 
-    private TbProtoQueueMsg<QueueProtos.ToUsageStatsMsgProto> buildMessageWithDifferentTs(String key, int value, int updateTs) {
+    private TbProtoQueueMsg<ToUsageStatsMsgProto> buildMessageWithDifferentTs(String key, int value, int updateTs) {
 
-        QueueProtos.UsageStatsKVProto statsItem = QueueProtos.UsageStatsKVProto.newBuilder()
+        UsageStatsKVProto statsItem = UsageStatsKVProto.newBuilder()
                 .setKey(key)
                 .setValue(value)
                 .build();
 
-        QueueProtos.ToUsageStatsMsgProto statsMsg = QueueProtos.ToUsageStatsMsgProto.newBuilder()
+        ToUsageStatsMsgProto statsMsg = ToUsageStatsMsgProto.newBuilder()
                 .setTs(ts + updateTs)
                 .setUsageStats(statsItem)
                 .build();

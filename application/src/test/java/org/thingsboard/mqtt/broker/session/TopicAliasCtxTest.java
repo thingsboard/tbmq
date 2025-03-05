@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import org.junit.Test;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 import java.util.ArrayList;
@@ -265,7 +265,7 @@ public class TopicAliasCtxTest {
     public void givenPubMsgProtoWithSmallTopic_whenGetTopicAliasResult_thenReturnNull() {
         topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>());
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder()
                 .setTopicName("123456789")
                 .build();
 
@@ -277,7 +277,7 @@ public class TopicAliasCtxTest {
     public void givenPubMsgProtoWithTopicAndMaxAllowedAliases_whenGetTopicAliasResult_thenReturnNull() {
         topicAliasCtx = new TopicAliasCtx(true, 1, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("qwerty", 1)));
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder()
                 .setTopicName("12345678900")
                 .build();
 
@@ -289,7 +289,7 @@ public class TopicAliasCtxTest {
     public void givenPubMsgProtoWithTopicAndExisingMapping_whenGetTopicAliasResult_thenReturnTopicAliasResultWithEmptyTopic() {
         topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("12345678900", 1)));
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder()
                 .setTopicName("12345678900")
                 .build();
 
@@ -302,7 +302,7 @@ public class TopicAliasCtxTest {
     public void givenPubMsgProtoWithTopic_whenGetTopicAliasResult_thenReturnTopicAliasResultWithNewAlias() {
         topicAliasCtx = new TopicAliasCtx(true, 5, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(Map.of("qwerty", 1)));
 
-        QueueProtos.PublishMsgProto publishMsgProto = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto publishMsgProto = PublishMsgProto.newBuilder()
                 .setTopicName("12345678900")
                 .build();
 

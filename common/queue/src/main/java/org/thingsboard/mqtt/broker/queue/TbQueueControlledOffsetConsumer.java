@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.queue;
 
+import org.apache.kafka.common.TopicPartition;
+
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 
@@ -30,7 +33,13 @@ public interface TbQueueControlledOffsetConsumer<T extends TbQueueMsg> extends T
 
     void seekToTheBeginning();
 
+    void seekToTheBeginning(Collection<TopicPartition> partitions);
+
+    Map<TopicPartition, Long> getEndOffset(Collection<TopicPartition> partitions);
+
     long getEndOffset(String topic, int partition);
+
+    long getPosition(String topic, int partition);
 
     Optional<Long> getCommittedOffset(String topic, int partition);
 

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,42 +14,44 @@
 /// limitations under the License.
 ///
 
-import { Component, EventEmitter, forwardRef, Input, Output } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, Input, input, output } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
+import { MatCheckbox } from '@angular/material/checkbox';
 
 @Component({
-  selector: 'tb-checkbox',
-  templateUrl: './tb-checkbox.component.html',
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => TbCheckboxComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-checkbox',
+    templateUrl: './tb-checkbox.component.html',
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => TbCheckboxComponent),
+            multi: true
+        }
+    ],
+    imports: [MatCheckbox, FormsModule]
 })
 export class TbCheckboxComponent implements ControlValueAccessor {
 
   innerValue: boolean;
 
   @Input() disabled: boolean;
-  @Input() trueValue: any = true;
-  @Input() falseValue: any = false;
-  @Output() valueChange = new EventEmitter();
+  readonly trueValue = input<any>(true);
+  readonly falseValue = input<any>(false);
+  readonly valueChange = output();
 
   private propagateChange = (_: any) => {};
 
   onHostChange(ev) {
-    this.propagateChange(ev.checked ? this.trueValue : this.falseValue);
+    this.propagateChange(ev.checked ? this.trueValue() : this.falseValue());
   }
 
   modelChange($event) {
     if ($event) {
       this.innerValue = true;
-      this.valueChange.emit(this.trueValue);
+      this.valueChange.emit(this.trueValue());
     } else {
       this.innerValue = false;
-      this.valueChange.emit(this.falseValue);
+      this.valueChange.emit(this.falseValue());
     }
   }
 
@@ -65,7 +67,7 @@ export class TbCheckboxComponent implements ControlValueAccessor {
   }
 
   writeValue(obj: any): void {
-    if (obj === this.trueValue) {
+    if (obj === this.trueValue()) {
       this.innerValue = true;
     } else {
       this.innerValue = false;

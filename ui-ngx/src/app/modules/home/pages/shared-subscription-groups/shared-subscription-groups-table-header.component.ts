@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -20,11 +20,14 @@ import { AppState } from '@core/core.state';
 import { EntityTableHeaderComponent } from '../../components/entity/entity-table-header.component';
 import { SharedSubscriptionFilterConfig, SharedSubscriptionGroup } from '@shared/models/shared-subscription.model';
 import { SharedSubscriptionGroupsTableConfig } from '@home/pages/shared-subscription-groups/shared-subscription-groups-table-config';
+import { SharedSubscriptionGroupsFilterConfigComponent } from './shared-subscription-groups-filter-config.component';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'tb-shared-subscription-groups-table-header',
-  templateUrl: './shared-subscription-groups-table-header.component.html',
-  styleUrls: ['./shared-subscription-groups-table-header.component.scss']
+    selector: 'tb-shared-subscription-groups-table-header',
+    templateUrl: './shared-subscription-groups-table-header.component.html',
+    styleUrls: ['./shared-subscription-groups-table-header.component.scss'],
+    imports: [SharedSubscriptionGroupsFilterConfigComponent, FormsModule]
 })
 export class SharedSubscriptionGroupsTableHeaderComponent extends EntityTableHeaderComponent<SharedSubscriptionGroup> {
 

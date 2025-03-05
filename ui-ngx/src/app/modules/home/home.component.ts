@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, ElementRef, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { Store } from '@ngrx/store';
 
 import { BreakpointObserver, BreakpointState } from '@angular/cdk/layout';
@@ -22,17 +22,28 @@ import { PageComponent } from '@shared/components/page.component';
 import { AppState } from '@core/core.state';
 import { MediaBreakpoints } from '@shared/models/constants';
 import screenfull from 'screenfull';
-import { MatSidenav } from '@angular/material/sidenav';
+import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { WINDOW } from '@core/services/window.service';
-import { UntypedFormBuilder } from '@angular/forms';
 import { takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { ActiveComponentService } from '@core/services/active-component.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { SideMenuComponent } from './menu/side-menu.component';
+import { GettingStartedMenuLinkComponent } from './pages/getting-started/getting-started-menu-link.component';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { BreadcrumbComponent } from '@shared/components/breadcrumb.component';
+import { AsyncPipe } from '@angular/common';
+import { UserMenuComponent } from '@shared/components/user-menu.component';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { ToastDirective } from '@shared/components/toast.directive';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'tb-home',
-  templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+    selector: 'tb-home',
+    templateUrl: './home.component.html',
+    styleUrls: ['./home.component.scss'],
+    imports: [MatSidenavContainer, MatSidenav, MatToolbar, SideMenuComponent, GettingStartedMenuLinkComponent, MatSidenavContent, MatIconButton, MatIcon, BreadcrumbComponent, UserMenuComponent, MatProgressBar, ToastDirective, RouterOutlet, AsyncPipe]
 })
 export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
@@ -43,10 +54,8 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   logo = 'assets/mqtt_logo_white.svg';
 
-  @ViewChild('sidenav')
-  sidenav: MatSidenav;
-
-  @ViewChild('searchInput') searchInputField: ElementRef;
+  readonly sidenav = viewChild<MatSidenav>('sidenav');
+  readonly searchInputField = viewChild<ElementRef>('searchInput');
 
   fullscreenEnabled = screenfull.isEnabled;
 
@@ -55,7 +64,6 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
   constructor(protected store: Store<AppState>,
               @Inject(WINDOW) private window: Window,
               private activeComponentService: ActiveComponentService,
-              private fb: UntypedFormBuilder,
               public breakpointObserver: BreakpointObserver) {
     super(store);
   }
@@ -88,7 +96,7 @@ export class HomeComponent extends PageComponent implements OnInit, OnDestroy {
 
   sidenavClicked() {
     if (this.sidenavMode === 'over') {
-      this.sidenav.toggle();
+      this.sidenav().toggle();
     }
   }
 

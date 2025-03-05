@@ -1,5 +1,5 @@
 --
--- Copyright © 2016-2024 The Thingsboard Authors
+-- Copyright © 2016-2025 The Thingsboard Authors
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -132,3 +132,43 @@ CREATE TABLE IF NOT EXISTS unauthorized_client (
     tls_used boolean,
     reason varchar
 );
+
+CREATE TABLE IF NOT EXISTS integration (
+    id uuid NOT NULL CONSTRAINT integration_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    disconnected_time bigint,
+    additional_info varchar,
+    configuration varchar(10000000),
+    enabled boolean,
+    name varchar(255),
+    type varchar(255),
+    status varchar
+);
+
+CREATE TABLE IF NOT EXISTS stats_event (
+    id uuid NOT NULL,
+    ts bigint NOT NULL,
+    entity_id uuid NOT NULL,
+    service_id varchar NOT NULL,
+    e_messages_processed bigint NOT NULL,
+    e_errors_occurred bigint NOT NULL
+) PARTITION BY RANGE (ts);
+
+CREATE TABLE IF NOT EXISTS lc_event (
+    id uuid NOT NULL,
+    ts bigint NOT NULL,
+    entity_id uuid NOT NULL,
+    service_id varchar NOT NULL,
+    e_type varchar NOT NULL,
+    e_success boolean NOT NULL,
+    e_error varchar
+) PARTITION BY RANGE (ts);
+
+CREATE TABLE IF NOT EXISTS error_event (
+    id uuid NOT NULL,
+    ts bigint NOT NULL,
+    entity_id uuid NOT NULL,
+    service_id varchar NOT NULL,
+    e_method varchar NOT NULL,
+    e_error varchar
+) PARTITION BY RANGE (ts);

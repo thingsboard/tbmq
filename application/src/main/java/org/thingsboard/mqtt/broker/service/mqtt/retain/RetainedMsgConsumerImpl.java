@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,15 +22,15 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.RetainedMsgQueueFactory;
@@ -74,7 +74,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
     private volatile boolean initializing = true;
     private volatile boolean stopped = false;
 
-    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> retainedMsgConsumer;
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<RetainedMsgProto>> retainedMsgConsumer;
 
     @PostConstruct
     public void init() {
@@ -93,7 +93,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         String dummyTopic = persistDummyRetainedMsg();
         retainedMsgConsumer.assignOrSubscribe();
 
-        List<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> messages;
+        List<TbProtoQueueMsg<RetainedMsgProto>> messages;
         boolean encounteredDummyTopic = false;
         Map<String, RetainedMsg> allRetainedMsgs = new HashMap<>();
         do {
@@ -102,7 +102,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                 int packSize = messages.size();
                 log.debug("Read {} retained messages from single poll", packSize);
                 totalMessageCount += packSize;
-                for (TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg : messages) {
+                for (TbProtoQueueMsg<RetainedMsgProto> msg : messages) {
                     String topic = msg.getKey();
                     if (topic.startsWith(BrokerConstants.SYSTEMS_TOPIC_PREFIX)) {
                         continue;
@@ -147,14 +147,14 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         consumerExecutor.execute(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.RetainedMsgProto>> messages = retainedMsgConsumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<RetainedMsgProto>> messages = retainedMsgConsumer.poll(pollDuration);
                     if (messages.isEmpty()) {
                         continue;
                     }
                     stats.logTotal(messages.size());
                     int newRetainedMsgCount = 0;
                     int clearedRetainedMsgCount = 0;
-                    for (TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg : messages) {
+                    for (TbProtoQueueMsg<RetainedMsgProto> msg : messages) {
                         String topic = msg.getKey();
                         String serviceId = BytesUtil.bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
 
@@ -183,7 +183,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         });
     }
 
-    private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<QueueProtos.RetainedMsgProto> msg) {
+    private static RetainedMsg convertToRetainedMsg(TbProtoQueueMsg<RetainedMsgProto> msg) {
         RetainedMsg retainedMsg = ProtoConverter.convertProtoToRetainedMsg(msg.getValue());
         MqttPropertiesUtil.addMsgExpiryIntervalToProps(retainedMsg.getProperties(), msg.getHeaders());
         return retainedMsg;
@@ -200,7 +200,7 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
         persistenceService.persistRetainedMsgSync(topic, QueueConstants.EMPTY_RETAINED_MSG_PROTO);
     }
 
-    private boolean isRetainedMsgProtoEmpty(QueueProtos.RetainedMsgProto retainedMsgProto) {
+    private boolean isRetainedMsgProtoEmpty(RetainedMsgProto retainedMsgProto) {
         return retainedMsgProto.getPayload().isEmpty() && retainedMsgProto.getQos() == 0;
     }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ kubectl apply -f postgres.yml
 kubectl rollout status deployment/postgres
 
 # install Kafka
-helm install kafka -f kafka/values-kafka.yml oci://registry-1.docker.io/bitnamicharts/kafka --version 25.3.3
+helm upgrade --install kafka -f kafka/values-kafka.yml oci://registry-1.docker.io/bitnamicharts/kafka --version 25.3.3
 
 # install Redis
 kubectl apply -f redis.yml

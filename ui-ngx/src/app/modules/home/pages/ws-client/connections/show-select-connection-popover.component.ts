@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { TbPopoverComponent } from '@shared/components/popover.component';
 import { Store } from '@ngrx/store';
@@ -26,11 +26,17 @@ import { MatDialog } from '@angular/material/dialog';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
+import { ConnectionComponent } from './connection.component';
 
 @Component({
-  selector: 'tb-show-connections-popover',
-  templateUrl: './show-select-connection-popover.component.html',
-  styleUrls: []
+    selector: 'tb-show-connections-popover',
+    templateUrl: './show-select-connection-popover.component.html',
+    styleUrls: [],
+    imports: [TranslateModule, MatIconButton, MatIcon, ConnectionComponent, MatButton, AsyncPipe]
 })
 export class ShowSelectConnectionPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 
@@ -46,8 +52,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
   constructor(protected store: Store<AppState>,
               private webSocketConnectionService: WebSocketConnectionService,
               private mqttJsClientService: MqttJsClientService,
-              private dialog: MatDialog,
-              private cd: ChangeDetectorRef) {
+              private dialog: MatDialog) {
     super(store);
   }
 
@@ -103,7 +108,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
       });
   }
 
-  trackById(index: number, item: WebSocketConnection): string {
+  trackById(item: WebSocketConnectionDto): string {
     return item.id;
   }
 

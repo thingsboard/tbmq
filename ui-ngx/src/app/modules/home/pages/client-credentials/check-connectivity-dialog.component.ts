@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -19,12 +19,23 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { AuthRulePatternsType, BasicCredentials, ClientCredentials } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
 import { randomStringFromRegex, getOS } from '@core/utils';
 import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton, MatButton, MatAnchor } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
+import { MatTabGroup, MatTab, MatTabLabel, MatTabContent } from '@angular/material/tabs';
+import { TbMarkdownComponent } from '@shared/components/markdown.component';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 export interface CheckConnectivityDialogData {
   credentials: ClientCredentials;
@@ -68,9 +79,10 @@ export interface MqttCommandConfig {
 }
 
 @Component({
-  selector: 'tb-check-connectivity-dialog',
-  templateUrl: './check-connectivity-dialog.component.html',
-  styleUrls: ['./check-connectivity-dialog.component.scss']
+    selector: 'tb-check-connectivity-dialog',
+    templateUrl: './check-connectivity-dialog.component.html',
+    styleUrls: ['./check-connectivity-dialog.component.scss'],
+    imports: [MatToolbar, TranslateModule, MatIconButton, MatIcon, MatDialogContent, ToggleHeaderComponent, ToggleOption, NgTemplateOutlet, MatTabGroup, MatTab, MatTabLabel, MatTabContent, TbMarkdownComponent, MatDialogActions, MatSlideToggle, FormsModule, MatButton, MatProgressSpinner, MatAnchor, AsyncPipe]
 })
 export class CheckConnectivityDialogComponent extends
   DialogComponent<CheckConnectivityDialogComponent> implements OnInit, OnDestroy {

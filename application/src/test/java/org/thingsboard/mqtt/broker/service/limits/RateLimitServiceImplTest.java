@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.thingsboard.mqtt.broker.config.DevicePersistedMsgsRateLimitsConfigura
 import org.thingsboard.mqtt.broker.config.IncomingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.OutgoingRateLimitsConfiguration;
 import org.thingsboard.mqtt.broker.config.TotalMsgsRateLimitsConfiguration;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 
 import java.util.UUID;
 
@@ -114,7 +114,7 @@ public class RateLimitServiceImplTest {
     public void givenOutgoingRateLimitsEnabled_whenCheckOutgoingLimitsWithQos0_thenGetExpectedResult() {
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
-        QueueProtos.PublishMsgProto proto = QueueProtos.PublishMsgProto.newBuilder().setQos(0).build();
+        PublishMsgProto proto = PublishMsgProto.newBuilder().setQos(0).build();
 
         boolean first = rateLimitService.checkOutgoingLimits(CLIENT_ID, proto);
         Assert.assertTrue(first);
@@ -128,7 +128,7 @@ public class RateLimitServiceImplTest {
     public void givenOutgoingRateLimitsEnabled_whenCheckOutgoingLimitsWithQos1_thenGetExpectedResult() {
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
-        QueueProtos.PublishMsgProto proto = QueueProtos.PublishMsgProto.newBuilder().setQos(1).build();
+        PublishMsgProto proto = PublishMsgProto.newBuilder().setQos(1).build();
 
         boolean first = rateLimitService.checkOutgoingLimits(CLIENT_ID, proto);
         Assert.assertTrue(first);
@@ -142,7 +142,7 @@ public class RateLimitServiceImplTest {
     public void givenOutgoingRateLimitsEnabled_whenCheckOutgoingLimitsWithQos2_thenGetExpectedResult() {
         when(outgoingRateLimitsConfiguration.isEnabled()).thenReturn(true);
 
-        QueueProtos.PublishMsgProto proto = QueueProtos.PublishMsgProto.newBuilder().setQos(2).build();
+        PublishMsgProto proto = PublishMsgProto.newBuilder().setQos(2).build();
 
         boolean first = rateLimitService.checkOutgoingLimits(CLIENT_ID, proto);
         Assert.assertTrue(first);

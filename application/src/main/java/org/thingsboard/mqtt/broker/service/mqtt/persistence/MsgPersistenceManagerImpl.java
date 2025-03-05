@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorStateInfo;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
+import org.thingsboard.mqtt.broker.queue.util.IntegrationProtoConverter;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueuePublisher;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.integration.IntegrationMsgQueuePublisher;
 import org.thingsboard.mqtt.broker.service.processing.MultiplePublishMsgCallbackWrapper;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgCallback;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgWithId;
@@ -40,7 +44,6 @@ import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscrip
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.Collection;
 import java.util.List;
@@ -62,6 +65,7 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
     private final DevicePersistenceProcessor devicePersistenceProcessor;
     private final ClientLogger clientLogger;
     private final RateLimitService rateLimitService;
+    private final IntegrationMsgQueuePublisher integrationMsgQueuePublisher;
 
     @Override
     public void processPublish(PublishMsgWithId publishMsgWithId, PersistentMsgSubscriptions persistentSubscriptions, PublishMsgCallback callback) {
@@ -70,8 +74,9 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
         List<Subscription> deviceSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getDeviceSubscriptions());
         List<Subscription> applicationSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getApplicationSubscriptions());
         Set<String> sharedTopics = getUniqueSharedTopics(persistentSubscriptions.getAllApplicationSharedSubscriptions());
+        List<Subscription> integrationSubscriptions = getSubscriptionsIfNotNull(persistentSubscriptions.getIntegrationSubscriptions());
 
-        int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics);
+        int callbackCount = getCallbackCount(deviceSubscriptions, applicationSubscriptions, sharedTopics, integrationSubscriptions);
         if (callbackCount == 0) {
             callback.onSuccess();
             return;
@@ -105,6 +110,11 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                         sharedTopic,
                         new TbProtoQueueMsg<>(ProtoConverter.createReceiverPublishMsg(publishMsgProto), getAppMsgHeaders(publishMsgWithId)),
                         callbackWrapper);
+            }
+        }
+        if (integrationSubscriptions != null) {
+            for (Subscription integrationSubscription : integrationSubscriptions) {
+                sendIntegrationMsg(integrationSubscription, publishMsgWithId, callbackWrapper);
             }
         }
 
@@ -142,6 +152,15 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
                 callbackWrapper);
     }
 
+    private void sendIntegrationMsg(Subscription integrationSubscription, PublishMsgWithId publishMsgWithId, PublishMsgCallback callbackWrapper) {
+        PublishIntegrationMsgProto publishMsg = IntegrationProtoConverter.toProto(publishMsgWithId.getPublishMsgProto(), integrationSubscription.getServiceId());
+        integrationMsgQueuePublisher.sendMsg(
+                integrationSubscription.getClientId(),
+                new TbProtoQueueMsg<>(publishMsg.getPublishMsgProto().getTopicName(), publishMsg),
+                callbackWrapper
+        );
+    }
+
     private TbQueueMsgHeaders getAppMsgHeaders(PublishMsgWithId publishMsgWithId) {
         TbQueueMsgHeaders headers = publishMsgWithId.getHeaders().copy();
         headers.put(BrokerConstants.CREATED_TIME, BytesUtil.longToBytes(System.currentTimeMillis()));
@@ -164,10 +183,12 @@ public class MsgPersistenceManagerImpl implements MsgPersistenceManager {
 
     private int getCallbackCount(List<Subscription> deviceSubscriptions,
                                  List<Subscription> applicationSubscriptions,
-                                 Set<String> sharedTopics) {
+                                 Set<String> sharedTopics,
+                                 List<Subscription> integrationSubscriptions) {
         return getCollectionSize(deviceSubscriptions) +
                 getCollectionSize(applicationSubscriptions) +
-                getCollectionSize(sharedTopics);
+                getCollectionSize(sharedTopics) +
+                getCollectionSize(integrationSubscriptions);
     }
 
     private <T> int getCollectionSize(Collection<T> collection) {

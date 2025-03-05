@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import {
   MessageCounterEmpty,
   MessageFilterConfig,
   MessageFilterDefaultConfigAll,
-  QoS,
   transformObjectToProps,
   transformPropsToObject,
   WebSocketConnection,
@@ -53,10 +52,10 @@ import { ClientSessionService } from '@core/http/client-session.service';
 import { ConnectionState } from '@shared/models/session.model';
 import { WebSocketSettings } from '@shared/models/settings.models';
 import { IClientSubscribeOptions } from 'mqtt/src/lib/client';
-import { ActionNotificationShow } from "@core/notification/notification.actions";
-import { Store } from "@ngrx/store";
-import { AppState } from "@core/core.state";
-import { TranslateService } from "@ngx-translate/core";
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
+import { TranslateService } from '@ngx-translate/core';
 
 @Injectable({
   providedIn: 'root'
@@ -612,7 +611,7 @@ export class MqttJsClientService {
 
   private subscriptionOptions(subscription: WebSocketSubscription): IClientSubscribeOptions {
     const options = {} as IClientSubscribeOptions;
-    options.qos = subscription.configuration.qos as QoS;
+    options.qos = subscription.configuration.qos;
     options.nl = subscription.configuration?.options?.noLocal;
     options.rap = subscription.configuration?.options?.retainAsPublish;
     options.rh = subscription.configuration?.options?.retainHandling;

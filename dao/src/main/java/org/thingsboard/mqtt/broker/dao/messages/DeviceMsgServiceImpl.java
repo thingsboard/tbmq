@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private static final String REMOVE_MESSAGE_SCRIPT_SHA = "af40a579a941a140cace4e5243fc0921a4c7b4b0";
     private static final String UPDATE_PACKET_TYPE_SCRIPT_SHA = "86164ab58880b91c4aee396bb5701fd6af1b0258";
 
+    // TODO: consider why we set score = lastPacketId if set is empty instead of set it to 0.
     private static final String ADD_MESSAGES_SCRIPT = """
             local messagesKey = KEYS[1]
             local lastPacketIdKey = KEYS[2]

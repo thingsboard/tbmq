@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
 import { KafkaService } from '@core/http/kafka.service';
 import { TranslateService } from '@ngx-translate/core';
 import { KafkaBrokersTableConfig } from '@home/pages/kafka-management/kafka-brokers-table-config';
 
 @Component({
-  selector: 'tb-kafka-brokers-table',
-  templateUrl: './kafka-brokers-table.component.html'
+    selector: 'tb-kafka-brokers-table',
+    templateUrl: './kafka-brokers-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class KafkaBrokersTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -39,7 +39,7 @@ export class KafkaBrokersTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -49,14 +49,14 @@ export class KafkaBrokersTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.kafkaBrokersTableConfig && this.kafkaBrokersTableConfig.entityId !== entityId) {
       this.kafkaBrokersTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   kafkaBrokersTableConfig: KafkaBrokersTableConfig;
 

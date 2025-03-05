@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,60 +15,35 @@
  */
 package org.thingsboard.mqtt.broker.common.data.subscription;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.ToString;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import java.util.Objects;
+public interface TopicSubscription {
 
-@AllArgsConstructor
-@Getter
-@Builder(toBuilder = true)
-@ToString
-public class TopicSubscription {
+    String getTopicFilter();
 
-    private final String topicFilter;
-    private final int qos;
-    private final String shareName;
-    private final SubscriptionOptions options;
-    private final int subscriptionId;
-
-    public TopicSubscription(String topicFilter, int qos) {
-        this(topicFilter, qos, null, SubscriptionOptions.newInstance(), -1);
+    default int getQos() {
+        return 1;
     }
 
-    public TopicSubscription(String topicFilter, int qos, String shareName) {
-        this(topicFilter, qos, shareName, SubscriptionOptions.newInstance(), -1);
+    default String getShareName() {
+        return null;
     }
 
-    public TopicSubscription(String topicFilter, int qos, SubscriptionOptions options) {
-        this(topicFilter, qos, null, options, -1);
+    default SubscriptionOptions getOptions() {
+        return null;
     }
 
-    public TopicSubscription(String topicFilter, int qos, String shareName, SubscriptionOptions options) {
-        this(topicFilter, qos, shareName, options, -1);
+    default int getSubscriptionId() {
+        return -1;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        TopicSubscription that = (TopicSubscription) o;
-        return Objects.equals(topicFilter, that.topicFilter);
+    @JsonIgnore
+    default boolean isSharedSubscription() {
+        return false;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(topicFilter);
+    @JsonIgnore
+    default boolean isCommonSubscription() {
+        return true;
     }
-
-    public boolean isSharedSubscription() {
-        return shareName != null;
-    }
-
-    public boolean isCommonSubscription() {
-        return !isSharedSubscription();
-    }
-
 }

@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, viewChild } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { MatStepper, StepperOrientation } from '@angular/material/stepper';
+import { MatStepper, StepperOrientation, MatStepperIcon, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
@@ -33,15 +33,31 @@ import { ClientCredentialsService } from "@core/http/client-credentials.service"
 import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
 import { AddEntityDialogData } from "@home/models/entity/entity-component.models";
 import { BaseData } from "@shared/models/base-data";
+import { MatToolbar } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
+import { HelpComponent } from '@shared/components/help.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { MqttCredentialsBasicComponent } from '../client-credentials-templates/basic/basic.component';
+import { MqttCredentialsSslComponent } from '../client-credentials-templates/ssl/ssl.component';
+import { MqttCredentialsScramComponent } from '../client-credentials-templates/scram/scram.component';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
-  selector: 'tb-client-credentials-wizard',
-  templateUrl: './client-credentials-wizard-dialog.component.html',
-  styleUrls: ['./client-credentials-wizard-dialog.component.scss']
+    selector: 'tb-client-credentials-wizard',
+    templateUrl: './client-credentials-wizard-dialog.component.html',
+    styleUrls: ['./client-credentials-wizard-dialog.component.scss'],
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ClientCredentialsWizardDialogComponent extends DialogComponent<ClientCredentialsWizardDialogComponent, ClientCredentials> {
 
-  @ViewChild('addClientCredentialsWizardStepper', {static: true}) addClientCredentialsWizardStepper: MatStepper;
+  readonly addClientCredentialsWizardStepper = viewChild<MatStepper>('addClientCredentialsWizardStepper');
 
   stepperOrientation: Observable<StepperOrientation>;
 
@@ -122,11 +138,11 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   }
 
   previousStep(): void {
-    this.addClientCredentialsWizardStepper.previous();
+    this.addClientCredentialsWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addClientCredentialsWizardStepper.next();
+    this.addClientCredentialsWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -139,7 +155,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   }
 
   get maxStepperIndex(): number {
-    return this.addClientCredentialsWizardStepper?._steps?.length - 1;
+    return this.addClientCredentialsWizardStepper()?._steps?.length - 1;
   }
 
   add(): void {
@@ -166,17 +182,17 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
     };
     return this.clientCredentialsService.saveClientCredentials(deepTrim(clientCredentials)).pipe(
       catchError(e => {
-        this.addClientCredentialsWizardStepper.selectedIndex = 0;
+        this.addClientCredentialsWizardStepper().selectedIndex = 0;
         return throwError(e);
       })
     );
   }
 
   allValid(): boolean {
-    return !this.addClientCredentialsWizardStepper.steps.find((item, index) => {
+    return !this.addClientCredentialsWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addClientCredentialsWizardStepper.selectedIndex = index;
+        this.addClientCredentialsWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

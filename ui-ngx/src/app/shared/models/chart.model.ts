@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -37,11 +37,15 @@ export enum StatsChartType {
   processedBytes = 'processedBytes',
 }
 
+export const CHART_ALL = Object.values(StatsChartType);
+export const CHART_TOTAL_ONLY = [StatsChartType.sessions, StatsChartType.subscriptions];
 export const TOTAL_KEY = 'total';
+export const MAX_DATAPOINTS_LIMIT = 50000;
 
-export const ONLY_TOTAL_KEYS = ['sessions', 'subscriptions'];
-
-export type ChartPage = 'home' | 'monitoring';
+export enum ChartPage {
+  home = 'home',
+  monitoring = 'monitoring'
+}
 
 export const StatsChartTypeTranslationMap = new Map<string, string>(
   [
@@ -92,47 +96,50 @@ Tooltip.positioners.tbPositioner = function(elements, eventPosition) {
   };
 };
 
+const crosshairPlugin = {
+  id: 'corsair',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea, corsair } = chart;
+    if (corsair?.x && corsair?.y) {
+      const { x, y } = corsair;
+      if (
+        x >= chartArea.left &&
+        x <= chartArea.right &&
+        y >= chartArea.top &&
+        y <= chartArea.bottom
+      ) {
+        ctx.save();
+        ctx.strokeStyle = '#960000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  },
+  afterEvent(chart, evt) {
+    const { chartArea } = chart;
+    const { x, y } = evt.event;
+    if (
+      x >= chartArea.left &&
+      x <= chartArea.right &&
+      y >= chartArea.top &&
+      y <= chartArea.bottom
+    ) {
+      chart.corsair = { x, y };
+    } else {
+      chart.corsair = null;
+    }
+    chart.draw();
+  },
+};
+
 const lineChartParams = {
   type: 'line',
   plugins: [
-    {
-      id: 'corsair',
-      afterInit: (chart) => { chart.corsair = {x: 0, y: 0}; },
-      afterEvent: (chart, evt) => {
-        const {chartArea: {top, bottom}} = chart;
-        const {event: {x, y}} = evt;
-        if (y < top || y > bottom || x < 20) {
-          chart.corsair = {x, y, draw: false};
-          chart.draw();
-          return;
-        }
-        chart.corsair = {x, y, draw: true};
-        chart.draw();
-      },
-      afterDatasetsDraw: (chart, _, opts) => {
-        const {ctx, chartArea: {top, bottom}} = chart;
-        const {x, draw} = chart.corsair;
-        if (!draw) return;
-        const {datasets} = chart.data;
-        let hasData = false;
-        for (let i = 0; i < datasets.length; i += 1) {
-          const dataset = datasets[i];
-          hasData = dataset.data.length > 0;
-        }
-        if (hasData) {
-          ctx.lineWidth = opts.width || 0;
-          ctx.setLineDash(opts.dash || []);
-          ctx.strokeStyle = '#960000';
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.moveTo(x, bottom);
-          ctx.lineTo(x, top);
-          ctx.stroke();
-          ctx.restore();
-        }
-      }
-    }
+    crosshairPlugin,
   ],
   options: {
     animation: false,
@@ -201,7 +208,7 @@ const lineChartParams = {
 }
 
 function getParams(type) {
-  if (type === 'monitoring') {
+  if (type === ChartPage.monitoring) {
     return {
       options: {
         plugins: {
@@ -225,7 +232,7 @@ function getParams(type) {
             }
           },
           legend: {
-            display: true,
+            display: false,
             position: 'bottom',
             align: 'start',
             fullSize: true,
@@ -273,7 +280,7 @@ function getParams(type) {
       },
     };
   }
-  if (type === 'home') {
+  if (type === ChartPage.home) {
     return {
       options: {
         title: {
@@ -328,4 +335,23 @@ function getParams(type) {
 export const chartJsParams = (type: string) => {
   const options = getParams(type);
   return _.merge(options, lineChartParams);
+}
+
+export interface LegendConfig {
+  showMin: boolean;
+  showMax: boolean;
+  showAvg: boolean;
+  showTotal: boolean;
+  showLatest: boolean;
+}
+
+export interface LegendKey {
+  dataKey: DataKey;
+  dataIndex: number;
+}
+
+export interface DataKey {
+  label: string;
+  hidden: boolean;
+  color: string;
 }

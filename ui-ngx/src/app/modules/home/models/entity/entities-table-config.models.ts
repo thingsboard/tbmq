@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import { PageLink } from '@shared/models/page/page-link';
 import { EntityTableHeaderComponent } from '@home/components/entity/entity-table-header.component';
 import { ActivatedRoute } from '@angular/router';
 import { EntityTabsComponent } from '../../components/entity/entity-tabs.component';
-import { ClientType } from '@shared/models/client.model';
 import { IEntitiesTableComponent } from './entity-table-component.models';
 import { DAY, historyInterval } from '@shared/models/time/time.models';
 import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
@@ -58,6 +57,7 @@ export interface CellActionDescriptor<T extends BaseData> {
   name: string;
   nameFunction?: (entity: T) => string;
   icon?: string;
+  iconFunction?: (entity: T) => string;
   style?: any;
   isEnabled: (entity: T) => boolean;
   onAction: ($event: MouseEvent, entity: T) => any;
@@ -86,8 +86,7 @@ export class BaseEntityTableColumn<T extends BaseData> {
               public title: string,
               public width: string = '0px',
               public sortable: boolean = true,
-              public ignoreTranslate: boolean = false,
-              public mobileHide: boolean = false) {
+              public ignoreTranslate: boolean = false) {
   }
 }
 

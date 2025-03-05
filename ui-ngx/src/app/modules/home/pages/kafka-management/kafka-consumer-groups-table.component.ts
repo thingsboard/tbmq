@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,22 +14,21 @@
 /// limitations under the License.
 ///
 
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, input, viewChild } from '@angular/core';
 import { EntitiesTableComponent } from '@home/components/entity/entities-table.component';
-import { KafkaTopicsTableConfig } from '@home/components/kafka-tables/kafka-topics-table-config';
 import { KafkaService } from '@core/http/kafka.service';
 import { KafkaConsumerGroupsTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-table-config';
 import { TranslateService } from '@ngx-translate/core';
 import { DialogService } from '@core/services/dialog.service';
 
 @Component({
-  selector: 'tb-kafka-consumer-groups-table',
-  templateUrl: './kafka-consumer-groups-table.component.html'
+    selector: 'tb-kafka-consumer-groups-table',
+    templateUrl: './kafka-consumer-groups-table.component.html',
+    imports: [EntitiesTableComponent]
 })
 export class KafkaConsumerGroupsTableComponent implements OnInit {
 
-  @Input()
-  detailsMode: boolean;
+  readonly detailsMode = input<boolean>();
 
   activeValue = false;
   dirtyValue = false;
@@ -41,7 +40,7 @@ export class KafkaConsumerGroupsTableComponent implements OnInit {
       this.activeValue = active;
       if (this.activeValue && this.dirtyValue) {
         this.dirtyValue = false;
-        this.entitiesTable.updateData();
+        this.entitiesTable().updateData();
       }
     }
   }
@@ -51,14 +50,14 @@ export class KafkaConsumerGroupsTableComponent implements OnInit {
     this.entityIdValue = entityId;
     if (this.kafkaConsumerGroupsTableConfig && this.kafkaConsumerGroupsTableConfig.entityId !== entityId) {
       this.kafkaConsumerGroupsTableConfig.entityId = entityId;
-      this.entitiesTable.resetSortAndFilter(this.activeValue);
+      this.entitiesTable().resetSortAndFilter(this.activeValue);
       if (!this.activeValue) {
         this.dirtyValue = true;
       }
     }
   }
 
-  @ViewChild(EntitiesTableComponent, {static: true}) entitiesTable: EntitiesTableComponent;
+  readonly entitiesTable = viewChild(EntitiesTableComponent);
 
   kafkaConsumerGroupsTableConfig: KafkaConsumerGroupsTableConfig;
 

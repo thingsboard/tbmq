@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,21 +15,37 @@
     limitations under the License.
 
 -->
-<div class="tb-home-overview" fxLayoutGap="12px" fxLayout="row" fxLayout.lt-lg="column">
-  <div fxLayout="column" fxFlex="70" fxLayoutGap="12px" fxFlex.lt-lg="auto">
-    <tb-home-charts></tb-home-charts>
-    <div fxFlex fxLayout="column" fxLayoutGap="12px">
-      <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
-      <div fxFlex fxLayout="row" fxLayout.xs="column" fxLayoutGap="12px">
-        <tb-card-config class="tb-home-card"></tb-card-config>
-        <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
+<div class="tb-home-overview flex flex-row gap-3 lt-lg:flex-col">
+  <div class="flex max-w-70% flex-col gap-3 lt-lg:max-w-100%">
+    @defer {
+      <tb-home-charts></tb-home-charts>
+    }
+    <div class="flex flex-1 flex-col gap-3">
+      @defer {
+        <tb-home-cards-sessions-credentials></tb-home-cards-sessions-credentials>
+      }
+      <div class="flex flex-1 flex-row gap-3 xs:flex-col">
+        @defer {
+          <tb-card-config class="tb-home-card"></tb-card-config>
+        }
+        @defer {
+          <tb-kafka-brokers-table class="tb-home-card"></tb-kafka-brokers-table>
+        }
       </div>
     </div>
-    <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
+    @defer {
+      <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
+    }
   </div>
-  <div fxLayout="column" fxFlex="30" fxLayoutGap="12px" fxFlex.lt-lg="auto">
-    <tb-getting-started fxFlex class="tb-home-card" [fxHide.xs]="true"></tb-getting-started>
-    <tb-quick-links class="tb-home-card" [fxHide.lt-lg]="true"></tb-quick-links>
-    <tb-version-card class="tb-home-card"></tb-version-card>
+  <div class="flex max-w-30% flex-col gap-3 lt-lg:max-w-100%">
+    @defer {
+      <tb-getting-started class="tb-home-card xs:!hidden"></tb-getting-started>
+    }
+    @defer {
+      <tb-quick-links class="tb-home-card lt-lg:!hidden"></tb-quick-links>
+    }
+    @defer {
+      <tb-version-card class="tb-home-card"></tb-version-card>
+    }
   </div>
 </div>

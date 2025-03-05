@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 import { BaseData } from '@shared/models/base-data';
 import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { PageComponent } from '@shared/components/page.component';
-import { ChangeDetectorRef, Directive, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Directive, Input, OnInit, output } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityAction } from '@home/models/entity/entity-component.models';
@@ -77,8 +77,7 @@ export abstract class EntityComponent<T extends BaseData,
     return this.entityValue;
   }
 
-  @Output()
-  entityAction = new EventEmitter<EntityAction<T>>();
+  readonly entityAction = output<EntityAction<T>>();
 
   protected constructor(protected store: Store<AppState>,
                         protected fb: UntypedFormBuilder,

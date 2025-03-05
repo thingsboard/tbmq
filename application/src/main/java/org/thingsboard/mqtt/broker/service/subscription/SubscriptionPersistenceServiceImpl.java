@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,18 +20,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgMetadata;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.ClientSubscriptionsQueueFactory;
-import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class SubscriptionPersistenceServiceImpl implements SubscriptionPersistenceService {
 
-    private final TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto>> clientSubscriptionsProducer;
+    private final TbQueueProducer<TbProtoQueueMsg<ClientSubscriptionsProto>> clientSubscriptionsProducer;
     private final ServiceInfoProvider serviceInfoProvider;
 
     public SubscriptionPersistenceServiceImpl(ClientSubscriptionsQueueFactory clientSubscriptionsQueueFactory, ServiceInfoProvider serviceInfoProvider) {
@@ -58,7 +58,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client subscriptions asynchronously - {}", clientId, clientSubscriptions);
         }
-        QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
+        ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto), new TbQueueCallback() {
             @Override
             public void onSuccess(TbQueueMsgMetadata metadata) {
@@ -82,7 +82,7 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
         if (log.isTraceEnabled()) {
             log.trace("[{}] Persisting client subscriptions synchronously - {}", clientId, clientSubscriptions);
         }
-        QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
+        ClientSubscriptionsProto clientSubscriptionsProto = ProtoConverter.convertToClientSubscriptionsProto(clientSubscriptions);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
         clientSubscriptionsProducer.send(generateRequest(clientId, clientSubscriptionsProto), new TbQueueCallback() {
@@ -121,8 +121,8 @@ public class SubscriptionPersistenceServiceImpl implements SubscriptionPersisten
         }
     }
 
-    private TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> generateRequest(String clientId, QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
-        TbProtoQueueMsg<QueueProtos.ClientSubscriptionsProto> request = new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto);
+    private TbProtoQueueMsg<ClientSubscriptionsProto> generateRequest(String clientId, ClientSubscriptionsProto clientSubscriptionsProto) {
+        TbProtoQueueMsg<ClientSubscriptionsProto> request = new TbProtoQueueMsg<>(clientId, clientSubscriptionsProto);
         request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }

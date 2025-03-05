@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,28 @@
  */
 package org.thingsboard.mqtt.broker.queue.constants;
 
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 
 public class QueueConstants {
+
+    public static final String TBMQ_NOT_IMPLEMENTED = "Implementation is not expected here for TBMQ!";
+    public static final String TBMQ_IE_NOT_IMPLEMENTED = "Implementation is not expected here for TBMQ IE!";
 
     public static final String REPLICATION_FACTOR = "replication.factor";
     public static final String PARTITIONS = "partitions";
     public final static String CLEANUP_POLICY_PROPERTY = "cleanup.policy";
     public final static String COMPACT_POLICY = "compact";
 
-    public static final QueueProtos.ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = QueueProtos.ClientSessionInfoProto.newBuilder().build();
-    public static final QueueProtos.RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = QueueProtos.RetainedMsgProto.newBuilder().build();
+    public static final ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = ClientSessionInfoProto.newBuilder().build();
+    public static final RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = RetainedMsgProto.newBuilder().build();
 
+    /**
+     * TBMQ Integration executor downlink topics constants
+     */
+    public static final String HTTP_TOPIC_SUFFIX = ".http";
+    public static final String MQTT_TOPIC_SUFFIX = ".mqtt";
+    public static final String KAFKA_TOPIC_SUFFIX = ".kafka";
+
+    public static final String IE_DOWNLINK_TOPIC = "tbmq.ie.downlink";
 }

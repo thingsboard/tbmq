@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.queue.provider;
 
-
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientPublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
 public interface DownLinkBasicPublishMsgQueueFactory {
 
-    TbQueueProducer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createProducer(String id);
+    TbQueueProducer<TbProtoQueueMsg<ClientPublishMsgProto>> createProducer(String id);
 
-    TbQueueConsumer<TbProtoQueueMsg<QueueProtos.ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId);
+    TbQueueConsumer<TbProtoQueueMsg<ClientPublishMsgProto>> createConsumer(String topic, String consumerId, String groupId);
 
 }

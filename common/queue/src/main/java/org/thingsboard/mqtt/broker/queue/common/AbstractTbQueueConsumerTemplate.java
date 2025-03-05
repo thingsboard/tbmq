@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,19 @@ package org.thingsboard.mqtt.broker.queue.common;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsg;
 import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -49,6 +54,17 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         consumerLock.lock();
         try {
             doSubscribe(topic);
+            subscribed = true;
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public void subscribe(ConsumerRebalanceListener listener) {
+        consumerLock.lock();
+        try {
+            doSubscribe(topic, listener);
             subscribed = true;
         } finally {
             consumerLock.unlock();
@@ -98,6 +114,9 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
         consumerLock.lock();
         try {
             doUnsubscribeAndClose();
+        } catch (InterruptException e) {
+            Thread.currentThread().interrupt();
+            log.warn("[{}] Consumer was interrupted during shutdown", topic);
         } finally {
             consumerLock.unlock();
         }
@@ -191,10 +210,40 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
     }
 
     @Override
+    public void seekToTheBeginning(Collection<TopicPartition> partitions) {
+        consumerLock.lock();
+        try {
+            doSeekToTheBeginning(partitions);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public Map<TopicPartition, Long> getEndOffset(Collection<TopicPartition> partitions) {
+        consumerLock.lock();
+        try {
+            return doGetEndOffset(partitions);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
     public long getEndOffset(String topic, int partition) {
         consumerLock.lock();
         try {
             return doGetEndOffset(topic, partition);
+        } finally {
+            consumerLock.unlock();
+        }
+    }
+
+    @Override
+    public long getPosition(String topic, int partition) {
+        consumerLock.lock();
+        try {
+            return doGetPosition(topic, partition);
         } finally {
             consumerLock.unlock();
         }
@@ -216,6 +265,8 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doSubscribe(String topic);
 
+    abstract protected void doSubscribe(String topic, ConsumerRebalanceListener listener);
+
     abstract protected void doAssignPartition(String topic, int partition);
 
     abstract protected void doAssignAllPartitions(String topic);
@@ -228,7 +279,13 @@ public abstract class AbstractTbQueueConsumerTemplate<R, T extends TbQueueMsg> i
 
     abstract protected void doSeekToTheBeginning();
 
+    abstract protected void doSeekToTheBeginning(Collection<TopicPartition> partitions);
+
+    abstract protected Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions);
+
     abstract protected long doGetEndOffset(String topic, int partition);
+
+    abstract protected long doGetPosition(String topic, int partition);
 
     abstract protected Optional<Long> doGetCommittedOffset(String topic, int partition);
 

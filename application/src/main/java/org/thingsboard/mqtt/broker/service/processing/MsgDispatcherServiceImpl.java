@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.integration.IntegrationSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.stats.MessagesStats;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueCallback;
 import org.thingsboard.mqtt.broker.queue.common.DefaultTbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -46,28 +42,21 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManage
 import org.thingsboard.mqtt.broker.service.processing.data.MsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.data.PersistentMsgSubscriptions;
 import org.thingsboard.mqtt.broker.service.processing.downlink.DownLinkProxy;
+import org.thingsboard.mqtt.broker.service.processing.shared.DeviceSharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.stats.timer.PublishMsgProcessingTimerStats;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.ValueWithTopicFilter;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.data.EntitySubscriptionType;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
-import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptions;
-import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
-import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.INCOMING_MSGS;
@@ -84,10 +73,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
     private final DownLinkProxy downLinkProxy;
     private final ClientLogger clientLogger;
     private final PublishMsgQueuePublisher publishMsgQueuePublisher;
-    private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    private final DeviceSharedSubscriptionProcessor deviceSharedSubscriptionProcessor;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
-    private final ServiceInfoProvider serviceInfoProvider;
     private final RateLimitService rateLimitService;
 
     private MessagesStats producerStats;
@@ -153,16 +141,14 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     PersistentMsgSubscriptions processBasicAndCollectPersistentSubscriptions(MsgSubscriptions msgSubscriptions,
                                                                              PublishMsgProto publishMsgProto) {
-        final PersistentMsgSubscriptions persistentSubscriptions = new PersistentMsgSubscriptions(
-                null, null, msgSubscriptions.getAllApplicationSharedSubscriptions()
-        );
+        final PersistentMsgSubscriptions persistentSubscriptions = PersistentMsgSubscriptions.newInstance(msgSubscriptions, processSubscriptionsInParallel);
         long startTime = System.nanoTime();
 
         if (!CollectionUtils.isEmpty(msgSubscriptions.getCommonSubscriptions())) {
-            processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto, persistentSubscriptions);
+            persistentSubscriptions.processSubscriptions(msgSubscriptions.getCommonSubscriptions(), publishMsgProto, subscription -> deliver(publishMsgProto, subscription));
         }
         if (!CollectionUtils.isEmpty(msgSubscriptions.getTargetDeviceSharedSubscriptions())) {
-            processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto, persistentSubscriptions);
+            persistentSubscriptions.processSubscriptions(msgSubscriptions.getTargetDeviceSharedSubscriptions(), publishMsgProto, subscription -> deliver(publishMsgProto, subscription));
         }
 
         if (publishMsgProcessingTimerStats != null) {
@@ -171,74 +157,9 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return persistentSubscriptions;
     }
 
-    private void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
-                                      final PersistentMsgSubscriptions persistentMsgSubscriptions) {
-        boolean nonPersistentByPubQos = publishMsgProto.getQos() == MqttQoS.AT_MOST_ONCE.value();
-        if (nonPersistentByPubQos) {
-            if (processSubscriptionsInParallel) {
-                subscriptions
-                        .parallelStream()
-                        .forEach(subscription -> deliver(publishMsgProto, subscription));
-            } else {
-                for (Subscription subscription : subscriptions) {
-                    deliver(publishMsgProto, subscription);
-                }
-            }
-        } else {
-            persistentMsgSubscriptions.setDeviceSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getDeviceSubscriptions(), subscriptions.size()));
-            persistentMsgSubscriptions.setApplicationSubscriptions(initSubscriptionListIfNull(persistentMsgSubscriptions.getApplicationSubscriptions(), subscriptions.size()));
-            if (processSubscriptionsInParallel) {
-                subscriptions
-                        .parallelStream()
-                        .forEach(subscription -> processSubscription(
-                                subscription,
-                                publishMsgProto,
-                                persistentMsgSubscriptions.getApplicationSubscriptions(),
-                                persistentMsgSubscriptions.getDeviceSubscriptions())
-                        );
-            } else {
-                for (Subscription subscription : subscriptions) {
-                    processSubscription(
-                            subscription,
-                            publishMsgProto,
-                            persistentMsgSubscriptions.getApplicationSubscriptions(),
-                            persistentMsgSubscriptions.getDeviceSubscriptions()
-                    );
-                }
-            }
-        }
-    }
-
-    private void processSubscription(Subscription subscription, PublishMsgProto publishMsgProto,
-                                     List<Subscription> applicationSubscriptions, List<Subscription> deviceSubscriptions) {
-        if (isPersistentBySubInfo(subscription)) {
-            if (ClientType.APPLICATION == subscription.getClientSessionInfo().getType()) {
-                applicationSubscriptions.add(subscription);
-            } else {
-                deviceSubscriptions.add(subscription);
-            }
-        } else {
-            deliver(publishMsgProto, subscription);
-        }
-    }
-
-    private List<Subscription> initSubscriptionListIfNull(List<Subscription> subscriptions, int size) {
-        return subscriptions == null ? initArrayList(size) : subscriptions;
-    }
-
-    private List<Subscription> initArrayList(int size) {
-        return processSubscriptionsInParallel ? Collections.synchronizedList(new ArrayList<>(size)) : new ArrayList<>(size);
-    }
-
-    private Set<TopicSharedSubscription> initTopicSharedSubscriptionSetIfNull(Set<TopicSharedSubscription> topicSharedSubscriptions) {
-        return topicSharedSubscriptions == null ? new HashSet<>() : topicSharedSubscriptions;
-    }
-
     MsgSubscriptions getAllSubscriptionsForPubMsg(PublishMsgProto publishMsgProto, String senderClientId) {
-        List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions =
-                subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
-        int clientSubscriptionsSize = clientSubscriptions.size();
-        if (clientSubscriptionsSize == 0) {
+        var clientSubscriptions = subscriptionService.getSubscriptions(publishMsgProto.getTopicName());
+        if (clientSubscriptions.isEmpty()) {
             log.trace("Found 0 subscriptions for [{}] msg", publishMsgProto);
             return null;
         }
@@ -248,30 +169,23 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         }
 
         if (sharedSubscriptionCacheService.sharedSubscriptionsInitialized()) {
-            Set<TopicSharedSubscription> topicSharedSubscriptions = null;
-            List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions = new ArrayList<>(clientSubscriptionsSize);
+            var compositeSubscriptions = sharedSubscriptionCacheService.getSubscriptions(clientSubscriptions);
+            var sharedSubscriptions = compositeSubscriptions.getSharedSubscriptions();
+            clientSubscriptions = compositeSubscriptions.getCommonSubscriptions();
 
-            for (ValueWithTopicFilter<ClientSubscription> clientSubscription : clientSubscriptions) {
-                topicSharedSubscriptions = addSubscription(clientSubscription, commonClientSubscriptions, topicSharedSubscriptions);
+            if (sharedSubscriptions != null) {
+                return new MsgSubscriptions(
+                        collectCommonSubscriptions(clientSubscriptions, senderClientId),
+                        sharedSubscriptions.getApplicationSubscriptions(),
+                        deviceSharedSubscriptionProcessor.getTargetSubscriptions(sharedSubscriptions.getDeviceSubscriptions(), publishMsgProto.getQos())
+                );
             }
-
-            SharedSubscriptions sharedSubscriptions = sharedSubscriptionCacheService.get(topicSharedSubscriptions);
-
-            return new MsgSubscriptions(
-                    collectCommonSubscriptions(commonClientSubscriptions, senderClientId),
-                    sharedSubscriptions == null ? null : sharedSubscriptions.getApplicationSubscriptions(),
-                    getTargetDeviceSharedSubscriptions(sharedSubscriptions, publishMsgProto.getQos())
-            );
-        } else {
-            return new MsgSubscriptions(
-                    collectCommonSubscriptions(clientSubscriptions, senderClientId),
-                    null,
-                    null
-            );
         }
+
+        return new MsgSubscriptions(collectCommonSubscriptions(clientSubscriptions, senderClientId));
     }
 
-    List<ValueWithTopicFilter<ClientSubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptions) {
+    List<ValueWithTopicFilter<EntitySubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
         if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
             int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
             if (availableTokens == 0) {
@@ -286,40 +200,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return clientSubscriptions;
     }
 
-    private Set<TopicSharedSubscription> addSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription,
-                                                         List<ValueWithTopicFilter<ClientSubscription>> commonClientSubscriptions,
-                                                         Set<TopicSharedSubscription> topicSharedSubscriptions) {
-        var topicFilter = clientSubscription.getTopicFilter();
-        var shareName = clientSubscription.getValue().getShareName();
-
-        if (!StringUtils.isEmpty(shareName)) {
-            topicSharedSubscriptions = initTopicSharedSubscriptionSetIfNull(topicSharedSubscriptions);
-            topicSharedSubscriptions.add(new TopicSharedSubscription(topicFilter, shareName));
-        } else {
-            commonClientSubscriptions.add(clientSubscription);
-        }
-        return topicSharedSubscriptions;
-    }
-
-    private List<Subscription> getTargetDeviceSharedSubscriptions(SharedSubscriptions sharedSubscriptions, int qos) {
-        if (sharedSubscriptions == null || CollectionUtils.isEmpty(sharedSubscriptions.getDeviceSubscriptions())) {
-            return null;
-        }
-        List<SharedSubscription> sharedSubscriptionList = toSharedSubscriptionList(sharedSubscriptions.getDeviceSubscriptions());
-        return collectOneSubscriptionFromEveryDeviceSharedSubscription(sharedSubscriptionList, qos);
-    }
-
-    List<SharedSubscription> toSharedSubscriptionList(Set<Subscription> sharedSubscriptions) {
-        return sharedSubscriptions.stream()
-                .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
-                .entrySet().stream()
-                .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
-    }
-
     private List<Subscription> collectCommonSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+            List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
 
         if (clientSubscriptionWithTopicFilterList.isEmpty()) {
             return null;
@@ -333,62 +215,8 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return msgSubscriptions;
     }
 
-    private List<Subscription> collectOneSubscriptionFromEveryDeviceSharedSubscription(List<SharedSubscription> sharedSubscriptions, int qos) {
-        List<Subscription> result = new ArrayList<>(sharedSubscriptions.size());
-        for (SharedSubscription sharedSubscription : sharedSubscriptions) {
-            result.add(getSubscription(sharedSubscription, qos));
-        }
-        return result;
-    }
-
-    private Subscription getSubscription(SharedSubscription sharedSubscription, int qos) {
-        Subscription anyActive = findAnyConnectedSubscription(sharedSubscription.getSubscriptions());
-        if (anyActive == null) {
-            log.info("[{}] No active subscription found for shared subscription - all are persisted and disconnected", sharedSubscription.getTopicSharedSubscription());
-            return createDummySubscription(sharedSubscription, qos);
-        } else {
-            SharedSubscriptionProcessingStrategy strategy = sharedSubscriptionProcessingStrategyFactory.newInstance();
-            return strategy.analyze(sharedSubscription);
-        }
-    }
-
-    Subscription findAnyConnectedSubscription(List<Subscription> subscriptions) {
-        if (CollectionUtils.isEmpty(subscriptions)) {
-            return null;
-        }
-        return subscriptions
-                .stream()
-                .filter(subscription -> subscription.getClientSessionInfo().isConnected())
-                .findAny()
-                .orElse(null);
-    }
-
-    private Subscription createDummySubscription(SharedSubscription sharedSubscription, int qos) {
-        return new Subscription(
-                sharedSubscription.getTopicSharedSubscription().getTopicFilter(),
-                qos,
-                createDummyClientSession(sharedSubscription),
-                sharedSubscription.getTopicSharedSubscription().getShareName(),
-                SubscriptionOptions.newInstance(),
-                -1
-        );
-    }
-
-    private ClientSessionInfo createDummyClientSession(SharedSubscription sharedSubscription) {
-        ClientInfo clientInfo = ClientSessionInfoFactory.getClientInfo(sharedSubscription.getTopicSharedSubscription().getKey());
-        return ClientSessionInfo.builder()
-                .connected(false)
-                .serviceId(serviceInfoProvider.getServiceId())
-                .clientId(clientInfo.getClientId())
-                .type(clientInfo.getType())
-                .clientIpAdr(clientInfo.getClientIpAdr())
-                .cleanStart(false)
-                .sessionExpiryInterval(1000)
-                .build();
-    }
-
     List<Subscription> collectSubscriptions(
-            List<ValueWithTopicFilter<ClientSubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
+            List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptionWithTopicFilterList, String senderClientId) {
         Map<String, Subscription> map = Maps.newHashMapWithExpectedSize(clientSubscriptionWithTopicFilterList.size());
 
         for (var clientSubsWithTopicFilter : clientSubscriptionWithTopicFilterList) {
@@ -417,13 +245,21 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
         return map.isEmpty() ? null : new ArrayList<>(map.values());
     }
 
-    private Subscription convertToSubscription(ValueWithTopicFilter<ClientSubscription> clientSubscription) {
+    private Subscription convertToSubscription(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
+        if (EntitySubscriptionType.INTEGRATION.equals(clientSubscription.getValue().getType())) {
+            return new Subscription(
+                    clientSubscription.getTopicFilter(),
+                    clientSubscription.getValue().getQos(),
+                    getIntegrationSessionInfo(clientSubscription),
+                    clientSubscription.getValue().getShareName(),
+                    clientSubscription.getValue().getOptions(),
+                    clientSubscription.getValue().getSubscriptionId()
+            );
+        }
         String clientId = clientSubscription.getValue().getClientId();
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Client session not found for existent client subscription.", clientId);
-            }
+            log.debug("[{}] Client session not found for existent client subscription.", clientId);
             return null;
         }
         return new Subscription(
@@ -435,23 +271,21 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
                 clientSubscription.getValue().getSubscriptionId());
     }
 
-    private boolean isNoLocalOptionMet(ValueWithTopicFilter<ClientSubscription> clientSubscriptionWithTopicFilter,
+    private IntegrationSessionInfo getIntegrationSessionInfo(ValueWithTopicFilter<EntitySubscription> clientSubscription) {
+        return new IntegrationSessionInfo(
+                clientSubscription.getValue().getClientId(),
+                downLinkProxy.getServiceInfoProvider().getServiceId()
+        );
+    }
+
+    private boolean isNoLocalOptionMet(ValueWithTopicFilter<EntitySubscription> clientSubscriptionWithTopicFilter,
                                        String senderClientId) {
-        return clientSubscriptionWithTopicFilter
-                .getValue()
-                .getOptions()
-                .isNoLocalOptionMet(
-                        clientSubscriptionWithTopicFilter.getValue().getClientId(),
-                        senderClientId
-                );
+        SubscriptionOptions options = clientSubscriptionWithTopicFilter.getValue().getOptions();
+        return options != null && options.isNoLocalOptionMet(clientSubscriptionWithTopicFilter.getValue().getClientId(), senderClientId);
     }
 
     Subscription getSubscriptionWithHigherQosAndAllSubscriptionIds(Subscription first, Subscription second) {
         return first.compareAndGetHigherQosAndAllSubscriptionIds(second);
-    }
-
-    private boolean isPersistentBySubInfo(Subscription subscription) {
-        return subscription.getClientSessionInfo().isPersistent() && subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
     private void deliver(PublishMsgProto publishMsgProto, Subscription subscription) {

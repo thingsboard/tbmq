@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,34 +14,38 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Component, forwardRef, input, model } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { QuickTimeInterval, QuickTimeIntervalTranslationMap } from '@shared/models/time/time.models';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatSelect } from '@angular/material/select';
+
+import { MatOption } from '@angular/material/core';
 
 @Component({
-  selector: 'tb-quick-time-interval',
-  templateUrl: './quick-time-interval.component.html',
-  styleUrls: ['./quick-time-interval.component.scss'],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => QuickTimeIntervalComponent),
-      multi: true
-    }
-  ]
+    selector: 'tb-quick-time-interval',
+    templateUrl: './quick-time-interval.component.html',
+    styleUrls: ['./quick-time-interval.component.scss'],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => QuickTimeIntervalComponent),
+            multi: true
+        }
+    ],
+    imports: [MatFormField, MatLabel, TranslateModule, MatSelect, FormsModule, MatOption]
 })
-export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor {
+export class QuickTimeIntervalComponent implements ControlValueAccessor {
 
   private allIntervals = Object.values(QuickTimeInterval);
 
   modelValue: QuickTimeInterval;
   timeIntervalTranslationMap = QuickTimeIntervalTranslationMap;
-
   rendered = false;
 
-  @Input() disabled: boolean;
-
-  @Input() onlyCurrentInterval = false;
+  disabled = model<boolean>();
+  readonly onlyCurrentInterval = input(false);
 
   private propagateChange = (_: any) => {};
 
@@ -49,13 +53,10 @@ export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor 
   }
 
   get intervals() {
-    if (this.onlyCurrentInterval) {
+    if (this.onlyCurrentInterval()) {
       return this.allIntervals.filter(interval => interval.startsWith('CURRENT_'));
     }
     return this.allIntervals;
-  }
-
-  ngOnInit(): void {
   }
 
   registerOnChange(fn: any): void {
@@ -66,7 +67,7 @@ export class QuickTimeIntervalComponent implements OnInit, ControlValueAccessor 
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.disabled.set(isDisabled);
   }
 
   writeValue(interval: QuickTimeInterval): void {

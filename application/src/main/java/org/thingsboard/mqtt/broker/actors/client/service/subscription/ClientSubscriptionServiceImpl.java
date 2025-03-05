@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -57,8 +58,9 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
     @Override
-    public void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions) {
-        this.clientSubscriptionsMap = new ConcurrentHashMap<>(clientTopicSubscriptions);
+    public void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions) {
+        this.clientSubscriptionsMap = new ConcurrentHashMap<>();
+        clientTopicSubscriptions.forEach((key, value) -> this.clientSubscriptionsMap.put(key.getId(), value));
         statsManager.registerClientSubscriptionsStats(clientSubscriptionsMap);
 
         log.info("Restoring persisted subscriptions for {} clients.", clientSubscriptionsMap.size());
@@ -161,6 +163,14 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     }
 
     @Override
+    public void clearSubscriptionsAndPersist(String clientId) {
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Cleared subscriptions", clientId),
+                t -> log.warn("[{}] Failed to clear subscriptions", clientId, t));
+        clearSubscriptionsAndPersist(clientId, callback);
+    }
+
+    @Override
     public void clearSubscriptionsAndPersist(String clientId, BasicCallback callback) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Clearing all subscriptions.", clientId);
@@ -200,6 +210,12 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
         return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
+    }
+
+    @Override
+    public Set<String> getIntegrationSubscriptions(String integrationId) {
+        Set<TopicSubscription> subscriptions = clientSubscriptionsMap.getOrDefault(integrationId, Collections.emptySet());
+        return subscriptions.stream().map(TopicSubscription::getTopicFilter).collect(Collectors.toSet());
     }
 
     @Override

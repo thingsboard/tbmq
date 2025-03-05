@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © 2016-2024 The Thingsboard Authors
+    Copyright © 2016-2025 The Thingsboard Authors
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,13 +15,15 @@
     limitations under the License.
 
 -->
-<div fxLayout="row" fxLayoutAlign="space-between center">
-  <section (click)="navigate()" [ngClass]="!disabled ? 'tb-title-link-active' : 'tb-title-link-disabled'">
-    <span>{{ title?.label | translate}}</span>
+<div class="flex flex-row items-center justify-between">
+  <section (click)="navigate()" [class]="!disabled() ? 'tb-title-link-active' : 'tb-title-link-disabled'">
+    <span>{{ title()?.label | translate}}</span>
   </section>
-  <section *ngIf="title?.docsLink">
-    <mat-icon class="home-page-material-icons" [matTooltip]="'help.goto-docs' | translate" (click)="gotoDocs()">
-      help_outline
-    </mat-icon>
-  </section>
+  @if (title()?.docsLink) {
+    <section>
+      <mat-icon class="home-page-material-icons" [matTooltip]="'help.goto-docs' | translate" (click)="gotoDocs()">
+        help_outline
+      </mat-icon>
+    </section>
+  }
 </div>

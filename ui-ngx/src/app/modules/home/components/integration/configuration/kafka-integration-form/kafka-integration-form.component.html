@@ -1,0 +1,216 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<section [formGroup]="kafkaIntegrationConfigForm">
+  <section formGroupName="clientConfiguration">
+    @if (!isNew) {
+      <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
+    }
+    <div class="flex flex-col">
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.bootstrap-servers</mat-label>
+        <input matInput formControlName="bootstrapServers" required>
+        @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipPosition="above"
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.topic</mat-label>
+        <input matInput formControlName="topic">
+        @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipPosition="above"
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.topic-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.key</mat-label>
+        <input matInput formControlName="key">
+        <mat-icon matSuffix class="cursor-pointer"
+                  matTooltipPosition="above"
+                  aria-hidden="false"
+                  aria-label="help-icon"
+                  color="primary"
+                  matTooltip="{{ 'integration.key-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.client-id-prefix</mat-label>
+        <input matInput formControlName="clientIdPrefix">
+        <mat-icon matSuffix class="cursor-pointer"
+                  matTooltipPosition="above"
+                  aria-hidden="false"
+                  aria-label="help-icon"
+                  color="primary"
+                  matTooltip="{{ 'integration.client-id-prefix-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+    </div>
+    <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
+    </ng-container>
+    <mat-expansion-panel class="configuration-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-description class="flex items-stretch justify-end" translate>
+          integration.advanced-settings
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.retries</mat-label>
+          <input type="number" step="1" min="0" matInput formControlName="retries">
+          @if (clientConfigurationFormGroup.get('retries').hasError('min')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.min-retries-message' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.batch-size-bytes</mat-label>
+          <input type="number" step="1" min="0" matInput formControlName="batchSize">
+          @if (clientConfigurationFormGroup.get('batchSize').hasError('min')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.min-batch-size-bytes-message' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.linger-ms</mat-label>
+          <input type="number" step="1" min="0" matInput formControlName="linger">
+          @if (clientConfigurationFormGroup.get('linger').hasError('min')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.min-linger-ms-message' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.buffer-memory-bytes</mat-label>
+          <input type="number" step="1" min="0" matInput formControlName="bufferMemory">
+          @if (clientConfigurationFormGroup.get('bufferMemory').hasError('min')) {
+            <mat-icon matSuffix
+                      matTooltipPosition="above"
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.min-buffer-memory-message' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.acks</mat-label>
+          <mat-select formControlName="acks" required>
+            @for (ackValue of ackValues; track ackValue) {
+              <mat-option [value]="ackValue">
+                {{ ackValue }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.compression</mat-label>
+          <mat-select formControlName="compression" required>
+            @for (value of compressionValues; track value) {
+              <mat-option [value]="value">
+                {{ value }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <div class="flex flex-col gap-4">
+          <section class="security-setting mat-padding">
+            <p translate>integration.other-properties</p>
+            <tb-key-val-map
+              class="security-setting-content"
+              isStrokedButton="true"
+              addText="integration.add-property"
+              noDataText="integration.no-properties"
+              formControlName="otherProperties">
+            </tb-key-val-map>
+          </section>
+          <section class="security-setting mat-padding">
+            <p translate>integration.kafka-headers</p>
+            <div class="flex flex-col gap-6">
+              <tb-key-val-map
+                class="security-setting-content"
+                isStrokedButton="true"
+                formControlName="kafkaHeaders">
+              </tb-key-val-map>
+              <mat-form-field class="mat-block flex-1" appearance="outline">
+                <mat-label translate>integration.charset-encoding</mat-label>
+                <mat-select formControlName="kafkaHeadersCharset">
+                  @for (charset of ToByteStandartCharsetTypesValues; track charset) {
+                    <mat-option [value]="charset">
+                      {{ ToByteStandartCharsetTypeTranslationMap.get(charset) | translate }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </section>
+          <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
+          </ng-container>
+        </div>
+        <!--<mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.key-serializer</mat-label>
+          <input required matInput formControlName="keySerializer">
+          @if (clientConfigurationFormGroup.get('keySerializer').hasError('required')) {
+            <mat-error>{{ 'integration.key-serializer-required' | translate }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field class="mat-block" appearance="outline">
+          <mat-label translate>integration.value-serializer</mat-label>
+          <input required matInput formControlName="valueSerializer">
+          @if (clientConfigurationFormGroup.get('valueSerializer').hasError('required')) {
+            <mat-error>{{ 'integration.value-serializer-required' | translate }}</mat-error>
+          }
+        </mat-form-field>-->
+      </ng-template>
+    </mat-expansion-panel>
+  </section>
+  <ng-template #topicFilters>
+    <section class="mb-6" [formGroup]="kafkaIntegrationConfigForm">
+      <section class="security-setting mat-padding">
+        <p translate>integration.topic-filters</p>
+        <tb-http-topic-filters [isEdit]="isEdit()" [integration]="integration()" formControlName="topicFilters">
+        </tb-http-topic-filters>
+      </section>
+    </section>
+  </ng-template>
+</section>

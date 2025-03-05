@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ActivatedRoute, ActivatedRouteSnapshot, Resolve, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import {
   cellWithIcon,
   DateEntityTableColumn,
@@ -57,7 +57,7 @@ import { Injectable } from '@angular/core';
 import { ConfigService } from '@core/http/config.service';
 
 @Injectable()
-export class ClientCredentialsTableConfigResolver implements Resolve<EntityTableConfig<ClientCredentials>> {
+export class ClientCredentialsTableConfigResolver {
 
   clientCredentialsFilterConfig: ClientCredentialsFilterConfig = {};
   private readonly config: EntityTableConfig<ClientCredentials> = new EntityTableConfig<ClientCredentials>();

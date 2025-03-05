@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { MatDialog } from '@angular/material/dialog';
-import { WsQoSTranslationMap } from '@shared/models/session.model';
+import { QosTranslation } from '@shared/models/session.model';
 import { isDefinedAndNotNull } from '@core/utils';
 import {
   isDefinedProps,
@@ -37,9 +37,9 @@ import {
 } from '@shared/models/ws-client.model';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import {
-  EventContentDialogV2ComponentDialogData,
-  EventContentDialogV2Component
-} from '@home/components/event/event-content-dialog-v2.component';
+  EventContentDialogComponentDialogData,
+  EventContentDialogComponent
+} from '@home/components/event/event-content-dialog.component';
 import {
   WsMessagePropertiesDialogComponent,
   WsMessagePropertiesDialogData
@@ -86,7 +86,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
       new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic,
         undefined, undefined, undefined, (entity) => entity.topic),
       new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50px', entity => entity.qos.toString(),
-        undefined, undefined, undefined, (entity) => this.translate.instant(WsQoSTranslationMap.get(entity.qos))),
+        undefined, undefined, undefined, (entity) => this.translate.instant(QosTranslation.get(entity.qos))),
       new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50px',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''
       ),
@@ -131,7 +131,7 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
     if ($event) {
       $event.stopPropagation();
     }
-    this.dialog.open<EventContentDialogV2Component, EventContentDialogV2ComponentDialogData>(EventContentDialogV2Component, {
+    this.dialog.open<EventContentDialogComponent, EventContentDialogComponentDialogData>(EventContentDialogComponent, {
       disableClose: false,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
       data: {

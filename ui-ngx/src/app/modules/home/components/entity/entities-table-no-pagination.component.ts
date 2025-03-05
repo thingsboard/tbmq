@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Directive, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Directive, OnInit, viewChild } from '@angular/core';
 import { PageLink } from '@shared/models/page/page-link';
 import { MatSort } from '@angular/material/sort';
 import { Observable } from 'rxjs';
@@ -27,7 +27,7 @@ import { MatTableDataSource } from '@angular/material/table';
 @Directive()
 export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implements OnInit, AfterViewInit {
 
-  @ViewChild(MatSort) sort: MatSort;
+  readonly sort = viewChild(MatSort);
 
   columns = [];
   dataSource: MatTableDataSource<T> = new MatTableDataSource();
@@ -102,17 +102,19 @@ export abstract class EntitiesTableHomeNoPagination<T extends BaseData> implemen
   }
 
   ngAfterViewInit(): void {
-    if (this.sort) {
-      this.sort.sortChange.subscribe(() => {
+    const sort = this.sort();
+    if (sort) {
+      sort.sortChange.subscribe(() => {
         this.dataSource = new MatTableDataSource(this.dataSource.data.sort(this.sortTable()));
       });
     }
   }
 
   private sortTable() {
-    if (this.sort?.direction) {
-      let direction = this.sort.direction === 'desc' ? -1 : 1;
-      let active = this.sort.active;
+    const sort = this.sort();
+    if (sort?.direction) {
+      let direction = sort.direction === 'desc' ? -1 : 1;
+      let active = sort.active;
       return function(a, b) {
         return ((a[active] < b[active]) ? -1 : (a[active] > b[active]) ? 1 : 0) * direction;
       };

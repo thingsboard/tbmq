@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 ///
 
 import { Component, OnDestroy, OnInit, Renderer2, ViewContainerRef } from '@angular/core';
-import { UntypedFormBuilder } from '@angular/forms';
+import { UntypedFormBuilder, FormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusTranslationMap, WebSocketConnection } from '@shared/models/ws-client.model';
@@ -23,11 +23,20 @@ import { TbPopoverService } from '@shared/components/popover.service';
 import { ShowConnectionLogsPopoverComponent } from '@home/pages/ws-client/connections/show-connection-logs-popover.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { isDefinedAndNotNull } from '@core/utils';
+import { TranslateModule } from '@ngx-translate/core';
+import { NgTemplateOutlet, LowerCasePipe } from '@angular/common';
+import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatIcon } from '@angular/material/icon';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 
 @Component({
-  selector: 'tb-connection-controller',
-  templateUrl: './connection-controller.component.html',
-  styleUrls: ['./connection-controller.component.scss']
+    selector: 'tb-connection-controller',
+    templateUrl: './connection-controller.component.html',
+    styleUrls: ['./connection-controller.component.scss'],
+    providers: [TbPopoverService],
+    imports: [TranslateModule, NgTemplateOutlet, MatButton, MatFormField, MatLabel, MatInput, FormsModule, MatIconButton, MatSuffix, MatIcon, LowerCasePipe, CdkOverlayOrigin]
 })
 export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
@@ -92,12 +101,11 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
     }
   }
 
-  showStatusLogs($event: Event, element: HTMLElement) {
+  showStatusLogs($event: Event, trigger: CdkOverlayOrigin) {
     if ($event) {
       $event.stopPropagation();
     }
     this.timeout = setTimeout(() => {
-      const trigger = element;
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {

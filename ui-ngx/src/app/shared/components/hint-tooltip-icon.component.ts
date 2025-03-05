@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,23 +14,22 @@
 /// limitations under the License.
 ///
 
-import { Component, HostBinding, Input } from '@angular/core';
-import { TooltipPosition } from '@angular/material/tooltip';
+import { Component, HostBinding, input } from '@angular/core';
+import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
+
+import { TbIconComponent } from './icon.component';
 
 @Component({
-  selector: '[tb-hint-tooltip-icon]',
-  templateUrl: './hint-tooltip-icon.component.html',
-  styleUrls: ['./hint-tooltip-icon.component.scss']
+    selector: '[tb-hint-tooltip-icon]',
+    templateUrl: './hint-tooltip-icon.component.html',
+    styleUrls: ['./hint-tooltip-icon.component.scss'],
+    imports: [TbIconComponent, MatTooltip]
 })
 export class HintTooltipIconComponent {
 
   @HostBinding('class.tb-hint-tooltip')
-  @Input('tb-hint-tooltip-icon') tooltipText: string;
+  readonly tooltipText = input<string>(undefined, { alias: "tb-hint-tooltip-icon" });
 
-  @Input()
-  tooltipPosition: TooltipPosition = 'right';
-
-  @Input()
-  hintIcon = 'info';
-
+  readonly tooltipPosition = input<TooltipPosition>('right');
+  readonly hintIcon = input('info');
 }

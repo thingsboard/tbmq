@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.adaptor;
 
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import io.netty.handler.codec.mqtt.MqttProperties;
 import io.netty.handler.codec.mqtt.MqttProperties.UserProperties;
@@ -28,14 +29,34 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
+import org.thingsboard.mqtt.broker.gen.queue.ConnectionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
+import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
+import org.thingsboard.mqtt.broker.gen.queue.SessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionOptionsProto;
+import org.thingsboard.mqtt.broker.gen.queue.SubscriptionsSourceProto;
+import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
+import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSource;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 import org.thingsboard.mqtt.broker.util.MqttQosUtil;
@@ -43,10 +64,10 @@ import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
@@ -55,9 +76,9 @@ public class ProtoConverter {
      * PUBLISH messages conversion
      */
 
-    public static QueueProtos.PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg) {
+    public static PublishMsgProto convertToPublishMsgProto(SessionInfo sessionInfo, PublishMsg publishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(publishMsg.getProperties());
-        QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto.Builder builder = PublishMsgProto.newBuilder()
                 .setPacketId(publishMsg.getPacketId())
                 .setTopicName(publishMsg.getTopicName())
                 .setQos(publishMsg.getQos())
@@ -68,7 +89,7 @@ public class ProtoConverter {
                 ByteString.copyFrom(publishMsg.getByteBuf().nioBuffer()) :
                 ByteString.copyFrom(publishMsg.getPayload()));
 
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(publishMsg.getProperties());
+        MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(publishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -76,9 +97,9 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    public static QueueProtos.PublishMsgProto convertToPublishMsgProto(DevicePublishMsg devicePublishMsg) {
+    public static PublishMsgProto convertToPublishMsgProto(DevicePublishMsg devicePublishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
-        QueueProtos.PublishMsgProto.Builder builder = QueueProtos.PublishMsgProto.newBuilder()
+        PublishMsgProto.Builder builder = PublishMsgProto.newBuilder()
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setTopicName(devicePublishMsg.getTopicName())
                 .setQos(devicePublishMsg.getQos())
@@ -86,7 +107,7 @@ public class ProtoConverter {
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setRetain(devicePublishMsg.isRetained());
 
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
+        MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -94,11 +115,11 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    public static QueueProtos.PublishMsgProto createReceiverPublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+    public static PublishMsgProto createReceiverPublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = MqttQosUtil.downgradeQos(subscription, publishMsgProto);
         var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
 
-        QueueProtos.MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
+        MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
 
         return publishMsgProto.toBuilder()
                 .setPacketId(0)
@@ -108,19 +129,19 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static QueueProtos.PublishMsgProto createReceiverPublishMsg(QueueProtos.PublishMsgProto publishMsgProto) {
+    public static PublishMsgProto createReceiverPublishMsg(PublishMsgProto publishMsgProto) {
         return publishMsgProto.toBuilder()
                 .setPacketId(0)
                 .build();
     }
 
-    public static QueueProtos.PublishMsgProto updatePublishMsg(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
+    public static PublishMsgProto updatePublishMsg(Subscription subscription, PublishMsgProto publishMsgProto) {
         var minQos = MqttQosUtil.downgradeQos(subscription, publishMsgProto);
         var retain = subscription.getOptions().isRetain(publishMsgProto.getRetain());
 
         if (minQos != publishMsgProto.getQos() || retain != publishMsgProto.getRetain() || subscription.isSubsIdsPresent()) {
 
-            QueueProtos.MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
+            MqttPropertiesProto mqttProperties = updateMqttPropsWithSubsIds(subscription, publishMsgProto);
 
             return publishMsgProto.toBuilder()
                     .setQos(minQos)
@@ -132,17 +153,17 @@ public class ProtoConverter {
         }
     }
 
-    private static QueueProtos.MqttPropertiesProto updateMqttPropsWithSubsIds(Subscription subscription, QueueProtos.PublishMsgProto publishMsgProto) {
-        QueueProtos.MqttPropertiesProto mqttProperties = publishMsgProto.getMqttProperties();
+    private static MqttPropertiesProto updateMqttPropsWithSubsIds(Subscription subscription, PublishMsgProto publishMsgProto) {
+        MqttPropertiesProto mqttProperties = publishMsgProto.getMqttProperties();
         if (subscription.isSubsIdsPresent()) {
-            QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = mqttProperties.toBuilder();
+            MqttPropertiesProto.Builder mqttPropertiesBuilder = mqttProperties.toBuilder();
             mqttPropertiesBuilder.addAllSubscriptionIds(subscription.getSubscriptionIds());
             mqttProperties = mqttPropertiesBuilder.build();
         }
         return mqttProperties;
     }
 
-    public static PublishMsg convertToPublishMsg(QueueProtos.PublishMsgProto msg, int packetId,
+    public static PublishMsg convertToPublishMsg(PublishMsgProto msg, int packetId,
                                                  int qos, boolean isDup, int subscriptionId) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(msg.getUserPropertiesList());
         if (msg.hasMqttProperties()) {
@@ -160,7 +181,7 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static DevicePublishMsg protoToDevicePublishMsg(String clientId, QueueProtos.PublishMsgProto publishMsgProto, TbQueueMsgHeaders headers) {
+    public static DevicePublishMsg protoToDevicePublishMsg(String clientId, PublishMsgProto publishMsgProto, TbQueueMsgHeaders headers) {
         MqttProperties mqttProperties = createMqttPropertiesWithUserPropsIfPresent(publishMsgProto.getUserPropertiesList());
         if (publishMsgProto.hasMqttProperties()) {
             addFromProtoToMqttProperties(publishMsgProto.getMqttProperties(), mqttProperties);
@@ -180,9 +201,9 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static QueueProtos.DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
+    public static DevicePublishMsgProto toDevicePublishMsgProto(DevicePublishMsg devicePublishMsg) {
         UserProperties userProperties = MqttPropertiesUtil.getUserProperties(devicePublishMsg.getProperties());
-        QueueProtos.DevicePublishMsgProto.Builder builder = QueueProtos.DevicePublishMsgProto.newBuilder()
+        DevicePublishMsgProto.Builder builder = DevicePublishMsgProto.newBuilder()
                 .setTime(devicePublishMsg.getTime())
                 .setPacketId(devicePublishMsg.getPacketId())
                 .setPayload(ByteString.copyFrom(devicePublishMsg.getPayload()))
@@ -193,7 +214,7 @@ public class ProtoConverter {
                 .addAllUserProperties(toUserPropertyProtos(userProperties))
                 .setRetain(devicePublishMsg.isRetained());
 
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
+        MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(devicePublishMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -201,7 +222,7 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    public static DevicePublishMsg protoToDevicePublishMsg(QueueProtos.DevicePublishMsgProto devicePublishMsgProto) {
+    public static DevicePublishMsg protoToDevicePublishMsg(DevicePublishMsgProto devicePublishMsgProto) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(devicePublishMsgProto.getUserPropertiesList());
         if (devicePublishMsgProto.hasMqttProperties()) {
             addFromProtoToMqttProperties(devicePublishMsgProto.getMqttProperties(), properties);
@@ -224,7 +245,7 @@ public class ProtoConverter {
      * Client sessions conversion
      */
 
-    public static ClientSessionInfo convertToClientSessionInfo(QueueProtos.ClientSessionInfoProto clientSessionProto) {
+    public static ClientSessionInfo convertToClientSessionInfo(ClientSessionInfoProto clientSessionProto) {
         return ClientSessionInfo.builder()
                 .connected(clientSessionProto.getConnected())
                 .serviceId(clientSessionProto.getSessionInfo().getServiceInfo().getServiceId())
@@ -240,26 +261,26 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static QueueProtos.ClientSessionInfoProto convertToClientSessionInfoProto(ClientSessionInfo clientSessionInfo) {
-        return QueueProtos.ClientSessionInfoProto.newBuilder()
+    public static ClientSessionInfoProto convertToClientSessionInfoProto(ClientSessionInfo clientSessionInfo) {
+        return ClientSessionInfoProto.newBuilder()
                 .setConnected(clientSessionInfo.isConnected())
                 .setSessionInfo(convertToSessionInfoProto(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo)))
                 .build();
     }
 
-    public static QueueProtos.SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
+    public static SessionInfoProto convertToSessionInfoProto(SessionInfo sessionInfo) {
         return sessionInfo.getSessionExpiryInterval() == -1 ?
                 getSessionInfoProto(sessionInfo) : getSessionInfoProtoWithSessionExpiryInterval(sessionInfo);
     }
 
-    public static QueueProtos.SessionInfoProto convertToSessionInfoProto(ClientSessionInfo clientSessionInfo) {
+    public static SessionInfoProto convertToSessionInfoProto(ClientSessionInfo clientSessionInfo) {
         return clientSessionInfo.getSessionExpiryInterval() == -1 ?
                 getSessionInfoProto(clientSessionInfo) : getSessionInfoProtoWithSessionExpiryInterval(clientSessionInfo);
     }
 
-    private static QueueProtos.SessionInfoProto getSessionInfoProto(SessionInfo sessionInfo) {
-        return QueueProtos.SessionInfoProto.newBuilder()
-                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
+    private static SessionInfoProto getSessionInfoProto(SessionInfo sessionInfo) {
+        return SessionInfoProto.newBuilder()
+                .setServiceInfo(ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
                 .setCleanStart(sessionInfo.isCleanStart())
@@ -268,9 +289,9 @@ public class ProtoConverter {
                 .build();
     }
 
-    private static QueueProtos.SessionInfoProto getSessionInfoProto(ClientSessionInfo clientSessionInfo) {
-        return QueueProtos.SessionInfoProto.newBuilder()
-                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(clientSessionInfo.getServiceId()).build())
+    private static SessionInfoProto getSessionInfoProto(ClientSessionInfo clientSessionInfo) {
+        return SessionInfoProto.newBuilder()
+                .setServiceInfo(ServiceInfo.newBuilder().setServiceId(clientSessionInfo.getServiceId()).build())
                 .setSessionIdMSB(clientSessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(clientSessionInfo.getSessionId().getLeastSignificantBits())
                 .setCleanStart(clientSessionInfo.isCleanStart())
@@ -279,9 +300,9 @@ public class ProtoConverter {
                 .build();
     }
 
-    private static QueueProtos.SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(SessionInfo sessionInfo) {
-        return QueueProtos.SessionInfoProto.newBuilder()
-                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
+    private static SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(SessionInfo sessionInfo) {
+        return SessionInfoProto.newBuilder()
+                .setServiceInfo(ServiceInfo.newBuilder().setServiceId(sessionInfo.getServiceId()).build())
                 .setSessionIdMSB(sessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(sessionInfo.getSessionId().getLeastSignificantBits())
                 .setCleanStart(sessionInfo.isCleanStart())
@@ -291,9 +312,9 @@ public class ProtoConverter {
                 .build();
     }
 
-    private static QueueProtos.SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(ClientSessionInfo clientSessionInfo) {
-        return QueueProtos.SessionInfoProto.newBuilder()
-                .setServiceInfo(QueueProtos.ServiceInfo.newBuilder().setServiceId(clientSessionInfo.getServiceId()).build())
+    private static SessionInfoProto getSessionInfoProtoWithSessionExpiryInterval(ClientSessionInfo clientSessionInfo) {
+        return SessionInfoProto.newBuilder()
+                .setServiceInfo(ServiceInfo.newBuilder().setServiceId(clientSessionInfo.getServiceId()).build())
                 .setSessionIdMSB(clientSessionInfo.getSessionId().getMostSignificantBits())
                 .setSessionIdLSB(clientSessionInfo.getSessionId().getLeastSignificantBits())
                 .setCleanStart(clientSessionInfo.isCleanStart())
@@ -303,7 +324,7 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static SessionInfo convertToSessionInfo(QueueProtos.SessionInfoProto sessionInfoProto) {
+    public static SessionInfo convertToSessionInfo(SessionInfoProto sessionInfoProto) {
         return SessionInfo.builder()
                 .serviceId(sessionInfoProto.getServiceInfo().getServiceId())
                 .sessionId(new UUID(sessionInfoProto.getSessionIdMSB(), sessionInfoProto.getSessionIdLSB()))
@@ -314,23 +335,23 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static QueueProtos.ClientInfoProto convertToClientInfoProto(ClientInfo clientInfo) {
-        return clientInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
+    public static ClientInfoProto convertToClientInfoProto(ClientInfo clientInfo) {
+        return clientInfo != null ? ClientInfoProto.newBuilder()
                 .setClientId(clientInfo.getClientId())
                 .setClientType(clientInfo.getType().toString())
                 .setClientIpAdr(ByteString.copyFrom(clientInfo.getClientIpAdr()))
-                .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
+                .build() : ClientInfoProto.getDefaultInstance();
     }
 
-    public static QueueProtos.ClientInfoProto convertToClientInfoProto(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo != null ? QueueProtos.ClientInfoProto.newBuilder()
+    public static ClientInfoProto convertToClientInfoProto(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo != null ? ClientInfoProto.newBuilder()
                 .setClientId(clientSessionInfo.getClientId())
                 .setClientType(clientSessionInfo.getType().toString())
                 .setClientIpAdr(ByteString.copyFrom(clientSessionInfo.getClientIpAdr()))
-                .build() : QueueProtos.ClientInfoProto.getDefaultInstance();
+                .build() : ClientInfoProto.getDefaultInstance();
     }
 
-    public static ClientInfo convertToClientInfo(QueueProtos.ClientInfoProto clientInfoProto) {
+    public static ClientInfo convertToClientInfo(ClientInfoProto clientInfoProto) {
         return clientInfoProto != null ? ClientInfo.builder()
                 .clientId(clientInfoProto.getClientId())
                 .type(ClientType.valueOf(clientInfoProto.getClientType()))
@@ -338,24 +359,24 @@ public class ProtoConverter {
                 .build() : null;
     }
 
-    public static QueueProtos.ConnectionInfoProto convertToConnectionInfoProto(ConnectionInfo connectionInfo) {
-        return connectionInfo != null ? QueueProtos.ConnectionInfoProto.newBuilder()
+    public static ConnectionInfoProto convertToConnectionInfoProto(ConnectionInfo connectionInfo) {
+        return connectionInfo != null ? ConnectionInfoProto.newBuilder()
                 .setConnectedAt(connectionInfo.getConnectedAt())
                 .setDisconnectedAt(connectionInfo.getDisconnectedAt())
                 .setKeepAlive(connectionInfo.getKeepAlive())
-                .build() : QueueProtos.ConnectionInfoProto.getDefaultInstance();
+                .build() : ConnectionInfoProto.getDefaultInstance();
     }
 
-    public static QueueProtos.ConnectionInfoProto convertToConnectionInfoProto(ClientSessionInfo clientSessionInfo) {
-        return clientSessionInfo != null ? QueueProtos.ConnectionInfoProto.newBuilder()
+    public static ConnectionInfoProto convertToConnectionInfoProto(ClientSessionInfo clientSessionInfo) {
+        return clientSessionInfo != null ? ConnectionInfoProto.newBuilder()
                 .setConnectedAt(clientSessionInfo.getConnectedAt())
                 .setDisconnectedAt(clientSessionInfo.getDisconnectedAt())
                 .setKeepAlive(clientSessionInfo.getKeepAlive())
-                .build() : QueueProtos.ConnectionInfoProto.getDefaultInstance();
+                .build() : ConnectionInfoProto.getDefaultInstance();
     }
 
 
-    private static ConnectionInfo convertToConnectionInfo(QueueProtos.ConnectionInfoProto connectionInfoProto) {
+    private static ConnectionInfo convertToConnectionInfo(ConnectionInfoProto connectionInfoProto) {
         return connectionInfoProto != null ? ConnectionInfo.builder()
                 .connectedAt(connectionInfoProto.getConnectedAt())
                 .disconnectedAt(connectionInfoProto.getDisconnectedAt())
@@ -363,10 +384,10 @@ public class ProtoConverter {
                 .build() : null;
     }
 
-    public static QueueProtos.DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId,
-                                                                                              boolean newSessionCleanStart,
-                                                                                              String reasonType) {
-        return QueueProtos.DisconnectClientCommandProto.newBuilder()
+    public static DisconnectClientCommandProto createDisconnectClientCommandProto(UUID sessionId,
+                                                                                  boolean newSessionCleanStart,
+                                                                                  String reasonType) {
+        return DisconnectClientCommandProto.newBuilder()
                 .setSessionIdMSB(sessionId.getMostSignificantBits())
                 .setSessionIdLSB(sessionId.getLeastSignificantBits())
                 .setNewSessionCleanStart(newSessionCleanStart)
@@ -374,7 +395,7 @@ public class ProtoConverter {
                 .build();
     }
 
-    public static ConnectionResponse toConnectionResponse(QueueProtos.ClientSessionEventResponseProto clientSessionEventResponseProto) {
+    public static ConnectionResponse toConnectionResponse(ClientSessionEventResponseProto clientSessionEventResponseProto) {
         return ConnectionResponse.builder()
                 .success(clientSessionEventResponseProto.getSuccess())
                 .sessionPresent(clientSessionEventResponseProto.getSessionPresent())
@@ -385,29 +406,37 @@ public class ProtoConverter {
      * Client subscriptions conversion
      */
 
-    public static QueueProtos.ClientSubscriptionsProto convertToClientSubscriptionsProto(Collection<TopicSubscription> topicSubscriptions) {
-        List<QueueProtos.TopicSubscriptionProto> topicSubscriptionsProto = topicSubscriptions.stream()
-                .map(topicSubscription -> topicSubscription.getShareName() == null ?
-                        getTopicSubscriptionProto(topicSubscription) :
-                        getTopicSubscriptionProtoWithShareName(topicSubscription))
-                .collect(Collectors.toList());
-        return QueueProtos.ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).build();
+    public static ClientSubscriptionsProto convertToClientSubscriptionsProto(Collection<TopicSubscription> topicSubscriptions) {
+        List<TopicSubscriptionProto> topicSubscriptionsProto = new ArrayList<>(topicSubscriptions.size());
+        SubscriptionsSourceProto source = SubscriptionsSourceProto.MQTT_CLIENT;
+        for (TopicSubscription topicSubscription : topicSubscriptions) {
+            if (topicSubscription instanceof IntegrationTopicSubscription) {
+                source = SubscriptionsSourceProto.INTEGRATION;
+            }
+            topicSubscriptionsProto.add(topicSubscription.getShareName() == null ?
+                    getTopicSubscriptionProto(topicSubscription) :
+                    getTopicSubscriptionProtoWithShareName(topicSubscription));
+        }
+        return ClientSubscriptionsProto.newBuilder().addAllSubscriptions(topicSubscriptionsProto).setSource(source).build();
     }
 
-    private static QueueProtos.SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {
-        return QueueProtos.SubscriptionOptionsProto.newBuilder()
+    private static SubscriptionOptionsProto prepareOptionsProto(TopicSubscription topicSubscription) {
+        if (topicSubscription.getOptions() == null) {
+            return SubscriptionOptionsProto.getDefaultInstance();
+        }
+        return SubscriptionOptionsProto.newBuilder()
                 .setNoLocal(topicSubscription.getOptions().isNoLocal())
                 .setRetainAsPublish(topicSubscription.getOptions().isRetainAsPublish())
                 .setRetainHandling(getRetainHandling(topicSubscription))
                 .build();
     }
 
-    private static QueueProtos.RetainHandling getRetainHandling(TopicSubscription topicSubscription) {
-        return QueueProtos.RetainHandling.forNumber(topicSubscription.getOptions().getRetainHandling().value());
+    private static RetainHandling getRetainHandling(TopicSubscription topicSubscription) {
+        return RetainHandling.forNumber(topicSubscription.getOptions().getRetainHandling().value());
     }
 
-    private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
-        QueueProtos.TopicSubscriptionProto.Builder builder = QueueProtos.TopicSubscriptionProto.newBuilder()
+    private static TopicSubscriptionProto getTopicSubscriptionProto(TopicSubscription topicSubscription) {
+        TopicSubscriptionProto.Builder builder = TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopicFilter())
                 .setOptions(prepareOptionsProto(topicSubscription));
@@ -415,8 +444,8 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    private static QueueProtos.TopicSubscriptionProto getTopicSubscriptionProtoWithShareName(TopicSubscription topicSubscription) {
-        QueueProtos.TopicSubscriptionProto.Builder builder = QueueProtos.TopicSubscriptionProto.newBuilder()
+    private static TopicSubscriptionProto getTopicSubscriptionProtoWithShareName(TopicSubscription topicSubscription) {
+        TopicSubscriptionProto.Builder builder = TopicSubscriptionProto.newBuilder()
                 .setQos(topicSubscription.getQos())
                 .setTopic(topicSubscription.getTopicFilter())
                 .setShareName(topicSubscription.getShareName())
@@ -425,32 +454,46 @@ public class ProtoConverter {
         return builder.build();
     }
 
-    private static void setSubscriptionIdIfPresent(TopicSubscription topicSubscription, QueueProtos.TopicSubscriptionProto.Builder builder) {
+    private static void setSubscriptionIdIfPresent(TopicSubscription topicSubscription, TopicSubscriptionProto.Builder builder) {
         if (topicSubscription.getSubscriptionId() != -1) {
             builder.setSubscriptionId(topicSubscription.getSubscriptionId());
         }
     }
 
-    public static Set<TopicSubscription> convertProtoToClientSubscriptions(QueueProtos.ClientSubscriptionsProto clientSubscriptionsProto) {
-        return clientSubscriptionsProto.getSubscriptionsList().stream()
-                .map(topicSubscriptionProto -> TopicSubscription.builder()
+    public static SourcedSubscriptions convertProtoToClientSubscriptions(ClientSubscriptionsProto clientSubscriptionsProto) {
+        SubscriptionsSource source = getSubscriptionsSource(clientSubscriptionsProto);
+        Set<TopicSubscription> subscriptions = Sets.newHashSetWithExpectedSize(clientSubscriptionsProto.getSubscriptionsCount());
+        for (TopicSubscriptionProto topicSubscriptionProto : clientSubscriptionsProto.getSubscriptionsList()) {
+            TopicSubscription subscription;
+            if (SubscriptionsSource.INTEGRATION.equals(source)) {
+                subscription = new IntegrationTopicSubscription(topicSubscriptionProto.getTopic());
+            } else {
+                subscription = ClientTopicSubscription.builder()
                         .qos(topicSubscriptionProto.getQos())
                         .topicFilter(topicSubscriptionProto.getTopic())
                         .shareName(topicSubscriptionProto.hasShareName() ? topicSubscriptionProto.getShareName() : null)
                         .options(createSubscriptionOptions(topicSubscriptionProto))
                         .subscriptionId(topicSubscriptionProto.hasSubscriptionId() ? topicSubscriptionProto.getSubscriptionId() : -1)
-                        .build())
-                .collect(Collectors.toSet());
+                        .build();
+            }
+            subscriptions.add(subscription);
+        }
+        return new SourcedSubscriptions(source, subscriptions);
     }
 
-    private static SubscriptionOptions createSubscriptionOptions(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+    private static SubscriptionsSource getSubscriptionsSource(ClientSubscriptionsProto clientSubscriptionsProto) {
+        var proto = clientSubscriptionsProto.hasSource() ? clientSubscriptionsProto.getSource() : SubscriptionsSourceProto.MQTT_CLIENT;
+        return SubscriptionsSource.valueOf(proto.name());
+    }
+
+    private static SubscriptionOptions createSubscriptionOptions(TopicSubscriptionProto topicSubscriptionProto) {
         return new SubscriptionOptions(
                 topicSubscriptionProto.getOptions().getNoLocal(),
                 topicSubscriptionProto.getOptions().getRetainAsPublish(),
                 getRetainHandling(topicSubscriptionProto));
     }
 
-    private static SubscriptionOptions.RetainHandlingPolicy getRetainHandling(QueueProtos.TopicSubscriptionProto topicSubscriptionProto) {
+    private static SubscriptionOptions.RetainHandlingPolicy getRetainHandling(TopicSubscriptionProto topicSubscriptionProto) {
         return SubscriptionOptions.RetainHandlingPolicy.valueOf(topicSubscriptionProto.getOptions().getRetainHandling().getNumber());
     }
 
@@ -458,7 +501,7 @@ public class ProtoConverter {
      * Retained messages conversion
      */
 
-    public static RetainedMsg convertProtoToRetainedMsg(QueueProtos.RetainedMsgProto retainedMsgProto) {
+    public static RetainedMsg convertProtoToRetainedMsg(RetainedMsgProto retainedMsgProto) {
         MqttProperties properties = createMqttPropertiesWithUserPropsIfPresent(retainedMsgProto.getUserPropertiesList());
         if (retainedMsgProto.hasMqttProperties()) {
             addFromProtoToMqttProperties(retainedMsgProto.getMqttProperties(), properties);
@@ -472,14 +515,14 @@ public class ProtoConverter {
         );
     }
 
-    public static QueueProtos.RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
-        QueueProtos.RetainedMsgProto.Builder builder = QueueProtos.RetainedMsgProto.newBuilder()
+    public static RetainedMsgProto convertToRetainedMsgProto(RetainedMsg retainedMsg) {
+        RetainedMsgProto.Builder builder = RetainedMsgProto.newBuilder()
                 .setPayload(ByteString.copyFrom(retainedMsg.getPayload()))
                 .setQos(retainedMsg.getQos())
                 .setTopic(retainedMsg.getTopic())
                 .addAllUserProperties(getUserPropertyProtos(retainedMsg.getProperties()))
                 .setCreatedTime(retainedMsg.getCreatedTime());
-        QueueProtos.MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(retainedMsg.getProperties());
+        MqttPropertiesProto.Builder mqttPropsProtoBuilder = getMqttPropsProtoBuilder(retainedMsg.getProperties());
         if (mqttPropsProtoBuilder != null) {
             builder.setMqttProperties(mqttPropsProtoBuilder);
         }
@@ -490,7 +533,7 @@ public class ProtoConverter {
      * MQTT properties conversion
      */
 
-    private static List<QueueProtos.UserPropertyProto> getUserPropertyProtos(MqttProperties properties) {
+    private static List<UserPropertyProto> getUserPropertyProtos(MqttProperties properties) {
         if (properties != null) {
             UserProperties userProperties = MqttPropertiesUtil.getUserProperties(properties);
             return toUserPropertyProtos(userProperties);
@@ -498,7 +541,7 @@ public class ProtoConverter {
         return Collections.emptyList();
     }
 
-    public static MqttProperties createMqttPropertiesWithUserPropsIfPresent(List<QueueProtos.UserPropertyProto> userPropertiesList) {
+    public static MqttProperties createMqttPropertiesWithUserPropsIfPresent(List<UserPropertyProto> userPropertiesList) {
         MqttProperties mqttProperties = new MqttProperties();
         if (CollectionUtils.isEmpty(userPropertiesList)) {
             return mqttProperties;
@@ -508,17 +551,17 @@ public class ProtoConverter {
         return mqttProperties;
     }
 
-    private static UserProperties protoToUserProperties(List<QueueProtos.UserPropertyProto> userPropertiesList) {
+    private static UserProperties protoToUserProperties(List<UserPropertyProto> userPropertiesList) {
         UserProperties userProperties = new UserProperties();
-        for (QueueProtos.UserPropertyProto userPropertyProto : userPropertiesList) {
+        for (UserPropertyProto userPropertyProto : userPropertiesList) {
             userProperties.add(userPropertyProto.getKey(), userPropertyProto.getValue());
         }
         return userProperties;
     }
 
-    private static List<QueueProtos.UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {
+    private static List<UserPropertyProto> toUserPropertyProtos(UserProperties userProperties) {
         if (userProperties != null) {
-            List<QueueProtos.UserPropertyProto> result = new ArrayList<>(userProperties.value().size());
+            List<UserPropertyProto> result = new ArrayList<>(userProperties.value().size());
             for (MqttProperties.StringPair stringPair : userProperties.value()) {
                 result.add(buildUserPropertyProto(stringPair));
             }
@@ -527,18 +570,18 @@ public class ProtoConverter {
         return Collections.emptyList();
     }
 
-    private static QueueProtos.UserPropertyProto buildUserPropertyProto(MqttProperties.StringPair stringPair) {
-        return QueueProtos.UserPropertyProto.newBuilder().setKey(stringPair.key).setValue(stringPair.value).build();
+    private static UserPropertyProto buildUserPropertyProto(MqttProperties.StringPair stringPair) {
+        return UserPropertyProto.newBuilder().setKey(stringPair.key).setValue(stringPair.value).build();
     }
 
-    static QueueProtos.MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
+    static MqttPropertiesProto.Builder getMqttPropsProtoBuilder(MqttProperties properties) {
         Integer payloadFormatIndicator = MqttPropertiesUtil.getPayloadFormatIndicatorValue(properties);
         String contentType = MqttPropertiesUtil.getContentTypeValue(properties);
         String responseTopic = MqttPropertiesUtil.getResponseTopicValue(properties);
         byte[] correlationData = MqttPropertiesUtil.getCorrelationDataValue(properties);
         List<Integer> subscriptionIds = MqttPropertiesUtil.getSubscriptionIds(properties);
         if (payloadFormatIndicator != null || contentType != null || responseTopic != null || correlationData != null || !subscriptionIds.isEmpty()) {
-            QueueProtos.MqttPropertiesProto.Builder mqttPropertiesBuilder = QueueProtos.MqttPropertiesProto.newBuilder();
+            MqttPropertiesProto.Builder mqttPropertiesBuilder = MqttPropertiesProto.newBuilder();
             if (payloadFormatIndicator != null) {
                 mqttPropertiesBuilder.setPayloadFormatIndicator(payloadFormatIndicator);
             }
@@ -559,7 +602,7 @@ public class ProtoConverter {
         return null;
     }
 
-    public static void addFromProtoToMqttProperties(QueueProtos.MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
+    public static void addFromProtoToMqttProperties(MqttPropertiesProto mqttPropertiesProto, MqttProperties properties) {
         if (mqttPropertiesProto.hasPayloadFormatIndicator()) {
             MqttPropertiesUtil.addPayloadFormatIndicatorToProps(properties, mqttPropertiesProto.getPayloadFormatIndicator());
         }
@@ -581,7 +624,7 @@ public class ProtoConverter {
      * Helper methods
      */
 
-    public static String getClientId(QueueProtos.PublishMsgProto publishMsgProto) {
+    public static String getClientId(PublishMsgProto publishMsgProto) {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 }

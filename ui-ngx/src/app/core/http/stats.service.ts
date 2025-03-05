@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -19,12 +19,9 @@ import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { isDefinedAndNotNull } from '@core/utils';
-import { AggregationType } from '@shared/models/time/time.models';
+import { AggregationType, Interval } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
-import { TimeseriesData } from '@shared/models/chart.model';
-
-export const chartKeysTotal = ['incomingMsgs', 'outgoingMsgs', 'droppedMsgs', 'sessions', 'subscriptions', 'processedBytes'];
-export const timeseriesDataLimit = 50000;
+import { CHART_ALL, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
 
 @Injectable({
   providedIn: 'root'
@@ -34,9 +31,9 @@ export class StatsService {
   constructor(private http: HttpClient) {
   }
 
-  public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = chartKeysTotal,
-                             limit: number = timeseriesDataLimit, agg: AggregationType = AggregationType.NONE, interval?: number,
-                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = false): Observable<TimeseriesData> {
+  public getEntityTimeseries(entityId: string, startTs: number, endTs: number, keys: Array<string> = CHART_ALL,
+                             limit: number = MAX_DATAPOINTS_LIMIT, agg: AggregationType = AggregationType.NONE, interval?: Interval,
+                             orderBy: Direction = Direction.DESC, useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/${encodeURIComponent(entityId)}/values?keys=${keys.join(',')}&startTs=${startTs}&endTs=${endTs}`;
     if (isDefinedAndNotNull(limit)) {
       url += `&limit=${limit}`;
@@ -60,8 +57,8 @@ export class StatsService {
     }));
   }
 
-  public getLatestTimeseries(entityId: string, keys: Array<string> = chartKeysTotal,
-                             useStrictDataTypes: boolean = false, config?: RequestConfig): Observable<TimeseriesData> {
+  public getLatestTimeseries(entityId: string, keys: Array<string> = CHART_ALL,
+                             useStrictDataTypes: boolean = true): Observable<TimeseriesData> {
     let url = `/api/timeseries/latest?entityId=${encodeURIComponent(entityId)}&keys=${keys.join(',')}`;
     if (isDefinedAndNotNull(useStrictDataTypes)) {
       url += `&useStrictDataTypes=${useStrictDataTypes}`;

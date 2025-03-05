@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +18,14 @@ package org.thingsboard.mqtt.broker.queue.provider;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
 import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaConsumerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.TbKafkaProducerTemplate;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.DisconnectClientCommandKafkaSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.queue.kafka.stats.TbKafkaConsumerStatsService;
-import org.thingsboard.mqtt.broker.queue.stats.ConsumerStatsManager;
-import org.thingsboard.mqtt.broker.queue.stats.ProducerStatsManager;
 import org.thingsboard.mqtt.broker.queue.util.QueueUtil;
 
 import java.util.Map;
@@ -42,16 +35,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KafkaDisconnectClientCommandQueueFactory extends AbstractQueueFactory implements DisconnectClientCommandQueueFactory {
 
-    private final TbKafkaConsumerSettings consumerSettings;
-    private final TbKafkaProducerSettings producerSettings;
     private final DisconnectClientCommandKafkaSettings disconnectClientCommandSettings;
-    private final TbQueueAdmin queueAdmin;
-    private final TbKafkaConsumerStatsService consumerStatsService;
-
-    @Autowired(required = false)
-    private ProducerStatsManager producerStatsManager;
-    @Autowired(required = false)
-    private ConsumerStatsManager consumerStatsManager;
 
     private Map<String, String> topicConfigs;
 
@@ -61,8 +45,8 @@ public class KafkaDisconnectClientCommandQueueFactory extends AbstractQueueFacto
     }
 
     @Override
-    public TbQueueProducer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createProducer(String serviceId) {
-        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
+    public TbQueueProducer<TbProtoQueueMsg<DisconnectClientCommandProto>> createProducer(String serviceId) {
+        TbKafkaProducerTemplate.TbKafkaProducerTemplateBuilder<TbProtoQueueMsg<DisconnectClientCommandProto>> producerBuilder = TbKafkaProducerTemplate.builder();
         producerBuilder.properties(producerSettings.toProps(disconnectClientCommandSettings.getAdditionalProducerConfig()));
         producerBuilder.clientId(kafkaPrefix + "disconnect-client-command-producer-" + serviceId);
         producerBuilder.topicConfigs(topicConfigs);
@@ -72,14 +56,14 @@ public class KafkaDisconnectClientCommandQueueFactory extends AbstractQueueFacto
     }
 
     @Override
-    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> createConsumer(String topic, String serviceId) {
-        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<QueueProtos.DisconnectClientCommandProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
+    public TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DisconnectClientCommandProto>> createConsumer(String topic, String serviceId) {
+        TbKafkaConsumerTemplate.TbKafkaConsumerTemplateBuilder<TbProtoQueueMsg<DisconnectClientCommandProto>> consumerBuilder = TbKafkaConsumerTemplate.builder();
         consumerBuilder.properties(consumerSettings.toProps(topic, disconnectClientCommandSettings.getAdditionalConsumerConfig()));
         consumerBuilder.topic(topic);
         consumerBuilder.topicConfigs(topicConfigs);
         consumerBuilder.clientId(kafkaPrefix + "disconnect-client-command-consumer-" + serviceId);
         consumerBuilder.groupId(kafkaPrefix + "disconnect-client-command-consumer-group-" + serviceId);
-        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), QueueProtos.DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
+        consumerBuilder.decoder(msg -> new TbProtoQueueMsg<>(msg.getKey(), DisconnectClientCommandProto.parseFrom(msg.getData()), msg.getHeaders()));
         consumerBuilder.admin(queueAdmin);
         consumerBuilder.statsService(consumerStatsService);
         consumerBuilder.statsManager(consumerStatsManager);

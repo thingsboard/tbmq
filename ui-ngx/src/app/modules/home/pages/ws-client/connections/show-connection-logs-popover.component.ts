@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -22,11 +22,17 @@ import { AppState } from '@core/core.state';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, ConnectionStatusLog, ConnectionStatusTranslationMap } from '@shared/models/ws-client.model';
 import { Subscription } from 'rxjs';
+import { TranslateModule } from '@ngx-translate/core';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { DatePipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
-  selector: 'tb-show-connection-logs-popover',
-  templateUrl: './show-connection-logs-popover.component.html',
-  styleUrls: ['./show-connection-logs-popover.component.scss']
+    selector: 'tb-show-connection-logs-popover',
+    templateUrl: './show-connection-logs-popover.component.html',
+    styleUrls: ['./show-connection-logs-popover.component.scss'],
+    imports: [TranslateModule, MatIconButton, MatIcon, MatTooltip, DatePipe]
 })
 export class ShowConnectionLogsPopoverComponent extends PageComponent implements OnDestroy, OnInit {
 

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
-import org.thingsboard.mqtt.broker.gen.queue.QueueProtos;
+import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.DevicePersistenceMsgQueueFactory;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
 
-    private final List<TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>>> consumers = new ArrayList<>();
+    private final List<TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>>> consumers = new ArrayList<>();
 
     private final DevicePersistenceMsgQueueFactory devicePersistenceMsgQueueFactory;
     private final DeviceMsgAcknowledgeStrategyFactory ackStrategyFactory;
@@ -85,19 +85,19 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
     public void startConsuming() {
         for (int i = 0; i < consumersCount; i++) {
             String consumerId = serviceInfoProvider.getServiceId() + "-" + i;
-            TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer = devicePersistenceMsgQueueFactory.createConsumer(consumerId);
+            TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer = devicePersistenceMsgQueueFactory.createConsumer(consumerId);
             consumers.add(consumer);
             consumer.subscribe();
             launchConsumer(consumerId, consumer);
         }
     }
 
-    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> consumer) {
+    private void launchConsumer(String consumerId, TbQueueConsumer<TbProtoQueueMsg<PublishMsgProto>> consumer) {
         DeviceProcessorStats stats = statsManager.createDeviceProcessorStats(consumerId);
         consumersExecutor.submit(() -> {
             while (!stopped) {
                 try {
-                    List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs = consumer.poll(pollDuration);
+                    List<TbProtoQueueMsg<PublishMsgProto>> msgs = consumer.poll(pollDuration);
                     if (msgs.isEmpty()) {
                         continue;
                     }
@@ -184,7 +184,7 @@ public class DeviceMsgQueueConsumerImpl implements DeviceMsgQueueConsumer {
         }
     }
 
-    private Map<String, ClientIdMessagesPack> toClientIdMsgsMap(List<TbProtoQueueMsg<QueueProtos.PublishMsgProto>> msgs) {
+    private Map<String, ClientIdMessagesPack> toClientIdMsgsMap(List<TbProtoQueueMsg<PublishMsgProto>> msgs) {
         var clientIdMessagesPackMap = new HashMap<String, ClientIdMessagesPack>();
         for (var msg : msgs) {
             String clientId = msg.getKey();

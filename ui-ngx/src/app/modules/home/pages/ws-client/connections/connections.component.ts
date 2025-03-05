@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -19,11 +19,18 @@ import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, WebSocketConnection } from '@shared/models/ws-client.model';
 import { Observable } from 'rxjs';
 import { ClientSessionService } from '@core/http/client-session.service';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIconButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { SelectConnectionComponent } from './select-connection.component';
+import { AsyncPipe } from '@angular/common';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-  selector: 'tb-connections',
-  templateUrl: './connections.component.html',
-  styleUrls: ['./connections.component.scss']
+    selector: 'tb-connections',
+    templateUrl: './connections.component.html',
+    styleUrls: ['./connections.component.scss'],
+    imports: [MatTooltip, MatIconButton, MatIcon, SelectConnectionComponent, AsyncPipe, TranslateModule]
 })
 export class ConnectionsComponent {
 

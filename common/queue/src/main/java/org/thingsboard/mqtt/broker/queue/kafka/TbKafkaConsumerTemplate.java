@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -36,6 +37,7 @@ import org.thingsboard.mqtt.broker.queue.stats.Timer;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +113,14 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
+    protected void doSubscribe(String topic, ConsumerRebalanceListener listener) {
+        if (createTopicIfNotExists) {
+            admin.createTopicIfNotExists(topic, topicConfigs);
+        }
+        consumer.subscribe(Collections.singletonList(topic), listener);
+    }
+
+    @Override
     protected void doAssignPartition(String topic, int partition) {
         if (createTopicIfNotExists) {
             admin.createTopicIfNotExists(topic, topicConfigs);
@@ -182,9 +192,19 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     }
 
     @Override
+    public Map<TopicPartition, Long> doGetEndOffset(Collection<TopicPartition> partitions) {
+        return consumer.endOffsets(partitions);
+    }
+
+    @Override
     public long doGetEndOffset(String topic, int partition) {
         TopicPartition topicPartition = newTopicPartition(topic, partition);
         return consumer.endOffsets(Collections.singletonList(topicPartition)).getOrDefault(topicPartition, 0L);
+    }
+
+    @Override
+    public long doGetPosition(String topic, int partition) {
+        return consumer.position(newTopicPartition(topic, partition));
     }
 
     @Override
@@ -208,5 +228,10 @@ public class TbKafkaConsumerTemplate<T extends TbQueueMsg> extends AbstractTbQue
     @Override
     public void doSeekToTheBeginning() {
         consumer.seekToBeginning(Collections.emptyList());
+    }
+
+    @Override
+    protected void doSeekToTheBeginning(Collection<TopicPartition> partitions) {
+        consumer.seekToBeginning(partitions);
     }
 }

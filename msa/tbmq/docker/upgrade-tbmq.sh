@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ source "${CONF_FOLDER}/${configfile}"
 
 echo "Starting TBMQ upgrade ..."
 
+# WARNING: The "exec" command replaces the shell process with the Java process.
+# This means no commands after this line will be executed.
+# If new commands need to be added after Java starts, please REMOVE "exec".
 exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                 -Dspring.jpa.hibernate.ddl-auto=none \
                 -Dinstall.upgrade=true \

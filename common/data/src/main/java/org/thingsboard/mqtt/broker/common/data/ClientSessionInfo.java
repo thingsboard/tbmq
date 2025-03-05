@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @EqualsAndHashCode
 @ToString
-public class ClientSessionInfo {
+public class ClientSessionInfo implements EntitySessionInfo {
 
     private final boolean connected;
     private final String serviceId;
@@ -42,6 +42,7 @@ public class ClientSessionInfo {
     private final long disconnectedAt;
     private final int keepAlive;
 
+    @Override
     public boolean isPersistent() {
         return safeGetSessionExpiryInterval() > 0 || isNotCleanSession();
     }

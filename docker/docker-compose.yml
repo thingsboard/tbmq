@@ -1,5 +1,5 @@
 #
-# Copyright © 2016-2024 The Thingsboard Authors
+# Copyright © 2016-2025 The Thingsboard Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,11 @@ services:
     image: "postgres:15"
     ports:
       - "5432"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     environment:
       POSTGRES_DB: thingsboard_mqtt_broker
       POSTGRES_PASSWORD: postgres
@@ -32,6 +37,11 @@ services:
     image: "bitnami/kafka:3.5.1"
     ports:
       - "9092"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "5"
     env_file:
       - kafka.env
     volumes:
@@ -84,6 +94,48 @@ services:
     depends_on:
       - postgres
       - kafka
+  tbmq-integration-executor1:
+    restart: always
+    container_name: "${TBMQ_IE_1_NAME}"
+    image: "${DOCKER_REPO}/${TBMQ_IE_DOCKER_NAME}:${TBMQ_VERSION}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "30"
+    environment:
+      TB_SERVICE_ID: tbmq-ie1
+      #JAVA_OPTS: "${JAVA_OPTS}"
+    env_file:
+      - tbmq-integration-executor.env
+    volumes:
+      - tbmq-ie-config:/config
+      - tbmq-ie1-logs:/var/log/tbmq-integration-executor
+    depends_on:
+      - kafka
+      - tbmq1
+      - tbmq2
+  tbmq-integration-executor2:
+    restart: always
+    container_name: "${TBMQ_IE_2_NAME}"
+    image: "${DOCKER_REPO}/${TBMQ_IE_DOCKER_NAME}:${TBMQ_VERSION}"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "30"
+    environment:
+      TB_SERVICE_ID: tbmq-ie2
+      #JAVA_OPTS: "${JAVA_OPTS}"
+    env_file:
+      - tbmq-integration-executor.env
+    volumes:
+      - tbmq-ie-config:/config
+      - tbmq-ie2-logs:/var/log/tbmq-integration-executor
+    depends_on:
+      - kafka
+      - tbmq1
+      - tbmq2
   haproxy:
     restart: always
     container_name: "${LOAD_BALANCER_NAME}"
@@ -125,4 +177,10 @@ volumes:
   tbmq-haproxy-letsencrypt:
     external: true
   tbmq-haproxy-certs-d:
+    external: true
+  tbmq-ie1-logs:
+    external: true
+  tbmq-ie2-logs:
+    external: true
+  tbmq-ie-config:
     external: true

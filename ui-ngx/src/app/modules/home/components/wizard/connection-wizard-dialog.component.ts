@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component, Inject, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { ChangeDetectorRef, Component, Inject, viewChild } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { FormBuilder, FormGroup, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
-import { MatStepper, StepperOrientation } from '@angular/material/stepper';
+import { MatStepper, StepperOrientation, MatStepperIcon, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
@@ -53,6 +53,26 @@ import { BasicClientCredentials } from '@home/pages/client-credentials/client-cr
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
 import { ConnectivitySettings } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
+import { MatToolbar } from '@angular/material/toolbar';
+import { TranslateModule } from '@ngx-translate/core';
+import { HelpComponent } from '@shared/components/help.component';
+import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
+import { MatProgressBar } from '@angular/material/progress-bar';
+import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { ClientCredentialsAutocompleteComponent } from '../client-credentials-templates/client-credentials-autocomplete.component';
+import { MatSelect } from '@angular/material/select';
+import { MatOption } from '@angular/material/core';
+import { LastWillComponent } from '../../pages/ws-client/connections/last-will.component';
+import { UserPropertiesComponent } from '../client-credentials-templates/user-properties.component';
+import { MatDivider } from '@angular/material/divider';
 
 export interface ConnectionDialogData {
   entity?: WebSocketConnection;
@@ -60,13 +80,14 @@ export interface ConnectionDialogData {
 }
 
 @Component({
-  selector: 'tb-connection-wizard',
-  templateUrl: './connection-wizard-dialog.component.html',
-  styleUrls: ['./connection-wizard-dialog.component.scss']
+    selector: 'tb-connection-wizard',
+    templateUrl: './connection-wizard-dialog.component.html',
+    styleUrls: ['./connection-wizard-dialog.component.scss'],
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 
-  @ViewChild('addConnectionWizardStepper', {static: true}) addConnectionWizardStepper: MatStepper;
+  readonly addConnectionWizardStepper = viewChild<MatStepper>('addConnectionWizardStepper');
 
   connectionFormGroup: UntypedFormGroup;
   connectionAdvancedFormGroup: UntypedFormGroup;
@@ -124,6 +145,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private breakpointObserver: BreakpointObserver,
               private settingsService: SettingsService,
               private fb: FormBuilder,
+              private cd: ChangeDetectorRef,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
     super(store, router, dialogRef);
     this.connection = this.data.entity;
@@ -317,11 +339,11 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   previousStep(): void {
-    this.addConnectionWizardStepper.previous();
+    this.addConnectionWizardStepper().previous();
   }
 
   nextStep(): void {
-    this.addConnectionWizardStepper.next();
+    this.addConnectionWizardStepper().next();
   }
 
   getFormLabel(index: number): string {
@@ -338,7 +360,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   get maxStepperIndex(): number {
-    return this.addConnectionWizardStepper?._steps?.length - 1;
+    return this.addConnectionWizardStepper()?._steps?.length - 1;
   }
 
   save(): void {
@@ -380,7 +402,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       catchError(e => {
-        this.addConnectionWizardStepper.selectedIndex = 0;
+        this.addConnectionWizardStepper().selectedIndex = 0;
         return throwError(e);
       })
     );
@@ -441,10 +463,10 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   allValid(): boolean {
-    return !this.addConnectionWizardStepper.steps.find((item, index) => {
+    return !this.addConnectionWizardStepper().steps.find((item, index) => {
       if (item.stepControl.invalid) {
         item.interacted = true;
-        this.addConnectionWizardStepper.selectedIndex = index;
+        this.addConnectionWizardStepper().selectedIndex = index;
         return true;
       } else {
         return false;

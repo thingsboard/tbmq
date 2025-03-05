@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.exception.SubscriptionTrieClearException;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
-import org.thingsboard.mqtt.broker.service.subscription.ClientSubscription;
+import org.thingsboard.mqtt.broker.service.subscription.EntitySubscription;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionTrie;
+import org.thingsboard.mqtt.broker.service.subscription.integration.IntegrationSubscription;
 
 import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -39,7 +42,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(MockitoJUnitRunner.class)
 public class SubscriptionServiceImplTest {
 
-    SubscriptionTrie<ClientSubscription> subscriptionTrie;
+    SubscriptionTrie<EntitySubscription> subscriptionTrie;
     StatsManager statsManager;
     SubscriptionService subscriptionService;
 
@@ -55,10 +58,19 @@ public class SubscriptionServiceImplTest {
     @Test
     public void givenClientTopicSubscriptions_whenSubscribe_thenOk() {
         subscriptionService.subscribe("clientId", Set.of(
-                new TopicSubscription("topic1", 1),
-                new TopicSubscription("topic2", 2)
+                new ClientTopicSubscription("topic1", 1),
+                new ClientTopicSubscription("topic2", 2)
         ));
         verify(subscriptionTrie, times(2)).put(any(), any());
+    }
+
+    @Test
+    public void givenIntegrationTopicSubscriptions_whenSubscribe_thenOk() {
+        subscriptionService.subscribe("clientId", Set.of(
+                new IntegrationTopicSubscription("topic1")
+        ));
+        IntegrationSubscription value = new IntegrationSubscription("clientId");
+        verify(subscriptionTrie, times(1)).put(eq("topic1"), eq(value));
     }
 
     @Test

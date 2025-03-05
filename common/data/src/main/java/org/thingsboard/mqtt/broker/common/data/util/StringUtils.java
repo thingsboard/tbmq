@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static org.apache.commons.lang3.StringUtils.repeat;
 
@@ -192,5 +193,16 @@ public class StringUtils {
         return encoder.encodeToString(bytes);
     }
 
+    public static String truncate(String string, int maxLength) {
+        return truncate(string, maxLength, n -> "...[truncated " + n + " symbols]");
+    }
+
+    public static String truncate(String string, int maxLength, Function<Integer, String> truncationMarkerFunc) {
+        if (string == null || maxLength <= 0 || string.length() <= maxLength) {
+            return string;
+        }
+        int truncatedSymbols = string.length() - maxLength;
+        return string.substring(0, maxLength) + truncationMarkerFunc.apply(truncatedSymbols);
+    }
 }
 

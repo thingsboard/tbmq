@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.service.provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 
 import java.util.List;
 
@@ -50,5 +50,9 @@ public abstract class AbstractServiceProvider {
         }
         log.info("[{}] Could not find all service ids, proceeding with {} task!", serviceId, logMsg);
         return true;
+    }
+
+    protected boolean isCurrentNodeShouldCleanUpEvents() {
+        return isThisNodeResponsibleForTask(getServiceId(), "events cleanup");
     }
 }

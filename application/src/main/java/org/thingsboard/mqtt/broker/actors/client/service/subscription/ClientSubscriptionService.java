@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +26,7 @@ import java.util.Set;
 
 public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
-    void init(Map<String, Set<TopicSubscription>> clientTopicSubscriptions);
+    void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions);
 
     void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);
 
@@ -38,6 +39,8 @@ public interface ClientSubscriptionService extends ClientSubscriptionCache {
     void unsubscribeAndPersist(String clientId, Collection<String> topicFilters, BasicCallback callback);
 
     void unsubscribeInternally(String clientId, Collection<String> topicFilters);
+
+    void clearSubscriptionsAndPersist(String clientId);
 
     void clearSubscriptionsAndPersist(String clientId, BasicCallback callback);
 

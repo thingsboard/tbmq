@@ -1,5 +1,5 @@
 /**
- * Copyright © 2016-2024 The Thingsboard Authors
+ * Copyright © 2016-2025 The Thingsboard Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 public class Validator {
 
@@ -59,6 +60,19 @@ public class Validator {
     public static void validateId(UUID id, String errorMessage) {
         if (id == null) {
             throw new IncorrectParameterException(errorMessage);
+        }
+    }
+
+    /**
+     * This method validate <code>UUID</code> id. If id is null than throw
+     * <code>IncorrectParameterException</code> exception
+     *
+     * @param id                    the id
+     * @param errorMessageFunction  the error message function for exception that applies id
+     */
+    public static void validateId(UUID id, Function<UUID, String> errorMessageFunction) {
+        if (id == null) {
+            throw new IncorrectParameterException(errorMessageFunction.apply(id));
         }
     }
 

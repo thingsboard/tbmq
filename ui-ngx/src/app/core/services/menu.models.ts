@@ -1,5 +1,5 @@
 ///
-/// Copyright © 2016-2024 The Thingsboard Authors
+/// Copyright © 2016-2025 The Thingsboard Authors
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -27,4 +27,28 @@ export interface MenuSection {
   pages?: Array<MenuSection>;
   isNew?: boolean;
   opened?: boolean;
+}
+
+export enum MenuId {
+  home = 'home',
+  sessions = 'sessions',
+  subscriptions = 'subscriptions',
+  client_credentials = 'client_credentials',
+  unauthorized_clients = 'unauthorized_clients',
+  web_socket_client = 'web_socket_client',
+  retained_messages = 'retained_messages',
+  shared_subscriptions_management = 'shared_subscriptions_management',
+  shared_subscriptions = 'shared_subscriptions',
+  shared_subscriptions_application = 'shared_subscriptions_application',
+  kafka_management = 'kafka_management',
+  kafka_topics = 'kafka_topics',
+  kafka_consumer_groups = 'kafka_consumer_groups',
+  kafka_brokers = 'kafka_brokers',
+  monitoring = 'monitoring',
+  integrations = 'integrations',
+  users = 'users',
+  mail_server = 'mail_server',
+  system_settings = 'system_settings',
+  system_settings_general = 'system_settings_general',
+  system_settings_security = 'system_settings_security',
 }
