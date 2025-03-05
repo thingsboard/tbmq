@@ -111,8 +111,8 @@ public class MqttIntegration extends AbstractIntegration {
 
     @Override
     public void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
-        client.publish(config.getTopicName(), Unpooled.wrappedBuffer(constructValue(msg).getBytes(StandardCharsets.UTF_8)),
-                        MqttQoS.valueOf(config.getQos()), config.isRetained())
+        client.publish(getMsgTopicName(msg), Unpooled.wrappedBuffer(constructValue(msg).getBytes(StandardCharsets.UTF_8)),
+                        MqttQoS.valueOf(getMsgQos(msg)), config.isRetained())
                 .addListener(future -> {
                             if (future.isSuccess()) {
                                 log.debug("[{}][{}] processPublish success {}", getId(), getName(), config.getTopicName());
@@ -126,6 +126,14 @@ public class MqttIntegration extends AbstractIntegration {
                             }
                         }
                 );
+    }
+
+    private String getMsgTopicName(PublishIntegrationMsgProto msg) {
+        return config.isUseMsgTopicName() ? msg.getPublishMsgProto().getTopicName() : config.getTopicName();
+    }
+
+    private int getMsgQos(PublishIntegrationMsgProto msg) {
+        return config.isUseMsgQoS() ? msg.getPublishMsgProto().getQos() : config.getQos();
     }
 
     private UUID getId() {
