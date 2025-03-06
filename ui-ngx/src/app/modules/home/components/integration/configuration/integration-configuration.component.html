@@ -22,8 +22,7 @@
         [integration]="integration()"
         [isEdit]="isEdit()"
         [executeRemotelyTemplate]="executeRemotelyTemplate()"
-        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
-        [allowLocalNetwork]="allowLocalNetwork()">
+        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()">
       </tb-http-integration-form>
     }
     @case (integrationTypes.MQTT) {
@@ -31,8 +30,7 @@
         [integration]="integration()"
         [isEdit]="isEdit()"
         [executeRemotelyTemplate]="executeRemotelyTemplate()"
-        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
-        [allowLocalNetwork]="allowLocalNetwork()">
+        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()">
       </tb-mqtt-integration-form>
     }
     @case (integrationTypes.KAFKA) {
@@ -40,12 +38,11 @@
         [integration]="integration()"
         [isEdit]="isEdit()"
         [executeRemotelyTemplate]="executeRemotelyTemplate()"
-        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()"
-        [allowLocalNetwork]="allowLocalNetwork()">
+        [genericAdditionalInfoTemplate]="genericAdditionalInfoTemplate()">
       </tb-kafka-integration-form>
     }
-  @default {
-    Not Found!!
-  }
+    @default {
+      Not Found!!
+    }
 }
 </section>

@@ -34,7 +34,6 @@ import {
   ToByteStandartCharsetTypes,
   ToByteStandartCharsetTypeTranslations
 } from '@shared/models/integration.models';
-import { privateNetworkAddressValidator } from '@home/components/integration/integration.models';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { NgTemplateOutlet } from '@angular/common';
@@ -131,18 +130,15 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
         kafkaHeadersCharset: ['UTF-8', []],
       })
     });
-    this.kafkaIntegrationConfigForm.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.updateModels(this.kafkaIntegrationConfigForm.getRawValue());
-    });
-    this.updateModels(this.kafkaIntegrationConfigForm.getRawValue());
+    this.kafkaIntegrationConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateModels(this.kafkaIntegrationConfigForm.getRawValue()));
   }
 
   writeValue(value: KafkaIntegration) {
     if (isDefinedAndNotNull(value?.clientConfiguration)) {
       this.isNew = false;
-      this.kafkaIntegrationConfigForm.reset(value);
+      this.kafkaIntegrationConfigForm.reset(value, {emitEvent: false});
     } else {
       this.isNew = true;
       this.propagateChangePending = true;
@@ -181,14 +177,5 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
     return this.kafkaIntegrationConfigForm.valid ? null : {
       kafkaIntegrationConfigForm: {valid: false}
     };
-  }
-
-  updatedValidationPrivateNetwork() {
-    if (this.allowLocalNetwork) {
-      this.clientConfigurationFormGroup.get('bootstrapServers').removeValidators(privateNetworkAddressValidator);
-    } else {
-      this.clientConfigurationFormGroup.get('bootstrapServers').addValidators(privateNetworkAddressValidator);
-    }
-    this.clientConfigurationFormGroup.get('bootstrapServers').updateValueAndValidity({emitEvent: false});
   }
 }

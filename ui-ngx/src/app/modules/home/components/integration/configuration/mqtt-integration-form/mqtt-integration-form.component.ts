@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, input, OnInit } from '@angular/core';
+import { Component, forwardRef, input, OnInit } from '@angular/core';
 import {
   ControlValueAccessor,
   UntypedFormBuilder,
@@ -98,7 +98,7 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     multi: true,
   }]
 })
-export class MqttIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator, OnInit, AfterViewInit {
+export class MqttIntegrationFormComponent extends IntegrationForm implements ControlValueAccessor, Validator, OnInit {
 
   integration = input<Integration>();
   isEdit = input<boolean>();
@@ -142,17 +142,10 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     this.initFormListeners();
   }
 
-  ngAfterViewInit() {
-    if (this.isNew) {
-      this.clientConfigurationFormGroup.get('topicName').disable();
-      this.clientConfigurationFormGroup.get('qos').disable();
-    }
-  }
-
   writeValue(value: MqttIntegration) {
     if (isDefinedAndNotNull(value?.clientConfiguration)) {
       this.isNew = false;
-      this.mqttIntegrationConfigForm.reset(value);
+      this.mqttIntegrationConfigForm.reset(value, {emitEvent: false});
       this.updateView(value);
     } else {
       this.isNew = true;
@@ -210,6 +203,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
       });
 
     this.clientConfigurationFormGroup.get('useMsgQoS').valueChanges
+      .pipe(takeUntil(this.destroy$))
       .subscribe((value) => {
         if (!this.disabled) {
           if (value) {
@@ -217,11 +211,12 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
           } else {
             this.clientConfigurationFormGroup.get('qos').enable({emitEvent: false});
           }
-          this.clientConfigurationFormGroup.get('qos').updateValueAndValidity({emitEvent: false});
+          this.clientConfigurationFormGroup.get('qos').updateValueAndValidity();
         }
       });
 
     this.clientConfigurationFormGroup.get('useMsgTopicName').valueChanges
+      .pipe(takeUntil(this.destroy$))
       .subscribe((value) => {
         if (!this.disabled) {
           if (value) {
@@ -230,9 +225,16 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
             this.clientConfigurationFormGroup.get('topicName').enable({emitEvent: false});
             this.clientConfigurationFormGroup.get('topicName').setValidators(Validators.required);
           }
-          this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity({emitEvent: false});
+          this.clientConfigurationFormGroup.get('topicName').updateValueAndValidity();
         }
       });
+
+    setTimeout(() => {
+      if (this.isNew) {
+        this.clientConfigurationFormGroup.get('topicName').disable();
+        this.clientConfigurationFormGroup.get('qos').disable();
+      }
+    }, 0);
   }
 
   private updateView(value: MqttIntegration) {

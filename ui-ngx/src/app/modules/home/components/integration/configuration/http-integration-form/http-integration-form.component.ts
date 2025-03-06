@@ -28,7 +28,6 @@ import {
 import { baseUrl, isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { HttpIntegration, HttpRequestType, Integration } from '@shared/models/integration.models';
-import { privateNetworkAddressValidator } from '@home/components/integration/integration.models';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -122,14 +121,10 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
   }
 
   ngOnInit() {
-    const restEndpointUrlValidators = [Validators.required];
-    if (!this.allowLocalNetwork) {
-      restEndpointUrlValidators.push(privateNetworkAddressValidator);
-    }
     this.baseHttpIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
-        restEndpointUrl: [baseUrl(), restEndpointUrlValidators],
+        restEndpointUrl: [baseUrl(), Validators.required],
         requestMethod: [HttpRequestType.POST],
         headers: [{'Content-Type': 'application/json'}, Validators.required],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
@@ -140,16 +135,12 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
         sendBinaryOnParseFailure: [true, []],
       })
     });
-    this.clientConfigurationFormGroup.get('restEndpointUrl').valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe();
-    this.baseHttpIntegrationConfigForm.valueChanges.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(() => {
-      this.updateModels(this.baseHttpIntegrationConfigForm.getRawValue());
-    });
-    this.clientConfigurationFormGroup.get('payloadContentType')
-      .valueChanges.subscribe(value => this.isBinaryContentType = value === ContentType.BINARY);
+    this.baseHttpIntegrationConfigForm.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateModels(this.baseHttpIntegrationConfigForm.getRawValue()));
+    this.clientConfigurationFormGroup.get('payloadContentType').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.isBinaryContentType = value === ContentType.BINARY);
   }
 
   writeValue(value: HttpIntegration) {
@@ -194,14 +185,5 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
     return this.baseHttpIntegrationConfigForm.valid ? null : {
       baseHttpIntegrationConfigForm: {valid: false}
     };
-  }
-
-  updatedValidationPrivateNetwork() {
-    if (this.allowLocalNetwork) {
-      this.clientConfigurationFormGroup?.get('restEndpointUrl').removeValidators(privateNetworkAddressValidator);
-    } else {
-      this.clientConfigurationFormGroup?.get('restEndpointUrl').addValidators(privateNetworkAddressValidator);
-    }
-    this.clientConfigurationFormGroup?.get('restEndpointUrl').updateValueAndValidity({emitEvent: false});
   }
 }

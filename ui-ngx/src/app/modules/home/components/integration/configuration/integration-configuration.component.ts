@@ -76,7 +76,6 @@ export class IntegrationConfigurationComponent implements ControlValueAccessor, 
   readonly genericAdditionalInfoTemplate = input<TemplateRef<any>>();
   readonly executeRemotelyTemplate = input<TemplateRef<any>>();
   readonly integrationType = input<IntegrationType>();
-  readonly allowLocalNetwork = input(true);
   readonly integration = input<Integration>();
   readonly isEdit = input<boolean>();
   disabled = model<boolean>();
