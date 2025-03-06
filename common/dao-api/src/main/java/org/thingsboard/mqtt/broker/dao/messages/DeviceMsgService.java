@@ -40,14 +40,4 @@ public interface DeviceMsgService {
 
     CompletionStage<String> saveLastPacketId(String clientId, int lastPacketId);
 
-    /**
-     * Imports data from the CSV file.
-     *
-     * This method is used exclusively by the upgrade script to import data into the system.
-     * It is marked as deprecated and is scheduled for removal in a future major release.
-     *
-     */
-    @Deprecated(forRemoval = true, since = "2.0.0")
-    void importFromCsvFile(Path filePath);
-
 }

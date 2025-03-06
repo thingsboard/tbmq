@@ -23,7 +23,6 @@ import io.netty.handler.timeout.ReadTimeoutException;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.binary.Base64;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -49,6 +48,7 @@ import reactor.netty.resources.ConnectionProvider;
 import javax.net.ssl.SSLException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -286,7 +286,7 @@ public class TbHttpClient {
         if (CredentialsType.BASIC == credentials.getType()) {
             BasicCredentials basicCredentials = (BasicCredentials) credentials;
             String authString = basicCredentials.getUsername() + ":" + basicCredentials.getPassword();
-            String encodedAuthString = new String(Base64.encodeBase64(authString.getBytes(StandardCharsets.UTF_8)));
+            String encodedAuthString = new String(Base64.getEncoder().encode(authString.getBytes(StandardCharsets.UTF_8)));
             headers.add("Authorization", "Basic " + encodedAuthString);
         }
     }

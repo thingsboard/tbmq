@@ -20,25 +20,13 @@ import io.lettuce.core.RedisNoScriptException;
 import io.lettuce.core.ScriptOutputType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.LettuceConnectionManager;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
-import org.thingsboard.mqtt.broker.common.util.DevicePublishMsgUtil;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -46,23 +34,16 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.function.Consumer;
 
 @Slf4j
 @Service
 public class DeviceMsgServiceImpl implements DeviceMsgService {
-
-    private static final int IMPORT_TO_REDIS_BATCH_SIZE = 1000;
-
-    private static final CSVFormat IMPORT_CSV_FORMAT = CSVFormat.Builder.create()
-            .setHeader().setSkipHeaderRecord(true).build();
 
     private static final String ADD_MESSAGES_SCRIPT_SHA = "b871298e156d1e8490eef02fdc96cc28d4442e36";
     private static final String GET_MESSAGES_SCRIPT_SHA = "e083e5645a5f268448aca2ec1d3150ee6de510ef";
     private static final String REMOVE_MESSAGES_SCRIPT_SHA = "efd7dd0e8b3ba4862b53691798fd5ff1f8f6e629";
     private static final String REMOVE_MESSAGE_SCRIPT_SHA = "af40a579a941a140cace4e5243fc0921a4c7b4b0";
     private static final String UPDATE_PACKET_TYPE_SCRIPT_SHA = "86164ab58880b91c4aee396bb5701fd6af1b0258";
-    private static final String MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA = "76ea84e42d6ab98e646ef8f88b99efd568721926";
 
     // TODO: consider why we set score = lastPacketId if set is empty instead of set it to 0.
     private static final String ADD_MESSAGES_SCRIPT = """
@@ -181,42 +162,6 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             redis.call('SET', msgKey, updatedMsgJson)
             return "OK"
             """;
-    private static final String MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT = """
-            local messagesKey = KEYS[1]
-            local lastPacketIdKey = KEYS[2]
-            local messages = cjson.decode(ARGV[1])
-            local defaultTtl = tonumber(ARGV[2])
-            local lastPacketId = 0
-            
-            -- Get the current maximum score in the sorted set
-            local maxScoreElement = redis.call('ZRANGE', messagesKey, 0, 0, 'REV', 'WITHSCORES')
-            -- Check if the maxScoreElement is non-empty
-            local score
-            if #maxScoreElement > 0 then
-               score = tonumber(maxScoreElement[2])
-            else
-               score = 0
-            end
-            
-            -- Add each message to the sorted set using packetId as the score
-            for _, msg in ipairs(messages) do
-                local msgKey = messagesKey .. "_" .. msg.packetId
-                local msgJson = cjson.encode(msg)
-                local msgExpiryInterval = msg.msgExpiryInterval or defaultTtl
-                -- Store the message as a separate key with TTL
-                redis.call('SET', msgKey, msgJson, 'EX', msgExpiryInterval)
-                -- increase the score
-                score = score + 1
-                redis.call('ZADD', messagesKey, score, msgKey)
-                -- Update lastPacketId with the current packetId
-                lastPacketId = msg.packetId
-            end
-            
-            -- Update the last packetId in the key-value store
-            redis.call('SET', lastPacketIdKey, lastPacketId)
-            
-            return "OK"
-            """;
 
     @Value("${mqtt.persistent-session.device.persisted-messages.ttl}")
     private int defaultTtl;
@@ -228,12 +173,10 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
     private String cachePrefix;
 
     private final LettuceConnectionManager connectionManager;
-    private final boolean installProfileActive;
     private final ConcurrentMap<String, CompletableFuture<Void>> scriptLoadingMap;
 
-    public DeviceMsgServiceImpl(LettuceConnectionManager connectionManager, Environment environment) {
+    public DeviceMsgServiceImpl(LettuceConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
-        this.installProfileActive = Arrays.asList(environment.getActiveProfiles()).contains("install");
         this.scriptLoadingMap = new ConcurrentHashMap<>();
     }
 
@@ -254,10 +197,6 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
             loadScript(REMOVE_MESSAGES_SCRIPT_SHA, REMOVE_MESSAGES_SCRIPT);
             loadScript(REMOVE_MESSAGE_SCRIPT_SHA, REMOVE_MESSAGE_SCRIPT);
             loadScript(UPDATE_PACKET_TYPE_SCRIPT_SHA, UPDATE_PACKET_TYPE_SCRIPT);
-            if (!installProfileActive) {
-                return;
-            }
-            loadScript(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
         } catch (Exception e) {
             throw new RuntimeException("Failed to init persisted device messages cache service!", e);
         }
@@ -414,85 +353,6 @@ public class DeviceMsgServiceImpl implements DeviceMsgService {
         }
         byte[] lastPacketIdKeyBytes = ClientIdLastPacketIdCacheKey.toBytesKey(clientId, cachePrefix);
         return connectionManager.setAsync(lastPacketIdKeyBytes, intToBytes(lastPacketId));
-    }
-
-    @Override
-    public void importFromCsvFile(Path filePath) {
-        if (!installProfileActive) {
-            throw new RuntimeException("Import from CSV file can be executed during upgrade only!");
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Import from csv file: {}", filePath);
-        }
-        migrateMessagesToRedis(filePath);
-    }
-
-    private void migrateMessagesToRedis(Path filePath) {
-        var clientIdToMsgMap = new HashMap<String, List<DevicePublishMsg>>();
-        List<CompletableFuture<String>> futures = new ArrayList<>();
-        consumeCsvRecords(filePath, record -> {
-            String clientId = record.get("client_id");
-            try {
-                var messages = clientIdToMsgMap.computeIfAbsent(clientId, k -> new ArrayList<>());
-                messages.add(DevicePublishMsgUtil.fromCsvRecord(record, defaultTtl));
-                if (messages.size() >= IMPORT_TO_REDIS_BATCH_SIZE) {
-                    futures.add(writeBatchToRedis(clientId, messages));
-                }
-            } catch (DecoderException e) {
-                throw new RuntimeException("Failed to deserialize message for client: " + clientId, e);
-            }
-        });
-        clientIdToMsgMap.forEach((clientId, messages) -> {
-            if (!messages.isEmpty()) {
-                futures.add(writeBatchToRedis(clientId, messages));
-            }
-        });
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .exceptionally(throwable -> {
-                    throw new CompletionException(throwable);
-                }).join();
-    }
-
-    private CompletableFuture<String> writeBatchToRedis(String clientId, List<DevicePublishMsg> messages) {
-        int batchSize = messages.size();
-        log.info("[{}] Adding {} messages to Redis ...", clientId, batchSize);
-        byte[] messagesCacheKeyBytes = ClientIdMessagesCacheKey.toBytesKey(clientId, cachePrefix);
-        byte[] lastPacketIdKeyBytes = ClientIdLastPacketIdCacheKey.toBytesKey(clientId, cachePrefix);
-        byte[] messagesBytes = JacksonUtil.writeValueAsBytes(messages);
-        RedisFuture<String> migrateFuture = connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
-                new byte[][]{messagesCacheKeyBytes, lastPacketIdKeyBytes}, messagesBytes, defaultTtlBytes);
-        var result = migrateFuture.exceptionallyCompose(throwable -> {
-            if (throwable instanceof RedisNoScriptException) {
-                CompletableFuture<Void> loadScriptFuture = processLoadScriptAsync(throwable, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT);
-                CompletableFuture<String> retryFuture = loadScriptFuture.thenCompose(__ ->
-                        connectionManager.evalShaAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT_SHA, ScriptOutputType.STATUS,
-                                new byte[][]{messagesCacheKeyBytes, lastPacketIdKeyBytes}, messagesBytes, defaultTtlBytes));
-                return retryFuture.exceptionallyCompose(retryThrowable -> {
-                    log.debug("Falling back to eval due to exception on retry sha evaluation of writeBatchToRedis: ", retryThrowable);
-                    return connectionManager.evalAsync(MIGRATE_FROM_POSTGRES_TO_REDIS_SCRIPT, ScriptOutputType.STATUS,
-                            new byte[][]{messagesCacheKeyBytes, lastPacketIdKeyBytes}, messagesBytes, defaultTtlBytes);
-                });
-            }
-            throw new CompletionException(throwable);
-        }).whenComplete((s, throwable) -> {
-            if (throwable != null) {
-                log.error("Failed to migrate {} messages for client {}", batchSize, clientId, throwable);
-                return;
-            }
-            log.info("[{}] Successfully added {} messages to Redis!", clientId, batchSize);
-        }).toCompletableFuture();
-        messages.clear();
-        return result;
-    }
-
-    private void consumeCsvRecords(Path filePath, Consumer<CSVRecord> csvRecordConsumer) {
-        try (CSVParser csvParser = new CSVParser(Files.newBufferedReader(filePath), IMPORT_CSV_FORMAT)) {
-            for (CSVRecord record : csvParser) {
-                csvRecordConsumer.accept(record);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read CSV file: " + filePath, e);
-        }
     }
 
     private CompletableFuture<Void> processLoadScriptAsync(Throwable throwable, String scriptSha, String script) {
