@@ -22,7 +22,6 @@ import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslContext;
 import io.netty.util.concurrent.Promise;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.MqttClientConfig;
 import org.thingsboard.mqtt.MqttConnectResult;
@@ -201,8 +200,6 @@ public class MqttIntegration extends AbstractIntegration {
     }
 
     private void updateConfigBeforeCheckConnection(MqttIntegrationConfig mqttIntegrationConfig) {
-        // If check connection is used when client is already connected - two sessions will conflict. That's why client ID is adjusted here
-        mqttIntegrationConfig.setClientId(mqttIntegrationConfig.getClientId() + RandomStringUtils.randomAlphabetic(5));
         // Disable reconnection
         mqttIntegrationConfig.setReconnectPeriodSec(0);
     }
