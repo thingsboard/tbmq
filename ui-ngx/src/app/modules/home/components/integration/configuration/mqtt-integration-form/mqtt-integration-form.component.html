@@ -20,114 +20,114 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
     }
-    <div class="flex flex-col">
-      <section class="flex flex-row gap-2">
-        <mat-form-field class="flex-1" appearance="outline">
-          <mat-label translate>admin.settings.host</mat-label>
-          <input matInput formControlName="host" required>
-          @if (clientConfigurationFormGroup.get('host').hasError('required')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'admin.settings.host-required' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
-        </mat-form-field>
-        <mat-form-field class="flex-1" appearance="outline">
-          <mat-label translate>admin.settings.port</mat-label>
-          <input matInput formControlName="port">
-          @if (clientConfigurationFormGroup.get('port').hasError('required')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'admin.settings.port-required' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          } @else if (clientConfigurationFormGroup.get('port').hasError('pattern')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'admin.settings.port-pattern' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          } @else if (clientConfigurationFormGroup.get('port').hasError('min') || clientConfigurationFormGroup.get('port').hasError('max')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'admin.settings.port-range' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
-        </mat-form-field>
-      </section>
-      <section class="flex gap-4">
-        <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
-          <mat-slide-toggle formControlName="useMsgTopicName">
-            <span translate>integration.topic-name-dynamic</span>
-          </mat-slide-toggle>
-          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                    [matTooltip]="'integration.topic-name-dynamic-hint' | translate"
-                    matTooltipPosition="right">
-            info</mat-icon>
-        </section>
-        <mat-form-field class="flex-1" appearance="outline">
-          <mat-label translate>integration.topic-name</mat-label>
-          <input matInput formControlName="topicName">
-          @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.topic-name-required' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
-          <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
-            help
-          </mat-icon>
-        </mat-form-field>
-      </section>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.client-id</mat-label>
-        <input matInput formControlName="clientId">
-        <tb-copy-button matSuffix
-                        [class.!hidden]="!clientConfigurationFormGroup.get('clientId')?.value?.length"
-                        [copyText]="clientConfigurationFormGroup.get('clientId').value">
-        </tb-copy-button>
-        <button mat-icon-button matSuffix
-                [class.hidden]="!isNew && !isEdit()"
-                [matTooltip]="'action.regenerate' | translate"
-                matTooltipPosition="above"
-                (click)="generateClientId()">
-          <mat-icon>
-            autorenew
-          </mat-icon>
-        </button>
-        <mat-icon matSuffix matTooltip="{{ 'integration.client-id-hint' | translate }}">
-          help
-        </mat-icon>
-        @if (clientConfigurationFormGroup.get('clientId').hasError('required')) {
+    <section class="flex gap-2">
+      <mat-form-field class="flex-1" appearance="outline">
+        <mat-label translate>admin.settings.host</mat-label>
+        <input matInput formControlName="host" required>
+        @if (clientConfigurationFormGroup.get('host').hasError('required')) {
           <mat-icon matSuffix
                     matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'integration.client-id-required' | translate }}"
+                    matTooltip="{{ 'admin.settings.host-required' | translate }}"
                     class="tb-error">
             warning
           </mat-icon>
         }
       </mat-form-field>
+      <mat-form-field class="flex-1" appearance="outline">
+        <mat-label translate>admin.settings.port</mat-label>
+        <input matInput formControlName="port">
+        @if (clientConfigurationFormGroup.get('port').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'admin.settings.port-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        } @else if (clientConfigurationFormGroup.get('port').hasError('pattern')) {
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'admin.settings.port-pattern' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        } @else if (clientConfigurationFormGroup.get('port').hasError('min') || clientConfigurationFormGroup.get('port').hasError('max')) {
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'admin.settings.port-range' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+      </mat-form-field>
+    </section>
+    <section class="flex gap-3">
+      <section class="flex items-center gap-2" style="padding: 0 0 24px 0">
+        <mat-slide-toggle formControlName="useMsgTopicName">
+          <span translate>integration.topic-name-dynamic</span>
+        </mat-slide-toggle>
+        <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                  [matTooltip]="'integration.topic-name-dynamic-hint' | translate"
+                  matTooltipPosition="right">
+          info</mat-icon>
+      </section>
+      <mat-form-field class="flex-1" appearance="outline">
+        <mat-label translate>integration.topic-name</mat-label>
+        <input matInput formControlName="topicName">
+        @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        }
+        <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+    </section>
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.client-id</mat-label>
+      <input matInput formControlName="clientId">
+      <tb-copy-button matSuffix
+                      [class.!hidden]="!clientConfigurationFormGroup.get('clientId')?.value?.length"
+                      [copyText]="clientConfigurationFormGroup.get('clientId').value">
+      </tb-copy-button>
+      <button mat-icon-button matSuffix
+              [class.hidden]="!isNew && !isEdit()"
+              [matTooltip]="'action.regenerate' | translate"
+              matTooltipPosition="above"
+              (click)="generateClientId()">
+        <mat-icon>
+          autorenew
+        </mat-icon>
+      </button>
+      <mat-icon matSuffix matTooltip="{{ 'integration.client-id-hint' | translate }}">
+        help
+      </mat-icon>
+      @if (clientConfigurationFormGroup.get('clientId').hasError('required')) {
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'integration.client-id-required' | translate }}"
+                  class="tb-error">
+          warning
+        </mat-icon>
+      }
+    </mat-form-field>
+    <section class="mb-4">
       <tb-integration-credentials formControlName="credentials"
                                   [passwordOptional]="true"
                                   [userNameOptional]="true"
                                   [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
-                                                           IntegrationCredentialType.Basic,
-                                                           IntegrationCredentialType.CertPEM]">
+                                                         IntegrationCredentialType.Basic,
+                                                         IntegrationCredentialType.CertPEM]">
         @if (displayEnableSsl()) {
           <mat-slide-toggle formControlName="ssl">
             {{ 'integration.enable-ssl' | translate }}
           </mat-slide-toggle>
         }
       </tb-integration-credentials>
-    </div>
+    </section>
     <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
     </ng-container>
     <mat-expansion-panel class="configuration-panel">
@@ -192,8 +192,8 @@
             }
           </mat-select>
         </mat-form-field>
-        <section class="flex gap-4">
-          <section class="flex flex-row items-center gap-2" style="padding: 0 0 24px 0">
+        <section class="flex gap-3">
+          <section class="flex items-center gap-2" style="padding: 0 0 24px 0">
             <mat-slide-toggle formControlName="useMsgQoS">
               <span translate>integration.mqtt-qos-dynamic</span>
             </mat-slide-toggle>
@@ -205,7 +205,7 @@
           <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
           </tb-qos-select>
         </section>
-        <mat-slide-toggle class="mb-4" formControlName="retained">
+        <mat-slide-toggle class="mb-6" formControlName="retained">
           {{ 'ws-client.last-will.retain' | translate }}
         </mat-slide-toggle>
         <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
