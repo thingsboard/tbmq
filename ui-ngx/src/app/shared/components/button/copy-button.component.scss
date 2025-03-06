@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
 
 :host {
+  cursor: pointer;
+  display: inline-block;
   .mat-icon.copied {
     color: #00C851 !important;
   }

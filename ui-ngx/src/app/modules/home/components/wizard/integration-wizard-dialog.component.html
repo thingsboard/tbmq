@@ -42,7 +42,7 @@
       <form [formGroup]="integrationWizardForm">
         <ng-template matStepLabel>
           {{ "integration.basic-settings" | translate }}<br>
-          <div class="mat-step-optional" [class.!hidden]="selectedIndex === 0">{{integrationType}}</div>
+          <div class="mat-step-optional">{{integrationType}}</div>
         </ng-template>
         <tb-integration-type-select formControlName="type" required class="flex-1">
         </tb-integration-type-select>

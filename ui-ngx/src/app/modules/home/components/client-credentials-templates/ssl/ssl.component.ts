@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, forwardRef, OnDestroy, input, model, viewChild } from '@angular/core';
+import { AfterViewInit, Component, forwardRef, OnDestroy, input, model } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -46,8 +46,6 @@ import { AuthRulesComponent } from './auth-rules.component';
     imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, MatSlideToggle, AuthRulesComponent]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
-
-  readonly copyBtn = viewChild<CopyButtonComponent>('copyBtn');
 
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
@@ -115,10 +113,6 @@ export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueA
     const formValue = JSON.stringify(value);
     this.updateCertificateCnView(value?.certCnIsRegex);
     this.propagateChange(formValue);
-  }
-
-  onClickTbCopyButton(value: string) {
-    this.copyBtn().copy(value);
   }
 
   private updateCertificateCnView(value: boolean = false) {

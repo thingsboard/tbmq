@@ -37,7 +37,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Getter
-public class TbIntegrationExecutorIntegrationContext implements IntegrationContext {
+public class IntegrationExecutorContext implements IntegrationContext {
 
     private final IntegrationLifecycleMsg lifecycleMsg;
     private final IntegrationMsgProcessor integrationMsgProcessor;
@@ -49,6 +49,7 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     private final String serviceId;
     private final BasicCallback callback;
     private final ExternalCallExecutorService externalCallExecutorService;
+    private final int integrationConnectTimeoutSec;
 
     @Override
     public EventLoopGroup getSharedEventLoop() {

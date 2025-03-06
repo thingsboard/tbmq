@@ -42,6 +42,9 @@ import {
 import {
   KafkaIntegrationFormComponent
 } from '@home/components/integration/configuration/kafka-integration-form/kafka-integration-form.component';
+import {
+  MqttIntegrationFormComponent
+} from '@home/components/integration/configuration/mqtt-integration-form/mqtt-integration-form.component';
 
 @Component({
   selector: 'tb-integration-configuration',
@@ -51,7 +54,8 @@ import {
   imports: [
     ReactiveFormsModule,
     HttpIntegrationFormComponent,
-    KafkaIntegrationFormComponent
+    KafkaIntegrationFormComponent,
+    MqttIntegrationFormComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -72,7 +76,6 @@ export class IntegrationConfigurationComponent implements ControlValueAccessor, 
   readonly genericAdditionalInfoTemplate = input<TemplateRef<any>>();
   readonly executeRemotelyTemplate = input<TemplateRef<any>>();
   readonly integrationType = input<IntegrationType>();
-  readonly allowLocalNetwork = input(true);
   readonly integration = input<Integration>();
   readonly isEdit = input<boolean>();
   disabled = model<boolean>();

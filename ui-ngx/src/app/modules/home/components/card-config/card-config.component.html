@@ -32,6 +32,7 @@
               <span>
                 {{ formatBytesToValue(entity) }}
                 <tb-copy-button [class.!hidden]="!showCopyButton(entity, configParams)"
+                  [containerStyle]="{padding: 0}"
                   [copyText]="entity.value"
                   [buttonClass]="{'tb-mat-12': true}"
                   [style]="{display: 'inline'}"

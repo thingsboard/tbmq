@@ -13,23 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host {
-  .tb-hint.client-id {
-    margin-top: -1.25em;
-    max-width: fit-content;
-
-    &.invisible {
-      visibility: hidden;
-    }
-  }
-
-  .checkbox {
-    padding: 8px 0 8px;
-  }
-
-  ::ng-deep {
-    .mat-expansion-panel-body {
-      padding: 0 0 16px;
-    }
+:host ::ng-deep {
+  .mat-expansion-panel-body {
+    padding: 0 0 16px;
   }
 }

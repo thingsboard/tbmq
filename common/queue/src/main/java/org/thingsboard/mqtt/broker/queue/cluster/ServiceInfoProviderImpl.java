@@ -113,7 +113,7 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
         return integrationTypes;
     }
 
-    private static List<IntegrationType> collectToList(String integrationsStr) {
+    private List<IntegrationType> collectToList(String integrationsStr) {
         return Arrays.stream(integrationsStr.split(","))
                 .map(String::trim)
                 .map(IntegrationType::valueOf)

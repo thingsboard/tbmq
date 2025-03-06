@@ -104,15 +104,15 @@ public class DefaultClusterIntegrationService {
                     //todo: add reprocessing logic
 
                     if (log.isDebugEnabled()) {
-                        log.debug("Received pack of messages: {}", msgs);
+                        log.debug("[{}] Received pack of messages: {}", consumer.getTopic(), msgs);
                     } else {
-                        log.info("Received pack with size: {}", msgs.size());
+                        log.info("[{}] Received pack with size: {}", consumer.getTopic(), msgs.size());
                     }
 
                     Map<Integer, Long> highestOffsets = null;
 
                     for (TbProtoQueueMsg<DownlinkIntegrationMsgProto> msg : msgs) {
-                        log.debug("Got the next message {}", msg);
+                        log.trace("[{}] Got the next message {}", consumer.getTopic(), msg);
 
                         DownlinkIntegrationMsgProto downlinkIntegrationMsg = msg.getValue();
                         int partition = msg.getPartition();
@@ -121,7 +121,7 @@ public class DefaultClusterIntegrationService {
                         TopicPartition topicPartition = newTopicPartition(consumer.getTopic(), partition);
                         Boolean isRestorationMode = partitionRestorationMap.get(topicPartition);
                         if (isRestorationMode == null) {
-                            log.debug("[{}] Partition was revoked", topicPartition);
+                            log.debug("[{}][{}] Partition was revoked", consumer.getTopic(), topicPartition);
                             removeAndStopIntegrations(topicPartition);
                             continue;
                         }
@@ -132,7 +132,7 @@ public class DefaultClusterIntegrationService {
                             highestOffsets.put(partition, offset);
 
                             if (downlinkIntegrationMsg.hasValidationRequestMsg()) {
-                                log.debug("[{}] Skipping integration validation request during restore process", topicPartition);
+                                log.debug("[{}][{}] Skipping integration validation request during restore process", consumer.getTopic(), topicPartition);
                             } else if (downlinkIntegrationMsg.hasIntegrationMsg()) {
                                 deserializeAndCacheIntegration(downlinkIntegrationMsg, topicPartition);
                             }
@@ -154,7 +154,7 @@ public class DefaultClusterIntegrationService {
 
                             Boolean isRestorationMode = partitionRestorationMap.get(topicPartition);
                             if (Boolean.TRUE.equals(isRestorationMode) && isEndOfPartition(consumer, partition, offset)) {
-                                log.info("Partition {} switched to real-time processing mode.", partition);
+                                log.info("[{}] Partition {} switched to real-time processing mode.", consumer.getTopic(), partition);
                                 partitionRestorationMap.put(topicPartition, false);
 
                                 // Process restored integrations for this partition
@@ -169,16 +169,16 @@ public class DefaultClusterIntegrationService {
                     consumer.commitSync();
                 } catch (Exception e) {
                     if (!stopped) {
-                        log.error("Failed to process messages from queue.", e);
+                        log.error("[{}] Failed to process messages from queue.", consumer.getTopic(), e);
                         try {
                             Thread.sleep(pollDuration);
                         } catch (InterruptedException e2) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
+                            log.trace("[{}] Failed to wait until the server has capacity to handle new requests", consumer.getTopic(), e2);
                         }
                     }
                 }
             }
-            log.info("Integration Executor downlink queue consumer has been stopped");
+            log.info("[{}] Integration Executor downlink queue consumer has been stopped", consumer.getTopic());
         });
     }
 

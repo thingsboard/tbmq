@@ -50,6 +50,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.service.integration.executor.ExternalExecutorService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -92,6 +93,9 @@ public abstract class AbstractPubSubIntegrationTest {
     protected BCryptPasswordEncoder passwordEncoder;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    @Lazy
+    protected ExternalExecutorService externalExecutorService;
 
     @Value("${listener.tcp.bind_port}")
     protected int mqttPort;

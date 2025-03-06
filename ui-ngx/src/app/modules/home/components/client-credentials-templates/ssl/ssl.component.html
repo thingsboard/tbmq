@@ -22,9 +22,8 @@
     <mat-form-field class="mat-block">
       <mat-label>{{ certificateCnLabel | translate }}</mat-label>
       <input required matInput formControlName="certCnPattern">
-      <tb-copy-button #copyBtn
-        (click)="onClickTbCopyButton(credentialsMqttFormGroup.get('certCnPattern')?.value)"
-        [class.!hidden]="!credentialsMqttFormGroup?.get('certCnPattern').value?.length" matSuffix
+      <tb-copy-button matSuffix
+        [class.!hidden]="!credentialsMqttFormGroup?.get('certCnPattern').value?.length"
         [copyText]="credentialsMqttFormGroup?.get('certCnPattern').value">
       </tb-copy-button>
       @if (credentialsMqttFormGroup.get('certCnPattern').hasError('required')) {

@@ -108,12 +108,22 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
   readonly passwordLabel = input('integration.password');
   readonly passwordRequired = input('integration.password-required');
   private passwordOptionalValue = false;
+  private userNameOptionalValue = false;
+
   get passwordOptional(): boolean {
     return this.passwordOptionalValue;
   }
   @Input()
   set passwordOptional(value: boolean) {
     this.passwordOptionalValue = coerceBooleanProperty(value);
+  }
+
+  get userNameOptional(): boolean {
+    return this.userNameOptionalValue;
+  }
+  @Input()
+  set userNameOptional(value: boolean) {
+    this.userNameOptionalValue = coerceBooleanProperty(value);
   }
 
   IntegrationCredentialTypeTranslation = IntegrationCredentialTypeTranslation;
@@ -131,7 +141,7 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
   ngOnInit() {
     this.integrationCredentialForm = this.fb.group({
       type: ['', Validators.required],
-      username: [{value: '', disabled: true}, Validators.required],
+      username: [{value: '', disabled: true}, this.userNameOptional ? null : Validators.required],
       password: [{value: '', disabled: true}, this.passwordOptional ? null : Validators.required],
       caCertFileName: [{value: '', disabled: true}, this.ignoreCaCert ? null : Validators.required],
       caCert: [{value: '', disabled: true},  this.ignoreCaCert ? null : Validators.required],

@@ -144,6 +144,10 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         context.clearIntegrationMessages(lifecycleMsg.getIntegrationId().toString());
     }
 
+    protected String constructValue(PublishIntegrationMsgProto msg) {
+        return JacksonUtil.toString(constructBody(msg));
+    }
+
     protected ObjectNode constructBody(PublishIntegrationMsgProto msg) {
         PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
 
