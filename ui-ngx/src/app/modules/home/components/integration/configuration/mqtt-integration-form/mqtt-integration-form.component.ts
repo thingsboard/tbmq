@@ -136,6 +136,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         qos: [QoS.AT_LEAST_ONCE, []],
         useMsgQoS: [true, []],
         retained: [false, []],
+        useMsgRetain: [true, []],
         keepAliveSec: [60, [Validators.required]],
       })
     });
@@ -229,10 +230,24 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         }
       });
 
+    this.clientConfigurationFormGroup.get('useMsgRetain').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value) => {
+        if (!this.disabled) {
+          if (value) {
+            this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
+          } else {
+            this.clientConfigurationFormGroup.get('retained').enable({emitEvent: false});
+          }
+          this.clientConfigurationFormGroup.get('retained').updateValueAndValidity();
+        }
+      });
+
     setTimeout(() => {
       if (this.isNew) {
         this.clientConfigurationFormGroup.get('topicName').disable();
         this.clientConfigurationFormGroup.get('qos').disable();
+        this.clientConfigurationFormGroup.get('retained').disable();
       }
     }, 0);
   }
@@ -245,6 +260,10 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     if (value.clientConfiguration.useMsgQoS) {
       this.clientConfigurationFormGroup.get('qos').disable({emitEvent: false});
       this.clientConfigurationFormGroup.get('qos').updateValueAndValidity({emitEvent: false});
+    }
+    if (value.clientConfiguration.useMsgRetain) {
+      this.clientConfigurationFormGroup.get('retained').disable({emitEvent: false});
+      this.clientConfigurationFormGroup.get('retained').updateValueAndValidity({emitEvent: false});
     }
   }
 }

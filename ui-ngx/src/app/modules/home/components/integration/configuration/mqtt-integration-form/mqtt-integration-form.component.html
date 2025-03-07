@@ -61,7 +61,7 @@
       </mat-form-field>
     </section>
     <section class="flex gap-3">
-      <section class="flex items-center gap-2" style="padding: 0 0 24px 0">
+      <section class="flex items-center gap-2 pb-6">
         <mat-slide-toggle formControlName="useMsgTopicName">
           <span translate>integration.topic-name-dynamic</span>
         </mat-slide-toggle>
@@ -193,7 +193,7 @@
           </mat-select>
         </mat-form-field>
         <section class="flex gap-3">
-          <section class="flex items-center gap-2" style="padding: 0 0 24px 0">
+          <section class="flex items-center gap-2  pb-6">
             <mat-slide-toggle formControlName="useMsgQoS">
               <span translate>integration.mqtt-qos-dynamic</span>
             </mat-slide-toggle>
@@ -205,8 +205,17 @@
           <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
           </tb-qos-select>
         </section>
-        <mat-slide-toggle class="mb-6" formControlName="retained">
-          {{ 'ws-client.last-will.retain' | translate }}
+        <section class="flex items-center gap-2 pb-6">
+          <mat-slide-toggle formControlName="useMsgRetain">
+            <span translate>integration.retain-dynamic</span>
+          </mat-slide-toggle>
+          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                    [matTooltip]="'integration.retain-dynamic-hint' | translate"
+                    matTooltipPosition="right">
+            info</mat-icon>
+        </section>
+        <mat-slide-toggle class="pb-6" formControlName="retained">
+          {{ 'integration.retain' | translate }}
         </mat-slide-toggle>
         <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
         </ng-container>
