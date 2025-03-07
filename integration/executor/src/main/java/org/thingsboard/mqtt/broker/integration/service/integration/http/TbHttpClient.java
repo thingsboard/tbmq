@@ -35,8 +35,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import org.springframework.web.util.UriComponentsBuilder;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
-import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.BasicCredentials;
@@ -153,7 +151,7 @@ public class TbHttpClient {
         }
     }
 
-    public void processMessage(PublishIntegrationMsgProto msg, ObjectNode requestBody, BasicCallback callback) {
+    public void processMessage(Object requestBody, BasicCallback callback) {
         try {
             if (semaphore != null && !semaphore.tryAcquire(config.getReadTimeoutMs(), TimeUnit.MILLISECONDS)) {
                 log.warn("[{}][{}] Timeout during waiting for reply!", getId(), getName());
@@ -168,7 +166,7 @@ public class TbHttpClient {
 
             if ((HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method) ||
                     HttpMethod.PATCH.equals(method))) {
-                request.body(BodyInserters.fromValue(constructBody(msg, requestBody)));
+                request.body(BodyInserters.fromValue(requestBody));
             }
 
             processRequest(request, callback);
@@ -198,26 +196,6 @@ public class TbHttpClient {
         }
 
         return uri;
-    }
-
-    private Object constructBody(PublishIntegrationMsgProto msg, ObjectNode request) {
-        PublishMsgProto publishMsgProto = msg.getPublishMsgProto();
-        try {
-            switch (config.getPayloadContentType()) {
-                case JSON -> request.set("payload", JacksonUtil.fromBytes(publishMsgProto.getPayload().toByteArray()));
-                case TEXT -> request.put("payload", publishMsgProto.getPayload().toStringUtf8());
-                case BINARY -> request.put("payload", publishMsgProto.getPayload().toByteArray());
-            }
-        } catch (Exception e) {
-            if (config.isSendBinaryOnParseFailure()) {
-                log.warn("[{}][{}] Failed to parse msg payload to {}: {}", getId(), getName(),
-                        config.getPayloadContentType(), msg, e);
-                request.put("payload", publishMsgProto.getPayload().toByteArray());
-            } else {
-                throw new RuntimeException("Failed to parse msg payload to " + config.getPayloadContentType() + ": " + msg);
-            }
-        }
-        return request;
     }
 
     private void processResponse(ResponseEntity<String> response) {

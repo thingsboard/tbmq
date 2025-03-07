@@ -30,6 +30,8 @@ import java.util.Objects;
 @AllArgsConstructor
 public class MqttIntegrationConfig {
 
+    private boolean sendOnlyMsgPayload;
+
     private String host;
     private int port;
     private String topicName;
@@ -44,6 +46,7 @@ public class MqttIntegrationConfig {
     private int qos; // Allowed values: 0, 1, 2. See org.thingsboard.mqtt.broker.common.data.MqttQoS
     private boolean useMsgQoS;
     private boolean retained;
+    private boolean useMsgRetain;
     private int keepAliveSec; // Value 0 disables Keep Alive mechanism
 
     public ClientCredentials getCredentials() {

@@ -247,4 +247,12 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         return ExceptionUtil.toString(e, lifecycleMsg.getIntegrationId(), context.isExceptionStackTraceEnabled());
     }
 
+    protected UUID getId() {
+        return lifecycleMsg.getIntegrationId();
+    }
+
+    protected String getName() {
+        return lifecycleMsg.getName();
+    }
+
 }

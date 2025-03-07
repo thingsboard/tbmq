@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.mqtt;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.netty.handler.codec.mqtt.MqttVersion;
@@ -39,7 +40,6 @@ import org.thingsboard.mqtt.broker.integration.service.integration.credentials.C
 
 import javax.net.ssl.SSLException;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -110,8 +110,8 @@ public class MqttIntegration extends AbstractIntegration {
 
     @Override
     public void process(PublishIntegrationMsgProto msg, IntegrationMsgCallback callback) {
-        client.publish(getMsgTopicName(msg), Unpooled.wrappedBuffer(constructValue(msg).getBytes(StandardCharsets.UTF_8)),
-                        MqttQoS.valueOf(getMsgQos(msg)), config.isRetained())
+        client.publish(getMsgTopicName(msg), getMsgPayload(msg),
+                        MqttQoS.valueOf(getMsgQos(msg)), getMsgRetain(msg))
                 .addListener(future -> {
                             if (future.isSuccess()) {
                                 log.debug("[{}][{}] processPublish success {}", getId(), getName(), config.getTopicName());
@@ -131,16 +131,19 @@ public class MqttIntegration extends AbstractIntegration {
         return config.isUseMsgTopicName() ? msg.getPublishMsgProto().getTopicName() : config.getTopicName();
     }
 
+    private ByteBuf getMsgPayload(PublishIntegrationMsgProto msg) {
+        if (config.isSendOnlyMsgPayload()) {
+            return Unpooled.wrappedBuffer(msg.getPublishMsgProto().getPayload().toByteArray());
+        }
+        return Unpooled.wrappedBuffer(constructValue(msg).getBytes(StandardCharsets.UTF_8));
+    }
+
     private int getMsgQos(PublishIntegrationMsgProto msg) {
         return config.isUseMsgQoS() ? msg.getPublishMsgProto().getQos() : config.getQos();
     }
 
-    private UUID getId() {
-        return context.getLifecycleMsg().getIntegrationId();
-    }
-
-    private String getName() {
-        return context.getLifecycleMsg().getName();
+    private boolean getMsgRetain(PublishIntegrationMsgProto msg) {
+        return config.isUseMsgRetain() ? msg.getPublishMsgProto().getRetain() : config.isRetained();
     }
 
     private void connectClient(MqttIntegrationConfig mqttIntegrationConfig) throws Exception {

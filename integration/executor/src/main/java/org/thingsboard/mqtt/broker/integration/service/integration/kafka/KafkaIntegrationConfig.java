@@ -33,6 +33,8 @@ import java.util.Map;
 @AllArgsConstructor
 public class KafkaIntegrationConfig {
 
+    private boolean sendOnlyMsgPayload;
+
     private String bootstrapServers;
     private String topic;
     private String key;
