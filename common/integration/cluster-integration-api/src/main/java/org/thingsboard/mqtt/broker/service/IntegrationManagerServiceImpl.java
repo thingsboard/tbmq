@@ -75,6 +75,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.DELETED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.FAILED;
+import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.REINIT;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STARTED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STOPPED;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INTEGRATION_EXECUTOR;
@@ -529,6 +530,7 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
                 if (state.getUpdateLock().tryLock()) {
                     boolean success = true;
                     try {
+                        eventStorageService.persistLifecycleEvent(state.getIntegrationId(), REINIT, null);
                         processUpdateEvent(state, state.getLifecycleMsg());
                     } catch (Exception e) {
                         log.warn("[{}] Failed to re-initialize the integration", state.getIntegrationId(), e);
