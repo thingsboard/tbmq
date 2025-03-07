@@ -146,6 +146,12 @@
       (click)="onIntegrationCheck()"
       [disabled]="(isLoading$ | async)">
       {{ 'integration.check-connection' | translate }}
+      @if (displayCheckConnectionHint()) {
+        <mat-icon [matTooltip]="'integration.check-connection-mqtt-hint' | translate"
+                  matTooltipPosition="left">
+          info
+        </mat-icon>
+      }
     </button>
   }
   <button mat-raised-button
