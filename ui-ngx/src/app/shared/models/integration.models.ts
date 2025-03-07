@@ -216,6 +216,7 @@ export interface MqttIntegration extends Topics {
     retained: boolean;
     useMsgTopicName: boolean;
     useMsgQoS: boolean;
+    useMsgRetain: boolean;
   };
 }
 
