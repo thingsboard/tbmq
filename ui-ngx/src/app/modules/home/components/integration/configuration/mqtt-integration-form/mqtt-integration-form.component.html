@@ -137,8 +137,14 @@
         }
       </tb-integration-credentials>
     </section>
-    <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
-    </ng-container>
+    <section class="flex items-center gap-2" [class.!hidden]="disabled">
+      <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
+      </ng-container>
+      <mat-icon class="tb-mat-20 mb-2" style="color: rgba(0,0,0,0.18)"
+                [matTooltip]="'integration.check-connection-mqtt-hint' | translate"
+                matTooltipPosition="right">
+        info</mat-icon>
+    </section>
     <mat-expansion-panel class="configuration-panel">
       <mat-expansion-panel-header>
         <mat-panel-description class="flex items-stretch justify-end" translate>
@@ -202,7 +208,7 @@
           </mat-select>
         </mat-form-field>
         <section class="flex gap-3">
-          <section class="flex items-center gap-2  pb-6">
+          <section class="flex items-center gap-2 pb-6">
             <mat-slide-toggle formControlName="useMsgQoS">
               <span translate>integration.mqtt-qos-dynamic</span>
             </mat-slide-toggle>
