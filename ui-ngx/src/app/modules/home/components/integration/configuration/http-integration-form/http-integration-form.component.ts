@@ -124,6 +124,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
     this.baseHttpIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
+        sendOnlyMsgPayload: [false, []],
         restEndpointUrl: [baseUrl(), Validators.required],
         requestMethod: [HttpRequestType.POST],
         headers: [{'Content-Type': 'application/json'}, Validators.required],

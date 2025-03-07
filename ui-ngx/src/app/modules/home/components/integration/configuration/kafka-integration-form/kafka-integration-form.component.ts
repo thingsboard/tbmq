@@ -51,6 +51,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import {
   HttpTopicFiltersComponent
 } from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'tb-kafka-integration-form',
@@ -73,7 +74,8 @@ import {
     MatSuffix,
     MatIcon,
     MatTooltip,
-    HttpTopicFiltersComponent
+    HttpTopicFiltersComponent,
+    MatSlideToggle
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -113,6 +115,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
     this.kafkaIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
+        sendOnlyMsgPayload: [false, []],
         topic: ['tbmq.messages', [Validators.required]],
         key: [null, []],
         bootstrapServers: ['localhost:9092', [Validators.required]],

@@ -903,7 +903,10 @@
     "compression": "Compression",
     "keep-alive-sec": "Keep alive (sec)",
     "connect-timeout-sec": "Connect timeout (sec)",
-    "reconnect-period-sec": "Reconnect period (sec)"
+    "reconnect-period-sec": "Reconnect period (sec)",
+    "configuration": "Configuration",
+    "send-only-payload": "Send only message payload",
+    "send-only-payload-hint": "If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and other properties is sent"
   },
   "language": {
     "language": "Language",

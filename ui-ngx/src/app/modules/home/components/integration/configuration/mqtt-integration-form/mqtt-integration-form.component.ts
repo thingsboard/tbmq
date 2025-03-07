@@ -123,6 +123,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
     this.mqttIntegrationConfigForm = this.fb.group({
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
+        sendOnlyMsgPayload: [false, []],
         host: [null, [Validators.required]],
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
         topicName: ['tbmq/messages', []],

@@ -77,7 +77,7 @@
       </form>
     </mat-step>
     <mat-step [stepControl]="integrationConfigurationForm">
-      <ng-template matStepLabel>{{ "integration.connection" | translate }}</ng-template>
+      <ng-template matStepLabel>{{ "integration.configuration" | translate }}</ng-template>
       <form [formGroup]="integrationConfigurationForm" tb-toast toastTarget="integrationRoot">
         <tb-integration-configuration
           formControlName="configuration"
