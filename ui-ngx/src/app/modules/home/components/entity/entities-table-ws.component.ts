@@ -204,6 +204,11 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
         this.init(this.entitiesTableConfig());
       }
     );
+    this.mqttJsClientService.messagesCleared$.subscribe(
+      () => {
+        this.paginator().pageIndex = 0;
+      }
+    );
     this.updatePaginationSubscriptions();
     this.updateData();
     this.viewInited = true;

@@ -123,7 +123,7 @@ export class MessangerComponent implements OnInit {
       }
     );
 
-    this.mqttJsClientService.messageCounter.subscribe(value => {
+    this.mqttJsClientService.messageCounter$.subscribe(value => {
       this.messagesTypeFilters = WsMessagesTypeFilters.map(filter => ({
         ...filter,
         name: `${filter.name} (${value[filter.value]})`,

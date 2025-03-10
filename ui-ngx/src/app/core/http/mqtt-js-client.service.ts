@@ -70,14 +70,16 @@ export class MqttJsClientService {
   private messageCounterSubject$ = new BehaviorSubject<MessageCounter>(MessageCounterEmpty);
   private clientConnectingSubject$ = new Subject<void>();
   private logsUpdatedSubject$ = new Subject<void>();
+  private messagesClearedSubject$ = new Subject<void>();
 
   public connection$ = this.connectionSubject$.asObservable();
   public connections$ = this.connectionsSubject$.asObservable();
   public connectionStatus$ = this.connectionStatusSubject$.asObservable();
   public messages$ = this.messagesSubject$.asObservable();
-  public messageCounter = this.messageCounterSubject$.asObservable();
-  public clientConnecting = this.clientConnectingSubject$.asObservable();
-  public logsUpdated = this.logsUpdatedSubject$.asObservable();
+  public messageCounter$ = this.messageCounterSubject$.asObservable();
+  public clientConnecting$ = this.clientConnectingSubject$.asObservable();
+  public logsUpdated$ = this.logsUpdatedSubject$.asObservable();
+  public messagesCleared$ = this.messagesClearedSubject$.asObservable();
 
   public connectionStatusLogMap = new Map<string, ConnectionStatusLog[]>();
 
@@ -220,11 +222,11 @@ export class MqttJsClientService {
 
   public clearMessages() {
     this.clearHistory(this.getSelectedConnectionId());
+    this.messagesClearedSubject$.next();
   }
 
   public clearAllMessages() {
     for (const clientId of this.connectionMqttClientMap.keys()) {
-      console.log('clientId', clientId)
       this.clearHistory(clientId);
     }
   }

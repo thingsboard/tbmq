@@ -82,7 +82,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       }
     );
 
-    this.mqttJsClientService.clientConnecting.subscribe(
+    this.mqttJsClientService.clientConnecting$.subscribe(
       () => {
         this.connecting = true;
       }
