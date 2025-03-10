@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.integration.api;
 import io.netty.channel.EventLoopGroup;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
+import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
 
@@ -45,6 +46,8 @@ public interface IntegrationContext {
     void onUplinkMessageProcessed(boolean success);
 
     void saveErrorEvent(ErrorEvent errorEvent);
+
+    void saveLifecycleEvent(ComponentLifecycleEvent event, Exception e);
 
     BasicCallback getCheckConnectionCallback();
 

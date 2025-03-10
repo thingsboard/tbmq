@@ -126,7 +126,7 @@ public class KafkaIntegration extends AbstractIntegration {
     }
 
     @Override
-    public void doStopProcessingPersistedMessages() {
+    public void doStopClient() {
         if (this.producer != null) {
             try {
                 this.producer.close();

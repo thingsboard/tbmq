@@ -81,8 +81,8 @@ class MqttIntegrationTest {
     }
 
     @Test
-    void testDoStopProcessingPersistedMessages() {
-        mqttIntegration.doStopProcessingPersistedMessages();
+    void testDoStopClient() {
+        mqttIntegration.doStopClient();
         verify(mockClient, times(1)).disconnect();
     }
 

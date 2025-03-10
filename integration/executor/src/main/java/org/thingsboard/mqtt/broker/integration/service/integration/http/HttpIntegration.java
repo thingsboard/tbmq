@@ -119,7 +119,7 @@ public class HttpIntegration extends AbstractHttpIntegration {
     }
 
     @Override
-    public void doStopProcessingPersistedMessages() {
+    public void doStopClient() {
         if (tbHttpClient != null) {
             tbHttpClient.destroy();
         }

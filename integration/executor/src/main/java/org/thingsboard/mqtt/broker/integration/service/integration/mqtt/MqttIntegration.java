@@ -45,6 +45,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MQTT_PROTOCOL_NAME;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MQTT_V_3_1_PROTOCOL_NAME;
+import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STARTED;
 
 @Slf4j
 public class MqttIntegration extends AbstractIntegration {
@@ -93,12 +94,15 @@ public class MqttIntegration extends AbstractIntegration {
         super.init(params);
         this.config = getClientConfiguration(this.lifecycleMsg, MqttIntegrationConfig.class);
         this.client = createMqttClient(this.config);
+        this.client.setCallback(new MqttIntegrationCallback(this.lifecycleMsg, __ -> {
+            handleLifecycleEvent(STARTED);
+            startProcessingIntegrationMessages(this);
+        }));
         connectClient(this.config);
-        startProcessingIntegrationMessages(this);
     }
 
     @Override
-    public void doStopProcessingPersistedMessages() {
+    public void doStopClient() {
         if (this.client != null) {
             try {
                 this.client.disconnect();
@@ -154,7 +158,7 @@ public class MqttIntegration extends AbstractIntegration {
         } catch (TimeoutException ex) {
             connectFuture.cancel(true);
             String hostPort = mqttIntegrationConfig.getHost() + ":" + mqttIntegrationConfig.getPort();
-            throw new RuntimeException(String.format("Failed to connect to MQTT broker at %s.", hostPort));
+            throw new RuntimeException(String.format("Failed to connect to MQTT broker at %s", hostPort));
         }
         if (!result.isSuccess()) {
             connectFuture.cancel(true);

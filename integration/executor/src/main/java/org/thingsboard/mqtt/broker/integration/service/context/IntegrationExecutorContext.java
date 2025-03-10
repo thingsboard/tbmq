@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
+import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
@@ -97,6 +98,13 @@ public class IntegrationExecutorContext implements IntegrationContext {
         }
 
         eventStorageService.persistError(integrationId, errorEvent);
+    }
+
+    @Override
+    public void saveLifecycleEvent(ComponentLifecycleEvent event, Exception e) {
+        if (lifecycleMsg != null) {
+            eventStorageService.persistLifecycleEvent(lifecycleMsg.getIntegrationId(), event, e);
+        }
     }
 
     @Override

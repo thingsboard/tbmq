@@ -18,12 +18,14 @@ package org.thingsboard.mqtt.broker.integration.service.event;
 import com.google.protobuf.ByteString;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.util.Pair;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.JavaSerDesUtil;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.event.LifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.event.StatisticsEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
+import org.thingsboard.mqtt.broker.common.util.DeduplicationUtil;
 import org.thingsboard.mqtt.broker.common.util.EventUtil;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
@@ -47,6 +49,12 @@ public class TbIntegrationExecutorEventStorageService implements EventStorageSer
 
     @Override
     public void persistLifecycleEvent(UUID entityId, ComponentLifecycleEvent lcEvent, Exception e) {
+        log.trace("[{}][{}] Sending Lifecycle event", entityId, lcEvent);
+        if (DeduplicationUtil.alreadyProcessed(getDeduplicationKey(entityId, lcEvent), 500)) {
+            log.info("[{}][{}] Lifecycle event already sent within 500ms", entityId, lcEvent);
+            return;
+        }
+
         TbEventSourceProto eventSource = TbEventSourceProto.INTEGRATION;
 
         var event = LifecycleEvent.builder()
@@ -70,6 +78,7 @@ public class TbIntegrationExecutorEventStorageService implements EventStorageSer
 
     @Override
     public void persistStatistics(UUID entityId, IntegrationStatistics statistics) {
+        log.trace("[{}][{}] Persist Statistics event", entityId, statistics);
         var builder = IntegrationEventProto.newBuilder()
                 .setSource(TbEventSourceProto.INTEGRATION)
                 .setEvent(ByteString.copyFrom(JavaSerDesUtil.encode(StatisticsEvent.builder()
@@ -86,6 +95,7 @@ public class TbIntegrationExecutorEventStorageService implements EventStorageSer
 
     @Override
     public void persistError(UUID entityId, ErrorEvent event) {
+        log.trace("[{}][{}] Persist Error event", entityId, event);
         TbEventSourceProto eventSource = TbEventSourceProto.INTEGRATION;
 
         var builder = IntegrationEventProto.newBuilder()
@@ -95,6 +105,10 @@ public class TbIntegrationExecutorEventStorageService implements EventStorageSer
                 .setEventSourceIdLSB(entityId.getLeastSignificantBits());
 
         apiService.sendEventData(entityId, builder.build(), EMPTY_CALLBACK);
+    }
+
+    private Object getDeduplicationKey(UUID entityId, ComponentLifecycleEvent lcEvent) {
+        return Pair.of(entityId, lcEvent);
     }
 
     private static final IntegrationCallback<Void> EMPTY_CALLBACK = new IntegrationCallback<>() {

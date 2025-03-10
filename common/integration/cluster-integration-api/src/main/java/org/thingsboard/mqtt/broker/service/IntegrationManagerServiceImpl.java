@@ -396,7 +396,7 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
                 if (log.isDebugEnabled()) {
                     log.debug("[{}] Failed to update state", id, e);
                 } else {
-                    log.warn("[{}] Failed to update state due to: {}. Enable debug level to get more details.", id, e.getMessage());
+                    log.warn("[{}] Failed to update state due to: {}. Enable debug level to get more details", id, e.getMessage());
                 }
                 success = false;
             } finally {

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
@@ -49,6 +50,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
+        log.info("[{}][{}] Init integration", params.getLifecycleMsg().getIntegrationId(), params.getLifecycleMsg().getName());
         this.lifecycleMsg = params.getLifecycleMsg();
         this.context = params.getContext();
         Map<String, String> mdMap = new HashMap<>();
@@ -69,17 +71,26 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     @Override
     public void destroy() {
+        if (this.lifecycleMsg != null) {
+            log.info("[{}][{}] Destroy integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+        }
         stopProcessingPersistedMessages();
     }
 
     @Override
     public void destroyAndClearData() {
+        if (this.lifecycleMsg != null) {
+            log.info("[{}][{}] Destroy and clear integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+        }
         stopProcessingPersistedMessages();
         clearIntegrationMessages();
     }
 
     @Override
     public void update(TbIntegrationInitParams params) throws Exception {
+        if (this.lifecycleMsg != null) {
+            log.info("[{}][{}] Update integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+        }
         destroy();
         init(params);
     }
@@ -127,7 +138,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     }
 
     protected void stopProcessingPersistedMessages() {
-        doStopProcessingPersistedMessages();
+        doStopClient();
 
         if (lifecycleMsg == null) {
             log.debug("[{}] Integration was not initialized properly. Skip stopProcessingPersistedMessages", this.getClass());
@@ -196,6 +207,14 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
         return throwable.getCause().toString();
     }
 
+    protected void handleLifecycleEvent(ComponentLifecycleEvent event) {
+        handleLifecycleEvent(event, null);
+    }
+
+    protected void handleLifecycleEvent(ComponentLifecycleEvent event, Exception e) {
+        context.saveLifecycleEvent(event, e);
+    }
+
     protected ContentType getDefaultUplinkContentType() {
         return ContentType.JSON;
     }
@@ -226,7 +245,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     }
 
-    protected void doStopProcessingPersistedMessages() {
+    protected void doStopClient() {
 
     }
 
