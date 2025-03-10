@@ -43,7 +43,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { AsyncPipe } from '@angular/common';
 import { IntegrationTypeSelectComponent } from '@home/components/integration/integration-type-select.component';
-import { MatError, MatFormField, MatLabel } from '@angular/material/form-field';
+import { MatSuffix, MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import {
@@ -87,7 +87,7 @@ import { MatTooltip } from '@angular/material/tooltip';
     MatDivider,
     MatDialogActions,
     MatButton,
-    MatError,
+    MatSuffix,
     MatLabel,
     ToastDirective,
     HttpTopicFiltersComponent,
