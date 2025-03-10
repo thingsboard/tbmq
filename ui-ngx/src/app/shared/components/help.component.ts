@@ -24,7 +24,12 @@ import { TranslateModule } from '@ngx-translate/core';
 @Component({
     selector: '[tb-help]',
     templateUrl: './help.component.html',
-    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
+    imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule],
+    styles: [`
+      ::ng-deep .mat-mdc-button-persistent-ripple {
+        display: none;
+      }
+    `]
 })
 export class HelpComponent {
 

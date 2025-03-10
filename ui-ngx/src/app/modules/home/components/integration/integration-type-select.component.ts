@@ -30,11 +30,12 @@ import { Observable, of } from 'rxjs';
 import { distinctUntilChanged, map, mergeMap, share, tap } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
-import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatInput } from '@angular/material/input';
+import { MatTooltip } from '@angular/material/tooltip';
 
 type IntegrationInfo = IntegrationTypeInfo & {type: IntegrationType};
 
@@ -53,7 +54,7 @@ type IntegrationInfo = IntegrationTypeInfo & {type: IntegrationType};
     MatOption,
     AsyncPipe,
     MatInput,
-    MatError,
+    MatTooltip,
     MatSuffix,
     MatLabel
   ],
