@@ -137,7 +137,7 @@
         }
       </tb-integration-credentials>
     </section>
-    <section class="flex items-center gap-2" [class.!hidden]="disabled">
+    <section class="flex items-center gap-2" [class.!hidden]="disabled || isNew">
       <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
       </ng-container>
       <mat-icon class="tb-mat-20 mb-2" style="color: rgba(0,0,0,0.18)"
