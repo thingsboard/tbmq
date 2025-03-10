@@ -22,14 +22,12 @@ import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
-    // tslint:disable-next-line:component-selector
     selector: '[tb-help]',
     templateUrl: './help.component.html',
     imports: [MatIconButton, MatTooltip, MatIcon, TranslateModule]
 })
 export class HelpComponent {
 
-  // tslint:disable-next-line:no-input-rename
   readonly helpLinkId = input<string>(undefined, { alias: "tb-help" });
 
   gotoHelpPage(): void {
