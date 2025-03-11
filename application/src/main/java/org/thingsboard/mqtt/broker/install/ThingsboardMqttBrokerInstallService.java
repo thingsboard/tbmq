@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.install.DatabaseEntitiesUpgradeService;
 import org.thingsboard.mqtt.broker.service.install.DatabaseSchemaService;
+import org.thingsboard.mqtt.broker.service.install.DatabaseSchemaSettingsService;
 import org.thingsboard.mqtt.broker.service.install.SystemDataLoaderService;
 import org.thingsboard.mqtt.broker.service.install.update.CacheCleanupService;
 import org.thingsboard.mqtt.broker.service.install.update.DataUpdateService;
@@ -36,8 +37,6 @@ public class ThingsboardMqttBrokerInstallService {
 
     @Value("${install.upgrade:false}")
     private Boolean isUpgrade;
-    @Value("${install.upgrade.from_version:1.2.3}")
-    private String upgradeFromVersion;
 
     private final DatabaseSchemaService databaseSchemaService;
     private final ApplicationContext context;
@@ -45,48 +44,25 @@ public class ThingsboardMqttBrokerInstallService {
     private final DatabaseEntitiesUpgradeService databaseEntitiesUpgradeService;
     private final CacheCleanupService cacheCleanupService;
     private final DataUpdateService dataUpdateService;
+    private final DatabaseSchemaSettingsService databaseSchemaVersionService;
 
     public void performInstall() {
         try {
             if (isUpgrade) {
-                log.info("Starting TBMQ Upgrade from version {} ...", upgradeFromVersion);
-
-                cacheCleanupService.clearCache(upgradeFromVersion);
-
-                switch (upgradeFromVersion) {
-                    case "1.0.0":
-                    case "1.0.1":
-                        log.info("Upgrading TBMQ from version 1.0.1 to 1.1.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.0.1");
-                    case "1.1.0":
-                        log.info("Upgrading TBMQ from version 1.1.0 to 1.2.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.1.0");
-                    case "1.2.0":
-                        log.info("Upgrading TBMQ from version 1.2.0 to 1.2.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.2.0");
-                    case "1.2.1":
-                        log.info("Upgrading TBMQ from version 1.2.1 to 1.3.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.2.1");
-
-                        systemDataLoaderService.createWebSocketMqttClientCredentials();
-                        systemDataLoaderService.createDefaultWebSocketConnections();
-                    case "1.3.0":
-                        log.info("Upgrading TBMQ from version 1.3.0 to 1.4.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.3.0");
-                        dataUpdateService.updateData("1.3.0");
-                    case "1.4.0":
-                        log.info("Upgrading TBMQ from version 1.4.0 to 2.0.0 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("1.4.0");
-                        dataUpdateService.updateData("1.4.0");
-                    case "2.0.0":
-                        log.info("Upgrading TBMQ from version 2.0.0 to 2.0.1 ...");
-                        databaseEntitiesUpgradeService.upgradeDatabase("2.0.0");
-                        dataUpdateService.updateData("2.0.0");
-                        break;
-                    default:
-                        throw new RuntimeException("Unable to upgrade TBMQ, unsupported fromVersion: " + upgradeFromVersion);
-                }
-
+                // TODO DON'T FORGET to update SUPPORTED_VERSIONS_FOR_UPGRADE in DefaultDatabaseSchemaSettingsService
+                databaseSchemaVersionService.validateSchemaSettings();
+                String fromVersion = databaseSchemaVersionService.getDbSchemaVersion();
+                String toVersion = databaseSchemaVersionService.getPackageSchemaVersion();
+                log.info("Starting TBMQ Upgrade from version {} to {} ...", fromVersion, toVersion);
+                cacheCleanupService.clearCache();
+                // Apply the schema_update.sql script. The script may include DDL statements to change the structure
+                // of *existing* tables and DML statements to manipulate the DB records.
+                databaseEntitiesUpgradeService.upgradeDatabase();
+                // All new tables that do not have any data will be automatically created here.
+                databaseSchemaService.createDatabaseSchema();
+                // TODO: cleanup update code after each release
+                dataUpdateService.updateData();
+                databaseSchemaVersionService.updateSchemaVersion();
                 log.info("Upgrade finished successfully!");
             } else {
                 log.info("Starting TBMQ Installation...");
@@ -94,6 +70,7 @@ public class ThingsboardMqttBrokerInstallService {
                 log.info("Installing DataBase schema...");
 
                 databaseSchemaService.createDatabaseSchema();
+                databaseSchemaVersionService.createSchemaSettings();
 
                 log.info("Loading system data...");
 

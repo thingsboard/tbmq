@@ -15,69 +15,95 @@
  */
 package org.thingsboard.mqtt.broker.service.install.update;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.willCallRealMethod;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = DefaultDataUpdateService.class)
 public class DefaultDataUpdateServiceTest {
 
     @MockBean
-    MqttClientCredentialsService mqttClientCredentialsService;
-    @MockBean
     AdminSettingsService adminSettingsService;
 
     @SpyBean
     DefaultDataUpdateService service;
 
-    @Before
-    public void setUp() throws Exception {
-        willCallRealMethod().given(service).convertSslMqttClientCredentialsForVersion140(any());
+    @Test
+    public void testUpdateData_createsWsClientSettingsWhenNotExist() throws Exception {
+        // Given
+        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+                .willReturn(null);
+
+        // When
+        service.updateData();
+
+        // Then
+        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().saveAdminSettings(any(AdminSettings.class));
+
+        ArgumentCaptor<AdminSettings> captor = ArgumentCaptor.forClass(AdminSettings.class);
+        then(adminSettingsService).should().saveAdminSettings(captor.capture());
+
+        AdminSettings savedSettings = captor.getValue();
+        assertThat(savedSettings).isNotNull();
+        assertThat(savedSettings.getKey()).isEqualTo(BrokerConstants.WEBSOCKET_KEY);
+        assertThat(savedSettings.getJsonValue()).isNotNull();
     }
 
     @Test
-    public void convertSslMqttClientCredentialsForVersion140FirstRun() throws IOException {
-        JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_in.json");
-        JsonNode expected = readFromResource("update/131/ssl_mqtt_creds_out.json");
+    public void testUpdateData_updatesJsonValueWhenNull() throws Exception {
+        // Given
+        AdminSettings wsSettings = new AdminSettings();
+        wsSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsSettings.setJsonValue(null);
 
-        String credentialsValue = service.convertSslMqttClientCredentialsForVersion140(spec.get("credentialsValue").asText());
-        assertThat(credentialsValue).isNotNull();
+        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+                .willReturn(wsSettings);
 
-        ObjectNode converted = (ObjectNode) spec;
+        // When
+        service.updateData();
 
-        converted.remove("credentialsValue");
-        converted.put("credentialsValue", credentialsValue);
-
-        assertThat(converted.toPrettyString().replaceAll("\\s+", ""))
-                .isEqualTo(expected.toPrettyString().replaceAll("\\s+", "")); // use IDE feature <Click to see difference>
+        // Then
+        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().saveAdminSettings(wsSettings);
+        assertThat(wsSettings.getJsonValue()).isNotNull();
     }
 
     @Test
-    public void convertSslMqttClientCredentialsForVersion140SecondRun() throws IOException {
-        JsonNode spec = readFromResource("update/131/ssl_mqtt_creds_out.json");
+    public void testUpdateData_updatesMaxMessagesWhenMissing() throws Exception {
+        // Given
+        ObjectNode jsonValue = mock(ObjectNode.class);
+        given(jsonValue.get("maxMessages")).willReturn(null);
 
-        String credentialsValue = service.convertSslMqttClientCredentialsForVersion140(spec.get("credentialsValue").asText());
-        assertThat(credentialsValue).isNull();
+        AdminSettings wsSettings = new AdminSettings();
+        wsSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsSettings.setJsonValue(jsonValue);
+
+        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+                .willReturn(wsSettings);
+
+        // When
+        service.updateData();
+
+        // Then
+        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().saveAdminSettings(wsSettings);
+        then(jsonValue).should().put("maxMessages", 1000);
     }
-
-    JsonNode readFromResource(String resourceName) throws IOException {
-        return JacksonUtil.OBJECT_MAPPER.readTree(this.getClass().getClassLoader().getResourceAsStream(resourceName));
-    }
-
 }

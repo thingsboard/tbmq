@@ -17,6 +17,6 @@ package org.thingsboard.mqtt.broker.service.install.update;
 
 public interface CacheCleanupService {
 
-    void clearCache(String fromVersion) throws Exception;
+    void clearCache() throws Exception;
 
 }

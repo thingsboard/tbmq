@@ -18,32 +18,16 @@
 CONF_FOLDER="${pkg.installFolder}/conf"
 jarfile=${pkg.installFolder}/bin/${pkg.name}.jar
 configfile=${pkg.name}.conf
-upgradeversion=${DATA_FOLDER}/.upgradeversion
 
 source "${CONF_FOLDER}/${configfile}"
 
-FROM_VERSION=`cat ${upgradeversion}`
-
 echo "Starting TBMQ upgrade ..."
 
-if [[ -z "${FROM_VERSION// }" ]]; then
-    echo "FROM_VERSION variable is invalid or unspecified!"
-    exit 1
-else
-    fromVersion="${FROM_VERSION// }"
-fi
-
-# "exec java -cp..." is wrong here since then the following lines "Saving upgrade version to file..." are not executed
-java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
+# WARNING: The "exec" command replaces the shell process with the Java process.
+# This means no commands after this line will be executed.
+# If new commands need to be added after Java starts, please REMOVE "exec".
+exec java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.mqtt.broker.ThingsboardMqttBrokerInstallApplication \
                 -Dspring.jpa.hibernate.ddl-auto=none \
                 -Dinstall.upgrade=true \
-                -Dinstall.upgrade.from_version=${fromVersion} \
                 -Dlogging.config=/usr/share/thingsboard-mqtt-broker/bin/install/logback.xml \
                 org.springframework.boot.loader.launch.PropertiesLauncher
-
-echo "Saving upgrade version to file..."
-
-echo "${pkg.upgradeVersion}" > ${upgradeversion}
-
-echo "Saved ${pkg.upgradeVersion}"
-

@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.util;
 
-import org.springframework.context.annotation.Profile;
-import org.springframework.stereotype.Service;
+public class EnvUtil {
 
-@Service
-@Profile("install")
-public class PsqlEntityDatabaseSchemaService extends AbstractDatabaseSchemaService
-        implements DatabaseSchemaService {
-
-    private static final String SCHEMA_ENTITIES_SQL = "schema-entities.sql";
-    private static final String SCHEMA_ENTITIES_IDX_SQL = "schema-entities-idx.sql";
-
-    public PsqlEntityDatabaseSchemaService() {
-        super(SCHEMA_ENTITIES_SQL, SCHEMA_ENTITIES_IDX_SQL);
+    public static boolean getBoolEnv(String name, boolean defaultValue) {
+        String env = System.getenv(name);
+        return env == null ? defaultValue : Boolean.parseBoolean(env);
     }
+
+    private static String getStrEnv(String name, String defaultValue) {
+        String env = System.getenv(name);
+        return env == null ? defaultValue : env;
+    }
+
 }

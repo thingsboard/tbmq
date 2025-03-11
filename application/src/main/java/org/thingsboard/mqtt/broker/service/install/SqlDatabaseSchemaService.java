@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.service.install;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,8 +30,12 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 @Slf4j
-public abstract class AbstractDatabaseSchemaService implements DatabaseSchemaService {
+@Service
+@Profile("install")
+public class SqlDatabaseSchemaService implements DatabaseSchemaService {
 
+    private static final String SCHEMA_ENTITIES_SQL = "schema-entities.sql";
+    private static final String SCHEMA_ENTITIES_IDX_SQL = "schema-entities-idx.sql";
     private static final String SQL_DIR = "sql";
 
     @Value("${spring.datasource.url}")
@@ -44,26 +50,16 @@ public abstract class AbstractDatabaseSchemaService implements DatabaseSchemaSer
     @Autowired
     private InstallScripts installScripts;
 
-    private final String schemaSql;
-    private final String schemaIdxSql;
-
-    protected AbstractDatabaseSchemaService(String schemaSql, String schemaIdxSql) {
-        this.schemaSql = schemaSql;
-        this.schemaIdxSql = schemaIdxSql;
-    }
-
     @Override
     public void createDatabaseSchema() throws Exception {
-        log.info("Installing SQL DataBase schema part: " + schemaSql);
-        executeQueryFromFile(schemaSql);
+        log.info("Installing SQL DataBase schema part: " + SCHEMA_ENTITIES_SQL);
+        executeQueryFromFile(SCHEMA_ENTITIES_SQL);
         createDatabaseIndexes();
     }
 
     private void createDatabaseIndexes() throws Exception {
-        if (schemaIdxSql != null) {
-            log.info("Installing SQL DataBase schema indexes part: " + schemaIdxSql);
-            executeQueryFromFile(schemaIdxSql);
-        }
+        log.info("Installing SQL DataBase schema indexes part: " + SCHEMA_ENTITIES_IDX_SQL);
+        executeQueryFromFile(SCHEMA_ENTITIES_IDX_SQL);
     }
 
     void executeQueryFromFile(String schemaSql) throws SQLException, IOException {
