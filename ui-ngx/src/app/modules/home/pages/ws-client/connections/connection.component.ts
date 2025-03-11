@@ -142,6 +142,7 @@ export class ConnectionComponent implements OnInit {
       this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        autoFocus: false,
         data: {
           entity: connection
         }

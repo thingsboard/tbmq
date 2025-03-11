@@ -23,7 +23,7 @@ import lombok.Getter;
 public enum IntegrationType {
 
     HTTP,
-    //    MQTT,
+    MQTT,
     KAFKA,
     ;
 

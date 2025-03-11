@@ -26,7 +26,7 @@ public class PasswordResetExecutorService extends AbstractListeningExecutor {
     private int mailExecutorThreadPoolSize;
 
     @Override
-    protected int getThreadPollSize() {
+    protected int getThreadPoolSize() {
         return mailExecutorThreadPoolSize;
     }
 

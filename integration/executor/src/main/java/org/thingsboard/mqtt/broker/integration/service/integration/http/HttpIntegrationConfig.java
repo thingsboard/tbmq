@@ -33,6 +33,8 @@ import java.util.Objects;
 @AllArgsConstructor
 public class HttpIntegrationConfig {
 
+    private boolean sendOnlyMsgPayload;
+
     private String restEndpointUrl;
     private String requestMethod;
     private Map<String, String> headers;
@@ -44,7 +46,7 @@ public class HttpIntegrationConfig {
     private boolean sendBinaryOnParseFailure;
 
     public HttpIntegrationConfig(String restEndpointUrl) {
-        this(restEndpointUrl, "POST", Map.of("Content-Type", "application/json"), 0, 0, null, 256, ContentType.BINARY, true);
+        this(false, restEndpointUrl, "POST", Map.of("Content-Type", "application/json"), 0, 0, null, 256, ContentType.BINARY, true);
     }
 
     public ClientCredentials getCredentials() {

@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 :host ::ng-deep {
+  .security-setting {
+    .mat-content {
+      overflow: visible;
+    }
+    .mat-expansion-panel-body {
+      padding: 0;
+      .security-setting-content {
+        display: block;
+        margin: 0 16px 12px;
+      }
+    }
+  }
+
   .mat-expansion-panel-body {
     padding: 0 0 16px;
   }

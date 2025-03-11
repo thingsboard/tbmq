@@ -189,6 +189,7 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
       Integration>(IntegrationWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      autoFocus: false,
       data: {
         entitiesTableConfig: this as any,
       }

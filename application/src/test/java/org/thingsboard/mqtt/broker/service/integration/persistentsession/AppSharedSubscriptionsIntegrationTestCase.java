@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.integration.persistentsession;
 
+import com.google.common.util.concurrent.Futures;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.handler.codec.mqtt.MqttQoS;
@@ -52,6 +53,7 @@ import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -142,7 +144,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
                 client.disconnect();
                 Thread.sleep(50);
             }
-            client = MqttClient.create(config, null);
+            client = MqttClient.create(config, null, externalExecutorService);
             client.connect("localhost", mqttPort).get(30, TimeUnit.SECONDS);
             client.disconnect();
         }
@@ -370,7 +372,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         config.setCleanSession(cleanSession);
         config.setProtocolVersion(MqttVersion.MQTT_3_1_1);
         config.setClientId(clientId);
-        MqttClient client = MqttClient.create(config, handler);
+        MqttClient client = MqttClient.create(config, handler, externalExecutorService);
         client.connect("localhost", mqttPort).get(5, TimeUnit.SECONDS);
         return client;
     }
@@ -395,9 +397,10 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
         }
 
         @Override
-        public void onMessage(String s, ByteBuf byteBuf) {
+        public Future<Void> onMessage(String s, ByteBuf byteBuf) {
             ai.incrementAndGet();
             latch.countDown();
+            return Futures.immediateVoidFuture();
         }
     }
 }

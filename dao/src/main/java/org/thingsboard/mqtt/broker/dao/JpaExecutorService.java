@@ -26,7 +26,7 @@ public class JpaExecutorService extends AbstractListeningExecutor {
     private int poolSize;
 
     @Override
-    protected int getThreadPollSize() {
+    protected int getThreadPoolSize() {
         return poolSize;
     }
 

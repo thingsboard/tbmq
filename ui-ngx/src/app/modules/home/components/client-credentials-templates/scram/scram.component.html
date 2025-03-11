@@ -24,17 +24,17 @@
         <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.username</mat-label>
           <input matInput formControlName="userName" name="user-name">
-          <tb-copy-button #copyUsernameBtn
-            (click)="onClickTbCopyButton('userName')"
-            [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length" matSuffix
+          <tb-copy-button matSuffix
+            [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
             [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
           <button mat-icon-button matSuffix
             [matTooltip]="'action.regenerate' | translate"
             matTooltipPosition="above"
+            [class.hidden]="disabled()"
             (click)="regenerate('userName')">
             <mat-icon>
-              repeat
+              autorenew
             </mat-icon>
           </button>
           @if (credentialsMqttFormGroup.get('userName').hasError('required')) {

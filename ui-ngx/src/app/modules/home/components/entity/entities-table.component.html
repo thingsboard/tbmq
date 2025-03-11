@@ -208,6 +208,7 @@
                         @case (cellActionType.COPY_BUTTON) {
                           <tb-copy-button
                             class="mat-cell-copy"
+                            [containerStyle]="{padding: '4px'}"
                             [buttonClass]="{'tb-mat-32': true}"
                             [disabled]="isLoading$ | async"
                             [class.!hidden]="!column.actionCell.isEnabled(entity)"

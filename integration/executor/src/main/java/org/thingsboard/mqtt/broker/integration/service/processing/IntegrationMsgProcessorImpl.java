@@ -90,6 +90,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
         log.info("Destroying IE msg processor");
         stopped = true;
         integrations.forEach((integrationId, integration) -> stopIntegrationCancelTask(integration));
+        integrations.clear();
         if (integrationMsgsConsumerExecutor != null) {
             ThingsBoardExecutors.shutdownAndAwaitTermination(integrationMsgsConsumerExecutor, "IE msg consumers'");
         }
@@ -101,9 +102,13 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
     @Override
     public void startProcessingIntegrationMessages(TbPlatformIntegration integration) {
         String integrationId = integration.getIntegrationId();
+        if (integrations.containsKey(integrationId)) {
+            log.info("[{}][{}] The processor is already running. Skipping start processing request", integrationId, integration.getLifecycleMsg().getName());
+            return;
+        }
 
         String integrationTopic = integrationTopicService.createTopic(integrationId);
-        log.debug("[{}] Starting integration messages processing", integrationId);
+        log.info("[{}] Starting integration messages processing", integrationId);
         TbQueueControlledOffsetConsumer<TbProtoQueueMsg<PublishIntegrationMsgProto>> consumer = initConsumer(integrationId, integrationTopic);
         IntegrationHolder integrationHolder = new IntegrationHolder(integration);
         Future<?> future = integrationMsgsConsumerExecutor.submit(() -> {
@@ -119,7 +124,7 @@ public class IntegrationMsgProcessorImpl implements IntegrationMsgProcessor {
 
     @Override
     public void stopProcessingIntegrationMessages(String integrationId) {
-        log.debug("[{}] Stopping integration messages processing", integrationId);
+        log.info("[{}] Stopping integration messages processing", integrationId);
         IntegrationHolder integrationHolder = integrations.remove(integrationId);
         if (integrationHolder == null) {
             log.warn("[{}] Cannot find integration for integrationId", integrationId);

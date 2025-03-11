@@ -28,6 +28,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testValidConfig() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "test-topic",
                 null,
@@ -50,6 +51,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testInvalidBootstrapServers() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "",
                 "test-topic",
                 null,
@@ -74,6 +76,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testInvalidTopic() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "",
                 null,
@@ -98,6 +101,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testNegativeRetries() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "test-topic",
                 null,
@@ -122,6 +126,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testInvalidAcks() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "test-topic",
                 null,
@@ -146,6 +151,7 @@ class KafkaConfigValidatorTest {
     @Test
     void testInvalidCompression() {
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "test-topic",
                 null,
@@ -173,6 +179,7 @@ class KafkaConfigValidatorTest {
         properties.put("ssl.keystore.location", "/path/to/keystore");
 
         KafkaIntegrationConfig config = new KafkaIntegrationConfig(
+                false,
                 "localhost:9092",
                 "test-topic",
                 null,

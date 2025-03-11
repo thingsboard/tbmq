@@ -70,7 +70,7 @@
         <jakarta-annotation.version>3.0.0</jakarta-annotation.version>
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <paho-client.version>1.2.5</paho-client.version>
-        <thingsboard.version>3.5.0</thingsboard.version>
+        <thingsboard.version>3.9.0</thingsboard.version>
         <concurrentunit.version>0.4.6</concurrentunit.version>
         <takari-cpsuite.version>1.2.7</takari-cpsuite.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
@@ -990,7 +990,6 @@
                 <groupId>org.thingsboard</groupId>
                 <artifactId>netty-mqtt</artifactId>
                 <version>${thingsboard.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.paho</groupId>

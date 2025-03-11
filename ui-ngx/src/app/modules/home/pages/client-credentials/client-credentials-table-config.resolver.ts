@@ -198,13 +198,14 @@ export class ClientCredentialsTableConfigResolver {
     this.dialog.open<ClientCredentialsWizardDialogComponent, AddEntityDialogData<BaseData>,
       ClientCredentials>(ClientCredentialsWizardDialogComponent, {
       disableClose: true,
-      panelClass: ['tb-dialog', 'tb-fullscreen-dialog']
+      panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      autoFocus: false
     }).afterClosed().subscribe(
       (res) => {
         if (res) {
           this.config.updateData();
           if (!localStorage.getItem('notDisplayCheckAfterAddCredentials') && res.credentialsType === CredentialsType.MQTT_BASIC) {
-            this.checkCredentials(null, res, true);
+            this.checkConnectivity(null, res, true);
           }
         }
       }
@@ -217,7 +218,7 @@ export class ClientCredentialsTableConfigResolver {
         this.openCredentials(action.event, action.entity, config);
         return true;
       case 'checkConnectivity':
-        this.checkCredentials(action.event, action.entity);
+        this.checkConnectivity(action.event, action.entity);
         return true;
       case 'changePassword':
         this.changePassword(action.event, action.entity);
@@ -226,7 +227,7 @@ export class ClientCredentialsTableConfigResolver {
     return false;
   }
 
-  private checkCredentials($event: Event, credentials: ClientCredentials, afterAdd = false) {
+  private checkConnectivity($event: Event, credentials: ClientCredentials, afterAdd = false) {
     if ($event) {
       $event.stopPropagation();
     }

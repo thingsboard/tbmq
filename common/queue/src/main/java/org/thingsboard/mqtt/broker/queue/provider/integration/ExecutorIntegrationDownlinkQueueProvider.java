@@ -45,6 +45,7 @@ public class ExecutorIntegrationDownlinkQueueProvider implements IntegrationDown
     private final ServiceInfoProvider serviceInfoProvider;
     private final @Lazy HttpIntegrationDownlinkQueueFactory httpIntegrationDownlinkQueueFactory;
     private final @Lazy KafkaIntegrationDownlinkQueueFactory kafkaIntegrationDownlinkQueueFactory;
+    private final @Lazy MqttIntegrationDownlinkQueueFactory mqttIntegrationDownlinkQueueFactory;
 
     private Map<IntegrationType, TbQueueControlledOffsetConsumer<TbProtoQueueMsg<DownlinkIntegrationMsgProto>>> consumers;
 
@@ -67,7 +68,7 @@ public class ExecutorIntegrationDownlinkQueueProvider implements IntegrationDown
         return switch (integrationType) {
             case HTTP -> httpIntegrationDownlinkQueueFactory.createConsumer(serviceId);
             case KAFKA -> kafkaIntegrationDownlinkQueueFactory.createConsumer(serviceId);
-//            case MQTT -> throw new ThingsboardRuntimeException("MQTT integration type is not yet implemented!");
+            case MQTT -> mqttIntegrationDownlinkQueueFactory.createConsumer(serviceId);
             default -> throw new ThingsboardRuntimeException("Unsupported integration type: " + integrationType);
         };
     }

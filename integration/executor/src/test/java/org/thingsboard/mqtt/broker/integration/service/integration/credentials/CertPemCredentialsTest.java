@@ -94,7 +94,7 @@ class CertPemCredentialsTest {
         String certContent = fileContent(certPath);
         certPemCredentials.setCert(certContent);
         certPemCredentials.setPrivateKey(fileContent(keyPath));
-        certPemCredentials.setPassword(password);
+        certPemCredentials.setPrivateKeyPassword(password);
         KeyStore keyStore = certPemCredentials.loadKeyStore();
         Assertions.assertNotNull(keyStore);
         Key key = keyStore.getKey(PRIVATE_KEY_ALIAS, SslUtil.getPassword(password));

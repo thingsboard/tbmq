@@ -15,19 +15,24 @@
     limitations under the License.
 
 -->
-<button mat-icon-button
-  type="button"
-  [class]="buttonClass()"
-  [color]="color()"
-  [disabled]="disabled()"
-  [matTooltip]="matTooltipText"
-  [matTooltipPosition]="matTooltipPosition"
-  (click)="copy($event)">
+<div [style]="containerStyle()">
   @if (!copied) {
-    <mat-icon [svgIcon]="mdiIcon()" [style]="style()">
+    <mat-icon [svgIcon]="mdiIcon()"
+              [class]="buttonClass()"
+              [matTooltip]="matTooltipText"
+              [matTooltipPosition]="matTooltipPosition"
+              (click)="copy($event)"
+              [color]="color()"
+              [style]="style()">
       {{ icon() }}
     </mat-icon>
   } @else {
-    <mat-icon [style]="style()" class="copied">done</mat-icon>
+    <mat-icon [style]="style()"
+              [class]="buttonClass()"
+              class="copied">
+      done
+    </mat-icon>
   }
-</button>
+</div>
+
+

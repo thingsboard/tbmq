@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.limit.LimitedApi;
 import org.thingsboard.mqtt.broker.common.util.DeduplicationUtil;
@@ -42,7 +43,7 @@ public class DefaultIntegrationRateLimitService implements IntegrationRateLimitS
     @Value("#{${event.error.rate-limits.ttl-minutes} * 60 * 1000}")
     private long deduplicationDurationMs;
 
-    private final RateLimitService rateLimitService;
+    private final @Lazy RateLimitService rateLimitService;
 
     @PostConstruct
     public void init() {

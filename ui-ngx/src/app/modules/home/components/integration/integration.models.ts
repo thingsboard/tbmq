@@ -15,13 +15,8 @@
 ///
 
 import { UntypedFormControl } from '@angular/forms';
-import { IntegrationType } from '@shared/models/integration.models';
 
 const PRIVATE_NETWORK_REGEXP = /^((http|https|pulsar):\/\/)?(127\.|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(192\.168\.)|localhost(:[0-9]+)?$)/;
-
-export function integrationEndPointUrl(type: IntegrationType, baseUrl: string, key = ''): string {
-  return `${baseUrl}/api/v1/integrations/${type.toLowerCase()}/${key}`;
-}
 
 export function privateNetworkAddressValidator(control: UntypedFormControl): { [key: string]: any } | null {
   if (control.value) {

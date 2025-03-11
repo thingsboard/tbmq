@@ -20,58 +20,53 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
     }
-    <div class="flex flex-col">
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.bootstrap-servers</mat-label>
-        <input matInput formControlName="bootstrapServers" required>
-        @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
-          <mat-icon matSuffix
-                    matTooltipPosition="above"
-                    matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
-                    class="tb-error">
-            warning
-          </mat-icon>
-        }
-      </mat-form-field>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.topic</mat-label>
-        <input matInput formControlName="topic">
-        @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
-          <mat-icon matSuffix
-                    matTooltipPosition="above"
-                    matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'integration.topic-required' | translate }}"
-                    class="tb-error">
-            warning
-          </mat-icon>
-        }
-      </mat-form-field>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.key</mat-label>
-        <input matInput formControlName="key">
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.key-hint' | translate }}">
-          help
+    <section class="flex items-center gap-2 pb-6">
+      <mat-slide-toggle formControlName="sendOnlyMsgPayload">
+        <span translate>integration.send-only-payload</span>
+      </mat-slide-toggle>
+      <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                [matTooltip]="'integration.send-only-payload-hint' | translate"
+                matTooltipPosition="right">
+        info</mat-icon>
+    </section>
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.bootstrap-servers</mat-label>
+      <input matInput formControlName="bootstrapServers" required>
+      @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
+                  class="tb-error">
+          warning
         </mat-icon>
-      </mat-form-field>
-      <mat-form-field class="mat-block" appearance="outline">
-        <mat-label translate>integration.client-id-prefix</mat-label>
-        <input matInput formControlName="clientIdPrefix">
-        <mat-icon matSuffix class="cursor-pointer"
-                  matTooltipPosition="above"
-                  aria-hidden="false"
-                  aria-label="help-icon"
-                  color="primary"
-                  matTooltip="{{ 'integration.client-id-prefix-hint' | translate }}">
-          help
+      }
+    </mat-form-field>
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.topic</mat-label>
+      <input matInput formControlName="topic">
+      @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'integration.topic-required' | translate }}"
+                  class="tb-error">
+          warning
         </mat-icon>
-      </mat-form-field>
-    </div>
+      }
+    </mat-form-field>
+    <mat-form-field class="mat-block" appearance="outline">
+      <mat-label translate>integration.key</mat-label>
+      <input matInput formControlName="key">
+      <mat-icon matSuffix matTooltip="{{ 'integration.key-hint' | translate }}">
+        help
+      </mat-icon>
+    </mat-form-field>
+    <mat-form-field class="mat-block mb-4" appearance="outline" subscriptSizing="dynamic">
+      <mat-label translate>integration.client-id-prefix</mat-label>
+      <input matInput formControlName="clientIdPrefix">
+      <mat-icon matSuffix matTooltip="{{ 'integration.client-id-prefix-hint' | translate }}">
+        help
+      </mat-icon>
+    </mat-form-field>
     <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">
     </ng-container>
     <mat-expansion-panel class="configuration-panel">
@@ -86,7 +81,6 @@
           <input type="number" step="1" min="0" matInput formControlName="retries">
           @if (clientConfigurationFormGroup.get('retries').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-retries-message' | translate }}"
                       class="tb-error">
@@ -99,7 +93,6 @@
           <input type="number" step="1" min="0" matInput formControlName="batchSize">
           @if (clientConfigurationFormGroup.get('batchSize').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-batch-size-bytes-message' | translate }}"
                       class="tb-error">
@@ -112,7 +105,6 @@
           <input type="number" step="1" min="0" matInput formControlName="linger">
           @if (clientConfigurationFormGroup.get('linger').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-linger-ms-message' | translate }}"
                       class="tb-error">
@@ -125,7 +117,6 @@
           <input type="number" step="1" min="0" matInput formControlName="bufferMemory">
           @if (clientConfigurationFormGroup.get('bufferMemory').hasError('min')) {
             <mat-icon matSuffix
-                      matTooltipPosition="above"
                       matTooltipClass="tb-error-tooltip"
                       matTooltip="{{ 'integration.min-buffer-memory-message' | translate }}"
                       class="tb-error">
@@ -153,7 +144,7 @@
             }
           </mat-select>
         </mat-form-field>
-        <div class="flex flex-col gap-4">
+        <div class="flex flex-col gap-3">
           <section class="security-setting mat-padding">
             <p translate>integration.other-properties</p>
             <tb-key-val-map

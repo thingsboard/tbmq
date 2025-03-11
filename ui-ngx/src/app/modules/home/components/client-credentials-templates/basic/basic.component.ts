@@ -21,8 +21,7 @@ import {
   forwardRef,
   OnDestroy,
   input,
-  model,
-  viewChild
+  model
 } from '@angular/core';
 import { ControlValueAccessor, FormBuilder, NG_VALIDATORS, NG_VALUE_ACCESSOR, UntypedFormGroup, ValidationErrors, Validator, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
@@ -64,16 +63,13 @@ import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle } fr
 })
 export class MqttCredentialsBasicComponent implements ControlValueAccessor, Validator, OnDestroy, AfterViewInit {
 
-  readonly copyClientIdBtn = viewChild<CopyButtonComponent>('copyClientIdBtn');
-  readonly copyUsernameBtn = viewChild<CopyButtonComponent>('copyUsernameBtn');
-
   disabled = model<boolean>();
   readonly entity = input<ClientCredentials>();
 
   authRulePatternsType = AuthRulePatternsType;
   credentialsMqttFormGroup: UntypedFormGroup;
-  pubRulesSet: Set<string> = new Set();
-  subRulesSet: Set<string> = new Set();
+  pubRulesSet = new Set<string>();
+  subRulesSet = new Set<string>();
   separatorKeysCodes = [ENTER, TAB];
 
   private destroy$ = new Subject<void>();
@@ -222,14 +218,6 @@ export class MqttCredentialsBasicComponent implements ControlValueAccessor, Vali
         this.pubRulesSet = new Set(array);
         this.setAuthRulePatternsControl(this.pubRulesSet, type);
         break;
-    }
-  }
-
-  onClickTbCopyButton(value: string) {
-    if (value === 'clientId') {
-      this.copyClientIdBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
-    } else if (value === 'userName') {
-      this.copyUsernameBtn().copy(this.credentialsMqttFormGroup.get(value)?.value);
     }
   }
 

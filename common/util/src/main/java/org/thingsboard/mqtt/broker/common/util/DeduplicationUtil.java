@@ -26,12 +26,12 @@ public class DeduplicationUtil {
 
     private static final ConcurrentMap<Object, Long> cache = new ConcurrentReferenceHashMap<>(16, SOFT);
 
-    public static boolean alreadyProcessed(Object deduplicationKey, long deduplicationDuration) {
+    public static boolean alreadyProcessed(Object deduplicationKey, long deduplicationDurationMs) {
         AtomicBoolean alreadyProcessed = new AtomicBoolean(false);
         cache.compute(deduplicationKey, (key, lastProcessedTs) -> {
             if (lastProcessedTs != null) {
                 long passed = System.currentTimeMillis() - lastProcessedTs;
-                if (passed <= deduplicationDuration) {
+                if (passed <= deduplicationDurationMs) {
                     alreadyProcessed.set(true);
                     return lastProcessedTs;
                 }

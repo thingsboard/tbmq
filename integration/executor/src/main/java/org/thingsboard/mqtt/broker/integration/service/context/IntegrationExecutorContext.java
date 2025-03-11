@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.event.ErrorEvent;
+import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.common.util.ListeningExecutor;
@@ -37,7 +38,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 @Getter
-public class TbIntegrationExecutorIntegrationContext implements IntegrationContext {
+public class IntegrationExecutorContext implements IntegrationContext {
 
     private final IntegrationLifecycleMsg lifecycleMsg;
     private final IntegrationMsgProcessor integrationMsgProcessor;
@@ -49,6 +50,7 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
     private final String serviceId;
     private final BasicCallback callback;
     private final ExternalCallExecutorService externalCallExecutorService;
+    private final int integrationConnectTimeoutSec;
 
     @Override
     public EventLoopGroup getSharedEventLoop() {
@@ -96,6 +98,13 @@ public class TbIntegrationExecutorIntegrationContext implements IntegrationConte
         }
 
         eventStorageService.persistError(integrationId, errorEvent);
+    }
+
+    @Override
+    public void saveLifecycleEvent(ComponentLifecycleEvent event, Exception e) {
+        if (lifecycleMsg != null) {
+            eventStorageService.persistLifecycleEvent(lifecycleMsg.getIntegrationId(), event, e);
+        }
     }
 
     @Override

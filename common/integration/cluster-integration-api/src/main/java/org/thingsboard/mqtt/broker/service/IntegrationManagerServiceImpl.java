@@ -75,6 +75,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.DELETED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.FAILED;
+import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.REINIT;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STARTED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STOPPED;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INTEGRATION_EXECUTOR;
@@ -122,6 +123,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
     private int gracefulShutdownTimeoutMs;
     @Value("${integrations.destroy.count:10}")
     private int gracefulShutdownIterations;
+    @Value("${integrations.destroy.forced-shutdown-timeout-ms:15000}")
+    private int forcedShutdownTimeoutMs;
 
     private ScheduledExecutorService lifecycleExecutorService;
     private ScheduledExecutorService reInitExecutorService;
@@ -152,8 +155,8 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
         log.info("Destroying IntegrationManagerService");
         integrations.forEach((uuid, integrationState) -> handleStopIntegrationLifecycleMsg(integrationState.getLifecycleMsg()));
         try {
-            stopLatch.await();
-            log.info("IE manager service graceful-stop has ended!");
+            boolean await = stopLatch.await(forcedShutdownTimeoutMs, TimeUnit.MILLISECONDS);
+            log.info(await ? "IE manager service graceful-stop has ended!" : "IE manager service graceful-stop has failed. Executing forceful shutdown!");
         } catch (InterruptedException e) {
             log.error("IE manager service graceful stop was interrupted", e);
         }
@@ -393,7 +396,7 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
                 if (log.isDebugEnabled()) {
                     log.debug("[{}] Failed to update state", id, e);
                 } else {
-                    log.warn("[{}] Failed to update state due to: {}. Enable debug level to get more details.", id, e.getMessage());
+                    log.warn("[{}] Failed to update state due to: {}. Enable debug level to get more details", id, e.getMessage());
                 }
                 success = false;
             } finally {
@@ -527,6 +530,7 @@ public class IntegrationManagerServiceImpl implements IntegrationManagerService 
                 if (state.getUpdateLock().tryLock()) {
                     boolean success = true;
                     try {
+                        eventStorageService.persistLifecycleEvent(state.getIntegrationId(), REINIT, null);
                         processUpdateEvent(state, state.getLifecycleMsg());
                     } catch (Exception e) {
                         log.warn("[{}] Failed to re-initialize the integration", state.getIntegrationId(), e);

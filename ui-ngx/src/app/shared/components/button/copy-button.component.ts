@@ -19,14 +19,13 @@ import { ClipboardService } from 'ngx-clipboard';
 import { TooltipPosition, MatTooltip } from '@angular/material/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { ThemePalette } from '@angular/material/core';
-import { MatIconButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
     selector: 'tb-copy-button',
     styleUrls: ['copy-button.component.scss'],
     templateUrl: './copy-button.component.html',
-    imports: [MatIconButton, MatTooltip, MatIcon]
+    imports: [MatTooltip, MatIcon]
 })
 export class CopyButtonComponent {
 
@@ -39,6 +38,7 @@ export class CopyButtonComponent {
   readonly style = input<{[key: string]: any;}>({});
   readonly color = input<ThemePalette>();
   readonly buttonClass = input<{[key: string]: any;}>({});
+  readonly containerStyle = input<{[key: string]: any;}>({padding: '12px'});
 
   copied = false;
   private timer;

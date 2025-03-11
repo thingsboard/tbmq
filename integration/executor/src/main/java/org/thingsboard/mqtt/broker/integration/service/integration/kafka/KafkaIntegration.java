@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.integration.kafka;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.protobuf.ByteString;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -31,15 +32,14 @@ import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
 
+import java.util.Base64;
 import java.util.Properties;
-import java.util.UUID;
 
 @Slf4j
 public class KafkaIntegration extends AbstractIntegration {
@@ -126,7 +126,7 @@ public class KafkaIntegration extends AbstractIntegration {
     }
 
     @Override
-    public void doStopProcessingPersistedMessages() {
+    public void doStopClient() {
         if (this.producer != null) {
             try {
                 this.producer.close();
@@ -149,7 +149,7 @@ public class KafkaIntegration extends AbstractIntegration {
             Headers headers = new RecordHeaders();
             config.getKafkaHeaders().forEach((k, v) -> headers.add(new RecordHeader(k, v.getBytes(config.getKafkaHeadersCharset()))));
 
-            ProducerRecord<String, String> kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), constructValue(msg), headers);
+            var kvProducerRecord = new ProducerRecord<>(config.getTopic(), null, config.getKey(), getRecordValue(msg), headers);
             producer.send(kvProducerRecord, (metadata, e) -> {
                 if (e == null) {
                     log.debug("[{}][{}] processRecord success {}{}{}", getId(), getName(), metadata.topic(),
@@ -169,16 +169,12 @@ public class KafkaIntegration extends AbstractIntegration {
         }
     }
 
-    private String constructValue(PublishIntegrationMsgProto msg) {
-        return JacksonUtil.toString(constructBody(msg));
-    }
-
-    private UUID getId() {
-        return context.getLifecycleMsg().getIntegrationId();
-    }
-
-    private String getName() {
-        return context.getLifecycleMsg().getName();
+    private String getRecordValue(PublishIntegrationMsgProto msg) {
+        if (config.isSendOnlyMsgPayload()) {
+            ByteString payload = msg.getPublishMsgProto().getPayload();
+            return payload.isValidUtf8() ? payload.toStringUtf8() : Base64.getEncoder().encodeToString(payload.toByteArray());
+        }
+        return constructValue(msg);
     }
 
 }

@@ -100,6 +100,13 @@ queue:
         additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_CONSUMER_CONFIG:}"
         # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.kafka` topic
         additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_KAFKA_ADDITIONAL_PRODUCER_CONFIG:}"
+      mqtt:
+        # Kafka topic properties separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        topic-properties: "${TB_KAFKA_IE_DOWNLINK_MQTT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:6;replication.factor:1}"
+        # Additional Kafka consumer configs separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        additional-consumer-config: "${TB_KAFKA_IE_DOWNLINK_MQTT_ADDITIONAL_CONSUMER_CONFIG:}"
+        # Additional Kafka producer configs separated by semicolon for `tbmq.ie.downlink.mqtt` topic
+        additional-producer-config: "${TB_KAFKA_IE_DOWNLINK_MQTT_ADDITIONAL_PRODUCER_CONFIG:}"
     integration-uplink:
       # Topic for sending messages/events from integration executors to tbmq
       topic: "${TB_KAFKA_IE_UPLINK_TOPIC:tbmq.ie.uplink}"
@@ -141,10 +148,10 @@ service:
   id: "${TB_SERVICE_ID:}"
   integrations:
     # Allow to enable integration on microservice integration executor.
-    # Allowed values: HTTP, KAFKA. By default, ALL
+    # Allowed values: HTTP, KAFKA, MQTT. By default, ALL
     supported: "${TB_SERVICE_INTEGRATIONS_SUPPORTED:ALL}"
     # List of integrations to exclude from processing on service/microservice integration executor.
-    # Allowed values: HTTP, KAFKA. By default, NONE
+    # Allowed values: HTTP, KAFKA, MQTT. By default, NONE
     excluded: "${TB_SERVICE_INTEGRATIONS_EXCLUDED:NONE}"
 
 # Integration common parameters
@@ -155,6 +162,8 @@ integrations:
     # Integration statistic persistence frequency in milliseconds
     persist-frequency: "${INTEGRATIONS_STATISTICS_PERSIST_FREQUENCY:3600000}"
   init:
+    # Maximum connection timeout allowed for integrations in seconds. Any greater user defined timeout will be reduced down to this limit
+    connection-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_TIMEOUT_SEC:15}"
     # Connection check timeout for API request in seconds
     connection-check-api-request-timeout-sec: "${INTEGRATIONS_INIT_CONNECTION_CHECK_API_REQUEST_TIMEOUT_SEC:20}"
   reinit:
@@ -168,6 +177,8 @@ integrations:
     graceful-timeout-ms: "${INTEGRATIONS_DESTROY_TIMEOUT_MS:1000}"
     # The number of iterations to attempt a graceful shutdown before forcefully stopping the process
     count: "${INTEGRATIONS_DESTROY_COUNT:10}"
+    # The maximum duration (in milliseconds) to wait before forcefully stopping the application if the graceful shutdown process has not started or exceeds the allowed time
+    forced-shutdown-timeout-ms: "${INTEGRATIONS_DESTROY_FORCED_SHUTDOWN_TIMEOUT_MS:15000}"
   # Enable/disable integrations local network hosts
   allow-local-network-hosts: "${INTEGRATIONS_ALLOW_LOCAL_NETWORK_HOSTS:true}"
   uplink:
@@ -181,6 +192,10 @@ integrations:
   external:
     # Number of threads in the pool dedicated to handling external operations, such as producing messages to Kafka topics
     threads-count: "${INTEGRATIONS_EXTERNAL_THREADS:10}"
+  netty:
+    # Netty shared worker group threads count. Defaults to 0 meaning the threads count is number of availableProcessors * 2.
+    # Used to send messages to external MQTT brokers using MQTT bridge (integration)
+    threads-count: "${INTEGRATIONS_NETTY_SHARED_GROUP_THREADS:0}"
 
 # Management parameters
 management:

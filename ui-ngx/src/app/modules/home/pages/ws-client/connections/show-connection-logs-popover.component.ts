@@ -57,7 +57,7 @@ export class ShowConnectionLogsPopoverComponent extends PageComponent implements
 
   ngOnInit() {
     this.updateView();
-    this.logsSubscription = this.mqttJsClientService.logsUpdated.subscribe(() => {
+    this.logsSubscription = this.mqttJsClientService.logsUpdated$.subscribe(() => {
       this.updateView();
     });
   }

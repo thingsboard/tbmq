@@ -133,6 +133,7 @@ export class GettingStartedHomeComponent implements OnInit {
       ClientCredentials>(ClientCredentialsWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      autoFocus: false,
       data: {
         entitiesTableConfig: config
       }

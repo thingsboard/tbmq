@@ -20,6 +20,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.SslUtil;
 
@@ -27,6 +28,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -43,10 +45,10 @@ public class CertPemCredentials implements ClientCredentials {
     public static final String CERT_ALIAS_PREFIX = "cert-";
     public static final String CA_CERT_CERT_ALIAS_PREFIX = "caCert-cert-";
 
-    protected String caCert;
+    private String caCert;
     private String cert;
     private String privateKey;
-    private String password;
+    private String privateKeyPassword;
 
     @Override
     public CredentialsType getType() {
@@ -56,6 +58,7 @@ public class CertPemCredentials implements ClientCredentials {
     @Override
     public SslContext initSslContext() {
         try {
+            Security.addProvider(new BouncyCastleProvider());
             SslContextBuilder builder = SslContextBuilder.forClient();
             if (StringUtils.hasLength(caCert)) {
                 builder.trustManager(createAndInitTrustManagerFactory());
@@ -70,7 +73,7 @@ public class CertPemCredentials implements ClientCredentials {
         }
     }
 
-    protected TrustManagerFactory createAndInitTrustManagerFactory() throws Exception {
+    private TrustManagerFactory createAndInitTrustManagerFactory() throws Exception {
         List<X509Certificate> caCerts = SslUtil.readCertFile(caCert);
 
         KeyStore caKeyStore = KeyStore.getInstance(KeyStore.getDefaultType());
@@ -86,13 +89,13 @@ public class CertPemCredentials implements ClientCredentials {
 
     private KeyManagerFactory createAndInitKeyManagerFactory() throws Exception {
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(loadKeyStore(), SslUtil.getPassword(password));
+        kmf.init(loadKeyStore(), SslUtil.getPassword(privateKeyPassword));
         return kmf;
     }
 
-    protected KeyStore loadKeyStore() throws Exception {
+    KeyStore loadKeyStore() throws Exception {
         List<X509Certificate> certificates = SslUtil.readCertFile(this.cert);
-        PrivateKey privateKey = SslUtil.readPrivateKey(this.privateKey, password);
+        PrivateKey privateKey = SslUtil.readPrivateKey(this.privateKey, privateKeyPassword);
 
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null);
@@ -106,7 +109,7 @@ public class CertPemCredentials implements ClientCredentials {
             CertPath certPath = factory.generateCertPath(certificates);
             List<? extends Certificate> path = certPath.getCertificates();
             Certificate[] x509Certificates = path.toArray(new Certificate[0]);
-            keyStore.setKeyEntry(PRIVATE_KEY_ALIAS, privateKey, SslUtil.getPassword(password), x509Certificates);
+            keyStore.setKeyEntry(PRIVATE_KEY_ALIAS, privateKey, SslUtil.getPassword(privateKeyPassword), x509Certificates);
         }
         return keyStore;
     }
