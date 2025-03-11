@@ -26,7 +26,7 @@ public class ExternalCallExecutorService extends AbstractListeningExecutor {
     private int externalCallExecutorThreadPoolSize;
 
     @Override
-    protected int getThreadPollSize() {
+    protected int getThreadPoolSize() {
         return externalCallExecutorThreadPoolSize;
     }
 
