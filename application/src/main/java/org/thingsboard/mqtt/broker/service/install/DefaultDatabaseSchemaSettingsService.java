@@ -56,7 +56,7 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
 
         String product = getProductFromDb();
         if (!CURRENT_PRODUCT.equals(product)) {
-            onSchemaSettingsError(String.format("Upgrade failed: can't upgrade ThingsBoard %s database using ThingsBoard %s.", product, CURRENT_PRODUCT));
+            onSchemaSettingsError(String.format("Upgrade failed: can't upgrade TBMQ %s database using TBMQ %s.", product, CURRENT_PRODUCT));
         }
 
         if (dbSchemaVersion.equals(getPackageSchemaVersion())) {

@@ -49,7 +49,7 @@ public class ThingsboardMqttBrokerInstallService {
     public void performInstall() {
         try {
             if (isUpgrade) {
-                // TODO DON'T FORGET to update SUPPORTED_VERSIONS_FROM in DefaultDatabaseSchemaSettingsService
+                // TODO DON'T FORGET to update SUPPORTED_VERSIONS_FOR_UPGRADE in DefaultDatabaseSchemaSettingsService
                 databaseSchemaVersionService.validateSchemaSettings();
                 String fromVersion = databaseSchemaVersionService.getDbSchemaVersion();
                 String toVersion = databaseSchemaVersionService.getPackageSchemaVersion();
