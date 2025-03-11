@@ -394,6 +394,7 @@ export class EntitiesTableComponent extends PageComponent implements AfterViewIn
         BaseData>(AddEntityDialogComponent, {
         disableClose: true,
         panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+        autoFocus: false,
         data: {
           entitiesTableConfig: entitiesTableConfig
         }

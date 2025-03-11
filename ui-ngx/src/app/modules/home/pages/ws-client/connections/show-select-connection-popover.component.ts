@@ -95,6 +95,7 @@ export class ShowSelectConnectionPopoverComponent extends PageComponent implemen
     this.dialog.open<ConnectionWizardDialogComponent, ConnectionDialogData>(ConnectionWizardDialogComponent, {
       disableClose: true,
       panelClass: ['tb-dialog', 'tb-fullscreen-dialog'],
+      autoFocus: false,
       data: {
         connectionsTotal: this.connectionsTotal
       }
