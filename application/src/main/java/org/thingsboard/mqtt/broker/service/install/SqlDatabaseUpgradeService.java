@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.install;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,17 +34,13 @@ import java.sql.Statement;
 @Service
 @Profile("install")
 @Slf4j
+@RequiredArgsConstructor
 public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService {
 
     private static final String SCHEMA_UPDATE_SQL = "schema_update.sql";
 
     private final InstallScripts installScripts;
     private final JdbcTemplate jdbcTemplate;
-
-    public SqlDatabaseUpgradeService(InstallScripts installScripts, JdbcTemplate jdbcTemplate) {
-        this.installScripts = installScripts;
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     public void upgradeDatabase() throws Exception {
