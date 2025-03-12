@@ -50,7 +50,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
 
     @Override
     public void init(TbIntegrationInitParams params) throws Exception {
-        log.info("[{}][{}] Init integration", params.getLifecycleMsg().getIntegrationId(), params.getLifecycleMsg().getName());
+        log.info("[{}][{}] Initializing integration", params.getLifecycleMsg().getIntegrationId(), params.getLifecycleMsg().getName());
         this.lifecycleMsg = params.getLifecycleMsg();
         this.context = params.getContext();
         Map<String, String> mdMap = new HashMap<>();
@@ -72,7 +72,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     @Override
     public void destroy() {
         if (this.lifecycleMsg != null) {
-            log.info("[{}][{}] Destroy integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+            log.info("[{}][{}] Destroying integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
         }
         stopProcessingPersistedMessages();
     }
@@ -80,7 +80,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     @Override
     public void destroyAndClearData() {
         if (this.lifecycleMsg != null) {
-            log.info("[{}][{}] Destroy and clear integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+            log.info("[{}][{}] Destroying and clearing integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
         }
         stopProcessingPersistedMessages();
         clearIntegrationMessages();
@@ -89,7 +89,7 @@ public abstract class AbstractIntegration implements TbPlatformIntegration {
     @Override
     public void update(TbIntegrationInitParams params) throws Exception {
         if (this.lifecycleMsg != null) {
-            log.info("[{}][{}] Update integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
+            log.info("[{}][{}] Updating integration", this.lifecycleMsg.getIntegrationId(), this.lifecycleMsg.getName());
         }
         destroy();
         init(params);

@@ -25,6 +25,8 @@ import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleM
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
+
 @Slf4j
 @Data
 public class MqttIntegrationCallback implements MqttClientCallback {
@@ -50,8 +52,12 @@ public class MqttIntegrationCallback implements MqttClientCallback {
 
     @Override
     public void onConnAck(MqttConnAckMessage connAckMessage) {
-        log.info("[{}][{}] MQTT Integration successfully connected to the target broker", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName());
-        startProcessingIfNotStarted();
+        log.info("[{}][{}] MQTT Integration established the connection to the target broker", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName());
+        var returnCode = connAckMessage.variableHeader().connectReturnCode();
+        log.info("[{}][{}] MQTT Integration received {} message from the target broker", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), returnCode);
+        if (CONNECTION_ACCEPTED == returnCode) {
+            startProcessingIfNotStarted();
+        }
     }
 
     @Override
