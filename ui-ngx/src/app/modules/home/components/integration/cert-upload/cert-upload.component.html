@@ -39,5 +39,8 @@
                    (fileNameChanged)="form()?.get('privateKeyFileName').patchValue($event)"
                    inputId="private-key">
     </tb-file-input>
+    @if (form()?.errors?.certRequiredError) {
+      <mat-error class="pb-4 text-xs">{{ 'integration.cert-required' | translate }}</mat-error>
+    }
   </fieldset>
 </div>

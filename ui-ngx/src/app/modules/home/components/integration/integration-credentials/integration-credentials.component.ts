@@ -82,7 +82,7 @@ export class IntegrationCredentialsComponent implements ControlValueAccessor, Va
     return this.allowCredentialTypesValue;
   }
 
-  private ignoreCaCertValue = false;
+  private ignoreCaCertValue = true;
   @Input()
   set ignoreCaCert(value: boolean) {
     this.ignoreCaCertValue = coerceBooleanProperty(value);

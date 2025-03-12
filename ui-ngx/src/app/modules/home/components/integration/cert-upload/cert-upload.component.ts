@@ -14,10 +14,11 @@
 /// limitations under the License.
 ///
 
-import { Component, input } from '@angular/core';
-import { ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
+import { Component, input, OnDestroy, OnInit } from '@angular/core';
+import { ReactiveFormsModule, UntypedFormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { FileInputComponent } from '@shared/components/file-input.component';
 import { TranslateModule } from '@ngx-translate/core';
+import { MatError } from '@angular/material/form-field';
 
 @Component({
   selector: 'tb-cert-upload',
@@ -26,18 +27,36 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [
     ReactiveFormsModule,
     FileInputComponent,
-    TranslateModule
+    TranslateModule,
+    MatError
   ]
 })
-export class CertUploadComponent {
+export class CertUploadComponent implements OnInit, OnDestroy {
 
   readonly form = input<UntypedFormGroup>();
-
   readonly disabled = input<boolean>();
-
   readonly ignoreCaCert = input(false);
 
-  constructor() {
+  ngOnInit() {
+    this.form()?.setValidators(this.certValidator());
+    this.form()?.updateValueAndValidity();
+  }
+
+  ngOnDestroy() {
+    this.form()?.clearValidators();
+    this.form()?.updateValueAndValidity();
+  }
+
+  private certValidator(): ValidatorFn {
+    return (form: UntypedFormGroup): ValidationErrors | null => {
+      const caCert = form.get('caCert')?.value;
+      const cert = form.get('cert')?.value;
+      const privateKey = form.get('privateKey')?.value;
+      if (!caCert && (!cert || !privateKey)) {
+        return { certRequiredError: true };
+      }
+      return null;
+    };
   }
 
 }
