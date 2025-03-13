@@ -145,7 +145,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   }
 
   writeValue(value: MqttIntegration) {
-    if (isDefinedAndNotNull(value?.clientConfiguration)) {
+    if (isDefinedAndNotNull(value?.clientConfiguration?.host)) {
       this.isNew = false;
       this.mqttIntegrationConfigForm.reset(value, {emitEvent: false});
       this.updateView(value);

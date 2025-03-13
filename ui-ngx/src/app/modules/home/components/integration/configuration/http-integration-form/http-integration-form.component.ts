@@ -145,7 +145,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
   }
 
   writeValue(value: HttpIntegration) {
-    if (isDefinedAndNotNull(value)) {
+    if (isDefinedAndNotNull(value?.clientConfiguration?.restEndpointUrl)) {
       this.isNew = false;
       this.baseHttpIntegrationConfigForm.reset(value, {emitEvent: false});
     } else {

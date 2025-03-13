@@ -139,7 +139,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
   }
 
   writeValue(value: KafkaIntegration) {
-    if (isDefinedAndNotNull(value?.clientConfiguration)) {
+    if (isDefinedAndNotNull(value?.clientConfiguration?.bootstrapServers)) {
       this.isNew = false;
       this.kafkaIntegrationConfigForm.reset(value, {emitEvent: false});
     } else {

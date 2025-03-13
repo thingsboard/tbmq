@@ -44,7 +44,7 @@
       </mat-form-field>
       <mat-form-field class="flex-1" appearance="outline">
         <mat-label translate>admin.settings.port</mat-label>
-        <input matInput formControlName="port">
+        <input matInput formControlName="port" type="number">
         @if (clientConfigurationFormGroup.get('port').hasError('required')) {
           <mat-icon matSuffix
                     matTooltipClass="tb-error-tooltip"
