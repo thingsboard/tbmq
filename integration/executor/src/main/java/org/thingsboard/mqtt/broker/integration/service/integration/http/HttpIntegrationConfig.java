@@ -19,7 +19,9 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.http.HttpMethod;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.AnonymousCredentials;
 import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
@@ -27,14 +29,18 @@ import org.thingsboard.mqtt.broker.integration.service.integration.credentials.C
 import java.util.Map;
 import java.util.Objects;
 
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class HttpIntegrationConfig {
 
-    private boolean sendOnlyMsgPayload;
+    private static final String POST_METHOD = HttpMethod.POST.name();
 
+    private boolean sendOnlyMsgPayload;
     private String restEndpointUrl;
     private String requestMethod;
     private Map<String, String> headers;
@@ -46,7 +52,11 @@ public class HttpIntegrationConfig {
     private boolean sendBinaryOnParseFailure;
 
     public HttpIntegrationConfig(String restEndpointUrl) {
-        this(false, restEndpointUrl, "POST", Map.of("Content-Type", "application/json"), 0, 0, null, 256, ContentType.BINARY, true);
+        this(false, restEndpointUrl, POST_METHOD, Map.of(CONTENT_TYPE, APPLICATION_JSON_VALUE), 0, 0, null, 256, ContentType.BINARY, true);
+    }
+
+    public String getRequestMethod() {
+        return StringUtils.isEmpty(requestMethod) ? POST_METHOD : requestMethod;
     }
 
     public ClientCredentials getCredentials() {

@@ -31,7 +31,6 @@ import java.util.Objects;
 public class MqttIntegrationConfig {
 
     private boolean sendOnlyMsgPayload;
-
     private String host;
     private int port;
     private String topicName;
@@ -39,7 +38,6 @@ public class MqttIntegrationConfig {
     private String clientId;
     private ClientCredentials credentials;
     private boolean ssl;
-
     private int connectTimeoutSec;
     private int reconnectPeriodSec;
     private int mqttVersion; // Allowed values: 3, 4, 5. See io.netty.handler.codec.mqtt.MqttVersion

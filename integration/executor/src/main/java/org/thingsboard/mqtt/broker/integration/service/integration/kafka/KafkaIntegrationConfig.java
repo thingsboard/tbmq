@@ -34,7 +34,6 @@ import java.util.Map;
 public class KafkaIntegrationConfig {
 
     private boolean sendOnlyMsgPayload;
-
     private String bootstrapServers;
     private String topic;
     private String key;

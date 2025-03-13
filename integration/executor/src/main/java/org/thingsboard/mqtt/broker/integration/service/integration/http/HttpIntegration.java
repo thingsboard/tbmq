@@ -38,6 +38,7 @@ public class HttpIntegration extends AbstractHttpIntegration {
     public void doValidateConfiguration(JsonNode clientConfiguration, boolean allowLocalNetworkHosts) throws ThingsboardException {
         try {
             HttpIntegrationConfig httpIntegrationConfig = getClientConfiguration(clientConfiguration, HttpIntegrationConfig.class);
+            HttpConfigValidator.validate(httpIntegrationConfig);
             TbHttpClient.buildEncodedUri(httpIntegrationConfig.getRestEndpointUrl());
         } catch (Exception e) {
             throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
