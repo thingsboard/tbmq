@@ -20,14 +20,10 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
     }
-    <section class="flex items-center gap-2 pb-6">
+    <section class="pb-6" tb-hint-tooltip-icon="{{ 'integration.send-only-payload-hint' | translate }}">
       <mat-slide-toggle formControlName="sendOnlyMsgPayload">
         <span translate>integration.send-only-payload</span>
       </mat-slide-toggle>
-      <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                [matTooltip]="'integration.send-only-payload-hint' | translate"
-                matTooltipPosition="right">
-        info</mat-icon>
     </section>
     <section class="flex gap-2">
       <mat-form-field class="flex-1" appearance="outline">
@@ -73,36 +69,37 @@
         }
       </mat-form-field>
     </section>
-    <section class="flex gap-3">
-      <section class="flex items-center gap-2 pb-6">
-        <mat-slide-toggle formControlName="useMsgTopicName">
-          <span translate>integration.topic-name-dynamic</span>
-        </mat-slide-toggle>
-        <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                  [matTooltip]="'integration.topic-name-dynamic-hint' | translate"
-                  matTooltipPosition="right">
-          info</mat-icon>
-      </section>
-      <mat-form-field class="flex-1" appearance="outline">
-        <mat-label translate>integration.topic-name</mat-label>
-        <input matInput formControlName="topicName">
-        <tb-copy-button matSuffix
-                        [class.!hidden]="!clientConfigurationFormGroup.get('topicName')?.value?.length"
-                        [copyText]="clientConfigurationFormGroup.get('topicName').value">
-        </tb-copy-button>
-        @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
-          <mat-icon matSuffix
-                    matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'integration.topic-name-required' | translate }}"
-                    class="tb-error">
-            warning
+    <mat-expansion-panel class="expansion-panel-setting" [expanded]="clientConfigurationFormGroup.get('topicName').enabled">
+      <mat-expansion-panel-header>
+        <section tb-hint-tooltip-icon="{{ 'integration.topic-name-dynamic-hint' | translate }}">
+          <mat-slide-toggle formControlName="useMsgTopicName" (click)="$event.stopPropagation()"
+                            [aria-label]="'integration.topic-name-dynamic' | translate">
+            <span translate>integration.topic-name-dynamic</span>
+          </mat-slide-toggle>
+        </section>
+      </mat-expansion-panel-header>
+      <ng-template matExpansionPanelContent>
+        <mat-form-field class="mt-2 flex" appearance="outline">
+          <mat-label translate>integration.topic-name</mat-label>
+          <input matInput formControlName="topicName">
+          <tb-copy-button matSuffix
+                          [class.!hidden]="!clientConfigurationFormGroup.get('topicName')?.value?.length"
+                          [copyText]="clientConfigurationFormGroup.get('topicName').value">
+          </tb-copy-button>
+          @if (clientConfigurationFormGroup.get('topicName').hasError('required')) {
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.topic-name-required' | translate }}"
+                      class="tb-error">
+              warning
+            </mat-icon>
+          }
+          <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
+            help
           </mat-icon>
-        }
-        <mat-icon matSuffix matTooltip="{{ 'integration.topic-name-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
-    </section>
+        </mat-form-field>
+      </ng-template>
+    </mat-expansion-panel>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.client-id</mat-label>
       <input matInput formControlName="clientId">
@@ -215,31 +212,35 @@
             }
           </mat-select>
         </mat-form-field>
-        <section class="flex gap-3">
-          <section class="flex items-center gap-2 pb-6">
-            <mat-slide-toggle formControlName="useMsgQoS">
-              <span translate>integration.mqtt-qos-dynamic</span>
+        <mat-expansion-panel class="expansion-panel-setting" [expanded]="clientConfigurationFormGroup.get('qos').enabled">
+          <mat-expansion-panel-header>
+            <section tb-hint-tooltip-icon="{{ 'integration.mqtt-qos-dynamic-hint' | translate }}">
+              <mat-slide-toggle formControlName="useMsgQoS" (click)="$event.stopPropagation()"
+                                [aria-label]="'integration.mqtt-qos-dynamic' | translate">
+                <span translate>integration.mqtt-qos-dynamic</span>
+              </mat-slide-toggle>
+            </section>
+          </mat-expansion-panel-header>
+          <ng-template matExpansionPanelContent>
+            <tb-qos-select formControlName="qos" class="mt-2 flex" appearance="outline">
+            </tb-qos-select>
+          </ng-template>
+        </mat-expansion-panel>
+        <mat-expansion-panel class="expansion-panel-setting" [expanded]="clientConfigurationFormGroup.get('retained').enabled">
+          <mat-expansion-panel-header>
+            <section tb-hint-tooltip-icon="{{ 'integration.retain-dynamic-hint' | translate }}">
+              <mat-slide-toggle formControlName="useMsgRetain" (click)="$event.stopPropagation()"
+                                [aria-label]="'integration.retain-dynamic' | translate">
+                <span translate>integration.retain-dynamic</span>
+              </mat-slide-toggle>
+            </section>
+          </mat-expansion-panel-header>
+          <ng-template matExpansionPanelContent>
+            <mat-slide-toggle class="pb-4" formControlName="retained">
+              {{ 'integration.retain' | translate }}
             </mat-slide-toggle>
-            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                      [matTooltip]="'integration.mqtt-qos-dynamic-hint' | translate"
-                      matTooltipPosition="right">
-              info</mat-icon>
-          </section>
-          <tb-qos-select formControlName="qos" class="flex-1" appearance="outline">
-          </tb-qos-select>
-        </section>
-        <section class="flex items-center gap-2 pb-6">
-          <mat-slide-toggle formControlName="useMsgRetain">
-            <span translate>integration.retain-dynamic</span>
-          </mat-slide-toggle>
-          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                    [matTooltip]="'integration.retain-dynamic-hint' | translate"
-                    matTooltipPosition="right">
-            info</mat-icon>
-        </section>
-        <mat-slide-toggle class="pb-6" formControlName="retained">
-          {{ 'integration.retain' | translate }}
-        </mat-slide-toggle>
+          </ng-template>
+        </mat-expansion-panel>
         <ng-container [ngTemplateOutlet]="genericAdditionalInfoTemplate()">
         </ng-container>
       </ng-template>

@@ -20,14 +20,10 @@
     @if (!isNew) {
       <ng-container *ngTemplateOutlet="topicFilters"></ng-container>
     }
-    <section class="flex items-center gap-2 pb-6">
+    <section class="pb-6" tb-hint-tooltip-icon="{{ 'integration.send-only-payload-hint' | translate }}">
       <mat-slide-toggle formControlName="sendOnlyMsgPayload">
         <span translate>integration.send-only-payload</span>
       </mat-slide-toggle>
-      <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                [matTooltip]="'integration.send-only-payload-hint' | translate"
-                matTooltipPosition="right">
-        info</mat-icon>
     </section>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.endpoint-url</mat-label>
@@ -103,14 +99,10 @@
           </mat-icon>
         </mat-form-field>
         @if (!isBinaryContentType) {
-          <section class="flex items-center gap-3" style="padding: 0 0 24px 0">
+          <section class="pb-6" tb-hint-tooltip-icon="{{ 'integration.send-binary-on-failure-hint' | translate }}">
             <mat-slide-toggle formControlName="sendBinaryOnParseFailure">
               <span translate>integration.send-binary-on-failure</span>
             </mat-slide-toggle>
-            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-                      [matTooltip]="'integration.send-binary-on-failure-hint' | translate"
-                      matTooltipPosition="right">
-              info</mat-icon>
           </section>
         }
         <mat-form-field class="mat-block" appearance="outline">

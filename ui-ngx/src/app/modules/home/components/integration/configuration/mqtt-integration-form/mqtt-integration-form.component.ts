@@ -59,6 +59,7 @@ import { QoS } from '@shared/models/session.model';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 
 @Component({
   selector: 'tb-mqtt-integration-form',
@@ -85,7 +86,8 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     IntegrationCredentialsComponent,
     QosSelectComponent,
     MatSlideToggle,
-    CopyButtonComponent
+    CopyButtonComponent,
+    HintTooltipIconComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

@@ -55,6 +55,7 @@ import { MatSlideToggle } from "@angular/material/slide-toggle";
 import { ContentType, contentTypesMap } from "@shared/models/constants";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
+import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 
 @Component({
   selector: 'tb-http-integration-form',
@@ -80,7 +81,8 @@ import { MatTooltip } from "@angular/material/tooltip";
     MatSlideToggle,
     MatIcon,
     MatTooltip,
-    MatSuffix
+    MatSuffix,
+    HintTooltipIconComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
