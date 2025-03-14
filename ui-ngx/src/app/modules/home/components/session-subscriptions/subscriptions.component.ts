@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, OnInit, OnDestroy, input, model } from '@angular/core';
+import { Component, forwardRef, OnInit, OnDestroy, model } from '@angular/core';
 import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { TranslateModule } from '@ngx-translate/core';
@@ -30,6 +30,7 @@ import { MatIcon } from '@angular/material/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
+import { isString } from '@core/utils';
 
 @Component({
     selector: 'tb-session-subscriptions',
@@ -96,8 +97,8 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
     const subscriptionsControls: Array<AbstractControl> = [];
     if (topics?.length) {
       if (topics) {
-        for (let topic of topics) {
-          topic.qos = QoS[topic.qos] as unknown as QoS;
+        for (const topic of topics) {
+          topic.qos = isString(topic.qos) ? QoS[topic.qos] : topic.qos;
           const topicControl = this.fb.group(topic);
           subscriptionsControls.push(topicControl);
         }
