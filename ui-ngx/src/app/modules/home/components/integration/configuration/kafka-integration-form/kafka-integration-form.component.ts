@@ -52,6 +52,7 @@ import {
   HttpTopicFiltersComponent
 } from '@home/components/integration/http-topic-filters/http-topic-filters.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-kafka-integration-form',
@@ -75,7 +76,8 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
     MatIcon,
     MatTooltip,
     HttpTopicFiltersComponent,
-    MatSlideToggle
+    MatSlideToggle,
+    CopyButtonComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

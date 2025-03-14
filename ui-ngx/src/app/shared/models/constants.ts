@@ -67,9 +67,9 @@ export const HelpLinks = {
     sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
     connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/websocket-client',
     unauthorizedClient: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/unauthorized-client',
-    integrationHttp: helpBaseUrl + '/docs/mqtt-broker/user-guide/integrations/http',
-    integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/user-guide/integrations/mqtt',
-    integrationKafka: helpBaseUrl + '/docs/mqtt-broker/user-guide/integrations/kafka',
+    integrationHttp: helpBaseUrl + '/docs/mqtt-broker/integrations/http',
+    integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/integrations/mqtt',
+    integrationKafka: helpBaseUrl + '/docs/mqtt-broker/integrations/kafka',
   }
 };
 

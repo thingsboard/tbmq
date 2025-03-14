@@ -36,6 +36,9 @@ import { TranslateModule } from '@ngx-translate/core';
 import { MatInput } from '@angular/material/input';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { CertUploadComponent } from '@home/components/integration/cert-upload/cert-upload.component';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'tb-integration-credentials',
@@ -53,7 +56,10 @@ import { CertUploadComponent } from '@home/components/integration/cert-upload/ce
     MatError,
     MatLabel,
     MatSuffix,
-    NgTemplateOutlet
+    NgTemplateOutlet,
+    CopyButtonComponent,
+    MatIcon,
+    MatTooltip
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,

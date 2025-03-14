@@ -24,6 +24,10 @@
           <mat-label>{{ i !== 0 ? "" : "integration.topic" | translate }}</mat-label>
         }
         <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef>
+        <tb-copy-button matSuffix
+                        [class.!hidden]="!topicFilterValue(topicFilter)?.length"
+                        [copyText]="topicFilterValue(topicFilter)">
+        </tb-copy-button>
         @if (integration() && !subscriptionActive(topicFilter) && inputRef.value?.length && !isEdit() && subscriptionsLoaded) {
           <mat-icon matSuffix style="color: #e33737" [matTooltip]="'integration.inactive-subscription' | translate">
             sync_problem

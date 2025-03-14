@@ -39,6 +39,7 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
 import { isDefinedAndNotNull } from '@core/utils';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-http-topic-filters',
@@ -55,7 +56,8 @@ import { isDefinedAndNotNull } from '@core/utils';
     MatInput,
     MatLabel,
     MatError,
-    MatSuffix
+    MatSuffix,
+    CopyButtonComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -172,6 +174,10 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
 
   subscriptionActive(topicFilter: AbstractControl<HttpTopicFilter>): boolean {
     return this.activeSubscriptions.indexOf(topicFilter.value.filter) > -1;
+  }
+
+  topicFilterValue(control: AbstractControl): string {
+    return control.value.filter;
   }
 
   private updateActiveSubscriptions() {

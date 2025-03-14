@@ -109,12 +109,6 @@ export interface IntegrationStatus {
   error?: any;
 }
 
-export const MqttQosTranslation = new Map<QoS, string>([
-  [QoS.AT_MOST_ONCE, 'integration.mqtt-qos-at-most-once'],
-  [QoS.AT_LEAST_ONCE, 'integration.mqtt-qos-at-least-once'],
-  [QoS.EXACTLY_ONCE, 'integration.mqtt-qos-exactly-once']
-]);
-
 export interface MqttTopicFilter {
   filter: string;
   qos: QoS;

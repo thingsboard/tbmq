@@ -32,6 +32,10 @@
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.bootstrap-servers</mat-label>
       <input matInput formControlName="bootstrapServers" required>
+      <tb-copy-button matSuffix
+                      [class.!hidden]="!clientConfigurationFormGroup.get('bootstrapServers')?.value?.length"
+                      [copyText]="clientConfigurationFormGroup.get('bootstrapServers').value">
+      </tb-copy-button>
       @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"
@@ -44,6 +48,10 @@
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.topic</mat-label>
       <input matInput formControlName="topic">
+      <tb-copy-button matSuffix
+                      [class.!hidden]="!clientConfigurationFormGroup.get('topic')?.value?.length"
+                      [copyText]="clientConfigurationFormGroup.get('topic').value">
+      </tb-copy-button>
       @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"

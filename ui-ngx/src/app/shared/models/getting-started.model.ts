@@ -83,6 +83,11 @@ export const gettingStartedDocs: GettingStartedLink[] = [
     url: 'https://thingsboard.io/docs/mqtt-broker/security'
   },
   {
+    img: '/assets/getting-started/integrations.svg',
+    title: 'Integrations',
+    url: 'https://thingsboard.io/docs/mqtt-broker/integrations'
+  },
+  {
     img: '/assets/getting-started/client_type.svg',
     title: 'Client Type',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type'
@@ -99,7 +104,7 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   },
   {
     img: '/assets/getting-started/unauthorized-clients.svg',
-      title: 'Unauthorized Clients',
+    title: 'Unauthorized Clients',
     url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/unauthorized-clients'
   },
   {
