@@ -156,27 +156,27 @@ public class DefaultIntegrationStatisticsService implements IntegrationStatistic
         if (!counters.isEmpty()) {
             StringBuilder stats = new StringBuilder();
             counters.forEach((key, value) -> stats.append(key).append(" = [").append(value.get()).append("] "));
-            log.info("Current Period Integration Stats: {}", stats);
+            log.info("Current Integration Activity: {}", stats);
             reset();
         }
         if (!gauges.isEmpty()) {
             StringBuilder gaugeLogBuilder = new StringBuilder();
             gauges.forEach((key, value) -> gaugeLogBuilder.append(key).append(" = [").append(value.get()).append("] "));
-            log.info("Integration Gauges Stats Summary: {}", gaugeLogBuilder);
+            log.info("Integration State Summary: {}", gaugeLogBuilder);
         }
         for (MessagesStats stats : managedStats) {
             String statsStr = StatsConstantNames.QUEUE_SIZE + " = [" + stats.getCurrentQueueSize() + "] " +
                     StatsConstantNames.TOTAL_MSGS + " = [" + stats.getTotal() + "] " +
                     StatsConstantNames.SUCCESSFUL_MSGS + " = [" + stats.getSuccessful() + "] " +
                     StatsConstantNames.FAILED_MSGS + " = [" + stats.getFailed() + "] ";
-            log.info("[{}] Integration Queue Stats: {}", stats.getName(), statsStr);
+            log.info("[{}] Integration Uplink Queue Stats: {}", stats.getName(), statsStr);
             stats.reset();
         }
         for (IntegrationProcessorStats stats : new ArrayList<>(managedIntegrationProcessorStats.values())) {
             String msgStatsStr = stats.getStatsCounters().stream()
                     .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
                     .collect(Collectors.joining(" "));
-            log.info("[{}][{}] Integration Processing Stats: {}", StatsType.INTEGRATION_PROCESSOR.getPrintName(), stats.getIntegrationUuid(), msgStatsStr);
+            log.info("[{}][{}] Integration Message Processing Stats: {}", StatsType.INTEGRATION_PROCESSOR.getPrintName(), stats.getIntegrationUuid(), msgStatsStr);
             if (!stats.isActive()) {
                 log.trace("[{}] Clearing inactive Integration stats", stats.getIntegrationUuid());
                 managedIntegrationProcessorStats.computeIfPresent(stats.getIntegrationUuid(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
