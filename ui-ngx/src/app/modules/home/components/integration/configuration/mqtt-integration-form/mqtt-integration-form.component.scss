@@ -31,6 +31,10 @@
 }
 
 :host ::ng-deep {
+  .mat-expansion-panel-body {
+    padding: 0 0 16px;
+  }
+
   .expansion-panel-setting {
     .mat-content {
       overflow: visible;
