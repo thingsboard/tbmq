@@ -358,6 +358,7 @@
       color: #212529;
       overflow-x: auto;
       overflow-y: hidden;
+      text-wrap: auto;
 
       .token.atrule, .token.attr-value, .token.keyword {
         color: #2a7dec;
