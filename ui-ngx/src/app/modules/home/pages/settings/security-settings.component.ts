@@ -31,6 +31,7 @@ import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 import { MatButton } from '@angular/material/button';
+import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 
 @Component({
     selector: 'tb-security-settings',
@@ -38,7 +39,7 @@ import { MatButton } from '@angular/material/button';
     styleUrls: ['./security-settings.component.scss'],
     imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe]
 })
-export class SecuritySettingsComponent extends PageComponent implements OnDestroy {
+export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
   securitySettingsForm: UntypedFormGroup;
 
@@ -104,6 +105,10 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
       }
       return null;
     };
+  }
+
+  confirmForm(): UntypedFormGroup {
+    return this.securitySettingsForm;
   }
 
 }

@@ -43,6 +43,7 @@ import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
 import { ToggleOption } from '@shared/components/toggle-header.component';
+import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 
 @Component({
     selector: 'tb-general-settings',
@@ -50,7 +51,7 @@ import { ToggleOption } from '@shared/components/toggle-header.component';
     styleUrls: ['./general-settings.component.scss'],
     imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatError, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
-export class GeneralSettingsComponent extends PageComponent implements OnDestroy {
+export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
   generalSettingsForm: UntypedFormGroup;
   connectivitySettingsForm: UntypedFormGroup;
@@ -170,5 +171,13 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   private getWebSocketGeneralSettings() {
     this.settingsService.getWebSocketSettings().subscribe(settings => this.processGeneralSettings(settings));
+  }
+
+  confirmForm(): UntypedFormGroup {
+    const form = this.generalSettingsForm;
+    if (this.generalSettingsForm.dirty || this.connectivitySettingsForm.dirty) {
+      form.markAsDirty();
+    }
+    return form;
   }
 }
