@@ -67,6 +67,7 @@ export const HelpLinks = {
     sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
     connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/websocket-client',
     unauthorizedClient: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/unauthorized-client',
+    integrations: helpBaseUrl + '/docs/mqtt-broker/integrations',
     integrationHttp: helpBaseUrl + '/docs/mqtt-broker/integrations/http',
     integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/integrations/mqtt',
     integrationKafka: helpBaseUrl + '/docs/mqtt-broker/integrations/kafka',
