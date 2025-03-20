@@ -29,7 +29,7 @@ import {
 import { isDefined } from '@core/utils';
 import { MAX_DATAPOINTS_LIMIT } from '@app/shared/models/chart.model';
 
-const MIN_INTERVAL = MINUTE;
+const MIN_INTERVAL = 2 * MINUTE;
 const MAX_INTERVAL = 365 * 20 * DAY;
 const MIN_LIMIT = 1;
 

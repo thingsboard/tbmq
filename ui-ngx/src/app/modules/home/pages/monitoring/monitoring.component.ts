@@ -380,7 +380,11 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
           index = 0;
         }
         const latestValue = data[index][chartType][0];
-        this.charts[chartType].data.datasets[index].data.unshift(latestValue);
+        const chartData = this.charts[chartType].data.datasets[index].data;
+        const chartLatestValue = chartData[0];
+        if (latestValue?.ts > chartLatestValue?.ts) {
+          this.charts[chartType].data.datasets[index].data.unshift(latestValue);
+        }
       }
     }
   }
@@ -400,6 +404,9 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   }
 
   private updateXScale(chartType: string) {
+    const timewindow = calculateFixedWindowTimeMs(this.timewindow);
+    this.charts[chartType].options.scales.x.min = timewindow.startTimeMs + POLLING_INTERVAL;
+    this.charts[chartType].options.scales.x.max = timewindow.endTimeMs;
     if (this.hoursInRange() <= 24) {
       this.charts[chartType].options.scales.x.time.displayFormats.minute = 'HH:mm';
     } else if (this.hoursInRange() <= (24 * 30)) {
@@ -497,7 +504,8 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     this.resetLegendData(chartType);
     for (let i = 0; i < this.brokerIds.length; i++) {
       const brokerId = this.brokerIds[i];
-      const data = this.charts[chartType].data.datasets[i]?.data;
+      const data = this.charts[chartType].data.datasets[i]?.data
+        .filter(value => value.ts >= this.fixedWindowTimeMs.startTimeMs - POLLING_INTERVAL);
       if (this.totalOnly(chartType)) {
         if (brokerId === TOTAL_KEY) {
           this.updateLegendData(data, chartType);
