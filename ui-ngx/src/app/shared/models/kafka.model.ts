@@ -50,7 +50,13 @@ export const KafkaTopicsTooltipMap = {
   'tbmq.msg.downlink.basic': 'Sends messages from one Broker node to another to which the DEVICE subscriber is connected',
   'tbmq.msg.downlink.persisted': 'Sends messages from one Broker node to another to which the DEVICE persistent subscriber is connected',
   'tbmq.sys.app.removed': 'Events to process removal of APPLICATION client topic',
-  'tbmq.sys.historical.data': 'Historical data stats published from each broker in the cluster to calculate the total'
+  'tbmq.sys.historical.data': 'Historical data stats published from each broker in the cluster to calculate the total',
+  'tbmq.ie.downlink.kafka': 'Kafka integration configuration and validation requests sent from TBMQ to Integration Executor',
+  'tbmq.ie.downlink.http': 'HTTP integration configuration and validation requests sent from TBMQ to Integration Executor',
+  'tbmq.ie.downlink.mqtt': 'MQTT integration configuration and validation requests sent from TBMQ to Integration Executor',
+  'tbmq.ie.uplink.notifications.': 'Direct replies from Integration Executor to specific TBMQ nodes — typically responses to validation or connection check requests',
+  'tbmq.ie.uplink': 'Messages sent from Integration Executor to TBMQ, including lifecycle, error, and statistics events',
+  'tbmq.msg.ie.': 'Integration message processing topic. Contains MQTT messages to be forwarded by the Integration Executor to the external system configured for the specific integration',
 };
 
 export enum KafkaTable {
