@@ -22,11 +22,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 
+import java.util.Collections;
+import java.util.Map;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.APPLICATION_SHARED_SUBSCRIPTION_COLUMN_FAMILY_NAME)
 public class ApplicationSharedSubscriptionEntity extends BaseSqlEntity<ApplicationSharedSubscription> implements BaseEntity<ApplicationSharedSubscription> {
+
+    public static final Map<String, String> appSharedSubscriptionColumnMap = Collections.singletonMap("topicFilter", "topic");
 
     @Column(name = ModelConstants.APPLICATION_SHARED_SUBSCRIPTION_TOPIC_PROPERTY, unique = true)
     private String topic;
