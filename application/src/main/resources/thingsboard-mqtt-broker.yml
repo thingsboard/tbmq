@@ -438,7 +438,7 @@ queue:
       # Topic for sending client session event requests
       topic: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC:tbmq.client.session.event.request}"
       # Kafka topic properties separated by semicolon for `tbmq.client.session.event.request` topic
-      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:48;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_CLIENT_SESSION_EVENT_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:24;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
       additional-consumer-config: "${TB_KAFKA_CLIENT_SESSION_EVENT_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:1000}"
       # Additional Kafka producer configs separated by semicolon for ``tbmq.client.session.event.request`` topic
