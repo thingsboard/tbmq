@@ -29,6 +29,8 @@ import org.thingsboard.mqtt.broker.dao.model.ApplicationSharedSubscriptionEntity
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.dao.model.ApplicationSharedSubscriptionEntity.appSharedSubscriptionColumnMap;
+
 @Component
 @RequiredArgsConstructor
 public class ApplicationSharedSubscriptionDaoImpl
@@ -61,6 +63,6 @@ public class ApplicationSharedSubscriptionDaoImpl
     public PageData<ApplicationSharedSubscription> findAll(PageLink pageLink) {
         return DaoUtil.toPageData(applicationSharedSubscriptionRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
-                DaoUtil.toPageable(pageLink)));
+                DaoUtil.toPageable(pageLink, appSharedSubscriptionColumnMap)));
     }
 }
