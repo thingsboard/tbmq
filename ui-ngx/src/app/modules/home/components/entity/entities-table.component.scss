@@ -98,6 +98,8 @@
   }
 }
 
-:host ::ng-deep .mat-sort-header-sorted .mat-sort-header-arrow {
-  opacity: 1 !important;
+:host ::ng-deep {
+  .mat-mdc-icon-button[disabled], .mat-mdc-icon-button.mat-mdc-button-disabled {
+    pointer-events: none !important;
+  }
 }
