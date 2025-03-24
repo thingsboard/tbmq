@@ -45,4 +45,8 @@
     bottom: 0;
     z-index: 2;
   }
+
+  .mat-mdc-icon-button[disabled], .mat-mdc-icon-button.mat-mdc-button-disabled {
+    pointer-events: none !important;
+  }
 }

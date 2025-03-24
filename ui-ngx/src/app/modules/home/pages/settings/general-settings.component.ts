@@ -174,10 +174,9 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   confirmForm(): UntypedFormGroup {
-    const form = this.generalSettingsForm;
-    if (this.generalSettingsForm.dirty || this.connectivitySettingsForm.dirty) {
-      form.markAsDirty();
+    if (this.generalSettingsForm.dirty) {
+      return this.generalSettingsForm;
     }
-    return form;
+    return this.connectivitySettingsForm;
   }
 }

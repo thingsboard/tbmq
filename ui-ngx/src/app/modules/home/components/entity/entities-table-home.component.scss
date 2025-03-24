@@ -137,4 +137,8 @@
   .mat-mdc-paginator .mat-mdc-text-field-wrapper.mdc-text-field--outlined .mat-mdc-form-field-infix {
     padding-top: 5px;
   }
+
+  .mat-mdc-icon-button[disabled], .mat-mdc-icon-button.mat-mdc-button-disabled {
+    pointer-events: none !important;
+  }
 }
