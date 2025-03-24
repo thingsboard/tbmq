@@ -149,7 +149,7 @@ public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheServic
 
     @Override
     public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return devicePersistedMsgsBucketProxy.tryConsumeAsMuchAsPossible(limit);
+        return tryConsumeAsMuchAsPossible(devicePersistedMsgsBucketProxy, limit);
     }
 
     /**
@@ -162,7 +162,7 @@ public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheServic
 
     @Override
     public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return totalMsgsBucketProxy.tryConsumeAsMuchAsPossible(limit);
+        return tryConsumeAsMuchAsPossible(totalMsgsBucketProxy, limit);
     }
 
     private Boolean initCacheWithCount(String key, int count) {

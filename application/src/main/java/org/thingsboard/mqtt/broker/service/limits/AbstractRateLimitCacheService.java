@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.Bucket;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -24,4 +25,10 @@ public abstract class AbstractRateLimitCacheService {
     @Value("${cache.cache-prefix:}")
     protected String cachePrefix;
 
+    protected long tryConsumeAsMuchAsPossible(Bucket bucket, long limit) {
+        if (limit <= 0) {
+            return 0;
+        }
+        return bucket.tryConsumeAsMuchAsPossible(limit);
+    }
 }

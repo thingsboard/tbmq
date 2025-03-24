@@ -188,8 +188,13 @@ public class MqttSubscribeHandler {
                                          List<TopicSubscription> newSubscriptions,
                                          Set<TopicSubscription> currentSubscriptions) {
         List<RetainedMsg> retainedMsgList = getRetainedMessagesForTopicSubscriptions(newSubscriptions, currentSubscriptions);
+        if (CollectionUtils.isEmpty(retainedMsgList)) {
+            return;
+        }
         retainedMsgList = applyRateLimits(retainedMsgList);
-        retainedMsgList.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+        if (!CollectionUtils.isEmpty(retainedMsgList)) {
+            retainedMsgList.forEach(retainedMsg -> publishMsgDeliveryService.sendPublishRetainedMsgToClient(ctx, retainedMsg));
+        }
     }
 
     List<RetainedMsg> applyRateLimits(List<RetainedMsg> retainedMsgList) {

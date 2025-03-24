@@ -130,7 +130,7 @@ public class RateLimitLocalCacheServiceImpl extends AbstractRateLimitCacheServic
 
     @Override
     public long tryConsumeAsMuchAsPossibleDevicePersistedMsgs(long limit) {
-        return devicePersistedMsgsBucket.tryConsumeAsMuchAsPossible(limit);
+        return tryConsumeAsMuchAsPossible(devicePersistedMsgsBucket, limit);
     }
 
     @Override
@@ -140,7 +140,7 @@ public class RateLimitLocalCacheServiceImpl extends AbstractRateLimitCacheServic
 
     @Override
     public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
-        return totalMsgsBucket.tryConsumeAsMuchAsPossible(limit);
+        return tryConsumeAsMuchAsPossible(totalMsgsBucket, limit);
     }
 
     LocalBucket getLocalBucket(BucketConfiguration bucketConfiguration) {
