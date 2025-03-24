@@ -20,8 +20,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.DefaultJedisClientConfig.Builder;
 import redis.clients.jedis.JedisSentineled;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -53,10 +55,16 @@ public class TBRedisSentinelConfiguration extends TBRedisCacheConfiguration<Redi
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
-        DefaultJedisClientConfig masterClientConfig = DefaultJedisClientConfig.builder().database(database).password(password).build();
-        DefaultJedisClientConfig sentinelClientConfig = DefaultJedisClientConfig.builder().password(sentinelPassword).build();
+        Builder masterClientConfigBuilder = DefaultJedisClientConfig.builder().database(database);
+        if (StringUtils.isNotEmpty(password)) {
+            masterClientConfigBuilder.password(password);
+        }
+        Builder sentinelClientConfigBuilder = DefaultJedisClientConfig.builder();
+        if (StringUtils.isNotEmpty(sentinelPassword)) {
+            sentinelClientConfigBuilder.password(sentinelPassword);
+        }
         ConnectionPoolConfig connectionPoolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
-        return new JedisSentineled(master, masterClientConfig, connectionPoolConfig, toHostAndPort(sentinels), sentinelClientConfig);
+        return new JedisSentineled(master, masterClientConfigBuilder.build(), connectionPoolConfig, toHostAndPort(sentinels), sentinelClientConfigBuilder.build());
     }
 
     @Override

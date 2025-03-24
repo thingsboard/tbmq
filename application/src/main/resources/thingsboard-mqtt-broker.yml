@@ -379,7 +379,7 @@ queue:
       # Topic for persisting incoming PUBLISH messages
       topic: "${TB_KAFKA_MSG_ALL_TOPIC:tbmq.msg.all}"
       # Kafka topic properties separated by semicolon for `tbmq.msg.all` topic
-      topic-properties: "${TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:24;replication.factor:1}"
+      topic-properties: "${TB_KAFKA_MSG_ALL_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:2147483648;partitions:16;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.all` topic
       additional-consumer-config: "${TB_KAFKA_MSG_ALL_ADDITIONAL_CONSUMER_CONFIG:}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.all` topic
@@ -566,7 +566,7 @@ service:
   # which is unnecessary in single-node setups where no other instances are sharing rate limit data.
   # Set this parameter to 'false' if your TBMQ is a cluster deployment (with 2 or more nodes in the cluster).
   # In this mode, rate limiting will be managed using Redis, allowing all nodes
-  # in the cluster to enforce consistent rate limits across the entire cluster.
+  # in the cluster to enforce consistent rate limits across the entire cluster
   singleton-mode: "${TB_SERVICE_SINGLETON_MODE:true}"
 
 # Actor system parameters

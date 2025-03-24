@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 @Service
@@ -41,6 +42,7 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
     private final RateLimitService rateLimitService;
     private final Queue<MessageWrapper> messageQueue = new ConcurrentLinkedQueue<>();
     private final AtomicInteger messageCount = new AtomicInteger(0);
+    private final ReentrantLock batchLock = new ReentrantLock();
 
     @Value("${mqtt.rate-limits.threads-count:1}")
     private int rateLimitThreadsCount;
@@ -74,33 +76,43 @@ public class RateLimitBatchProcessorImpl implements RateLimitBatchProcessor {
     }
 
     void processBatch() {
-        if (messageQueue.isEmpty()) {
+        if (!batchLock.tryLock()) {
             return;
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Processing rate-limit batch of messages: {}", messageCount.get());
-        }
-
-        int tokensToConsume = messageCount.get();
-        int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensToConsume);
-        int messagesToProcess = Math.min(availableTokens, tokensToConsume);
-
-        for (int i = 0; i < messagesToProcess; i++) {
-            MessageWrapper message = poll();
-            if (message != null) {
-                processMessage(message);
+        try {
+            if (messageQueue.isEmpty()) {
+                return;
             }
-        }
 
-        if (availableTokens < tokensToConsume) {
-            while (!messageQueue.isEmpty()) {
+            if (log.isTraceEnabled()) {
+                log.trace("Processing rate-limit batch of messages: {}", messageCount.get());
+            }
+
+            int tokensToConsume = messageCount.get();
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensToConsume);
+            int messagesToProcess = Math.min(availableTokens, tokensToConsume);
+
+            for (int i = 0; i < messagesToProcess; i++) {
                 MessageWrapper message = poll();
                 if (message != null) {
-                    log.trace("Hitting total messages rate limits on incoming side!");
-                    skipMessage(message);
+                    processMessage(message);
                 }
             }
+
+            if (availableTokens < tokensToConsume) {
+                while (!messageQueue.isEmpty()) {
+                    MessageWrapper message = poll();
+                    if (message != null) {
+                        log.trace("Hitting total messages rate limits on incoming side!");
+                        skipMessage(message);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Could not process the rate-limit batch of messages {}", messageCount.get(), e);
+        } finally {
+            batchLock.unlock();
         }
     }
 

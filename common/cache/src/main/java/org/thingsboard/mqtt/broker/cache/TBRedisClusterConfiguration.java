@@ -24,8 +24,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import redis.clients.jedis.ConnectionPoolConfig;
 import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.DefaultJedisClientConfig.Builder;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.UnifiedJedis;
 
@@ -53,9 +55,12 @@ public class TBRedisClusterConfiguration extends TBRedisCacheConfiguration<Redis
 
     @Override
     protected UnifiedJedis loadUnifiedJedis() {
-        DefaultJedisClientConfig jedisClientConfig = DefaultJedisClientConfig.builder().password(password).build();
+        Builder clientConfigBuilder = DefaultJedisClientConfig.builder();
+        if (StringUtils.isNotEmpty(password)) {
+            clientConfigBuilder.password(password);
+        }
         ConnectionPoolConfig poolConfig = useDefaultPoolConfig ? new ConnectionPoolConfig() : buildConnectionPoolConfig();
-        return new JedisCluster(toHostAndPort(clusterNodes), jedisClientConfig, JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
+        return new JedisCluster(toHostAndPort(clusterNodes), clientConfigBuilder.build(), JedisCluster.DEFAULT_MAX_ATTEMPTS, poolConfig);
     }
 
     @Override
