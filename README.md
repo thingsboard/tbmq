@@ -81,6 +81,7 @@ Last but not least, it had been running in production for more than a year befor
 - Cluster and clients' metrics monitoring
 - Unauthorized clients
 - MQTT WebSocket client
+- Integrations with external systems (HTTP, MQTT, Kafka)
 - Kafka topics and consumer groups monitoring
 
 ## Documentation
