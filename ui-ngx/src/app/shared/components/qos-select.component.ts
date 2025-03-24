@@ -81,9 +81,9 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
 
   writeValue(value: QoS) {
     if (isDefinedAndNotNull(value)) {
-      this.qosFormControl.patchValue(value);
+      this.qosFormControl.patchValue(value, {emitEvent: false});
     } else {
-      this.qosFormControl.patchValue(DEFAULT_QOS);
+      this.qosFormControl.patchValue(DEFAULT_QOS, {emitEvent: false});
     }
   }
 

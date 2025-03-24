@@ -44,6 +44,7 @@ const routes: Routes = [
       {
         path: 'general',
         loadComponent: () => import('@home/pages/settings/general-settings.component').then(m => m.GeneralSettingsComponent),
+        canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'admin.general',
@@ -69,6 +70,7 @@ const routes: Routes = [
       {
         path: 'security',
         loadComponent: () => import('@home/pages/settings/security-settings.component').then(m => m.SecuritySettingsComponent),
+        canDeactivate: [ConfirmOnExitGuard],
         data: {
           auth: [Authority.SYS_ADMIN],
           title: 'home.security',

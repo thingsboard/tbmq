@@ -676,7 +676,7 @@ export const calculateAvg = (data: any): number => {
 
 export const calculateLatest = (data: any): number => {
   if (data.length > 0) {
-    return Number(data[data.length - 1].value) || 0;
+    return Number(data[0].value) || 0;
   } else {
     return null;
   }
