@@ -54,13 +54,17 @@ public class IntegrationCleanupServiceImpl {
                 if (needsToBeRemoved(currentTs, integration)) {
                     count++;
                     log.debug("[{}][{}] Cleaning up expired disconnected integration", integration.getId(), integration.getName());
-                    integrationTopicService.deleteTopic(integration.getIdStr(), CallbackUtil.EMPTY);
+                    deleteIntegrationTopic(integration.getIdStr());
                 }
             }
         } catch (Throwable t) {
             log.warn("Failed to clean up expired disconnected integrations", t);
         }
         log.info("Cleaning up of [{}] expired disconnected integrations is finished", count);
+    }
+
+    public void deleteIntegrationTopic(String integrationId) {
+        integrationTopicService.deleteTopic(integrationId, CallbackUtil.EMPTY);
     }
 
     private boolean needsToBeRemoved(long currentTs, Integration integration) {

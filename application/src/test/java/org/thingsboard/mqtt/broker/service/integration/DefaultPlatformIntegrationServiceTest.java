@@ -67,6 +67,8 @@ class DefaultPlatformIntegrationServiceTest {
     private IntegrationDownlinkQueueService ieDownlinkQueueService;
     @Mock
     private ServiceInfoProvider serviceInfoProvider;
+    @Mock
+    IntegrationCleanupServiceImpl integrationCleanupService;
 
     private DefaultPlatformIntegrationService platformIntegrationService;
     private UUID integrationId;
@@ -78,7 +80,7 @@ class DefaultPlatformIntegrationServiceTest {
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         platformIntegrationService = new DefaultPlatformIntegrationService(
-                integrationService, eventService, integrationSubscriptionUpdateService, ieDownlinkQueueService, serviceInfoProvider
+                integrationService, eventService, integrationSubscriptionUpdateService, ieDownlinkQueueService, serviceInfoProvider, integrationCleanupService
         );
 
         integrationId = UUID.randomUUID();

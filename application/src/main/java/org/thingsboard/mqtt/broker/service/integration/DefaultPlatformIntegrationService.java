@@ -64,6 +64,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     private final IntegrationSubscriptionUpdateService integrationSubscriptionUpdateService;
     private final IntegrationDownlinkQueueService ieDownlinkQueueService;
     private final ServiceInfoProvider serviceInfoProvider;
+    private final IntegrationCleanupServiceImpl integrationCleanupService;
 
     @PostConstruct
     public void init() {
@@ -88,6 +89,9 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
         if (removed) {
             removeSubscriptions(integration.getIdStr());
             sendToIntegrationExecutor(integration, ComponentLifecycleEvent.DELETED);
+            if (!integration.isEnabled()) {
+                integrationCleanupService.deleteIntegrationTopic(integration.getIdStr());
+            }
         }
     }
 
