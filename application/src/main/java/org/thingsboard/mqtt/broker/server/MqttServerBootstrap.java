@@ -21,8 +21,6 @@ public interface MqttServerBootstrap {
 
     int getPort();
 
-    String getLeakDetectorLevel();
-
     int getBossGroupThreadCount();
 
     int getWorkerGroupThreadCount();

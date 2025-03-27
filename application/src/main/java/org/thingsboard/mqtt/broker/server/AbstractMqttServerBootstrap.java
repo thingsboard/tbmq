@@ -24,19 +24,23 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap {
 
+    @Value("${listener.leak_detector_level:DISABLED}")
+    private String leakDetectorLevel;
+
     private Channel serverChannel;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
     public void init() throws Exception {
-        log.info("[{}] Setting resource leak detector level to {}", getServerName(), getLeakDetectorLevel());
-        ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.valueOf(getLeakDetectorLevel().toUpperCase()));
+        log.info("[{}] Setting global resource leak detector level to {}", getServerName(), leakDetectorLevel);
+        ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.valueOf(leakDetectorLevel.toUpperCase()));
 
         log.info("[{}] Starting MQTT server...", getServerName());
         bossGroup = new NioEventLoopGroup(getBossGroupThreadCount());

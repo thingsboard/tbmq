@@ -40,8 +40,6 @@ public class MqttWsServerBootstrap extends AbstractMqttServerBootstrap {
     @Value("${listener.ws.bind_port}")
     private int port;
 
-    @Value("${listener.ws.netty.leak_detector_level}")
-    private String leakDetectorLevel;
     @Value("${listener.ws.netty.boss_group_thread_count}")
     private int bossGroupThreadCount;
     @Value("${listener.ws.netty.worker_group_thread_count}")

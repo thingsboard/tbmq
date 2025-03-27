@@ -55,6 +55,8 @@ server:
 
 # MQTT listeners parameters
 listener:
+  # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID. It is set globally for all listeners
+  leak_detector_level: "${NETTY_LEAK_DETECTOR_LVL:DISABLED}"
   tcp:
     # Enable/disable MQTT TCP port listener
     enabled: "${LISTENER_TCP_ENABLED:true}"
@@ -63,8 +65,6 @@ listener:
     # MQTT TCP listener bind port
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
     netty:
-      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
-      leak_detector_level: "${TCP_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       # Netty boss group threads count
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
       # Netty worker group threads count
@@ -115,8 +115,6 @@ listener:
           # Optional password to access the private key. If not set, the platform will attempt to load the private keys that are not protected with the password
           key_password: "${LISTENER_SSL_KEY_PASSWORD:server_key_password}"
     netty:
-      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
-      leak_detector_level: "${SSL_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       # Netty boss group threads count
       boss_group_thread_count: "${SSL_NETTY_BOSS_GROUP_THREADS:1}"
       # Netty worker group threads count
@@ -139,8 +137,6 @@ listener:
     netty:
       # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5
       sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
-      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
-      leak_detector_level: "${WS_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       # Netty boss group threads count
       boss_group_thread_count: "${WS_NETTY_BOSS_GROUP_THREADS:1}"
       # Netty worker group threads count
@@ -193,8 +189,6 @@ listener:
     netty:
       # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5
       sub_protocols: "${WSS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
-      # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID
-      leak_detector_level: "${WSS_NETTY_LEAK_DETECTOR_LVL:DISABLED}"
       # Netty boss group threads count
       boss_group_thread_count: "${WSS_NETTY_BOSS_GROUP_THREADS:1}"
       # Netty worker group threads count

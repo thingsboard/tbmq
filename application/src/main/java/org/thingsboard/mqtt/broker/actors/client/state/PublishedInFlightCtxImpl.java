@@ -17,10 +17,11 @@ package org.thingsboard.mqtt.broker.actors.client.state;
 
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.util.ReferenceCountUtil;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.mqtt.MqttPubMsgWithCreatedTime;
 import org.thingsboard.mqtt.broker.service.mqtt.flow.control.FlowControlService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -63,16 +64,16 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
 
     @Override
     public boolean addInFlightMsg(MqttPublishMessage mqttPubMsg) {
+        if (atMostOnce(mqttPubMsg)) {
+            return true;
+        }
         lock.lock();
         try {
-            if (atMostOnce(mqttPubMsg)) {
-                return true;
-            }
             int delayedMsgQueueSize = delayedMsgQueueSize();
             if (delayedMsgQueueSize == 0) {
                 if (publishedInFlightMsgQueueSize() >= clientReceiveMax) {
                     if (log.isDebugEnabled()) {
-                        log.debug("[{}][{}] Max in-flight messages reached! Adding msg to delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
+                        log.debug("[{}][{}] Max in-flight messages reached! Adding msg to empty delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
                     }
                     addDelayedMsg(mqttPubMsg);
                     flowControlService.addToMap(clientId, this);
@@ -83,6 +84,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                 if (delayedMsgQueueSize >= delayedMsgQueueMaxSize) {
                     log.error("[{}] Message is skipped! Max in-flight messages reached [{}] and delay queue is full [{}]!",
                             clientId, clientReceiveMax, delayedMsgQueueMaxSize);
+                    ReferenceCountUtil.release(mqttPubMsg);
                 } else {
                     if (log.isDebugEnabled()) {
                         log.debug("[{}][{}] Max in-flight messages reached! Adding msg to delay queue [{}]", clientId, clientReceiveMax, delayedMsgQueueSize);
@@ -167,6 +169,7 @@ public class PublishedInFlightCtxImpl implements PublishedInFlightCtx {
                     if (log.isDebugEnabled()) {
                         log.debug("[{}] Msg expired in delayed queue {}", clientId, head);
                     }
+                    ReferenceCountUtil.release(head.getMqttPublishMessage());
                     continue;
                 }
 

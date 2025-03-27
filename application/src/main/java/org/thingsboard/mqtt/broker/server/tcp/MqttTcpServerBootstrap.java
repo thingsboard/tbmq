@@ -40,8 +40,6 @@ public class MqttTcpServerBootstrap extends AbstractMqttServerBootstrap {
     @Value("${listener.tcp.bind_port}")
     private int port;
 
-    @Value("${listener.tcp.netty.leak_detector_level}")
-    private String leakDetectorLevel;
     @Value("${listener.tcp.netty.boss_group_thread_count}")
     private int bossGroupThreadCount;
     @Value("${listener.tcp.netty.worker_group_thread_count}")
