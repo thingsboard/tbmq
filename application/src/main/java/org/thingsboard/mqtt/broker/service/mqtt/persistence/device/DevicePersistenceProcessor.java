@@ -37,4 +37,8 @@ public interface DevicePersistenceProcessor {
     void processPubRecNoPubRelDelivery(String clientId, int packetId);
 
     void processPubComp(String clientId, int packetId);
+
+    void processChannelWritable(String clientId);
+
+    void processChannelNonWritable(String clientId);
 }

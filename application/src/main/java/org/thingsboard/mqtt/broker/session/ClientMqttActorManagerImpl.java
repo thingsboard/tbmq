@@ -25,9 +25,11 @@ import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
@@ -69,9 +71,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void processMqttAuthMsg(String clientId, MqttAuthMsg mqttAuthMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find client actor for auth, sessionId - {}.", clientId, mqttAuthMsg.getSessionId());
-            }
+            log.debug("[{}] Cannot find client actor for auth, sessionId - {}.", clientId, mqttAuthMsg.getSessionId());
         } else {
             clientActorRef.tellWithHighPriority(mqttAuthMsg);
         }
@@ -81,9 +81,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void disconnect(String clientId, MqttDisconnectMsg disconnectMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
-            }
+            log.debug("[{}] Cannot find client actor for disconnect, sessionId - {}.", clientId, disconnectMsg.getSessionId());
         } else {
             clientActorRef.tellWithHighPriority(disconnectMsg);
         }
@@ -93,9 +91,7 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
     public void connect(String clientId, MqttConnectMsg connectMsg) {
         TbActorRef clientActorRef = getActor(clientId);
         if (clientActorRef == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
-            }
+            log.debug("[{}] Cannot find client actor for connect, sessionId - {}.", clientId, connectMsg.getSessionId());
         } else {
             clientActorRef.tell(connectMsg);
         }
@@ -138,6 +134,26 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
             clientActorRef = createRootActor(clientId, true);
         }
         clientActorRef.tellWithHighPriority(unsubscribeCommandMsg);
+    }
+
+    @Override
+    public void notifyChannelNonWritable(String clientId, NonWritableChannelMsg nonWritableChannelMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            log.warn("[{}] Cannot find client actor to process non-writable channel notification", clientId);
+        } else {
+            clientActorRef.tellWithHighPriority(nonWritableChannelMsg);
+        }
+    }
+
+    @Override
+    public void notifyChannelWritable(String clientId, WritableChannelMsg writableChannelMsg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            log.warn("[{}] Cannot find client actor to process writable channel notification", clientId);
+        } else {
+            clientActorRef.tellWithHighPriority(writableChannelMsg);
+        }
     }
 
     private TbActorRef createRootActor(String clientId, boolean isClientIdGenerated) {

@@ -19,6 +19,7 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
@@ -28,11 +29,19 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.WRITE_BUFFER_DEFAULT_HIGH_WATER_MARK;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.WRITE_BUFFER_DEFAULT_LOW_WATER_MARK;
+
 @Slf4j
 public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap {
 
     @Value("${listener.leak_detector_level:DISABLED}")
     private String leakDetectorLevel;
+
+    @Value("#{${listener.write_buffer_high_water_mark:64} * 1024}")
+    private int writeBufferHighWaterMark;
+    @Value("#{${listener.write_buffer_low_water_mark:32} * 1024}")
+    private int writeBufferLowWaterMark;
 
     private Channel serverChannel;
     private EventLoopGroup bossGroup;
@@ -49,7 +58,8 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
         b.group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(getChannelInitializer())
-                .childOption(ChannelOption.SO_KEEPALIVE, isKeepAlive());
+                .childOption(ChannelOption.SO_KEEPALIVE, isKeepAlive())
+                .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, getWriteBufferWaterMark());
 
         serverChannel = b.bind(getHost(), getPort()).sync().channel();
         log.info("[{}] Mqtt server started on port {}!", getServerName(), getPort());
@@ -84,4 +94,10 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
         log.info("[{}] MQTT server stopped!", getServerName());
     }
 
+    private WriteBufferWaterMark getWriteBufferWaterMark() {
+        if (writeBufferLowWaterMark == WRITE_BUFFER_DEFAULT_LOW_WATER_MARK && writeBufferHighWaterMark == WRITE_BUFFER_DEFAULT_HIGH_WATER_MARK) {
+            return WriteBufferWaterMark.DEFAULT;
+        }
+        return new WriteBufferWaterMark(writeBufferLowWaterMark, writeBufferHighWaterMark);
+    }
 }

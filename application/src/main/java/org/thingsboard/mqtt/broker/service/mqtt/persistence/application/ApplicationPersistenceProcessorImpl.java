@@ -273,6 +273,18 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     }
 
     @Override
+    public void processChannelWritable(ClientActorStateInfo clientState) {
+        log.trace("[{}] Channel is writable", clientState.getClientId());
+        startProcessingPersistedMessages(clientState);
+    }
+
+    @Override
+    public void processChannelNonWritable(String clientId) {
+        log.trace("[{}] Channel is not writable", clientId);
+        stopProcessingPersistedMessages(clientId);
+    }
+
+    @Override
     public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
         if (CollectionUtils.isEmpty(subscriptions)) {
             return;

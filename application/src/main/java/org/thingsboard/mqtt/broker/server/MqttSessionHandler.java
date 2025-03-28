@@ -40,7 +40,9 @@ import io.netty.util.concurrent.GenericFutureListener;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPublishMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
@@ -285,6 +287,18 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
         var version = (byte) connectMessage.variableHeader().version();
         var protocolName = version > 3 ? BrokerConstants.MQTT_PROTOCOL_NAME : BrokerConstants.MQTT_V_3_1_PROTOCOL_NAME;
         return MqttVersion.fromProtocolNameAndLevel(protocolName, version);
+    }
+
+    @Override
+    public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
+        if (ctx.channel().isWritable()) {
+            log.info("[{}][{}] Channel is writable addr:[{}]", sessionId, clientId, address);
+            clientMqttActorManager.notifyChannelWritable(clientId, WritableChannelMsg.DEFAULT);
+        } else {
+            log.warn("[{}][{}] Channel became non-writable addr:[{}]", sessionId, clientId, address);
+            clientMqttActorManager.notifyChannelNonWritable(clientId, NonWritableChannelMsg.DEFAULT);
+        }
+        super.channelWritabilityChanged(ctx);
     }
 
     @Override

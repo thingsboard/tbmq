@@ -23,6 +23,7 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtx;
 import org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl;
@@ -92,7 +93,7 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public byte[] getAddressBytes() {
-        return this.address.getAddress().getAddress();
+        return address.getAddress().getAddress();
     }
 
     private int getMaxAwaitingQueueSize(MqttHandlerCtx mqttHandlerCtx) {
@@ -107,8 +108,7 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public String getClientId() {
-        return (sessionInfo != null && sessionInfo.getClientInfo() != null) ?
-                sessionInfo.getClientInfo().getClientId() : null;
+        return (sessionInfo != null && sessionInfo.getClientInfo() != null) ? sessionInfo.getClientId() : null;
     }
 
     public void initPublishedInFlightCtx(FlowControlService flowControlService, ClientSessionCtx sessionCtx, int receiveMaxValue, int delayedQueueMaxSize) {
@@ -128,15 +128,17 @@ public class ClientSessionCtx implements SessionContext {
         }
     }
 
+    public boolean isWritable() {
+        return channel.channel().isWritable();
+    }
+
     public void closeChannel() {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Closing channel...", getClientId());
-        }
-        this.channel.flush();
-        this.channel.close();
-        if (this.pendingPublishes != null) {
-            this.pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
-            this.pendingPublishes.clear();
+        log.debug("[{}] Closing channel...", getClientId());
+        channel.flush();
+        channel.close();
+        if (!CollectionUtils.isEmpty(pendingPublishes)) {
+            pendingPublishes.forEach((id, mqttPendingPublish) -> mqttPendingPublish.onChannelClosed());
+            pendingPublishes.clear();
         }
     }
 

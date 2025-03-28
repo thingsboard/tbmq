@@ -19,24 +19,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DevicePersistenceProcessorImplTest {
 
-    DeviceMsgService deviceMsgService;
     DeviceActorManager deviceActorManager;
     DevicePersistenceProcessorImpl devicePersistenceProcessor;
 
@@ -44,18 +39,17 @@ public class DevicePersistenceProcessorImplTest {
 
     @Before
     public void setUp() {
-        deviceMsgService = mock(DeviceMsgService.class);
         deviceActorManager = mock(DeviceActorManager.class);
-        devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(deviceMsgService, deviceActorManager));
+        devicePersistenceProcessor = spy(new DevicePersistenceProcessorImpl(deviceActorManager));
 
         clientId = "clientId";
     }
 
     @Test
     public void clearPersistedMsgsTest() {
-        when(deviceMsgService.removePersistedMessages(any())).thenReturn(CompletableFuture.completedStage("OK"));
         devicePersistenceProcessor.clearPersistedMsgs(clientId);
-        verify(deviceMsgService).removePersistedMessages(eq(clientId));
+
+        verify(deviceActorManager).notifyRemovePersistedMessages(eq(clientId));
     }
 
     @Test

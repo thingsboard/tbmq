@@ -40,4 +40,8 @@ public interface ApplicationPersistenceProcessor {
     void processPubRecNoPubRelDelivery(ClientSessionCtx clientSessionCtx, int packetId);
 
     void processPubComp(String clientId, int packetId);
+
+    void processChannelWritable(ClientActorStateInfo clientState);
+
+    void processChannelNonWritable(String clientId);
 }
