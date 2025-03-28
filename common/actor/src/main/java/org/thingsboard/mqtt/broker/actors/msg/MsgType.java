@@ -27,6 +27,9 @@ public enum MsgType {
     PACKET_COMPLETED_EVENT_MSG,
     INCOMING_PUBLISH_MSG,
     STOP_DEVICE_ACTOR_COMMAND_MSG,
+    REMOVE_PERSISTED_MESSAGES_MSG,
+    DEVICE_WRITABLE_CHANNEL_MSG,
+    DEVICE_NON_WRITABLE_CHANNEL_MSG,
 
     // Client Session MQTT Msg Types
     MQTT_CONNECT_MSG,
@@ -66,5 +69,9 @@ public enum MsgType {
 
     // Subscription update Inter-Cluster Msg Type
     SUBSCRIPTION_CHANGED_EVENT_MSG,
-    ;
+
+    // Channel writable Msg Type
+    WRITABLE_CHANNEL_MSG,
+    NON_WRITABLE_CHANNEL_MSG,
+
 }

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.actors.client.ClientActorConfiguration;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ActorProcessingMetricService;
@@ -44,6 +45,7 @@ public class ActorSystemContext {
     private final ActorProcessingMetricService actorProcessingMetricService;
     private final ClientLogger clientLogger;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
+    private final ChannelBackpressureManager channelBackpressureManager;
 
     private final ClientActorContext clientActorContext;
 

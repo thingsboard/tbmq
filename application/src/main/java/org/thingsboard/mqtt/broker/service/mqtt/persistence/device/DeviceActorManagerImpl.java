@@ -24,6 +24,8 @@ import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.actors.device.PersistedDeviceActorCreator;
+import org.thingsboard.mqtt.broker.actors.device.messages.ChannelNonWritableEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.ChannelWritableEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceDisconnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
@@ -31,6 +33,7 @@ import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEven
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketCompletedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketReceivedNoDeliveryEventMsg;
+import org.thingsboard.mqtt.broker.actors.device.messages.RemovePersistedMessagesEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.SharedSubscriptionEventMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
@@ -67,9 +70,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         String clientId = clientSessionCtx.getClientId();
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
-            }
+            log.debug("[{}] Cannot find device actor to process shared subscription for received event, skipping.", clientId);
         } else {
             deviceActorRef.tellWithHighPriority(new SharedSubscriptionEventMsg(subscriptions));
         }
@@ -79,16 +80,24 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
     public void notifyClientDisconnected(String clientId) {
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
-            }
+            log.debug("[{}] Cannot find device actor to be stopped for received disconnect event, skipping.", clientId);
         } else {
             deviceActorRef.tellWithHighPriority(new DeviceDisconnectedEventMsg());
         }
     }
 
     @Override
-    public void sendMsgToActor(String clientId, DevicePublishMsg devicePublishMsg) {
+    public void notifyRemovePersistedMessages(String clientId) {
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
+        if (deviceActorRef == null) {
+            deviceActorRef = actorSystem.createRootActor(ActorSystemLifecycle.PERSISTED_DEVICE_DISPATCHER_NAME,
+                    new PersistedDeviceActorCreator(actorSystemContext, clientId));
+        }
+        deviceActorRef.tellWithHighPriority(new RemovePersistedMessagesEventMsg());
+    }
+
+    @Override
+    public void notifyPublishMsg(String clientId, DevicePublishMsg devicePublishMsg) {
         TbActorRef deviceActorRef = getActorByClientId(clientId);
         if (deviceActorRef == null) {
             log.trace("[{}] No active actor for device.", clientId);
@@ -134,6 +143,26 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
             log.warn("[{}] Cannot find device actor for packet completed event, packetId - {}.", clientId, packetId);
         } else {
             deviceActorRef.tell(new PacketCompletedEventMsg(packetId));
+        }
+    }
+
+    @Override
+    public void notifyChannelWritable(String clientId) {
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
+        if (deviceActorRef == null) {
+            log.warn("[{}] Cannot find device actor for channel writable event", clientId);
+        } else {
+            deviceActorRef.tell(new ChannelWritableEventMsg());
+        }
+    }
+
+    @Override
+    public void notifyChannelNonWritable(String clientId) {
+        TbActorRef deviceActorRef = getActorByClientId(clientId);
+        if (deviceActorRef == null) {
+            log.warn("[{}] Cannot find device actor for channel non-writable event", clientId);
+        } else {
+            deviceActorRef.tell(new ChannelNonWritableEventMsg());
         }
     }
 

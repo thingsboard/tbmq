@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -29,20 +28,26 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DevicePersistenceProcessorImpl implements DevicePersistenceProcessor {
 
-    private final DeviceMsgService deviceMsgService;
     private final DeviceActorManager deviceActorManager;
 
     @Override
+    public void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx) {
+        deviceActorManager.notifyClientConnected(clientSessionCtx);
+    }
+
+    @Override
+    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
+        deviceActorManager.notifySubscribeToSharedSubscriptions(clientSessionCtx, subscriptions);
+    }
+
+    @Override
+    public void stopProcessingPersistedMessages(String clientId) {
+        deviceActorManager.notifyClientDisconnected(clientId);
+    }
+
+    @Override
     public void clearPersistedMsgs(String clientId) {
-        deviceMsgService.removePersistedMessages(clientId).whenComplete((status, throwable) -> {
-            if (log.isDebugEnabled()) {
-                if (throwable != null) {
-                    log.debug("Failed to remove persisted messages, clientId - {}", clientId, throwable);
-                } else {
-                    log.debug("Removed persisted messages, clientId - {}", clientId);
-                }
-            }
-        });
+        deviceActorManager.notifyRemovePersistedMessages(clientId);
     }
 
     @Override
@@ -66,18 +71,13 @@ public class DevicePersistenceProcessorImpl implements DevicePersistenceProcesso
     }
 
     @Override
-    public void startProcessingPersistedMessages(ClientSessionCtx clientSessionCtx) {
-        deviceActorManager.notifyClientConnected(clientSessionCtx);
+    public void processChannelWritable(String clientId) {
+        deviceActorManager.notifyChannelWritable(clientId);
     }
 
     @Override
-    public void startProcessingSharedSubscriptions(ClientSessionCtx clientSessionCtx, Set<TopicSharedSubscription> subscriptions) {
-        deviceActorManager.notifySubscribeToSharedSubscriptions(clientSessionCtx, subscriptions);
-    }
-
-    @Override
-    public void stopProcessingPersistedMessages(String clientId) {
-        deviceActorManager.notifyClientDisconnected(clientId);
+    public void processChannelNonWritable(String clientId) {
+        deviceActorManager.notifyChannelNonWritable(clientId);
     }
 
 }

@@ -53,9 +53,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
     @Override
     public void put(String clientId, Collection<TopicSubscription> topicSubscriptions) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing put of shared subscriptions {}", clientId, topicSubscriptions);
-        }
+        log.trace("[{}] Executing put of shared subscriptions {}", clientId, topicSubscriptions);
         if (CollectionUtils.isEmpty(topicSubscriptions)) {
             return;
         }
@@ -66,9 +64,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
         var clientSessionInfo = findClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Client session is not found for client.", clientId);
-            }
+            log.debug("[{}] Client session is not found for client", clientId);
             return;
         }
 
@@ -84,9 +80,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             Set<Subscription> subscriptionsByClientTypeInverted = getSubscriptionsByClientTypeInverted(clientSessionInfo, sharedSubscriptions);
             removeSubscription(subscriptionsByClientTypeInverted, clientId, subscription.getTopicFilter());
         }
-        if (log.isTraceEnabled()) {
-            log.trace("Shared subscriptions updated!");
-        }
+        log.trace("Shared subscriptions updated!");
     }
 
     private List<TopicSubscription> filterSharedTopicSubscriptions(Collection<TopicSubscription> topicSubscriptions) {
@@ -107,9 +101,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
     @Override
     public void remove(String clientId, TopicSubscription topicSubscription) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing remove of shared subscription {}", clientId, topicSubscription);
-        }
+        log.trace("[{}] Executing remove of shared subscription {}", clientId, topicSubscription);
         TopicSharedSubscription key = getKey(topicSubscription);
         SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(key);
         if (sharedSubscriptions == null) {
@@ -124,14 +116,10 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
             Set<Subscription> subscriptions = getSubscriptionsByClientType(clientSessionInfo, sharedSubscriptions);
             removeSubscription(subscriptions, clientId, topicFilter);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("Shared subscription removed from set!");
-        }
+        log.trace("Shared subscription removed from set!");
         if (sharedSubscriptions.isEmpty()) {
             sharedSubscriptionsMap.remove(key);
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Shared subscriptions removed completely!", key);
-            }
+            log.trace("[{}] Shared subscriptions removed completely!", key);
         }
     }
 
@@ -150,9 +138,7 @@ public class SharedSubscriptionCacheServiceImpl implements SharedSubscriptionCac
 
     @Override
     public boolean isAnyOtherDeviceClientConnected(String clientId, TopicSharedSubscription topicSharedSubscription) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Executing isAnyOtherDeviceClientConnected!", topicSharedSubscription);
-        }
+        log.trace("[{}] Executing isAnyOtherDeviceClientConnected!", topicSharedSubscription);
         SharedSubscriptions sharedSubscriptions = sharedSubscriptionsMap.get(topicSharedSubscription);
         if (sharedSubscriptions == null) {
             log.error("Failed to find any shared subscriptions for the key {}", topicSharedSubscription);

@@ -75,6 +75,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     @Setter
     private volatile ClientSessionCtx sessionCtx;
     private volatile UUID stopActorCommandUUID;
+    private volatile boolean channelWritable;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
         super(systemContext);
@@ -88,28 +89,16 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void processDeviceConnect(DeviceConnectedEventMsg msg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Start processing persisted messages on Device connect", msg.getSessionCtx().getClientId());
-        }
+        log.trace("[{}] Start processing persisted messages on Device connect", msg.getSessionCtx().getClientId());
         this.sessionCtx = msg.getSessionCtx();
         this.stopActorCommandUUID = null;
-        CompletionStage<List<DevicePublishMsg>> persistedMessagesFuture = deviceMsgService.findPersistedMessages(clientId);
-        persistedMessagesFuture.whenComplete((persistedMessages, throwable) -> {
-            if (throwable == null) {
-                persistedMessages.forEach(this::deliverPersistedMsg);
-                return;
-            }
-            log.warn("[{}][{}] Failed to process persisted messages.", clientId, sessionCtx.getSessionId(), throwable);
-            disconnect("Failed to process persisted messages");
-        });
+        findAndDeliverPersistedMessages();
     }
 
     // TODO: refactor to not use .toCompletableFuture().get(); for deviceMsgService APIs
     @SneakyThrows
     public void processingSharedSubscriptions(SharedSubscriptionEventMsg msg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
-        }
+        log.trace("[{}] Start processing Device shared subscriptions", msg.getSubscriptions());
         if (CollectionUtils.isEmpty(msg.getSubscriptions())) {
             return;
         }
@@ -193,6 +182,10 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     }
 
     public void process(IncomingPublishMsg msg) {
+        if (!channelWritable) {
+            log.debug("[{}] Channel non-writable, skipping message delivery {}", clientId, msg);
+            return;
+        }
         DevicePublishMsg publishMsg = msg.getPublishMsg();
         MsgExpiryResult msgExpiryResult = MqttPropertiesUtil.getMsgExpiryResult(publishMsg, System.currentTimeMillis());
         if (msgExpiryResult.isExpired()) {
@@ -269,9 +262,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
                         log.warn("[{}] Failed to remove persisted msg {} from the DB", targetClientId, msg.getPacketId(), throwable);
                         return;
                     }
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
-                    }
+                    log.debug("[{}] Removed persisted msg {} from the DB", targetClientId, msg.getPacketId());
                 });
     }
 
@@ -293,14 +284,43 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
 
     public void processActorStop(TbActorCtx ctx, StopDeviceActorCommandMsg msg) {
         if (msg.getCommandUUID().equals(stopActorCommandUUID)) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Stopping DEVICE actor.", clientId);
-            }
+            log.debug("[{}] Stopping DEVICE actor", clientId);
             ctx.stop(ctx.getSelf());
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Device was reconnected, ignoring actor stop command.", clientId);
-            }
+            log.debug("[{}] Device was reconnected, ignoring actor stop command", clientId);
         }
+    }
+
+    public void processRemovePersistedMessages() {
+        deviceMsgService.removePersistedMessages(clientId).whenComplete((status, throwable) -> {
+            if (throwable != null) {
+                log.debug("Failed to remove persisted messages, clientId - {}", clientId, throwable);
+            } else {
+                log.debug("Removed persisted messages, clientId - {}", clientId);
+            }
+        });
+    }
+
+    public void processChannelWritable() {
+        channelWritable = true;
+        log.trace("[{}] Start processing persisted messages on channel writable", clientId);
+        findAndDeliverPersistedMessages();
+    }
+
+    private void findAndDeliverPersistedMessages() {
+        CompletionStage<List<DevicePublishMsg>> persistedMessagesFuture = deviceMsgService.findPersistedMessages(clientId);
+        persistedMessagesFuture.whenComplete((persistedMessages, throwable) -> {
+            if (throwable == null) {
+                persistedMessages.forEach(this::deliverPersistedMsg);
+                return;
+            }
+            log.warn("[{}][{}] Failed to process persisted messages.", clientId, sessionCtx.getSessionId(), throwable);
+            disconnect("Failed to process persisted messages");
+        });
+    }
+
+    public void processChannelNonWritable() {
+        log.trace("[{}] Channel is not writable", clientId);
+        channelWritable = false;
     }
 }

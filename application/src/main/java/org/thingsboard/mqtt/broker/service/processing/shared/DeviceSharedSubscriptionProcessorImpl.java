@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategy;
@@ -42,6 +43,7 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
 
     private final ServiceInfoProvider serviceInfoProvider;
     private final SharedSubscriptionProcessingStrategyFactory sharedSubscriptionProcessingStrategyFactory;
+    private final ClientSessionCtxService clientSessionCtxService;
 
     @Override
     public List<Subscription> getTargetSubscriptions(Set<Subscription> deviceSubscriptions, int qos) {
@@ -55,7 +57,7 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
     List<SharedSubscription> toSharedSubscriptionList(Set<Subscription> sharedSubscriptions) {
         return sharedSubscriptions.stream()
                 .collect(Collectors.groupingBy(subscription ->
-                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName(), subscription.getQos())))
+                        new TopicSharedSubscription(subscription.getTopicFilter(), subscription.getShareName())))
                 .entrySet().stream()
                 .map(entry -> new SharedSubscription(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toList());
@@ -87,6 +89,7 @@ public class DeviceSharedSubscriptionProcessorImpl implements DeviceSharedSubscr
         return subscriptions
                 .stream()
                 .filter(subscription -> subscription.getClientSessionInfo().isConnected())
+                .filter(subscription -> clientSessionCtxService.getClientSessionCtx(subscription.getClientId()).isWritable())
                 .findAny()
                 .orElse(null);
     }

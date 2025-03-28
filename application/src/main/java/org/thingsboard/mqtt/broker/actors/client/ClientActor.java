@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.ActorProcessor;
 import org.thingsboard.mqtt.broker.actors.client.service.MqttMessageHandler;
+import org.thingsboard.mqtt.broker.actors.client.service.channel.ChannelBackpressureManager;
 import org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectService;
 import org.thingsboard.mqtt.broker.actors.client.service.session.SessionClusterManager;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionChangesManager;
@@ -70,6 +71,7 @@ public class ClientActor extends ContextAwareActor {
     private final MqttMessageHandler mqttMessageHandler;
     private final ClientLogger clientLogger;
     private final ClientActorConfiguration actorConfiguration;
+    private final ChannelBackpressureManager backpressureManager;
 
     private final ClientActorState state;
     private final ClientActorStats clientActorStats;
@@ -84,6 +86,7 @@ public class ClientActor extends ContextAwareActor {
         this.mqttMessageHandler = systemContext.getClientActorContext().getMqttMessageHandler();
         this.clientLogger = systemContext.getClientActorContext().getClientLogger();
         this.actorConfiguration = systemContext.getClientActorConfiguration();
+        this.backpressureManager = systemContext.getChannelBackpressureManager();
         this.state = new DefaultClientActorState(clientId, isClientIdGenerated, systemContext.getClientActorContext().getMaxPreConnectQueueSize());
         this.clientActorStats = systemContext.getClientActorContext().getStatsManager().getClientActorStats();
     }
@@ -185,6 +188,14 @@ public class ClientActor extends ContextAwareActor {
                             }
                         }
                         break;
+
+                    case WRITABLE_CHANNEL_MSG:
+                        backpressureManager.onChannelWritable(state);
+                        break;
+                    case NON_WRITABLE_CHANNEL_MSG:
+                        backpressureManager.onChannelNonWritable(state.getClientId(), state.getCurrentSessionCtx());
+                        break;
+
                     default:
                         success = false;
                 }

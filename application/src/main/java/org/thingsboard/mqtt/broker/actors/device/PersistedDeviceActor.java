@@ -77,6 +77,15 @@ public class PersistedDeviceActor extends ContextAwareActor {
             case STOP_DEVICE_ACTOR_COMMAND_MSG:
                 processor.processActorStop(ctx, (StopDeviceActorCommandMsg) msg);
                 break;
+            case REMOVE_PERSISTED_MESSAGES_MSG:
+                processor.processRemovePersistedMessages();
+                break;
+            case DEVICE_WRITABLE_CHANNEL_MSG:
+                processor.processChannelWritable();
+                break;
+            case DEVICE_NON_WRITABLE_CHANNEL_MSG:
+                processor.processChannelNonWritable();
+                break;
             default:
                 return false;
         }

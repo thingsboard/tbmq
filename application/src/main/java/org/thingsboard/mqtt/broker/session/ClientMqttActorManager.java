@@ -17,9 +17,11 @@ package org.thingsboard.mqtt.broker.session;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionAcceptedMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
@@ -44,5 +46,9 @@ public interface ClientMqttActorManager {
     void subscribe(String clientId, SubscribeCommandMsg subscribeCommandMsg);
 
     void unsubscribe(String clientId, UnsubscribeCommandMsg unsubscribeCommandMsg);
+
+    void notifyChannelNonWritable(String clientId, NonWritableChannelMsg nonWritableChannelMsg);
+
+    void notifyChannelWritable(String clientId, WritableChannelMsg writableChannelMsg);
 
 }

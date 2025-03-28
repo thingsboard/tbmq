@@ -29,7 +29,9 @@ public interface DeviceActorManager {
 
     void notifyClientDisconnected(String clientId);
 
-    void sendMsgToActor(String clientId, DevicePublishMsg devicePublishMsg);
+    void notifyRemovePersistedMessages(String clientId);
+
+    void notifyPublishMsg(String clientId, DevicePublishMsg devicePublishMsg);
 
     void notifyPacketAcknowledged(String clientId, int packetId);
 
@@ -39,4 +41,7 @@ public interface DeviceActorManager {
 
     void notifyPacketCompleted(String clientId, int packetId);
 
+    void notifyChannelWritable(String clientId);
+
+    void notifyChannelNonWritable(String clientId);
 }

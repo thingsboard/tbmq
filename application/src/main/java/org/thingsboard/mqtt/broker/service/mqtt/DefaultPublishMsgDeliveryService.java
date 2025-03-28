@@ -176,6 +176,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     private void processSendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, Consumer<MqttPublishMessage> processor) {
+        if (!sessionCtx.isWritable()) {
+            log.debug("[{}] Channel is not writable. Skip send Publish {}", sessionCtx.getClientId(), mqttPubMsg);
+            return;
+        }
         long startTime = System.nanoTime();
         try {
             boolean added = sessionCtx.addInFlightMsg(mqttPubMsg);
@@ -194,6 +198,10 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     private void processSendPubRel(ClientSessionCtx sessionCtx, int packetId, Consumer<MqttMessage> processor) {
+        if (!sessionCtx.isWritable()) {
+            log.debug("[{}] Channel is not writable. Skip send PubRel {}", sessionCtx.getClientId(), packetId);
+            return;
+        }
         MqttReasonCodes.PubRel code = MqttReasonCodeResolver.pubRelSuccess(sessionCtx);
         MqttMessage mqttPubRelMsg = mqttMessageGenerator.createPubRelMsg(packetId, code);
         try {

@@ -32,7 +32,7 @@ public class PersistentDownLinkProcessorImpl implements PersistentDownLinkProces
 
     @Override
     public void process(String clientId, DevicePublishMsg msg) {
-        deviceActorManager.sendMsgToActor(clientId, msg);
+        deviceActorManager.notifyPublishMsg(clientId, msg);
         clientLogger.logEvent(clientId, this.getClass(), "Sent msg to device client actor");
     }
 }

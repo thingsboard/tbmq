@@ -81,6 +81,9 @@ public class BrokerConstants {
         }
     }
 
+    public static final int WRITE_BUFFER_DEFAULT_HIGH_WATER_MARK = 64 * 1024; // 64 KB
+    public static final int WRITE_BUFFER_DEFAULT_LOW_WATER_MARK = 32 * 1024; // 32 KB
+
     public static final int TCP_PACKET_BYTES_OVERHEAD = 66;
     public static final int TLS_PACKET_BYTES_OVERHEAD = 95;
     public static final int TLS_CONNECT_BYTES_OVERHEAD = 4078;
