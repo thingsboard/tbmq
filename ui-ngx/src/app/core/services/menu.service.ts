@@ -124,18 +124,18 @@ export class MenuService {
         icon: 'mediation',
         pages: [
           {
-            id: MenuId.shared_subscriptions_application,
-            name: 'shared-subscription.application-shared-subscriptions',
-            type: 'link',
-            path: '/shared-subscriptions/applications',
-            icon: 'mdi:monitor-share'
-          },
-          {
             id: MenuId.shared_subscriptions,
             name: 'shared-subscription.groups',
             type: 'link',
             path: '/shared-subscriptions/manage',
             icon: 'lan'
+          },
+          {
+            id: MenuId.shared_subscriptions_application,
+            name: 'shared-subscription.application-shared-subscriptions',
+            type: 'link',
+            path: '/shared-subscriptions/applications',
+            icon: 'mdi:monitor-share'
           }
         ]
       },
