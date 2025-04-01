@@ -178,6 +178,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private void processSendPublish(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, Consumer<MqttPublishMessage> processor) {
         if (!sessionCtx.isWritable()) {
             log.debug("[{}] Channel is not writable. Skip send Publish {}", sessionCtx.getClientId(), mqttPubMsg);
+            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
             return;
         }
         long startTime = System.nanoTime();
