@@ -105,4 +105,19 @@ public class DevicePersistenceProcessorImplTest {
 
         verify(deviceActorManager).notifyClientDisconnected(eq(clientId));
     }
+
+    @Test
+    public void processChannelWritableTest() {
+        devicePersistenceProcessor.processChannelWritable(clientId);
+
+        verify(deviceActorManager).notifyChannelWritable(eq(clientId));
+    }
+
+    @Test
+    public void processChannelNonWritableTest() {
+        devicePersistenceProcessor.processChannelNonWritable(clientId);
+
+        verify(deviceActorManager).notifyChannelNonWritable(eq(clientId));
+    }
+
 }

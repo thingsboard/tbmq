@@ -93,7 +93,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
             deviceActorRef = actorSystem.createRootActor(ActorSystemLifecycle.PERSISTED_DEVICE_DISPATCHER_NAME,
                     new PersistedDeviceActorCreator(actorSystemContext, clientId));
         }
-        deviceActorRef.tellWithHighPriority(new RemovePersistedMessagesEventMsg());
+        deviceActorRef.tellWithHighPriority(RemovePersistedMessagesEventMsg.DEFAULT);
     }
 
     @Override
@@ -152,7 +152,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for channel writable event", clientId);
         } else {
-            deviceActorRef.tell(new ChannelWritableEventMsg());
+            deviceActorRef.tellWithHighPriority(ChannelWritableEventMsg.INSTANCE);
         }
     }
 
@@ -162,7 +162,7 @@ public class DeviceActorManagerImpl implements DeviceActorManager {
         if (deviceActorRef == null) {
             log.warn("[{}] Cannot find device actor for channel non-writable event", clientId);
         } else {
-            deviceActorRef.tell(new ChannelNonWritableEventMsg());
+            deviceActorRef.tellWithHighPriority(ChannelNonWritableEventMsg.INSTANCE);
         }
     }
 

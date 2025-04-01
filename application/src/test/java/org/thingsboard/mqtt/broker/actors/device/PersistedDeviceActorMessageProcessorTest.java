@@ -49,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -311,6 +312,23 @@ public class PersistedDeviceActorMessageProcessorTest {
     }
 
     @Test
+    public void givenDevicePublishMsg_whenChannelNonWritable_thenStopProcessing() {
+        persistedDeviceActorMessageProcessor.processChannelNonWritable();
+        MqttProperties properties = new MqttProperties();
+
+        DevicePublishMsg devicePublishMsg = DevicePublishMsg
+                .builder()
+                .packetId(2)
+                .time(System.currentTimeMillis())
+                .properties(properties)
+                .build();
+
+        persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
+
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
+    }
+
+    @Test
     public void givenDevicePublishMsg_whenMessageIsNotExpired_thenProcessingIsCorrect() {
         MqttProperties properties = new MqttProperties();
         properties.add(new MqttProperties.IntegerProperty(BrokerConstants.PUB_EXPIRY_INTERVAL_PROP_ID, 100));
@@ -476,6 +494,35 @@ public class PersistedDeviceActorMessageProcessorTest {
         assertEquals(1, lastPacketId);
         assertEquals(1, (int) msg.getPacketId());
         assertEquals(1, (int) msg.getQos());
+    }
+
+    @Test
+    public void givenClient_whenProcessRemovePersistedMessages_thenExecuteRemove() {
+        when(deviceMsgService.removePersistedMessages(eq(CLIENT_ID))).thenReturn(new CompletableFuture<>());
+
+        persistedDeviceActorMessageProcessor.processRemovePersistedMessages();
+
+        verify(deviceMsgService).removePersistedMessages(CLIENT_ID);
+    }
+
+    @Test
+    public void givenWritableClient_whenProcessChannelNonWritable_thenChangeState() {
+        assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
+
+        persistedDeviceActorMessageProcessor.processChannelNonWritable();
+
+        assertFalse(persistedDeviceActorMessageProcessor.isChannelWritable());
+    }
+
+    @Test
+    public void givenNotWritableClient_whenProcessChannelWritable_thenChangeState() {
+        when(deviceMsgService.findPersistedMessages(eq(CLIENT_ID))).thenReturn(new CompletableFuture<>());
+        persistedDeviceActorMessageProcessor.setChannelWritable(false);
+
+        persistedDeviceActorMessageProcessor.processChannelWritable();
+
+        assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
+        verify(deviceMsgService).findPersistedMessages(eq(CLIENT_ID));
     }
 
 }

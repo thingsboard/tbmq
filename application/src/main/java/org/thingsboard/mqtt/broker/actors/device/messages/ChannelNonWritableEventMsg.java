@@ -26,6 +26,8 @@ import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 @RequiredArgsConstructor
 public class ChannelNonWritableEventMsg implements TbActorMsg {
 
+    public static final ChannelNonWritableEventMsg INSTANCE = new ChannelNonWritableEventMsg();
+
     @Override
     public MsgType getMsgType() {
         return MsgType.DEVICE_NON_WRITABLE_CHANNEL_MSG;
