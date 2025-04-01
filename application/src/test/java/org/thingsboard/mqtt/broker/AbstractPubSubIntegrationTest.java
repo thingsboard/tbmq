@@ -50,7 +50,7 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
-import org.thingsboard.mqtt.broker.service.integration.executor.ExternalExecutorService;
+import org.thingsboard.mqtt.broker.service.testing.integration.executor.ExternalExecutorService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
