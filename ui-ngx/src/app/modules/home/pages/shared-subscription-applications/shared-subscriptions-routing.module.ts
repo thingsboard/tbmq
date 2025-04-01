@@ -43,7 +43,7 @@ const routes: Routes = [
         data: {
           auth: [Authority.SYS_ADMIN],
           redirectTo: {
-            SYS_ADMIN: '/shared-subscriptions/applications'
+            SYS_ADMIN: '/shared-subscriptions/manage'
           }
         }
       },
