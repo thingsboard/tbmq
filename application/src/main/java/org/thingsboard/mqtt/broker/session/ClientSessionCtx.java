@@ -132,6 +132,10 @@ public class ClientSessionCtx implements SessionContext {
         return channel.channel().isWritable();
     }
 
+    public boolean isCleanSession() {
+        return sessionInfo.isCleanSession();
+    }
+
     public void closeChannel() {
         log.debug("[{}] Closing channel...", getClientId());
         channel.flush();

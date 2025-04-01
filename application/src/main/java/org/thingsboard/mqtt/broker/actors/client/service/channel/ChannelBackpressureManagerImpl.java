@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 
@@ -35,6 +36,14 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @Override
     public void onChannelWritable(ClientActorState state) {
+        log.trace("[{}] onChannelWritable", state.getClientId());
+        if (state.getCurrentSessionCtx().isCleanSession()) {
+            return;
+        }
+        if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
+            log.warn("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
+        }
+        state.updateSessionState(SessionState.CONNECTED);
         if (APPLICATION.equals(state.getCurrentSessionCtx().getClientType())) {
             applicationPersistenceProcessor.processChannelWritable(state);
         } else if (DEVICE.equals(state.getCurrentSessionCtx().getClientType())) {
@@ -44,6 +53,14 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @Override
     public void onChannelNonWritable(ClientActorState state) {
+        log.trace("[{}] onChannelNonWritable", state.getClientId());
+        if (state.getCurrentSessionCtx().isCleanSession()) {
+            return;
+        }
+        if (!SessionState.CONNECTED.equals(state.getCurrentSessionState())) {
+            log.warn("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
+        }
+        state.updateSessionState(SessionState.CHANNEL_NON_WRITABLE);
         if (APPLICATION.equals(state.getCurrentSessionCtx().getClientType())) {
             applicationPersistenceProcessor.processChannelNonWritable(state.getClientId());
         } else if (DEVICE.equals(state.getCurrentSessionCtx().getClientType())) {

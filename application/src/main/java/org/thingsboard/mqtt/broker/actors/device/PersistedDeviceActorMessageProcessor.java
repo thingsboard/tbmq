@@ -312,6 +312,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
         CompletionStage<List<DevicePublishMsg>> persistedMessagesFuture = deviceMsgService.findPersistedMessages(clientId);
         persistedMessagesFuture.whenComplete((persistedMessages, throwable) -> {
             if (throwable == null) {
+                log.debug("[{}] Found {} persisted messages to deliver", clientId, persistedMessages.size());
                 persistedMessages.forEach(this::deliverPersistedMsg);
                 return;
             }

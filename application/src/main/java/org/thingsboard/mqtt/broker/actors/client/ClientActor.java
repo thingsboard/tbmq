@@ -60,6 +60,8 @@ import org.thingsboard.mqtt.broker.session.DisconnectReasonType;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.actors.client.state.SessionState.MQTT_PROCESSABLE_STATES;
+
 @Slf4j
 public class ClientActor extends ContextAwareActor {
 
@@ -281,8 +283,7 @@ public class ClientActor extends ContextAwareActor {
             release(msg);
             return true;
         }
-        if (state.getCurrentSessionState() != SessionState.CONNECTING
-                && state.getCurrentSessionState() != SessionState.CONNECTED) {
+        if (!MQTT_PROCESSABLE_STATES.contains(state.getCurrentSessionState())) {
             log.warn("[{}][{}] Msg {} cannot be processed in state - {}.", state.getClientId(), state.getCurrentSessionId(),
                     msg.getMsgType(), state.getCurrentSessionState());
             release(msg);

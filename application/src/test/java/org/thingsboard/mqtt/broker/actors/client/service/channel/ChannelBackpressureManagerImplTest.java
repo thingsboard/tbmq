@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +58,7 @@ public class ChannelBackpressureManagerImplTest {
 
         when(state.getClientId()).thenReturn(clientId);
         when(state.getCurrentSessionCtx()).thenReturn(ctx);
+        when(ctx.isCleanSession()).thenReturn(false);
     }
 
     @After
@@ -97,6 +99,51 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(devicePersistenceProcessor).processChannelNonWritable(eq(clientId));
+    }
+
+    @Test
+    public void givenNonPersistentAppClientState_whenOnChannelWritable_thenVerifyAppProcessorExecutions() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+
+        channelBackpressureManager.onChannelWritable(state);
+
+        verify(applicationPersistenceProcessor, never()).processChannelWritable(eq(state));
+    }
+
+    @Test
+    public void givenNonPersistentDevClientState_whenOnChannelWritable_thenVerifyDevProcessorExecutions() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+
+        channelBackpressureManager.onChannelWritable(state);
+
+        verify(devicePersistenceProcessor, never()).processChannelWritable(eq(clientId));
+    }
+
+    @Test
+    public void givenNonPersistentAppClientState_whenOnChannelNonWritable_thenVerifyAppProcessorExecutions() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+
+        verify(applicationPersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+    }
+
+    @Test
+    public void givenNonPersistentDevClientState_whenOnChannelNonWritable_thenVerifyDevProcessorExecutions() {
+        setCleanSession();
+
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+
+        verify(devicePersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+    }
+
+    private void setCleanSession() {
+        when(ctx.isCleanSession()).thenReturn(true);
     }
 
 }
