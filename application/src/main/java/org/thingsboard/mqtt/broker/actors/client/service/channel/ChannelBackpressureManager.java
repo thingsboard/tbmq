@@ -16,12 +16,11 @@
 package org.thingsboard.mqtt.broker.actors.client.service.channel;
 
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 public interface ChannelBackpressureManager {
 
     void onChannelWritable(ClientActorState state);
 
-    void onChannelNonWritable(String clientId, ClientSessionCtx ctx);
+    void onChannelNonWritable(ClientActorState state);
 
 }

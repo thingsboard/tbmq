@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
@@ -44,11 +43,11 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
     }
 
     @Override
-    public void onChannelNonWritable(String clientId, ClientSessionCtx ctx) {
-        if (APPLICATION.equals(ctx.getClientType())) {
-            applicationPersistenceProcessor.processChannelNonWritable(clientId);
-        } else if (DEVICE.equals(ctx.getClientType())) {
-            devicePersistenceProcessor.processChannelNonWritable(clientId);
+    public void onChannelNonWritable(ClientActorState state) {
+        if (APPLICATION.equals(state.getCurrentSessionCtx().getClientType())) {
+            applicationPersistenceProcessor.processChannelNonWritable(state.getClientId());
+        } else if (DEVICE.equals(state.getCurrentSessionCtx().getClientType())) {
+            devicePersistenceProcessor.processChannelNonWritable(state.getClientId());
         }
     }
 }

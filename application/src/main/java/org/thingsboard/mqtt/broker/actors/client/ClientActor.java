@@ -193,7 +193,7 @@ public class ClientActor extends ContextAwareActor {
                         backpressureManager.onChannelWritable(state);
                         break;
                     case NON_WRITABLE_CHANNEL_MSG:
-                        backpressureManager.onChannelNonWritable(state.getClientId(), state.getCurrentSessionCtx());
+                        backpressureManager.onChannelNonWritable(state);
                         break;
 
                     default:

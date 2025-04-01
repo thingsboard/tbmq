@@ -75,7 +75,7 @@ class PersistedDeviceActorMessageProcessor extends AbstractContextAwareMsgProces
     @Setter
     private volatile ClientSessionCtx sessionCtx;
     private volatile UUID stopActorCommandUUID;
-    private volatile boolean channelWritable;
+    private volatile boolean channelWritable = true;
 
     PersistedDeviceActorMessageProcessor(ActorSystemContext systemContext, String clientId) {
         super(systemContext);

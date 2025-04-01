@@ -70,8 +70,8 @@ public enum MsgType {
     // Subscription update Inter-Cluster Msg Type
     SUBSCRIPTION_CHANGED_EVENT_MSG,
 
-    // Channel writable Msg Type
+    // Channel writability Msg Type
     WRITABLE_CHANNEL_MSG,
-    NON_WRITABLE_CHANNEL_MSG,
+    NON_WRITABLE_CHANNEL_MSG
 
 }
