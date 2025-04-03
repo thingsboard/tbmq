@@ -71,7 +71,7 @@ import { ChartConfiguration, ChartDataset } from 'chart.js';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TimewindowComponent } from '@shared/components/time/timewindow.component';
 import { FormsModule } from '@angular/forms';
-import { NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatDivider } from '@angular/material/divider';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
@@ -79,6 +79,8 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { SafePipe } from '@shared/pipe/safe.pipe';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { MatProgressBar } from '@angular/material/progress-bar';
 
 Chart.register([Zoom]);
 
@@ -86,9 +88,9 @@ Chart.register([Zoom]);
     selector: 'tb-monitoring',
     templateUrl: './monitoring.component.html',
     styleUrls: ['./monitoring.component.scss'],
-    imports: [MatToolbar, TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
+  imports: [MatToolbar, TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule, AsyncPipe, MatProgressSpinner, MatProgressBar]
 })
-export class MonitoringComponent extends PageComponent implements OnInit, AfterViewInit, OnDestroy {
+export class MonitoringComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly chartElements = viewChildren<ElementRef>('chartElement');
 
@@ -106,6 +108,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   fullscreenElements: HTMLElement[] = [];
   fullscreenChart: string;
   isFullscreen = false;
+  isLoading = false;
 
   showLegend = true;
   legendConfig: LegendConfig = {
@@ -132,7 +135,6 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
               private statsService: StatsService,
               private cd: ChangeDetectorRef,
               private route: ActivatedRoute) {
-    super(store);
     this.timewindow = this.timeService.defaultTimewindow();
     this.calculateFixedWindowTimeMs();
   }
@@ -161,6 +163,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
   }
 
   onTimewindowChange() {
+    this.isLoading = true;
     this.stopPolling();
     this.calculateFixedWindowTimeMs();
     this.processedBytesUnitTypeChanged();
@@ -261,6 +264,7 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     forkJoin($getEntityTimeseriesTasks)
       .pipe(takeUntil(this.stopPolling$))
       .subscribe(data => {
+        this.isLoading = false;
         if (initCharts) {
           this.initCharts(data as TimeseriesData[]);
         } else {
@@ -407,13 +411,21 @@ export class MonitoringComponent extends PageComponent implements OnInit, AfterV
     const timewindow = calculateFixedWindowTimeMs(this.timewindow);
     this.charts[chartType].options.scales.x.min = timewindow.startTimeMs + POLLING_INTERVAL;
     this.charts[chartType].options.scales.x.max = timewindow.endTimeMs;
-    if (this.hoursInRange() <= 24) {
-      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'HH:mm';
-    } else if (this.hoursInRange() <= (24 * 30)) {
-      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'MMM-DD HH:mm';
-    } else {
-      this.charts[chartType].options.scales.x.time.displayFormats.minute = 'MMM-DD';
+    const hours = this.hoursInRange();
+    let format = 'MMM-DD';
+    let round: string;
+    let unit: string;
+    if (hours <= 24) {
+      format = 'HH:mm';
+      unit = 'minute';
+      round = 'minute';
+    } else if (hours <= 24 * 30) {
+      format = 'MMM-DD HH:mm';
+      unit = 'day';
     }
+    this.charts[chartType].options.scales.x.time.displayFormats.minute = format;
+    this.charts[chartType].options.scales.x.time.round = round;
+    this.charts[chartType].options.scales.x.time.unit = unit;
   }
 
   private hoursInRange(): number {

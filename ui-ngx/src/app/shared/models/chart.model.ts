@@ -142,7 +142,7 @@ const lineChartParams = {
     crosshairPlugin,
   ],
   options: {
-    animation: false,
+    animation: true,
     responsive: true,
     maintainAspectRatio: false,
     interaction: {
@@ -151,26 +151,42 @@ const lineChartParams = {
     },
     scales: {
       x: {
-        type: 'timeseries',
+        type: 'time',
         bounds: 'ticks',
         time: {
           round: 'minute',
           unit: 'minute'
         },
         ticks: {
-          align: 'start',
+          align: 'auto',
           maxRotation: 0,
-          autoSkip: true,
-          autoSkipPadding: 6
+          autoSkipPadding: 9,
+          major: {
+            enabled: true
+          },
+          font: (ctx) => {
+            if (ctx.tick && ctx.tick.major) {
+              return {
+                weight: 'bold',
+                size: 12
+              };
+            } else {
+              return {
+                weight: 'normal',
+                size: 11
+              };
+            }
+          },
         },
         grid: {
-          display: true,
-          drawTicks: false,
-          offset: false
-        }
+          display: false,
+        },
+        border: {
+          display: false
+        },
       },
       y: {
-        offset: true,
+        offset: false,
         min: 0,
         suggestedMax: 1,
         ticks: {
@@ -183,7 +199,13 @@ const lineChartParams = {
               return formatter.format(label);
             }
           }
-        }
+        },
+        border: {
+          display: false
+        },
+        grid: {
+          display: false,
+        },
       }
     },
     plugins: {
@@ -294,9 +316,9 @@ function getParams(type) {
         },
         scales: {
           x: {
-            ticks: {
-              font: {
-                size: 9
+            time: {
+              displayFormats: {
+                minute: 'HH:mm'
               }
             }
           },
