@@ -195,7 +195,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     public void removeServiceInfo(String serviceId) throws ThingsboardException {
         Long delete = redisTemplate.opsForHash().delete(SERVICE_REGISTRY_KEY, serviceId);
         if (delete == 0) {
-            throw new ThingsboardException(ThingsboardErrorCode.ITEM_NOT_FOUND);
+            throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
     }
 
