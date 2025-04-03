@@ -38,13 +38,14 @@ import org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEve
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
-import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.SystemInfoService;
 
 import java.util.Collections;
 import java.util.Set;
@@ -53,6 +54,7 @@ import java.util.UUID;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.FAILED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STARTED;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STOPPED;
+import static org.thingsboard.mqtt.broker.common.util.DonAsynchron.withCallback;
 
 @Slf4j
 @Service
@@ -65,6 +67,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     private final IntegrationDownlinkQueueService ieDownlinkQueueService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final IntegrationCleanupServiceImpl integrationCleanupService;
+    private final SystemInfoService systemInfoService;
 
     @PostConstruct
     public void init() {
@@ -122,6 +125,11 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
     }
 
     @Override
+    public void processServiceInfo(ServiceInfo serviceInfo) {
+        systemInfoService.processServiceInfo(serviceInfo);
+    }
+
+    @Override
     public void updateSubscriptions(Integration integration) {
         JsonNode configuration = integration.getConfiguration();
         if (!configuration.has("topicFilters")) {
@@ -160,7 +168,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
                 ListenableFuture<Integration> findIntegrationFuture = Futures.transformAsync(saveEventFuture,
                         __ -> integrationService.findIntegrationByIdAsync(entityId), MoreExecutors.directExecutor());
 
-                DonAsynchron.withCallback(findIntegrationFuture, integration -> {
+                withCallback(findIntegrationFuture, integration -> {
                     if (integration == null) {
                         if (log.isDebugEnabled()) {
                             log.debug("[{}] Could not find integration to update its status {}", entityId, lcEvent);
@@ -179,7 +187,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
                     }
                 }, callback::onError);
             } else {
-                DonAsynchron.withCallback(saveEventFuture, callback::onSuccess, callback::onError);
+                withCallback(saveEventFuture, callback::onSuccess, callback::onError);
             }
 
         } catch (Exception t) {
@@ -213,7 +221,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
                 .serviceId(serviceInfoProvider.getServiceId())
                 .lcEventType(event.name())
                 .success(true).build();
-        DonAsynchron.withCallback(eventService.saveAsync(lcEvent), __ -> {
+        withCallback(eventService.saveAsync(lcEvent), __ -> {
         }, ___ -> {
         });
     }

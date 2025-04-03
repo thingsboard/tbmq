@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.api;
+package org.thingsboard.mqtt.broker.service;
 
-import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
+import com.google.common.util.concurrent.ListenableFuture;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
-import org.thingsboard.mqtt.broker.integration.api.IntegrationCallback;
+import org.thingsboard.mqtt.broker.integration.api.data.ServiceInfoDto;
 
-import java.util.UUID;
+import java.util.List;
 
-public interface IntegrationApiService {
+public interface SystemInfoService {
 
-    void sendEventData(UUID entityId, IntegrationEventProto data, IntegrationCallback<Void> callback);
+    void sendCurrentServiceInfo();
 
-    void sendServiceInfo(ServiceInfo data);
+    default void processServiceInfo(ServiceInfo serviceInfo) {
+
+    }
+
+    default ListenableFuture<List<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
+        return null;
+    }
+
+    default void removeServiceInfo(String serviceId) throws ThingsboardException {
+
+    }
 }
