@@ -34,9 +34,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuCount;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuUsage;
-import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getDiscSpaceUsage;
+import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getDiskSpaceUsage;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getMemoryUsage;
-import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalDiscSpace;
+import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalDiskSpace;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalMemory;
 
 @Service
@@ -69,12 +69,16 @@ public class IntegrationExecutorSystemInfoServiceImpl implements IntegrationExec
 
     @Override
     public void sendCurrentServiceInfo() {
-        ServiceInfo serviceInfo = serviceInfoProvider
-                .getServiceInfo()
-                .toBuilder()
-                .setSystemInfo(buildSystemInfoProto())
-                .build();
-        apiService.sendServiceInfo(serviceInfo);
+        try {
+            ServiceInfo serviceInfo = serviceInfoProvider
+                    .getServiceInfo()
+                    .toBuilder()
+                    .setSystemInfo(buildSystemInfoProto())
+                    .build();
+            apiService.sendServiceInfo(serviceInfo);
+        } catch (Exception e) {
+            log.warn("Failed to send current service info", e);
+        }
     }
 
     private SystemInfoProto buildSystemInfoProto() {
@@ -82,11 +86,11 @@ public class IntegrationExecutorSystemInfoServiceImpl implements IntegrationExec
 
         getMemoryUsage().ifPresent(builder::setMemoryUsage);
         getCpuUsage().ifPresent(builder::setCpuUsage);
-        getDiscSpaceUsage().ifPresent(builder::setDiskUsage);
+        getDiskSpaceUsage().ifPresent(builder::setDiskUsage);
 
         getTotalMemory().ifPresent(builder::setTotalMemory);
         getCpuCount().ifPresent(builder::setCpuCount);
-        getTotalDiscSpace().ifPresent(builder::setTotalDiskSpace);
+        getTotalDiskSpace().ifPresent(builder::setTotalDiskSpace);
 
         return builder.build();
     }

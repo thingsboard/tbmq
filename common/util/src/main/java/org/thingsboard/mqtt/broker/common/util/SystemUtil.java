@@ -75,24 +75,24 @@ public class SystemUtil {
         return Optional.empty();
     }
 
-    public static Optional<Integer> getDiscSpaceUsage() {
+    public static Optional<Integer> getDiskSpaceUsage() {
         try {
             FileStore store = Files.getFileStore(Paths.get("/"));
             long total = store.getTotalSpace();
             long available = store.getUsableSpace();
             return Optional.of(toPercent(total - available, total));
         } catch (Throwable e) {
-            log.debug("Failed to get free disc space!", e);
+            log.debug("Failed to get free disk space!", e);
         }
         return Optional.empty();
     }
 
-    public static Optional<Long> getTotalDiscSpace() {
+    public static Optional<Long> getTotalDiskSpace() {
         try {
             FileStore store = Files.getFileStore(Paths.get("/"));
             return Optional.of(store.getTotalSpace());
         } catch (Throwable e) {
-            log.debug("Failed to get total disc space!", e);
+            log.debug("Failed to get total disk space!", e);
         }
         return Optional.empty();
     }

@@ -52,23 +52,22 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CPU_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DISK_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MEMORY_USAGE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_INFO_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SERVICE_INFO_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_DISK_SPACE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_MEMORY;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.UNKNOWN;
 import static org.thingsboard.mqtt.broker.common.util.DonAsynchron.withCallback;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuCount;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getCpuUsage;
-import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getDiscSpaceUsage;
+import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getDiskSpaceUsage;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getMemoryUsage;
-import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalDiscSpace;
+import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalDiskSpace;
 import static org.thingsboard.mqtt.broker.common.util.SystemUtil.getTotalMemory;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class TbmqSystemInfoService implements SystemInfoService {
-
-    private static final int KEYS_TO_UPDATE = 6;
 
     private final ServiceInfoProvider serviceInfoProvider;
     private final TimeseriesService timeseriesService;
@@ -96,17 +95,18 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public void saveCurrentServiceInfo() {
+        log.trace("Executing saveCurrentServiceInfo");
         ServiceInfo serviceInfo = serviceInfoProvider.getServiceInfo();
 
         long ts = System.currentTimeMillis();
-        List<TsKvEntry> tsList = new ArrayList<>(KEYS_TO_UPDATE);
+        List<TsKvEntry> tsList = new ArrayList<>(SERVICE_INFO_KEYS_COUNT);
 
         getMemoryUsage().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(MEMORY_USAGE, (long) value))));
         getCpuUsage().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, (long) value))));
-        getDiscSpaceUsage().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(DISK_USAGE, (long) value))));
+        getDiskSpaceUsage().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(DISK_USAGE, (long) value))));
         getTotalMemory().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, value))));
         getCpuCount().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, (long) value))));
-        getTotalDiscSpace().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, value))));
+        getTotalDiskSpace().ifPresent(value -> tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, value))));
 
         withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
         }, throwable -> log.warn("Failed to process TBMQ service info {}", serviceInfo, throwable));
@@ -114,7 +114,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
     @Override
     public void processIeServiceInfo(ServiceInfo serviceInfo) {
-        log.trace("processServiceInfo: [{}]", serviceInfo);
+        log.trace("Executing processServiceInfo: [{}]", serviceInfo);
 
         if (!serviceInfo.hasSystemInfo()) {
             updateServiceRegistry(serviceInfo);
@@ -123,7 +123,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
         SystemInfoProto systemInfo = serviceInfo.getSystemInfo();
         long ts = System.currentTimeMillis();
-        List<TsKvEntry> tsList = new ArrayList<>(KEYS_TO_UPDATE);
+        List<TsKvEntry> tsList = new ArrayList<>(SERVICE_INFO_KEYS_COUNT);
         if (systemInfo.hasCpuUsage()) {
             tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, systemInfo.getCpuUsage())));
         }

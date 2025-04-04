@@ -81,6 +81,7 @@ public class BrokerConstants {
     public static final List<String> SERVICE_INFO_KEYS = List.of(MEMORY_USAGE, CPU_USAGE,
             DISK_USAGE, TOTAL_MEMORY,
             CPU_COUNT, TOTAL_DISK_SPACE);
+    public static final int SERVICE_INFO_KEYS_COUNT = SERVICE_INFO_KEYS.size();
 
     public static final byte[] LOCAL_ADR;
 
