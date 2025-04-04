@@ -15,25 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
+@Data
 public class DefaultClientActorState implements ClientActorState {
 
     private final String clientId;
     private final boolean isClientIdGenerated;
-
     private final QueuedMqttMessages queuedMqttMessages;
 
-    @Setter
-    @Getter
-    private UUID stopActorCommandId;
-
-    private ClientSessionCtx clientSessionCtx;
-    private SessionState currentSessionState = SessionState.DISCONNECTED;
+    private volatile UUID stopActorCommandId;
+    private volatile ClientSessionCtx clientSessionCtx;
+    private volatile SessionState currentSessionState = SessionState.DISCONNECTED;
 
     public DefaultClientActorState(String clientId, boolean isClientIdGenerated, int maxPreConnectQueueSize) {
         this.clientId = clientId;
@@ -42,28 +38,13 @@ public class DefaultClientActorState implements ClientActorState {
     }
 
     @Override
-    public String getClientId() {
-        return clientId;
-    }
-
-    @Override
     public UUID getCurrentSessionId() {
         return clientSessionCtx != null ? clientSessionCtx.getSessionId() : null;
     }
 
     @Override
-    public SessionState getCurrentSessionState() {
-        return currentSessionState;
-    }
-
-    @Override
     public ClientSessionCtx getCurrentSessionCtx() {
         return clientSessionCtx;
-    }
-
-    @Override
-    public boolean isClientIdGenerated() {
-        return isClientIdGenerated;
     }
 
     @Override
@@ -74,11 +55,6 @@ public class DefaultClientActorState implements ClientActorState {
     @Override
     public void updateSessionState(SessionState newState) {
         this.currentSessionState = newState;
-    }
-
-    @Override
-    public void setClientSessionCtx(ClientSessionCtx clientSessionCtx) {
-        this.clientSessionCtx = clientSessionCtx;
     }
 
     @Override

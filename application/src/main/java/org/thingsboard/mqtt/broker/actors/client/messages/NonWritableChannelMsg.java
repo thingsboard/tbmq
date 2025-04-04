@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.actors.client.messages;
 
-import java.util.EnumSet;
-import java.util.Set;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
+import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 
-public enum SessionState {
+@Slf4j
+@Getter
+@RequiredArgsConstructor
+public class NonWritableChannelMsg extends AbstractTimedMsg implements TbActorMsg {
 
-    INITIALIZED,
-    ENHANCED_AUTH_STARTED,
-    CONNECTING,
-    CONNECTED,
-    DISCONNECTING,
-    DISCONNECTED,
-    CHANNEL_NON_WRITABLE;
+    public static final NonWritableChannelMsg DEFAULT = new NonWritableChannelMsg();
 
-    public static final Set<SessionState> MQTT_PROCESSABLE_STATES = EnumSet.of(
-            SessionState.CONNECTING,
-            SessionState.CONNECTED,
-            SessionState.CHANNEL_NON_WRITABLE
-    );
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.NON_WRITABLE_CHANNEL_MSG;
+    }
 }

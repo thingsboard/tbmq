@@ -13,24 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.state;
+package org.thingsboard.mqtt.broker.actors.client.service.channel;
 
-import java.util.EnumSet;
-import java.util.Set;
+import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 
-public enum SessionState {
+public interface ChannelBackpressureManager {
 
-    INITIALIZED,
-    ENHANCED_AUTH_STARTED,
-    CONNECTING,
-    CONNECTED,
-    DISCONNECTING,
-    DISCONNECTED,
-    CHANNEL_NON_WRITABLE;
+    void onChannelWritable(ClientActorState state);
 
-    public static final Set<SessionState> MQTT_PROCESSABLE_STATES = EnumSet.of(
-            SessionState.CONNECTING,
-            SessionState.CONNECTED,
-            SessionState.CHANNEL_NON_WRITABLE
-    );
+    void onChannelNonWritable(ClientActorState state);
+
 }
