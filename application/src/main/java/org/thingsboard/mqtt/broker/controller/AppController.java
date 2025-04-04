@@ -36,8 +36,8 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
-import org.thingsboard.mqtt.broker.service.SystemInfoService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
 

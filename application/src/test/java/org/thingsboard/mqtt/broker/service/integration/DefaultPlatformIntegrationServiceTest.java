@@ -37,8 +37,9 @@ import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.SystemInfoService;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.Collections;
 import java.util.Set;
@@ -153,6 +154,14 @@ class DefaultPlatformIntegrationServiceTest {
                 platformIntegrationService.processIntegrationRestart(integration));
 
         assertEquals("Integration is disabled", exception.getMessage());
+    }
+
+    @Test
+    void testProcessServiceInfo() {
+        ServiceInfo instance = ServiceInfo.getDefaultInstance();
+        platformIntegrationService.processServiceInfo(instance);
+
+        verify(systemInfoService).processServiceInfo(eq(instance));
     }
 
     @Test

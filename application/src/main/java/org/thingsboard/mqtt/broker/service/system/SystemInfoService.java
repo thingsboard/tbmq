@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service;
+package org.thingsboard.mqtt.broker.service.system;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
-import org.thingsboard.mqtt.broker.integration.api.data.ServiceInfoDto;
 
 import java.util.List;
 
@@ -26,15 +25,9 @@ public interface SystemInfoService {
 
     void sendCurrentServiceInfo();
 
-    default void processServiceInfo(ServiceInfo serviceInfo) {
+    void processServiceInfo(ServiceInfo serviceInfo);
 
-    }
+    ListenableFuture<List<ServiceInfoDto>> getServiceInfos() throws ThingsboardException;
 
-    default ListenableFuture<List<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
-        return null;
-    }
-
-    default void removeServiceInfo(String serviceId) throws ThingsboardException {
-
-    }
+    void removeServiceInfo(String serviceId) throws ThingsboardException;
 }

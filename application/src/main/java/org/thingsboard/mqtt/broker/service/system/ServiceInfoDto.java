@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.api.data;
+package org.thingsboard.mqtt.broker.service.system;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -39,5 +39,7 @@ public class ServiceInfoDto {
     private Long discUsage;
     @Schema(description = "Total disc space in bytes.")
     private Long totalDiscSpace;
+    @Schema(description = "Current service status based on last update time.")
+    private ServiceStatus status;
 
 }

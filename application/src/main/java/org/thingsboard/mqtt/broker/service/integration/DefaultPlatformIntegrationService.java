@@ -45,7 +45,7 @@ import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.SystemInfoService;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.Collections;
 import java.util.Set;

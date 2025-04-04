@@ -36,9 +36,7 @@ import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.gen.queue.SystemInfoProto;
-import org.thingsboard.mqtt.broker.integration.api.data.ServiceInfoDto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
-import org.thingsboard.mqtt.broker.service.SystemInfoService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -185,6 +183,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
                     }
                     dto.setLastUpdateTime(entry.getTs());
                 }
+                dto.setStatus(ServiceStatus.fromLastUpdateTime(dto.getLastUpdateTime()));
                 response.add(dto);
             }
             return response;

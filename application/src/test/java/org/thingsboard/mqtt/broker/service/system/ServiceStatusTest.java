@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.system;
+package org.thingsboard.mqtt.broker.service.system;
 
-public interface IntegrationExecutorSystemInfoService {
+import org.junit.jupiter.api.Test;
 
-    void sendCurrentServiceInfo();
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ServiceStatusTest {
+
+    @Test
+    void testServiceStatusFromLastUpdateTime() {
+        long now = System.currentTimeMillis();
+
+        assertEquals(ServiceStatus.ACTIVE, ServiceStatus.fromLastUpdateTime(now - 1000));
+        assertEquals(ServiceStatus.INACTIVE, ServiceStatus.fromLastUpdateTime(now - (2 * 60 * 60 * 1000)));
+        assertEquals(ServiceStatus.OUTDATED, ServiceStatus.fromLastUpdateTime(now - (8L * 24 * 60 * 60 * 1000)));
+    }
 
 }
