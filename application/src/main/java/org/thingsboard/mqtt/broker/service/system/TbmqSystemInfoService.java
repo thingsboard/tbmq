@@ -118,6 +118,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
 
         if (!serviceInfo.hasSystemInfo()) {
             updateServiceRegistry(serviceInfo);
+            return;
         }
 
         SystemInfoProto systemInfo = serviceInfo.getSystemInfo();
@@ -138,8 +139,8 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (systemInfo.hasTotalMemory()) {
             tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, systemInfo.getTotalMemory())));
         }
-        if (systemInfo.hasTotalDiscSpace()) {
-            tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, systemInfo.getTotalDiscSpace())));
+        if (systemInfo.hasTotalDiskSpace()) {
+            tsList.add(new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, systemInfo.getTotalDiskSpace())));
         }
 
         withCallback(timeseriesService.saveLatest(serviceInfo.getServiceId(), tsList), __ -> {
@@ -178,8 +179,8 @@ public class TbmqSystemInfoService implements SystemInfoService {
                         case CPU_COUNT -> dto.setCpuCount(entry.getLongValue().orElse(null));
                         case MEMORY_USAGE -> dto.setMemoryUsage(entry.getLongValue().orElse(null));
                         case TOTAL_MEMORY -> dto.setTotalMemory(entry.getLongValue().orElse(null));
-                        case DISK_USAGE -> dto.setDiscUsage(entry.getLongValue().orElse(null));
-                        case TOTAL_DISK_SPACE -> dto.setTotalDiscSpace(entry.getLongValue().orElse(null));
+                        case DISK_USAGE -> dto.setDiskUsage(entry.getLongValue().orElse(null));
+                        case TOTAL_DISK_SPACE -> dto.setTotalDiskSpace(entry.getLongValue().orElse(null));
                     }
                     dto.setLastUpdateTime(entry.getTs());
                 }

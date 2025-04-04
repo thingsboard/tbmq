@@ -36,9 +36,9 @@ public class ServiceInfoDto {
     @Schema(description = "Total memory in bytes.")
     private Long totalMemory;
     @Schema(description = "Disk usage, in percent.")
-    private Long discUsage;
-    @Schema(description = "Total disc space in bytes.")
-    private Long totalDiscSpace;
+    private Long diskUsage;
+    @Schema(description = "Total disk space in bytes.")
+    private Long totalDiskSpace;
     @Schema(description = "Current service status based on last update time.")
     private ServiceStatus status;
 

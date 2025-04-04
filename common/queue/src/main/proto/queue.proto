@@ -173,5 +173,5 @@ message SystemInfoProto {
   optional int64 memoryUsage = 3;
   optional int64 totalMemory = 4;
   optional int64 diskUsage = 5;
-  optional int64 totalDiscSpace = 6;
+  optional int64 totalDiskSpace = 6;
 }

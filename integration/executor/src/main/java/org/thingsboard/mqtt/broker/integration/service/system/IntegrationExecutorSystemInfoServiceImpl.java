@@ -86,7 +86,7 @@ public class IntegrationExecutorSystemInfoServiceImpl implements IntegrationExec
 
         getTotalMemory().ifPresent(builder::setTotalMemory);
         getCpuCount().ifPresent(builder::setCpuCount);
-        getTotalDiscSpace().ifPresent(builder::setTotalDiscSpace);
+        getTotalDiscSpace().ifPresent(builder::setTotalDiskSpace);
 
         return builder.build();
     }
