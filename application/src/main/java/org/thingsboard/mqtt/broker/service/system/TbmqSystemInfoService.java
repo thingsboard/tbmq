@@ -82,7 +82,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     @PostConstruct
     public void init() {
         scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("tbmq-system-info-scheduler"));
-        scheduler.scheduleAtFixedRate(this::sendCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::saveCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
 
         updateServiceRegistry(serviceInfoProvider.getServiceInfo());
     }
@@ -95,7 +95,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public void sendCurrentServiceInfo() {
+    public void saveCurrentServiceInfo() {
         ServiceInfo serviceInfo = serviceInfoProvider.getServiceInfo();
 
         long ts = System.currentTimeMillis();
@@ -113,7 +113,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public void processServiceInfo(ServiceInfo serviceInfo) {
+    public void processIeServiceInfo(ServiceInfo serviceInfo) {
         log.trace("processServiceInfo: [{}]", serviceInfo);
 
         if (!serviceInfo.hasSystemInfo()) {

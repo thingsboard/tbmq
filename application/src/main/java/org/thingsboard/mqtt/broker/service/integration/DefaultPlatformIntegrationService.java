@@ -126,7 +126,7 @@ public class DefaultPlatformIntegrationService implements PlatformIntegrationSer
 
     @Override
     public void processServiceInfo(ServiceInfo serviceInfo) {
-        systemInfoService.processServiceInfo(serviceInfo);
+        systemInfoService.processIeServiceInfo(serviceInfo);
     }
 
     @Override

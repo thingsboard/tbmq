@@ -82,31 +82,31 @@ public class TbmqSystemInfoServiceTest {
     }
 
     @Test
-    public void testSendCurrentServiceInfo() {
+    public void testSaveCurrentServiceInfo() {
         ServiceInfo serviceInfo = ServiceInfo.newBuilder().setServiceId("test-service").build();
         when(serviceInfoProvider.getServiceInfo()).thenReturn(serviceInfo);
         when(timeseriesService.saveLatest(eq("test-service"), anyList())).thenReturn(Futures.immediateFuture(null));
 
-        systemInfoService.sendCurrentServiceInfo();
+        systemInfoService.saveCurrentServiceInfo();
 
         verify(timeseriesService).saveLatest(eq("test-service"), anyList());
     }
 
     @Test
-    public void testProcessServiceInfoWithoutSystemInfo() {
+    public void testProcessIeServiceInfoWithoutSystemInfo() {
         ServiceInfo serviceInfo = ServiceInfo
                 .newBuilder()
                 .setServiceId("svc1")
                 .setServiceType("type1")
                 .build();
 
-        systemInfoService.processServiceInfo(serviceInfo);
+        systemInfoService.processIeServiceInfo(serviceInfo);
 
         verify(hashOperations).put(SERVICE_REGISTRY_KEY, "svc1", "type1");
     }
 
     @Test
-    public void testProcessServiceInfoWithSystemInfo() {
+    public void testProcessIeServiceInfoWithSystemInfo() {
         when(timeseriesService.saveLatest(eq("svc2"), anyList())).thenReturn(Futures.immediateFuture(null));
 
         ServiceInfo serviceInfo = ServiceInfo
@@ -124,7 +124,7 @@ public class TbmqSystemInfoServiceTest {
                         .build())
                 .build();
 
-        systemInfoService.processServiceInfo(serviceInfo);
+        systemInfoService.processIeServiceInfo(serviceInfo);
 
         verify(timeseriesService).saveLatest(eq("svc2"), anyList());
     }

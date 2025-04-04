@@ -23,9 +23,9 @@ import java.util.List;
 
 public interface SystemInfoService {
 
-    void sendCurrentServiceInfo();
+    void saveCurrentServiceInfo();
 
-    void processServiceInfo(ServiceInfo serviceInfo);
+    void processIeServiceInfo(ServiceInfo serviceInfo);
 
     ListenableFuture<List<ServiceInfoDto>> getServiceInfos() throws ThingsboardException;
 

@@ -161,7 +161,7 @@ class DefaultPlatformIntegrationServiceTest {
         ServiceInfo instance = ServiceInfo.getDefaultInstance();
         platformIntegrationService.processServiceInfo(instance);
 
-        verify(systemInfoService).processServiceInfo(eq(instance));
+        verify(systemInfoService).processIeServiceInfo(eq(instance));
     }
 
     @Test
