@@ -86,6 +86,7 @@ message IntegrationEventProto {
 
 message UplinkIntegrationMsgProto {
   IntegrationEventProto eventProto = 1;
+  optional queue.ServiceInfo serviceInfoProto = 2;
 }
 
 message UplinkIntegrationNotificationMsgProto {

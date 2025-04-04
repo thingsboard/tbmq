@@ -13,17 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.api;
+package org.thingsboard.mqtt.broker.integration.service.system;
 
-import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
-import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
-import org.thingsboard.mqtt.broker.integration.api.IntegrationCallback;
+public interface IntegrationExecutorSystemInfoService {
 
-import java.util.UUID;
+    void sendCurrentServiceInfo();
 
-public interface IntegrationApiService {
-
-    void sendEventData(UUID entityId, IntegrationEventProto data, IntegrationCallback<Void> callback);
-
-    void sendServiceInfo(ServiceInfo data);
 }

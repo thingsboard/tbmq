@@ -37,7 +37,9 @@ import org.thingsboard.mqtt.broker.dao.event.EventService;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.TbEventSourceProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.Collections;
 import java.util.Set;
@@ -69,6 +71,8 @@ class DefaultPlatformIntegrationServiceTest {
     private ServiceInfoProvider serviceInfoProvider;
     @Mock
     IntegrationCleanupServiceImpl integrationCleanupService;
+    @Mock
+    SystemInfoService systemInfoService;
 
     private DefaultPlatformIntegrationService platformIntegrationService;
     private UUID integrationId;
@@ -80,7 +84,8 @@ class DefaultPlatformIntegrationServiceTest {
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         platformIntegrationService = new DefaultPlatformIntegrationService(
-                integrationService, eventService, integrationSubscriptionUpdateService, ieDownlinkQueueService, serviceInfoProvider, integrationCleanupService
+                integrationService, eventService, integrationSubscriptionUpdateService,
+                ieDownlinkQueueService, serviceInfoProvider, integrationCleanupService, systemInfoService
         );
 
         integrationId = UUID.randomUUID();
@@ -149,6 +154,14 @@ class DefaultPlatformIntegrationServiceTest {
                 platformIntegrationService.processIntegrationRestart(integration));
 
         assertEquals("Integration is disabled", exception.getMessage());
+    }
+
+    @Test
+    void testProcessServiceInfo() {
+        ServiceInfo instance = ServiceInfo.getDefaultInstance();
+        platformIntegrationService.processServiceInfo(instance);
+
+        verify(systemInfoService).processIeServiceInfo(eq(instance));
     }
 
     @Test

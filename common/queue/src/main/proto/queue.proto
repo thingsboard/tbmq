@@ -159,8 +159,19 @@ message ToUsageStatsMsgProto {
 
 message ServiceInfo {
   string serviceId = 1;
+  optional string serviceType = 2;
+  optional SystemInfoProto systemInfo = 3;
 }
 
 message ApplicationRemovedEventProto {
   string clientId = 1;
+}
+
+message SystemInfoProto {
+  optional int64 cpuUsage = 1;
+  optional int64 cpuCount = 2;
+  optional int64 memoryUsage = 3;
+  optional int64 totalMemory = 4;
+  optional int64 diskUsage = 5;
+  optional int64 totalDiskSpace = 6;
 }

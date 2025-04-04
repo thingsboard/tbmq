@@ -33,4 +33,5 @@ public class CacheConstants {
     public static final String CLIENT_SESSIONS_LIMIT_CACHE_KEY = CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE + COUNT_SUFFIX;
     public static final String APP_CLIENTS_LIMIT_CACHE_KEY = CacheConstants.APP_CLIENTS_LIMIT_CACHE + COUNT_SUFFIX;
 
+    public static final String SERVICE_REGISTRY_KEY = "tbmq:service:registry";
 }

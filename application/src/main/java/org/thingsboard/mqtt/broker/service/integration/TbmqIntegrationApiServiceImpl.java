@@ -34,6 +34,8 @@ public class TbmqIntegrationApiServiceImpl implements TbmqIntegrationApiService 
         var msg = envelope.getValue();
         if (msg.hasEventProto()) {
             platformIntegrationService.processUplinkData(msg.getEventProto(), new IntegrationApiCallback(callback));
+        } else if (msg.hasServiceInfoProto()) {
+            platformIntegrationService.processServiceInfo(msg.getServiceInfoProto());
         } else {
             callback.onFailure(new IllegalArgumentException("Unsupported integration msg!"));
         }

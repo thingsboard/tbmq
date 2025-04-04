@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.stats.StubMessagesStats;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
 import org.thingsboard.mqtt.broker.gen.integration.UplinkIntegrationMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationCallback;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationStatisticsService;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
@@ -74,6 +75,16 @@ public class DefaultIntegrationApiService implements IntegrationApiService {
 
         var msg = UplinkIntegrationMsgProto.newBuilder().setEventProto(data).build();
         queueProvider.getIeUplinkProducer().send(new TbProtoQueueMsg<>(entityId, msg), wrappedCallback);
+    }
+
+    @Override
+    public void sendServiceInfo(ServiceInfo data) {
+        log.trace("Pushing service info message {}", data);
+        tbCoreProducerStats.incrementTotal();
+        StatsTbQueueCallback wrappedCallback = new StatsTbQueueCallback(null, tbCoreProducerStats);
+
+        var msg = UplinkIntegrationMsgProto.newBuilder().setServiceInfoProto(data).build();
+        queueProvider.getIeUplinkProducer().send(new TbProtoQueueMsg<>(UUID.randomUUID(), msg), wrappedCallback);
     }
 
 }
