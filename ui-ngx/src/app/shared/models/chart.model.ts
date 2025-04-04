@@ -24,7 +24,7 @@ export interface TimeseriesData {
 
 export interface TsValue {
   ts: number;
-  value: string;
+  value: number;
   count?: number;
 }
 

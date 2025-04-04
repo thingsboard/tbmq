@@ -20,138 +20,16 @@
     <section class="flex items-end">
       <span class="flex-1"></span>
       <tb-timewindow [(ngModel)]="timewindow"
-                     (ngModelChange)="onTimewindowChange()"
                      asButton
                      flatButton
                      tooltipPosition="left"
                      aggregation="true">
       </tb-timewindow>
     </section>
-    @if (isLoading) {
-      <mat-progress-bar color="warn" mode="indeterminate">
-      </mat-progress-bar>
-    }
   </section>
 </mat-toolbar>
 <div class="mat-padding flex flex-1 flex-col gap-4">
-  @for (statsChartType of chartTypes; track trackByIndex(index); let index = $index) {
-    <div tb-fullscreen
-      [fullscreen]="fullscreenChart === statsChartType"
-      [fullscreenElement]="fullscreenElements[index]"
-      [fullscreenBackgroundStyle]="{'background-color':'#fff'}">
-      <div [id]="statsChartType + 'container'" #chartElement class="mat-padding chart-container" >
-        <mat-divider [class.!hidden]="!isFullscreen"></mat-divider>
-        <section class="flex flex-row items-center justify-between" [style]="{'padding-right': isFullscreen ? '20px' : 0}">
-          <span class="flex flex-1"></span>
-          <span [style]="{paddingLeft: statsChartType === 'processedBytes' ? '170px' : 0}">{{ chartTypeTranslationMap.get(statsChartType) | translate }}</span>
-          <span class="flex flex-1"></span>
-          @if (statsChartType === 'processedBytes') {
-            <tb-toggle-header (valueChange)="processedBytesUnitTypeChanged($event)"
-              [value]="currentDataSizeUnitType"
-              style="padding-right: 12px"
-              [name]="statsChartType"
-              useSelectOnMdLg="true"
-              appearance="fill">
-              @for (type of dataSizeUnitType; track type) {
-                <tb-toggle-option [value]="type">
-                  {{ dataSizeUnitTypeTranslationMap.get(type) }}
-                </tb-toggle-option>
-              }
-            </tb-toggle-header>
-          }
-          <mat-icon [matTooltip]="chartTooltip(statsChartType)" class="material-icons" style="cursor: default">
-            info_outline
-          </mat-icon>
-          <button type="button"
-            mat-icon-button class="tb-fullscreen-button tb-mat-40"
-            (click)="onFullScreen(statsChartType)"
-            matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-            matTooltipPosition="above">
-            <mat-icon>{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-          </button>
-        </section>
-        <section [style]="{'height': chartContainerHeight}">
-          <canvas [id]="statsChartType + chartPage" [height]="chartHeight"></canvas>
-        </section>
-        @if (showLegend) {
-          <section class="tb-time-series-chart-legend">
-            <ng-container *ngTemplateOutlet="legend; context:{chartType: statsChartType}"></ng-container>
-          </section>
-        }
-        <mat-divider [class.!hidden]="!isFullscreen"></mat-divider>
-      </div>
-    </div>
+  @for (chartType of chartTypes; track $index;) {
+    <tb-monitoring-chart [parentTimewindow]="timewindow" [chartType]="chartType"></tb-monitoring-chart>
   }
 </div>
-
-<ng-template #legend let-chartType="chartType">
-  <table class="tb-time-series-chart-legend-table vertical">
-    <thead>
-      <tr>
-        <th></th>
-        @if (legendConfig.showMin === true) {
-          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Min' | translate }}</th>
-        }
-        @if (legendConfig.showMax === true) {
-          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Max' | translate }}</th>
-        }
-        @if (legendConfig.showAvg === true) {
-          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Avg' | translate }}</th>
-        }
-        @if (legendConfig.showTotal === true && !totalOnly(chartType)) {
-          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Total' | translate }}</th>
-        }
-        @if (legendConfig.showLatest === true) {
-          <th class="tb-time-series-chart-legend-type-label right">{{ 'legend.Latest' | translate }}</th>
-        }
-      </tr>
-    </thead>
-    <tbody>
-      @for (legendKey of legendKeys[chartType]?.keys; track legendKey; let index = $index) {
-        <tr>
-          <th>
-            <ng-container *ngTemplateOutlet="legendItem; context:{legendKey: legendKey, chartType: chartType, left: true}"></ng-container>
-          </th>
-          @if (legendConfig.showMin === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-              [innerHTML]="legendValue(index, chartType, 'min') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig.showMax === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-              [innerHTML]="legendValue(index, chartType, 'max') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig.showAvg === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-              [innerHTML]="legendValue(index, chartType, 'avg') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig.showTotal === true && !legendKey.dataKey.hidden && !totalOnly(chartType)) {
-            <td
-              class="tb-time-series-chart-legend-value"
-              [innerHTML]="legendValue(index, chartType, 'total') | safe: 'html'">
-            </td>
-          }
-          @if (legendConfig.showLatest === true && !legendKey.dataKey.hidden) {
-            <td class="tb-time-series-chart-legend-value"
-              [innerHTML]="legendValue(index, chartType, 'latest') | safe: 'html'">
-            </td>
-          }
-        </tr>
-      }
-    </tbody>
-  </table>
-</ng-template>
-<ng-template #legendItem let-legendKey="legendKey" let-left="left" let-chartType="chartType">
-  <div class="tb-time-series-chart-legend-item"
-    [class.left]="left">
-    <div class="tb-time-series-chart-legend-item-label"
-      (mouseenter)="onLegendKeyEnter(legendKey, chartType)"
-      (mouseleave)="onLegendKeyLeave(legendKey, chartType)"
-      (click)="toggleLegendKey(legendKey, chartType)">
-      <div class="tb-time-series-chart-legend-item-label-circle" [style]="{background: !legendKey.dataKey.hidden ? legendKey.dataKey.color : null}"></div>
-      <div class="tb-time-series-chart-legend-item-label-text" [innerHTML]="legendKey.dataKey.label | safe: 'html'"></div>
-    </div>
-  </div>
-</ng-template>

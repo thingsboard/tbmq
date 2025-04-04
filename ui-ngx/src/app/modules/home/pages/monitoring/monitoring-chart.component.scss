@@ -30,4 +30,27 @@
       margin-top: 42px;
     }
   }
+
+  .chart-container {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .mat-button:disabled {
+    color: rgba(0,0,0,0.87);
+  }
+
+  mat-card.settings-card {
+    margin: 8px;
+
+    @media #{$mat-md} {
+      width: 80%;
+    }
+
+    @media #{$mat-gt-md} {
+      width: 80vw;
+    }
+  }
 }
