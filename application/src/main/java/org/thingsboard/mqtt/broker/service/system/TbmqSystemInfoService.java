@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -148,7 +149,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     @Override
-    public ListenableFuture<List<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
+    public ListenableFuture<PageData<ServiceInfoDto>> getServiceInfos() throws ThingsboardException {
         Map<Object, Object> serviceMap = redisTemplate.opsForHash().entries(SERVICE_REGISTRY_KEY);
         if (CollectionUtils.isEmpty(serviceMap)) {
             throw new ThingsboardException("Could not find all service ids", ThingsboardErrorCode.ITEM_NOT_FOUND);
@@ -187,7 +188,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
                 dto.setStatus(ServiceStatus.fromLastUpdateTime(dto.getLastUpdateTime()));
                 response.add(dto);
             }
-            return response;
+            return new PageData<>(response, 1, response.size(), false);
         }, MoreExecutors.directExecutor());
     }
 

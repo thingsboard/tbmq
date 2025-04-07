@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.gen.queue.SystemInfoProto;
@@ -160,10 +161,10 @@ public class TbmqSystemInfoServiceTest {
         when(timeseriesService.findLatest(eq(serviceId), anyList())).thenReturn(future);
 
         var resultFuture = systemInfoService.getServiceInfos();
-        List<ServiceInfoDto> result = resultFuture.get();
+        PageData<ServiceInfoDto> result = resultFuture.get();
 
-        assertEquals(1, result.size());
-        ServiceInfoDto dto = result.get(0);
+        assertEquals(1, result.getData().size());
+        ServiceInfoDto dto = result.getData().get(0);
         assertEquals(serviceId, dto.getServiceId());
         assertEquals(serviceType, dto.getServiceType());
         assertEquals(10L, dto.getCpuUsage());
