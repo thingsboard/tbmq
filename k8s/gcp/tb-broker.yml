@@ -1,0 +1,150 @@
+#
+# Copyright © 2016-2025 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tb-broker
+  namespace: thingsboard-mqtt-broker
+spec:
+  serviceName: tb-broker
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tb-broker
+  template:
+    metadata:
+      labels:
+        app: tb-broker
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                      - tb-broker
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: tb-broker-config
+          configMap:
+            name: tb-broker-config
+            items:
+              - key: conf
+                path: thingsboard-mqtt-broker.conf
+              - key: logback
+                path: logback.xml
+        - name: tb-broker-logs
+          emptyDir: { }
+      # Uncomment the following lines to enable two-way MQTTS
+      #        - name: tbmq-mqtts-config
+      #          configMap:
+      #            name: tbmq-mqtts-config
+      #            items:
+      #              - key: server.pem
+      #                path: server.pem
+      #              - key: mqttserver_key.pem
+      #                path: mqttserver_key.pem
+      containers:
+        - name: server
+          imagePullPolicy: Always
+          image: thingsboard/tbmq-node:2.0.1
+          ports:
+            - containerPort: 8083
+              name: http
+            - containerPort: 443
+              name: https
+            - containerPort: 1883
+              name: mqtt
+            - containerPort: 8883
+              name: mqtts
+            - containerPort: 8084
+              name: mqtt-ws
+            - containerPort: 8085
+              name: mqtt-wss
+          env:
+            - name: TB_SERVICE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SECURITY_MQTT_BASIC_ENABLED
+              value: "true"
+            - name: SECURITY_MQTT_SSL_ENABLED
+              value: "true"
+            - name: TB_KAFKA_SERVERS
+              value: "kafka:9092"
+          #            Uncomment the following lines to enable two-way MQTTS
+          #            - name: LISTENER_SSL_ENABLED
+          #              value: "true"
+          #            - name: LISTENER_SSL_CREDENTIALS_TYPE
+          #              value: "PEM"
+          #            - name: LISTENER_SSL_PEM_CERT
+          #              value: "/ssl-config/server.pem"
+          #            - name: LISTENER_SSL_PEM_KEY
+          #              value: "/ssl-config/mqttserver_key.pem"
+          envFrom:
+            - configMapRef:
+                name: tb-broker-db-config
+            - configMapRef:
+                name: tb-broker-cache-config
+          volumeMounts:
+            - mountPath: /config
+              name: tb-broker-config
+            - mountPath: /var/log/thingsboard-mqtt-broker
+              name: tb-broker-logs
+          # Uncomment the following lines to enable two-way MQTTS
+          #            - mountPath: /ssl-config
+          #              name: tbmq-mqtts-config
+          readinessProbe:
+            tcpSocket:
+              port: 1883
+            timeoutSeconds: 10
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            successThreshold: 1
+            failureThreshold: 5
+          livenessProbe:
+            timeoutSeconds: 10
+            tcpSocket:
+              port: 1883
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 10
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tb-broker
+  namespace: thingsboard-mqtt-broker
+spec:
+  type: ClusterIP
+  selector:
+    app: tb-broker
+  ports:
+    - port: 8083
+      name: http
+    - port: 1883
+      name: mqtt
+    - port: 8883
+      name: mqtts
+    - port: 8084
+      name: mqtt-ws
+    - port: 8085
+      name: mqtt-wss
