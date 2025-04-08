@@ -85,7 +85,7 @@ export class ResourceUsageTableConfigResolver {
     const actions: Array<CellActionDescriptor<ResourceUsage>> = [];
     actions.push(
       {
-        name: this.translate.instant('kafka.delete-consumer-group'),
+        name: this.translate.instant('monitoring.resource-usage.delete-resource'),
         icon: 'mdi:trash-can-outline',
         isEnabled: (entity) => entity.status === ResourceUsageStatus.OUTDATED,
         onAction: ($event, entity) => this.deleteResource($event, entity)

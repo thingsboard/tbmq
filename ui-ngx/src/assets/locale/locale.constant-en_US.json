@@ -979,8 +979,9 @@
       "inactive": "Inactive",
       "outdated": "Outdated",
       "outdated-hint": "Updated over a week ago",
-      "delete-resource-title": "Are you sure you want to delete the resource '{{id}}'?",
-      "delete-resource-text": "Be careful, after the confirmation the resource will be removed and all related data will become unrecoverable."
+      "delete-resource": "Delete outdated service",
+      "delete-resource-title": "Are you sure you want to delete the service '{{id}}'?",
+      "delete-resource-text": "Be careful, after the confirmation the service will be removed and all related data will become unrecoverable."
     }
   },
   "mqtt-client": {
