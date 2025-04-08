@@ -120,7 +120,8 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
               datePipe: DatePipe,
               width: string = '0px',
               dateFormat: string = 'yyyy-MM-dd HH:mm:ss',
-              cellStyleFunction: CellStyleFunction<T> = () => ({})) {
+              cellStyleFunction: CellStyleFunction<T> = () => ({}),
+              sortable: boolean = true) {
     super(key,
       title,
       width,
@@ -130,7 +131,8 @@ export class DateEntityTableColumn<T extends BaseData> extends EntityTableColumn
         }
         return datePipe.transform(entity[property], dateFormat);
       },
-      cellStyleFunction);
+      cellStyleFunction,
+      sortable);
   }
 }
 

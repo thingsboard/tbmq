@@ -1052,6 +1052,9 @@ stats:
   application-processor:
     # Enable/disable specific Application clients stats
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
+  system-info:
+    # Persist frequency of system info (CPU, memory usage, etc.) in seconds
+    persist-frequency: "${STATS_SYSTEM_INFO_PERSIST_FREQUENCY_SEC:60}"
 
 # Historical data statistics parameters
 historical-data-report:

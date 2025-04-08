@@ -215,6 +215,9 @@ stats:
   timer:
     # Metrics percentiles returned by actuator for timer metrics. List of comma-separated (,) double values
     percentiles: "${STATS_TIMER_PERCENTILES:0.5}"
+  system-info:
+    # Persist frequency of system info (CPU, memory usage, etc.) in seconds
+    persist-frequency: "${STATS_SYSTEM_INFO_PERSIST_FREQUENCY_SEC:60}"
 
 # Event configuration parameters
 event:

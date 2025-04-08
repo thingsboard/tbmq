@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.api;
+package org.thingsboard.mqtt.broker.service.system;
 
-import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
-import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
-import org.thingsboard.mqtt.broker.integration.api.IntegrationCallback;
+import org.junit.jupiter.api.Test;
 
-import java.util.UUID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public interface IntegrationApiService {
+class ServiceStatusTest {
 
-    void sendEventData(UUID entityId, IntegrationEventProto data, IntegrationCallback<Void> callback);
+    @Test
+    void testServiceStatusFromLastUpdateTime() {
+        long now = System.currentTimeMillis();
 
-    void sendServiceInfo(ServiceInfo data);
+        assertEquals(ServiceStatus.ACTIVE, ServiceStatus.fromLastUpdateTime(now - 1000));
+        assertEquals(ServiceStatus.INACTIVE, ServiceStatus.fromLastUpdateTime(now - (2 * 60 * 60 * 1000)));
+        assertEquals(ServiceStatus.OUTDATED, ServiceStatus.fromLastUpdateTime(now - (8L * 24 * 60 * 60 * 1000)));
+    }
+
 }

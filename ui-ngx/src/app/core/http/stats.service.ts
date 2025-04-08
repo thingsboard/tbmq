@@ -22,6 +22,8 @@ import { isDefinedAndNotNull } from '@core/utils';
 import { AggregationType, Interval } from '@shared/models/time/time.models';
 import { Direction } from '@shared/models/page/sort-order';
 import { CHART_ALL, TimeseriesData, MAX_DATAPOINTS_LIMIT } from '@shared/models/chart.model';
+import { PageData } from '@shared/models/page/page-data';
+import { ResourceUsage } from '@shared/models/resource-usage.model';
 
 @Injectable({
   providedIn: 'root'
@@ -84,5 +86,13 @@ export class StatsService {
       url += `&deleteClientSessionCachedStats=${deleteClientSessionCachedStats}`;
     }
     return this.http.delete(url, defaultHttpOptionsFromConfig(config));
+  }
+
+  public getServiceInfos(config?: RequestConfig): Observable<PageData<ResourceUsage>> {
+    return this.http.get<PageData<ResourceUsage>>(`/api/app/service/info`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public deleteServiceInfo(serviceId: string, config?: RequestConfig) {
+    return this.http.delete(`/api/app/service/info?serviceId=${serviceId}`, defaultHttpOptionsFromConfig(config));
   }
 }
