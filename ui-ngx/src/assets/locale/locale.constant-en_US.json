@@ -971,7 +971,16 @@
       "memory-usage": "RAM",
       "total-memory": "RAM total",
       "disk-usage": "Disk",
-      "total-disk-space": "Disk total"
+      "total-disk-space": "Disk total",
+      "status": "Status",
+      "active": "Active",
+      "active-hint": "Updated within the last hour",
+      "inactive-hint": "Updated within the last week",
+      "inactive": "Inactive",
+      "outdated": "Outdated",
+      "outdated-hint": "Updated over a week ago",
+      "delete-resource-title": "Are you sure you want to delete the resource '{{id}}'?",
+      "delete-resource-text": "Be careful, after the confirmation the resource will be removed and all related data will become unrecoverable."
     }
   },
   "mqtt-client": {
