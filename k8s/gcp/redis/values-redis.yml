@@ -610,10 +610,10 @@ redis:
   ##
   resources:
     requests:
-      cpu: 0.75
+      cpu: 0.5
       memory: 2Gi
     limits:
-      cpu: 0.75
+      cpu: 0.5
       memory: 2Gi
   ## @param redis.schedulerName Use an alternate scheduler, e.g. "stork".
   ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
