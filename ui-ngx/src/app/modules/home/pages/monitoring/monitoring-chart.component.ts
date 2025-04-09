@@ -69,6 +69,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { SafePipe } from '@shared/pipe/safe.pipe';
+import { MatProgressBar } from '@angular/material/progress-bar';
 
 import Chart from 'chart.js/auto';
 import Zoom from 'chartjs-plugin-zoom';
@@ -79,7 +80,7 @@ Chart.register([Zoom]);
   selector: 'tb-monitoring-chart',
   templateUrl: './monitoring-chart.component.html',
   styleUrls: ['./monitoring-chart.component.scss'],
-  imports: [TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule]
+  imports: [TimewindowComponent, FormsModule, FullscreenDirective, MatDivider, ToggleHeaderComponent, ToggleOption, MatIcon, MatTooltip, MatIconButton, NgTemplateOutlet, SafePipe, TranslateModule, MatProgressBar]
 })
 export class MonitoringChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
 
