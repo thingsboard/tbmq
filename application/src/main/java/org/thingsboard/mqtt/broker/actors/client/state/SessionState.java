@@ -15,11 +15,22 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.state;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 public enum SessionState {
+
     INITIALIZED,
     ENHANCED_AUTH_STARTED,
     CONNECTING,
     CONNECTED,
     DISCONNECTING,
     DISCONNECTED,
+    CHANNEL_NON_WRITABLE;
+
+    public static final Set<SessionState> MQTT_PROCESSABLE_STATES = EnumSet.of(
+            SessionState.CONNECTING,
+            SessionState.CONNECTED,
+            SessionState.CHANNEL_NON_WRITABLE
+    );
 }

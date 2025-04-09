@@ -958,7 +958,31 @@
   },
   "monitoring": {
     "monitoring": "Monitoring",
-    "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points."
+    "stats": "Broker Stats",
+    "max-allowed-timeseries": "Please narrow down the time range selection. The current request has exceeded the maximum limit 50k for data points.",
+    "resource-usage": {
+      "resource-usage": "Resource Usage",
+      "no-resource-usage-text": "No resources found",
+      "service-id": "Service ID",
+      "service-type": "Service type",
+      "last-update-time": "Last update time",
+      "cpu-usage": "CPU",
+      "cpu-count": "CPU(s)",
+      "memory-usage": "RAM",
+      "total-memory": "RAM total",
+      "disk-usage": "Disk",
+      "total-disk-space": "Disk total",
+      "status": "Status",
+      "active": "Active",
+      "active-hint": "Updated within the last hour",
+      "inactive-hint": "Updated within the last week",
+      "inactive": "Inactive",
+      "outdated": "Outdated",
+      "outdated-hint": "Updated over a week ago",
+      "delete-resource": "Delete outdated service",
+      "delete-resource-title": "Are you sure you want to delete the service '{{id}}'?",
+      "delete-resource-text": "Be careful, after the confirmation the service will be removed and all related data will become unrecoverable."
+    }
   },
   "mqtt-client": {
     "client-id": "Client ID",

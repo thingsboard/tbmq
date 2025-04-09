@@ -17,12 +17,14 @@ package org.thingsboard.mqtt.broker.actors.device.messages;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
 @Getter
 @RequiredArgsConstructor
+@ToString
 public class IncomingPublishMsg implements TbActorMsg {
 
     private final DevicePublishMsg publishMsg;

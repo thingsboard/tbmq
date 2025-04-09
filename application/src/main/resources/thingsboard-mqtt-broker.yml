@@ -57,6 +57,11 @@ server:
 listener:
   # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID. It is set globally for all listeners
   leak_detector_level: "${NETTY_LEAK_DETECTOR_LVL:DISABLED}"
+  # The threshold (in KB) where Netty considers the channel non-writable. When the limit reached, TBMQ stops delivering data to subscriber until the channel is writable again.
+  # Non-persistent clients lose data in this case
+  write_buffer_high_water_mark: "${NETTY_WRITE_BUFFER_HIGH_WATER_MARK:64}"
+  # The threshold (in KB) where Netty considers the channel writable again. When the limit reached, TBMQ starts delivering data to subscriber
+  write_buffer_low_water_mark: "${NETTY_WRITE_BUFFER_LOW_WATER_MARK:32}"
   tcp:
     # Enable/disable MQTT TCP port listener
     enabled: "${LISTENER_TCP_ENABLED:true}"
@@ -1047,6 +1052,9 @@ stats:
   application-processor:
     # Enable/disable specific Application clients stats
     enabled: "${APPLICATION_PROCESSOR_STATS_ENABLED:true}"
+  system-info:
+    # Persist frequency of system info (CPU, memory usage, etc.) in seconds
+    persist-frequency: "${STATS_SYSTEM_INFO_PERSIST_FREQUENCY_SEC:60}"
 
 # Historical data statistics parameters
 historical-data-report:

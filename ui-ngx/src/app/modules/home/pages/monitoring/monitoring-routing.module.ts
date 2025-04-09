@@ -21,6 +21,7 @@ import { of } from 'rxjs';
 import { ConfigService } from '@core/http/config.service';
 import { TOTAL_KEY } from '@shared/models/chart.model';
 import { mergeMap } from 'rxjs/operators';
+import { ResourceUsageTableConfigResolver } from '@home/pages/resource-usage/resource-usage-table-config.resolver';
 
 export const BrokerIdsResolver: ResolveFn<string[]> = () =>
   inject(ConfigService).getBrokerServiceIds().pipe(
@@ -34,24 +35,65 @@ export const BrokerIdsResolver: ResolveFn<string[]> = () =>
 const routes: Routes = [
   {
     path: 'monitoring',
-    loadComponent: () => import('@home/pages/monitoring/monitoring.component').then(m => m.MonitoringComponent),
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
-      title: 'monitoring.monitoring',
       breadcrumb: {
         label: 'monitoring.monitoring',
         icon: 'mdi:monitor-dashboard'
       }
     },
-    resolve: {
-      brokerIds: BrokerIdsResolver
-    }
+    children: [
+      {
+        path: '',
+        children: [],
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          redirectTo: {
+            SYS_ADMIN: '/monitoring/stats'
+          }
+        }
+      },
+      {
+        path: 'stats',
+        loadComponent: () => import('@home/pages/monitoring/monitoring.component').then(m => m.MonitoringComponent),
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'monitoring.stats',
+          breadcrumb: {
+            label: 'monitoring.stats',
+            icon: 'insert_chart'
+          }
+        },
+        resolve: {
+          brokerIds: BrokerIdsResolver
+        }
+      },
+      {
+        path: 'resource-usage',
+        loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          title: 'monitoring.resource-usage.resource-usage',
+          breadcrumb: {
+            label: 'monitoring.resource-usage.resource-usage',
+            icon: 'memory'
+          }
+        },
+        resolve: {
+          entitiesTableConfig: ResourceUsageTableConfigResolver
+        }
+      },
+    ]
   }
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
+  providers: [
+    ResourceUsageTableConfigResolver
+  ]
 })
 
 export class MonitoringRoutingModule {

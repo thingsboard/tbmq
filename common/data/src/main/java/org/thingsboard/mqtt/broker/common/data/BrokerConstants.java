@@ -71,6 +71,18 @@ public class BrokerConstants {
         };
     }
 
+    public static final String MEMORY_USAGE = "memoryUsage";
+    public static final String CPU_USAGE = "cpuUsage";
+    public static final String DISK_USAGE = "diskUsage";
+    public static final String TOTAL_MEMORY = "totalMemory";
+    public static final String CPU_COUNT = "cpuCount";
+    public static final String TOTAL_DISK_SPACE = "totalDiskSpace";
+
+    public static final List<String> SERVICE_INFO_KEYS = List.of(MEMORY_USAGE, CPU_USAGE,
+            DISK_USAGE, TOTAL_MEMORY,
+            CPU_COUNT, TOTAL_DISK_SPACE);
+    public static final int SERVICE_INFO_KEYS_COUNT = SERVICE_INFO_KEYS.size();
+
     public static final byte[] LOCAL_ADR;
 
     static {
@@ -80,6 +92,9 @@ public class BrokerConstants {
             throw new RuntimeException(e);
         }
     }
+
+    public static final int WRITE_BUFFER_DEFAULT_HIGH_WATER_MARK = 64 * 1024; // 64 KB
+    public static final int WRITE_BUFFER_DEFAULT_LOW_WATER_MARK = 32 * 1024; // 32 KB
 
     public static final int TCP_PACKET_BYTES_OVERHEAD = 66;
     public static final int TLS_PACKET_BYTES_OVERHEAD = 95;
