@@ -25,7 +25,7 @@ managedNodeGroups:
     minSize: 0
     labels: { role: tbmq }
     privateNetworking: true
-    volumeType: gp3
+    volumeType: gp2
     volumeSize: 20
 
   - name: tbmq-kafka
@@ -35,7 +35,7 @@ managedNodeGroups:
     minSize: 0
     labels: { role: kafka }
     privateNetworking: true
-    volumeType: gp3
+    volumeType: gp2
     volumeSize: 20
 
   - name: tbmq-redis
@@ -45,7 +45,7 @@ managedNodeGroups:
     minSize: 0
     labels: { role: redis }
     privateNetworking: true
-    volumeType: gp3
+    volumeType: gp2
     volumeSize: 20
 
   - name: tbmq-postgresql
@@ -54,7 +54,7 @@ managedNodeGroups:
     maxSize: 1
     minSize: 0
     labels: { role: postgresql }
-    volumeType: gp3
+    volumeType: gp2
     volumeSize: 20
 
 addons:
