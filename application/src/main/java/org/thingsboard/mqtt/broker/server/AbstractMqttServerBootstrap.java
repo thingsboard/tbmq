@@ -42,6 +42,8 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
     private int writeBufferHighWaterMark;
     @Value("#{${listener.write_buffer_low_water_mark:32} * 1024}")
     private int writeBufferLowWaterMark;
+    @Value("#{${listener.so_receive_buffer:0} * 1024}")
+    private int soReceiveBuffer;
 
     private Channel serverChannel;
     private EventLoopGroup bossGroup;
@@ -60,6 +62,9 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
                 .childHandler(getChannelInitializer())
                 .childOption(ChannelOption.SO_KEEPALIVE, isKeepAlive())
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, getWriteBufferWaterMark());
+        if (soReceiveBuffer > 0) {
+            b.childOption(ChannelOption.SO_RCVBUF, soReceiveBuffer);
+        }
 
         serverChannel = b.bind(getHost(), getPort()).sync().channel();
         log.info("[{}] Mqtt server started on port {}!", getServerName(), getPort());

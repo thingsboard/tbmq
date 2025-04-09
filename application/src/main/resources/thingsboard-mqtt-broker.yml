@@ -62,6 +62,9 @@ listener:
   write_buffer_high_water_mark: "${NETTY_WRITE_BUFFER_HIGH_WATER_MARK:64}"
   # The threshold (in KB) where Netty considers the channel writable again. When the limit reached, TBMQ starts delivering data to subscriber
   write_buffer_low_water_mark: "${NETTY_WRITE_BUFFER_LOW_WATER_MARK:32}"
+  # Socket receive buffer size for Netty in KB. If the buffer limit is reached, TCP will trigger backpressure and notify the sender to slow down.
+  # If set to 0 (default), the system's default buffer size will be used
+  so_receive_buffer: "${NETTY_SO_RECEIVE_BUFFER:0}"
   tcp:
     # Enable/disable MQTT TCP port listener
     enabled: "${LISTENER_TCP_ENABLED:true}"
