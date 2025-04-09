@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
-
 :host {
   overflow: auto;
 
   mat-toolbar {
     overflow: hidden;
     position: absolute;
-    top: 0;
-    left: 0;
     z-index: 1;
     height: 42px;
+    background: #eee;
 
     + div {
-      margin-top: 42px;
+      margin-top: 28px;
     }
   }
 }

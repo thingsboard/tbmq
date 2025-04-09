@@ -15,18 +15,14 @@
     limitations under the License.
 
 -->
-<mat-toolbar color="primary" class="mat-elevation-z2">
-  <section class="flex-1 flex-col">
-    <section class="flex items-end">
-      <span class="flex-1"></span>
-      <tb-timewindow [(ngModel)]="timewindow"
-                     asButton
-                     flatButton
-                     tooltipPosition="left"
-                     aggregation="true">
-      </tb-timewindow>
-    </section>
-  </section>
+<mat-toolbar>
+  <span class="flex-1"></span>
+  <tb-timewindow [(ngModel)]="timewindow"
+    asButton
+    flatButton
+    tooltipPosition="left"
+    aggregation="true">
+  </tb-timewindow>
 </mat-toolbar>
 <div class="mat-padding flex flex-1 flex-col gap-4">
   @for (chartType of chartTypes; track $index;) {
