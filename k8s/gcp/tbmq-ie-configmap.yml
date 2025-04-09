@@ -17,30 +17,29 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tb-broker-config
+  name: tbmq-ie-config
   namespace: thingsboard-mqtt-broker
   labels:
-    name: tb-broker-config
+    name: tbmq-ie-config
 data:
   conf: |
-    export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"
-    export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
-    export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}-heapdump.bin"
+    export JAVA_OPTS="$JAVA_OPTS -Xlog:gc*,heap*,age*,safepoint=debug:file=/var/log/tbmq-integration-executor/gc.log:time,uptime,level,tags:filecount=10,filesize=10M"
+    export JAVA_OPTS="$JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/tbmq-integration-executor/${TB_SERVICE_ID}-heapdump.bin"
     export JAVA_OPTS="$JAVA_OPTS -XX:+UseTLAB -XX:+ResizeTLAB -XX:+PerfDisableSharedMem -XX:+UseCondCardMark"
     export JAVA_OPTS="$JAVA_OPTS -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:+UseStringDeduplication -XX:+ParallelRefProcEnabled -XX:MaxTenuringThreshold=10"
     export JAVA_OPTS="$JAVA_OPTS -XX:+ExitOnOutOfMemoryError"
-    export LOG_FILENAME=thingsboard-mqtt-broker.out
-    export LOADER_PATH=/usr/share/thingsboard-mqtt-broker/conf
+    export LOG_FILENAME=tbmq-integration-executor.out
+    export LOADER_PATH=/usr/share/tbmq-integration-executor/conf
   logback: |
     <!DOCTYPE configuration>
     <configuration scan="true" scanPeriod="10 seconds">
     
         <appender name="fileLogAppender"
                   class="ch.qos.logback.core.rolling.RollingFileAppender">
-            <file>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.log</file>
+            <file>/var/log/tbmq-integration-executor/${TB_SERVICE_ID}/tbmq-integration-executor.log</file>
             <rollingPolicy
                     class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-                <fileNamePattern>/var/log/thingsboard-mqtt-broker/${TB_SERVICE_ID}/thingsboard-mqtt-broker.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <fileNamePattern>/var/log/tbmq-integration-executor/${TB_SERVICE_ID}/tbmq-integration-executor.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
                 <maxFileSize>100MB</maxFileSize>
                 <maxHistory>30</maxHistory>
                 <totalSizeCap>3GB</totalSizeCap>
@@ -56,8 +55,7 @@ data:
             </encoder>
         </appender>
     
-          <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
-          <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="INFO"/>
+        <logger name="org.thingsboard.mqtt.broker.integration" level="INFO"/>
     
         <root level="INFO">
             <appender-ref ref="fileLogAppender"/>
@@ -65,3 +63,4 @@ data:
         </root>
     
     </configuration>
+---
