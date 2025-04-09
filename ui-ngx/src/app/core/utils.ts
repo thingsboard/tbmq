@@ -582,7 +582,7 @@ const convertToMilliseconds = (value: number, unit: WebSocketTimeUnit): number =
 
 export const convertDataSizeUnits = (value: number, valueUnit: DataSizeUnitType, targetUnit: DataSizeUnitType): number => {
   if (!valueUnit) return 0;
-  let bytes: number = convertToBytes(value, valueUnit);
+  const bytes: number = convertToBytes(value, valueUnit);
   switch(targetUnit) {
     case DataSizeUnitType.BYTE:
       return bytes;

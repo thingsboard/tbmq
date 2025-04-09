@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 :host {
-  overflow: auto;
-
-  mat-toolbar {
-    overflow: hidden;
-    position: absolute;
-    z-index: 2;
-    height: 42px;
-    background: #eee;
-
-    + div {
-      margin-top: 28px;
-    }
+  .chart-container {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
 }
