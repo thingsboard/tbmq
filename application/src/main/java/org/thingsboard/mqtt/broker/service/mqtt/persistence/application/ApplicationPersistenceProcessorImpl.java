@@ -42,6 +42,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionCtx;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationAckStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPackProcessingCtx;
@@ -107,6 +108,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
     private final ClientLogger clientLogger;
     private final ApplicationTopicService applicationTopicService;
     private final ApplicationClientHelperService appClientHelperService;
+    private final AppMsgDeliveryStrategy appMsgDeliveryStrategy;
     private final boolean isTraceEnabled = log.isTraceEnabled();
     private final boolean isDebugEnabled = log.isDebugEnabled();
 
@@ -335,7 +337,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                                 int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                                 cachePackProcessingCtx(clientId, subscription, ctx);
 
-                                process(submitStrategy, clientSessionCtx, clientId);
+                                process(submitStrategy, clientSessionCtx);
 
                                 if (isJobActive(job)) {
                                     log.debug("[{}] Awaiting shared subs pack to be acknowledged", clientId);
@@ -713,7 +715,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
                     int totalPubRelMsgs = ctx.getPubRelPendingMsgMap().size();
                     packProcessingCtxMap.put(clientId, ctx);
 
-                    process(submitStrategy, clientSessionCtx, clientId);
+                    process(submitStrategy, clientSessionCtx);
 
                     if (isClientConnected(sessionId, clientState)) {
                         log.debug("[{}] Awaiting pack to be acknowledged", clientId);
@@ -743,23 +745,8 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         log.debug("[{}] Application persisted messages consumer stopped", clientId);
     }
 
-    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx, String clientId) {
-        if (isDebugEnabled) {
-            log.debug("[{}] Start sending the pack of messages from processing ctx: {}", clientId, submitStrategy.getOrderedMessages());
-        }
-        submitStrategy.process(msg -> {
-            switch (msg.getPacketType()) {
-                case PUBLISH:
-                    PublishMsg publishMsg = ((PersistedPublishMsg) msg).getPublishMsg();
-                    publishMsgDeliveryService.sendPublishMsgToClientWithoutFlush(clientSessionCtx, publishMsg);
-                    break;
-                case PUBREL:
-                    publishMsgDeliveryService.sendPubRelMsgToClientWithoutFlush(clientSessionCtx, msg.getPacketId());
-                    break;
-            }
-            clientLogger.logEvent(clientId, this.getClass(), "Delivered msg to application client");
-        });
-        clientSessionCtx.getChannel().flush();
+    private void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx) {
+        appMsgDeliveryStrategy.process(submitStrategy, clientSessionCtx);
     }
 
     private int getQos(TopicSharedSubscription subscription, int publishMsgQos) {

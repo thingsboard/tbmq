@@ -60,11 +60,10 @@ public class ApplicationPackProcessingCtx {
         for (PersistedMsg persistedMsg : submitStrategy.getOrderedMessages()) {
             switch (persistedMsg.getPacketType()) {
                 case PUBLISH:
-                    PersistedPublishMsg persistedPublishMsg = (PersistedPublishMsg) persistedMsg;
-                    if (persistedPublishMsg.isSharedSubscriptionMsg() && persistedPublishMsg.getPublishMsg().getQos() == 0) {
+                    if (atMostOnceSharedSubsMsg(persistedMsg)) {
                         break;
                     }
-                    publishPendingMsgMap.put(persistedMsg.getPacketId(), persistedPublishMsg);
+                    publishPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPublishMsg) persistedMsg);
                     break;
                 case PUBREL:
                     pubRelPendingMsgMap.put(persistedMsg.getPacketId(), (PersistedPubRelMsg) persistedMsg);
@@ -161,5 +160,9 @@ public class ApplicationPackProcessingCtx {
                 ", pubRelPendingMsgMap=" + pubRelPendingMsgMap +
                 ", pubRelMsgCtx=" + pubRelMsgCtx +
                 '}';
+    }
+
+    private boolean atMostOnceSharedSubsMsg(PersistedMsg persistedMsg) {
+        return persistedMsg.isSharedSubscriptionMsg() && persistedMsg.getPublishMsg().getQos() == 0;
     }
 }

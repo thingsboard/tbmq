@@ -41,7 +41,6 @@ public class BurstSubmitStrategy implements ApplicationSubmitStrategy {
         this.orderedMessages = new ArrayList<>(orderedMessages);
     }
 
-    // note, changed from collecting to map by packet id
     @Override
     public List<PersistedMsg> getOrderedMessages() {
         return orderedMessages;
