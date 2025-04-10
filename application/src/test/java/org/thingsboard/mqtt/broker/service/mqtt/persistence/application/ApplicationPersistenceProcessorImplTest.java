@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.queue.provider.ApplicationPersistenceMsgQueue
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.data.ApplicationSharedSubscriptionJob;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery.AppMsgDeliveryStrategy;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationMsgAcknowledgeStrategyFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationPersistedMsgCtxService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategyFactory;
@@ -79,6 +80,8 @@ public class ApplicationPersistenceProcessorImplTest {
     ApplicationTopicService applicationTopicService;
     @MockBean
     ApplicationClientHelperService appClientHelperService;
+    @MockBean
+    AppMsgDeliveryStrategy appMsgDeliveryStrategy;
 
     @SpyBean
     ApplicationPersistenceProcessorImpl applicationPersistenceProcessor;
