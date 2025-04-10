@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 
 public interface PersistedMsg {
 
@@ -24,4 +25,12 @@ public interface PersistedMsg {
     int getPacketId();
 
     PersistedPacketType getPacketType();
+
+    default PublishMsg getPublishMsg() {
+        return null;
+    }
+
+    default boolean isSharedSubscriptionMsg() {
+        return false;
+    }
 }
