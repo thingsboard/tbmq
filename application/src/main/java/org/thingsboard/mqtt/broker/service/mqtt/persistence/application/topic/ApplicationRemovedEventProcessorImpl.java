@@ -15,7 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,24 +33,33 @@ import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedEventProcessor {
 
     private static final int MAX_EMPTY_EVENTS = 5;
 
-    private final TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ApplicationRemovedEventProto>> consumer;
     private final ClientSessionEventService clientSessionEventService;
+    private final ApplicationRemovedEventQueueFactory applicationRemovedEventQueueFactory;
+    private final ServiceInfoProvider serviceInfoProvider;
 
-    @Value("${queue.application-removed-event.poll-interval}")
+    @Value("${queue.application-removed-event.poll-interval:100}")
     private long pollDuration;
 
+    private TbQueueControlledOffsetConsumer<TbProtoQueueMsg<ApplicationRemovedEventProto>> consumer;
     private volatile boolean stopped = false;
 
-    public ApplicationRemovedEventProcessorImpl(ClientSessionEventService clientSessionEventService,
-                                                ApplicationRemovedEventQueueFactory applicationRemovedEventQueueFactory,
-                                                ServiceInfoProvider serviceInfoProvider) {
-        this.consumer = applicationRemovedEventQueueFactory.createEventConsumer(serviceInfoProvider.getServiceId());
-        this.consumer.subscribe();
-        this.clientSessionEventService = clientSessionEventService;
+    @PostConstruct
+    public void init() {
+        consumer = applicationRemovedEventQueueFactory.createEventConsumer(serviceInfoProvider.getServiceId());
+        consumer.subscribe();
+    }
+
+    @PreDestroy
+    public void destroy() {
+        stopped = true;
+        if (consumer != null) {
+            consumer.unsubscribeAndClose();
+        }
     }
 
     @Scheduled(cron = "${queue.application-removed-event.processing.cron}", zone = "${queue.application-removed-event.processing.zone}")
@@ -56,13 +67,13 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
         try {
             processEvents();
         } catch (Exception e) {
-            log.error("Failed to process APPLICATION removed events.", e);
+            log.error("Failed to process APPLICATION removed events", e);
         }
     }
 
     @Override
     public void processEvents() {
-        log.debug("Start processing APPLICATION removed events.");
+        log.debug("Start processing APPLICATION removed events");
         int currentEmptyEvents = 0;
         while (!stopped) {
             List<TbProtoQueueMsg<ApplicationRemovedEventProto>> msgs = consumer.poll(pollDuration);
@@ -80,12 +91,7 @@ public class ApplicationRemovedEventProcessorImpl implements ApplicationRemovedE
             }
             consumer.commitSync();
         }
-        log.debug("Finished processing APPLICATION removed events.");
+        log.debug("Finished processing APPLICATION removed events");
     }
 
-    @PreDestroy
-    public void destroy() {
-        stopped = true;
-        consumer.unsubscribeAndClose();
-    }
 }
