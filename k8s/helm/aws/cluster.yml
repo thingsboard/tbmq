@@ -5,7 +5,7 @@ availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 
 metadata:
   name: tbmq
-  region: eu-west-1
+  region: us-east-1
   version: "1.31"
 
 iam:
@@ -25,7 +25,17 @@ managedNodeGroups:
     minSize: 0
     labels: { role: tbmq }
     privateNetworking: true
-    volumeType: gp2
+    volumeType: gp3
+    volumeSize: 20
+
+  - name: tbmq-ie
+    instanceType: c7a.medium
+    desiredCapacity: 2
+    maxSize: 2
+    minSize: 0
+    labels: { role: tbmq-ie }
+    privateNetworking: true
+    volumeType: gp3
     volumeSize: 20
 
   - name: tbmq-kafka
@@ -35,7 +45,7 @@ managedNodeGroups:
     minSize: 0
     labels: { role: kafka }
     privateNetworking: true
-    volumeType: gp2
+    volumeType: gp3
     volumeSize: 20
 
   - name: tbmq-redis
@@ -45,24 +55,27 @@ managedNodeGroups:
     minSize: 0
     labels: { role: redis }
     privateNetworking: true
-    volumeType: gp2
+    volumeType: gp3
     volumeSize: 20
 
+  # Optional group. You can safely remove this section if:
+  #   - You’re using Amazon RDS or an existing PostgreSQL service.
+  #   - You want to keep your database outside the EKS cluster.
   - name: tbmq-postgresql
     instanceType: c7a.large
     desiredCapacity: 1
     maxSize: 1
     minSize: 0
     labels: { role: postgresql }
-    volumeType: gp2
+    volumeType: gp3
     volumeSize: 20
 
 addons:
   - name: aws-ebs-csi-driver
-    wellKnownPolicies:      # add IAM and service account
+    wellKnownPolicies:
       ebsCSIController: true
   - name: aws-efs-csi-driver
-    wellKnownPolicies:      # add IAM and service account
+    wellKnownPolicies:
       efsCSIController: true
   - name: vpc-cni
     attachPolicyARNs:
