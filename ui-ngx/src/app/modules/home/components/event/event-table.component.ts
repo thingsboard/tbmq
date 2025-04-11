@@ -48,7 +48,6 @@ import { isNotEmptyStr } from '@core/utils';
 })
 export class EventTableComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  readonly tenantId = input<string>();
   readonly defaultEventType = input<EventType>();
   readonly disabledEventTypes = input<Array<EventType>>();
   readonly isReadOnly = input<boolean>(false);
@@ -131,7 +130,6 @@ export class EventTableComponent implements OnInit, AfterViewInit, OnDestroy {
       this.datePipe,
       this.dialog,
       this.entityIdValue,
-      this.tenantId(),
       this.defaultEventType(),
       this.disabledEventTypes(),
       this.overlay,

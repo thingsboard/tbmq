@@ -20,7 +20,7 @@ import {
   EntityTableColumn,
   EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
-import { Event, EventBody, EventType, FilterEventBody } from '@shared/models/event.models';
+import { Event, EventType, FilterEventBody } from '@shared/models/event.models';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -76,7 +76,6 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
               private datePipe: DatePipe,
               private dialog: MatDialog,
               public entityId: string,
-              public tenantId: string,
               private defaultEventType: EventType,
               private disabledEventTypes: Array<EventType> = null,
               private overlay: Overlay,
@@ -173,28 +172,29 @@ export class EventTableConfig extends EntityTableConfig<Event, TimePageLink> {
     this.columns = [];
     this.columns.push(
       new DateEntityTableColumn<Event>('createdTime', 'event.event-time', this.datePipe, '120px', 'yyyy-MM-dd HH:mm:ss.SSS'),
-      new EntityTableColumn<Event>('server', 'event.server', '100px',
-        (entity) => entity.body.server, entity => ({}), false));
+      new EntityTableColumn<Event>('server', 'event.server', undefined,
+        (entity) => entity.body.server, entity => ({}), false)
+    );
     switch (this.eventType) {
       case EventType.ERROR:
         this.columns.push(
         new EntityTableColumn<Event>('method', 'event.method', '100%',
           (entity) => entity.body.method, entity => ({}), false),
-          new EntityActionTableColumn<Event>('error', 'event.error',
-            {
-              name: this.translate.instant('action.view'),
-              icon: 'more_horiz',
-              isEnabled: (entity) => entity.body.error && entity.body.error.length > 0,
-              onAction: ($event, entity) => this.showContent($event, entity.body.error, 'event.error')
-            },
-            '100px')
+        new EntityActionTableColumn<Event>('error', 'event.error',
+          {
+            name: this.translate.instant('action.view'),
+            icon: 'more_horiz',
+            isEnabled: (entity) => entity.body.error && entity.body.error.length > 0,
+            onAction: ($event, entity) => this.showContent($event, entity.body.error, 'event.error')
+          },
+          '100px')
         );
         break;
       case EventType.LC_EVENT:
         this.columns.push(
-          new EntityTableColumn<Event>('method', 'event.event', '100%',
+          new EntityTableColumn<Event>('method', 'event.event', '50%',
             (entity) => entity.body.event, entity => ({}), false),
-          new EntityTableColumn<Event>('status', 'event.status', '100%',
+          new EntityTableColumn<Event>('status', 'event.status', '50%',
             (entity) =>
               this.translate.instant(entity.body.success ? 'event.success' : 'event.failed'), entity => ({}), false),
           new EntityActionTableColumn<Event>('error', 'event.error',
