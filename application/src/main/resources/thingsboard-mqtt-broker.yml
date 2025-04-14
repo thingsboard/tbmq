@@ -897,6 +897,12 @@ mqtt:
         write-and-flush: "${MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH:true}"
         # Number of messages buffered in the channel before the flush is made. Used when `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` = false
         buffered-msg-count: "${MQTT_PERSISTENT_BUFFERED_MSG_COUNT:5}"
+    app:
+      persisted-messages:
+        # If enabled, each message is published to persistent APPLICATION client subscribers with flush. When disabled, the messages are buffered in the channel and are flushed once in a while
+        write-and-flush: "${MQTT_APP_MSG_WRITE_AND_FLUSH:false}"
+        # Number of messages buffered in the channel before the flush is made. Used when `MQTT_APP_MSG_WRITE_AND_FLUSH` = false
+        buffered-msg-count: "${MQTT_APP_BUFFERED_MSG_COUNT:10}"
   rate-limits:
     # The number of parallel threads dedicated to processing total rate limit checks for incoming messages
     threads-count: "${MQTT_RATE_LIMITS_THREADS_COUNT:1}"

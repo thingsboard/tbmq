@@ -15,12 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
+import com.google.common.collect.Maps;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -33,14 +33,10 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
     private final ApplicationAckStrategyConfiguration ackStrategyConfiguration;
 
     public ApplicationAckStrategy newInstance(String clientId) {
-        switch (ackStrategyConfiguration.getType()) {
-            case SKIP_ALL:
-                return new SkipStrategy(clientId);
-            case RETRY_ALL:
-                return new RetryStrategy(clientId, ackStrategyConfiguration.getRetries());
-            default:
-                throw new RuntimeException("ApplicationAckStrategy with type " + ackStrategyConfiguration.getType() + " is not supported!");
-        }
+        return switch (ackStrategyConfiguration.getType()) {
+            case SKIP_ALL -> new SkipStrategy(clientId);
+            case RETRY_ALL -> new RetryStrategy(clientId, ackStrategyConfiguration.getRetries());
+        };
     }
 
     @RequiredArgsConstructor
@@ -50,8 +46,8 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
         @Override
         public ApplicationProcessingDecision analyze(ApplicationPackProcessingResult result) {
-            Map<Integer, PersistedPublishMsg> publishPendingMsgMap = result.getPublishPendingMap();
-            Map<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = result.getPubRelPendingMap();
+            var publishPendingMsgMap = result.getPublishPendingMap();
+            var pubRelPendingMsgMap = result.getPubRelPendingMap();
             if (!publishPendingMsgMap.isEmpty() || !pubRelPendingMsgMap.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("[{}] Skip reprocess for {} PUBLISH and {} PUBREL timeout messages.", clientId, publishPendingMsgMap.size(), pubRelPendingMsgMap);
@@ -81,8 +77,8 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
 
         @Override
         public ApplicationProcessingDecision analyze(ApplicationPackProcessingResult result) {
-            Map<Integer, PersistedPublishMsg> publishPendingMsgMap = result.getPublishPendingMap();
-            Map<Integer, PersistedPubRelMsg> pubRelPendingMsgMap = result.getPubRelPendingMap();
+            var publishPendingMsgMap = result.getPublishPendingMap();
+            var pubRelPendingMsgMap = result.getPubRelPendingMap();
             if (publishPendingMsgMap.isEmpty() && pubRelPendingMsgMap.isEmpty()) {
                 return new ApplicationProcessingDecision(true, Collections.emptyMap());
             }
@@ -103,18 +99,27 @@ public class ApplicationMsgAcknowledgeStrategyFactory {
                                 clientId, msg.getPacketId())
                 );
             }
-            Map<Integer, PersistedPublishMsg> publishPendingDuplicatedMsgMap = publishPendingMsgMap.values().stream()
-                    .map(persistedPublishMsg -> persistedPublishMsg.toBuilder()
-                            .publishMsg(persistedPublishMsg.getPublishMsg().toBuilder()
-                                    .isDup(true)
-                                    .build())
-                            .build())
+            var dupPublishPendingMap = publishPendingMsgMap
+                    .values().stream()
+                    .map(ApplicationMsgAcknowledgeStrategyFactory::getDupMsg)
                     .collect(Collectors.toMap(PersistedPublishMsg::getPacketId, Function.identity()));
 
-            Map<Integer, PersistedMsg> pendingMsgMap = new HashMap<>();
-            pendingMsgMap.putAll(publishPendingDuplicatedMsgMap);
+            Map<Integer, PersistedMsg> pendingMsgMap = Maps.newHashMapWithExpectedSize(dupPublishPendingMap.size() + pubRelPendingMsgMap.size());
+
+            pendingMsgMap.putAll(dupPublishPendingMap);
             pendingMsgMap.putAll(pubRelPendingMsgMap);
             return new ApplicationProcessingDecision(false, pendingMsgMap);
         }
+    }
+
+    private static PersistedPublishMsg getDupMsg(PersistedPublishMsg persistedPublishMsg) {
+        return persistedPublishMsg
+                .toBuilder()
+                .publishMsg(persistedPublishMsg
+                        .getPublishMsg()
+                        .toBuilder()
+                        .isDup(true)
+                        .build())
+                .build();
     }
 }

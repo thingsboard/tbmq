@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
+package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.delivery;
 
-import lombok.Getter;
+import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing.ApplicationSubmitStrategy;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.HashMap;
-import java.util.Map;
+public interface AppMsgDeliveryStrategy {
 
-@Getter
-public class ApplicationPackProcessingResult {
+    void process(ApplicationSubmitStrategy submitStrategy, ClientSessionCtx clientSessionCtx);
 
-    private final Map<Integer, PersistedPublishMsg> publishPendingMap;
-    private final Map<Integer, PersistedPubRelMsg> pubRelPendingMap;
-
-    public ApplicationPackProcessingResult(ApplicationPackProcessingCtx ctx) {
-        this.publishPendingMap = new HashMap<>(ctx.getPublishPendingMsgMap());
-        this.pubRelPendingMap = new HashMap<>(ctx.getPubRelPendingMsgMap());
-    }
 }
