@@ -55,6 +55,9 @@ server:
 
 # MQTT listeners parameters
 listener:
+  # Enable proxy protocol support. Disabled by default. If enabled, supports both v1 and v2.
+  # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
+  proxy_enabled: "${MQTT_PROXY_PROTOCOL_ENABLED:false}"
   # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID. It is set globally for all listeners
   leak_detector_level: "${NETTY_LEAK_DETECTOR_LVL:DISABLED}"
   tcp:
