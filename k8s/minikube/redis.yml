@@ -31,7 +31,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: bitnami/redis:7.0
+          image: bitnami/redis:7.2.5
           ports:
             - containerPort: 6379
           env:
