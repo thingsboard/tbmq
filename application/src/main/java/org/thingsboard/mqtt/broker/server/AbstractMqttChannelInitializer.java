@@ -26,7 +26,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.thingsboard.mqtt.broker.server.ip.IpAddressHandler;
-import org.thingsboard.mqtt.broker.server.ip.ProxyIpFilter;
+import org.thingsboard.mqtt.broker.server.ip.ProxyIpAddressHandler;
 import org.thingsboard.mqtt.broker.server.traffic.DuplexTrafficHandler;
 
 @Slf4j
@@ -52,9 +52,9 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
         if (proxyProtocolEnabled) {
             pipeline.addLast("proxy", new HAProxyMessageDecoder());
-            pipeline.addLast("ipFilter", new ProxyIpFilter());
+            pipeline.addLast("ipAdrHandler", new ProxyIpAddressHandler());
         } else {
-            pipeline.addLast("ipFilter", new IpAddressHandler());
+            pipeline.addLast("ipAdrHandler", new IpAddressHandler());
         }
 
         SslHandler sslHandler = getSslHandler();

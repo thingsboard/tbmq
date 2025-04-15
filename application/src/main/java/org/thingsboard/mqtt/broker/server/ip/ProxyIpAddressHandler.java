@@ -24,7 +24,7 @@ import org.thingsboard.mqtt.broker.server.MqttSessionHandler;
 import java.net.InetSocketAddress;
 
 @Slf4j
-public class ProxyIpFilter extends ChannelInboundHandlerAdapter {
+public class ProxyIpAddressHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
