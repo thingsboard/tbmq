@@ -74,7 +74,7 @@
       [disabled]="(isLoading$ | async)"
     (click)="cancel()">{{ 'action.cancel' | translate }}</button>
     <button mat-raised-button
-      [disabled]="(isLoading$ | async)"
+      [disabled]="(isLoading$ | async) || detailsForm?.invalid || !detailsForm?.dirty"
       color="primary"
     (click)="add()">{{ 'action.add' | translate }}</button>
   </div>

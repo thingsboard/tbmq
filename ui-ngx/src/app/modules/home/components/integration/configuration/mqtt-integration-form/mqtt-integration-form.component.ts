@@ -128,7 +128,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         sendOnlyMsgPayload: [false, []],
         host: [null, [Validators.required]],
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
-        topicName: ['tbmq/messages', []],
+        topicName: ['tbmq/messages', [Validators.required]],
         useMsgTopicName: [true, []],
         clientId: [clientIdRandom(), [Validators.required]],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],

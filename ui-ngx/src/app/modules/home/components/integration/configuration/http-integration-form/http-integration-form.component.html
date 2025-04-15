@@ -32,22 +32,13 @@
                       [class.!hidden]="!clientConfigurationFormGroup.get('restEndpointUrl')?.value?.length"
                       [copyText]="clientConfigurationFormGroup.get('restEndpointUrl')?.value">
       </tb-copy-button>
-      @if (clientConfigurationFormGroup.get('restEndpointUrl').hasError('required')) {
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'integration.endpoint-url-required' | translate }}"
-                  class="tb-error">
-          warning
-        </mat-icon>
-      }
-      @if (clientConfigurationFormGroup.get('restEndpointUrl').hasError('privateNetwork')) {
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'integration.url-private' | translate }}"
-                  class="tb-error">
-          warning
-        </mat-icon>
-      }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'integration.endpoint-url-required' | translate }}"
+                [class.!hidden]="!clientConfigurationFormGroup.get('restEndpointUrl').hasError('required')"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.request-method</mat-label>
@@ -122,15 +113,13 @@
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.max-response-size</mat-label>
           <input type="text" min="1" [max]="MemoryBufferSizeInKbLimit" inputmode="numeric" pattern="[0-9]*" matInput formControlName="maxInMemoryBufferSizeInKb">
-          @if (clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('min') ||
-               clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('max')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.memory-buffer-size-range' | translate: { max: MemoryBufferSizeInKbLimit } }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.memory-buffer-size-range' | translate: { max: MemoryBufferSizeInKbLimit } }}"
+                    [class.!hidden]="!(clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('min') || clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('max'))"
+                    class="tb-error">
+            warning
+          </mat-icon>
           <mat-icon matSuffix matTooltip="{{ 'integration.max-response-size-hint' | translate }}">
             help
           </mat-icon>

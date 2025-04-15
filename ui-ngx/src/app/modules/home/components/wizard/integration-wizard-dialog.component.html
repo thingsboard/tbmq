@@ -50,22 +50,20 @@
           <mat-form-field class="flex-1" appearance="outline">
             <mat-label translate>integration.name</mat-label>
             <input matInput formControlName="name" required>
-            @if (integrationWizardForm.get('name').hasError('required') || integrationWizardForm.get('name').hasError('pattern')) {
-              <mat-icon matSuffix
-                        matTooltipClass="tb-error-tooltip"
-                        matTooltip="{{ 'integration.name-required' | translate }}"
-                        class="tb-error">
-                warning
-              </mat-icon>
-            }
-            @if (integrationWizardForm.get('name').hasError('maxlength')) {
-              <mat-icon matSuffix
-                        matTooltipClass="tb-error-tooltip"
-                        matTooltip="{{ 'integration.name-max-length' | translate }}"
-                        class="tb-error">
-                warning
-              </mat-icon>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.name-required' | translate }}"
+                      [class.!hidden]="!((integrationWizardForm.get('name').hasError('required') || integrationWizardForm.get('name').hasError('pattern')) && integrationWizardForm.get('name').touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'integration.name-max-length' | translate }}"
+                      [class.!hidden]="!(integrationWizardForm.get('name').hasError('maxlength') && integrationWizardForm.get('name').touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
         </div>
         <div class="row flex flex-col gap-2">
