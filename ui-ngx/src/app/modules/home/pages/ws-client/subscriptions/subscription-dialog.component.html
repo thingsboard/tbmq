@@ -43,11 +43,13 @@
           [class.!hidden]="!formGroup.get('topicFilter')?.value?.length"
           [copyText]="formGroup.get('topicFilter')?.value">
         </tb-copy-button>
-        @if (formGroup.get('topicFilter').hasError('required')) {
-          <mat-error>
-            {{ 'subscription.topic-filter-required' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.topic-filter-required' | translate }}"
+                  [class.!hidden]="!formGroup.get('topicFilter').hasError('required')"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
       <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
       </tb-color-input>
@@ -98,16 +100,20 @@
                 <mat-icon matSuffix [matTooltip]="'subscription.subscription-identifier-hint' | translate">
                   info
                 </mat-icon>
-                @if (formGroup.get('options.subscriptionId').hasError('min')) {
-                  <mat-error>
-                    {{ 'subscription.subscription-identifier-min' | translate }}
-                  </mat-error>
-                }
-                @if (formGroup.get('options.subscriptionId').hasError('max')) {
-                  <mat-error>
-                    {{ 'subscription.subscription-identifier-max' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'subscription.subscription-identifier-min' | translate }}"
+                          [class.!hidden]="!formGroup.get('options.subscriptionId').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'subscription.subscription-identifier-max' | translate }}"
+                          [class.!hidden]="!formGroup.get('options.subscriptionId').hasError('max')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
           </ng-template>

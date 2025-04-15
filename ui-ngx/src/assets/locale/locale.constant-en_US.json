@@ -1199,7 +1199,7 @@
     "hint-application-shared-subscription": "<b>Application Shared Subscriptions</b> are the TBMQ entities used for effective management of the MQTT shared</br> subscriptions feature. Provision such entities if you plan to use <b>shared subscriptions with Application clients</b>. <a href='https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions/' target='_blank'>Read more.</a>",
     "hint-topic-filter": "The format for a shared subscription topic filter is <code>$share/ShareName/TopicFilter</code>.</br>If shared subscription topic filter is <code>$share/group1/city/+/home/#</code>, set <i>Topic Filter</i> as <code>city/+/home/#</code>",
     "hint-partitions": "It is recommended that the number of partitions is <b>equal to or X times more than the expected number of clients</b> of the shared subscription.</br>For example, if 5 clients are going to be subscribed to the shared subscription, set the <i>Partitions</i> value to 5, 10 or 15.</br>This will guarantee even load distribution between the subscribers.",
-    "hint-shared-subscription-notes": "Notes:<ul><li><i>Topic Filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Application Shared Subscription feature works with MQTT v5 and v3.x</li></ul>",
+    "hint-shared-subscription-notes": "<li><i>Topic Filter</i> and <i>Partitions</i> fields can not be changed after creation.</li><li>Application Shared Subscription feature works with MQTT v5 and v3.x</li>",
     "partitions": "Partitions",
     "partitions-required": "Partitions are required",
     "partitions-min": "Minimum value is 1",

@@ -35,11 +35,13 @@
             <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [class.!hidden]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
                             [copyText]="topicFilter.get('topicFilter').value">
             </tb-copy-button>
-            @if (topicFilter.invalid) {
-              <mat-error>
-                {{ 'mqtt-client-session.topic-filter-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'mqtt-client-session.topic-filter-required' | translate }}"
+                      [class.!hidden]="!(topicFilter.invalid && topicFilter.touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
           <tb-qos-select class="flex flex-1 basis-[30%]" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
           </tb-qos-select>

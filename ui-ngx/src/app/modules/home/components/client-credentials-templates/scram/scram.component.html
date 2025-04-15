@@ -28,6 +28,13 @@
             [class.!hidden]="!credentialsMqttFormGroup.get('userName')?.value?.length"
             [copyText]="credentialsMqttFormGroup.get('userName').value">
           </tb-copy-button>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'mqtt-client-credentials.user-name-required' | translate }}"
+                    [class.!hidden]="!(credentialsMqttFormGroup.get('userName').hasError('required') && credentialsMqttFormGroup.get('userName').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
           <button mat-icon-button matSuffix
             [matTooltip]="'action.regenerate' | translate"
             matTooltipPosition="above"
@@ -37,23 +44,20 @@
               autorenew
             </mat-icon>
           </button>
-          @if (credentialsMqttFormGroup.get('userName').hasError('required')) {
-            <mat-error>
-              {{ 'mqtt-client-credentials.user-name-required' | translate }}
-            </mat-error>
-          }
         </mat-form-field>
         <mat-form-field class="flex flex-1">
           <mat-label translate>mqtt-client-credentials.password</mat-label>
           <input matInput formControlName="password"
             autocomplete="new-password" name="new-password"
             type="password">
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'mqtt-client-credentials.password-required' | translate }}"
+                    [class.!hidden]="!(credentialsMqttFormGroup.get('password').hasError('required') && credentialsMqttFormGroup.get('password').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
           <tb-toggle-password matSuffix></tb-toggle-password>
-          @if (credentialsMqttFormGroup.get('password').hasError('required')) {
-            <mat-error>
-              {{ 'mqtt-client-credentials.password-required' | translate }}
-            </mat-error>
-          }
         </mat-form-field>
       </div>
       <mat-form-field class="flex flex-1">

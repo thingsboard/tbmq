@@ -20,7 +20,7 @@ import { RhOptions, TopicSubscription } from '@shared/models/ws-client.model';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatFormField, MatSuffix } from '@angular/material/form-field';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
@@ -32,7 +32,7 @@ import { MatInput } from '@angular/material/input';
     selector: 'tb-show-subscription-options',
     templateUrl: './show-subscription-options-popover.component.html',
     styleUrls: [],
-    imports: [FormsModule, NgTemplateOutlet, MatButton, ReactiveFormsModule, TranslateModule, MatFormField, MatSelect, MatOption, MatSlideToggle, MatIcon, MatTooltip, MatInput, MatSuffix, MatError]
+    imports: [FormsModule, NgTemplateOutlet, MatButton, ReactiveFormsModule, TranslateModule, MatFormField, MatSelect, MatOption, MatSlideToggle, MatIcon, MatTooltip, MatInput, MatSuffix]
 })
 export class ShowSubscriptionOptionsPopoverComponent implements OnInit, OnDestroy {
 

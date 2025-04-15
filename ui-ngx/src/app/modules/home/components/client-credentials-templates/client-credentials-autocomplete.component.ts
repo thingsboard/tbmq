@@ -25,7 +25,7 @@ import { TruncatePipe } from '@shared//pipe/truncate.pipe';
 import { ENTER } from '@angular/cdk/keycodes';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { emptyPageData } from '@shared/models/page/page-data';
-import { SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField, MatLabel, MatSuffix, MatHint } from '@angular/material/form-field';
 import { ClientCredentials, CredentialsType, wsSystemCredentialsName } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { WebSocketConnection } from '@shared/models/ws-client.model';
@@ -48,6 +48,7 @@ import { MatIcon } from '@angular/material/icon';
 import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
 import { MatOption } from '@angular/material/core';
 import { HighlightPipe } from '@shared/pipe/highlight.pipe';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-client-credentials-autocomplete',
@@ -61,7 +62,7 @@ import { HighlightPipe } from '@shared/pipe/highlight.pipe';
       },
       TruncatePipe
     ],
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatError, MatHint, AsyncPipe, HighlightPipe]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatHint, AsyncPipe, HighlightPipe, MatTooltip]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 

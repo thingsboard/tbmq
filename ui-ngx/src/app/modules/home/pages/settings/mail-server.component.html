@@ -37,11 +37,13 @@
           <mat-form-field class="mat-block">
             <mat-label translate>admin.mail-from</mat-label>
             <input matInput formControlName="mailFrom" required/>
-            @if (mailSettings.get('mailFrom').hasError('required')) {
-              <mat-error>
-                {{ 'admin.mail-from-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'admin.mail-from-required' | translate }}"
+                      [class.!hidden]="!(mailSettings.get('mailFrom').hasError('required') && mailSettings.get('mailFrom').touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
           <mat-expansion-panel class="configuration-panel mat-elevation-z0" [expanded]="true">
             <mat-expansion-panel-header>
@@ -64,42 +66,53 @@
                 <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
                   <mat-label translate>admin.smtp-host</mat-label>
                   <input matInput formControlName="smtpHost" placeholder="localhost" required/>
-                  @if (mailSettings.get('smtpHost').hasError('required')) {
-                    <mat-error>
-                      {{ 'admin.smtp-host-required' | translate }}
-                    </mat-error>
-                  }
+                  <mat-icon matSuffix
+                            matTooltipClass="tb-error-tooltip"
+                            matTooltip="{{ 'admin.smtp-host-required' | translate }}"
+                            [class.!hidden]="!(mailSettings.get('smtpHost').hasError('required') && mailSettings.get('smtpHost').touched)"
+                            class="tb-error">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
                 <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
                   <mat-label translate>admin.smtp-port</mat-label>
                   <input matInput #smtpPortInput formControlName="smtpPort" placeholder="25" maxlength="5" required/>
                   <mat-hint align="end">{{smtpPortInput.value?.length || 0}}/5</mat-hint>
-                  @if (mailSettings.get('smtpPort').hasError('required')) {
-                    <mat-error>
-                      {{ 'admin.smtp-port-required' | translate }}
-                    </mat-error>
-                  }
-                  @if (mailSettings.get('smtpPort').hasError('pattern') || mailSettings.get('smtpPort').hasError('maxlength')) {
-                    <mat-error>
-                      {{ 'admin.smtp-port-invalid' | translate }}
-                    </mat-error>
-                  }
+                  <mat-icon matSuffix
+                            matTooltipClass="tb-error-tooltip"
+                            matTooltip="{{ 'admin.smtp-port-required' | translate }}"
+                            [class.!hidden]="!(mailSettings.get('smtpPort').hasError('required') && mailSettings.get('smtpPort').touched)"
+                            class="tb-error">
+                    warning
+                  </mat-icon>
+                  <mat-icon matSuffix
+                            matTooltipClass="tb-error-tooltip"
+                            matTooltip="{{ 'admin.smtp-port-invalid' | translate }}"
+                            [class.!hidden]="!((mailSettings.get('smtpPort').hasError('pattern') || mailSettings.get('smtpPort').hasError('maxlength')) && mailSettings.get('smtpPort').touched)"
+                            class="tb-error">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
               </div>
               <mat-form-field class="mat-block">
                 <mat-label translate>admin.timeout-msec</mat-label>
                 <input matInput #timeoutInput formControlName="timeout" placeholder="10000" maxlength="6" required/>
                 <mat-hint align="end">{{timeoutInput.value?.length || 0}}/6</mat-hint>
-                @if (mailSettings.get('timeout').hasError('required')) {
-                  <mat-error>
-                    {{ 'admin.timeout-required' | translate }}
-                  </mat-error>
-                }
-                @if (mailSettings.get('timeout').hasError('pattern') || mailSettings.get('timeout').hasError('maxlength')) {
-                  <mat-error>
-                    {{ 'admin.timeout-invalid' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.timeout-required' | translate }}"
+                          [class.!hidden]="!(mailSettings.get('timeout').hasError('required') && mailSettings.get('timeout').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.timeout-invalid' | translate }}"
+                          [class.!hidden]="!((mailSettings.get('timeout').hasError('pattern') || mailSettings.get('timeout').hasError('maxlength')) && mailSettings.get('timeout').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-slide-toggle class="flex flex-1" formControlName="enableTls" style="display: block; padding-bottom: 22px;">
                 {{ 'admin.enable-tls' | translate }}
@@ -125,27 +138,31 @@
                     <mat-form-field class="flex flex-1 gt-sm:basis-[60%]">
                       <mat-label translate>admin.proxy-host</mat-label>
                       <input matInput required formControlName="proxyHost">
-                      @if (mailSettings.get('proxyHost').hasError('required')) {
-                        <mat-error>
-                          {{ 'admin.proxy-host-required' | translate }}
-                        </mat-error>
-                      }
+                      <mat-icon matSuffix
+                                matTooltipClass="tb-error-tooltip"
+                                matTooltip="{{ 'admin.proxy-host-required' | translate }}"
+                                [class.!hidden]="!(mailSettings.get('proxyHost').hasError('required') && mailSettings.get('proxyHost').touched)"
+                                class="tb-error">
+                        warning
+                      </mat-icon>
                     </mat-form-field>
                     <mat-form-field class="flex flex-1 gt-sm:basis-[40%]">
                       <mat-label translate>admin.proxy-port</mat-label>
                       <input matInput required formControlName="proxyPort" type="number" step="1" min="1" max="65535">
-                      @if (mailSettings.get('proxyPort').hasError('required')) {
-                        <mat-error>
-                          {{ 'admin.proxy-port-required' | translate }}
-                        </mat-error>
-                      }
-                      @if (mailSettings.get('proxyPort').hasError('pattern')
-                        || mailSettings.get('proxyPort').hasError('min')
-                        || mailSettings.get('proxyPort').hasError('max')) {
-                        <mat-error>
-                          {{ 'admin.proxy-port-range' | translate }}
-                        </mat-error>
-                      }
+                      <mat-icon matSuffix
+                                matTooltipClass="tb-error-tooltip"
+                                matTooltip="{{ 'admin.proxy-port-required' | translate }}"
+                                [class.!hidden]="!(mailSettings.get('proxyPort').hasError('required') && mailSettings.get('proxyPort').touched)"
+                                class="tb-error">
+                        warning
+                      </mat-icon>
+                      <mat-icon matSuffix
+                                matTooltipClass="tb-error-tooltip"
+                                matTooltip="{{ 'admin.proxy-port-range' | translate }}"
+                                [class.!hidden]="!((mailSettings.get('proxyPort').hasError('pattern') || mailSettings.get('proxyPort').hasError('min') || mailSettings.get('proxyPort').hasError('max')) && mailSettings.get('proxyPort').touched)"
+                                class="tb-error">
+                        warning
+                      </mat-icon>
                     </mat-form-field>
                   </div>
                   <div class="flex flex-row xs:flex-col gt-xs:gap-2">

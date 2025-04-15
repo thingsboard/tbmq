@@ -32,7 +32,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { ColorInputComponent } from '@shared/components/color-input.component';
@@ -53,7 +53,7 @@ export interface AddWsClientSubscriptionDialogData {
     selector: 'tb-subscription-dialog',
     templateUrl: './subscription-dialog.component.html',
     styleUrls: ['./subscription-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, ColorInputComponent, MatSelect, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ColorInputComponent, MatSelect, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
 })
 export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
