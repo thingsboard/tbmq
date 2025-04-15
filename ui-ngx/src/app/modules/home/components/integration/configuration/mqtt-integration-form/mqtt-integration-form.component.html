@@ -81,7 +81,12 @@
       <ng-template matExpansionPanelContent>
         <mat-form-field class="mt-2 flex" appearance="outline">
           <mat-label translate>integration.topic-name</mat-label>
-          <input matInput formControlName="topicName">
+          <input matInput formControlName="topicName" [matAutocomplete]="auto">
+          <mat-autocomplete #auto="matAutocomplete">
+            @for (option of filteredTopics | async; track option) {
+              <mat-option [value]="option">{{option}}</mat-option>
+            }
+          </mat-autocomplete>
           <tb-copy-button matSuffix
                           [class.!hidden]="!clientConfigurationFormGroup.get('topicName')?.value?.length"
                           [copyText]="clientConfigurationFormGroup.get('topicName').value">

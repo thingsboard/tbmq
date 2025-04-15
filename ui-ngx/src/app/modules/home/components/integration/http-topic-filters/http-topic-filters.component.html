@@ -23,7 +23,13 @@
         @if (i === 0) {
           <mat-label>{{ i !== 0 ? "" : "integration.topic" | translate }}</mat-label>
         }
-        <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef>
+        <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef
+               [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredTopics; track option) {
+            <mat-option [value]="option">{{option}}</mat-option>
+          }
+        </mat-autocomplete>
         <tb-copy-button matSuffix
                         [class.!hidden]="!topicFilterValue(topicFilter)?.length"
                         [copyText]="topicFilterValue(topicFilter)">

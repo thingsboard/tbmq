@@ -24,7 +24,12 @@
     <section class="flex flex-row gap-4">
       <mat-form-field class="flex flex-1">
         <mat-label translate>ws-client.last-will.topic</mat-label>
-        <input matInput formControlName="topic">
+        <input matInput formControlName="topic" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredTopics | async; track option) {
+            <mat-option [value]="option">{{option}}</mat-option>
+          }
+        </mat-autocomplete>
         <tb-copy-button matSuffix
                         [class.!hidden]="!formGroup.get('topic')?.value?.length"
                         [copyText]="formGroup.get('topic')?.value">

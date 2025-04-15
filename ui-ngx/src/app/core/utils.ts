@@ -681,3 +681,25 @@ export const calculateLatest = (data: any): number => {
     return null;
   }
 };
+
+export const getLocalStorageTopics = () => {
+  return JSON.parse(localStorage.getItem('topicList') || '[]');
+}
+
+export const addLocalStorageTopic = (topic: string | Set<string>) => {
+  const stored = getLocalStorageTopics();
+  const topicSet = new Set(stored);
+  if (typeof topic === 'string') {
+    topicSet.add(topic);
+  } else {
+    for (const t of topic) {
+      topicSet.add(t);
+    }
+  }
+  localStorage.setItem('topicList', JSON.stringify(Array.from(topicSet)));
+}
+
+export const filterTopics = (value: string):string[] => {
+  const filterValue = value.toLowerCase();
+  return getLocalStorageTopics().filter(option => option.toLowerCase().includes(filterValue));
+}

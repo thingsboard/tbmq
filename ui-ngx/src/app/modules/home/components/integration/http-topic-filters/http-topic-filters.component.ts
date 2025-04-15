@@ -38,8 +38,9 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
-import { isDefinedAndNotNull } from '@core/utils';
+import { filterTopics, getLocalStorageTopics, isDefinedAndNotNull } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
 @Component({
   selector: 'tb-http-topic-filters',
@@ -57,7 +58,10 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     MatLabel,
     MatError,
     MatSuffix,
-    CopyButtonComponent
+    CopyButtonComponent,
+    MatAutocomplete,
+    MatOption,
+    MatAutocompleteTrigger
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -82,6 +86,7 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
   isEdit = input<boolean>();
   activeSubscriptions: string[] = [];
   subscriptionsLoaded = false;
+  filteredTopics = [];
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
@@ -113,6 +118,7 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
     });
     if (this.httpFiltersFromArray.length === value?.length) {
       this.httpTopicFiltersForm.get('filters').patchValue(value, {emitEvent: false});
+      this.topicFiltersSubscribeValueChanges();
     } else {
       const filtersControls: Array<AbstractControl> = [];
       if (value) {
@@ -130,6 +136,7 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
         this.httpTopicFiltersForm.enable({emitEvent: false});
       }
       this.httpTopicFiltersForm.updateValueAndValidity();
+      this.topicFiltersSubscribeValueChanges();
     }
     if (isDefinedAndNotNull(value)) {
       this.updateActiveSubscriptions();
@@ -156,14 +163,32 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
   }
 
   addTopicFilter() {
-    this.httpFiltersFromArray.push(this.fb.group({
+    const formGroup = this.fb.group({
       filter: ['', [Validators.required]]
-    }));
+    });
+    this.subscribeTopicValueChanges(formGroup);
+    this.httpFiltersFromArray.push(formGroup);
   }
 
   private updateModel(value: HttpTopicFilter[]) {
     const transformedValue = value.map(el => el.filter);
     this.propagateChange(transformedValue);
+  }
+
+  topicFiltersSubscribeValueChanges() {
+    this.httpFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
+  }
+
+  clearFilteredOptions() {
+    setTimeout(() => {
+      this.filteredTopics = getLocalStorageTopics();
+    }, 100)
+  }
+
+  private subscribeTopicValueChanges(control) {
+    control.get('filter').valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(value => this.filteredTopics = filterTopics(value));
   }
 
   validate(): ValidationErrors | null {
