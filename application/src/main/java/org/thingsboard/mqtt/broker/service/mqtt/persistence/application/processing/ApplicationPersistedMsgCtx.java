@@ -15,16 +15,12 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.application.processing;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.Data;
 
 import java.util.Collections;
 import java.util.Map;
 
-@Getter
-@RequiredArgsConstructor
-@EqualsAndHashCode
+@Data
 public class ApplicationPersistedMsgCtx {
 
     private final Map<Long, Integer> publishMsgIds;
