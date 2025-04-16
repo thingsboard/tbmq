@@ -23,11 +23,11 @@ import { DialogComponent } from '@shared/components/dialog.component';
 import { Router } from '@angular/router';
 import { MatStepper, StepperOrientation, MatStepperIcon, MatStep, MatStepLabel } from '@angular/material/stepper';
 import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
-import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject } from '@core/utils';
+import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject, saveTopicsToLocalStorage } from '@core/utils';
 import { CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
@@ -401,6 +401,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     };
     const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
+      tap(connection => saveTopicsToLocalStorage(connection.configuration.lastWillMsg?.topic)),
       catchError(e => {
         this.addConnectionWizardStepper().selectedIndex = 0;
         return throwError(e);

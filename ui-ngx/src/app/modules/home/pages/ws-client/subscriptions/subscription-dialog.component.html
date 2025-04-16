@@ -38,7 +38,14 @@
     <section class="flex flex-1 flex-row items-center gap-4">
       <mat-form-field class="flex flex-1">
         <mat-label translate>subscription.topic-filter</mat-label>
-        <input matInput required formControlName="topicFilter" placeholder="{{ 'subscription.topic-filter' | translate }}">
+        <input matInput required formControlName="topicFilter"
+               placeholder="{{ 'subscription.topic-filter' | translate }}"
+               [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredTopics | async; track option) {
+            <mat-option [value]="option">{{option}}</mat-option>
+          }
+        </mat-autocomplete>
         <tb-copy-button matSuffix
           [class.!hidden]="!formGroup.get('topicFilter')?.value?.length"
           [copyText]="formGroup.get('topicFilter')?.value">

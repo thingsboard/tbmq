@@ -109,12 +109,7 @@ export interface IntegrationStatus {
   error?: any;
 }
 
-export interface MqttTopicFilter {
-  filter: string;
-  qos: QoS;
-}
-
-export interface HttpTopicFilter {
+export interface IntegrationTopicFilter {
   filter: string;
 }
 

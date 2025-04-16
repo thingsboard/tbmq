@@ -681,3 +681,23 @@ export const calculateLatest = (data: any): number => {
     return null;
   }
 };
+
+export const TOPICS_LOCAL_STORAGE = 'tbmq_topics';
+
+export const getLocalStorageTopics = () => {
+  return JSON.parse(localStorage.getItem(TOPICS_LOCAL_STORAGE) || '[]');
+}
+
+export const saveTopicsToLocalStorage = (value: string | string[]) => {
+  if (value?.length) {
+    const topics = getLocalStorageTopics();
+    const input = Array.isArray(value) ? value : [value];
+    const result = Array.from(new Set([...topics, ...input]));
+    localStorage.setItem(TOPICS_LOCAL_STORAGE, JSON.stringify(result));
+  }
+}
+
+export const filterTopics = (value: string):string[] => {
+  const filterValue = value.toLowerCase();
+  return getLocalStorageTopics().filter(option => option.toLowerCase().includes(filterValue));
+}

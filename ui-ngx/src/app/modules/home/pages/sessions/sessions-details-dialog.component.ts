@@ -47,6 +47,7 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
 import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
 import { SubscriptionsComponent } from '../../components/session-subscriptions/subscriptions.component';
 import { SessionMetricsComponent } from '../../components/session-metrics/session-metrics.component';
+import { saveTopicsToLocalStorage } from '@core/utils';
 
 export interface SessionsDetailsDialogData {
   session: DetailedClientSessionInfo;
@@ -170,9 +171,11 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
   }
 
   private onSave(): void {
-    this.clientSessionService.updateShortClientSessionInfo(this.entity).subscribe(() => {
-      this.closeDialog();
-    });
+    this.clientSessionService.updateShortClientSessionInfo(this.entity)
+      .subscribe((session) => {
+        this.saveTopicFiltersToLocalStorage(session);
+        this.closeDialog();
+      });
 
   }
 
@@ -207,5 +210,13 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
 
   private closeDialog(): void {
     this.dialogRef.close(true);
+  }
+
+  private saveTopicFiltersToLocalStorage(session: DetailedClientSessionInfo) {
+    const subscriptions = session.subscriptions;
+    if (subscriptions?.length) {
+      const topicFilters = subscriptions.map(subscription => subscription.topicFilter);
+      saveTopicsToLocalStorage(topicFilters);
+    }
   }
 }
