@@ -30,6 +30,7 @@ import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/ro
 import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
+import { saveTopicsToLocalStorage } from '@core/utils';
 
 @Injectable()
 export class SharedSubscriptionsTableConfigResolver {
@@ -90,7 +91,7 @@ export class SharedSubscriptionsTableConfigResolver {
     this.config.deleteEntitiesContent = () => this.translate.instant('shared-subscription.delete-shared-subscriptions-text');
 
     this.config.loadEntity = id => this.sharedSubscriptionService.getSharedSubscriptionById(id);
-    this.config.saveEntity = entity => this.sharedSubscriptionService.saveSharedSubscription(entity);
+    this.config.saveEntity = entity => this.saveSharedSubscription(entity);
     this.config.deleteEntity = id => this.sharedSubscriptionService.deleteSharedSubscription(id);
 
     this.config.entitiesFetchFunction = pageLink => this.sharedSubscriptionService.getSharedSubscriptions(pageLink);
@@ -115,5 +116,10 @@ export class SharedSubscriptionsTableConfigResolver {
     }
     const url = this.router.createUrlTree([subscription.id], {relativeTo: config.getActivatedRoute()});
     this.router.navigateByUrl(url);
+  }
+
+  private saveSharedSubscription(entity: SharedSubscription): Observable<SharedSubscription> {
+    saveTopicsToLocalStorage(entity.topicFilter);
+    return this.sharedSubscriptionService.saveSharedSubscription(entity);
   }
 }

@@ -43,7 +43,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { map, startWith, takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { addLocalStorageTopic, filterTopics } from '@core/utils';
+import { saveTopicsToLocalStorage, filterTopics } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
@@ -132,7 +132,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     delete formValues.options.subscriptionId;
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
     if (!this.topicFilterDuplicate) {
-      addLocalStorageTopic(formValues.topicFilter);
+      saveTopicsToLocalStorage(formValues.topicFilter);
       this.dialogRef.close(result);
     } else {
       this.store.dispatch(new ActionNotificationShow(

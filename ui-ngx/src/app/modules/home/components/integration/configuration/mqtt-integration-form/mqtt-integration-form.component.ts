@@ -46,8 +46,8 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import {
-  HttpTopicFiltersComponent
-} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+  IntegrationTopicFiltersComponent
+} from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { MatIconButton } from '@angular/material/button';
 import { clientIdRandom } from '@shared/models/ws-client.model';
 import {
@@ -83,7 +83,7 @@ import { Observable } from 'rxjs';
     MatSuffix,
     MatIcon,
     MatTooltip,
-    HttpTopicFiltersComponent,
+    IntegrationTopicFiltersComponent,
     MatIconButton,
     IntegrationCredentialsComponent,
     QosSelectComponent,

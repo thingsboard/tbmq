@@ -682,21 +682,19 @@ export const calculateLatest = (data: any): number => {
   }
 };
 
+export const TOPICS_LOCAL_STORAGE = 'tbmq_topics';
+
 export const getLocalStorageTopics = () => {
-  return JSON.parse(localStorage.getItem('topicList') || '[]');
+  return JSON.parse(localStorage.getItem(TOPICS_LOCAL_STORAGE) || '[]');
 }
 
-export const addLocalStorageTopic = (topic: string | Set<string>) => {
-  const stored = getLocalStorageTopics();
-  const topicSet = new Set(stored);
-  if (typeof topic === 'string') {
-    topicSet.add(topic);
-  } else {
-    for (const t of topic) {
-      topicSet.add(t);
-    }
+export const saveTopicsToLocalStorage = (value: string | string[]) => {
+  if (value?.length) {
+    const topics = getLocalStorageTopics();
+    const input = Array.isArray(value) ? value : [value];
+    const result = Array.from(new Set([...topics, ...input]));
+    localStorage.setItem(TOPICS_LOCAL_STORAGE, JSON.stringify(result));
   }
-  localStorage.setItem('topicList', JSON.stringify(Array.from(topicSet)));
 }
 
 export const filterTopics = (value: string):string[] => {

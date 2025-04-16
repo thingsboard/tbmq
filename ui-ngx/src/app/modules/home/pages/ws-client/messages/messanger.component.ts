@@ -19,7 +19,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { addLocalStorageTopic, filterTopics, isDefinedAndNotNull } from '@core/utils';
+import { saveTopicsToLocalStorage, filterTopics, isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
@@ -185,7 +185,7 @@ export class MessangerComponent implements OnInit, OnDestroy {
       if (isDefinedAndNotNull(properties?.responseTopic)) options.properties.responseTopic = properties.responseTopic;
     }
     this.mqttJsClientService.publishMessage(topic, message, options);
-    addLocalStorageTopic(topic);
+    saveTopicsToLocalStorage(topic);
   }
 
   clearHistory() {
