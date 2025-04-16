@@ -18,7 +18,7 @@ services:
   postgres:
     restart: always
     container_name: "${POSTGRES_NAME}"
-    image: "postgres:15"
+    image: "postgres:16"
     ports:
       - "5432"
     logging:
@@ -34,7 +34,7 @@ services:
   kafka:
     restart: always
     container_name: "${KAFKA_NAME}"
-    image: "bitnami/kafka:3.5.1"
+    image: "bitnami/kafka:3.7.0"
     ports:
       - "9092"
     logging:

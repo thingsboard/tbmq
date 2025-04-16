@@ -27,7 +27,7 @@ import java.util.List;
 public class AbstractRedisContainer {
 
     @ClassRule
-    public static GenericContainer redis = new GenericContainer("redis:7.2")
+    public static GenericContainer redis = new GenericContainer("redis:7.2.5")
             .withExposedPorts(6379)
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
