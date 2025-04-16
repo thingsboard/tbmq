@@ -23,7 +23,7 @@ import {
   JsonObjectEditDialogComponent,
   JsonObjectEditDialogData
 } from '@shared/components/dialog/json-object-edit-dialog.component';
-import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatSelect, MatSelectTrigger } from '@angular/material/select';
 import { MatIcon } from '@angular/material/icon';
@@ -32,6 +32,7 @@ import { MatOption } from '@angular/material/core';
 import { MatInput } from '@angular/material/input';
 import { TbJsonToStringDirective } from './directives/tb-json-to-string.directive';
 import { MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-value-input',
@@ -44,7 +45,7 @@ import { MatIconButton } from '@angular/material/button';
             multi: true
         }
     ],
-    imports: [FormsModule, MatFormField, MatLabel, TranslateModule, MatSelect, MatSelectTrigger, MatIcon, MatOption, MatInput, MatError, TbJsonToStringDirective, MatIconButton, MatSuffix]
+  imports: [FormsModule, MatFormField, MatLabel, TranslateModule, MatSelect, MatSelectTrigger, MatIcon, MatOption, MatInput, TbJsonToStringDirective, MatIconButton, MatSuffix, MatTooltip]
 })
 export class ValueInputComponent implements OnInit, ControlValueAccessor {
 

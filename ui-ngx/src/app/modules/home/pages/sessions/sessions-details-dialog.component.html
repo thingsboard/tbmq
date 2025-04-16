@@ -65,7 +65,7 @@
             <div class="hint flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.connected-status</mat-label>
-                <input matInput class="hidden" formControlName="connectionState">
+                <input matInput [class.!hidden]="true" formControlName="connectionState">
                 <span style="vertical-align: bottom; font-size: 32px; padding-right: 8px"
                 [style]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">&#8226;</span>
                 <span [style]="{color: connectionStateColor.get(this.entityForm.get('connectionState').value.toUpperCase())}">{{ entityForm.get('connectionState')?.value | titlecase }}</span>
@@ -79,13 +79,13 @@
             <div class="flex flex-1 flex-col">
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client-session.connected-at</mat-label>
-                <input matInput class="hidden" formControlName="connectedAt">
+                <input matInput [class.!hidden]="true" formControlName="connectedAt">
                 <span>{{ entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss' }}</span>
               </mat-form-field>
               @if (!isConnected()) {
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-session.disconnected-at</mat-label>
-                  <input matInput class="hidden" formControlName="disconnectedAt">
+                  <input matInput [class.!hidden]="true" formControlName="disconnectedAt">
                   <span>
                     {{ isConnected() ? (entityForm.get('connectedAt').value | date:'yyyy-MM-dd HH:mm:ss') : (entityForm.get('disconnectedAt').value | date:'yyyy-MM-dd HH:mm:ss') }}
                   </span>
@@ -122,7 +122,7 @@
               @if (!isConnected() && entity?.sessionEndTs > -1) {
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-session.session-end</mat-label>
-                  <input matInput class="hidden" formControlName="sessionEndTs">
+                  <input matInput [class.!hidden]="true" formControlName="sessionEndTs">
                   <span>{{ entity?.sessionEndTs | date:'yyyy-MM-dd HH:mm:ss' }}</span>
                   <mat-hint translate>mqtt-client-session.hint-session-end</mat-hint>
                 </mat-form-field>
@@ -144,7 +144,7 @@
               </mat-form-field>
               <mat-form-field class="mat-block">
                 <mat-label translate>mqtt-client.client-type</mat-label>
-                <input class="hidden" matInput formControlName="clientType">
+                <input [class.!hidden]="true" matInput formControlName="clientType">
                 <span style="display: inline-flex; align-items: center; gap: 8px;">
                   {{ entityForm.get('clientType')?.value | titlecase }}
                   <mat-icon style="height: 20px; width: 20px; font-size: 20px;" class="material-icons mat-icon">

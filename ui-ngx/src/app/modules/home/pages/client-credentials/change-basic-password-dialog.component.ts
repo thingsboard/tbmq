@@ -38,7 +38,7 @@ export interface ChangeBasicPasswordDialogData {
 }
 
 @Component({
-    selector: 'tb-change-password-dialog',
+    selector: 'tb-change-basic-password-dialog',
     templateUrl: './change-basic-password-dialog.component.html',
     styleUrls: ['./change-basic-password-dialog.component.scss'],
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatDialogActions, MatButton, AsyncPipe]

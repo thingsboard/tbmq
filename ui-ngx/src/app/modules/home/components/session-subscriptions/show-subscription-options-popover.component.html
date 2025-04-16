@@ -73,16 +73,20 @@
         <mat-icon matSuffix [matTooltip]="'subscription.subscription-identifier-hint' | translate">
           info
         </mat-icon>
-        @if (subscriptionOptionsForm.get('subscriptionId').hasError('min')) {
-          <mat-error>
-            {{ 'subscription.subscription-identifier-min' | translate }}
-          </mat-error>
-        }
-        @if (subscriptionOptionsForm.get('subscriptionId').hasError('max')) {
-          <mat-error>
-            {{ 'subscription.subscription-identifier-max' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.subscription-identifier-min' | translate }}"
+                  [class.!hidden]="!(subscriptionOptionsForm.get('subscriptionId').hasError('min') && subscriptionOptionsForm.get('subscriptionId').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.subscription-identifier-max' | translate }}"
+                  [class.!hidden]="!(subscriptionOptionsForm.get('subscriptionId').hasError('max') && subscriptionOptionsForm.get('subscriptionId').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
     </div>
   </div>
