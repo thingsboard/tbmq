@@ -98,10 +98,10 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
     this.entityTitle = (integration) => integration ? integration.name : '';
 
     columns.push(
-      new DateEntityTableColumn<IntegrationInfo>('createdTime', 'common.created-time', this.datePipe, '15%'),
+      new DateEntityTableColumn<IntegrationInfo>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<IntegrationInfo>('name', 'integration.name', '15%'),
       new EntityTableColumn<IntegrationInfo>('type', 'integration.type', '15%', (integration) => this.translate.instant(integrationTypeInfoMap.get(integration.type).name)),
-      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '55%',
+      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '35%',
         integration => this.integrationStatus(integration),
         integration => this.integrationStatusStyle(integration), false),
     );

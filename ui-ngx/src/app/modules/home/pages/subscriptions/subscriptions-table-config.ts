@@ -71,7 +71,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity.clientId, 1);
 
     this.columns.push(
-      new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '50%',
+      new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '300px',
         undefined, () => undefined, true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
@@ -88,7 +88,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
           onAction: ($event, entity) => entity.clientId,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '50%',
+      new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '150px',
         entity => entity.subscription.topicFilter, () => undefined, true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),

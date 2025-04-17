@@ -871,7 +871,7 @@
     "max-parallel-requests-count": "Max number of parallel requests",
     "max-parallel-requests-count-hint": "The maximum number of HTTP requests that can be processed simultaneously. The value of 0 specifies no limit in parallel processing",
     "max-response-size": "Max response size (in KB)",
-    "max-response-size-hint": "The maximum amount of memory allocated for buffering data when decoding or encoding HTTP messages, such as JSON or XML payloads",
+    "max-response-size-hint": "The maximum amount of memory used to buffer the response body when decoding HTTP messages (e.g., JSON or XML) before they are passed to the application.",
     "memory-buffer-size-range": "Memory buffer size must be between 0 and {{max}} KB",
     "memory-buffer-size-required": "Memory buffer size is required",
     "restart": "Restart integration",

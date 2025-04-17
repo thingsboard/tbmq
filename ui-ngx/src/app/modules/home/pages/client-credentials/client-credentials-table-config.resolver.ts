@@ -86,11 +86,11 @@ export class ClientCredentialsTableConfigResolver {
 
     this.config.columns.push(
       new DateEntityTableColumn<ClientCredentials>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<ClientCredentials>('name', 'mqtt-client-credentials.name', '30%',
+      new EntityTableColumn<ClientCredentials>('name', 'mqtt-client-credentials.name', '40%',
         (entity) => entity.name),
-      new EntityTableColumn<ClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '30%',
+      new EntityTableColumn<ClientCredentials>('credentialsType', 'mqtt-client-credentials.type', '150px',
         (entity) => this.translate.instant(credentialsTypeTranslationMap.get(entity.credentialsType))),
-      new EntityTableColumn<ClientCredentials>('clientType', 'mqtt-client.client-type', '30%',
+      new EntityTableColumn<ClientCredentials>('clientType', 'mqtt-client.client-type', '150px',
         (entity) => {
         const clientType = entity.clientType;
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));

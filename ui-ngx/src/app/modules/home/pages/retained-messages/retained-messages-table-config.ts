@@ -93,7 +93,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
 
     this.columns.push(
       new DateEntityTableColumn<RetainedMessage>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '50%',
+      new EntityTableColumn<RetainedMessage>('topic', 'retained-message.topic', '60%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -111,7 +111,7 @@ export class RetainedMessagesTableConfig extends EntityTableConfig<RetainedMessa
           onAction: ($event, entity) => entity.topic,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '50%', entity => entity.qos + ' - ' + this.translate.instant(QosTranslation.get(entity.qos)))
+      new EntityTableColumn<RetainedMessage>('qos', 'retained-message.qos', '150px', entity => entity.qos + ' - ' + this.translate.instant(QosTranslation.get(entity.qos)))
     );
 
     this.entitiesFetchFunction = pageLink => this.fetchRetainedMessages(pageLink as TimePageLink);

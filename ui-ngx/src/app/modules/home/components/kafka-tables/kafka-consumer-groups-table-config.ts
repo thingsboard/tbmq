@@ -51,11 +51,11 @@ export class KafkaConsumerGroupsTableConfig extends EntityTableConfig<KafkaConsu
     this.cellActionDescriptors = this.configureCellActions();
 
     this.columns.push(
-      new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '70%'),
-      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '10%'),
-      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '10%',
+      new EntityTableColumn<KafkaConsumerGroup>('groupId', 'kafka.id', '60%'),
+      new EntityTableColumn<KafkaConsumerGroup>('state', 'kafka.state', '100px'),
+      new EntityTableColumn<KafkaConsumerGroup>('members', 'kafka.members', '100px',
         entity => entity.members.toString()),
-      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '10%',
+      new EntityTableColumn<KafkaConsumerGroup>('lag', 'kafka.lag', '100px',
           entity => entity.lag)
     );
   }
