@@ -879,6 +879,7 @@
     "inactive-subscription": "The integration subscription is inactive. Try to refresh the Integrations table, otherwise update or restart integration to sync subscriptions.",
     "restart-title": "Are you sure you want to restart the integration '{{name}}'?",
     "restart-text": "After the confirmation the integration process will be reinitialized.",
+    "restarted": "Integration '{{name}}' has been restarted",
     "select-content-type": "Payload content type",
     "select-content-type-hint": "Select how to format the payload content before sending",
     "send-binary-on-failure": "Send as binary on parsing error",

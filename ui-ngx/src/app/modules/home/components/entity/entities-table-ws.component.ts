@@ -381,9 +381,8 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
       } else {
         return res !== null ? res : undefined;
       }
-    } else {
-      return undefined;
     }
+    return '*'; // fix for matTooltip bug appearance
   }
 
   cellStyle(entity: BaseData, column: EntityColumn<BaseData>, row: number) {
