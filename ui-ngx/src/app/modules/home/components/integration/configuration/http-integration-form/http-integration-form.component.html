@@ -120,6 +120,13 @@
                     class="tb-error">
             warning
           </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.memory-buffer-size-required' | translate }}"
+                    [class.!hidden]="!clientConfigurationFormGroup?.get('maxInMemoryBufferSizeInKb').hasError('required')"
+                    class="tb-error">
+            warning
+          </mat-icon>
           <mat-icon matSuffix matTooltip="{{ 'integration.max-response-size-hint' | translate }}">
             help
           </mat-icon>

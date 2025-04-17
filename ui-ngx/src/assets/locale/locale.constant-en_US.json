@@ -873,6 +873,7 @@
     "max-response-size": "Max response size (in KB)",
     "max-response-size-hint": "The maximum amount of memory allocated for buffering data when decoding or encoding HTTP messages, such as JSON or XML payloads",
     "memory-buffer-size-range": "Memory buffer size must be between 0 and {{max}} KB",
+    "memory-buffer-size-required": "Memory buffer size is required",
     "restart": "Restart integration",
     "enable": "Enable integration",
     "disable": "Disable integration",

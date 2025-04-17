@@ -133,7 +133,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
         readTimeoutMs: [0, []],
         maxParallelRequestsCount: [0, []],
-        maxInMemoryBufferSizeInKb: [256, [Validators.min(1), Validators.max(this.MemoryBufferSizeInKbLimit)]],
+        maxInMemoryBufferSizeInKb: [256, [Validators.required, Validators.min(1), Validators.max(this.MemoryBufferSizeInKbLimit)]],
         payloadContentType: [ContentType.BINARY, []],
         sendBinaryOnParseFailure: [true, []],
       })
