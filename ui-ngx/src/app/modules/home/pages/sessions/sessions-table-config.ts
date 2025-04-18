@@ -95,7 +95,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const iconColor = clientTypeValueColor.get(clientType);
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       }),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '20%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '50%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -114,7 +114,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           type: CellActionDescriptorType.COPY_BUTTON
         }
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '120px',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {

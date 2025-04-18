@@ -25,7 +25,7 @@ import {
   Validator,
   Validators, ReactiveFormsModule
 } from '@angular/forms';
-import { isDefinedAndNotNull } from '@core/utils';
+import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
@@ -126,7 +126,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
-        host: [null, [Validators.required]],
+        host: [null, [Validators.required, notOnlyWhitespaceValidator]],
         port: [1883, [Validators.min(1), Validators.max(65535), Validators.pattern('[0-9]*'), Validators.required]],
         topicName: ['tbmq/messages', [Validators.required]],
         useMsgTopicName: [true, []],

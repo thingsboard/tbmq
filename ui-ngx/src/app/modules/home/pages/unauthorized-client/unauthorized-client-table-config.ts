@@ -97,7 +97,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
 
     this.columns.push(
       new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.update-time', this.datePipe, '150px'),
-      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '150px',
+      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '15%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -115,7 +115,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
           onAction: ($event, entity) => entity.clientId,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '150px',
+      new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '15%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {

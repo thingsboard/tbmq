@@ -16,6 +16,7 @@
 
 import { BaseData } from '@shared/models/base-data';
 import { QoS } from '@shared/models/session.model';
+import { ContentType } from '@shared/models/constants';
 
 export enum IntegrationType {
   HTTP = 'HTTP',
@@ -160,6 +161,11 @@ export interface HttpIntegration extends Topics {
     credentials: Credentials;
     readTimeoutMs: number;
     headers?: {[key: string]: string} | null;
+    maxInMemoryBufferSizeInKb: number;
+    maxParallelRequestsCount: number;
+    payloadContentType: ContentType,
+    sendBinaryOnParseFailure: boolean;
+    sendOnlyMsgPayload: boolean
   }
 }
 

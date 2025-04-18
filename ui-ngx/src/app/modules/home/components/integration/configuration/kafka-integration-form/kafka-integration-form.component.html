@@ -39,6 +39,13 @@
                 class="tb-error">
         warning
       </mat-icon>
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'integration.white-space-only' | translate }}"
+                [class.!hidden]="!clientConfigurationFormGroup.get('bootstrapServers').hasError('onlyWhitespace')"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.topic</mat-label>
