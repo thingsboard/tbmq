@@ -442,7 +442,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     config.sessionExpiryIntervalUnit = formValues.properties?.sessionExpiryIntervalUnit;
     config.maxPacketSizeUnit = formValues.properties?.maximumPacketSizeUnit;
     config.userProperties = formValues.userProperties;
-    if (isDefinedAndNotNull(formValues.lastWillMsg?.topic)) {
+    if (formValues.lastWillMsg?.topic?.length) {
       config.lastWillMsg = {};
       config.lastWillMsg.topic = formValues.lastWillMsg.topic;
       config.lastWillMsg.qos = formValues.lastWillMsg.qos;
