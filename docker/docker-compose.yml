@@ -139,7 +139,7 @@ services:
   haproxy:
     restart: always
     container_name: "${LOAD_BALANCER_NAME}"
-    image: thingsboard/haproxy-certbot:2.2.31-alpine3.18
+    image: thingsboard/haproxy-certbot:2.2.33-alpine
     volumes:
       - tbmq-haproxy-config:/config
       - tbmq-haproxy-letsencrypt:/etc/letsencrypt
