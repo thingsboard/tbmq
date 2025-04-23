@@ -55,6 +55,7 @@ import { ActionNotificationShow } from '@core/notification/notification.actions'
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { TranslateService } from '@ngx-translate/core';
+import { share } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -71,7 +72,7 @@ export class MqttJsClientService {
   private logsUpdatedSubject$ = new Subject<void>();
   private messagesClearedSubject$ = new Subject<void>();
 
-  public connection$ = this.connectionSubject$.asObservable();
+  public connection$ = this.connectionSubject$.asObservable().pipe(share());
   public connections$ = this.connectionsSubject$.asObservable();
   public connectionStatus$ = this.connectionStatusSubject$.asObservable();
   public messages$ = this.messagesSubject$.asObservable();

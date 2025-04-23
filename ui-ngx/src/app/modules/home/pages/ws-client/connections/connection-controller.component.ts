@@ -31,7 +31,7 @@ import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'tb-connection-controller',
@@ -75,9 +75,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       });
 
     this.mqttJsClientService.connection$
-      .pipe(
-        takeUntil(this.destroy$),
-        take(1))
+      .pipe(takeUntil(this.destroy$))
       .subscribe(entity => {
         if (entity) {
           this.reconnecting = false;
@@ -97,6 +95,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
     this.destroy$.complete();
   }
 
