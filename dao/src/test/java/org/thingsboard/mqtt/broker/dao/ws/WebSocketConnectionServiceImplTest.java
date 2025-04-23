@@ -226,6 +226,7 @@ public class WebSocketConnectionServiceImplTest extends AbstractServiceTest {
         config.setUrl("ws://localhost:8084/mqtt");
 
         LastWillMsg lastWillMsg = new LastWillMsg();
+        lastWillMsg.setTopic("");
         config.setLastWillMsg(lastWillMsg);
 
         connection.setConfiguration(config);
