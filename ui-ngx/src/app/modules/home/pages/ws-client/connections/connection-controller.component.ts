@@ -31,7 +31,7 @@ import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { CdkOverlayOrigin } from '@angular/cdk/overlay';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
-import { takeUntil } from 'rxjs/operators';
+import { take, takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'tb-connection-controller',
@@ -75,7 +75,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       });
 
     this.mqttJsClientService.connection$
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        take(1))
       .subscribe(entity => {
         if (entity) {
           this.reconnecting = false;
@@ -206,7 +208,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   private checkExisitingCredentialsPasswordChanged(clientCredentialsId: string) {
     if (clientCredentialsId) {
-      this.clientCredentialsService.getClientCredentials(clientCredentialsId)
+      this.clientCredentialsService.getClientCredentials(clientCredentialsId, {ignoreErrors: true})
         .pipe(takeUntil(this.destroy$))
         .subscribe(credentials => {
           if (credentials?.credentialsValue) {

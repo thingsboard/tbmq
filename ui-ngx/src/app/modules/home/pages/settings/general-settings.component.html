@@ -21,13 +21,6 @@
       <span class="mat-headline-5" translate>admin.general-settings</span>
     </mat-card-title>
   </mat-card-header>
-  @if (isLoading$ | async) {
-    <mat-progress-bar color="warn" mode="indeterminate">
-    </mat-progress-bar>
-  }
-  @if (!(isLoading$ | async)) {
-    <div style="height: 4px;"></div>
-  }
   <mat-card-content>
     <form [formGroup]="generalSettingsForm" (ngSubmit)="saveGeneralSettings()" class="tb-form-panel no-border no-padding">
       <fieldset class="fields-group">
