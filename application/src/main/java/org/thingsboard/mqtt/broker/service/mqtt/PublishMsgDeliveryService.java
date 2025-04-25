@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt;
 
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
@@ -36,4 +37,9 @@ public interface PublishMsgDeliveryService {
     void sendPubRelMsgToClient(ClientSessionCtx sessionCtx, int packetId);
 
     void sendPubRelMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, int packetId);
+
+    // Added as helper methods for BufferedMsgDeliveryService
+    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+
+    void sendPublishMsgWithoutFlushToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 }
