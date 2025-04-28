@@ -15,13 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.delivery;
 
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-public interface BufferedMsgDeliveryService {
+@Data
+@Component
+@ConfigurationProperties(prefix = "mqtt.buffered-delivery")
+public class BufferedMsgDeliverySettings {
 
-    void sendPublishMsgToRegularClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
-
-    void sendPublishMsgToDeviceClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 
 }

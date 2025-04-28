@@ -38,8 +38,7 @@ public interface PublishMsgDeliveryService {
 
     void sendPubRelMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, int packetId);
 
-    // Added as helper methods for BufferedMsgDeliveryService
-    void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+    void doSendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 
-    void sendPublishMsgWithoutFlushToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
+    void doSendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg);
 }

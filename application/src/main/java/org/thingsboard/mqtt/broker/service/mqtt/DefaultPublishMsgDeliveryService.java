@@ -132,7 +132,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQos());
-        sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
+        doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), retainedMsg.getQos());
-        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -164,12 +164,12 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     }
 
     @Override
-    public void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+    public void doSendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
         processSendPublish(sessionCtx, mqttPubMsg, msg -> retransmissionService.sendPublish(sessionCtx, msg));
     }
 
     @Override
-    public void sendPublishMsgWithoutFlushToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+    public void doSendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
         processSendPublish(sessionCtx, mqttPubMsg, msg -> retransmissionService.sendPublishWithoutFlush(sessionCtx, msg));
     }
 
