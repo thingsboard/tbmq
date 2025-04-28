@@ -23,8 +23,6 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.common.data.ClientInfo;
-import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
@@ -66,11 +64,6 @@ public class MqttUnsubscribeHandlerTest {
 
     @Test
     public void testProcess_MQTT5() {
-        SessionInfo sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        ClientInfo clientInfo = mock(ClientInfo.class);
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
-
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
 
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
@@ -81,11 +74,6 @@ public class MqttUnsubscribeHandlerTest {
 
     @Test
     public void testProcess_MQTT3() {
-        SessionInfo sessionInfo = mock(SessionInfo.class);
-        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        ClientInfo clientInfo = mock(ClientInfo.class);
-        when(sessionInfo.getClientInfo()).thenReturn(clientInfo);
-
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
         verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(getList()));
