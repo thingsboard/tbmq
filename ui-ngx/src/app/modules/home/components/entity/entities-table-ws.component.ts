@@ -23,7 +23,8 @@ import {
   EventEmitter,
   OnInit,
   model,
-  viewChild
+  viewChild,
+  OnDestroy
 } from '@angular/core';
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
@@ -33,9 +34,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { EntitiesDataSource } from '@home/models/datasource/entity-datasource';
-import { tap } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 import { Direction, SortOrder } from '@shared/models/page/sort-order';
-import { merge, Observable, Subscription } from 'rxjs';
+import { merge, Observable, Subject, Subscription } from 'rxjs';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import { BaseData } from '@shared/models/base-data';
 import { ActivatedRoute, QueryParamsHandling, Router } from '@angular/router';
@@ -73,7 +74,7 @@ import { MatIcon } from '@angular/material/icon';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCheckbox, MatCellDef, MatCell, MatSortHeader, MatTooltip, CopyButtonComponent, MatIconButton, TbIconComponent, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, NgTemplateOutlet, MatPaginator, TranslateModule, AsyncPipe]
 })
-export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit {
+export class EntitiesTableWsComponent extends PageComponent implements AfterViewInit, OnInit, OnDestroy {
 
   entitiesTableConfig = model<EntityTableConfig<BaseData>>();
 
@@ -120,6 +121,7 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   private sortSubscription: Subscription;
   private updateDataSubscription: Subscription;
   private viewInited = false;
+  private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               public route: ActivatedRoute,
@@ -140,6 +142,12 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
     } else {
       this.init(this.route.snapshot.data.entitiesTableConfig);
     }
+  }
+
+  ngOnDestroy() {
+    super.ngOnDestroy();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private init(entitiesTableConfig: EntityTableConfig<BaseData>) {
@@ -198,7 +206,9 @@ export class EntitiesTableWsComponent extends PageComponent implements AfterView
   }
 
   ngAfterViewInit() {
-    this.mqttJsClientService.connection$.subscribe(
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       () => {
         this.paginator().pageIndex = 0;
         this.init(this.entitiesTableConfig());

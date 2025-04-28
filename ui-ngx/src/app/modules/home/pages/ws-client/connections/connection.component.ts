@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit, input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, input, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { WebSocketConnection, WebSocketConnectionDto } from '@shared/models/ws-client.model';
 import { CellActionDescriptor } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
@@ -27,6 +27,8 @@ import { ClientSessionService } from '@core/http/client-session.service';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
 import { TbIconComponent } from '@shared/components/icon.component';
+import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'tb-connection',
@@ -34,7 +36,7 @@ import { TbIconComponent } from '@shared/components/icon.component';
     styleUrls: ['./connection.component.scss'],
     imports: [MatTooltip, MatIconButton, TbIconComponent]
 })
-export class ConnectionComponent implements OnInit {
+export class ConnectionComponent implements OnInit, OnDestroy {
 
   readonly connection = input<WebSocketConnectionDto>();
 
@@ -44,6 +46,8 @@ export class ConnectionComponent implements OnInit {
   selectedConnection: WebSocketConnectionDto;
   showActions = false;
   hiddenActions = this.configureCellHiddenActions();
+
+  private destroy$ = new Subject<void>();
 
   constructor(private mqttJsClientService: MqttJsClientService,
               private webSocketConnectionService: WebSocketConnectionService,
@@ -55,11 +59,18 @@ export class ConnectionComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connection$.subscribe(
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       res => {
         this.selectedConnection = res;
       }
     );
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onCommentMouseEnter(): void {

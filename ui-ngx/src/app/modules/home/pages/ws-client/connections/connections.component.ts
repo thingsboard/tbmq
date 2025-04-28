@@ -14,10 +14,10 @@
 /// limitations under the License.
 ///
 
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { ConnectionStatus, WebSocketConnection } from '@shared/models/ws-client.model';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { ClientSessionService } from '@core/http/client-session.service';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIconButton } from '@angular/material/button';
@@ -25,6 +25,7 @@ import { MatIcon } from '@angular/material/icon';
 import { SelectConnectionComponent } from './select-connection.component';
 import { AsyncPipe } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'tb-connections',
@@ -32,12 +33,14 @@ import { TranslateModule } from '@ngx-translate/core';
     styleUrls: ['./connections.component.scss'],
     imports: [MatTooltip, MatIconButton, MatIcon, SelectConnectionComponent, AsyncPipe, TranslateModule]
 })
-export class ConnectionsComponent {
+export class ConnectionsComponent implements OnDestroy{
 
-  connection: Observable<WebSocketConnection> = this.mqttJsClientService.connection$;
   isConnected: boolean;
 
   private connectionValue: WebSocketConnection;
+  private destroy$ = new Subject<void>();
+
+  connection: Observable<WebSocketConnection> = this.mqttJsClientService.connection$.pipe(takeUntil(this.destroy$));
 
   constructor(private mqttJsClientService: MqttJsClientService,
               private clientSessionService: ClientSessionService) {
@@ -45,6 +48,11 @@ export class ConnectionsComponent {
       this.connectionValue = connection;
       this.updateConnectionStatus();
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   openSessions($event: Event) {
