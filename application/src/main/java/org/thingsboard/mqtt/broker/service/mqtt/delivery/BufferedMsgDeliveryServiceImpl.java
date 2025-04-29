@@ -127,11 +127,16 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
     private void doFlush(SessionFlushState state, long now) {
         try {
-            state.getCtx().getChannel().executor().execute(() -> {
-                state.getCtx().getChannel().flush();
-                state.resetBufferedCount();
-                state.setLastFlushTimeMs(now);
-            });
+            var executor = state.getCtx().getChannel().executor();
+            if (!executor.isShuttingDown() && !executor.isTerminated()) {
+                executor.execute(() -> {
+                    state.getCtx().getChannel().flush();
+                    state.resetBufferedCount();
+                    state.setLastFlushTimeMs(now);
+                });
+            } else {
+                log.debug("[{}] Skipping flush: executor already shutting down or terminated", state.getClientId());
+            }
         } catch (Exception e) {
             log.warn("[{}] Failed to flush client session buffer", state.getClientId(), e);
         }
@@ -148,7 +153,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
                             notification.getValue().getClientId(), notification.getCause(), notification.getValue().getBufferedCount());
                     if (RemovalCause.SIZE.equals(notification.getCause())) {
                         log.info("[{}] Client session was evicted due to cache size limit. " +
-                                "If you see this message often, consider increasing the maximum cache size {}", notification.getValue().getClientId(), settings.getSessionCacheMaxSize());
+                                "If you see this message often, consider increasing the maximum cache size: [{}]", notification.getValue().getClientId(), settings.getSessionCacheMaxSize());
                     }
                 } catch (Exception e) {
                     log.warn("[{}] Exception during cache eviction flush", notification.getValue().getClientId(), e);
@@ -159,6 +164,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
     void flushPendingBuffers(boolean forceFlush) {
         try {
+            log.trace("Executing flush pending buffers");
             final long now = System.currentTimeMillis();
             cache.asMap().forEach((sessionId, state) -> {
                 if (forceFlush) {
