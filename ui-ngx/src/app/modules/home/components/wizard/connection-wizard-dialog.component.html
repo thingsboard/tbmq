@@ -47,11 +47,11 @@
         </mat-form-field>
 
         <section class="flex flex-col gap-2">
-          <tb-toggle-header [style]="{width: '400px', alignSelf: 'center'}"
+          <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
             (valueChange)="onAddressProtocolChange($event)"
             [value]="addressProtocol"
             name="addressProtocol"
-            useSelectOnMdLg="true"
+            useSelectOnMdLg="false"
             appearance="fill">
             <tb-toggle-option [value]="wsAddressProtocolType.WS">
               {{ wsAddressProtocolType.WS }}

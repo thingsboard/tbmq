@@ -14,11 +14,11 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { WebSocketConnection, WebSocketSubscription } from '@shared/models/ws-client.model';
 import { MatDialog } from '@angular/material/dialog';
-import { map } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import {
   AddWsClientSubscriptionDialogData,
   SubscriptionDialogComponent
@@ -31,19 +31,20 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 
 import { SubscriptionComponent } from './subscription.component';
-import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'tb-ws-subscriptions',
     templateUrl: './subscriptions.component.html',
     styleUrls: ['./subscriptions.component.scss'],
-    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, SubscriptionComponent, MatProgressSpinner]
+    imports: [TranslateModule, MatIconButton, MatTooltip, MatIcon, SubscriptionComponent]
 })
-export class SubscriptionsComponent implements OnInit {
+export class SubscriptionsComponent implements OnInit, OnDestroy {
 
   subscriptions: WebSocketSubscription[];
   connection: WebSocketConnection;
-  loadSubscriptions = false;
+
+  private destroy$ = new Subject<void>();
 
   constructor(private dialog: MatDialog,
               private mqttJsClientService: MqttJsClientService,
@@ -51,10 +52,11 @@ export class SubscriptionsComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connection$.subscribe(
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       connection => {
         if (isDefinedAndNotNull(connection)) {
-          this.loadSubscriptions = true;
           if (isDefinedAndNotNull(this.connection)) {
             if (this.connection.id !== connection.id) {
               this.fetchSubcriptions(connection);
@@ -67,6 +69,11 @@ export class SubscriptionsComponent implements OnInit {
         }
       }
     );
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   fetchSubcriptions(connection: WebSocketConnection) {

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -34,7 +34,7 @@ import {
 } from '@shared/models/ws-client.model';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
-import { map } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -53,6 +53,7 @@ import { WsJsonObjectEditComponent } from './ws-json-object-edit.component';
 import { MatIcon } from '@angular/material/icon';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'tb-messanger',
@@ -60,7 +61,7 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
     styleUrls: ['./messanger.component.scss'],
     imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
 })
-export class MessangerComponent implements OnInit {
+export class MessangerComponent implements OnInit, OnDestroy {
 
   connection: WebSocketConnection;
   filterConfig: MessageFilterConfig;
@@ -78,6 +79,8 @@ export class MessangerComponent implements OnInit {
 
   publishMsgProps: PublishMessageProperties = null;
   isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
+
+  private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               private mqttJsClientService: MqttJsClientService,
@@ -106,7 +109,9 @@ export class MessangerComponent implements OnInit {
       })
     });
 
-    this.mqttJsClientService.connection$.subscribe(
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       connection => {
         if (connection) {
           this.connection = connection;
@@ -138,6 +143,11 @@ export class MessangerComponent implements OnInit {
         this.isPayloadValid = true;
       }
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   publishMessage(): void {
