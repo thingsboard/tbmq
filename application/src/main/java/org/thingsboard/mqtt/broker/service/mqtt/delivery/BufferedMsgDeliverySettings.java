@@ -24,5 +24,9 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "mqtt.buffered-delivery")
 public class BufferedMsgDeliverySettings {
 
+    private int sessionCacheMaxSize;
+    private long sessionCacheExpirationMs;
+    private long schedulerExecutionIntervalMs;
+    private long idleSessionFlushTimeoutMs;
 
 }

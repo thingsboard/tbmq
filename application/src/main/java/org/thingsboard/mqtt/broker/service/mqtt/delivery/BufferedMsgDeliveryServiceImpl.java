@@ -25,7 +25,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -41,12 +40,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @Data
 public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryService {
 
     private final @Lazy PublishMsgDeliveryService publishMsgDeliveryService;
+    private final @Lazy BufferedMsgDeliverySettings settings;
 
     @Value("${mqtt.write-and-flush:true}")
     private boolean writeAndFlush;
@@ -57,15 +56,6 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
     @Value("${mqtt.persistent-session.device.persisted-messages.buffered-msg-count:5}")
     private int persistentBufferedMsgCount;
 
-    @Value("${mqtt.buffered-delivery.flush-scheduler-interval-ms:100}")
-    private long flushSchedulerIntervalMs;
-    @Value("${mqtt.buffered-delivery.idle-flush-timeout-ms:1000}")
-    private long idleFlushTimeoutMs;
-    @Value("${mqtt.buffered-delivery.session-flush-cache-expiration-ms:1000}")
-    private long sessionFlushCacheExpirationMs;
-    @Value("${mqtt.buffered-delivery.session-flush-cache-max-size:10000}")
-    private int sessionFlushCacheMaxSize;
-
     private Cache<UUID, SessionFlushState> cache;
     private ScheduledExecutorService flushScheduler;
 
@@ -73,13 +63,17 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
     public void init() {
         if (!writeAndFlush || !persistentWriteAndFlush) {
             cache = CacheBuilder.newBuilder()
-                    .expireAfterAccess(sessionFlushCacheExpirationMs, TimeUnit.MILLISECONDS)
-                    .maximumSize(sessionFlushCacheMaxSize)
+                    .expireAfterAccess(settings.getSessionCacheExpirationMs(), TimeUnit.MILLISECONDS)
+                    .maximumSize(settings.getSessionCacheMaxSize())
                     .removalListener(getCacheRemovalListener())
                     .build();
 
             flushScheduler = ThingsBoardExecutors.newSingleScheduledThreadPool("buff-delivery-scheduler");
-            flushScheduler.scheduleAtFixedRate(() -> flushPendingBuffers(false), flushSchedulerIntervalMs, flushSchedulerIntervalMs, TimeUnit.MILLISECONDS);
+            flushScheduler.scheduleAtFixedRate(
+                    () -> flushPendingBuffers(false),
+                    settings.getSchedulerExecutionIntervalMs(),
+                    settings.getSchedulerExecutionIntervalMs(),
+                    TimeUnit.MILLISECONDS);
         }
     }
 
@@ -110,7 +104,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
         SessionFlushState state;
         try {
-            state = cache.get(sessionCtx.getSessionId(), () -> new SessionFlushState(System.currentTimeMillis(), new AtomicInteger(), sessionCtx));
+            state = cache.get(sessionCtx.getSessionId(), () -> newSessionState(sessionCtx));
         } catch (ExecutionException e) {
             log.warn("[{}] Unexpected exception while loading SessionFlushState", sessionCtx.getClientId(), e);
             publishMsgDeliveryService.doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
@@ -119,23 +113,27 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
         publishMsgDeliveryService.doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
         if (isFlushNeeded(state, bufferedMsgCount)) {
-            doFlush(sessionCtx.getClientId(), state, System.currentTimeMillis());
+            doFlush(state, System.currentTimeMillis());
         }
+    }
+
+    private SessionFlushState newSessionState(ClientSessionCtx sessionCtx) {
+        return new SessionFlushState(System.currentTimeMillis(), new AtomicInteger(), sessionCtx);
     }
 
     private boolean isFlushNeeded(SessionFlushState state, int bufferedMsgCount) {
         return state.incrementAndGetBufferedCount() % bufferedMsgCount == 0;
     }
 
-    private void doFlush(String clientId, SessionFlushState state, long now) {
+    private void doFlush(SessionFlushState state, long now) {
         try {
             state.getCtx().getChannel().executor().execute(() -> {
                 state.getCtx().getChannel().flush();
                 state.resetBufferedCount();
-                state.setLastFlushTime(now);
+                state.setLastFlushTimeMs(now);
             });
         } catch (Exception e) {
-            log.warn("[{}] Failed to flush client session buffer", clientId, e);
+            log.warn("[{}] Failed to flush client session buffer", state.getClientId(), e);
         }
     }
 
@@ -148,9 +146,9 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
 
                     log.debug("[{}] Flushed due to cache eviction ({}): {} buffered messages",
                             notification.getValue().getClientId(), notification.getCause(), notification.getValue().getBufferedCount());
-                    if (notification.getCause().equals(RemovalCause.SIZE)) {
+                    if (RemovalCause.SIZE.equals(notification.getCause())) {
                         log.info("[{}] Client session was evicted due to cache size limit. " +
-                                "If you see this message often, consider increasing the maximum cache size {}", notification.getValue().getClientId(), sessionFlushCacheMaxSize);
+                                "If you see this message often, consider increasing the maximum cache size {}", notification.getValue().getClientId(), settings.getSessionCacheMaxSize());
                     }
                 } catch (Exception e) {
                     log.warn("[{}] Exception during cache eviction flush", notification.getValue().getClientId(), e);
@@ -164,10 +162,10 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
             final long now = System.currentTimeMillis();
             cache.asMap().forEach((sessionId, state) -> {
                 if (forceFlush) {
-                    doFlush(state.getClientId(), state, now);
+                    doFlush(state, now);
                 } else {
-                    if ((now - state.getLastFlushTime()) >= idleFlushTimeoutMs && state.getBufferedCount() > 0) {
-                        doFlush(state.getClientId(), state, now);
+                    if ((now - state.getLastFlushTimeMs()) >= settings.getIdleSessionFlushTimeoutMs() && state.getBufferedCount() > 0) {
+                        doFlush(state, now);
                     }
                 }
             });
@@ -181,7 +179,7 @@ public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryServic
     @AllArgsConstructor
     static class SessionFlushState {
 
-        private long lastFlushTime;
+        private long lastFlushTimeMs;
         private AtomicInteger bufferedCounter;
         private ClientSessionCtx ctx;
 

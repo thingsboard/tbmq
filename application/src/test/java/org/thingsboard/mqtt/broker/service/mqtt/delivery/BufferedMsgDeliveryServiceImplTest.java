@@ -22,6 +22,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.util.concurrent.EventExecutor;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
@@ -31,6 +32,7 @@ import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.eq;
@@ -42,48 +44,89 @@ import static org.mockito.Mockito.when;
 public class BufferedMsgDeliveryServiceImplTest {
 
     private PublishMsgDeliveryService publishMsgDeliveryService;
-    private BufferedMsgDeliveryServiceImpl bufferedService;
+    private BufferedMsgDeliveryServiceImpl bufferedMsgDeliveryService;
 
     @BeforeEach
     void setup() {
         publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
+        BufferedMsgDeliverySettings bufferedMsgDeliverySettings = new BufferedMsgDeliverySettings();
+        bufferedMsgDeliverySettings.setSchedulerExecutionIntervalMs(100);
+        bufferedMsgDeliverySettings.setIdleSessionFlushTimeoutMs(1000);
+        bufferedMsgDeliverySettings.setSessionCacheExpirationMs(1000);
+        bufferedMsgDeliverySettings.setSessionCacheMaxSize(100);
 
-        bufferedService = new BufferedMsgDeliveryServiceImpl(publishMsgDeliveryService);
-        // Set fields manually since @Value won't inject in tests
-        bufferedService.setFlushSchedulerIntervalMs(100);
-        bufferedService.setIdleFlushTimeoutMs(1000);
-        bufferedService.setSessionFlushCacheExpirationMs(1000);
-        bufferedService.setSessionFlushCacheMaxSize(100);
-        bufferedService.setWriteAndFlush(false);
-        bufferedService.setBufferedMsgCount(2);
-        bufferedService.setPersistentWriteAndFlush(false);
-        bufferedService.setPersistentBufferedMsgCount(2);
+        bufferedMsgDeliveryService = new BufferedMsgDeliveryServiceImpl(publishMsgDeliveryService, bufferedMsgDeliverySettings);
 
-        bufferedService.init();
+        bufferedMsgDeliveryService.setWriteAndFlush(false);
+        bufferedMsgDeliveryService.setBufferedMsgCount(2);
+        bufferedMsgDeliveryService.setPersistentWriteAndFlush(false);
+        bufferedMsgDeliveryService.setPersistentBufferedMsgCount(3);
+
+        bufferedMsgDeliveryService.init();
+    }
+
+    @AfterEach
+    void tearDown() {
+        bufferedMsgDeliveryService.shutdown();
     }
 
     @Test
-    void testSendPublishMsgToClient_WithBufferedFlush() throws Exception {
+    void testSendPublishMsgToClient_WithBufferedFlush() {
         UUID sessionId = UUID.randomUUID();
         ClientSessionCtx ctx = mockSessionCtx(sessionId, "client1");
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
-        bufferedService.sendPublishMsgToRegularClient(ctx, mqttMsg);
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
         verify(publishMsgDeliveryService).doSendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
 
-        // Trigger flush after bufferedMsgCount
-        bufferedService.sendPublishMsgToRegularClient(ctx, mqttMsg);
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
         verify(publishMsgDeliveryService, times(2)).doSendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+
+        verify(ctx.getChannel()).flush();
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
     }
 
     @Test
     void testSendPublishMsgToClient_WithWriteAndFlush() {
-        bufferedService.setWriteAndFlush(true);
-        ClientSessionCtx ctx = mockSessionCtx(UUID.randomUUID(), "client2");
+        bufferedMsgDeliveryService.setWriteAndFlush(true);
+        UUID sessionId = UUID.randomUUID();
+        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client2");
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
-        bufferedService.sendPublishMsgToRegularClient(ctx, mqttMsg);
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
         verify(publishMsgDeliveryService).doSendPublishMsgToClient(eq(ctx), eq(mqttMsg));
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId)).isNull();
+    }
+
+    @Test
+    void testSendPublishMsgToPersistentClient_WithBufferedFlush() {
+        UUID sessionId = UUID.randomUUID();
+        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client11");
+        MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
+
+        bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
+        verify(publishMsgDeliveryService).doSendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+
+        bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
+        verify(publishMsgDeliveryService, times(2)).doSendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+
+        bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
+        verify(publishMsgDeliveryService, times(3)).doSendPublishMsgToClientWithoutFlush(eq(ctx), eq(mqttMsg));
+
+        verify(ctx.getChannel()).flush();
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
+    }
+
+    @Test
+    void testSendPublishMsgToPersistentClient_WithWriteAndFlush() {
+        bufferedMsgDeliveryService.setPersistentWriteAndFlush(true);
+        UUID sessionId = UUID.randomUUID();
+        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client22");
+        MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
+
+        bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(ctx, mqttMsg);
+        verify(publishMsgDeliveryService).doSendPublishMsgToClient(eq(ctx), eq(mqttMsg));
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId)).isNull();
     }
 
     @Test
@@ -92,29 +135,41 @@ public class BufferedMsgDeliveryServiceImplTest {
         ClientSessionCtx ctx = mockSessionCtx(sessionId, "client3");
         MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
 
-        bufferedService.sendPublishMsgToRegularClient(ctx, mqttMsg);
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
 
-        bufferedService.flushPendingBuffers(true);
+        bufferedMsgDeliveryService.flushPendingBuffers(true);
+        verify(ctx.getChannel()).flush();
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
+    }
+
+    @Test
+    void testShutdown_ForceFlush() {
+        UUID sessionId = UUID.randomUUID();
+        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client4");
+        MqttPublishMessage mqttMsg = mock(MqttPublishMessage.class);
+
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(ctx, mqttMsg);
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isEqualTo(1);
+        bufferedMsgDeliveryService.shutdown();
+
+        verify(ctx.getChannel()).flush();
+        assertThat(bufferedMsgDeliveryService.getCache().getIfPresent(sessionId).getBufferedCount()).isZero();
     }
 
     @Test
     void testRemovalListenerFlush() {
         UUID sessionId = UUID.randomUUID();
-        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client4");
+        ClientSessionCtx ctx = mockSessionCtx(sessionId, "client5");
 
         ChannelHandlerContext channelCtx = ctx.getChannel();
-        Channel channel = channelCtx.channel();
         EventExecutor executor = channelCtx.executor();
 
-        // Ensure buffered count > 0 for eviction to trigger flush
         BufferedMsgDeliveryServiceImpl.SessionFlushState state =
                 new BufferedMsgDeliveryServiceImpl.SessionFlushState(System.currentTimeMillis(), new AtomicInteger(1), ctx);
 
-        // Get the removal listener and trigger onRemoval manually
         RemovalListener<UUID, BufferedMsgDeliveryServiceImpl.SessionFlushState> listener =
-                bufferedService.getCacheRemovalListener();
+                bufferedMsgDeliveryService.getCacheRemovalListener();
 
-        // Create a proper RemovalNotification
         RemovalNotification<UUID, SessionFlushState> notification =
                 RemovalNotification.create(sessionId, state, RemovalCause.SIZE);
 
@@ -135,16 +190,14 @@ public class BufferedMsgDeliveryServiceImplTest {
         when(ctx.getChannel()).thenReturn(channelCtx);
         when(channelCtx.executor()).thenReturn(executor);
         when(channelCtx.channel()).thenReturn(channel);
-        when(channel.isActive()).thenReturn(true);
 
         doAnswer(invocation -> {
             Runnable task = invocation.getArgument(0);
-            task.run(); // run immediately for test
+            task.run();
             return null;
         }).when(executor).execute(any(Runnable.class));
 
         return ctx;
     }
-
 
 }

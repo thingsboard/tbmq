@@ -887,10 +887,26 @@ mqtt:
   # Number of messages buffered in the channel before the flush is made. Used when `MQTT_MSG_WRITE_AND_FLUSH` = false
   buffered-msg-count: "${MQTT_BUFFERED_MSG_COUNT:5}"
   buffered-delivery:
-    flush-scheduler-interval-ms: ""
-    idle-flush-timeout-ms: ""
-    session-flush-cache-expiration-ms: ""
-    session-flush-cache-max-size: ""
+    # When either `MQTT_MSG_WRITE_AND_FLUSH` or `MQTT_PERSISTENT_MSG_WRITE_AND_FLUSH` is set to false,
+    # the broker buffers outgoing messages in the outbound channel to improve throughput.
+    # The respective buffer sizes are controlled by `MQTT_BUFFERED_MSG_COUNT` (for non-persistent clients)
+    # and `MQTT_PERSISTENT_BUFFERED_MSG_COUNT` (for persistent clients).
+    # Defines the maximum number of session entries that can be stored in the flush state cache.
+    # When the cache exceeds this size, the least recently used sessions are evicted
+    # and their pending message buffers are flushed automatically
+    session-cache-max-size: "${MQTT_BUFFERED_CACHE_MAX_SIZE:10000}"
+    # Time in milliseconds after which an inactive session entry in the flush cache expires.
+    # A session is considered inactive if it receives no new messages during this period.
+    # Upon expiration, the session is evicted from the cache and its buffer is flushed.
+    # Default is 5 minutes
+    session-cache-expiration-ms: "${MQTT_BUFFERED_CACHE_EXPIRY_MS:300000}"
+    # Interval in milliseconds at which the scheduler checks all sessions in the cache
+    # for potential flushing. A smaller value results in more frequent flush checks
+    scheduler-execution-interval-ms: "${MQTT_BUFFERED_SCHEDULER_INTERVAL_MS:100}"
+    # Maximum duration in milliseconds that a session can remain idle (i.e., without being flushed)
+    # before its message buffer is automatically flushed to the client.
+    # In essence, a flush occurs either when the buffer limit is reached or when this timeout elapses
+    idle-session-flush-timeout-ms: "${MQTT_BUFFERED_IDLE_FLUSH_MS:200}"
   persistent-session:
     device:
       persisted-messages:
