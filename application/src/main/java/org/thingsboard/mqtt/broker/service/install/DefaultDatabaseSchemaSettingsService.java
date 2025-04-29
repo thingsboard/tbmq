@@ -34,7 +34,7 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
     private static final String CURRENT_PRODUCT = "CE";
     // This list should include all versions that are compatible for the upgrade.
     // The compatibility cycle usually breaks when we have some scripts written in Java that may not work after new release.
-    private static final List<String> SUPPORTED_VERSIONS_FOR_UPGRADE = List.of("2.0.0", "2.0.1");
+    private static final List<String> SUPPORTED_VERSIONS_FOR_UPGRADE = List.of("2.1.0");
 
     private final BuildProperties buildProperties;
     private final JdbcTemplate jdbcTemplate;
@@ -44,11 +44,6 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
 
     @Override
     public void validateSchemaSettings() {
-        // TODO: remove after release 2.1
-        createProductIfNotExists();
-
-        String dbSchemaVersion = getDbSchemaVersion();
-
         if (EnvUtil.getBoolEnv("SKIP_SCHEMA_VERSION_CHECK", false)) {
             log.info("Skipped DB schema version check due to SKIP_SCHEMA_VERSION_CHECK set to 'true'.");
             return;
@@ -59,6 +54,7 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
             onSchemaSettingsError(String.format("Upgrade failed: can't upgrade TBMQ %s database using TBMQ %s.", product, CURRENT_PRODUCT));
         }
 
+        String dbSchemaVersion = getDbSchemaVersion();
         if (dbSchemaVersion.equals(getPackageSchemaVersion())) {
             onSchemaSettingsError("Upgrade failed: database already upgraded to current version. You can set SKIP_SCHEMA_VERSION_CHECK to 'true' if force re-upgrade needed.");
         }
@@ -67,11 +63,6 @@ public class DefaultDatabaseSchemaSettingsService implements DatabaseSchemaSetti
             onSchemaSettingsError(String.format("Upgrade failed: database version '%s' is not supported for upgrade. Supported versions are: %s.",
                     dbSchemaVersion, SUPPORTED_VERSIONS_FOR_UPGRADE));
         }
-    }
-
-    @Deprecated(forRemoval = true, since = "2.1")
-    private void createProductIfNotExists() {
-        jdbcTemplate.execute("ALTER TABLE tb_schema_settings ADD COLUMN IF NOT EXISTS product varchar(2) DEFAULT 'CE'");
     }
 
     @Override
