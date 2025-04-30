@@ -35,11 +35,13 @@
           autorenew
         </mat-icon>
       </button>
-      @if (credentialsMqttFormGroup.get('clientId').hasError('pattern')) {
-        <mat-error>
-          {{ 'mqtt-client-credentials.client-id-pattern' | translate }}
-        </mat-error>
-      }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'mqtt-client-credentials.client-id-or-user-name-required' | translate }}"
+                [class.!hidden]="!(credentialsMqttFormGroup.hasError('atLeastOne') && credentialsMqttFormGroup.get('clientId').touched)"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <div class="flex flex-col">
       <div class="flex flex-row xs:flex-col gt-xs:gap-2">
@@ -59,11 +61,13 @@
               autorenew
             </mat-icon>
           </button>
-          @if (credentialsMqttFormGroup.get('userName').hasError('required')) {
-            <mat-error>
-              {{ 'mqtt-client-credentials.user-name-required' | translate }}
-            </mat-error>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'mqtt-client-credentials.client-id-or-user-name-required' | translate }}"
+                    [class.!hidden]="!(credentialsMqttFormGroup.hasError('atLeastOne') && credentialsMqttFormGroup.get('userName').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         @if (!entity()?.id) {
           <mat-form-field class="flex flex-1">
@@ -75,12 +79,6 @@
           </mat-form-field>
         }
       </div>
-      @if (credentialsMqttFormGroup.hasError('atLeastOne')) {
-        <tb-error
-                [error]="credentialsMqttFormGroup.hasError('atLeastOne') ?
-                ('mqtt-client-credentials.client-id-or-user-name-required' | translate) : ''">
-        </tb-error>
-      }
     </div>
   </fieldset>
   <mat-expansion-panel [expanded]="true">

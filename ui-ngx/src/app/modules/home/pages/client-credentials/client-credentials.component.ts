@@ -22,8 +22,7 @@ import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormField, MatLabel, MatError } from '@angular/material/form-field';
-import { appearance } from '@shared/models/constants';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { isDefinedAndNotNull } from '@core/utils';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
@@ -33,21 +32,16 @@ import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
-import { MqttCredentialsBasicComponent } from '../../components/client-credentials-templates/basic/basic.component';
-import { MqttCredentialsSslComponent } from '../../components/client-credentials-templates/ssl/ssl.component';
-import { MqttCredentialsScramComponent } from '../../components/client-credentials-templates/scram/scram.component';
+import { MqttCredentialsBasicComponent } from '@home/components/client-credentials-templates/basic/basic.component';
+import { MqttCredentialsSslComponent } from '@home/components/client-credentials-templates/ssl/ssl.component';
+import { MqttCredentialsScramComponent } from '@home/components/client-credentials-templates/scram/scram.component';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-client-credentials',
     templateUrl: './client-credentials.component.html',
     styleUrls: ['./client-credentials.component.scss'],
-    providers: [
-        {
-            provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-            useValue: appearance
-        }
-    ],
-    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, AsyncPipe, MatTooltip]
 })
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
 

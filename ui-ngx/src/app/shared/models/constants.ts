@@ -14,8 +14,6 @@
 /// limitations under the License.
 ///
 
-import { MatFormFieldDefaultOptions } from '@angular/material/form-field';
-
 export const Constants = {
   serverErrorCode: {
     general: 2,
@@ -77,10 +75,6 @@ export const HelpLinks = {
 export const customTranslationsPrefix = 'custom.';
 
 export const NULL_UUID = '13814000-1dd2-11b2-8080-808080808080';
-
-export const appearance: MatFormFieldDefaultOptions = {
-  appearance: 'fill'
-};
 
 export interface ContentTypeData {
   name: string;

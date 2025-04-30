@@ -36,8 +36,8 @@
         color: rgba(0, 0, 0, 0.87);
       }
       mat-checkbox {
-        background: #f2f8f5;
-        padding: 12px 6px;
+        border: 1px solid rgba(0,0,0,0.04);
+        padding: 9px 6px;
         height: 56px;
       }
       .mat-mdc-text-field-wrapper .mat-mdc-form-field-flex .mat-mdc-floating-label {
@@ -47,11 +47,6 @@
 
       .mdc-text-field--disabled .mdc-text-field__input {
         color: rgba(0, 0, 0, 0.54);
-      }
-
-      .mat-mdc-form-field.mat-form-field-appearance-fill .mdc-text-field--filled,
-        .mat-mdc-form-field.mat-form-field-appearance-fill .mat-mdc-form-field-focus-overlay {
-        background-color: #f2f8f5;
       }
 
       .mat-mdc-tab-body-wrapper {

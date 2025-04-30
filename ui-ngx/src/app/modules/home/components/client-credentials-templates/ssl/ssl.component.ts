@@ -22,11 +22,13 @@ import { isDefinedAndNotNull, isEmptyStr } from '@core/utils';
 import { ClientCredentials, SslMqttCredentials } from '@shared/models/credentials.model';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { AuthRulesComponent } from './auth-rules.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-mqtt-credentials-ssl',
@@ -43,7 +45,7 @@ import { AuthRulesComponent } from './auth-rules.component';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, MatSlideToggle, AuthRulesComponent]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatSlideToggle, AuthRulesComponent, MatIcon, MatTooltip]
 })
 export class MqttCredentialsSslComponent implements AfterViewInit, ControlValueAccessor, Validator, OnDestroy {
 

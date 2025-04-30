@@ -55,7 +55,7 @@ export class QosSelectComponent implements ControlValueAccessor, OnDestroy  {
   readonly asString = input(false, {transform: booleanAttribute});
   readonly displayLabel = input(true, {transform: booleanAttribute});
   readonly label = input<string>(this.translate.instant('mqtt-client-session.qos'));
-  readonly appearance = input<MatFormFieldAppearance>('fill');
+  readonly appearance = input<MatFormFieldAppearance>('outline');
   readonly subscriptSizing = input<SubscriptSizing>('fixed');
   readonly hideRequiredMarker = input(true);
 

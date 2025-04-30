@@ -26,15 +26,16 @@ import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { CopyContentButtonComponent } from '@shared/components/button/copy-content-button.component';
-import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-shared-subscriptions',
     templateUrl: './shared-subscription.component.html',
     styleUrls: ['./shared-subscription.component.scss'],
-    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, CopyButtonComponent, MatSuffix, AsyncPipe]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, AsyncPipe, MatTooltip]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
 

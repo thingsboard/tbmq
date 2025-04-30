@@ -26,11 +26,13 @@
         [class.!hidden]="!credentialsMqttFormGroup?.get('certCnPattern').value?.length"
         [copyText]="credentialsMqttFormGroup?.get('certCnPattern').value">
       </tb-copy-button>
-      @if (credentialsMqttFormGroup.get('certCnPattern').hasError('required')) {
-        <mat-error>
-          {{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}
-        </mat-error>
-      }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'mqtt-client-credentials.certificate-common-name-required' | translate }}"
+                [class.!hidden]="!(credentialsMqttFormGroup.get('certCnPattern').hasError('required') && credentialsMqttFormGroup.get('certCnPattern').touched)"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <div class="tb-hint" [innerHTML]="certificateCnHint | translate"></div>
     <mat-slide-toggle formControlName="certCnIsRegex" style="padding: 8px 0 16px 8px">
