@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+import org.thingsboard.mqtt.broker.service.mqtt.delivery.BufferedMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -53,28 +54,23 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
     private final RetransmissionService retransmissionService;
     private final DeliveryTimerStats deliveryTimerStats;
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
+    private final BufferedMsgDeliveryService bufferedMsgDeliveryService;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
     @Value("${mqtt.topic.min-length-for-alias-replacement:50}")
     private int minTopicNameLengthForAliasReplacement;
-    @Value("${mqtt.write-and-flush:true}")
-    private boolean writeAndFlush;
-    @Value("${mqtt.buffered-msg-count:5}")
-    private int bufferedMsgCount;
-    @Value("${mqtt.persistent-session.device.persisted-messages.write-and-flush:true}")
-    private boolean persistentWriteAndFlush;
-    @Value("${mqtt.persistent-session.device.persisted-messages.buffered-msg-count:5}")
-    private int persistentBufferedMsgCount;
 
     public DefaultPublishMsgDeliveryService(MqttMessageGenerator mqttMessageGenerator,
                                             RetransmissionService retransmissionService,
                                             StatsManager statsManager,
-                                            TbMessageStatsReportClient tbMessageStatsReportClient) {
+                                            TbMessageStatsReportClient tbMessageStatsReportClient,
+                                            BufferedMsgDeliveryService bufferedMsgDeliveryService) {
         this.mqttMessageGenerator = mqttMessageGenerator;
         this.retransmissionService = retransmissionService;
         this.deliveryTimerStats = statsManager.getDeliveryTimerStats();
         this.tbMessageStatsReportClient = tbMessageStatsReportClient;
+        this.bufferedMsgDeliveryService = bufferedMsgDeliveryService;
     }
 
     @Override
@@ -86,7 +82,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg, isDup);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQos());
-        sendPublishMsgToClient(sessionCtx, mqttPubMsg, persistentWriteAndFlush, persistentBufferedMsgCount);
+        bufferedMsgDeliveryService.sendPublishMsgToDeviceClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -124,7 +120,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
 
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), qos);
-        sendPublishMsgToClient(sessionCtx, mqttPubMsg, writeAndFlush, bufferedMsgCount);
+        bufferedMsgDeliveryService.sendPublishMsgToRegularClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -136,7 +132,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubMsg(pubMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), pubMsg.getQos());
-        sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
+        doSendPublishMsgToClientWithoutFlush(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -148,7 +144,7 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         MqttPublishMessage mqttPubMsg = mqttMessageGenerator.createPubRetainMsg(packetId, retainedMsg);
         tbMessageStatsReportClient.reportStats(OUTGOING_MSGS);
         tbMessageStatsReportClient.reportClientReceiveStats(sessionCtx.getClientId(), retainedMsg.getQos());
-        sendPublishMsgToClient(sessionCtx, mqttPubMsg);
+        doSendPublishMsgToClient(sessionCtx, mqttPubMsg);
     }
 
     @Override
@@ -167,11 +163,13 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         processSendPubRel(sessionCtx, packetId, msg -> retransmissionService.onPubRecReceivedWithoutFlush(sessionCtx, msg));
     }
 
-    private void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+    @Override
+    public void doSendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
         processSendPublish(sessionCtx, mqttPubMsg, msg -> retransmissionService.sendPublish(sessionCtx, msg));
     }
 
-    private void sendPublishMsgWithoutFlushToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
+    @Override
+    public void doSendPublishMsgToClientWithoutFlush(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg) {
         processSendPublish(sessionCtx, mqttPubMsg, msg -> retransmissionService.sendPublishWithoutFlush(sessionCtx, msg));
     }
 
@@ -214,18 +212,4 @@ public class DefaultPublishMsgDeliveryService implements PublishMsgDeliveryServi
         }
     }
 
-    private void sendPublishMsgToClient(ClientSessionCtx sessionCtx, MqttPublishMessage mqttPubMsg, boolean writeAndFlush, int bufferedMsgCount) {
-        if (writeAndFlush) {
-            sendPublishMsgToClient(sessionCtx, mqttPubMsg);
-            return;
-        }
-        sendPublishMsgWithoutFlushToClient(sessionCtx, mqttPubMsg);
-        if (isFlushNeeded(mqttPubMsg.variableHeader().packetId(), bufferedMsgCount)) {
-            sessionCtx.getChannel().flush();
-        }
-    }
-
-    private boolean isFlushNeeded(int packetId, int bufferedMsgCount) {
-        return packetId % bufferedMsgCount == 0;
-    }
 }
