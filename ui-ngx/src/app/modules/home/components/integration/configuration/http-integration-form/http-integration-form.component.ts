@@ -37,8 +37,8 @@ import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field'
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatOption, MatSelect } from '@angular/material/select';
 import {
-  HttpTopicFiltersComponent
-} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+  IntegrationTopicFiltersComponent
+} from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import {
   IntegrationCredentialsComponent
 } from '@home/components/integration/integration-credentials/integration-credentials.component';
@@ -67,7 +67,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     CopyButtonComponent,
     MatSelect,
     MatOption,
-    HttpTopicFiltersComponent,
+    IntegrationTopicFiltersComponent,
     IntegrationCredentialsComponent,
     TranslateModule,
     HeaderFilterMapComponent,

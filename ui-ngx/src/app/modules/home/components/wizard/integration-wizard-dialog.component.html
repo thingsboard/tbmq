@@ -78,8 +78,8 @@
     <mat-step [stepControl]="integrationTopicFilterForm">
       <ng-template matStepLabel>{{ "integration.topic-filters" | translate }}</ng-template>
       <form [formGroup]="integrationTopicFilterForm">
-        <tb-http-topic-filters formControlName="topicFilters">
-        </tb-http-topic-filters>
+        <tb-integration-topic-filters formControlName="topicFilters">
+        </tb-integration-topic-filters>
       </form>
     </mat-step>
     <mat-step [stepControl]="integrationConfigurationForm">

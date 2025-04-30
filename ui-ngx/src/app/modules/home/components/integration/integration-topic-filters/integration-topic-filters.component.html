@@ -16,14 +16,20 @@
 
 -->
 <div class="container">
-  @for (topicFilter of httpFiltersFromArray.controls; track topicFilter; let i = $index) {
+  @for (topicFilter of integrationFiltersFromArray.controls; track topicFilter; let i = $index) {
     <div class="flex flex-1 flex-row items-center justify-start"
       [formGroup]="topicFilter">
       <mat-form-field hideRequiredMarker class="mat-block flex-1" appearance="outline">
         @if (i === 0) {
           <mat-label>{{ i !== 0 ? "" : "integration.topic" | translate }}</mat-label>
         }
-        <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef>
+        <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef
+               [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredTopics; track option) {
+            <mat-option [value]="option">{{option}}</mat-option>
+          }
+        </mat-autocomplete>
         <tb-copy-button matSuffix
                         [class.!hidden]="!topicFilterValue(topicFilter)?.length"
                         [copyText]="topicFilterValue(topicFilter)">
@@ -34,9 +40,9 @@
           </mat-icon>
         }
       </mat-form-field>
-      <button mat-icon-button color="primary" [disabled]="httpFiltersFromArray.length === 1 || (!isEdit() && integration())"
+      <button mat-icon-button color="primary" [disabled]="integrationFiltersFromArray.length === 1 || (!isEdit() && integration())"
         type="button" style="top: 4px; align-self: baseline"
-        (click)="httpFiltersFromArray.removeAt(i)"
+        (click)="integrationFiltersFromArray.removeAt(i)"
         [matTooltip]="'integration.remove-topic-filter' | translate" matTooltipPosition="above">
         <mat-icon class="material-icons">close</mat-icon>
       </button>
@@ -46,7 +52,7 @@
     <mat-error style="font-size: 12px">{{ 'integration.topic-filters-has-duplicates' | translate }}</mat-error>
   }
 </div>
-@if (!httpFiltersFromArray.disabled) {
+@if (!integrationFiltersFromArray.disabled) {
   <section style="margin-top: 8px">
     <div class="tb-hint mb-2" innerHTML="{{ 'integration.topic-filters-hint' | translate }}"></div>
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.support-level-wildcards' | translate }}"></div>
@@ -54,10 +60,10 @@
     <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.multi-level-wildcards-hint' | translate }}"></div>
   </section>
 }
-@if (!httpFiltersFromArray.length) {
+@if (!integrationFiltersFromArray.length) {
   <span class="no-data-found flex items-center justify-center" translate>integration.add-topic-filter-prompt</span>
 }
-@if (!httpFiltersFromArray.disabled) {
+@if (!integrationFiltersFromArray.disabled) {
   <button mat-stroked-button color="primary"
     type="button"
     class="add-button"

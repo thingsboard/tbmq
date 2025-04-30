@@ -54,8 +54,8 @@ import { MatProgressSpinner } from '@angular/material/progress-spinner';
 import { MatDivider } from '@angular/material/divider';
 import { ToastDirective } from '@shared/components/toast.directive';
 import {
-  HttpTopicFiltersComponent
-} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+  IntegrationTopicFiltersComponent
+} from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 import { MatTooltip } from '@angular/material/tooltip';
 
@@ -90,7 +90,7 @@ import { MatTooltip } from '@angular/material/tooltip';
     MatSuffix,
     MatLabel,
     ToastDirective,
-    HttpTopicFiltersComponent,
+    IntegrationTopicFiltersComponent,
     KeyValMapComponent,
     MatTooltip
   ]
