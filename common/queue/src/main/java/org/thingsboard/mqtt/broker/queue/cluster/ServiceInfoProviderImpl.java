@@ -65,6 +65,7 @@ public class ServiceInfoProviderImpl implements ServiceInfoProvider {
         serviceType = ServiceType.of(serviceTypeStr);
         this.serviceInfo = ServiceInfo.newBuilder()
                 .setServiceId(serviceId)
+                .setServiceType(serviceType.name())
                 .build();
     }
 

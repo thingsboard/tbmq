@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.integration.service.api;
 
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationCallback;
 
 import java.util.UUID;
@@ -24,4 +25,5 @@ public interface IntegrationApiService {
 
     void sendEventData(UUID entityId, IntegrationEventProto data, IntegrationCallback<Void> callback);
 
+    void sendServiceInfo(ServiceInfo data);
 }

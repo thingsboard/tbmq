@@ -16,7 +16,7 @@
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
 import io.netty.handler.codec.mqtt.MqttMessage;
-import io.netty.handler.codec.mqtt.MqttReasonCodes;
+import io.netty.handler.codec.mqtt.MqttReasonCodes.UnsubAck;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,30 +46,35 @@ public class MqttUnsubscribeHandler {
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
-        UUID sessionId = ctx.getSessionId();
-        String clientId = ctx.getClientId();
         if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", clientId, sessionId, msg.getMessageId(), msg.getTopics());
+            log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
         }
 
-        List<MqttReasonCodes.UnsubAck> codes = msg.getTopics().stream().map(s -> MqttReasonCodeResolver.unsubAckSuccess(ctx)).collect(Collectors.toList());
-        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), codes);
-        clientSubscriptionService.unsubscribeAndPersist(clientId, msg.getTopics(),
+        MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
+        clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
                 CallbackUtil.createCallback(
                         () -> ctx.getChannel().writeAndFlush(unSubAckMessage),
-                        t -> log.warn("[{}][{}] Failed to process client unsubscription", clientId, sessionId, t)
+                        t -> log.warn("[{}][{}] Failed to process client unsubscription", ctx.getClientId(), ctx.getSessionId(), t)
                 ));
 
         stopProcessingApplicationSharedSubscriptions(ctx, msg.getTopics());
     }
 
+    private List<UnsubAck> getCodes(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
+        return msg
+                .getTopics()
+                .stream()
+                .map(s -> MqttReasonCodeResolver.unsubAckSuccess(ctx))
+                .collect(Collectors.toList());
+    }
+
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
-        if (ClientType.APPLICATION == ctx.getSessionInfo().getClientInfo().getType()) {
-            Set<TopicSharedSubscription> subscriptionTopicFilters = collectUniqueSharedSubscriptions(topics);
-            if (CollectionUtils.isEmpty(subscriptionTopicFilters)) {
+        if (ClientType.APPLICATION == ctx.getClientType()) {
+            Set<TopicSharedSubscription> subscriptions = collectUniqueSharedSubscriptions(topics);
+            if (CollectionUtils.isEmpty(subscriptions)) {
                 return;
             }
-            applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, subscriptionTopicFilters);
+            applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, subscriptions);
         }
     }
 

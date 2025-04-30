@@ -174,7 +174,23 @@ export class MenuService {
         name: 'monitoring.monitoring',
         type: 'link',
         path: '/monitoring',
-        icon: 'mdi:monitor-dashboard'
+        icon: 'mdi:monitor-dashboard',
+        pages: [
+          {
+            id: MenuId.monitoring_broker_stats,
+            name: 'monitoring.stats',
+            type: 'link',
+            path: '/monitoring/stats',
+            icon: 'insert_chart'
+          },
+          {
+            id: MenuId.monitoring_resource_usage,
+            name: 'monitoring.resource-usage.resource-usage',
+            type: 'link',
+            path: '/monitoring/resource-usage',
+            icon: 'memory'
+          },
+        ]
       },
       {
         id: MenuId.users,

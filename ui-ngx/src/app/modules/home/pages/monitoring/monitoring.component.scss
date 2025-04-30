@@ -13,44 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@import 'constants';
-
 :host {
   overflow: auto;
 
   mat-toolbar {
     overflow: hidden;
     position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 1;
+    z-index: 2;
     height: 42px;
+    background: #eee;
 
     + div {
-      margin-top: 42px;
-    }
-  }
-
-  .chart-container {
-    background-color: #fff;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .mat-button:disabled {
-    color: rgba(0,0,0,0.87);
-  }
-
-  mat-card.settings-card {
-    margin: 8px;
-
-    @media #{$mat-md} {
-      width: 80%;
-    }
-
-    @media #{$mat-gt-md} {
-      width: 80vw;
+      margin-top: 28px;
     }
   }
 }

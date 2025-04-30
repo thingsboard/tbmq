@@ -25,16 +25,20 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionCtxService;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessingStrategyFactory;
+import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = DeviceSharedSubscriptionProcessorImpl.class)
@@ -44,6 +48,8 @@ public class DeviceSharedSubscriptionProcessorImplTest {
     ServiceInfoProvider serviceInfoProvider;
     @MockBean
     SharedSubscriptionProcessingStrategyFactory strategyFactory;
+    @MockBean
+    ClientSessionCtxService clientSessionCtxService;
 
     @SpyBean
     DeviceSharedSubscriptionProcessorImpl processor;
@@ -56,7 +62,7 @@ public class DeviceSharedSubscriptionProcessorImplTest {
     }
 
     @Test
-    public void testConvertToSharedSubscriptionList() {
+    public void givenSubscriptions_whenConvertToSharedSubscriptions_thenGotListOfGroups() {
         Set<Subscription> subscriptions = Set.of(
                 newSubscription(0, "group1"),
                 newSubscription(1, "group1"),
@@ -71,7 +77,7 @@ public class DeviceSharedSubscriptionProcessorImplTest {
     }
 
     @Test
-    public void testFindAnyConnectedSubscription() {
+    public void givenDisconnectedSubscriptions_whenFindAnyConnectedSubscription_thenNothingFound() {
         List<Subscription> subscriptions = List.of(
                 new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
                 new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
@@ -81,15 +87,41 @@ public class DeviceSharedSubscriptionProcessorImplTest {
         );
         Subscription subscription = processor.findAnyConnectedSubscription(subscriptions);
         assertNull(subscription);
+    }
 
-        subscriptions = List.of(
+    @Test
+    public void givenDisconnectedAndNonWritableSubscriptions_whenFindAnyConnectedSubscription_thenNothingFound() {
+        List<Subscription> subscriptions = List.of(
                 new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
                 new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
-                new Subscription("topic3", 2, ClientSessionInfo.builder().connected(true).build()),
+                new Subscription("topic3", 2, ClientSessionInfo.builder().clientId("testClient").connected(true).build()),
                 new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
                 new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
         );
-        subscription = processor.findAnyConnectedSubscription(subscriptions);
+
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.isWritable()).thenReturn(false);
+        when(clientSessionCtxService.getClientSessionCtx(eq("testClient"))).thenReturn(ctx);
+
+        Subscription subscription = processor.findAnyConnectedSubscription(subscriptions);
+        assertNull(subscription);
+    }
+
+    @Test
+    public void givenWritableSubscription_whenFindAnyConnectedSubscription_thenReturnSubscription() {
+        List<Subscription> subscriptions = List.of(
+                new Subscription("topic1", 1, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic2", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic3", 2, ClientSessionInfo.builder().clientId("testClient").connected(true).build()),
+                new Subscription("topic4", 0, ClientSessionInfo.builder().connected(false).build()),
+                new Subscription("topic5", 1, ClientSessionInfo.builder().connected(false).build())
+        );
+
+        ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        when(ctx.isWritable()).thenReturn(true);
+        when(clientSessionCtxService.getClientSessionCtx(eq("testClient"))).thenReturn(ctx);
+
+        Subscription subscription = processor.findAnyConnectedSubscription(subscriptions);
         assertEquals("topic3", subscription.getTopicFilter());
     }
 

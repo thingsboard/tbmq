@@ -20,11 +20,10 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.Map;
 
+@Getter
 public class ApplicationPackProcessingResult {
 
-    @Getter
     private final Map<Integer, PersistedPublishMsg> publishPendingMap;
-    @Getter
     private final Map<Integer, PersistedPubRelMsg> pubRelPendingMap;
 
     public ApplicationPackProcessingResult(ApplicationPackProcessingCtx ctx) {

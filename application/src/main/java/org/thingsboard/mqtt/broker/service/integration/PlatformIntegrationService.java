@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.integration;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.gen.integration.IntegrationEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
 
 public interface PlatformIntegrationService {
 
@@ -28,6 +29,8 @@ public interface PlatformIntegrationService {
     void processIntegrationRestart(Integration integration) throws ThingsboardException;
 
     void processUplinkData(IntegrationEventProto data, IntegrationApiCallback integrationApiCallback);
+
+    void processServiceInfo(ServiceInfo serviceInfo);
 
     void updateSubscriptions(Integration integration);
 

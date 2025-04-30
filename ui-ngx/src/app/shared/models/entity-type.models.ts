@@ -31,6 +31,7 @@ export enum EntityType {
   WS_MESSAGE = 'WS_MESSAGE',
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
   INTEGRATION = 'INTEGRATION',
+  RESOURCE_USAGE = 'RESOURCE_USAGE',
 }
 
 export interface EntityTypeTranslation {
@@ -242,6 +243,13 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         noEntities: 'integration.no-integrations-text',
         search: 'integration.search',
         selectedEntities: 'integration.selected-integrations'
+      }
+    ],
+    [
+      EntityType.RESOURCE_USAGE,
+      {
+        type: 'monitoring.resource-usage.resource-usage',
+        noEntities: 'monitoring.resource-usage.no-resource-usage-text',
       }
     ],
   ]
