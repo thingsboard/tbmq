@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.channel;
 
+import jakarta.annotation.PostConstruct;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,9 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.thingsboard.mqtt.broker.common.data.ClientType.APPLICATION;
 import static org.thingsboard.mqtt.broker.common.data.ClientType.DEVICE;
@@ -33,10 +38,20 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
     private final DevicePersistenceProcessor devicePersistenceProcessor;
+    private final StatsManager statsManager;
+
+    @Getter
+    private AtomicInteger nonWritableClientsCount;
+
+    @PostConstruct
+    public void init() {
+        this.nonWritableClientsCount = statsManager.createNonWritableClientsCounter();
+    }
 
     @Override
     public void onChannelWritable(ClientActorState state) {
         log.trace("[{}] onChannelWritable", state.getClientId());
+        nonWritableClientsCount.updateAndGet(current -> current == 0 ? 0 : current - 1);
         if (state.getCurrentSessionCtx().isCleanSession()) {
             return;
         }
@@ -54,6 +69,7 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
     @Override
     public void onChannelNonWritable(ClientActorState state) {
         log.trace("[{}] onChannelNonWritable", state.getClientId());
+        nonWritableClientsCount.incrementAndGet();
         if (state.getCurrentSessionCtx().isCleanSession()) {
             return;
         }

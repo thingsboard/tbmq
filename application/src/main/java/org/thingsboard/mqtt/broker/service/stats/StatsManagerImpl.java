@@ -241,6 +241,14 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     }
 
     @Override
+    public AtomicInteger createNonWritableClientsCounter() {
+        log.trace("Creating NonWritableClientsCounter");
+        AtomicInteger sizeGauge = statsFactory.createGauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), new AtomicInteger(0));
+        gauges.add(new Gauge(StatsType.NON_WRITABLE_CLIENTS.getPrintName(), sizeGauge::get));
+        return sizeGauge;
+    }
+
+    @Override
     public AtomicInteger createSubscriptionSizeCounter() {
         if (log.isTraceEnabled()) {
             log.trace("Creating SubscriptionSizeCounter.");
