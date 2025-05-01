@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.integration.credentials;
+package org.thingsboard.mqtt.broker.common.data.security.ssl;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorType;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class AnonymousCredentials implements ClientCredentials {
+@Data
+public class SslAuthenticatorConfiguration implements MqttClientAuthenticatorConfiguration {
+
+    private boolean enabled;
+    private boolean skipValidityCheckForClientCert;
 
     @Override
-    public CredentialsType getType() {
-        return CredentialsType.ANONYMOUS;
+    public MqttClientAuthenticatorType getType() {
+        return MqttClientAuthenticatorType.SSL;
     }
+
 }

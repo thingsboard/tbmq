@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.integration.credentials;
+package org.thingsboard.mqtt.broker.common.data.credentials;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.thingsboard.mqtt.broker.common.util.SslUtil;
+import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,8 +32,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static org.thingsboard.mqtt.broker.integration.service.integration.credentials.CertPemCredentials.CERT_ALIAS_PREFIX;
-import static org.thingsboard.mqtt.broker.integration.service.integration.credentials.CertPemCredentials.PRIVATE_KEY_ALIAS;
+import static org.thingsboard.mqtt.broker.common.data.credentials.CertPemCredentials.CERT_ALIAS_PREFIX;
+import static org.thingsboard.mqtt.broker.common.data.credentials.CertPemCredentials.PRIVATE_KEY_ALIAS;
 
 class CertPemCredentialsTest {
 

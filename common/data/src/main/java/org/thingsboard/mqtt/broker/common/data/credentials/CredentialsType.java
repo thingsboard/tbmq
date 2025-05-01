@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.integration.credentials;
+package org.thingsboard.mqtt.broker.common.data.credentials;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Data;
+public enum CredentialsType {
 
-@Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class BasicCredentials implements ClientCredentials {
+    ANONYMOUS("anonymous"),
+    BASIC("basic"),
+    CERT_PEM("cert.PEM");
 
-    private String username;
-    private String password;
+    private final String label;
 
-    @Override
-    public CredentialsType getType() {
-        return CredentialsType.BASIC;
+    CredentialsType(String label) {
+        this.label = label;
     }
 }

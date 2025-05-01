@@ -13,28 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.integration.credentials;
+package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
 
-import javax.net.ssl.SSLException;
-
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "algorithm")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = AnonymousCredentials.class, name = "anonymous"),
-        @JsonSubTypes.Type(value = BasicCredentials.class, name = "basic"),
-        @JsonSubTypes.Type(value = CertPemCredentials.class, name = "cert.PEM")})
-public interface ClientCredentials {
+        @JsonSubTypes.Type(value = HmacBasedAlgorithmConfiguration.class, name = "HMAC_BASED"),
+        @JsonSubTypes.Type(value = PemKeyAlgorithmConfiguration.class, name = "PEM_KEY")})
+public interface JwtSignAlgorithmConfiguration {
 
     @JsonIgnore
-    CredentialsType getType();
+    JwtSignAlgorithm getAlgorithm();
 
-    @JsonIgnore
-    default SslContext initSslContext() throws SSLException {
-        return SslContextBuilder.forClient().build();
-    }
+    default void validate() {}
 }

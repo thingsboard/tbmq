@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.integration.service.integration.credentials;
+package org.thingsboard.mqtt.broker.common.data.credentials;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.netty.handler.ssl.SslContext;
@@ -21,8 +21,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
-import org.thingsboard.mqtt.broker.common.util.SslUtil;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;

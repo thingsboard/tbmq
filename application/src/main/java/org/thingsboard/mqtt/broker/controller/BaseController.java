@@ -37,9 +37,11 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticator;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.authenticator.MqttClientAuthenticatorService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
@@ -78,6 +80,8 @@ public abstract class BaseController {
     protected UserService userService;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttClientAuthenticatorService mqttClientAuthenticatorService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
@@ -220,6 +224,12 @@ public abstract class BaseController {
         validateId(clientCredentialsId, "Incorrect clientCredentialsId " + clientCredentialsId);
         Optional<MqttClientCredentials> credentials = mqttClientCredentialsService.getCredentialsById(clientCredentialsId);
         return checkNotNull(credentials);
+    }
+
+    MqttClientAuthenticator checkClientAuthenticatorId(UUID clientAuthenticatorId) throws ThingsboardException {
+        validateId(clientAuthenticatorId, "Incorrect clientAuthenticatorId " + clientAuthenticatorId);
+        Optional<MqttClientAuthenticator> authenticator = mqttClientAuthenticatorService.getAuthenticatorById(clientAuthenticatorId);
+        return checkNotNull(authenticator);
     }
 
     UnauthorizedClient checkUnauthorizedClient(String clientId) throws ThingsboardException {
