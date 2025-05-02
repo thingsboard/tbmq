@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.common.util.MqttClientAuthProviderUtil;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttClientAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
@@ -79,12 +80,8 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
         validatePageLink(pageLink);
         PageData<MqttClientAuthProvider> pageData = mqttClientAuthProviderDao.findAll(pageLink);
         var shortMqttClientAuthProviders = pageData.getData().stream()
-                .map(MqttClientAuthProviderServiceImpl::toShortMqttClientAuthProvider).collect(Collectors.toList());
+                .map(MqttClientAuthProviderUtil::toShortMqttClientAuthProvider).collect(Collectors.toList());
         return new PageData<>(shortMqttClientAuthProviders, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
-    }
-
-    private static ShortMqttClientAuthProvider toShortMqttClientAuthProvider(MqttClientAuthProvider mqttClientAuthProvider) {
-        return new ShortMqttClientAuthProvider(mqttClientAuthProvider.getId(), mqttClientAuthProvider.getType(), mqttClientAuthProvider.getCreatedTime());
     }
 
     private final DataValidator<MqttClientAuthProvider> authProviderValidator =

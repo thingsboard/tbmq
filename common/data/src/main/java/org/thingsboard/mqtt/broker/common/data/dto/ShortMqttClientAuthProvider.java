@@ -35,6 +35,7 @@ public class ShortMqttClientAuthProvider implements HasId {
     private static final long serialVersionUID = -2600428961625900686L;
 
     private UUID id;
+    private boolean enabled;
     private MqttClientAuthProviderType type;
     private long createdTime;
 

@@ -52,6 +52,9 @@ public class JwtAuthProviderConfiguration implements MqttClientAuthProviderConfi
 
     @Override
     public void validate() {
+        if (ClientType.INTEGRATION.equals(defaultClientType)) {
+            throw new DataValidationException("INTEGRATION client type is not supported!");
+        }
         if (jwtVerifierType == null) {
             throw new DataValidationException("Jwt verifier type should be specified!");
         }
