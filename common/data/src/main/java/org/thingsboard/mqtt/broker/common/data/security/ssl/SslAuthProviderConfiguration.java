@@ -13,10 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security;
+package org.thingsboard.mqtt.broker.common.data.security.ssl;
 
-public enum MqttClientAuthenticatorType {
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 
-    BASIC, SSL, JWT
+@Data
+public class SslAuthProviderConfiguration implements MqttClientAuthProviderConfiguration {
+
+    private boolean skipValidityCheckForClientCert;
+
+    @Override
+    public MqttClientAuthProviderType getType() {
+        return MqttClientAuthProviderType.SSL;
+    }
 
 }

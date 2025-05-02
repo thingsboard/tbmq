@@ -20,15 +20,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthenticatorEntity;
+import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
 
 import java.util.UUID;
 
-public interface MqttClientAuthenticatorRepository extends JpaRepository<MqttClientAuthenticatorEntity, UUID> {
+public interface MqttClientAuthProviderRepository extends JpaRepository<MqttClientAuthProviderEntity, UUID> {
 
-    @Query("SELECT c FROM MqttClientAuthenticatorEntity c WHERE " +
+    @Query("SELECT c FROM MqttClientAuthProviderEntity c WHERE " +
            "LOWER(c.type) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
-    Page<MqttClientAuthenticatorEntity> findAll(@Param("textSearch") String textSearch,
-                                              Pageable pageable);
+    Page<MqttClientAuthProviderEntity> findAll(@Param("textSearch") String textSearch,
+                                               Pageable pageable);
 
 }

@@ -37,11 +37,11 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticator;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.client.authenticator.MqttClientAuthenticatorService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttClientAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
@@ -81,7 +81,7 @@ public abstract class BaseController {
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
-    protected MqttClientAuthenticatorService mqttClientAuthenticatorService;
+    protected MqttClientAuthProviderService mqttClientAuthProviderService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
@@ -226,10 +226,10 @@ public abstract class BaseController {
         return checkNotNull(credentials);
     }
 
-    MqttClientAuthenticator checkClientAuthenticatorId(UUID clientAuthenticatorId) throws ThingsboardException {
-        validateId(clientAuthenticatorId, "Incorrect clientAuthenticatorId " + clientAuthenticatorId);
-        Optional<MqttClientAuthenticator> authenticator = mqttClientAuthenticatorService.getAuthenticatorById(clientAuthenticatorId);
-        return checkNotNull(authenticator);
+    MqttClientAuthProvider checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
+        validateId(authProviderId, "Incorrect authProviderId " + authProviderId);
+        Optional<MqttClientAuthProvider> authProvider = mqttClientAuthProviderService.getAuthProviderById(authProviderId);
+        return checkNotNull(authProvider);
     }
 
     UnauthorizedClient checkUnauthorizedClient(String clientId) throws ThingsboardException {

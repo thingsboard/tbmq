@@ -20,9 +20,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthenticatorConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtAuthenticatorConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthenticatorConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthProviderConfiguration;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeInfo(
@@ -30,13 +30,13 @@ import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthenticatorConf
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = BasicAuthenticatorConfiguration.class, name = "BASIC"),
-        @JsonSubTypes.Type(value = SslAuthenticatorConfiguration.class, name = "SSL"),
-        @JsonSubTypes.Type(value = JwtAuthenticatorConfiguration.class, name = "JWT")})
-public interface MqttClientAuthenticatorConfiguration {
+        @JsonSubTypes.Type(value = BasicAuthProviderConfiguration.class, name = "BASIC"),
+        @JsonSubTypes.Type(value = SslAuthProviderConfiguration.class, name = "SSL"),
+        @JsonSubTypes.Type(value = JwtAuthProviderConfiguration.class, name = "JWT")})
+public interface MqttClientAuthProviderConfiguration {
 
     @JsonIgnore
-    MqttClientAuthenticatorType getType();
+    MqttClientAuthProviderType getType();
 
     default void validate() {}
 

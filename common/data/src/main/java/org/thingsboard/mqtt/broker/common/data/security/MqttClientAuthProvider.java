@@ -13,29 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.dto;
+package org.thingsboard.mqtt.broker.common.data.security;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.id.HasId;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorType;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
-import java.util.UUID;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShortMqttClientAuthenticator implements HasId {
+@ToString
+@EqualsAndHashCode(callSuper = true)
+public class MqttClientAuthProvider extends BaseData {
 
     @Serial
-    private static final long serialVersionUID = -2600428961625900686L;
+    private static final long serialVersionUID = 464223366680445871L;
 
-    private UUID id;
-    private MqttClientAuthenticatorType type;
-    private long createdTime;
+    private boolean enabled;
+
+    @NoXss
+    private MqttClientAuthProviderType type;
+    private MqttClientAuthProviderConfiguration mqttClientAuthProviderConfiguration;
 
 }

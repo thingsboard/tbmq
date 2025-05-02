@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.common.data.security.jwt;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Data
-public class JwtAuthenticatorConfiguration implements MqttClientAuthenticatorConfiguration {
+public class JwtAuthProviderConfiguration implements MqttClientAuthProviderConfiguration {
 
     @NoXss
     private JwtVerifierType jwtVerifierType;
@@ -46,8 +46,8 @@ public class JwtAuthenticatorConfiguration implements MqttClientAuthenticatorCon
     private boolean verifyJwtFirst;
 
     @Override
-    public MqttClientAuthenticatorType getType() {
-        return MqttClientAuthenticatorType.JWT;
+    public MqttClientAuthProviderType getType() {
+        return MqttClientAuthProviderType.JWT;
     }
 
     @Override

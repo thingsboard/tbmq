@@ -21,10 +21,10 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticator;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
-import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthenticatorEntity;
+import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -32,25 +32,25 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultMqttClientAuthenticatorDao extends AbstractDao<MqttClientAuthenticatorEntity, MqttClientAuthenticator>
-        implements MqttClientAuthenticatorDao {
+public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuthProviderEntity, MqttClientAuthProvider>
+        implements MqttClientAuthProviderDao {
 
-    private final MqttClientAuthenticatorRepository mqttClientAuthenticatorRepository;
+    private final MqttClientAuthProviderRepository mqttClientAuthProviderRepository;
 
     @Override
-    protected Class<MqttClientAuthenticatorEntity> getEntityClass() {
-        return MqttClientAuthenticatorEntity.class;
+    protected Class<MqttClientAuthProviderEntity> getEntityClass() {
+        return MqttClientAuthProviderEntity.class;
     }
 
     @Override
-    protected CrudRepository<MqttClientAuthenticatorEntity, UUID> getCrudRepository() {
-        return mqttClientAuthenticatorRepository;
+    protected CrudRepository<MqttClientAuthProviderEntity, UUID> getCrudRepository() {
+        return mqttClientAuthProviderRepository;
     }
 
     @Override
-    public PageData<MqttClientAuthenticator> findAll(PageLink pageLink) {
-        log.trace("Trying to find all MQTT client authenticators, pageLink {}", pageLink);
-        return DaoUtil.toPageData(mqttClientAuthenticatorRepository.findAll(
+    public PageData<MqttClientAuthProvider> findAll(PageLink pageLink) {
+        log.trace("Trying to find all MQTT client auth providers, pageLink {}", pageLink);
+        return DaoUtil.toPageData(mqttClientAuthProviderRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
     }

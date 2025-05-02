@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security.ssl;
+package org.thingsboard.mqtt.broker.dao.client;
 
-import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticatorType;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.dao.Dao;
 
-@Data
-public class SslAuthenticatorConfiguration implements MqttClientAuthenticatorConfiguration {
+public interface MqttClientAuthProviderDao extends Dao<MqttClientAuthProvider> {
 
-    private boolean enabled;
-    private boolean skipValidityCheckForClientCert;
-
-    @Override
-    public MqttClientAuthenticatorType getType() {
-        return MqttClientAuthenticatorType.SSL;
-    }
+    PageData<MqttClientAuthProvider> findAll(PageLink pageLink);
 
 }

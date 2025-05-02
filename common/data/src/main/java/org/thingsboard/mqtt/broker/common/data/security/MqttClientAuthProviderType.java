@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.common.data.security;
 
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthenticator;
-import org.thingsboard.mqtt.broker.dao.Dao;
+public enum MqttClientAuthProviderType {
 
-public interface MqttClientAuthenticatorDao extends Dao<MqttClientAuthenticator> {
-
-    PageData<MqttClientAuthenticator> findAll(PageLink pageLink);
+    BASIC, SSL, JWT
 
 }
