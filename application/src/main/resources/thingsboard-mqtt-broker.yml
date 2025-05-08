@@ -366,6 +366,8 @@ queue:
     admin:
       # List of configs separated by semicolon used for admin kafka client creation
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
+      # Kafka Admin client command timeout (in seconds). Applies to operations like describeCluster, listTopics, etc
+      command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
     consumer-stats:
       # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
@@ -704,6 +706,10 @@ lettuce:
   # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count
   flush-interval-ms: "${REDIS_LETTUCE_FLUSH_INTERVAL_MS:5}"
   config:
+    # Maximum time (in seconds) to wait for a lettuce command to complete.
+    # This affects health checks and any command execution (e.g. GET, SET, PING).
+    # Reduce this to fail fast if Redis is unresponsive
+    command-timeout: "${REDIS_LETTUCE_COMMAND_TIMEOUT_SEC:30}"
     # The shutdown quiet period for lettuce client set in seconds
     shutdown-quiet-period: "${REDIS_LETTUCE_SHUTDOWN_QUIET_PERIOD_SEC:1}"
     # The shutdown timeout for lettuce client set in seconds
@@ -758,6 +764,9 @@ spring:
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
       # This property controls the max lifetime in milliseconds of a connection. Only when it is closed will it then be removed. Default is 10 minutes
       maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}"
+      # Maximum time (in milliseconds) HikariCP will wait to acquire a connection from the pool.
+      # If exceeded, an exception is thrown. Default is 30 seconds
+      connectionTimeout: "${SPRING_DATASOURCE_CONNECTION_TIMEOUT_MS:30000}"
 
 # General Spring parameters
 spring.lifecycle.timeout-per-shutdown-phase: "${SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE:1m}" # The server will wait for active requests to finish their work up to a specified amount of time before graceful shutdown
@@ -1100,11 +1109,17 @@ historical-data-report:
 
 # Metrics management parameters
 management:
+  health:
+    diskspace:
+      # Enable/disable disk space health check
+      enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
-        include: "${METRICS_ENDPOINTS_EXPOSE:prometheus}"
+        # Specify which Actuator endpoints should be exposed via HTTP.
+        # Use 'health,info' to expose only basic health and information endpoints.
+        # For exposing Prometheus metrics, update this to include 'prometheus' in the list (e.g., 'health,info,prometheus')
+        include: "${METRICS_ENDPOINTS_EXPOSE:health,info,prometheus}"
 
 # Spring CORS configuration
 spring.mvc.cors:

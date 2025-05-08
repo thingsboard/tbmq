@@ -24,6 +24,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "lettuce.config")
 public class LettuceConfig {
 
+    private int commandTimeout;
     private int shutdownQuietPeriod;
     private int shutdownTimeout;
     private ClusterConfig cluster;
