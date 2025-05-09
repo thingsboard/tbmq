@@ -74,6 +74,8 @@ queue:
     admin:
       # List of configs separated by semicolon used for admin kafka client creation
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
+      # Kafka Admin client command timeout (in seconds). Applies to operations like describeCluster, listTopics, etc
+      command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
     consumer-stats:
       # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
@@ -199,11 +201,25 @@ integrations:
 
 # Management parameters
 management:
+  health:
+    diskspace:
+      # Enable/disable disk space health check
+      enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
+  endpoint:
+    health:
+      # Controls whether health endpoint shows full component details (e.g., Redis, DB, TBMQ).
+      # Options:
+      # - 'never': always hide details (default if security is enabled).
+      # - 'when-authorized': show details only to authenticated users.
+      # - 'always': always include full health details in the response
+      show-details: "${HEALTH_SHOW_DETAILS:never}"
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
-        include: "${METRICS_ENDPOINTS_EXPOSE:prometheus}"
+        # Specify which Actuator endpoints should be exposed via HTTP.
+        # Use 'health,info' to expose only basic health and information endpoints.
+        # For exposing Prometheus metrics, update this to include 'prometheus' in the list (e.g., 'health,info,prometheus')
+        include: "${METRICS_ENDPOINTS_EXPOSE:health,info,prometheus}"
 
 # Statistics parameters
 stats:

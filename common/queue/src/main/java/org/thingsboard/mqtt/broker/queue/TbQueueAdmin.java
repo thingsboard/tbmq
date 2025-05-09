@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.queue;
 
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
+import org.apache.kafka.common.Node;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -41,6 +42,8 @@ public interface TbQueueAdmin {
     void deleteConsumerGroup(String groupId) throws ExecutionException, InterruptedException;
 
     int getNumberOfPartitions(String topic);
+
+    Collection<Node> getNodes() throws Exception;
 
     PageData<KafkaBroker> getClusterInfo();
 

@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.server;
 
+import io.netty.channel.Channel;
+
 public interface MqttServerBootstrap {
 
     String getHost();
@@ -34,4 +36,7 @@ public interface MqttServerBootstrap {
     AbstractMqttChannelInitializer getChannelInitializer();
 
     String getServerName();
+
+    Channel getServerChannel();
+
 }

@@ -18,6 +18,9 @@ FROM thingsboard/openjdk17:bookworm-slim
 
 COPY start-tb-mqtt-broker.sh ${pkg.name}.deb /tmp/
 
+RUN apt-get update \
+    && apt-get install -y curl
+
 RUN chmod a+x /tmp/*.sh \
     && mv /tmp/start-tb-mqtt-broker.sh /usr/bin
 
