@@ -56,11 +56,9 @@ public class TbmqHealthIndicator implements HealthIndicator {
     }
 
     private boolean isHealthy(Optional<MqttServerBootstrap> serverBootstrapOpt) {
-        if (serverBootstrapOpt.isPresent()) {
-            MqttServerBootstrap server = serverBootstrapOpt.get();
-            return server.getServerChannel().isOpen() && server.getServerChannel().isActive();
-        }
-        return true;
+        return serverBootstrapOpt
+                .map(server -> server.getServerChannel().isOpen() && server.getServerChannel().isActive())
+                .orElse(true);
     }
 
 }
