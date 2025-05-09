@@ -18,6 +18,9 @@ FROM thingsboard/openjdk17:bookworm-slim
 
 COPY start-tbmq-integration-executor.sh ${pkg.name}.deb /tmp/
 
+RUN apt-get update \
+    && apt-get install -y curl
+
 RUN chmod a+x /tmp/*.sh \
     && mv /tmp/start-tbmq-integration-executor.sh /usr/bin && \
     (yes | dpkg -i /tmp/${pkg.name}.deb) && \
