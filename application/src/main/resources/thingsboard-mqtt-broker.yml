@@ -1113,6 +1113,14 @@ management:
     diskspace:
       # Enable/disable disk space health check
       enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
+  endpoint:
+    health:
+      # Controls whether health endpoint shows full component details (e.g., Redis, DB, TBMQ).
+      # Options:
+      # - 'never': always hide details (default if security is enabled).
+      # - 'when-authorized': show details only to authenticated users.
+      # - 'always': always include full health details in the response
+      show-details: "${HEALTH_SHOW_DETAILS:never}"
   endpoints:
     web:
       exposure:
