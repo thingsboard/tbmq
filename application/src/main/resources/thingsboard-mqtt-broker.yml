@@ -22,6 +22,12 @@ server:
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # HTTP Server bind port (has no effect if web-environment is disabled)
   port: "${HTTP_BIND_PORT:8083}"
+  # Server headers forwarding strategy. Required for SWAGGER UI when reverse proxy is used
+  forward_headers_strategy: "${HTTP_FORWARD_HEADERS_STRATEGY:framework}"
+  # HTTP/2 support (takes effect only if server SSL is enabled)
+  http2:
+    # Enable/disable HTTP/2 support
+    enabled: "${HTTP2_ENABLED:true}"
   # Log errors with stacktrace when REST API throws exception
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration
