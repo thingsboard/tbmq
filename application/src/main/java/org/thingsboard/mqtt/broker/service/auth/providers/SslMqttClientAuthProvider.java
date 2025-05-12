@@ -16,17 +16,17 @@
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import io.netty.handler.ssl.SslHandler;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
-import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
@@ -53,20 +53,58 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.
 import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.X_509_AUTH_FAILURE;
 
 @Slf4j
-@Service
-@RequiredArgsConstructor
-public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
+public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslAuthProviderConfiguration> {
 
-    private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final MqttClientCredentialsService clientCredentialsService;
     private final CacheNameResolver cacheNameResolver;
 
-    @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
-    private boolean skipValidityCheckForClientCert;
+    private boolean enabled;
+    private SslAuthProviderConfiguration configuration;
+
+    public SslMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService, MqttClientCredentialsService credentialsService,
+                                     CacheNameResolver cacheNameResolver, boolean enabled, SslAuthProviderConfiguration configuration) {
+        this.authorizationRuleService = authorizationRuleService;
+        this.clientCredentialsService = credentialsService;
+        this.cacheNameResolver = cacheNameResolver;
+        this.enabled = enabled;
+        this.configuration = configuration;
+    }
+
+    // TODO: consider if this should be renamed to X_509_CERTIFICATE_CHAIN. See AuthProviderType for more details.
+    @Override
+    public MqttClientAuthProviderType getType() {
+        return MqttClientAuthProviderType.SSL;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        this.enabled = false;
+    }
+
+    @Override
+    public SslAuthProviderConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    @Override
+    public void updateConfiguration(SslAuthProviderConfiguration configuration) {
+        this.configuration = configuration;
+    }
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
-        if (authContext.getSslHandler() == null) {
+        if (authContext.isSslListenerDisabled()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
             log.error(logErrorMsg, authContext);
@@ -169,7 +207,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private void checkCertValidity(String clientId, X509Certificate certificate) throws AuthenticationException {
         try {
-            if (!skipValidityCheckForClientCert) {
+            if (!configuration.isSkipValidityCheckForClientCert()) {
                 certificate.checkValidity();
             }
         } catch (Exception e) {

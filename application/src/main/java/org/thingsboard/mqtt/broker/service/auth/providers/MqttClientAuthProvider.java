@@ -15,9 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
-public interface MqttClientAuthProvider {
+public interface MqttClientAuthProvider<T extends MqttClientAuthProviderConfiguration> {
+
+    MqttClientAuthProviderType getType();
+
+    boolean isEnabled();
+
+    void enable();
+
+    void disable();
+
+    T getConfiguration();
+
+    void updateConfiguration(T configuration);
 
     AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
 

@@ -13,28 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.notification;
 
-import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
-
-public interface MqttClientAuthProviderManager {
-
-    boolean isAuthEnabled();
-
-    boolean isJwtEnabled();
-
-    boolean isBasicEnabled();
-
-    boolean isSslEnabled();
-
-    boolean isVerifyJwtFirst();
-
-    JwtMqttClientAuthProvider getJwtMqttClientAuthProvider();
-
-    BasicMqttClientAuthProvider getBasicMqttClientAuthProvider();
-
-    SslMqttClientAuthProvider getSslMqttClientAuthProvider();
-
-    void handleProviderNotification(MqttAuthProviderProto notification);
-
+public interface InternodeNotificationsConsumer {
+    void startConsuming();
 }

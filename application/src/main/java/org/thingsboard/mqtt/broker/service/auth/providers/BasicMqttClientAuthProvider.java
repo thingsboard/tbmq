@@ -19,16 +19,16 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -44,9 +44,8 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
-@Service
 @RequiredArgsConstructor
-public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
+public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicAuthProviderConfiguration> {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
@@ -54,16 +53,52 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
     private BCryptPasswordEncoder passwordEncoder;
     private HashFunction hashFunction;
 
-    @Autowired
+    private boolean enabled;
+    private BasicAuthProviderConfiguration configuration;
+
     public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
                                        MqttClientCredentialsService clientCredentialsService,
                                        CacheNameResolver cacheNameResolver,
-                                       @Lazy BCryptPasswordEncoder passwordEncoder) {
+                                       BCryptPasswordEncoder passwordEncoder,
+                                       boolean enabled,
+                                       BasicAuthProviderConfiguration configuration) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
         this.cacheNameResolver = cacheNameResolver;
         this.passwordEncoder = passwordEncoder;
         this.hashFunction = Hashing.sha256();
+        this.enabled = enabled;
+        this.configuration = configuration;
+    }
+
+    @Override
+    public MqttClientAuthProviderType getType() {
+        return MqttClientAuthProviderType.BASIC;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        this.enabled = false;
+    }
+
+    @Override
+    public BasicAuthProviderConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    @Override
+    public void updateConfiguration(BasicAuthProviderConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     @Override

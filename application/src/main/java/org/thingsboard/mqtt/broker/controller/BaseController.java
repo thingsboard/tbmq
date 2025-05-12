@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -50,6 +50,7 @@ import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttClientAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -80,6 +81,8 @@ public abstract class BaseController {
     protected UserService userService;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttClientAuthProviderManagerService mqttClientAuthProviderManagerService;
     @Autowired
     protected MqttClientAuthProviderService mqttClientAuthProviderService;
     @Autowired
@@ -226,9 +229,9 @@ public abstract class BaseController {
         return checkNotNull(credentials);
     }
 
-    MqttClientAuthProvider checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
+    MqttClientAuthProviderDto checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
         validateId(authProviderId, "Incorrect authProviderId " + authProviderId);
-        Optional<MqttClientAuthProvider> authProvider = mqttClientAuthProviderService.getAuthProviderById(authProviderId);
+        Optional<MqttClientAuthProviderDto> authProvider = mqttClientAuthProviderService.getAuthProviderById(authProviderId);
         return checkNotNull(authProvider);
     }
 

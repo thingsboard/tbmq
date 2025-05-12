@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
-import org.thingsboard.mqtt.broker.dao.Dao;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-import java.util.UUID;
+@Data
+@Component
+@ConfigurationProperties(prefix = "queue.kafka.internode-notifications")
+public class InternodeNotificationsKafkaSettings extends AbstractKafkaSettings {
 
-public interface MqttClientAuthProviderDao extends Dao<MqttClientAuthProviderDto> {
+    private String topicPrefix;
+    private String topicProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 
-    PageData<MqttClientAuthProviderDto> findAll(PageLink pageLink);
-
-    PageData<MqttClientAuthProviderDto> findAllEnabled(PageLink pageLink);
-
-    boolean enableById(UUID id);
-
-    boolean disableById(UUID id);
 }

@@ -15,48 +15,74 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DefaultAuthenticationService implements AuthenticationService {
 
-    private final Map<AuthProviderType, MqttClientAuthProvider> authProviders;
+    private final MqttClientAuthProviderManager authProviderManager;
 
-    @Setter
-    @Value("${security.mqtt.auth_strategy:BOTH}")
-    private AuthStrategy authStrategy;
-
-    public DefaultAuthenticationService(MqttClientAuthProviderManager authProviderManager) {
-        this.authProviders = authProviderManager.getActiveAuthProviders();
-    }
-
+    // TODO: check for backward compatibility, when Auth strategy: SINGLE, BOTH were used.
+    // TODO: Uncomment test: DefaultAuthenticationServiceTest
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
         logAuthenticationAttempt(authContext);
 
-        if (authProviders.isEmpty()) {
+        if (!authProviderManager.isAuthEnabled()) {
             return AuthResponse.defaultAuthResponse();
         }
 
-        try {
-            return AuthStrategy.BOTH == authStrategy ?
-                    authenticateWithBothStrategies(authContext) :
-                    authenticateWithSingleStrategy(authContext);
-        } catch (Exception e) {
-            throw newAuthenticationException(authContext, e);
+        List<String> failureReasons = new ArrayList<>(3);
+
+        // JWT first
+        if (authProviderManager.isJwtEnabled() && authProviderManager.isVerifyJwtFirst()) {
+            AuthResponse jwtResponse = authProviderManager.getJwtMqttClientAuthProvider().authenticate(authContext);
+            if (jwtResponse.isSuccess()) {
+                return jwtResponse;
+            }
+            failureReasons.add("JWT: " + jwtResponse.getReason());
         }
+
+        // BASIC
+        if (authProviderManager.isBasicEnabled()) {
+            AuthResponse basicResponse = authProviderManager.getBasicMqttClientAuthProvider().authenticate(authContext);
+            if (basicResponse.isSuccess()) {
+                return basicResponse;
+            }
+            failureReasons.add("BASIC: " + basicResponse.getReason());
+        }
+
+        // SSL
+        if (authProviderManager.isSslEnabled()) {
+            AuthResponse sslResponse = authProviderManager.getSslMqttClientAuthProvider().authenticate(authContext);
+            if (sslResponse.isSuccess()) {
+                return sslResponse;
+            }
+            failureReasons.add("SSL: " + sslResponse.getReason());
+        }
+
+        // JWT last
+        if (authProviderManager.isJwtEnabled() && !authProviderManager.isVerifyJwtFirst()) {
+            AuthResponse jwtResponse = authProviderManager.getJwtMqttClientAuthProvider().authenticate(authContext);
+            if (jwtResponse.isSuccess()) {
+                return jwtResponse;
+            }
+            failureReasons.add("JWT: " + jwtResponse.getReason());
+        }
+
+        // Everything failed
+        throw onAuthFailure(authContext, failureReasons);
     }
 
     private void logAuthenticationAttempt(AuthContext authContext) {
@@ -65,75 +91,11 @@ public class DefaultAuthenticationService implements AuthenticationService {
         }
     }
 
-    private AuthResponse authenticateWithBothStrategies(AuthContext authContext) throws AuthenticationException {
-        var basicAuthResponse = authenticate(AuthProviderType.BASIC, authContext);
-        if (isAuthSuccessful(basicAuthResponse)) {
-            return basicAuthResponse;
-        }
-
-        String basicAuthFailureReason = getBasicAuthFailureReason(basicAuthResponse);
-        if (authContext.isTlsDisabled()) {
-            return AuthResponse.failure(basicAuthFailureReason);
-        }
-
-        var sslAuthResponse = authenticate(AuthProviderType.X_509_CERTIFICATE_CHAIN, authContext);
-        return processSslAuthResponse(sslAuthResponse, basicAuthFailureReason);
-    }
-
-    private AuthResponse authenticateWithSingleStrategy(AuthContext authContext) throws AuthenticationException {
-        var authResponse = authenticateBySingleAuthProvider(authContext);
-
-        if (authResponse == null) {
-            throwAuthenticationExceptionForSingleStrategy(authContext);
-        }
-
-        return authResponse;
-    }
-
-    private AuthResponse authenticateBySingleAuthProvider(AuthContext authContext) throws AuthenticationException {
-        AuthProviderType providerType = getAuthProviderType(authContext);
-        return authenticate(providerType, authContext);
-    }
-
-    private void throwAuthenticationExceptionForSingleStrategy(AuthContext authContext) throws AuthenticationException {
-        String providerType = getAuthProviderType(authContext).name();
-        String errorMsg = String.format("Failed to authenticate client, %s authentication is disabled!", providerType);
-        throw new AuthenticationException(errorMsg);
-    }
-
-    private AuthResponse processSslAuthResponse(AuthResponse authResponse, String basicAuthFailureReason) throws AuthenticationException {
-        if (authResponse == null) {
-            throw new AuthenticationException(basicAuthFailureReason + ". X_509_CERTIFICATE_CHAIN authentication is disabled!");
-        }
-
-        if (authResponse.isFailure()) {
-            String errorMsg = basicAuthFailureReason + ". " + authResponse.getReason();
-            return authResponse.toBuilder().reason(errorMsg).build();
-        }
-
-        return authResponse;
-    }
-
-    private String getBasicAuthFailureReason(AuthResponse authResponse) {
-        return authResponse == null ? "BASIC authentication is disabled" : authResponse.getReason();
-    }
-
-    private AuthResponse authenticate(AuthProviderType type, AuthContext authContext) throws AuthenticationException {
-        var authProvider = authProviders.get(type);
-        return authProvider != null ? authProvider.authenticate(authContext) : null;
-    }
-
-    private AuthProviderType getAuthProviderType(AuthContext authContext) {
-        return authContext.isTlsEnabled() ? AuthProviderType.X_509_CERTIFICATE_CHAIN : AuthProviderType.BASIC;
-    }
-
-    private boolean isAuthSuccessful(AuthResponse authResponse) {
-        return authResponse != null && authResponse.isSuccess();
-    }
-
-    private AuthenticationException newAuthenticationException(AuthContext authContext, Exception e) {
-        log.warn("[{}] Failed to authenticate client", authContext.getClientId(), e);
-        return new AuthenticationException("Exception on client authentication: " + e.getMessage());
+    private AuthenticationException onAuthFailure(AuthContext authContext, List<String> failureReasons) {
+        String fullReason = String.join(" | ", failureReasons);
+        var re = new RuntimeException("Authentication failed: " + fullReason);
+        log.warn("[{}] Failed to authenticate client", authContext.getClientId(), re);
+        return new AuthenticationException("Exception on client authentication: " + re.getMessage());
     }
 
 }

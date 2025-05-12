@@ -27,7 +27,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLJsonPGObjectJsonbType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.MQTT_CLIENT_AUTH_PROVIDER_COLUMN_FAMILY_NAME)
-public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthProvider> implements BaseEntity<MqttClientAuthProvider> {
+public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthProviderDto> implements BaseEntity<MqttClientAuthProviderDto> {
 
     @Column(name = ModelConstants.MQTT_CLIENT_AUTH_PROVIDER_ENABLED_PROPERTY)
     private boolean enabled;
@@ -54,7 +54,7 @@ public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthPr
     public MqttClientAuthProviderEntity() {
     }
 
-    public MqttClientAuthProviderEntity(MqttClientAuthProvider mqttClientAuthProvider) {
+    public MqttClientAuthProviderEntity(MqttClientAuthProviderDto mqttClientAuthProvider) {
         if (mqttClientAuthProvider.getId() != null) {
             this.setId(mqttClientAuthProvider.getId());
         }
@@ -62,17 +62,17 @@ public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthPr
         this.enabled = mqttClientAuthProvider.isEnabled();
         this.type = mqttClientAuthProvider.getType();
         this.configuration = JacksonUtil.convertValue(
-                mqttClientAuthProvider.getMqttClientAuthProviderConfiguration(), ObjectNode.class);
+                mqttClientAuthProvider.getConfiguration(), ObjectNode.class);
     }
 
     @Override
-    public MqttClientAuthProvider toData() {
-        MqttClientAuthProvider mqttClientAuthProvider = new MqttClientAuthProvider();
+    public MqttClientAuthProviderDto toData() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = new MqttClientAuthProviderDto();
         mqttClientAuthProvider.setId(id);
         mqttClientAuthProvider.setCreatedTime(createdTime);
         mqttClientAuthProvider.setEnabled(enabled);
         mqttClientAuthProvider.setType(type);
-        mqttClientAuthProvider.setMqttClientAuthProviderConfiguration(
+        mqttClientAuthProvider.setConfiguration(
                 JacksonUtil.convertValue(configuration, MqttClientAuthProviderConfiguration.class));
         return mqttClientAuthProvider;
     }

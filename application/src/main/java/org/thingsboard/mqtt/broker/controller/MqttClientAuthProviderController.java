@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,12 +24,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
 
 import java.util.UUID;
 
@@ -40,10 +42,36 @@ public class MqttClientAuthProviderController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider", method = RequestMethod.POST)
     @ResponseBody
-    public MqttClientAuthProvider saveAuthProvider(@RequestBody MqttClientAuthProvider authProvider) throws ThingsboardException {
+    public MqttClientAuthProviderDto saveAuthProvider(@RequestBody MqttClientAuthProviderDto authProvider) throws ThingsboardException {
         checkNotNull(authProvider);
         try {
-            return checkNotNull(mqttClientAuthProviderService.saveAuthProvider(authProvider));
+            return checkNotNull(mqttClientAuthProviderManagerService.saveAuthProvider(authProvider));
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}/enable", method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.OK)
+    public void enableAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
+        try {
+            UUID uuid = toUUID(strAuthProviderId);
+            checkAuthProviderId(uuid);
+            mqttClientAuthProviderManagerService.enableAuthProvider(uuid);
+        } catch (Exception e) {
+            throw handleException(e);
+        }
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}/disable", method = RequestMethod.POST)
+    @ResponseStatus(HttpStatus.OK)
+    public void disableAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
+        try {
+            UUID uuid = toUUID(strAuthProviderId);
+            checkAuthProviderId(uuid);
+            mqttClientAuthProviderManagerService.disableAuthProvider(uuid);
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -67,7 +95,7 @@ public class MqttClientAuthProviderController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}", method = RequestMethod.GET)
-    public MqttClientAuthProvider getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
+    public MqttClientAuthProviderDto getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         try {
             return checkNotNull(mqttClientAuthProviderService.getAuthProviderById(toUUID(strAuthProviderId)).orElse(null));
         } catch (Exception e) {
@@ -77,11 +105,12 @@ public class MqttClientAuthProviderController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}", method = RequestMethod.DELETE)
+    @ResponseStatus(HttpStatus.OK)
     public void deleteAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         try {
             UUID uuid = toUUID(strAuthProviderId);
             checkAuthProviderId(uuid);
-            mqttClientAuthProviderService.deleteAuthProvider(uuid);
+            mqttClientAuthProviderManagerService.deleteAuthProvider(uuid);
         } catch (Exception e) {
             throw handleException(e);
         }

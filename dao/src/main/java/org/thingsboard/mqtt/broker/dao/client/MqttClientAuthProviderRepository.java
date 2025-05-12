@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.client;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
@@ -26,9 +27,19 @@ import java.util.UUID;
 
 public interface MqttClientAuthProviderRepository extends JpaRepository<MqttClientAuthProviderEntity, UUID> {
 
-    @Query("SELECT c FROM MqttClientAuthProviderEntity c WHERE " +
-           "LOWER(c.type) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
+    @Query("SELECT p FROM MqttClientAuthProviderEntity p WHERE " +
+           "LOWER(p.type) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
     Page<MqttClientAuthProviderEntity> findAll(@Param("textSearch") String textSearch,
                                                Pageable pageable);
+
+    @Query("SELECT p FROM MqttClientAuthProviderEntity p WHERE " +
+           "LOWER(p.type) LIKE LOWER(CONCAT('%', :textSearch, '%')) AND p.enabled = true")
+    Page<MqttClientAuthProviderEntity> findAllEnabled(@Param("textSearch") String textSearch,
+                                                      Pageable pageable);
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE MqttClientAuthProviderEntity p SET p.enabled = :enabled WHERE p.id = :id")
+    boolean updateEnabled(@Param("id") UUID id, @Param("enabled") boolean enabled);
 
 }

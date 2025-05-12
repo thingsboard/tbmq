@@ -32,12 +32,12 @@ public class AuthContext {
     private final byte[] passwordBytes;
     private final SslHandler sslHandler;
 
-    public boolean isTlsEnabled() {
+    public boolean isSslListenerEnabled() {
         return sslHandler != null;
     }
 
-    public boolean isTlsDisabled() {
-        return !isTlsEnabled();
+    public boolean isSslListenerDisabled() {
+        return !isSslListenerEnabled();
     }
 
     @Override

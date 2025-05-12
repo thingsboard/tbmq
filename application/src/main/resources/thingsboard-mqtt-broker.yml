@@ -330,6 +330,9 @@ queue:
   integration-uplink-notifications:
     # Interval in milliseconds to poll messages from 'tbmq.ie.uplink.notifications' topics
     poll-interval: "${TB_IE_UPLINK_NOTIFICATIONS_POLL_INTERVAL:100}"
+  internode-notifications:
+    # Interval in milliseconds to poll messages from 'tbmq.sys.internode.notifications' topics
+    poll-interval: "${TB_NODE_NOTIFICATION_POLL_INTERVAL:100}"
 
   kafka:
     # List of kafka bootstrap servers used to establish connection
@@ -551,6 +554,15 @@ queue:
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    internode-notifications:
+      # Prefix for topics for sending system notifications to Broker nodes
+      topic-prefix: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PREFIX:tbmq.sys.internode.notifications}"
+      # Kafka topic properties separated by semicolon for `tbmq.sys.internode.notifications` topics
+      topic-properties: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.internode.notifications` topics
+      additional-consumer-config: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.internode.notifications` topics
+      additional-producer-config: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_ADDITIONAL_PRODUCER_CONFIG:}"
     # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
     kafka-prefix: "${TB_KAFKA_PREFIX:}"
     # Custom consumer configuration per Kafka topic

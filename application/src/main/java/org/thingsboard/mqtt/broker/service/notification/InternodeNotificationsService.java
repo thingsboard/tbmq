@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.service.notification;
 
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
-import org.thingsboard.mqtt.broker.dao.Dao;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 
-import java.util.UUID;
+public interface InternodeNotificationsService {
 
-public interface MqttClientAuthProviderDao extends Dao<MqttClientAuthProviderDto> {
+    void broadcast(InternodeNotificationProto notificationProto);
 
-    PageData<MqttClientAuthProviderDto> findAll(PageLink pageLink);
-
-    PageData<MqttClientAuthProviderDto> findAllEnabled(PageLink pageLink);
-
-    boolean enableById(UUID id);
-
-    boolean disableById(UUID id);
 }
