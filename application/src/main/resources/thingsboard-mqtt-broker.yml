@@ -347,7 +347,7 @@ queue:
         # A list of class names or class types, ordered by preference, of supported partition assignment strategies that the client will use to distribute partition ownership amongst consumer instances when group management is used
         partition-assignment-strategy: "${TB_KAFKA_DEFAULT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:org.apache.kafka.clients.consumer.StickyAssignor}"
         # The timeout in milliseconds used to detect client failures when using Kafka's group management facility
-        session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:300000}"
+        session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:10000}"
         # The maximum delay in milliseconds between invocations of poll() when using consumer group management
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
         # The maximum number of records returned in a single call to poll()
@@ -356,6 +356,11 @@ queue:
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
         # The maximum amount of data in bytes the server should return for a fetch request
         fetch-max-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_FETCH_MAX_BYTES:134217728}"
+        # The expected time between heartbeats to the consumer coordinator when using Kafka’s group management facilities.
+        # Heartbeats are used to ensure that the consumer’s session stays active and to facilitate rebalancing when new consumers join or leave the group.
+        # The value must be set lower than TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS, but typically should be set no higher than 1/3 of that value.
+        # It can be adjusted even lower to control the expected time for normal rebalances. Value in milliseconds. Default is 3 sec
+        heartbeat-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_HEARTBEAT_INTERVAL_MS:3000}"
       producer:
         # The number of acknowledgments the producer requires the leader to have received before considering a request complete
         acks: "${TB_KAFKA_DEFAULT_PRODUCER_ACKS:1}"

@@ -56,6 +56,9 @@ public class TbKafkaConsumerSettings {
     @Value("${queue.kafka.default.consumer.fetch-max-bytes}")
     private int fetchMaxBytes;
 
+    @Value("${queue.kafka.default.consumer.heartbeat-interval-ms}")
+    private int heartbeatIntervalMs;
+
     private Map<String, List<TbProperty>> consumerPropertiesPerTopic = Collections.emptyMap();
 
     public Properties toProps(String topic, String customProperties) {
@@ -67,6 +70,7 @@ public class TbKafkaConsumerSettings {
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
         props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
         props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+        props.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, heartbeatIntervalMs);
         if (customProperties != null) {
             props.putAll(QueueUtil.getConfigs(customProperties));
         }
