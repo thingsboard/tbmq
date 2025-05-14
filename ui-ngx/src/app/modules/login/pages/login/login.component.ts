@@ -29,19 +29,20 @@ import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
 import { MatDivider } from '@angular/material/divider';
-import { MatFormField, MatLabel, MatPrefix, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatButton } from '@angular/material/button';
 import { FooterComponent } from '@shared/components/footer.component';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-login',
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.scss'],
-    imports: [MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, MatError, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe]
+    imports: [MatCard, MatCardContent, FormsModule, ReactiveFormsModule, LogoComponent, MatProgressBar, ToastDirective, MatDivider, MatFormField, MatLabel, TranslateModule, MatInput, MatIcon, MatPrefix, TogglePasswordComponent, MatSuffix, MatButton, RouterLink, FooterComponent, AsyncPipe, MatTooltip]
 })
 export class LoginComponent extends PageComponent {
 

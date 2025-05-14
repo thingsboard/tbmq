@@ -33,18 +33,19 @@ import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { ToastDirective } from '@shared/components/toast.directive';
-import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatPrefix, MatSuffix, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { MatDivider } from '@angular/material/divider';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-change-password-dialog',
     templateUrl: './change-password-dialog.component.html',
     styleUrls: ['./change-password-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, MatDialogContent, ToastDirective, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatError, MatHint, MatDivider, TbIconComponent, MatDialogActions, MatSlideToggle, MatButton, AsyncPipe]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatIcon, MatProgressBar, MatDialogContent, ToastDirective, MatFormField, MatLabel, MatInput, MatPrefix, TogglePasswordComponent, MatSuffix, MatHint, MatDivider, TbIconComponent, MatDialogActions, MatSlideToggle, MatButton, AsyncPipe, MatTooltip]
 })
 export class ChangePasswordDialogComponent extends DialogComponent<ChangePasswordDialogComponent> implements OnInit {
 
