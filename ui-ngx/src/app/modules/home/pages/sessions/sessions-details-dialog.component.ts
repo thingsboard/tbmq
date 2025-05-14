@@ -14,23 +14,22 @@
 /// limitations under the License.
 ///
 
-import {AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit} from '@angular/core';
+import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import {
   ConnectionState,
   connectionStateColor,
   DetailedClientSessionInfo,
   MqttVersionTranslationMap
 } from '@shared/models/session.model';
-import {DialogComponent} from '@shared/components/dialog.component';
-import {AppState} from '@core/core.state';
-import {Store} from '@ngrx/store';
-import {Router} from '@angular/router';
+import { DialogComponent } from '@shared/components/dialog.component';
+import { AppState } from '@core/core.state';
+import { Store } from '@ngrx/store';
+import { Router } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogClose, MatDialogActions } from '@angular/material/dialog';
 import { FormArray, UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {ClientSessionService} from '@core/http/client-session.service';
-import { MAT_FORM_FIELD_DEFAULT_OPTIONS, MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/form-field';
-import {appearance} from '@shared/models/constants';
-import {ClientType, clientTypeIcon, clientTypeTranslationMap} from '@shared/models/client.model';
+import { ClientSessionService } from '@core/http/client-session.service';
+import { MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/form-field';
+import { ClientType, clientTypeIcon, clientTypeTranslationMap } from '@shared/models/client.model';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
 import { HelpComponent } from '@shared/components/help.component';
@@ -57,12 +56,6 @@ export interface SessionsDetailsDialogData {
     selector: 'tb-sessions-details-dialog',
     templateUrl: './sessions-details-dialog.component.html',
     styleUrls: ['./sessions-details-dialog.component.scss'],
-    providers: [
-        {
-            provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
-            useValue: appearance
-        }
-    ],
     imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatTabGroup, MatTab, MatButton, CopyContentButtonComponent, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, CopyButtonComponent, MatSuffix, EditClientCredentialsButtonComponent, MatTabContent, SubscriptionsComponent, SessionMetricsComponent, MatDialogActions, AsyncPipe, TitleCasePipe, DatePipe]
 })
 export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDetailsDialogComponent>

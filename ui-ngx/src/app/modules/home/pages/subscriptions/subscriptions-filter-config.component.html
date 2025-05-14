@@ -84,16 +84,20 @@
         <div class="fixed-title-width" translate>subscription.subscription-id</div>
         <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
           <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
-          @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('min')) {
-            <mat-error>
-              {{ 'subscription.subscription-identifier-min' | translate }}
-            </mat-error>
-          }
-          @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('max')) {
-            <mat-error>
-              {{ 'subscription.subscription-identifier-max' | translate }}
-            </mat-error>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'subscription.subscription-identifier-min' | translate }}"
+                    [class.!hidden]="!(subscriptionsFilterConfigForm.get('subscriptionId').hasError('min') && subscriptionsFilterConfigForm.get('subscriptionId').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'subscription.subscription-identifier-max' | translate }}"
+                    [class.!hidden]="!(subscriptionsFilterConfigForm.get('subscriptionId').hasError('max') && subscriptionsFilterConfigForm.get('subscriptionId').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
       </div>
     </div>
@@ -182,16 +186,20 @@
       <div class="fixed-title-width" translate>subscription.subscription-id</div>
       <mat-form-field appearance="outline" class="flex number" subscriptSizing="dynamic">
         <input matInput type="number" min="1" max="268435455" formControlName="subscriptionId">
-        @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('min')) {
-          <mat-error>
-            {{ 'subscription.subscription-identifier-min' | translate }}
-          </mat-error>
-        }
-        @if (subscriptionsFilterConfigForm.get('subscriptionId').hasError('max')) {
-          <mat-error>
-            {{ 'subscription.subscription-identifier-max' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.subscription-identifier-min' | translate }}"
+                  [class.!hidden]="!(subscriptionsFilterConfigForm.get('subscriptionId').hasError('min') && subscriptionsFilterConfigForm.get('subscriptionId').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.subscription-identifier-max' | translate }}"
+                  [class.!hidden]="!(subscriptionsFilterConfigForm.get('subscriptionId').hasError('max') && subscriptionsFilterConfigForm.get('subscriptionId').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
     </div>
   </div>

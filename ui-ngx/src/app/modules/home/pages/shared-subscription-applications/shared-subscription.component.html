@@ -44,16 +44,18 @@
   </fieldset>
   <form [formGroup]="entityForm">
     <fieldset [disabled]="(isLoading$ | async) || !isEdit">
-      <mat-form-field class="mat-block">
+      <mat-form-field class="mat-block mt-4">
         <mat-label translate>shared-subscription.name</mat-label>
         <input matInput formControlName="name" required>
-        @if (entityForm.get('name').hasError('required')) {
-          <mat-error>
-            {{ 'shared-subscription.name-required' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'shared-subscription.name-required' | translate }}"
+                  [class.!hidden]="!(entityForm.get('name').hasError('required') && entityForm.get('name').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
-      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+      <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.topic-filter</mat-label>
         <input matInput formControlName="topicFilter" required>
         <tb-copy-button #copyBtn
@@ -61,28 +63,38 @@
           [class.!hidden]="!entityForm.get('topicFilter')?.value?.length" matSuffix [disabled]="isLoading$ | async"
           [copyText]="entityForm.get('topicFilter').value">
         </tb-copy-button>
-        @if (entityForm.get('topicFilter').hasError('required')) {
-          <mat-error>
-            {{ 'shared-subscription.topic-filter-required' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'shared-subscription.topic-filter-required' | translate }}"
+                  [class.!hidden]="!(entityForm.get('topicFilter').hasError('required') && entityForm.get('topicFilter').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix matTooltip="{{ 'shared-subscription.hint-topic-filter' | translate }}">
+          help
+        </mat-icon>
       </mat-form-field>
-      <div class="tb-hint" [innerHTML]="'shared-subscription.hint-topic-filter' | translate"></div>
-      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+      <mat-form-field class="mat-block">
         <mat-label translate>shared-subscription.partitions</mat-label>
         <input matInput formControlName="partitions" required type="number" min="1" step="1">
-        @if (entityForm.get('partitions').hasError('required')) {
-          <mat-error>
-            {{ 'shared-subscription.partitions-required' | translate }}
-          </mat-error>
-        }
-        @if (entityForm.get('partitions').hasError('min')) {
-          <mat-error>
-            {{ 'shared-subscription.partitions-min' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'shared-subscription.partitions-required' | translate }}"
+                  [class.!hidden]="!(entityForm.get('partitions').hasError('required') && entityForm.get('partitions').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'shared-subscription.partitions-min' | translate }}"
+                  [class.!hidden]="!(entityForm.get('partitions').hasError('min') && entityForm.get('partitions').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix matTooltip="{{ 'shared-subscription.hint-partitions' | translate }}">
+          help
+        </mat-icon>
       </mat-form-field>
-      <div class="tb-hint" [innerHTML]="'shared-subscription.hint-partitions' | translate"></div>
       @if (!entity?.name) {
         <div class="tb-hint" [innerHTML]="'shared-subscription.hint-shared-subscription-notes' | translate"></div>
       }

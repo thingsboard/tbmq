@@ -43,16 +43,20 @@
               <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
                 info
               </mat-icon>
-              @if (generalSettingsForm.get('maxMessages').hasError('required')) {
-                <mat-error>
-                  {{ 'ws-client.messages.max-messages-required' | translate }}
-                </mat-error>
-              }
-              @if (generalSettingsForm.get('maxMessages').hasError('min')) {
-                <mat-error>
-                  {{ 'ws-client.messages.max-messages-min' | translate }}
-                </mat-error>
-              }
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'ws-client.messages.max-messages-required' | translate }}"
+                        [class.!hidden]="!(generalSettingsForm.get('maxMessages').hasError('required') && generalSettingsForm.get('maxMessages').touched)"
+                        class="tb-error">
+                warning
+              </mat-icon>
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'ws-client.messages.max-messages-min' | translate }}"
+                        [class.!hidden]="!(generalSettingsForm.get('maxMessages').hasError('min') && generalSettingsForm.get('maxMessages').touched)"
+                        class="tb-error">
+                warning
+              </mat-icon>
             </mat-form-field>
           </section>
         </div>
@@ -107,31 +111,38 @@
               <mat-form-field class="flex flex-1" hideRequiredMarker>
                 <mat-label translate>admin.settings.host</mat-label>
                 <input matInput formControlName="host"/>
-                @if (connectivitySettingsForm.get(protocol + '.host').hasError('required')) {
-                  <mat-error>
-                    {{ 'admin.settings.host-required' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.settings.host-required' | translate }}"
+                          [class.!hidden]="!(connectivitySettingsForm.get(protocol + '.host').hasError('required') && connectivitySettingsForm.get(protocol + '.host').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-form-field class="flex flex-1" hideRequiredMarker>
                 <mat-label translate>admin.settings.port</mat-label>
                 <input matInput type="number" min="0" max="65535" formControlName="port"/>
-                @if (connectivitySettingsForm.get(protocol + '.port').hasError('required')) {
-                  <mat-error>
-                    {{ 'admin.settings.port-required' | translate }}
-                  </mat-error>
-                }
-                @if (connectivitySettingsForm.get(protocol + '.port').hasError('pattern')) {
-                  <mat-error>
-                    {{ 'admin.settings.port-pattern' | translate }}
-                  </mat-error>
-                }
-                @if (connectivitySettingsForm.get(protocol + '.port').hasError('min') ||
-                  connectivitySettingsForm.get(protocol + '.port').hasError('max')) {
-                  <mat-error>
-                    {{ 'admin.settings.port-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.settings.port-required' | translate }}"
+                          [class.!hidden]="!(connectivitySettingsForm.get(protocol + '.port').hasError('required') && connectivitySettingsForm.get(protocol + '.port').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.settings.port-pattern' | translate }}"
+                          [class.!hidden]="!(connectivitySettingsForm.get(protocol + '.port').hasError('pattern') && connectivitySettingsForm.get(protocol + '.port').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.settings.port-range' | translate }}"
+                          [class.!hidden]="!((connectivitySettingsForm.get(protocol + '.port').hasError('min') || connectivitySettingsForm.get(protocol + '.port').hasError('max')) && connectivitySettingsForm.get(protocol + '.port').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
           </div>

@@ -41,16 +41,20 @@
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.certificate-matcher-regex</mat-label>
                   <input matInput formControlName="certificateMatcherRegex" required>
-                  @if (rulesControl.get('certificateMatcherRegex').hasError('required')) {
-                    <mat-error>
-                      {{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}
-                    </mat-error>
-                  }
-                  @if (rulesControl.get('certificateMatcherRegex').hasError('notUnique')) {
-                    <mat-error>
-                      {{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}
-                    </mat-error>
-                  }
+                  <mat-icon matSuffix
+                            matTooltipClass="tb-error-tooltip"
+                            matTooltip="{{ 'mqtt-client-credentials.certificate-matcher-regex-required' | translate }}"
+                            [class.!hidden]="!(rulesControl.get('certificateMatcherRegex').hasError('required') && rulesControl.get('certificateMatcherRegex').touched)"
+                            class="tb-error">
+                    warning
+                  </mat-icon>
+                  <mat-icon matSuffix
+                            matTooltipClass="tb-error-tooltip"
+                            matTooltip="{{ 'mqtt-client-credentials.certificate-matcher-regex-not-unique' | translate }}"
+                            [class.!hidden]="!(rulesControl.get('certificateMatcherRegex').hasError('notUnique') && rulesControl.get('certificateMatcherRegex').touched)"
+                            class="tb-error">
+                    warning
+                  </mat-icon>
                 </mat-form-field>
                 <mat-form-field class="mat-block">
                   <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
