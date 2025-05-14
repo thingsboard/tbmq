@@ -128,6 +128,126 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
         assertThat(foundAuthProvider.get()).isEqualTo(savedAuthProvider);
     }
 
+    @Test
+    public void testFindEnabledMqttClientAuthProviders() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+
+        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isFalse();
+
+        PageData<MqttClientAuthProviderDto> enabledAuthProviders = mqttClientAuthProviderService.getEnabledAuthProviders(new PageLink(1000));
+        assertThat(enabledAuthProviders.getTotalElements()).isEqualTo(0);
+
+        mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId());
+
+        enabledAuthProviders = mqttClientAuthProviderService.getEnabledAuthProviders(new PageLink(1000));
+        assertThat(enabledAuthProviders.getTotalElements()).isEqualTo(1);
+        assertThat(enabledAuthProviders.getData().get(0).getId()).isEqualTo(savedAuthProvider.getId());
+    }
+
+    @Test
+    public void testDeleteNonExistingMqttClientAuthProvider() {
+        assertThat(mqttClientAuthProviderService.deleteAuthProvider(UUID.fromString("9b519fe5-4712-4926-9e24-debf24a7c660"))).isFalse();
+    }
+
+    @Test
+    public void testEnableMqttClientAuthProvider() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+
+        // save disabled
+        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isFalse();
+
+        assertThat(mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId())).isTrue();
+
+        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        assertThat(authProviderById.isPresent()).isTrue();
+        assertThat(authProviderById.get().isEnabled()).isTrue();
+    }
+
+    @Test
+    public void testEnableAlreadyEnabledMqttClientAuthProvider() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        mqttClientAuthProvider.setEnabled(true);
+
+        // save enabled
+        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isTrue();
+
+        assertThat(mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId())).isFalse();
+
+        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        assertThat(authProviderById.isPresent()).isTrue();
+        assertThat(authProviderById.get().isEnabled()).isTrue();
+    }
+
+
+    @Test
+    public void testEnableNonExistingMqttClientAuthProvider() {
+        assertThatThrownBy(() -> mqttClientAuthProviderService.enableAuthProvider(UUID.fromString("ab196e2f-e6bf-4138-8f4e-95de7748fc0a")))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Unable to enable non-existent MQTT client auth provider!");
+    }
+
+    @Test
+    public void testDisableMqttClientAuthProvider() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        mqttClientAuthProvider.setEnabled(true);
+
+        // save enabled
+        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isTrue();
+
+        assertThat(mqttClientAuthProviderService.disableAuthProvider(savedAuthProvider.getId())).isTrue();
+
+        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        assertThat(authProviderById.isPresent()).isTrue();
+        assertThat(authProviderById.get().isEnabled()).isFalse();
+    }
+
+    @Test
+    public void testDisableAlreadyDisabledMqttClientAuthProvider() {
+        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+
+        // save enabled
+        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isFalse();
+
+        assertThat(mqttClientAuthProviderService.disableAuthProvider(savedAuthProvider.getId())).isFalse();
+
+        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        assertThat(authProviderById.isPresent()).isTrue();
+        assertThat(authProviderById.get().isEnabled()).isFalse();
+    }
+
+    @Test
+    public void testDisableNonExistingMqttClientAuthProvider() {
+        assertThatThrownBy(() -> mqttClientAuthProviderService.disableAuthProvider(UUID.fromString("6e2fb006-d5ad-4539-ad6a-203abff9521b")))
+                .isInstanceOf(DataValidationException.class)
+                .hasMessage("Unable to disable non-existent MQTT client auth provider!");
+    }
+
+
+
     private MqttClientAuthProviderDto getMqttClientAuthProvider() {
         return getMqttClientAuthProvider(MqttClientAuthProviderType.BASIC, new BasicAuthProviderConfiguration());
     }

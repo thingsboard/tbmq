@@ -68,13 +68,17 @@ public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuth
     @Transactional
     public boolean enableById(UUID id) {
         log.trace("[{}] Trying to enable MQTT client auth provider!", id);
-        return mqttClientAuthProviderRepository.updateEnabled(id, true);
+        return changeEnabledState(id, true);
     }
 
     @Override
     @Transactional
     public boolean disableById(UUID id) {
         log.trace("[{}] Trying to disable MQTT client auth provider!", id);
-        return mqttClientAuthProviderRepository.updateEnabled(id, false);
+        return changeEnabledState(id, false);
+    }
+
+    private boolean changeEnabledState(UUID id, boolean newValue) {
+        return mqttClientAuthProviderRepository.updateEnabled(id, newValue) == 1;
     }
 }

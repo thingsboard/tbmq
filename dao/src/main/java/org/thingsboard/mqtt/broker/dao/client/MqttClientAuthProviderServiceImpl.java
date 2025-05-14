@@ -98,11 +98,11 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
         log.trace("Executing enableAuthProvider [{}]", id);
         var authProvider = mqttClientAuthProviderDao.findById(id);
         if (authProvider == null) {
-            return false;
+            throw new DataValidationException("Unable to enable non-existent MQTT client auth provider!");
         }
         if (authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already enabled!", id, authProvider.getType());
-            return true;
+            return false;
         }
         return mqttClientAuthProviderDao.enableById(id);
     }
@@ -113,11 +113,11 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
         log.trace("Executing disableAuthProvider [{}]", id);
         var authProvider = mqttClientAuthProviderDao.findById(id);
         if (authProvider == null) {
-            return false;
+            throw new DataValidationException("Unable to disable non-existent MQTT client auth provider!");
         }
         if (!authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already disabled!", id, authProvider.getType());
-            return true;
+            return false;
         }
         return mqttClientAuthProviderDao.disableById(id);
     }

@@ -40,6 +40,6 @@ public interface MqttClientAuthProviderRepository extends JpaRepository<MqttClie
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE MqttClientAuthProviderEntity p SET p.enabled = :enabled WHERE p.id = :id")
-    boolean updateEnabled(@Param("id") UUID id, @Param("enabled") boolean enabled);
+    int updateEnabled(@Param("id") UUID id, @Param("enabled") boolean enabled);
 
 }
