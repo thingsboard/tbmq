@@ -22,13 +22,6 @@
     </mat-card-title>
     <span class="flex flex-1"></span>
   </mat-card-header>
-  @if (isLoading$ | async) {
-    <mat-progress-bar color="warn" mode="indeterminate">
-    </mat-progress-bar>
-  }
-  @if (!(isLoading$ | async)) {
-    <div style="height: 4px;"></div>
-  }
   <mat-card-content>
     <form [formGroup]="securitySettingsForm" (ngSubmit)="saveSecuritySettings()" autocomplete="off">
       <fieldset [disabled]="isLoading$ | async">

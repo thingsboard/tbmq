@@ -23,7 +23,6 @@ import org.thingsboard.mqtt.MqttClientCallback;
 import org.thingsboard.mqtt.broker.common.data.integration.IntegrationLifecycleMsg;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 
@@ -32,7 +31,8 @@ import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEP
 public class MqttIntegrationCallback implements MqttClientCallback {
 
     private final IntegrationLifecycleMsg lifecycleMsg;
-    private final Consumer<Void> startProcessorSupplier;
+    private final Runnable startProcessor;
+    private final Runnable stopProcessingLogger;
     private final AtomicBoolean active = new AtomicBoolean(false);
 
     @Override
@@ -41,7 +41,7 @@ public class MqttIntegrationCallback implements MqttClientCallback {
         if (log.isDebugEnabled()) {
             log.debug("[{}][{}] MQTT integration connectionLost reason: ", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName(), cause);
         }
-        active.set(false);
+        logStopProcessingIfRunning();
     }
 
     @Override
@@ -63,12 +63,18 @@ public class MqttIntegrationCallback implements MqttClientCallback {
     @Override
     public void onDisconnect(MqttMessage mqttDisconnectMessage) {
         log.info("[{}][{}] MQTT Integration received Disconnect packet from the target broker", lifecycleMsg.getIntegrationId(), lifecycleMsg.getName());
-        active.set(false);
+        logStopProcessingIfRunning();
     }
 
     private void startProcessingIfNotStarted() {
         if (active.compareAndSet(false, true)) {
-            startProcessorSupplier.accept(null);
+            startProcessor.run();
+        }
+    }
+
+    private void logStopProcessingIfRunning() {
+        if (active.compareAndSet(true, false)) {
+            stopProcessingLogger.run();
         }
     }
 }

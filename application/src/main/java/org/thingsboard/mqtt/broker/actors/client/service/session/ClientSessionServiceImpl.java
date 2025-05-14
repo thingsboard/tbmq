@@ -126,6 +126,15 @@ public class ClientSessionServiceImpl implements ClientSessionService {
     }
 
     @Override
+    public long getActiveSessionCountForNode(String serviceId) {
+        return getAllClientSessions()
+                .values()
+                .stream()
+                .filter(sessionInfo -> sessionInfo.isConnected() && sessionInfo.getServiceId().equals(serviceId))
+                .count();
+    }
+
+    @Override
     public int getClientSessionsCount() {
         return clientSessionMap == null ? 0 : clientSessionMap.size();
     }

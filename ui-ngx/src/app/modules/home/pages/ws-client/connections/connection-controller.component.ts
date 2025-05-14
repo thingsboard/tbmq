@@ -30,6 +30,8 @@ import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field'
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from '@angular/material/icon';
 import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import { ClientCredentialsService } from '@core/http/client-credentials.service';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'tb-connection-controller',
@@ -56,6 +58,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   constructor(private mqttJsClientService: MqttJsClientService,
               private webSocketConnectionService: WebSocketConnectionService,
+              private clientCredentialsService: ClientCredentialsService,
               public fb: UntypedFormBuilder,
               private popoverService: TbPopoverService,
               private renderer: Renderer2,
@@ -63,33 +66,36 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.mqttJsClientService.connectionStatus$.subscribe(
-      statusObject => {
+    this.mqttJsClientService.connectionStatus$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(statusObject => {
         const status = statusObject?.status;
         const details = statusObject?.details?.trim();
         this.updateLabels(status, details);
-      }
-    );
+      });
 
-    this.mqttJsClientService.connection$.subscribe(
-      entity => {
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(entity => {
         if (entity) {
           this.reconnecting = false;
           this.connection = entity;
           this.isPasswordRequired = entity.configuration.passwordRequired;
           this.resetPassword();
+          this.checkExisitingCredentialsPasswordChanged(entity.configuration.clientCredentialsId);
         }
-      }
-    );
+      });
 
-    this.mqttJsClientService.clientConnecting$.subscribe(
-      () => {
+    this.mqttJsClientService.clientConnecting$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
         this.connecting = true;
       }
     );
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
     this.destroy$.complete();
   }
 
@@ -156,8 +162,9 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
 
   connect() {
     const password = this.isPasswordRequired ? this.password : null;
-    this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id).subscribe(
-      connection => {
+    this.webSocketConnectionService.getWebSocketConnectionById(this.connection.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(connection => {
         this.mqttJsClientService.connectClient(connection, password);
       }
     );
@@ -195,6 +202,19 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
           color: 'rgba(0, 0, 0, 0.54)',
           backgroundColor: 'rgba(0, 0, 0, 0.06)'
         };
+    }
+  }
+
+  private checkExisitingCredentialsPasswordChanged(clientCredentialsId: string) {
+    if (clientCredentialsId) {
+      this.clientCredentialsService.getClientCredentials(clientCredentialsId, {ignoreErrors: true})
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(credentials => {
+          if (credentials?.credentialsValue) {
+            const credentialsValue = JSON.parse(credentials.credentialsValue);
+            this.isPasswordRequired = isDefinedAndNotNull(credentialsValue.password);
+          }
+        });
     }
   }
 }

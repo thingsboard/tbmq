@@ -180,7 +180,7 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
 
   updateView(credentialsId: string, useDefaultCredentials = false) {
     if (credentialsId) {
-      this.clientCredentialsService.getClientCredentials(credentialsId).subscribe(
+      this.clientCredentialsService.getClientCredentials(credentialsId, {ignoreErrors: true}).subscribe(
         (credentials) => {
           this.selectCredentialsFormGroup.get('clientCredentials').patchValue(credentials, {emitEvent: false});
           this.propagateChange(credentials);

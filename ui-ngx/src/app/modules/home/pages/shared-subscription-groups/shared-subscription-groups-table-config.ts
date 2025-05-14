@@ -100,7 +100,7 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
           onAction: ($event, entity) => entity.topicFilter,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new ChipsTableColumn<SharedSubscriptionGroup>('clients', 'shared-subscription.client-ids', '50%',
+      new ChipsTableColumn<SharedSubscriptionGroup>('clients', 'shared-subscription.client-ids', '40%',
         entity => entity?.clients?.map(e => e.clientId)?.join(','),
         (entity, value) => this.showSessionDetails(value),
         (entity, value) => {

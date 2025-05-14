@@ -683,6 +683,7 @@ public class ApplicationPersistenceProcessorImpl implements ApplicationPersisten
         ApplicationProcessorStats stats = statsManager.createApplicationProcessorStats(clientId);
 
         ApplicationPersistedMsgCtx persistedMsgCtx = unacknowledgedPersistedMsgCtxService.loadPersistedMsgCtx(clientId);
+        log.info("[{}] Loaded persistedMsgCtx {}", clientId, persistedMsgCtx);
         persistedMsgCtxMap.put(clientId, persistedMsgCtx);
 
         // TODO: make consistent with logic for DEVICES

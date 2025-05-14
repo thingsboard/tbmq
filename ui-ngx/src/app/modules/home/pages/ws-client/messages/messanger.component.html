@@ -42,8 +42,8 @@
   <tb-messages style="overflow: auto"></tb-messages>
 </section>
 
-<div [formGroup]="messangerFormGroup" class="mat-padding flex flex-col">
-  <section class="flex flex-row flex-nowrap items-center gap-4"
+<div [formGroup]="messangerFormGroup" class="mat-padding flex flex-col" style="background: #fff; border-radius: 4px;">
+  <section class="flex flex-row flex-nowrap items-center gap-4 lt-xl:flex-wrap"
     [class.wrap]="isLtLg | async">
     <mat-form-field class="flex flex-1" [class.topic-mat-form-field]="isLtLg | async"
                     style="min-width: 250px !important; width: 100%" hideRequiredMarker>

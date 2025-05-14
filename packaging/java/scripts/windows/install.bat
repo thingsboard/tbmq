@@ -12,9 +12,9 @@ if %jver% NEQ 170 GOTO JAVA_NOT_INSTALLED
 :JAVA_INSTALLED
 
 @ECHO Java 17 found!
-@ECHO Installing ThingsBoard MQTT Broker...
+@ECHO Installing TBMQ...
 
-@ECHO ThingsBoard MQTT Broker installed successfully!
+@ECHO TBMQ installed successfully!
 
 GOTO END
 

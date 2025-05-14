@@ -42,13 +42,13 @@ export class KafkaTopicsTableConfig extends EntityTableConfig<KafkaTopic, TimePa
     this.entitiesFetchFunction = pageLink => this.fetchKafkaTopics(pageLink);
 
     this.columns.push(
-      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '70%', undefined, undefined,
+      new EntityTableColumn<KafkaTopic>('name', 'kafka.name', '60%', undefined, undefined,
         undefined, undefined, (entity) => this.showKafkaTopicTooltip(entity)),
-      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '10%',
+      new EntityTableColumn<KafkaTopic>('partitions', 'kafka.partitions', '100px',
         entity => entity.partitions.toString()),
-      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '10%',
+      new EntityTableColumn<KafkaTopic>('replicationFactor', 'kafka.replicas', '100px',
         entity => entity.replicationFactor.toString()),
-      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '10%',
+      new EntityTableColumn<KafkaTopic>('size', 'kafka.size', '100px',
           entity => formatBytes(entity.size))
     );
   }

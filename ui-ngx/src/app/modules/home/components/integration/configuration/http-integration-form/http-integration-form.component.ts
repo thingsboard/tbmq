@@ -25,7 +25,7 @@ import {
   Validator,
   Validators, ReactiveFormsModule
 } from '@angular/forms';
-import { baseUrl, isDefinedAndNotNull } from '@core/utils';
+import { baseUrl, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { HttpIntegration, HttpRequestType, Integration } from '@shared/models/integration.models';
 import { Store } from '@ngrx/store';
@@ -127,13 +127,13 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
       topicFilters: [['tbmq/#'], Validators.required],
       clientConfiguration: this.fb.group({
         sendOnlyMsgPayload: [false, []],
-        restEndpointUrl: [baseUrl(), Validators.required],
+        restEndpointUrl: [baseUrl(), [Validators.required, notOnlyWhitespaceValidator]],
         requestMethod: [HttpRequestType.POST],
         headers: [{'Content-Type': 'application/json'}, Validators.required],
         credentials: [{ type: IntegrationCredentialType.Anonymous }],
         readTimeoutMs: [0, []],
         maxParallelRequestsCount: [0, []],
-        maxInMemoryBufferSizeInKb: [256, [Validators.min(1), Validators.max(this.MemoryBufferSizeInKbLimit)]],
+        maxInMemoryBufferSizeInKb: [256, [Validators.required, Validators.min(1), Validators.max(this.MemoryBufferSizeInKbLimit)]],
         payloadContentType: [ContentType.BINARY, []],
         sendBinaryOnParseFailure: [true, []],
       })
@@ -150,6 +150,7 @@ export class HttpIntegrationFormComponent extends IntegrationForm implements Con
     if (isDefinedAndNotNull(value?.clientConfiguration?.restEndpointUrl)) {
       this.isNew = false;
       this.baseHttpIntegrationConfigForm.reset(value, {emitEvent: false});
+      this.isBinaryContentType = value.clientConfiguration.payloadContentType === ContentType.BINARY;
     } else {
       this.isNew = true;
       this.propagateChangePending = true;

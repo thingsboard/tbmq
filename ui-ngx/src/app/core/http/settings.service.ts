@@ -41,7 +41,7 @@ export class SettingsService {
   }
 
   public getGeneralSettings<T>(key: string): Observable<AdminSettings<T>> {
-    return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig({ignoreErrors: true, ignoreLoading: true}));
+    return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig({ignoreErrors: true}));
   }
 
   public saveAdminSettings<T>(adminSettings: AdminSettings<T>,

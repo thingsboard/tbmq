@@ -59,7 +59,7 @@ public class InstallScripts {
         }
     }
 
-    public String getUpgradeDataDir() {
+    public String getAppDataDir() {
         if (!StringUtils.isEmpty(dataDir)) {
             if (!Paths.get(this.dataDir).toFile().isDirectory()) {
                 throw new RuntimeException("'install.data_dir' property value is not a valid directory!");
@@ -67,7 +67,7 @@ public class InstallScripts {
             return dataDir;
         } else {
             String workDir = System.getProperty("user.dir");
-            if (workDir.endsWith("application")) {
+            if (workDir.endsWith(APP_DIR)) {
                 return Paths.get(workDir, SRC_DIR, MAIN_DIR, DATA_DIR).toString();
             } else {
                 Path dataDirPath = Paths.get(workDir, APP_DIR, SRC_DIR, MAIN_DIR, DATA_DIR);

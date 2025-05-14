@@ -34,7 +34,8 @@ RUN apt-get update \
     && chown -R ${pkg.user}:${pkg.user} $DATA_FOLDER \
     && chown -R ${pkg.user}:${pkg.user} /var/log/${pkg.name} \
     && chown -R ${pkg.user}:${pkg.user} /tmp \
-    && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar
+    && chmod 555 ${pkg.installFolder}/bin/${pkg.name}.jar \
+    && apt-get install -y curl
 
 USER ${pkg.user}
 

@@ -14,42 +14,42 @@
 /// limitations under the License.
 ///
 
-import { Router } from '@angular/router';
-import { Injectable } from '@angular/core';
-import { Actions } from '@ngrx/effects';
+import { Inject, Injectable } from '@angular/core';
+import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { TranslateService } from '@ngx-translate/core';
 
-import { SettingsActions, } from './settings.actions';
-import { TitleService } from '@app/core/services/title.service';
+import { SettingsActions, SettingsActionTypes, } from './settings.actions';
+import { distinctUntilChanged, map, tap, withLatestFrom } from 'rxjs';
+import { select, Store } from '@ngrx/store';
+import { selectSettingsState } from './settings.selectors';
+import { updateUserLang } from '@core/settings/settings.utils';
+import { DOCUMENT } from '@angular/common';
+import { AppState } from '@core/core.state';
+import { LocalStorageService } from '@core/local-storage/local-storage.service';
+
+export const SETTINGS_KEY = 'SETTINGS';
 
 @Injectable()
 export class SettingsEffects {
   constructor(
       private actions$: Actions<SettingsActions>,
-      // private faviconService: FaviconService,
-      private router: Router,
-      private titleService: TitleService,
-      private translate: TranslateService
+      private store: Store<AppState>,
+      private localStorageService: LocalStorageService,
+      private translate: TranslateService,
+      @Inject(DOCUMENT) private document: Document,
   ) {
   }
 
-  /*setTitle = createEffect(() => merge(
-    this.actions$.pipe(ofType(SettingsActionTypes.CHANGE_LANGUAGE, SettingsActionTypes.CHANGE_WHITE_LABELING)),
-    this.router.events.pipe(filter(event => event instanceof ActivationEnd))
-  ).pipe(
-    tap(() => {
-      this.titleService.setTitle(
-        this.router.routerState.snapshot.root,
-        this.translate
-      );
+  setTranslateServiceLanguage = createEffect(() => this.actions$.pipe(
+    ofType(
+      SettingsActionTypes.CHANGE_LANGUAGE,
+    ),
+    withLatestFrom(this.store.pipe(select(selectSettingsState))),
+    map(settings => settings[1]),
+    distinctUntilChanged((a, b) => a?.userLang === b?.userLang),
+    tap(setting => {
+      this.localStorageService.setItem(SETTINGS_KEY, setting);
+      updateUserLang(this.translate, this.document, setting.userLang);
     })
   ), {dispatch: false});
-
-  setFavicon = createEffect(() => merge(
-    this.actions$.pipe(ofType(SettingsActionTypes.CHANGE_WHITE_LABELING)),
-  ).pipe(
-    tap(() => {
-      this.faviconService.setFavicon();
-    })
-  ), {dispatch: false});*/
 }

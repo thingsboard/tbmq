@@ -25,7 +25,6 @@ import { SettingsService } from '@core/http/settings.service';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
@@ -39,7 +38,7 @@ import { MatTooltip } from '@angular/material/tooltip';
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 

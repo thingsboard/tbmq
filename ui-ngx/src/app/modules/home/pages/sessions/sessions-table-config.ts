@@ -83,10 +83,10 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.handleRowClick = ($event, entity) => this.showSessionDetails($event, entity);
 
     this.columns.push(
-      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '160px'),
-      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '10%',
+      new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '150px'),
+      new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '100px',
         (entity) => connectedStateCell(this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)), connectionStateColor.get(entity.connectionState))),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '10%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
         (entity) => {
         const clientType = entity.clientType;
         const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
@@ -95,7 +95,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         const iconColor = clientTypeValueColor.get(clientType);
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       }),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '25%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '50%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -114,7 +114,7 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           type: CellActionDescriptorType.COPY_BUTTON
         }
       ),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '15%',
+      new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -132,10 +132,10 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           onAction: ($event, entity) => entity.clientIpAdr,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '10%',
+      new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
-      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '10%'),
-      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '160px'),
+      new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),
+      new DateEntityTableColumn<DetailedClientSessionInfo>('disconnectedAt', 'mqtt-client-session.disconnected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('cleanStart', 'mqtt-client-session.clean-start', '60px',
         entity => checkBoxCell(entity?.cleanStart))
     );

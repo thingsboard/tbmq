@@ -55,8 +55,8 @@ spec:
         role: tbmq-ie
       containers:
         - name: server
-          imagePullPolicy: Never
-          image: thingsboard/tbmq-integration-executor:2.0.1
+          imagePullPolicy: Always
+          image: thingsboard/tbmq-integration-executor:2.1.0
           ports:
             - containerPort: 8082
               name: http

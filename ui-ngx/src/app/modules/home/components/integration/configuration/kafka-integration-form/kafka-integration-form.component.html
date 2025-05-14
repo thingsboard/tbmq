@@ -32,14 +32,20 @@
                       [class.!hidden]="!clientConfigurationFormGroup.get('bootstrapServers')?.value?.length"
                       [copyText]="clientConfigurationFormGroup.get('bootstrapServers').value">
       </tb-copy-button>
-      @if (clientConfigurationFormGroup.get('bootstrapServers').hasError('required')) {
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
-                  class="tb-error">
-          warning
-        </mat-icon>
-      }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'integration.bootstrap-servers-required' | translate }}"
+                [class.!hidden]="!clientConfigurationFormGroup.get('bootstrapServers').hasError('required')"
+                class="tb-error">
+        warning
+      </mat-icon>
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'integration.white-space-only' | translate }}"
+                [class.!hidden]="!clientConfigurationFormGroup.get('bootstrapServers').hasError('onlyWhitespace')"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.topic</mat-label>
@@ -48,14 +54,13 @@
                       [class.!hidden]="!clientConfigurationFormGroup.get('topic')?.value?.length"
                       [copyText]="clientConfigurationFormGroup.get('topic').value">
       </tb-copy-button>
-      @if (clientConfigurationFormGroup.get('topic').hasError('required')) {
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'integration.topic-required' | translate }}"
-                  class="tb-error">
-          warning
-        </mat-icon>
-      }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'integration.topic-required' | translate }}"
+                [class.!hidden]="!clientConfigurationFormGroup.get('topic').hasError('required')"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <mat-form-field class="mat-block" appearance="outline">
       <mat-label translate>integration.key</mat-label>
@@ -83,50 +88,46 @@
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.retries</mat-label>
           <input type="number" step="1" min="0" matInput formControlName="retries">
-          @if (clientConfigurationFormGroup.get('retries').hasError('min')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.min-retries-message' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.min-retries-message' | translate }}"
+                    [class.!hidden]="!clientConfigurationFormGroup.get('retries').hasError('min')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.batch-size-bytes</mat-label>
           <input type="number" step="1" min="0" matInput formControlName="batchSize">
-          @if (clientConfigurationFormGroup.get('batchSize').hasError('min')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.min-batch-size-bytes-message' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.min-batch-size-bytes-message' | translate }}"
+                    [class.!hidden]="!clientConfigurationFormGroup.get('batchSize').hasError('min')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.linger-ms</mat-label>
           <input type="number" step="1" min="0" matInput formControlName="linger">
-          @if (clientConfigurationFormGroup.get('linger').hasError('min')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.min-linger-ms-message' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.min-linger-ms-message' | translate }}"
+                    [class.!hidden]="!clientConfigurationFormGroup.get('linger').hasError('min')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.buffer-memory-bytes</mat-label>
           <input type="number" step="1" min="0" matInput formControlName="bufferMemory">
-          @if (clientConfigurationFormGroup.get('bufferMemory').hasError('min')) {
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'integration.min-buffer-memory-message' | translate }}"
-                      class="tb-error">
-              warning
-            </mat-icon>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'integration.min-buffer-memory-message' | translate }}"
+                    [class.!hidden]="!clientConfigurationFormGroup.get('bufferMemory').hasError('min')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field class="mat-block" appearance="outline">
           <mat-label translate>integration.acks</mat-label>

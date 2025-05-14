@@ -27,8 +27,12 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
+import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,6 +47,8 @@ public class ChannelBackpressureManagerImplTest {
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
     @MockBean
     DevicePersistenceProcessor devicePersistenceProcessor;
+    @MockBean
+    StatsManager statsManager;
 
     @SpyBean
     ChannelBackpressureManagerImpl channelBackpressureManager;
@@ -59,6 +65,9 @@ public class ChannelBackpressureManagerImplTest {
         when(state.getClientId()).thenReturn(clientId);
         when(state.getCurrentSessionCtx()).thenReturn(ctx);
         when(ctx.isCleanSession()).thenReturn(false);
+
+        when(statsManager.createNonWritableClientsCounter()).thenReturn(new AtomicInteger());
+        channelBackpressureManager.init();
     }
 
     @After
@@ -72,6 +81,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelWritable(state);
 
         verify(applicationPersistenceProcessor).processChannelWritable(eq(state));
+        assertThatCounterIs(0);
     }
 
     @Test
@@ -81,6 +91,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelWritable(state);
 
         verify(devicePersistenceProcessor).processChannelWritable(eq(clientId));
+        assertThatCounterIs(0);
     }
 
     @Test
@@ -90,6 +101,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(applicationPersistenceProcessor).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(1);
     }
 
     @Test
@@ -99,6 +111,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(devicePersistenceProcessor).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(1);
     }
 
     @Test
@@ -109,6 +122,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelWritable(state);
 
         verify(applicationPersistenceProcessor, never()).processChannelWritable(eq(state));
+        assertThatCounterIs(0);
     }
 
     @Test
@@ -119,6 +133,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelWritable(state);
 
         verify(devicePersistenceProcessor, never()).processChannelWritable(eq(clientId));
+        assertThatCounterIs(0);
     }
 
     @Test
@@ -129,6 +144,7 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(applicationPersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(1);
     }
 
     @Test
@@ -140,6 +156,11 @@ public class ChannelBackpressureManagerImplTest {
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(devicePersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(1);
+    }
+
+    private void assertThatCounterIs(int expected) {
+        assertThat(channelBackpressureManager.getNonWritableClientsCount().get()).isEqualTo(expected);
     }
 
     private void setCleanSession() {

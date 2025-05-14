@@ -83,6 +83,7 @@ Last but not least, it had been running in production for more than a year befor
 - MQTT WebSocket client
 - Integrations with external systems (HTTP, MQTT, Kafka)
 - Kafka topics and consumer groups monitoring
+- Proxy protocol
 
 ## Documentation
 

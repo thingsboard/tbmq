@@ -871,14 +871,16 @@
     "max-parallel-requests-count": "Max number of parallel requests",
     "max-parallel-requests-count-hint": "The maximum number of HTTP requests that can be processed simultaneously. The value of 0 specifies no limit in parallel processing",
     "max-response-size": "Max response size (in KB)",
-    "max-response-size-hint": "The maximum amount of memory allocated for buffering data when decoding or encoding HTTP messages, such as JSON or XML payloads",
+    "max-response-size-hint": "The maximum amount of memory used to buffer the response body when decoding HTTP messages (e.g., JSON or XML) before they are passed to the application.",
     "memory-buffer-size-range": "Memory buffer size must be between 0 and {{max}} KB",
+    "memory-buffer-size-required": "Memory buffer size is required",
     "restart": "Restart integration",
     "enable": "Enable integration",
     "disable": "Disable integration",
     "inactive-subscription": "The integration subscription is inactive. Try to refresh the Integrations table, otherwise update or restart integration to sync subscriptions.",
     "restart-title": "Are you sure you want to restart the integration '{{name}}'?",
     "restart-text": "After the confirmation the integration process will be reinitialized.",
+    "restarted": "Integration '{{name}}' has been restarted",
     "select-content-type": "Payload content type",
     "select-content-type-hint": "Select how to format the payload content before sending",
     "send-binary-on-failure": "Send as binary on parsing error",
@@ -908,7 +910,8 @@
     "send-only-payload": "Send only message payload",
     "send-only-payload-hint": "If enabled, the incoming message's payload is forwarded as is. If disabled, a JSON object with the payload and other properties is sent",
     "check-connection-mqtt-hint": "Be careful, Check Connection creates a temporary session using the current configuration and specified client ID to test connectivity. If an active session with this client ID exists on the target broker, a session conflict occurs, and it will be disconnected due to the unique ID requirement. The original client will restore its connection after the reconnect period if configured, but this will cause an unintended brief disruption. If reconnection is disabled, the client will remain disconnected.",
-    "cert-required": "Either the 'CA certificate file' or both the 'Certificate file' and 'Private key file' are required."
+    "cert-required": "Either the 'CA certificate file' or both the 'Certificate file' and 'Private key file' are required.",
+    "white-space-only": "Whitespace-only value is not allowed."
   },
   "language": {
     "language": "Language",

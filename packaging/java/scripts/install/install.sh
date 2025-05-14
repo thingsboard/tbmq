@@ -32,9 +32,9 @@ su -s /bin/sh -c "java -cp ${jarfile} $JAVA_OPTS -Dloader.main=org.thingsboard.m
                     org.springframework.boot.loader.launch.PropertiesLauncher" "$run_user"
 
 if [ $? -ne 0 ]; then
-    echo "ThingsBoard MQTT Broker installation failed!"
+    echo "TBMQ installation failed!"
 else
-    echo "ThingsBoard MQTT Broker installed successfully!"
+    echo "TBMQ installed successfully!"
 fi
 
 exit $?

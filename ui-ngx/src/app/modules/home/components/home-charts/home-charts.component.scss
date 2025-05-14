@@ -72,11 +72,11 @@
               color: rgba(0,0,0,0.38);
             }
 
-            /*@media #{$mat-lt-xl} {
+            @media screen and (min-width: 1280px) and (max-width: 1500px) {
               span {
-                font-size: 11px;
+                font-size: 0.7em;
               }
-            }*/
+            }
           }
         }
       }

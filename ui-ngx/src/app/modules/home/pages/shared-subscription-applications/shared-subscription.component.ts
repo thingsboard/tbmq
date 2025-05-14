@@ -68,6 +68,10 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
     this.entityForm.get('topicFilter').disable();
   }
 
+  prepareFormValue(formValue: SharedSubscription): SharedSubscription {
+    return formValue;
+  }
+
   onClickTbCopyButton(value: string) {
     this.copyBtn().copy(value);
   }

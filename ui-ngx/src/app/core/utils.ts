@@ -19,6 +19,7 @@ import {Observable, Subject} from 'rxjs';
 import {finalize, share} from 'rxjs/operators';
 import {DataSizeUnitType, WebSocketTimeUnit} from '@shared/models/ws-client.model';
 import RandExp from 'randexp';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 const varsRegex = /\${([^}]*)}/g;
 
@@ -681,3 +682,8 @@ export const calculateLatest = (data: any): number => {
     return null;
   }
 };
+
+export function notOnlyWhitespaceValidator(control: AbstractControl): ValidationErrors | null {
+  const isOnlyWhitespace = typeof control.value === 'string' && control.value?.length && control.value.trim().length === 0;
+  return isOnlyWhitespace ? { onlyWhitespace: true } : null;
+}
