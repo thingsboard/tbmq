@@ -20,43 +20,43 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
-import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 
 @Component
 @RequiredArgsConstructor
-public class MqttClientAuthProviderFactory {
+public class MqttAuthProviderFactory {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService credentialsService;
     private final CacheNameResolver cacheNameResolver;
     private final @Lazy BCryptPasswordEncoder passwordEncoder;
 
-    public BasicMqttClientAuthProvider createBasicProvider(BasicAuthProviderConfiguration configuration) {
+    public BasicMqttClientAuthProvider createBasicProvider(BasicMqttAuthProviderConfiguration configuration) {
         return createBasicProvider(configuration, true);
     }
 
-    public BasicMqttClientAuthProvider createBasicProvider(BasicAuthProviderConfiguration configuration, boolean enabled) {
+    public BasicMqttClientAuthProvider createBasicProvider(BasicMqttAuthProviderConfiguration configuration, boolean enabled) {
         return new BasicMqttClientAuthProvider(authorizationRuleService, credentialsService, cacheNameResolver, passwordEncoder, enabled, configuration);
     }
 
-    public SslMqttClientAuthProvider createSslProvider(SslAuthProviderConfiguration configuration) {
+    public SslMqttClientAuthProvider createSslProvider(SslMqttAuthProviderConfiguration configuration) {
         return createSslProvider(configuration, true);
     }
 
-    public SslMqttClientAuthProvider createSslProvider(SslAuthProviderConfiguration configuration, boolean enabled) {
+    public SslMqttClientAuthProvider createSslProvider(SslMqttAuthProviderConfiguration configuration, boolean enabled) {
         return new SslMqttClientAuthProvider(authorizationRuleService, credentialsService, cacheNameResolver, enabled, configuration);
     }
 
 
-    public JwtMqttClientAuthProvider createJwtProvider(JwtAuthProviderConfiguration configuration) {
+    public JwtMqttClientAuthProvider createJwtProvider(JwtMqttAuthProviderConfiguration configuration) {
         return createJwtProvider(configuration, true);
     }
 
-    public JwtMqttClientAuthProvider createJwtProvider(JwtAuthProviderConfiguration configuration, boolean enabled) {
+    public JwtMqttClientAuthProvider createJwtProvider(JwtMqttAuthProviderConfiguration configuration, boolean enabled) {
         return new JwtMqttClientAuthProvider(enabled, configuration);
     }
 

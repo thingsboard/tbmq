@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security;
+package org.thingsboard.mqtt.broker.service.mqtt.auth;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.BaseData;
-import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 
-import java.io.Serial;
+import java.util.UUID;
 
-@Data
-@ToString
-@EqualsAndHashCode(callSuper = true)
-public class MqttAuthProviderDto extends BaseData {
+public interface MqttAuthProviderManagerService {
 
-    @Serial
-    private static final long serialVersionUID = 464223366680445871L;
+    MqttAuthProvider saveAuthProvider(MqttAuthProvider authProvider);
 
-    private boolean enabled;
+    void deleteAuthProvider(UUID id);
 
-    @NoXss
-    private MqttClientAuthProviderType type;
-    private MqttClientAuthProviderConfiguration configuration;
+    void enableAuthProvider(UUID id);
+
+    void disableAuthProvider(UUID id);
 
 }

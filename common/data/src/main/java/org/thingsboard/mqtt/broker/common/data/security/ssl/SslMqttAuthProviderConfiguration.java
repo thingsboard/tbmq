@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.auth;
+package org.thingsboard.mqtt.broker.common.data.security.ssl;
 
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
-import java.util.UUID;
+@Data
+public class SslMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
 
-public interface MqttClientAuthProviderManagerService {
+    private boolean skipValidityCheckForClientCert;
 
-    MqttAuthProviderDto saveAuthProvider(MqttAuthProviderDto authProvider);
-
-    void deleteAuthProvider(UUID id);
-
-    void enableAuthProvider(UUID id);
-
-    void disableAuthProvider(UUID id);
+    @Override
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.SSL;
+    }
 
 }

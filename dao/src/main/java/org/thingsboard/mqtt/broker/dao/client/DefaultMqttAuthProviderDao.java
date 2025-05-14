@@ -22,10 +22,10 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
-import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
+import org.thingsboard.mqtt.broker.dao.model.MqttAuthProviderEntity;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -33,33 +33,33 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuthProviderEntity, MqttAuthProviderDto>
-        implements MqttClientAuthProviderDao {
+public class DefaultMqttAuthProviderDao extends AbstractDao<MqttAuthProviderEntity, MqttAuthProvider>
+        implements MqttAuthProviderDao {
 
-    private final MqttClientAuthProviderRepository mqttClientAuthProviderRepository;
+    private final MqttAuthProviderRepository mqttAuthProviderRepository;
 
     @Override
-    protected Class<MqttClientAuthProviderEntity> getEntityClass() {
-        return MqttClientAuthProviderEntity.class;
+    protected Class<MqttAuthProviderEntity> getEntityClass() {
+        return MqttAuthProviderEntity.class;
     }
 
     @Override
-    protected CrudRepository<MqttClientAuthProviderEntity, UUID> getCrudRepository() {
-        return mqttClientAuthProviderRepository;
+    protected CrudRepository<MqttAuthProviderEntity, UUID> getCrudRepository() {
+        return mqttAuthProviderRepository;
     }
 
     @Override
-    public PageData<MqttAuthProviderDto> findAll(PageLink pageLink) {
+    public PageData<MqttAuthProvider> findAll(PageLink pageLink) {
         log.trace("Trying to find all MQTT client auth providers, pageLink {}", pageLink);
-        return DaoUtil.toPageData(mqttClientAuthProviderRepository.findAll(
+        return DaoUtil.toPageData(mqttAuthProviderRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
     }
 
     @Override
-    public PageData<MqttAuthProviderDto> findAllEnabled(PageLink pageLink) {
+    public PageData<MqttAuthProvider> findAllEnabled(PageLink pageLink) {
         log.trace("Trying to find all enabled MQTT client auth providers, pageLink {}", pageLink);
-        return DaoUtil.toPageData(mqttClientAuthProviderRepository.findAllEnabled(
+        return DaoUtil.toPageData(mqttAuthProviderRepository.findAllEnabled(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
     }
@@ -79,6 +79,6 @@ public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuth
     }
 
     private boolean changeEnabledState(UUID id, boolean newValue) {
-        return mqttClientAuthProviderRepository.updateEnabled(id, newValue) == 1;
+        return mqttAuthProviderRepository.updateEnabled(id, newValue) == 1;
     }
 }

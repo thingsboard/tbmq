@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -42,7 +42,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     private final InternodeNotificationsQueueFactory internodeNotificationsQueueFactory;
     private final InternodeNotificationsHelperImpl helper;
     private final ServiceInfoProvider serviceInfoProvider;
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final MqttAuthProviderManager mqttAuthProviderManager;
 
     private volatile boolean stopped = false;
 
@@ -88,8 +88,8 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
         // TODO: how to use this key?
         String key = msg.getKey();
         InternodeNotificationProto notificationProto = msg.getValue();
-        if (notificationProto.hasMqttClientAuthProviderProto()) {
-            mqttClientAuthProviderManager.handleProviderNotification(notificationProto.getMqttClientAuthProviderProto());
+        if (notificationProto.hasMqttAuthProviderProto()) {
+            mqttAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
         }
     }
 

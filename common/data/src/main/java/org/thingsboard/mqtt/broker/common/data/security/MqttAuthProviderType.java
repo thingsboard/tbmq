@@ -23,20 +23,20 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Getter
-public enum MqttClientAuthProviderType {
+public enum MqttAuthProviderType {
 
     BASIC(0), SSL(1), JWT(2);
 
     private final int protoNumber;
 
-    private static final Map<Integer, MqttClientAuthProviderType> LOOKUP_MAP =
+    private static final Map<Integer, MqttAuthProviderType> LOOKUP_MAP =
             Arrays.stream(values()).collect(Collectors.toMap(type -> type.protoNumber, Function.identity()));
 
-    MqttClientAuthProviderType(int protoNumber) {
+    MqttAuthProviderType(int protoNumber) {
         this.protoNumber = protoNumber;
     }
 
-    public static MqttClientAuthProviderType fromProtoNumber(int protoNumber) {
+    public static MqttAuthProviderType fromProtoNumber(int protoNumber) {
         return LOOKUP_MAP.get(protoNumber);
     }
 

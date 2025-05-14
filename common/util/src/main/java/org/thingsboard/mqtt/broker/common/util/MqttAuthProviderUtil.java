@@ -15,17 +15,17 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
-import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 
-public class MqttClientAuthProviderUtil {
+public class MqttAuthProviderUtil {
 
-    public static ShortMqttClientAuthProvider toShortMqttClientAuthProvider(MqttAuthProviderDto mqttClientAuthProvider) {
-        return ShortMqttClientAuthProvider.builder()
-                .id(mqttClientAuthProvider.getId())
-                .enabled(mqttClientAuthProvider.isEnabled())
-                .type(mqttClientAuthProvider.getType())
-                .createdTime(mqttClientAuthProvider.getCreatedTime())
+    public static ShortMqttAuthProvider toShortMqttAuthProvider(MqttAuthProvider mqttAuthProvider) {
+        return ShortMqttAuthProvider.builder()
+                .id(mqttAuthProvider.getId())
+                .enabled(mqttAuthProvider.isEnabled())
+                .type(mqttAuthProvider.getType())
+                .createdTime(mqttAuthProvider.getCreatedTime())
                 .build();
     }
 }

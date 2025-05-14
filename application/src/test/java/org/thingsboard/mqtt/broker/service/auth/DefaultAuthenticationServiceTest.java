@@ -17,26 +17,15 @@ package org.thingsboard.mqtt.broker.service.auth;
 
 import io.netty.handler.ssl.SslHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthProviderType;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.BasicMqttClientAuthProvider;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
-import org.thingsboard.mqtt.broker.service.auth.providers.SslMqttClientAuthProvider;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @Slf4j
 @RunWith(MockitoJUnitRunner.class)

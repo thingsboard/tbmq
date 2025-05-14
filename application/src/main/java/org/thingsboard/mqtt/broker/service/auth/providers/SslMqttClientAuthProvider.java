@@ -23,10 +23,9 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
@@ -53,17 +52,17 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.
 import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.X_509_AUTH_FAILURE;
 
 @Slf4j
-public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslAuthProviderConfiguration> {
+public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqttAuthProviderConfiguration> {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
     private final CacheNameResolver cacheNameResolver;
 
     private boolean enabled;
-    private SslAuthProviderConfiguration configuration;
+    private SslMqttAuthProviderConfiguration configuration;
 
     public SslMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService, MqttClientCredentialsService credentialsService,
-                                     CacheNameResolver cacheNameResolver, boolean enabled, SslAuthProviderConfiguration configuration) {
+                                     CacheNameResolver cacheNameResolver, boolean enabled, SslMqttAuthProviderConfiguration configuration) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = credentialsService;
         this.cacheNameResolver = cacheNameResolver;
@@ -73,8 +72,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslAuth
 
     // TODO: consider if this should be renamed to X_509_CERTIFICATE_CHAIN. See AuthProviderType for more details.
     @Override
-    public MqttClientAuthProviderType getType() {
-        return MqttClientAuthProviderType.SSL;
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.SSL;
     }
 
     @Override
@@ -93,12 +92,12 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslAuth
     }
 
     @Override
-    public SslAuthProviderConfiguration getConfiguration() {
+    public SslMqttAuthProviderConfiguration getConfiguration() {
         return configuration;
     }
 
     @Override
-    public void updateConfiguration(SslAuthProviderConfiguration configuration) {
+    public void updateConfiguration(SslMqttAuthProviderConfiguration configuration) {
         this.configuration = configuration;
     }
 

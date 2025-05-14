@@ -25,10 +25,9 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -45,7 +44,7 @@ import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicAuthProviderConfiguration> {
+public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicMqttAuthProviderConfiguration> {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
@@ -54,14 +53,14 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     private HashFunction hashFunction;
 
     private boolean enabled;
-    private BasicAuthProviderConfiguration configuration;
+    private BasicMqttAuthProviderConfiguration configuration;
 
     public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
                                        MqttClientCredentialsService clientCredentialsService,
                                        CacheNameResolver cacheNameResolver,
                                        BCryptPasswordEncoder passwordEncoder,
                                        boolean enabled,
-                                       BasicAuthProviderConfiguration configuration) {
+                                       BasicMqttAuthProviderConfiguration configuration) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
         this.cacheNameResolver = cacheNameResolver;
@@ -72,8 +71,8 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     }
 
     @Override
-    public MqttClientAuthProviderType getType() {
-        return MqttClientAuthProviderType.BASIC;
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.BASIC;
     }
 
     @Override
@@ -92,12 +91,12 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     }
 
     @Override
-    public BasicAuthProviderConfiguration getConfiguration() {
+    public BasicMqttAuthProviderConfiguration getConfiguration() {
         return configuration;
     }
 
     @Override
-    public void updateConfiguration(BasicAuthProviderConfiguration configuration) {
+    public void updateConfiguration(BasicMqttAuthProviderConfiguration configuration) {
         this.configuration = configuration;
     }
 

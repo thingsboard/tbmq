@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security.ssl;
+package org.thingsboard.mqtt.broker.common.data.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
+import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.id.HasId;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+
+import java.io.Serial;
+import java.util.UUID;
 
 @Data
-public class SslAuthProviderConfiguration implements MqttClientAuthProviderConfiguration {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ShortMqttAuthProvider implements HasId {
 
-    private boolean skipValidityCheckForClientCert;
+    @Serial
+    private static final long serialVersionUID = -2600428961625900686L;
 
-    @Override
-    public MqttClientAuthProviderType getType() {
-        return MqttClientAuthProviderType.SSL;
-    }
+    private UUID id;
+    private boolean enabled;
+    private MqttAuthProviderType type;
+    private long createdTime;
 
 }

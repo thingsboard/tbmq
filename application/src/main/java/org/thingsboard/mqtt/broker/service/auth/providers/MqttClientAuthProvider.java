@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
-public interface MqttClientAuthProvider<T extends MqttClientAuthProviderConfiguration> {
+public interface MqttClientAuthProvider<T extends MqttAuthProviderConfiguration> {
 
-    MqttClientAuthProviderType getType();
+    MqttAuthProviderType getType();
 
     boolean isEnabled();
 

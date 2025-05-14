@@ -21,25 +21,25 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
+import org.thingsboard.mqtt.broker.dao.model.MqttAuthProviderEntity;
 
 import java.util.UUID;
 
-public interface MqttClientAuthProviderRepository extends JpaRepository<MqttClientAuthProviderEntity, UUID> {
+public interface MqttAuthProviderRepository extends JpaRepository<MqttAuthProviderEntity, UUID> {
 
-    @Query("SELECT p FROM MqttClientAuthProviderEntity p WHERE " +
+    @Query("SELECT p FROM MqttAuthProviderEntity p WHERE " +
            "LOWER(p.type) LIKE LOWER(CONCAT('%', :textSearch, '%'))")
-    Page<MqttClientAuthProviderEntity> findAll(@Param("textSearch") String textSearch,
-                                               Pageable pageable);
+    Page<MqttAuthProviderEntity> findAll(@Param("textSearch") String textSearch,
+                                         Pageable pageable);
 
-    @Query("SELECT p FROM MqttClientAuthProviderEntity p WHERE " +
+    @Query("SELECT p FROM MqttAuthProviderEntity p WHERE " +
            "LOWER(p.type) LIKE LOWER(CONCAT('%', :textSearch, '%')) AND p.enabled = true")
-    Page<MqttClientAuthProviderEntity> findAllEnabled(@Param("textSearch") String textSearch,
-                                                      Pageable pageable);
+    Page<MqttAuthProviderEntity> findAllEnabled(@Param("textSearch") String textSearch,
+                                                Pageable pageable);
 
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("UPDATE MqttClientAuthProviderEntity p SET p.enabled = :enabled WHERE p.id = :id")
+    @Query("UPDATE MqttAuthProviderEntity p SET p.enabled = :enabled WHERE p.id = :id")
     int updateEnabled(@Param("id") UUID id, @Param("enabled") boolean enabled);
 
 }

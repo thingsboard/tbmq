@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +31,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultAuthenticationService implements AuthenticationService {
 
-    private final MqttClientAuthProviderManager authProviderManager;
+    private final MqttAuthProviderManager authProviderManager;
 
     // TODO: check for backward compatibility, when Auth strategy: SINGLE, BOTH were used.
     // TODO: Uncomment test: DefaultAuthenticationServiceTest
@@ -47,7 +47,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
         // JWT first
         if (authProviderManager.isJwtEnabled() && authProviderManager.isVerifyJwtFirst()) {
-            AuthResponse jwtResponse = authProviderManager.getJwtMqttClientAuthProvider().authenticate(authContext);
+            AuthResponse jwtResponse = authProviderManager.getJwtMqttAuthProvider().authenticate(authContext);
             if (jwtResponse.isSuccess()) {
                 return jwtResponse;
             }
@@ -56,7 +56,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
         // BASIC
         if (authProviderManager.isBasicEnabled()) {
-            AuthResponse basicResponse = authProviderManager.getBasicMqttClientAuthProvider().authenticate(authContext);
+            AuthResponse basicResponse = authProviderManager.getBasicMqttAuthProvider().authenticate(authContext);
             if (basicResponse.isSuccess()) {
                 return basicResponse;
             }
@@ -65,7 +65,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
         // SSL
         if (authProviderManager.isSslEnabled()) {
-            AuthResponse sslResponse = authProviderManager.getSslMqttClientAuthProvider().authenticate(authContext);
+            AuthResponse sslResponse = authProviderManager.getSslMqttAuthProvider().authenticate(authContext);
             if (sslResponse.isSuccess()) {
                 return sslResponse;
             }
@@ -74,7 +74,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
 
         // JWT last
         if (authProviderManager.isJwtEnabled() && !authProviderManager.isVerifyJwtFirst()) {
-            AuthResponse jwtResponse = authProviderManager.getJwtMqttClientAuthProvider().authenticate(authContext);
+            AuthResponse jwtResponse = authProviderManager.getJwtMqttAuthProvider().authenticate(authContext);
             if (jwtResponse.isSuccess()) {
                 return jwtResponse;
             }

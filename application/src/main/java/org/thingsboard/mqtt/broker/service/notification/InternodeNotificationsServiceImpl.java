@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     private final ServiceInfoProvider serviceInfoProvider;
     private final InternodeNotificationsHelper helper;
 
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final MqttAuthProviderManager mqttAuthProviderManager;
 
     private TbQueueProducer<TbProtoQueueMsg<InternodeNotificationProto>> internodeNotificationsProducer;
 
@@ -57,9 +57,9 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
                 broadcastToNode(serviceId, notificationProto);
                 continue;
             }
-            if (notificationProto.hasMqttClientAuthProviderProto()) {
-                mqttClientAuthProviderManager
-                        .handleProviderNotification(notificationProto.getMqttClientAuthProviderProto());
+            if (notificationProto.hasMqttAuthProviderProto()) {
+                mqttAuthProviderManager
+                        .handleProviderNotification(notificationProto.getMqttAuthProviderProto());
             }
         }
     }

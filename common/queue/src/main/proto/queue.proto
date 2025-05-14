@@ -127,7 +127,7 @@ message DisconnectClientCommandProto {
   optional string reasonType = 4;
 }
 
-enum MqttClientAuthProviderEventProto {
+enum MqttAuthProviderEventProto {
   PROVIDER_CREATED = 0;
   PROVIDER_UPDATED = 1;
   PROVIDER_ENABLED = 2;
@@ -135,23 +135,23 @@ enum MqttClientAuthProviderEventProto {
   PROVIDER_DELETED = 4;
 }
 
-enum MqttClientAuthProviderTypeProto {
+enum MqttAuthProviderTypeProto {
   BASIC = 0;
   SSL = 1;
   JWT = 2;
 }
 
 message MqttAuthProviderProto {
-  int64 mqttClientAuthProviderIdMSB = 1;
-  int64 mqttClientAuthProviderIdLSB = 2;
-  MqttClientAuthProviderEventProto eventType = 3;
-  optional MqttClientAuthProviderTypeProto providerType = 4;
+  int64 mqttAuthProviderIdMSB = 1;
+  int64 mqttAuthProviderIdLSB = 2;
+  MqttAuthProviderEventProto eventType = 3;
+  optional MqttAuthProviderTypeProto providerType = 4;
   optional bool enabled = 5;
   optional string configuration = 6;
 }
 
 message InternodeNotificationProto {
-  MqttAuthProviderProto mqttClientAuthProviderProto = 1;
+  MqttAuthProviderProto mqttAuthProviderProto = 1;
 }
 
 message DevicePublishMsgProto {

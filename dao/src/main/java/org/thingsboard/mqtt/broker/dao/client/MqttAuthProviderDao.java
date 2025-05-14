@@ -13,28 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.dao.client;
 
-import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.dao.Dao;
 
-public interface MqttClientAuthProviderManager {
+import java.util.UUID;
 
-    boolean isAuthEnabled();
+public interface MqttAuthProviderDao extends Dao<MqttAuthProvider> {
 
-    boolean isJwtEnabled();
+    PageData<MqttAuthProvider> findAll(PageLink pageLink);
 
-    boolean isBasicEnabled();
+    PageData<MqttAuthProvider> findAllEnabled(PageLink pageLink);
 
-    boolean isSslEnabled();
+    boolean enableById(UUID id);
 
-    boolean isVerifyJwtFirst();
-
-    JwtMqttClientAuthProvider getJwtMqttClientAuthProvider();
-
-    BasicMqttClientAuthProvider getBasicMqttClientAuthProvider();
-
-    SslMqttClientAuthProvider getSslMqttClientAuthProvider();
-
-    void handleProviderNotification(MqttAuthProviderProto notification);
-
+    boolean disableById(UUID id);
 }

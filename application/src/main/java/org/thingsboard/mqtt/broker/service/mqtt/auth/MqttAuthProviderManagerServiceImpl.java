@@ -18,24 +18,23 @@ package org.thingsboard.mqtt.broker.service.mqtt.auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
-import org.thingsboard.mqtt.broker.dao.client.provider.MqttClientAuthProviderService;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 
 import java.util.UUID;
 
-// TODO: should we send notification if provider not deleted/enabled/disabled?
 @Service
 @RequiredArgsConstructor
-public class MqttClientAuthProviderManagerServiceImpl implements MqttClientAuthProviderManagerService {
+public class MqttAuthProviderManagerServiceImpl implements MqttAuthProviderManagerService {
 
-    private final MqttClientAuthProviderService providerService;
+    private final MqttAuthProviderService providerService;
     private final InternodeNotificationsService internodeNotificationsService;
 
     @Override
-    public MqttAuthProviderDto saveAuthProvider(MqttAuthProviderDto authProvider) {
-        MqttAuthProviderDto saved = providerService.saveAuthProvider(authProvider);
+    public MqttAuthProvider saveAuthProvider(MqttAuthProvider authProvider) {
+        MqttAuthProvider saved = providerService.saveAuthProvider(authProvider);
         InternodeNotificationProto notificationProto = authProvider.getId() == null ?
                 ProtoConverter.toMqttAuthProviderCreatedEvent(saved) :
                 ProtoConverter.toMqttAuthProviderUpdatedEvent(saved);

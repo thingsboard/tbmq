@@ -16,26 +16,26 @@
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
 
 // TODO: add implementation
 @Slf4j
-public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtAuthProviderConfiguration> {
+public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqttAuthProviderConfiguration> {
 
     private boolean enabled;
-    private JwtAuthProviderConfiguration configuration;
+    private JwtMqttAuthProviderConfiguration configuration;
 
-    public JwtMqttClientAuthProvider(boolean enabled, JwtAuthProviderConfiguration configuration) {
+    public JwtMqttClientAuthProvider(boolean enabled, JwtMqttAuthProviderConfiguration configuration) {
         this.enabled = enabled;
         this.configuration = configuration;
     }
 
     @Override
-    public MqttClientAuthProviderType getType() {
-        return MqttClientAuthProviderType.JWT;
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.JWT;
     }
 
     @Override
@@ -54,12 +54,12 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtAuth
     }
 
     @Override
-    public JwtAuthProviderConfiguration getConfiguration() {
+    public JwtMqttAuthProviderConfiguration getConfiguration() {
         return configuration;
     }
 
     @Override
-    public void updateConfiguration(JwtAuthProviderConfiguration configuration) {
+    public void updateConfiguration(JwtMqttAuthProviderConfiguration configuration) {
         this.configuration = configuration;
     }
 

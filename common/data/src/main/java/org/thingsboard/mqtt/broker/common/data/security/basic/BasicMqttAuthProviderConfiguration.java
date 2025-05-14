@@ -16,15 +16,15 @@
 package org.thingsboard.mqtt.broker.common.data.security.basic;
 
 import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
 @Data
-public class BasicAuthProviderConfiguration implements MqttClientAuthProviderConfiguration {
+public class BasicMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
 
     @Override
-    public MqttClientAuthProviderType getType() {
-        return MqttClientAuthProviderType.BASIC;
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.BASIC;
     }
 
 }
