@@ -27,7 +27,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcType;
 import org.hibernate.dialect.PostgreSQLJsonPGObjectJsonbType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = ModelConstants.MQTT_CLIENT_AUTH_PROVIDER_COLUMN_FAMILY_NAME)
-public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthProviderDto> implements BaseEntity<MqttClientAuthProviderDto> {
+public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttAuthProviderDto> implements BaseEntity<MqttAuthProviderDto> {
 
     @Column(name = ModelConstants.MQTT_CLIENT_AUTH_PROVIDER_ENABLED_PROPERTY)
     private boolean enabled;
@@ -54,7 +54,7 @@ public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthPr
     public MqttClientAuthProviderEntity() {
     }
 
-    public MqttClientAuthProviderEntity(MqttClientAuthProviderDto mqttClientAuthProvider) {
+    public MqttClientAuthProviderEntity(MqttAuthProviderDto mqttClientAuthProvider) {
         if (mqttClientAuthProvider.getId() != null) {
             this.setId(mqttClientAuthProvider.getId());
         }
@@ -66,8 +66,8 @@ public class MqttClientAuthProviderEntity extends BaseSqlEntity<MqttClientAuthPr
     }
 
     @Override
-    public MqttClientAuthProviderDto toData() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = new MqttClientAuthProviderDto();
+    public MqttAuthProviderDto toData() {
+        MqttAuthProviderDto mqttClientAuthProvider = new MqttAuthProviderDto();
         mqttClientAuthProvider.setId(id);
         mqttClientAuthProvider.setCreatedTime(createdTime);
         mqttClientAuthProvider.setEnabled(enabled);

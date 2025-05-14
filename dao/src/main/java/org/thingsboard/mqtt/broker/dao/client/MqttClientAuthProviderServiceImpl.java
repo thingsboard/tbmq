@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.util.MqttClientAuthProviderUtil;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttClientAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -44,7 +44,7 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
     private final MqttClientAuthProviderDao mqttClientAuthProviderDao;
 
     @Override
-    public MqttClientAuthProviderDto saveAuthProvider(MqttClientAuthProviderDto authProvider) {
+    public MqttAuthProviderDto saveAuthProvider(MqttAuthProviderDto authProvider) {
         log.trace("Executing saveAuthProvider [{}]", authProvider);
         authProviderValidator.validate(authProvider);
         try {
@@ -60,7 +60,7 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
     }
 
     @Override
-    public Optional<MqttClientAuthProviderDto> getAuthProviderById(UUID id) {
+    public Optional<MqttAuthProviderDto> getAuthProviderById(UUID id) {
         log.trace("Executing getAuthProviderById [{}]", id);
         return Optional.ofNullable(mqttClientAuthProviderDao.findById(id));
     }
@@ -79,14 +79,14 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
     public PageData<ShortMqttClientAuthProvider> getAuthProviders(PageLink pageLink) {
         log.trace("Executing getAuthProviders, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
-        PageData<MqttClientAuthProviderDto> pageData = mqttClientAuthProviderDao.findAll(pageLink);
+        PageData<MqttAuthProviderDto> pageData = mqttClientAuthProviderDao.findAll(pageLink);
         var shortMqttClientAuthProviders = pageData.getData().stream()
                 .map(MqttClientAuthProviderUtil::toShortMqttClientAuthProvider).collect(Collectors.toList());
         return new PageData<>(shortMqttClientAuthProviders, pageData.getTotalPages(), pageData.getTotalElements(), pageData.hasNext());
     }
 
     @Override
-    public PageData<MqttClientAuthProviderDto> getEnabledAuthProviders(PageLink pageLink) {
+    public PageData<MqttAuthProviderDto> getEnabledAuthProviders(PageLink pageLink) {
         log.trace("Executing getEnabledAuthProviders, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
         return mqttClientAuthProviderDao.findAllEnabled(pageLink);
@@ -122,12 +122,12 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
         return mqttClientAuthProviderDao.disableById(id);
     }
 
-    private final DataValidator<MqttClientAuthProviderDto> authProviderValidator =
+    private final DataValidator<MqttAuthProviderDto> authProviderValidator =
             new DataValidator<>() {
 
                 @Override
-                protected void validateUpdate(MqttClientAuthProviderDto updated) {
-                    MqttClientAuthProviderDto existing = mqttClientAuthProviderDao.findById(updated.getId());
+                protected void validateUpdate(MqttAuthProviderDto updated) {
+                    MqttAuthProviderDto existing = mqttClientAuthProviderDao.findById(updated.getId());
                     if (existing == null) {
                         throw new DataValidationException("Unable to update non-existent MQTT client auth provider!");
                     }
@@ -137,7 +137,7 @@ public class MqttClientAuthProviderServiceImpl implements MqttClientAuthProvider
                 }
 
                 @Override
-                protected void validateDataImpl(MqttClientAuthProviderDto authProvider) {
+                protected void validateDataImpl(MqttAuthProviderDto authProvider) {
                     if (authProvider.getType() == null) {
                         throw new DataValidationException("MQTT client auth provider type should be specified!");
                     }

@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtAuthProviderConfiguration;
@@ -49,7 +49,7 @@ public class MqttClientAuthProviderManagerImpl implements MqttClientAuthProvider
 
     @PostConstruct
     public void init() {
-        PageData<MqttClientAuthProviderDto> enabledAuthProvidersDto = mqttClientAuthProviderService.getEnabledAuthProviders(DEFAULT_PAGE_LINK);
+        PageData<MqttAuthProviderDto> enabledAuthProvidersDto = mqttClientAuthProviderService.getEnabledAuthProviders(DEFAULT_PAGE_LINK);
         if (enabledAuthProvidersDto == null || enabledAuthProvidersDto.getData().isEmpty()) {
             log.info("MQTT Authentication options are disabled!");
             return;

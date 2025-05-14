@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
@@ -57,13 +57,13 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
         assertThatCode(() -> mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider)).doesNotThrowAnyException();
     }
 
     @Test
     public void testUpdateNonExistingMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
         mqttClientAuthProvider.setId(UUID.fromString("e993d875-2e5b-48f2-ba6b-63074800a3ce"));
         assertThatThrownBy(() -> mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider))
                 .isInstanceOf(DataValidationException.class)
@@ -72,8 +72,8 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testUpdateMqttClientAuthProviderType() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
         assertThat(savedAuthProvider).isNotNull();
 
         savedAuthProvider.setType(MqttClientAuthProviderType.SSL);
@@ -85,7 +85,7 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveMqttClientAuthProviderWithNullType() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider(null, new BasicAuthProviderConfiguration());
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider(null, new BasicAuthProviderConfiguration());
         assertThatThrownBy(() -> mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessage("MQTT client auth provider type should be specified!");
@@ -93,7 +93,7 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveMqttClientAuthProviderWithNullConfiguration() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider(MqttClientAuthProviderType.BASIC, null);
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider(MqttClientAuthProviderType.BASIC, null);
         assertThatThrownBy(() -> mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessage("MQTT client auth provider configuration should be specified!");
@@ -101,12 +101,12 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveMqttClientAuthProviderWithExistingType() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
         assertThat(savedAuthProvider).isNotNull();
 
-        MqttClientAuthProviderDto anotherBasicMqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto anotherBasicMqttClientAuthProvider = getMqttClientAuthProvider();
 
         assertThatThrownBy(() -> mqttClientAuthProviderService.saveAuthProvider(anotherBasicMqttClientAuthProvider))
                 .isInstanceOf(DataValidationException.class)
@@ -115,30 +115,30 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testFindMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
         assertThat(savedAuthProvider.getConfiguration()).isNotNull();
         assertThat(savedAuthProvider.isEnabled()).isFalse();
 
-        Optional<MqttClientAuthProviderDto> foundAuthProvider = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        Optional<MqttAuthProviderDto> foundAuthProvider = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
         assertThat(foundAuthProvider.isPresent()).isTrue();
         assertThat(foundAuthProvider.get()).isEqualTo(savedAuthProvider);
     }
 
     @Test
     public void testFindEnabledMqttClientAuthProviders() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
         assertThat(savedAuthProvider.getConfiguration()).isNotNull();
         assertThat(savedAuthProvider.isEnabled()).isFalse();
 
-        PageData<MqttClientAuthProviderDto> enabledAuthProviders = mqttClientAuthProviderService.getEnabledAuthProviders(new PageLink(1000));
+        PageData<MqttAuthProviderDto> enabledAuthProviders = mqttClientAuthProviderService.getEnabledAuthProviders(new PageLink(1000));
         assertThat(enabledAuthProviders.getTotalElements()).isEqualTo(0);
 
         mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId());
@@ -155,10 +155,10 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testEnableMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
 
         // save disabled
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
@@ -167,18 +167,18 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThat(mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId())).isTrue();
 
-        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        Optional<MqttAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
         assertThat(authProviderById.isPresent()).isTrue();
         assertThat(authProviderById.get().isEnabled()).isTrue();
     }
 
     @Test
     public void testEnableAlreadyEnabledMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
         mqttClientAuthProvider.setEnabled(true);
 
         // save enabled
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
@@ -187,7 +187,7 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThat(mqttClientAuthProviderService.enableAuthProvider(savedAuthProvider.getId())).isFalse();
 
-        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        Optional<MqttAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
         assertThat(authProviderById.isPresent()).isTrue();
         assertThat(authProviderById.get().isEnabled()).isTrue();
     }
@@ -202,11 +202,11 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testDisableMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
         mqttClientAuthProvider.setEnabled(true);
 
         // save enabled
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
@@ -215,17 +215,17 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThat(mqttClientAuthProviderService.disableAuthProvider(savedAuthProvider.getId())).isTrue();
 
-        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        Optional<MqttAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
         assertThat(authProviderById.isPresent()).isTrue();
         assertThat(authProviderById.get().isEnabled()).isFalse();
     }
 
     @Test
     public void testDisableAlreadyDisabledMqttClientAuthProvider() {
-        MqttClientAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
+        MqttAuthProviderDto mqttClientAuthProvider = getMqttClientAuthProvider();
 
         // save enabled
-        MqttClientAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
+        MqttAuthProviderDto savedAuthProvider = mqttClientAuthProviderService.saveAuthProvider(mqttClientAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
         assertThat(savedAuthProvider.getType()).isEqualTo(MqttClientAuthProviderType.BASIC);
@@ -234,7 +234,7 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThat(mqttClientAuthProviderService.disableAuthProvider(savedAuthProvider.getId())).isFalse();
 
-        Optional<MqttClientAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
+        Optional<MqttAuthProviderDto> authProviderById = mqttClientAuthProviderService.getAuthProviderById(savedAuthProvider.getId());
         assertThat(authProviderById.isPresent()).isTrue();
         assertThat(authProviderById.get().isEnabled()).isFalse();
     }
@@ -248,12 +248,12 @@ public class MqttClientAuthProviderServiceTest extends AbstractServiceTest {
 
 
 
-    private MqttClientAuthProviderDto getMqttClientAuthProvider() {
+    private MqttAuthProviderDto getMqttClientAuthProvider() {
         return getMqttClientAuthProvider(MqttClientAuthProviderType.BASIC, new BasicAuthProviderConfiguration());
     }
 
-    private MqttClientAuthProviderDto getMqttClientAuthProvider(MqttClientAuthProviderType type, MqttClientAuthProviderConfiguration configuration) {
-        var mqttClientAuthProvider = new MqttClientAuthProviderDto();
+    private MqttAuthProviderDto getMqttClientAuthProvider(MqttClientAuthProviderType type, MqttClientAuthProviderConfiguration configuration) {
+        var mqttClientAuthProvider = new MqttAuthProviderDto();
         mqttClientAuthProvider.setType(type);
         mqttClientAuthProvider.setConfiguration(configuration);
         return mqttClientAuthProvider;

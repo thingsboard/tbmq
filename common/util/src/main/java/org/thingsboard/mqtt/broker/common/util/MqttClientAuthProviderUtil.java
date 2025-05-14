@@ -16,11 +16,11 @@
 package org.thingsboard.mqtt.broker.common.util;
 
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 
 public class MqttClientAuthProviderUtil {
 
-    public static ShortMqttClientAuthProvider toShortMqttClientAuthProvider(MqttClientAuthProviderDto mqttClientAuthProvider) {
+    public static ShortMqttClientAuthProvider toShortMqttClientAuthProvider(MqttAuthProviderDto mqttClientAuthProvider) {
         return ShortMqttClientAuthProvider.builder()
                 .id(mqttClientAuthProvider.getId())
                 .enabled(mqttClientAuthProvider.isEnabled())

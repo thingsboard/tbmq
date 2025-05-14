@@ -26,7 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifierConfiguration;
@@ -67,9 +67,9 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
     @Test
     public void saveBasicMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
 
         Assert.assertNotNull(savedMqttClientAuthProvider);
         Assert.assertNotNull(savedMqttClientAuthProvider.getId());
@@ -80,16 +80,16 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
         savedMqttClientAuthProvider.setEnabled(false);
 
-        MqttClientAuthProviderDto updatedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", savedMqttClientAuthProvider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto updatedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", savedMqttClientAuthProvider, MqttAuthProviderDto.class);
         Assert.assertNotNull(updatedMqttClientAuthProvider);
         Assert.assertFalse(updatedMqttClientAuthProvider.isEnabled());
     }
 
     @Test
     public void saveSslMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getSslMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getSslMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
 
         Assert.assertNotNull(savedMqttClientAuthProvider);
         Assert.assertNotNull(savedMqttClientAuthProvider.getId());
@@ -109,7 +109,7 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
         savedSslAuthProviderConfiguration.setSkipValidityCheckForClientCert(false);
         savedMqttClientAuthProvider.setConfiguration(savedSslAuthProviderConfiguration);
 
-        MqttClientAuthProviderDto updatedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", savedMqttClientAuthProvider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto updatedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", savedMqttClientAuthProvider, MqttAuthProviderDto.class);
         Assert.assertNotNull(updatedMqttClientAuthProvider);
         Assert.assertFalse(updatedMqttClientAuthProvider.isEnabled());
 
@@ -120,9 +120,9 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
     @Test
     public void saveJwtMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getJwtMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getJwtMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
 
         Assert.assertNotNull(savedMqttClientAuthProvider);
         Assert.assertNotNull(savedMqttClientAuthProvider.getId());
@@ -131,31 +131,31 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
         Assert.assertTrue(savedMqttClientAuthProvider.getCreatedTime() > 0);
         Assert.assertTrue(savedMqttClientAuthProvider.isEnabled());
 
-        MqttClientAuthProviderDto foundMqttClientAuthProvider = doGet("/api/mqtt/auth/provider/" + savedMqttClientAuthProvider.getId().toString(), MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto foundMqttClientAuthProvider = doGet("/api/mqtt/auth/provider/" + savedMqttClientAuthProvider.getId().toString(), MqttAuthProviderDto.class);
         Assert.assertNotNull(foundMqttClientAuthProvider);
         Assert.assertEquals(savedMqttClientAuthProvider, foundMqttClientAuthProvider);
     }
 
-    private MqttClientAuthProviderDto getBasicMqttClientAuthProvider() {
-        MqttClientAuthProviderDto provider = new MqttClientAuthProviderDto();
+    private MqttAuthProviderDto getBasicMqttClientAuthProvider() {
+        MqttAuthProviderDto provider = new MqttAuthProviderDto();
         provider.setEnabled(true);
         provider.setType(MqttClientAuthProviderType.BASIC);
         provider.setConfiguration(new BasicAuthProviderConfiguration());
         return provider;
     }
 
-    private MqttClientAuthProviderDto getSslMqttClientAuthProvider() {
+    private MqttAuthProviderDto getSslMqttClientAuthProvider() {
         SslAuthProviderConfiguration configuration = new SslAuthProviderConfiguration();
         configuration.setSkipValidityCheckForClientCert(true);
 
-        MqttClientAuthProviderDto provider = new MqttClientAuthProviderDto();
+        MqttAuthProviderDto provider = new MqttAuthProviderDto();
         provider.setEnabled(true);
         provider.setType(MqttClientAuthProviderType.SSL);
         provider.setConfiguration(configuration);
         return provider;
     }
 
-    private MqttClientAuthProviderDto getJwtMqttClientAuthProvider() {
+    private MqttAuthProviderDto getJwtMqttClientAuthProvider() {
         HmacBasedAlgorithmConfiguration algorithmConfiguration = new HmacBasedAlgorithmConfiguration();
         algorithmConfiguration.setSecret(RandomStringUtils.randomAlphanumeric(10));
 
@@ -168,7 +168,7 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
         configuration.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         configuration.setJwtVerifierConfiguration(verifierConfiguration);
 
-        MqttClientAuthProviderDto provider = new MqttClientAuthProviderDto();
+        MqttAuthProviderDto provider = new MqttAuthProviderDto();
         provider.setEnabled(true);
         provider.setType(MqttClientAuthProviderType.JWT);
         provider.setConfiguration(configuration);
@@ -177,13 +177,13 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
     @Test
     public void getMqttClientAuthProvidersTest() throws Exception {
-        MqttClientAuthProviderDto basicProvider = getBasicMqttClientAuthProvider();
-        MqttClientAuthProviderDto sslProvider = getSslMqttClientAuthProvider();
-        MqttClientAuthProviderDto jwtProvider = getJwtMqttClientAuthProvider();
+        MqttAuthProviderDto basicProvider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto sslProvider = getSslMqttClientAuthProvider();
+        MqttAuthProviderDto jwtProvider = getJwtMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedBasicProvider = doPost("/api/mqtt/auth/provider", basicProvider, MqttClientAuthProviderDto.class);
-        MqttClientAuthProviderDto savedSslProvider = doPost("/api/mqtt/auth/provider", sslProvider, MqttClientAuthProviderDto.class);
-        MqttClientAuthProviderDto savedJwtProvider = doPost("/api/mqtt/auth/provider", jwtProvider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedBasicProvider = doPost("/api/mqtt/auth/provider", basicProvider, MqttAuthProviderDto.class);
+        MqttAuthProviderDto savedSslProvider = doPost("/api/mqtt/auth/provider", sslProvider, MqttAuthProviderDto.class);
+        MqttAuthProviderDto savedJwtProvider = doPost("/api/mqtt/auth/provider", jwtProvider, MqttAuthProviderDto.class);
 
         List<ShortMqttClientAuthProvider> loadedShortMqttClientAuthProviders = new ArrayList<>();
         PageLink pageLink = new PageLink(1);
@@ -209,20 +209,20 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
     }
 
     public void saveAuthProviderWithExistingProviderType() throws  Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertNotNull(savedMqttClientAuthProvider);
 
-        MqttClientAuthProviderDto anotherBasicProvider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto anotherBasicProvider = getBasicMqttClientAuthProvider();
         doPost("/api/mqtt/auth/provider", anotherBasicProvider).andExpect(status().isBadRequest());
     }
 
     @Test
     public void deleteAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedMqttClientAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertNotNull(savedMqttClientAuthProvider);
 
         doDelete("/api/mqtt/auth/provider/" + savedMqttClientAuthProvider.getId())
@@ -235,14 +235,14 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
     @Test
     public void saveMqttClientAuthProviderWithNullAuthProviderType() throws Exception {
-        MqttClientAuthProviderDto authProvider = new MqttClientAuthProviderDto();
+        MqttAuthProviderDto authProvider = new MqttAuthProviderDto();
         doPost("/api/mqtt/auth/provider", authProvider)
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     public void saveMqttClientAuthProviderWithNullAuthProviderConfiguration() throws Exception {
-        MqttClientAuthProviderDto authProvider = new MqttClientAuthProviderDto();
+        MqttAuthProviderDto authProvider = new MqttAuthProviderDto();
         authProvider.setType(MqttClientAuthProviderType.JWT);
         doPost("/api/mqtt/auth/provider", authProvider)
                 .andExpect(status().isBadRequest());
@@ -250,57 +250,57 @@ public class MqttClientAuthProviderControllerTest extends AbstractControllerTest
 
     @Test
     public void enableMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
         provider.setEnabled(false);
 
-        MqttClientAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertNotNull(savedProvider);
         Assert.assertFalse(savedProvider.isEnabled());
 
         doPost("/api/mqtt/auth/provider/" + savedProvider.getId() + "/enable").andExpect(status().isOk());
 
-        MqttClientAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttAuthProviderDto.class);
         Assert.assertTrue(fetched.isEnabled());
     }
 
     @Test
     public void disableMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertNotNull(savedProvider);
         Assert.assertTrue(savedProvider.isEnabled());
 
         doPost("/api/mqtt/auth/provider/" + savedProvider.getId() + "/disable").andExpect(status().isOk());
 
-        MqttClientAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttAuthProviderDto.class);
         Assert.assertFalse(fetched.isEnabled());
     }
 
     @Test
     public void enableAlreadyEnabledMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
 
-        MqttClientAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertTrue(savedProvider.isEnabled());
 
         doPost("/api/mqtt/auth/provider/" + savedProvider.getId() + "/enable").andExpect(status().isOk());
 
-        MqttClientAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttAuthProviderDto.class);
         Assert.assertTrue(fetched.isEnabled());
     }
 
     @Test
     public void disableAlreadyDisabledMqttClientAuthProviderTest() throws Exception {
-        MqttClientAuthProviderDto provider = getBasicMqttClientAuthProvider();
+        MqttAuthProviderDto provider = getBasicMqttClientAuthProvider();
         provider.setEnabled(false);
 
-        MqttClientAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto savedProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProviderDto.class);
         Assert.assertFalse(savedProvider.isEnabled());
 
         doPost("/api/mqtt/auth/provider/" + savedProvider.getId() + "/disable").andExpect(status().isOk());
 
-        MqttClientAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttClientAuthProviderDto.class);
+        MqttAuthProviderDto fetched = doGet("/api/mqtt/auth/provider/" + savedProvider.getId(), MqttAuthProviderDto.class);
         Assert.assertFalse(fetched.isEnabled());
     }
 

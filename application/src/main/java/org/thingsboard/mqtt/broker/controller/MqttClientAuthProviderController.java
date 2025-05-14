@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 
 import java.util.UUID;
 
@@ -42,7 +42,7 @@ public class MqttClientAuthProviderController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider", method = RequestMethod.POST)
     @ResponseBody
-    public MqttClientAuthProviderDto saveAuthProvider(@RequestBody MqttClientAuthProviderDto authProvider) throws ThingsboardException {
+    public MqttAuthProviderDto saveAuthProvider(@RequestBody MqttAuthProviderDto authProvider) throws ThingsboardException {
         checkNotNull(authProvider);
         try {
             return checkNotNull(mqttClientAuthProviderManagerService.saveAuthProvider(authProvider));
@@ -95,7 +95,7 @@ public class MqttClientAuthProviderController extends BaseController {
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}", method = RequestMethod.GET)
-    public MqttClientAuthProviderDto getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
+    public MqttAuthProviderDto getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         try {
             return checkNotNull(mqttClientAuthProviderService.getAuthProviderById(toUUID(strAuthProviderId)).orElse(null));
         } catch (Exception e) {

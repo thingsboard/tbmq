@@ -37,7 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -229,9 +229,9 @@ public abstract class BaseController {
         return checkNotNull(credentials);
     }
 
-    MqttClientAuthProviderDto checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
+    MqttAuthProviderDto checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
         validateId(authProviderId, "Incorrect authProviderId " + authProviderId);
-        Optional<MqttClientAuthProviderDto> authProvider = mqttClientAuthProviderService.getAuthProviderById(authProviderId);
+        Optional<MqttAuthProviderDto> authProvider = mqttClientAuthProviderService.getAuthProviderById(authProviderId);
         return checkNotNull(authProvider);
     }
 

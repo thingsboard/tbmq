@@ -15,13 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.auth;
 
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 
 import java.util.UUID;
 
 public interface MqttClientAuthProviderManagerService {
 
-    MqttClientAuthProviderDto saveAuthProvider(MqttClientAuthProviderDto authProvider);
+    MqttAuthProviderDto saveAuthProvider(MqttAuthProviderDto authProvider);
 
     void deleteAuthProvider(UUID id);
 

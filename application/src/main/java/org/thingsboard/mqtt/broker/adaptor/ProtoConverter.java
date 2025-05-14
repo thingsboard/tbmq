@@ -29,7 +29,7 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
@@ -633,13 +633,13 @@ public class ProtoConverter {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 
-    public static InternodeNotificationProto toMqttAuthProviderCreatedEvent(MqttClientAuthProviderDto provider) {
+    public static InternodeNotificationProto toMqttAuthProviderCreatedEvent(MqttAuthProviderDto provider) {
         var mqttAuthProviderProto =
                 toCreatedOrUpdatedMqttAuthProviderProto(provider, MqttClientAuthProviderEventProto.PROVIDER_CREATED);
         return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
     }
 
-    public static InternodeNotificationProto toMqttAuthProviderUpdatedEvent(MqttClientAuthProviderDto provider) {
+    public static InternodeNotificationProto toMqttAuthProviderUpdatedEvent(MqttAuthProviderDto provider) {
         var mqttAuthProviderProto =
                 toCreatedOrUpdatedMqttAuthProviderProto(provider, MqttClientAuthProviderEventProto.PROVIDER_UPDATED);
         return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
@@ -666,7 +666,7 @@ public class ProtoConverter {
         return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
     }
 
-    private static MqttAuthProviderProto toCreatedOrUpdatedMqttAuthProviderProto(MqttClientAuthProviderDto provider, MqttClientAuthProviderEventProto event) {
+    private static MqttAuthProviderProto toCreatedOrUpdatedMqttAuthProviderProto(MqttAuthProviderDto provider, MqttClientAuthProviderEventProto event) {
         return MqttAuthProviderProto.newBuilder()
                 .setEventType(event)
                 .setMqttClientAuthProviderIdMSB(provider.getId().getMostSignificantBits())

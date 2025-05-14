@@ -26,7 +26,7 @@ import java.io.Serial;
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class MqttClientAuthProviderDto extends BaseData {
+public class MqttAuthProviderDto extends BaseData {
 
     @Serial
     private static final long serialVersionUID = 464223366680445871L;

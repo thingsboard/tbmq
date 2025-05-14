@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.auth;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttClientAuthProviderService;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
@@ -34,8 +34,8 @@ public class MqttClientAuthProviderManagerServiceImpl implements MqttClientAuthP
     private final InternodeNotificationsService internodeNotificationsService;
 
     @Override
-    public MqttClientAuthProviderDto saveAuthProvider(MqttClientAuthProviderDto authProvider) {
-        MqttClientAuthProviderDto saved = providerService.saveAuthProvider(authProvider);
+    public MqttAuthProviderDto saveAuthProvider(MqttAuthProviderDto authProvider) {
+        MqttAuthProviderDto saved = providerService.saveAuthProvider(authProvider);
         InternodeNotificationProto notificationProto = authProvider.getId() == null ?
                 ProtoConverter.toMqttAuthProviderCreatedEvent(saved) :
                 ProtoConverter.toMqttAuthProviderUpdatedEvent(saved);

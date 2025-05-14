@@ -22,7 +22,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientAuthProviderDto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderDto;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttClientAuthProviderEntity;
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuthProviderEntity, MqttClientAuthProviderDto>
+public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuthProviderEntity, MqttAuthProviderDto>
         implements MqttClientAuthProviderDao {
 
     private final MqttClientAuthProviderRepository mqttClientAuthProviderRepository;
@@ -49,7 +49,7 @@ public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuth
     }
 
     @Override
-    public PageData<MqttClientAuthProviderDto> findAll(PageLink pageLink) {
+    public PageData<MqttAuthProviderDto> findAll(PageLink pageLink) {
         log.trace("Trying to find all MQTT client auth providers, pageLink {}", pageLink);
         return DaoUtil.toPageData(mqttClientAuthProviderRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
@@ -57,7 +57,7 @@ public class DefaultMqttClientAuthProviderDao extends AbstractDao<MqttClientAuth
     }
 
     @Override
-    public PageData<MqttClientAuthProviderDto> findAllEnabled(PageLink pageLink) {
+    public PageData<MqttAuthProviderDto> findAllEnabled(PageLink pageLink) {
         log.trace("Trying to find all enabled MQTT client auth providers, pageLink {}", pageLink);
         return DaoUtil.toPageData(mqttClientAuthProviderRepository.findAllEnabled(
                 Objects.toString(pageLink.getTextSearch(), ""),
