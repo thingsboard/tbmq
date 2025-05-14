@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject, viewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -29,17 +29,24 @@ import { CopyContentButtonComponent } from '@shared/components/button/copy-conte
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
+import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
+import { Observable, Subject } from 'rxjs';
+import { map, startWith, takeUntil } from 'rxjs/operators';
+import { filterTopics } from '@core/utils';
 import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-shared-subscriptions',
     templateUrl: './shared-subscription.component.html',
     styleUrls: ['./shared-subscription.component.scss'],
-    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, AsyncPipe, MatTooltip]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, AsyncPipe,  MatAutocomplete, MatAutocompleteTrigger, MatOption, MatTooltip]
 })
-export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> {
+export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> implements OnInit, OnDestroy {
 
   readonly copyBtn = viewChild<CopyButtonComponent>('copyBtn');
+  filteredTopics: Observable<string[]>;
+
+  private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: SharedSubscription,
@@ -47,6 +54,20 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
               public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
+  }
+
+  ngOnInit() {
+    super.ngOnInit();
+    this.filteredTopics = this.entityForm.get('topicFilter').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      startWith(''),
+      map(value => filterTopics(value || ''))
+    );
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   buildForm(entity: SharedSubscription): UntypedFormGroup {

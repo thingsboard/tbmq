@@ -15,7 +15,20 @@
 ///
 
 import { Component, forwardRef, OnInit, OnDestroy, model } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, UntypedFormArray, UntypedFormBuilder, UntypedFormGroup, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  AbstractControl,
+  ControlValueAccessor,
+  UntypedFormArray,
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  NG_VALIDATORS,
+  NG_VALUE_ACCESSOR,
+  ValidationErrors,
+  Validators,
+  FormsModule,
+  ReactiveFormsModule,
+  FormGroup
+} from '@angular/forms';
 import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { TranslateModule } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
@@ -30,7 +43,8 @@ import { MatIcon } from '@angular/material/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
-import { isString } from '@core/utils';
+import { filterTopics, getLocalStorageTopics, isString } from '@core/utils';
+import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
 @Component({
     selector: 'tb-session-subscriptions',
@@ -46,13 +60,14 @@ import { isString } from '@core/utils';
             useExisting: forwardRef(() => SubscriptionsComponent),
             multi: true
         }],
-    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton]
+    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton, MatAutocompleteTrigger, MatAutocomplete, MatOption]
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
   disabled = model<boolean>();
 
   topicListFormGroup: UntypedFormGroup;
+  filteredTopics = [];
 
   private propagateChange = (v: any) => {};
   private destroy$ = new Subject<void>();
@@ -105,6 +120,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
       }
     }
     this.topicListFormGroup.setControl('subscriptions', this.fb.array(subscriptionsControls));
+    this.topicFiltersSubscribeValueChanges();
   }
 
   removeTopic(index: number) {
@@ -123,6 +139,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
       })
     });
     this.subscriptionsFormArray().push(group);
+    this.subscribeTopicValueChanges(group);
   }
 
   validate(control: AbstractControl): ValidationErrors | null {
@@ -133,6 +150,22 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
 
   subscriptionOptionsChanged(value: TopicSubscription, topicFilter: AbstractControl<TopicSubscription>) {
     topicFilter.patchValue(value);
+  }
+
+  topicFiltersSubscribeValueChanges() {
+    this.subscriptionsFormArray().controls.forEach(control => this.subscribeTopicValueChanges(control as FormGroup));
+  }
+
+  clearFilteredOptions() {
+    setTimeout(() => {
+      this.filteredTopics = getLocalStorageTopics();
+    }, 100);
+  }
+
+  private subscribeTopicValueChanges(control: FormGroup) {
+    control.get('topicFilter').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.filteredTopics = filterTopics(value));
   }
 
   private updateModel() {

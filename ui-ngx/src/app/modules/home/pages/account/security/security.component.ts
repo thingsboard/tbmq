@@ -156,6 +156,11 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
       this.authService.changePassword(this.changePassword.get('currentPassword').value,
         this.changePassword.get('newPassword').value, {ignoreErrors: true}).subscribe(() => {
           this.discardChanges(form);
+          this.store.dispatch(new ActionNotificationShow({
+            message: this.translate.instant('mqtt-client-credentials.password-changed'),
+            type: 'success',
+            duration: 2000
+          }));
         },
         (error) => {
           if (error.status === 400 && error.error.message === 'Current password doesn\'t match!') {
@@ -188,10 +193,5 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
     });
     this.changePassword.markAsPristine();
     this.changePassword.updateValueAndValidity();
-    this.store.dispatch(new ActionNotificationShow({
-      message: this.translate.instant('mqtt-client-credentials.password-changed'),
-      type: 'success',
-      duration: 2000
-    }));
   }
 }

@@ -204,8 +204,8 @@
     <section class="mb-6" [formGroup]="kafkaIntegrationConfigForm">
       <section class="security-setting mat-padding">
         <p translate>integration.topic-filters</p>
-        <tb-http-topic-filters [isEdit]="isEdit()" [integration]="integration()" formControlName="topicFilters">
-        </tb-http-topic-filters>
+        <tb-integration-topic-filters [isEdit]="isEdit()" [integration]="integration()" formControlName="topicFilters">
+        </tb-integration-topic-filters>
       </section>
     </section>
   </ng-template>
