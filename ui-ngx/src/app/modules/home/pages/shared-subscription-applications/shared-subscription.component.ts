@@ -33,12 +33,13 @@ import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/mat
 import { Observable, Subject } from 'rxjs';
 import { map, startWith, takeUntil } from 'rxjs/operators';
 import { filterTopics } from '@core/utils';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-shared-subscriptions',
     templateUrl: './shared-subscription.component.html',
     styleUrls: ['./shared-subscription.component.scss'],
-    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, AsyncPipe, MatTooltip]
+    imports: [MatButton, MatIcon, TranslateModule, CopyContentButtonComponent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, AsyncPipe,  MatAutocomplete, MatAutocompleteTrigger, MatOption, MatTooltip]
 })
 export class SharedSubscriptionComponent extends EntityComponent<SharedSubscription> implements OnInit, OnDestroy {
 
