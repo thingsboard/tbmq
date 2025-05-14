@@ -15,18 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service.handlers;
 
-import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttReasonCodes;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
 import org.thingsboard.mqtt.broker.exception.MqttException;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
-import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
-import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 
 @Service
 @AllArgsConstructor
@@ -34,8 +31,7 @@ import org.thingsboard.mqtt.broker.util.MqttReasonCodeResolver;
 public class MqttPubRecHandler {
 
     private final MsgPersistenceManager msgPersistenceManager;
-    private final RetransmissionService retransmissionService;
-    private final MqttMessageGenerator mqttMessageGenerator;
+    private final PublishMsgDeliveryService publishMsgDeliveryService;
 
     public void process(ClientSessionCtx ctx, MqttPubRecMsg msg) throws MqttException {
         int messageId = msg.getMessageId();
@@ -54,9 +50,7 @@ public class MqttPubRecHandler {
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubRec(ctx, messageId);
         } else {
-            MqttReasonCodes.PubRel code = MqttReasonCodeResolver.pubRelSuccess(ctx);
-            MqttMessage pubRelMsg = mqttMessageGenerator.createPubRelMsg(messageId, code);
-            retransmissionService.onPubRecReceived(ctx, pubRelMsg);
+            publishMsgDeliveryService.sendPubRelMsgToClient(ctx, messageId);
         }
     }
 

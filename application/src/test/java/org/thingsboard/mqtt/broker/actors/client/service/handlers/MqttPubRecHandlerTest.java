@@ -23,20 +23,17 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttPubRecMsg;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
-import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.MsgPersistenceManager;
-import org.thingsboard.mqtt.broker.service.mqtt.retransmission.RetransmissionService;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
 import java.util.UUID;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,17 +41,15 @@ import static org.mockito.Mockito.when;
 public class MqttPubRecHandlerTest {
 
     MsgPersistenceManager msgPersistenceManager;
-    RetransmissionService retransmissionService;
-    MqttMessageGenerator mqttMessageGenerator;
+    PublishMsgDeliveryService publishMsgDeliveryService;
     MqttPubRecHandler mqttPubRecHandler;
     ClientSessionCtx ctx;
 
     @Before
     public void setUp() {
         msgPersistenceManager = mock(MsgPersistenceManager.class);
-        retransmissionService = mock(RetransmissionService.class);
-        mqttMessageGenerator = mock(MqttMessageGenerator.class);
-        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, retransmissionService, mqttMessageGenerator));
+        publishMsgDeliveryService = mock(PublishMsgDeliveryService.class);
+        mqttPubRecHandler = spy(new MqttPubRecHandler(msgPersistenceManager, publishMsgDeliveryService));
 
         ctx = mock(ClientSessionCtx.class);
     }
@@ -63,7 +58,7 @@ public class MqttPubRecHandlerTest {
     public void testProcessPersistent() {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(false, 1));
         mqttPubRecHandler.process(ctx, newMqttPubRecMsg(MqttReasonCodes.PubRec.SUCCESS));
-        verify(msgPersistenceManager, times(1)).processPubRec(eq(ctx), eq(1));
+        verify(msgPersistenceManager).processPubRec(eq(ctx), eq(1));
     }
 
     @Test
@@ -71,8 +66,7 @@ public class MqttPubRecHandlerTest {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(true, 0));
 
         mqttPubRecHandler.process(ctx, newMqttPubRecMsg(MqttReasonCodes.PubRec.SUCCESS));
-        verify(mqttMessageGenerator, times(1)).createPubRelMsg(eq(1), eq(null));
-        verify(retransmissionService, times(1)).onPubRecReceived(eq(ctx), any());
+        verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
     }
 
     @Test

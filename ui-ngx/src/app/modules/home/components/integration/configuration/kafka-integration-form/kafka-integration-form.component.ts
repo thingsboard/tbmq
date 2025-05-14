@@ -25,7 +25,7 @@ import {
   Validator,
   Validators, ReactiveFormsModule
 } from '@angular/forms';
-import { isDefinedAndNotNull } from '@core/utils';
+import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
@@ -122,7 +122,7 @@ export class KafkaIntegrationFormComponent extends IntegrationForm implements Co
         sendOnlyMsgPayload: [false, []],
         topic: ['tbmq.messages', [Validators.required]],
         key: [null, []],
-        bootstrapServers: ['localhost:9092', [Validators.required]],
+        bootstrapServers: ['localhost:9092', [Validators.required, notOnlyWhitespaceValidator]],
         clientIdPrefix: [null, []],
         retries: [0, [Validators.min(0)]],
         batchSize: [16384, [Validators.min(0)]],

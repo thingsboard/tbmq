@@ -66,6 +66,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -79,6 +80,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private String kafkaPrefix;
     @Value("${queue.kafka.client-session-event-response.topic-prefix:tbmq.client.session.event.response}")
     private String clientSessionEventRespTopicPrefix;
+    @Value("${queue.kafka.admin.command-timeout:30}")
+    private int kafkaAdminCommandTimeout;
 
     private final Admin client;
     private final Set<String> topics = ConcurrentHashMap.newKeySet();
@@ -193,6 +196,11 @@ public class TbKafkaAdmin implements TbQueueAdmin {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Collection<Node> getNodes() throws Exception {
+        return client.describeCluster().nodes().get(kafkaAdminCommandTimeout, TimeUnit.SECONDS);
     }
 
     @Override

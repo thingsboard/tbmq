@@ -30,7 +30,6 @@ import {
 } from '@shared/models/integration.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
-import { UtilsService } from '@core/services/utils.service';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { IntegrationService } from '@core/http/integration.service';
@@ -42,6 +41,9 @@ import { Observable } from 'rxjs';
 import { AddEntityDialogData, EntityAction } from '@home/models/entity/entity-component.models';
 import { PageLink } from '@shared/models/page/page-link';
 import { IntegrationWizardDialogComponent } from '@home/components/wizard/integration-wizard-dialog.component';
+import { ActionNotificationShow } from '@core/notification/notification.actions';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 export class IntegrationsTableConfig extends EntityTableConfig<Integration, PageLink, IntegrationInfo> {
 
@@ -49,7 +51,7 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
               private translate: TranslateService,
               private datePipe: DatePipe,
               private router: Router,
-              private utils: UtilsService,
+              private store: Store<AppState>,
               private dialogService: DialogService,
               private dialog: MatDialog) {
     super();
@@ -96,10 +98,10 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
     this.entityTitle = (integration) => integration ? integration.name : '';
 
     columns.push(
-      new DateEntityTableColumn<IntegrationInfo>('createdTime', 'common.created-time', this.datePipe, '15%'),
+      new DateEntityTableColumn<IntegrationInfo>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<IntegrationInfo>('name', 'integration.name', '15%'),
       new EntityTableColumn<IntegrationInfo>('type', 'integration.type', '15%', (integration) => this.translate.instant(integrationTypeInfoMap.get(integration.type).name)),
-      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '55%',
+      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '35%',
         integration => this.integrationStatus(integration),
         integration => this.integrationStatusStyle(integration), false),
     );
@@ -158,7 +160,14 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
     ).subscribe((result) => {
       if (result) {
         this.integrationService.restartIntegration(integration.id)
-          .subscribe(() => this.integrationService.onRestartIntegration())
+          .subscribe(() => {
+            this.integrationService.onRestartIntegration();
+            this.store.dispatch(new ActionNotificationShow({
+              message: this.translate.instant('integration.restarted', {name: integration.name}),
+              type: 'success',
+              duration: 2000
+            }));
+          })
       }
     });
   }

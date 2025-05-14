@@ -77,11 +77,20 @@
         <mat-icon matSuffix [matTooltip]="'ws-client.connections.topic-alias-hint' | translate">
           help
         </mat-icon>
-        @if (formGroup.get('topicAlias').errors?.topicAliasMaxError) {
-          <mat-error>
-            {{ 'ws-client.connections.topic-alias-error' | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'subscription.subscription-identifier-min' | translate }}"
+                  [class.!hidden]="!(formGroup.get('topicAlias').hasError('min') && formGroup.get('topicAlias').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'ws-client.connections.topic-alias-error' | translate }}"
+                  [class.!hidden]="!(formGroup.get('topicAlias').errors?.topicAliasMaxError && formGroup.get('topicAlias').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
       <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
         <mat-label translate>ws-client.last-will.correlation-data</mat-label>

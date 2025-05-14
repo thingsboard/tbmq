@@ -101,7 +101,9 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     ).subscribe((value) => {
       this.updateModel(value.filters);
     });
-    this.integrationService.restarted.subscribe(() => this.updateActiveSubscriptions());
+    this.integrationService.restarted
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.updateActiveSubscriptions());
   }
 
   ngOnDestroy() {
@@ -205,6 +207,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
   private updateActiveSubscriptions() {
     if (this.integration()?.id) {
       this.integrationService.getIntegrationSubscriptions(this.integration().id)
+        .pipe(takeUntil(this.destroy$))
         .subscribe(subscriptions => {
           this.activeSubscriptions = subscriptions;
           this.subscriptionsLoaded = true;

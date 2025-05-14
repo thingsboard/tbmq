@@ -60,8 +60,8 @@ export class UsersTableConfigResolver {
 
     this.config.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<User>('email', 'user.email', '25%',
-        undefined, () => undefined,
+      new EntityTableColumn<User>('email', 'user.email', '40%',
+        entity => entity.email, () => undefined,
         true, () => ({}), () => undefined, false,
         {
           name: this.translate.instant('action.copy'),
@@ -77,11 +77,11 @@ export class UsersTableConfigResolver {
           onAction: ($event, entity) => entity.email,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<User>('authority', 'user.role', '25%',
+      new EntityTableColumn<User>('authority', 'user.role', '100px',
         entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority)),
         undefined, false),
-      new EntityTableColumn<User>('firstName', 'user.first-name', '25%'),
-      new EntityTableColumn<User>('lastName', 'user.last-name', '25%')
+      new EntityTableColumn<User>('firstName', 'user.first-name', '150px'),
+      new EntityTableColumn<User>('lastName', 'user.last-name', '150px')
     );
 
     this.config.addActionDescriptors.push(

@@ -25,6 +25,7 @@ public enum StatsType {
     MSG_DISPATCHER_PRODUCER("incomingPublishMsg.published"),
     CLIENT_SESSION_EVENT_CONSUMER("clientSessionEvent"),
     PUBLISH_MSG_CONSUMER("incomingPublishMsg.consumed"),
+    NON_WRITABLE_CLIENTS("nonWritableClients"),
     SUBSCRIPTION_TOPIC_TRIE_SIZE("subscriptionTopicTrieSize"),
     RETAIN_MSG_TRIE_SIZE("retainMsgTrieSize"),
     LAST_WILL_CLIENTS("lastWillClients"),

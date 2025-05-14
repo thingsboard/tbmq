@@ -57,12 +57,11 @@
       </mat-option>
     }
   </mat-autocomplete>
-  @if (integrationTypeFormGroup.get('type').hasError('required')) {
-    <mat-icon matSuffix
-              matTooltipClass="tb-error-tooltip"
-              matTooltip="{{ 'integration.type-required' | translate }}"
-              class="tb-error">
-      warning
-    </mat-icon>
-  }
+  <mat-icon matSuffix
+            matTooltipClass="tb-error-tooltip"
+            matTooltip="{{ 'integration.type-required' | translate }}"
+            [class.!hidden]="!(integrationTypeFormGroup.get('type').hasError('required') && integrationTypeFormGroup.get('type').touched)"
+            class="tb-error">
+    warning
+  </mat-icon>
 </mat-form-field>

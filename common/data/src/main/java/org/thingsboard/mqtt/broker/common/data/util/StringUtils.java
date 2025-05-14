@@ -49,7 +49,7 @@ public class StringUtils {
     }
 
     public static boolean contains0x00(final String s) {
-        return s != null && s.contains("\u0000");
+        return s != null && s.contains(BrokerConstants.NULL_CHAR_STR);
     }
 
     public static String removeStart(final String str, final String remove) {

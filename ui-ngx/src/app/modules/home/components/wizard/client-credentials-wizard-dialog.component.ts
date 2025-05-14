@@ -40,7 +40,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField, MatLabel, MatError } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
@@ -48,12 +48,13 @@ import { MqttCredentialsBasicComponent } from '../client-credentials-templates/b
 import { MqttCredentialsSslComponent } from '../client-credentials-templates/ssl/ssl.component';
 import { MqttCredentialsScramComponent } from '../client-credentials-templates/scram/scram.component';
 import { MatDivider } from '@angular/material/divider';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-client-credentials-wizard',
     templateUrl: './client-credentials-wizard-dialog.component.html',
     styleUrls: ['./client-credentials-wizard-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, MatError, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, MatSelect, MatOption, MqttCredentialsBasicComponent, MqttCredentialsSslComponent, MqttCredentialsScramComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe, MatTooltip, MatSuffix]
 })
 export class ClientCredentialsWizardDialogComponent extends DialogComponent<ClientCredentialsWizardDialogComponent, ClientCredentials> {
 

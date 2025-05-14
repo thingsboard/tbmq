@@ -53,8 +53,8 @@ export class SharedSubscriptionsTableConfigResolver {
 
     this.config.columns.push(
       new DateEntityTableColumn<SharedSubscription>('createdTime', 'common.created-time', this.datePipe, '150px'),
-      new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '33%'),
-      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '33%',
+      new EntityTableColumn<SharedSubscription>('name', 'shared-subscription.name', '250px'),
+      new EntityTableColumn<SharedSubscription>('topicFilter', 'shared-subscription.topic-filter', '50%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -72,7 +72,7 @@ export class SharedSubscriptionsTableConfigResolver {
           onAction: ($event, entity) => entity.topicFilter,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '33%')
+      new EntityTableColumn<SharedSubscription>('partitions', 'shared-subscription.partitions', '100px')
     );
 
     this.config.addActionDescriptors.push(

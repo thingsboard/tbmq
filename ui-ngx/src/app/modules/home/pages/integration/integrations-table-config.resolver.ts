@@ -27,6 +27,8 @@ import { DialogService } from '@core/services/dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { IntegrationsTableConfig } from '@home/pages/integration/integrations-table-config';
 import { PageLink } from '@shared/models/page/page-link';
+import { Store } from '@ngrx/store';
+import { AppState } from '@core/core.state';
 
 @Injectable()
 export class IntegrationsTableConfigResolver  {
@@ -35,7 +37,7 @@ export class IntegrationsTableConfigResolver  {
               private translate: TranslateService,
               private datePipe: DatePipe,
               private router: Router,
-              private utils: UtilsService,
+              private store: Store<AppState>,
               private dialogService: DialogService,
               private dialog: MatDialog) {
   }
@@ -50,7 +52,7 @@ export class IntegrationsTableConfigResolver  {
       this.translate,
       this.datePipe,
       this.router,
-      this.utils,
+      this.store,
       this.dialogService,
       this.dialog,
     );

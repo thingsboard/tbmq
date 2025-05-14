@@ -97,7 +97,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
 
     this.columns.push(
       new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.update-time', this.datePipe, '150px'),
-      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '40%',
+      new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '15%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -115,7 +115,7 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
           onAction: ($event, entity) => entity.clientId,
           type: CellActionDescriptorType.COPY_BUTTON
         }),
-      new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '40%',
+      new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '15%',
         undefined, () => undefined,
         true, () => ({}), () => undefined, false,
         {
@@ -139,8 +139,8 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
       new EntityTableColumn<UnauthorizedClient>('tlsUsed', 'unauthorized-client.tls', '60px',
         entity => checkBoxCell(entity?.tlsUsed), undefined, undefined, undefined,
         (entity) => this.tlsUsedTooltip(entity)),
-      new EntityTableColumn<UnauthorizedClient>('ipAddress', 'mqtt-client-session.client-ip', '20%'),
-      new EntityTableColumn<UnauthorizedClient>('reason', 'unauthorized-client.reason', undefined, (entity) => {
+      new EntityTableColumn<UnauthorizedClient>('ipAddress', 'mqtt-client-session.client-ip', '100px'),
+      new EntityTableColumn<UnauthorizedClient>('reason', 'unauthorized-client.reason', '25%', (entity) => {
         const content = entity.reason;
         if (content.length) {
           return content.substring(0, 50) + '...';

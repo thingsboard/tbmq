@@ -27,7 +27,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
-import { deepTrim, isDefinedAndNotNull, isNotEmptyStr, isObject, saveTopicsToLocalStorage } from '@core/utils';
+import { isDefinedAndNotNull, isNotEmptyStr, isObject, saveTopicsToLocalStorage } from '@core/utils';
 import { CredentialsType } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
@@ -60,7 +60,7 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField, MatLabel, MatError, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { ToggleHeaderComponent, ToggleOption } from '@shared/components/toggle-header.component';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -83,7 +83,7 @@ export interface ConnectionDialogData {
     selector: 'tb-connection-wizard',
     templateUrl: './connection-wizard-dialog.component.html',
     styleUrls: ['./connection-wizard-dialog.component.scss'],
-    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatError, MatSuffix, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
+    imports: [MatToolbar, TranslateModule, HelpComponent, MatIconButton, MatIcon, MatProgressBar, MatDialogContent, MatStepper, MatStepperIcon, MatStep, FormsModule, ReactiveFormsModule, MatStepLabel, MatFormField, MatLabel, MatInput, ToggleHeaderComponent, ToggleOption, MatSuffix, MatTooltip, MatSlideToggle, CopyButtonComponent, TogglePasswordComponent, ClientCredentialsAutocompleteComponent, MatSelect, MatOption, LastWillComponent, UserPropertiesComponent, MatDialogActions, MatButton, MatDivider, AsyncPipe]
 })
 export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionWizardDialogComponent, WebSocketConnection> {
 
@@ -399,7 +399,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
       ...this.lastWillFormGroup.getRawValue(),
       ...this.userPropertiesFormGroup.getRawValue()
     };
-    const connection: WebSocketConnection = this.transformValues(deepTrim(connectionFormGroupValue));
+    const connection: WebSocketConnection = this.transformValues(connectionFormGroupValue);
     return this.webSocketConnectionService.saveWebSocketConnection(connection).pipe(
       tap(connection => saveTopicsToLocalStorage(connection.configuration.lastWillMsg?.topic)),
       catchError(e => {
@@ -443,7 +443,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
     config.sessionExpiryIntervalUnit = formValues.properties?.sessionExpiryIntervalUnit;
     config.maxPacketSizeUnit = formValues.properties?.maximumPacketSizeUnit;
     config.userProperties = formValues.userProperties;
-    if (isNotEmptyStr(formValues.lastWillMsg?.topic)) {
+    if (formValues.lastWillMsg?.topic?.length) {
       config.lastWillMsg = {};
       config.lastWillMsg.topic = formValues.lastWillMsg.topic;
       config.lastWillMsg.qos = formValues.lastWillMsg.qos;

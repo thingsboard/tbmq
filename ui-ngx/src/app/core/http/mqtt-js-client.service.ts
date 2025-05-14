@@ -42,7 +42,6 @@ import {
   convertTimeUnits,
   guid,
   isDefinedAndNotNull,
-  isNotEmptyStr,
   isNumber
 } from '@core/utils';
 import { PageLink } from '@shared/models/page/page-link';
@@ -320,7 +319,7 @@ export class MqttJsClientService {
         requestResponseInformation: connection.configuration.requestResponseInfo
       };
     }
-    if (isNotEmptyStr(connection.configuration?.lastWillMsg?.topic)) {
+    if (connection.configuration?.lastWillMsg?.topic?.length) {
       options.will = {
         topic: connection.configuration.lastWillMsg.topic,
         qos: connection.configuration.lastWillMsg.qos,

@@ -30,8 +30,8 @@ import { AuthService } from '@core/http/auth.service';
 import { UserPasswordPolicy } from '@shared/models/settings.models';
 import { MatCard } from '@angular/material/card';
 import { ToastDirective } from '@shared/components/toast.directive';
-import { TranslateModule } from '@ngx-translate/core';
-import { MatFormField, MatLabel, MatSuffix, MatError, MatHint } from '@angular/material/form-field';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { MatFormField, MatLabel, MatSuffix, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
@@ -39,12 +39,13 @@ import { MatDivider } from '@angular/material/divider';
 import { TbIconComponent } from '@shared/components/icon.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
     selector: 'tb-security',
     templateUrl: './security.component.html',
     styleUrls: ['./security.component.scss'],
-    imports: [MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, MatError, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe]
+    imports: [MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe, MatTooltip]
 })
 export class SecurityComponent extends PageComponent implements OnInit, OnDestroy {
 
@@ -60,6 +61,7 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
               public dialog: MatDialog,
               public dialogService: DialogService,
               public fb: UntypedFormBuilder,
+              private translate: TranslateService,
               private authService: AuthService) {
     super(store);
   }
@@ -184,5 +186,12 @@ export class SecurityComponent extends PageComponent implements OnInit, OnDestro
       newPassword: '',
       newPassword2: ''
     });
+    this.changePassword.markAsPristine();
+    this.changePassword.updateValueAndValidity();
+    this.store.dispatch(new ActionNotificationShow({
+      message: this.translate.instant('mqtt-client-credentials.password-changed'),
+      type: 'success',
+      duration: 2000
+    }));
   }
 }

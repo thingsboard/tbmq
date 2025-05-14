@@ -119,7 +119,9 @@ public class WebSocketSubscriptionServiceImplTest extends AbstractServiceTest {
     public void givenWebSocketSubscriptionWithWrongConfigurationWithoutTopicFilter_whenExecuteSave_thenFailure() {
         WebSocketSubscription subscription = new WebSocketSubscription();
         subscription.setWebSocketConnectionId(savedWebSocketConnection.getId());
-        subscription.setConfiguration(new WebSocketSubscriptionConfiguration());
+        WebSocketSubscriptionConfiguration config = new WebSocketSubscriptionConfiguration();
+        config.setTopicFilter("");
+        subscription.setConfiguration(config);
 
         webSocketSubscriptionService.saveWebSocketSubscription(subscription);
     }

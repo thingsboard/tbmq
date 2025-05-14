@@ -108,7 +108,6 @@ public class WebSocketSubscriptionServiceImpl implements WebSocketSubscriptionSe
                     if (webSocketSubscription.getConfiguration() == null) {
                         throw new DataValidationException("WebSocket Subscription configuration should be specified!");
                     }
-                    validateString("WebSocket Subscription topicFilter", webSocketSubscription.getConfiguration().getTopicFilter());
                     topicValidationService.validateTopicFilter(webSocketSubscription.getConfiguration().getTopicFilter());
                 }
             };

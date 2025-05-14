@@ -409,7 +409,7 @@ public class SwaggerConfiguration {
                 ThingsboardErrorResponse.of("Requested item wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND, HttpStatus.NOT_FOUND)));
 
         apiResponses.addApiResponse("429", errorResponse("429", "Too Many Requests",
-                ThingsboardErrorResponse.of("Too many requests for current tenant!", ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS)));
+                ThingsboardErrorResponse.of("Too many requests for current admin!", ThingsboardErrorCode.TOO_MANY_REQUESTS, HttpStatus.TOO_MANY_REQUESTS)));
 
         return apiResponses;
     }

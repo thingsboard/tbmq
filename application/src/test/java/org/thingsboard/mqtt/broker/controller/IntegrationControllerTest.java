@@ -125,7 +125,7 @@ public class IntegrationControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void testFindTenantIntegrations() throws Exception {
+    public void testFindIntegrations() throws Exception {
         List<Integration> integrationList = new ArrayList<>();
         for (int i = 0; i < 178; i++) {
             Integration integration = new Integration();
@@ -154,7 +154,7 @@ public class IntegrationControllerTest extends AbstractControllerTest {
     }
 
     @Test
-    public void testFindTenantIntegrationsBySearchText() throws Exception {
+    public void testFindIntegrationsBySearchText() throws Exception {
         String title1 = "Integration title 1";
         List<Integration> integrations1 = new ArrayList<>();
         for (int i = 0; i < 143; i++) {

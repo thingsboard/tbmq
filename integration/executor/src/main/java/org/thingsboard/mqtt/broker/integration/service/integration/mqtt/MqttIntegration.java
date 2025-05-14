@@ -46,6 +46,7 @@ import java.util.concurrent.TimeoutException;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MQTT_PROTOCOL_NAME;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MQTT_V_3_1_PROTOCOL_NAME;
 import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STARTED;
+import static org.thingsboard.mqtt.broker.common.data.integration.ComponentLifecycleEvent.STOPPED;
 
 @Slf4j
 public class MqttIntegration extends AbstractIntegration {
@@ -94,10 +95,10 @@ public class MqttIntegration extends AbstractIntegration {
         super.init(params);
         this.config = getClientConfiguration(this.lifecycleMsg, MqttIntegrationConfig.class);
         this.client = createMqttClient(this.config);
-        this.client.setCallback(new MqttIntegrationCallback(this.lifecycleMsg, __ -> {
+        this.client.setCallback(new MqttIntegrationCallback(this.lifecycleMsg, () -> {
             handleLifecycleEvent(STARTED);
             startProcessingIntegrationMessages(this);
-        }));
+        }, () -> handleLifecycleEvent(STOPPED)));
         connectClient(this.config);
     }
 

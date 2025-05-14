@@ -44,14 +44,21 @@
         <mat-form-field class="mat-block">
           <mat-label translate>ws-client.connections.name</mat-label>
           <input matInput formControlName="name">
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'mqtt-client-credentials.name-required' | translate }}"
+                    [class.!hidden]="!connectionFormGroup.get('name').hasError('required')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
 
         <section class="flex flex-col gap-2">
-          <tb-toggle-header [style]="{width: '400px', alignSelf: 'center'}"
+          <tb-toggle-header [style]="{maxWidth: 'fit-content', alignSelf: 'center'}"
             (valueChange)="onAddressProtocolChange($event)"
             [value]="addressProtocol"
             name="addressProtocol"
-            useSelectOnMdLg="true"
+            useSelectOnMdLg="false"
             appearance="fill">
             <tb-toggle-option [value]="wsAddressProtocolType.WS">
               {{ wsAddressProtocolType.WS }}
@@ -63,11 +70,13 @@
           <mat-form-field class="mat-block" subscriptSizing="fixed" style="margin-bottom: 0">
             <mat-label translate>ws-client.connections.url</mat-label>
             <input matInput formControlName="url">
-            @if (connectionFormGroup.get('url').hasError('required')) {
-              <mat-error>
-                {{ 'ws-client.connections.url-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'ws-client.connections.url-required' | translate }}"
+                      [class.!hidden]="!connectionFormGroup.get('url').hasError('required')"
+                      class="tb-error">
+              warning
+            </mat-icon>
             <mat-icon matSuffix style="color: #ff9a00"
               [class.!hidden]="!displayUrlWarning"
               [matTooltip]="'ws-client.connections.url-warning' | translate">
@@ -75,8 +84,7 @@
             </mat-icon>
           </mat-form-field>
           @if (addressProtocol === wsAddressProtocolType.WSS) {
-            <section class="flex flex-row items-center gap-2" style="padding: 0 0 12px 0"
-              >
+            <section class="flex flex-row items-center gap-2" style="padding: 0 0 12px 0">
               <mat-slide-toggle formControlName="rejectUnauthorized">
                 <span translate>ws-client.connections.reject-unauthorized</span>
               </mat-slide-toggle>
@@ -247,11 +255,13 @@
               <mat-icon matSuffix [matTooltip]="'mqtt-client-session.keep-alive-hint' | translate">
                 help
               </mat-icon>
-              @if (connectionAdvancedFormGroup.get('keepalive').hasError('required')) {
-                <mat-error>
-                  {{ 'mqtt-client-session.keep-alive-required' | translate }}
-                </mat-error>
-              }
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'mqtt-client-session.keep-alive-required' | translate }}"
+                        [class.!hidden]="!connectionAdvancedFormGroup.get('keepalive').hasError('required')"
+                        class="tb-error">
+                warning
+              </mat-icon>
           </mat-form-field>
           <mat-form-field class="flex flex-1">
             <mat-label translate>timeunit.units</mat-label>
@@ -272,11 +282,13 @@
             <mat-icon matSuffix [matTooltip]="'ws-client.connections.connect-timeout-hint' | translate">
               help
             </mat-icon>
-            @if (connectionAdvancedFormGroup.get('connectTimeout').hasError('required')) {
-              <mat-error>
-                {{ 'ws-client.connections.connect-timeout-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'ws-client.connections.connect-timeout-required' | translate }}"
+                      [class.!hidden]="!connectionAdvancedFormGroup.get('connectTimeout').hasError('required')"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
           <mat-form-field class="flex flex-1">
             <mat-label translate>timeunit.units</mat-label>
@@ -297,11 +309,13 @@
             <mat-icon matSuffix [matTooltip]="'ws-client.connections.reconnect-period-hint' | translate">
               help
             </mat-icon>
-            @if (connectionAdvancedFormGroup.get('reconnectPeriod').hasError('required')) {
-              <mat-error>
-                {{ 'ws-client.connections.reconnect-period-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'ws-client.connections.reconnect-period-required' | translate }}"
+                      [class.!hidden]="!connectionAdvancedFormGroup.get('reconnectPeriod').hasError('required')"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
           <mat-form-field class="flex flex-1">
             <mat-label translate>timeunit.units</mat-label>

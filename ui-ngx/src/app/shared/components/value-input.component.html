@@ -37,11 +37,13 @@
         <mat-label translate>value.string-value</mat-label>
         <input [disabled]="disabled()" matInput [required]="required()" name="value" #value="ngModel"
                [(ngModel)]="modelValue" (ngModelChange)="onValueChanged()"/>
-        @if (value.hasError('required')) {
-          <mat-error>
-            {{ (requiredText() ? requiredText() : 'value.string-value-required') | translate }}
-          </mat-error>
-        }
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  [matTooltip]="(requiredText() ? requiredText() : 'value.string-value-required') | translate"
+                  [class.!hidden]="!value.hasError('required')"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
     }
     @if (valueType === valueTypeEnum.JSON) {
@@ -53,16 +55,20 @@
           <button matSuffix mat-icon-button (click)="openEditJSONDialog($event)">
             <mat-icon>open_in_new</mat-icon>
           </button>
-          @if (value.hasError('required') && !value.hasError('invalidJSON')) {
-            <mat-error>
-              {{ (requiredText() ? requiredText() : 'value.json-value-required') | translate }}
-            </mat-error>
-          }
-          @if (value.hasError('invalidJSON')) {
-            <mat-error>
-              {{ 'value.json-value-invalid' | translate }}
-            </mat-error>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    [matTooltip]="(requiredText() ? requiredText() : 'value.json-value-required') | translate"
+                    [class.!hidden]="!(value.hasError('required') && !value.hasError('invalidJSON'))"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'value.json-value-invalid' | translate }}"
+                    [class.!hidden]="!value.hasError('invalidJSON')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
       </div>
     }

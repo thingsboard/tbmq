@@ -251,19 +251,14 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     @Override
     public void processRemoveApplicationTopicRequest(String clientId, ClientCallback callback) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Processing REMOVE_APPLICATION_TOPIC_REQUEST_MSG processRemoveApplicationTopicRequest", clientId);
-        }
+        log.trace("[{}] Processing REMOVE_APPLICATION_TOPIC_REQUEST_MSG", clientId);
         if (StringUtils.isEmpty(clientId)) {
             callback.onFailure(new RuntimeException("Trying to remove APPLICATION topic for empty clientId"));
             return;
         }
         ClientSession clientSession = getClientSessionForClient(clientId);
-        ClientType currentType = clientSession.getSessionInfo().getClientInfo().getType();
-        if (currentType == ClientType.APPLICATION) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Current type of the client is APPLICATION", clientId);
-            }
+        if (clientSession == null || ClientType.APPLICATION == clientSession.getClientType()) {
+            log.debug("[{}] Skipping application topic removal: {}", clientId, clientSession == null ? "no client session found" : "type is APPLICATION");
             callback.onSuccess();
             return;
         }

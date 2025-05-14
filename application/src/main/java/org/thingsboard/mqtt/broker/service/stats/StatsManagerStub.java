@@ -105,6 +105,11 @@ public class StatsManagerStub implements StatsManager, ActorStatsManager, Produc
     }
 
     @Override
+    public AtomicInteger createNonWritableClientsCounter() {
+        return new AtomicInteger(0);
+    }
+
+    @Override
     public AtomicInteger createSubscriptionSizeCounter() {
         return new AtomicInteger(0);
     }

@@ -60,7 +60,7 @@ import { Observable, Subject } from 'rxjs';
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
-  imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent, MatAutocomplete, MatAutocompleteTrigger]
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent, MatAutocomplete, MatAutocompleteTrigger]
 })
 export class MessangerComponent implements OnInit, OnDestroy {
 
@@ -111,7 +111,9 @@ export class MessangerComponent implements OnInit, OnDestroy {
       })
     });
 
-    this.mqttJsClientService.connection$.subscribe(
+    this.mqttJsClientService.connection$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(
       connection => {
         if (connection) {
           this.connection = connection;

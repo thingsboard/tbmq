@@ -34,11 +34,10 @@ import { MqttJsClientService } from "@core/http/mqtt-js-client.service";
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
-import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatButton } from '@angular/material/button';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -49,7 +48,7 @@ import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
     selector: 'tb-general-settings',
     templateUrl: './general-settings.component.html',
     styleUrls: ['./general-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatProgressBar, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatError, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatSlideToggle, MatIcon, MatTooltip, MatFormField, MatLabel, MatInput, MatSuffix, MatButton, ToggleSelectComponent, ToggleOption, NgTemplateOutlet, AsyncPipe]
 })
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 

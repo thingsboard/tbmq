@@ -29,7 +29,7 @@ helm upgrade --install kafka -f kafka/values-kafka.yml oci://registry-1.docker.i
 # install Redis
 kubectl apply -f redis.yml
 
-# install ThingsBoard MQTT Broker
+# install TBMQ
 kubectl apply -f tb-broker-configmap.yml
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&

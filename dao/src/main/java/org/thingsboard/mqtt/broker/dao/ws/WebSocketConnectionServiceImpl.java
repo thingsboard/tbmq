@@ -172,7 +172,6 @@ public class WebSocketConnectionServiceImpl implements WebSocketConnectionServic
                     validateString("WebSocket Connection URL", webSocketConnection.getConfiguration().getUrl());
                     validateURL(webSocketConnection.getConfiguration().getUrl());
                     if (webSocketConnection.getConfiguration().getLastWillMsg() != null) {
-                        validateString("WebSocket Connection Last Will Msg topic", webSocketConnection.getConfiguration().getLastWillMsg().getTopic());
                         topicValidationService.validateTopic(webSocketConnection.getConfiguration().getLastWillMsg().getTopic());
                     }
                 }

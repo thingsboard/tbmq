@@ -18,7 +18,7 @@ services:
   postgres:
     restart: always
     container_name: "${POSTGRES_NAME}"
-    image: "postgres:15"
+    image: "postgres:16"
     ports:
       - "5432"
     logging:
@@ -34,7 +34,7 @@ services:
   kafka:
     restart: always
     container_name: "${KAFKA_NAME}"
-    image: "bitnami/kafka:3.5.1"
+    image: "bitnami/kafka:3.7.0"
     ports:
       - "9092"
     logging:
@@ -139,20 +139,20 @@ services:
   haproxy:
     restart: always
     container_name: "${LOAD_BALANCER_NAME}"
-    image: thingsboard/haproxy-certbot:2.2.31-alpine3.18
+    image: thingsboard/haproxy-certbot:2.2.33-alpine
     volumes:
       - tbmq-haproxy-config:/config
       - tbmq-haproxy-letsencrypt:/etc/letsencrypt
       - tbmq-haproxy-certs-d:/usr/local/etc/haproxy/certs.d
     ports:
-      - "8083:8083"
+      - "80:80"
       - "443:443"
       - "1883:1883"
       - "8084:8084"
     cap_add:
       - NET_ADMIN
     environment:
-      HTTP_PORT: 8083
+      HTTP_PORT: 80
       HTTPS_PORT: 443
       MQTT_PORT: 1883
       MQTT_WS_PORT: 8084

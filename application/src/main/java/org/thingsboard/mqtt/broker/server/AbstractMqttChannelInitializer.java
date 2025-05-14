@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.haproxy.HAProxyMessageDecoder;
 import io.netty.handler.codec.mqtt.MqttDecoder;
 import io.netty.handler.codec.mqtt.MqttEncoder;
 import io.netty.handler.ssl.SslHandler;
@@ -25,6 +26,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.thingsboard.mqtt.broker.server.ip.IpAddressHandler;
+import org.thingsboard.mqtt.broker.server.ip.ProxyIpAddressHandler;
 import org.thingsboard.mqtt.broker.server.traffic.DuplexTrafficHandler;
 
 @Slf4j
@@ -35,6 +37,8 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     private int maxClientIdLength;
     @Value("${historical-data-report.enabled:true}")
     private boolean historicalDataReportEnabled;
+    @Value("${listener.proxy_enabled:false}")
+    private boolean proxyProtocolEnabled;
 
     private final MqttHandlerFactory handlerFactory;
 
@@ -45,7 +49,13 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     @Override
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast(new IpAddressHandler());
+
+        if (proxyProtocolEnabled) {
+            pipeline.addLast("proxy", new HAProxyMessageDecoder());
+            pipeline.addLast("ipAdrHandler", new ProxyIpAddressHandler());
+        } else {
+            pipeline.addLast("ipAdrHandler", new IpAddressHandler());
+        }
 
         SslHandler sslHandler = getSslHandler();
         if (sslHandler != null) {

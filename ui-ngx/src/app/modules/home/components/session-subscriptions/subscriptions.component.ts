@@ -32,7 +32,7 @@ import {
 import { DEFAULT_QOS, QoS } from '@shared/models/session.model';
 import { TranslateModule } from '@ngx-translate/core';
 import { TopicSubscription } from '@shared/models/ws-client.model';
-import { MatLabel, MatFormField, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatLabel, MatFormField, MatSuffix } from '@angular/material/form-field';
 
 import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
@@ -60,7 +60,7 @@ import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/mat
             useExisting: forwardRef(() => SubscriptionsComponent),
             multi: true
         }],
-  imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, MatError, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton, MatAutocompleteTrigger, MatAutocomplete, MatOption]
+    imports: [TranslateModule, MatLabel, FormsModule, ReactiveFormsModule, MatFormField, MatInput, CopyButtonComponent, QosSelectComponent, MatSuffix, SubscriptionOptionsComponent, MatIconButton, MatTooltip, MatIcon, MatButton, MatAutocompleteTrigger, MatAutocomplete, MatOption]
 })
 export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnDestroy {
 
