@@ -172,7 +172,7 @@ export const gettingStartedActions: GettingStartedLink[] = [
   },
   {
     title: 'getting-started.guide.support',
-    url: 'https://thingsboard.io/docs/contact-us'
+    url: 'https://thingsboard.io/docs/mqtt-broker/help'
   },
   {
     title: 'getting-started.guide.github',
