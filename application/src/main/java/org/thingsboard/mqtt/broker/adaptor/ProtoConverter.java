@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.ConnectionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
@@ -626,11 +627,13 @@ public class ProtoConverter {
     }
 
     /**
-     * Helper methods
+     * Internode notifications
      */
 
-    public static String getClientId(PublishMsgProto publishMsgProto) {
-        return publishMsgProto != null ? publishMsgProto.getClientId() : null;
+    public static InternodeNotificationProto toClientSessionStatsCleanupProto(String clientId) {
+        return InternodeNotificationProto.newBuilder()
+                .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.newBuilder().setClientId(clientId).build())
+                .build();
     }
 
     public static InternodeNotificationProto toMqttAuthProviderCreatedEvent(MqttAuthProvider provider) {
@@ -691,6 +694,14 @@ public class ProtoConverter {
         return InternodeNotificationProto.newBuilder()
                 .setMqttAuthProviderProto(mqttAuthProviderProto)
                 .build();
+    }
+
+    /**
+     * Helper methods
+     */
+
+    public static String getClientId(PublishMsgProto publishMsgProto) {
+        return publishMsgProto != null ? publishMsgProto.getClientId() : null;
     }
 
 }

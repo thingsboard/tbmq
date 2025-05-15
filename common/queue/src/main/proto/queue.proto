@@ -150,8 +150,13 @@ message MqttAuthProviderProto {
   optional string configuration = 6;
 }
 
+message ClientSessionStatsCleanupProto {
+  string clientId = 1;
+}
+
 message InternodeNotificationProto {
   MqttAuthProviderProto mqttAuthProviderProto = 1;
+  ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 2;
 }
 
 message DevicePublishMsgProto {

@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +44,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     private final InternodeNotificationsHelperImpl helper;
     private final ServiceInfoProvider serviceInfoProvider;
     private final MqttAuthProviderManager mqttAuthProviderManager;
+    private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
 
     private volatile boolean stopped = false;
 
@@ -81,15 +83,21 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
                 }
             }
         }
-        log.info("Node Notification Consumer stopped.");
+        log.info("Internode Notification Consumer stopped.");
     }
 
     private void processInternodeNotification(TbProtoQueueMsg<InternodeNotificationProto> msg) {
-        // TODO: how to use this key?
-        String key = msg.getKey();
+        // TODO: how to use this key? (serviceId at the current stage)
+        String serviceId = msg.getKey();
         InternodeNotificationProto notificationProto = msg.getValue();
         if (notificationProto.hasMqttAuthProviderProto()) {
+            log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
             mqttAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
+            return;
+        }
+        if (notificationProto.hasClientSessionStatsCleanupProto()) {
+            log.trace("[{}] Forwarding message to local MQTT client session stats cleanup processor {}", serviceId, notificationProto.getClientSessionStatsCleanupProto());
+            clientSessionStatsCleanupProcessor.processClientSessionStatsCleanup(notificationProto.getClientSessionStatsCleanupProto());
         }
     }
 

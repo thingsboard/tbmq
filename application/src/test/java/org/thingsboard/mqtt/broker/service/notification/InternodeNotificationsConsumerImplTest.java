@@ -23,6 +23,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -39,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -57,6 +60,9 @@ public class InternodeNotificationsConsumerImplTest {
     private MqttAuthProviderManager mqttAuthProviderManager;
 
     @Mock
+    private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
+
+    @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
 
     private InternodeNotificationsConsumerImpl notificationsConsumer;
@@ -64,12 +70,14 @@ public class InternodeNotificationsConsumerImplTest {
     @Before
     public void setUp() {
         notificationsConsumer = new InternodeNotificationsConsumerImpl(
-                queueFactory, helper, serviceInfoProvider, mqttAuthProviderManager
-        );
+                queueFactory,
+                helper,
+                serviceInfoProvider,
+                mqttAuthProviderManager,
+                clientSessionStatsCleanupProcessor);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
-        // Basic mock wiring
         when(serviceInfoProvider.getServiceId()).thenReturn("nodeA");
         when(helper.getServiceTopic("nodeA")).thenReturn("topicA");
         when(queueFactory.createConsumer("topicA", "nodeA")).thenReturn(consumer);
@@ -84,7 +92,7 @@ public class InternodeNotificationsConsumerImplTest {
                 .setMqttAuthProviderProto(MqttAuthProviderProto.getDefaultInstance())
                 .build();
 
-        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("key1", proto);
+        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
 
         when(consumer.poll(anyLong()))
                 .thenAnswer(invocation -> {
@@ -97,6 +105,35 @@ public class InternodeNotificationsConsumerImplTest {
         assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
         verify(mqttAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
+        verifyNoInteractions(clientSessionStatsCleanupProcessor);
+
+        notificationsConsumer.destroy();
+        verify(consumer).unsubscribeAndClose();
+    }
+
+    @Test
+    public void testStartConsuming_AndProcessesMessageWithClientSessionStatsCleanupRequest() throws InterruptedException {
+        // Prepare a latch to wait for async execution
+        CountDownLatch latch = new CountDownLatch(1);
+
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.getDefaultInstance())
+                .build();
+
+        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
+
+        when(consumer.poll(anyLong()))
+                .thenAnswer(invocation -> {
+                    latch.countDown();
+                    return List.of(msg);
+                }).thenReturn(List.of()); // to avoid continuous processing
+
+        notificationsConsumer.startConsuming();
+
+        assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+
+        verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
+        verifyNoInteractions(mqttAuthProviderManager);
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();

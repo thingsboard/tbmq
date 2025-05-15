@@ -13,26 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
-
-import java.nio.charset.StandardCharsets;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class RetainedMsgSystemRequestProcessorImpl implements RetainedMsgSystemRequestProcessor {
+public class ClientSessionStatsCleanupProcessorImpl implements ClientSessionStatsCleanupProcessor {
 
     private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     @Override
-    public void processClientSessionStatsCleanup(RetainedMsg retainedMsg) {
-        log.trace("[{}] Executing processClientSessionStatsCleanup", retainedMsg);
-        String clientId = new String(retainedMsg.getPayload(), StandardCharsets.UTF_8);
-        tbMessageStatsReportClient.removeClient(clientId);
+    public void processClientSessionStatsCleanup(ClientSessionStatsCleanupProto cleanupRequest) {
+        log.trace("[{}] Executing processClientSessionStatsCleanup", cleanupRequest);
+        tbMessageStatsReportClient.removeClient(cleanupRequest.getClientId());
     }
 }

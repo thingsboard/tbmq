@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.retain;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-public interface RetainedMsgSystemRequestProcessor {
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 
-    void processClientSessionStatsCleanup(RetainedMsg retainedMsg);
+public interface ClientSessionStatsCleanupProcessor {
+
+    void processClientSessionStatsCleanup(ClientSessionStatsCleanupProto cleanupRequest);
 
 }

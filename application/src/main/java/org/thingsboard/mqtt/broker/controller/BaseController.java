@@ -52,6 +52,7 @@ import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
@@ -85,6 +86,8 @@ public abstract class BaseController {
     protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
     @Autowired
     protected MqttAuthProviderService mqttAuthProviderService;
+    @Autowired
+    ClientSessionStatsService clientSessionStatsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired

@@ -45,5 +45,4 @@ public interface RetainedMsgListenerService {
 
     List<RetainedMsg> getRetainedMessages();
 
-    void distributeRequestUsingRetainedMsg(RetainedMsg retainedMsg);
 }

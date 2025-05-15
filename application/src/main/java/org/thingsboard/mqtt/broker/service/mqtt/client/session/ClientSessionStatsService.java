@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.util;
+package org.thingsboard.mqtt.broker.service.mqtt.client.session;
 
-import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
+public interface ClientSessionStatsService {
 
-import java.nio.charset.StandardCharsets;
-
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME;
-
-public class SystemRetainedMsgUtil {
-
-    public static RetainedMsg newClientSessionStatsCleanupMsg(String clientId) {
-        return new RetainedMsg(CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME, clientId.getBytes(StandardCharsets.UTF_8));
-    }
+    void broadcastCleanupClientSessionStatsRequest(String clientId);
 
 }

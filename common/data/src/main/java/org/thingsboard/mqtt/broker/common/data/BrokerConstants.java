@@ -176,7 +176,6 @@ public class BrokerConstants {
     public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-consumer-group-";
 
     public static final String SYSTEMS_TOPIC_PREFIX = "$SYS/tbmq/";
-    public static final String CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "cs/stats/cleanup";
     public static final String LATEST_VERSION_AVAILABLE_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "latest/version/available";
 
     public static final String UNKNOWN = "unknown";
