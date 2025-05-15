@@ -67,7 +67,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         mqttAuthProvider.setId(UUID.fromString("e993d875-2e5b-48f2-ba6b-63074800a3ce"));
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(mqttAuthProvider))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("Unable to update non-existent MQTT client auth provider!");
+                .hasMessage("Unable to update non-existent MQTT auth provider!");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(savedAuthProvider))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("MQTT client auth provider type can't be changed!");
+                .hasMessage("MQTT auth provider type can't be changed!");
     }
 
     @Test
@@ -88,7 +88,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(null, new BasicMqttAuthProviderConfiguration());
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(mqttAuthProvider))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("MQTT client auth provider type should be specified!");
+                .hasMessage("MQTT auth provider type should be specified!");
     }
 
     @Test
@@ -96,7 +96,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(MqttAuthProviderType.BASIC, null);
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(mqttAuthProvider))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("MQTT client auth provider configuration should be specified!");
+                .hasMessage("MQTT auth provider configuration should be specified!");
     }
 
     @Test
@@ -110,7 +110,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(anotherBasicMqttAuthProvider))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("MQTT client auth provider with such type already registered!");
+                .hasMessage("MQTT auth provider with such type already registered!");
     }
 
     @Test
@@ -197,7 +197,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
     public void testEnableNonExistingMqttAuthProvider() {
         assertThatThrownBy(() -> mqttAuthProviderService.enableAuthProvider(UUID.fromString("ab196e2f-e6bf-4138-8f4e-95de7748fc0a")))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("Unable to enable non-existent MQTT client auth provider!");
+                .hasMessage("Unable to enable non-existent MQTT auth provider!");
     }
 
     @Test
@@ -243,7 +243,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
     public void testDisableNonExistingMqttAuthProvider() {
         assertThatThrownBy(() -> mqttAuthProviderService.disableAuthProvider(UUID.fromString("6e2fb006-d5ad-4539-ad6a-203abff9521b")))
                 .isInstanceOf(DataValidationException.class)
-                .hasMessage("Unable to disable non-existent MQTT client auth provider!");
+                .hasMessage("Unable to disable non-existent MQTT auth provider!");
     }
 
 

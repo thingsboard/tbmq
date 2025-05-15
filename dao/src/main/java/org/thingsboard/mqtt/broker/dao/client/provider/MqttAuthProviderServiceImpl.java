@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dao.client;
+package org.thingsboard.mqtt.broker.dao.client.provider;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
-import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -53,7 +52,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
             ConstraintViolationException ex = DbExceptionUtil.extractConstraintViolationException(e).orElse(null);
             if (ex != null && ex.getConstraintName() != null
                 && ex.getConstraintName().equalsIgnoreCase("mqtt_auth_provider_type_key")) {
-                throw new DataValidationException("MQTT client auth provider with such type already registered!");
+                throw new DataValidationException("MQTT auth provider with such type already registered!");
             }
             throw e;
         }
@@ -98,7 +97,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
         log.trace("Executing enableAuthProvider [{}]", id);
         var authProvider = mqttAuthProviderDao.findById(id);
         if (authProvider == null) {
-            throw new DataValidationException("Unable to enable non-existent MQTT client auth provider!");
+            throw new DataValidationException("Unable to enable non-existent MQTT auth provider!");
         }
         if (authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already enabled!", id, authProvider.getType());
@@ -113,7 +112,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
         log.trace("Executing disableAuthProvider [{}]", id);
         var authProvider = mqttAuthProviderDao.findById(id);
         if (authProvider == null) {
-            throw new DataValidationException("Unable to disable non-existent MQTT client auth provider!");
+            throw new DataValidationException("Unable to disable non-existent MQTT auth provider!");
         }
         if (!authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already disabled!", id, authProvider.getType());
@@ -129,20 +128,20 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
                 protected void validateUpdate(MqttAuthProvider updated) {
                     MqttAuthProvider existing = mqttAuthProviderDao.findById(updated.getId());
                     if (existing == null) {
-                        throw new DataValidationException("Unable to update non-existent MQTT client auth provider!");
+                        throw new DataValidationException("Unable to update non-existent MQTT auth provider!");
                     }
                     if (existing.getType() != updated.getType()) {
-                        throw new DataValidationException("MQTT client auth provider type can't be changed!");
+                        throw new DataValidationException("MQTT auth provider type can't be changed!");
                     }
                 }
 
                 @Override
                 protected void validateDataImpl(MqttAuthProvider authProvider) {
                     if (authProvider.getType() == null) {
-                        throw new DataValidationException("MQTT client auth provider type should be specified!");
+                        throw new DataValidationException("MQTT auth provider type should be specified!");
                     }
                     if (authProvider.getConfiguration() == null) {
-                        throw new DataValidationException("MQTT client auth provider configuration should be specified!");
+                        throw new DataValidationException("MQTT auth provider configuration should be specified!");
                     }
                     authProvider.getConfiguration().validate();
                 }
