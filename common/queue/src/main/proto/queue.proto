@@ -127,27 +127,28 @@ message DisconnectClientCommandProto {
   optional string reasonType = 4;
 }
 
+message MqttAuthSettingsProto {
+  bool jwtFirst = 1;
+  bool useListenerBasedProviderOnly = 2;
+}
+
 enum MqttAuthProviderEventProto {
-  PROVIDER_CREATED = 0;
-  PROVIDER_UPDATED = 1;
-  PROVIDER_ENABLED = 2;
-  PROVIDER_DISABLED = 3;
-  PROVIDER_DELETED = 4;
+  PROVIDER_UPDATED = 0;
+  PROVIDER_ENABLED = 1;
+  PROVIDER_DISABLED = 2;
 }
 
 enum MqttAuthProviderTypeProto {
   BASIC = 0;
-  SSL = 1;
+  X_509 = 1;
   JWT = 2;
 }
 
 message MqttAuthProviderProto {
-  int64 mqttAuthProviderIdMSB = 1;
-  int64 mqttAuthProviderIdLSB = 2;
-  MqttAuthProviderEventProto eventType = 3;
-  optional MqttAuthProviderTypeProto providerType = 4;
-  optional bool enabled = 5;
-  optional string configuration = 6;
+  MqttAuthProviderEventProto eventType = 1;
+  optional MqttAuthProviderTypeProto providerType = 2;
+  optional bool enabled = 3;
+  optional string configuration = 4;
 }
 
 message ClientSessionStatsCleanupProto {
@@ -155,8 +156,9 @@ message ClientSessionStatsCleanupProto {
 }
 
 message InternodeNotificationProto {
-  MqttAuthProviderProto mqttAuthProviderProto = 1;
-  ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 2;
+  MqttAuthSettingsProto mqttAuthSettingsProto = 1;
+  MqttAuthProviderProto mqttAuthProviderProto = 2;
+  ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 3;
 }
 
 message DevicePublishMsgProto {

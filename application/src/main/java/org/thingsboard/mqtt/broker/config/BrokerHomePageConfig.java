@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -47,8 +48,10 @@ public class BrokerHomePageConfig {
     private int tcpMaxPayloadSize;
     @Value("${listener.ssl.netty.max_payload_size}")
     private int tlsMaxPayloadSize;
+    // TODO: to remove. This will be handled by MQTT auth providers.
     @Value("${security.mqtt.basic.enabled}")
     private boolean basicAuthEnabled;
+    // TODO: to remove. This will be handled by MQTT auth providers.
     @Value("${security.mqtt.ssl.enabled}")
     private boolean x509AuthEnabled;
 
@@ -69,7 +72,7 @@ public class BrokerHomePageConfig {
     public final AdminSettingsService adminSettingsService;
 
     public HomePageConfigDto getConfig() {
-        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY);
+        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
         Map<String, ConnectivityInfo> connectivityInfoMap = null;
         if (connectivityAdminSettings != null) {
             connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {

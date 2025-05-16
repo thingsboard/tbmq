@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -83,7 +84,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         adminSettingsService.saveAdminSettings(generalSettings);
 
         AdminSettings mailSettings = new AdminSettings();
-        mailSettings.setKey("mail");
+        mailSettings.setKey(SysAdminSettingType.MAIL.getKey());
         node = objectMapper.createObjectNode();
         node.put("mailFrom", "ThingsBoard <sysadmin@localhost.localdomain>");
         node.put("smtpProtocol", "smtp");

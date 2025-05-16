@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsSe
 
 import java.util.UUID;
 
+// TODO: send disable event if provider deleted API will be called?
 @Service
 @RequiredArgsConstructor
 public class MqttAuthProviderManagerServiceImpl implements MqttAuthProviderManagerService {
@@ -35,38 +36,25 @@ public class MqttAuthProviderManagerServiceImpl implements MqttAuthProviderManag
     @Override
     public MqttAuthProvider saveAuthProvider(MqttAuthProvider authProvider) {
         MqttAuthProvider saved = providerService.saveAuthProvider(authProvider);
-        InternodeNotificationProto notificationProto = authProvider.getId() == null ?
-                ProtoConverter.toMqttAuthProviderCreatedEvent(saved) :
-                ProtoConverter.toMqttAuthProviderUpdatedEvent(saved);
+        InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderUpdatedEvent(saved);
         internodeNotificationsService.broadcast(notificationProto);
         return saved;
     }
 
     @Override
-    public void deleteAuthProvider(UUID id) {
-        boolean deleted = providerService.deleteAuthProvider(id);
-        if (deleted) {
-            InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderDeletedEvent(id);
-            internodeNotificationsService.broadcast(notificationProto);
-        }
-    }
-
-    @Override
     public void enableAuthProvider(UUID id) {
-        boolean enabled = providerService.enableAuthProvider(id);
-        if (enabled) {
-            InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderEnabledEvent(id);
+        providerService.enableAuthProvider(id).ifPresent(type -> {
+            InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderEnabledEvent(type);
             internodeNotificationsService.broadcast(notificationProto);
-        }
+        });
     }
 
     @Override
     public void disableAuthProvider(UUID id) {
-        boolean disabled = providerService.disableAuthProvider(id);
-        if (disabled) {
-            InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderDisabledEvent(id);
+        providerService.disableAuthProvider(id).ifPresent(type -> {
+            InternodeNotificationProto notificationProto = ProtoConverter.toMqttAuthProviderDisabledEvent(type);
             internodeNotificationsService.broadcast(notificationProto);
-        }
+        });
     }
 
 }

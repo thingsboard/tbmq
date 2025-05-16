@@ -30,6 +30,8 @@ import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.model.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
@@ -47,6 +49,7 @@ import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
@@ -630,64 +633,43 @@ public class ProtoConverter {
      * Internode notifications
      */
 
+    // TODO: should we handle remove cases?
+    public static InternodeNotificationProto toMqttAuthSettingUpdateProto(MqttAuthSettings mqttAuthSettings) {
+        return InternodeNotificationProto.newBuilder()
+                .setMqttAuthSettingsProto(MqttAuthSettingsProto.newBuilder()
+                        .setJwtFirst(mqttAuthSettings.isJwtFirst())
+                        .setUseListenerBasedProviderOnly(mqttAuthSettings.isUseListenerBasedProviderOnly())
+                        .build()).build();
+    }
+
     public static InternodeNotificationProto toClientSessionStatsCleanupProto(String clientId) {
         return InternodeNotificationProto.newBuilder()
                 .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.newBuilder().setClientId(clientId).build())
                 .build();
     }
 
-    public static InternodeNotificationProto toMqttAuthProviderCreatedEvent(MqttAuthProvider provider) {
-        var mqttAuthProviderProto =
-                toCreatedOrUpdatedMqttAuthProviderProto(provider, MqttAuthProviderEventProto.PROVIDER_CREATED);
-        return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
-    }
-
     public static InternodeNotificationProto toMqttAuthProviderUpdatedEvent(MqttAuthProvider provider) {
-        var mqttAuthProviderProto =
-                toCreatedOrUpdatedMqttAuthProviderProto(provider, MqttAuthProviderEventProto.PROVIDER_UPDATED);
-        return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
-    }
-
-    public static InternodeNotificationProto toMqttAuthProviderEnabledEvent(UUID id) {
-        MqttAuthProviderProto mqttAuthProviderProto =
-                toStateChangedMqttAuthProviderProto(id, MqttAuthProviderEventProto.PROVIDER_ENABLED);
-        return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
-    }
-
-    public static InternodeNotificationProto toMqttAuthProviderDisabledEvent(UUID id) {
-        MqttAuthProviderProto mqttAuthProviderProto =
-                toStateChangedMqttAuthProviderProto(id, MqttAuthProviderEventProto.PROVIDER_DISABLED);
-        return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
-    }
-
-    public static InternodeNotificationProto toMqttAuthProviderDeletedEvent(UUID id) {
-        MqttAuthProviderProto mqttAuthProviderProto = MqttAuthProviderProto.newBuilder()
-                .setEventType(MqttAuthProviderEventProto.PROVIDER_DELETED)
-                .setMqttAuthProviderIdMSB(id.getMostSignificantBits())
-                .setMqttAuthProviderIdLSB(id.getLeastSignificantBits())
-                .build();
-        return wrapMqttAuthProviderProtoToInterNodeNotification(mqttAuthProviderProto);
-    }
-
-    private static MqttAuthProviderProto toCreatedOrUpdatedMqttAuthProviderProto(MqttAuthProvider provider, MqttAuthProviderEventProto event) {
-        return MqttAuthProviderProto.newBuilder()
-                .setEventType(event)
-                .setMqttAuthProviderIdMSB(provider.getId().getMostSignificantBits())
-                .setMqttAuthProviderIdLSB(provider.getId().getLeastSignificantBits())
-                .setEnabled(provider.isEnabled())
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.forNumber(provider.getType().getProtoNumber()))
+                .setEnabled(provider.isEnabled())
                 // TODO: Why convert to string instead of bytes?
                 .setConfiguration(JacksonUtil.toString(provider.getConfiguration()))
-                .build();
+                .build());
     }
 
-    private static MqttAuthProviderProto toStateChangedMqttAuthProviderProto(UUID id, MqttAuthProviderEventProto event) {
-        return MqttAuthProviderProto.newBuilder()
-                .setEventType(event)
-                .setMqttAuthProviderIdMSB(id.getMostSignificantBits())
-                .setMqttAuthProviderIdLSB(id.getLeastSignificantBits())
-                .setEnabled(MqttAuthProviderEventProto.PROVIDER_ENABLED.equals(event))
-                .build();
+    public static InternodeNotificationProto toMqttAuthProviderEnabledEvent(MqttAuthProviderType type) {
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
+                .setProviderType(MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .build());
+    }
+
+    public static InternodeNotificationProto toMqttAuthProviderDisabledEvent(MqttAuthProviderType type) {
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
+                .setProviderType(MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .build());
     }
 
     private static InternodeNotificationProto wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto mqttAuthProviderProto) {

@@ -93,7 +93,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
         Assert.assertNotNull(savedMqttAuthProvider);
         Assert.assertNotNull(savedMqttAuthProvider.getId());
-        Assert.assertEquals(savedMqttAuthProvider.getType(), MqttAuthProviderType.SSL);
+        Assert.assertEquals(savedMqttAuthProvider.getType(), MqttAuthProviderType.X_509);
         Assert.assertTrue(savedMqttAuthProvider.getConfiguration() instanceof SslMqttAuthProviderConfiguration);
         Assert.assertTrue(savedMqttAuthProvider.getCreatedTime() > 0);
         Assert.assertTrue(savedMqttAuthProvider.isEnabled());
@@ -150,7 +150,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
         MqttAuthProvider provider = new MqttAuthProvider();
         provider.setEnabled(true);
-        provider.setType(MqttAuthProviderType.SSL);
+        provider.setType(MqttAuthProviderType.X_509);
         provider.setConfiguration(configuration);
         return provider;
     }
@@ -208,7 +208,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
                 .contains(MqttAuthProviderUtil.toShortMqttAuthProvider(savedJwtProvider)));
     }
 
-    public void saveAuthProviderWithExistingProviderType() throws  Exception {
+    public void saveAuthProviderWithExistingProviderType() throws Exception {
         MqttAuthProvider provider = getBasicMqttAuthProvider();
 
         MqttAuthProvider savedMqttAuthProvider = doPost("/api/mqtt/auth/provider", provider, MqttAuthProvider.class);

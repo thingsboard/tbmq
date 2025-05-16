@@ -23,8 +23,6 @@ public interface MqttAuthProviderManagerService {
 
     MqttAuthProvider saveAuthProvider(MqttAuthProvider authProvider);
 
-    void deleteAuthProvider(UUID id);
-
     void enableAuthProvider(UUID id);
 
     void disableAuthProvider(UUID id);

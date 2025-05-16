@@ -13,18 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth;
 
 import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-
+import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 
 @Slf4j
-public class JwtMqttClientAuthProvider implements MqttClientAuthProvider {
+@Service
+public class DefaultAuthorizationRoutingServiceImpl implements AuthorizationRoutingService {
+
+    private volatile boolean isJwtFirst;
+    private volatile boolean useSingleProvider;
 
     @Override
-    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
-        return AuthResponse.defaultAuthResponse();
+    public void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto) {
+        isJwtFirst = mqttAuthSettingsProto.getJwtFirst();
+        useSingleProvider = mqttAuthSettingsProto.getUseListenerBasedProviderOnly();
     }
 
 }

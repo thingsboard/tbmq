@@ -26,10 +26,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
@@ -63,6 +65,9 @@ public class InternodeNotificationsConsumerImplTest {
     private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
 
     @Mock
+    private AuthorizationRoutingService authorizationRoutingService;
+
+    @Mock
     private TbQueueConsumer<TbProtoQueueMsg<InternodeNotificationProto>> consumer;
 
     private InternodeNotificationsConsumerImpl notificationsConsumer;
@@ -74,13 +79,42 @@ public class InternodeNotificationsConsumerImplTest {
                 helper,
                 serviceInfoProvider,
                 mqttAuthProviderManager,
-                clientSessionStatsCleanupProcessor);
+                clientSessionStatsCleanupProcessor,
+                authorizationRoutingService);
 
         ReflectionTestUtils.setField(notificationsConsumer, "pollDuration", 1L);
 
         when(serviceInfoProvider.getServiceId()).thenReturn("nodeA");
         when(helper.getServiceTopic("nodeA")).thenReturn("topicA");
         when(queueFactory.createConsumer("topicA", "nodeA")).thenReturn(consumer);
+    }
+
+    @Test
+    public void testStartConsuming_AndProcessesMessageWithAuthSettings() throws InterruptedException {
+        // Prepare a latch to wait for async execution
+        CountDownLatch latch = new CountDownLatch(1);
+
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setMqttAuthSettingsProto(MqttAuthSettingsProto.getDefaultInstance())
+                .build();
+
+        TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
+
+        when(consumer.poll(anyLong()))
+                .thenAnswer(invocation -> {
+                    latch.countDown();
+                    return List.of(msg);
+                }).thenReturn(List.of()); // to avoid continuous processing
+
+        notificationsConsumer.startConsuming();
+
+        assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+
+        verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
+        verifyNoInteractions(mqttAuthProviderManager, clientSessionStatsCleanupProcessor);
+
+        notificationsConsumer.destroy();
+        verify(consumer).unsubscribeAndClose();
     }
 
     @Test
@@ -105,7 +139,7 @@ public class InternodeNotificationsConsumerImplTest {
         assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
         verify(mqttAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
-        verifyNoInteractions(clientSessionStatsCleanupProcessor);
+        verifyNoInteractions(authorizationRoutingService, clientSessionStatsCleanupProcessor);
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();
@@ -133,7 +167,7 @@ public class InternodeNotificationsConsumerImplTest {
         assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
         verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
-        verifyNoInteractions(mqttAuthProviderManager);
+        verifyNoInteractions(authorizationRoutingService, mqttAuthProviderManager);
 
         notificationsConsumer.destroy();
         verify(consumer).unsubscribeAndClose();

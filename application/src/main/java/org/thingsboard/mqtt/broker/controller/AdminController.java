@@ -26,17 +26,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.model.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
+import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.ArrayList;
@@ -54,6 +58,7 @@ public class AdminController extends BaseController {
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
     private final WebSocketConnectionService webSocketConnectionService;
+    private final SystemSettingsNotificationService systemSettingsNotificationService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
@@ -74,7 +79,7 @@ public class AdminController extends BaseController {
         try {
             checkParameter("key", key);
             AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
-            if (adminSettings.getKey().equals("mail")) {
+            if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
                 ((ObjectNode) adminSettings.getJsonValue()).remove("password");
             }
             return adminSettings;
@@ -90,9 +95,20 @@ public class AdminController extends BaseController {
         try {
             checkNotNull(adminSettings);
             adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
-            if (adminSettings.getKey().equals("mail")) {
-                mailService.updateMailConfiguration();
-                ((ObjectNode) adminSettings.getJsonValue()).remove("password");
+            String rawKey = adminSettings.getKey();
+            var sysAdminSettingTypeOptional = SysAdminSettingType.parse(rawKey);
+            if (sysAdminSettingTypeOptional.isPresent()) {
+                switch (sysAdminSettingTypeOptional.get()) {
+                    case MAIL -> {
+                        mailService.updateMailConfiguration();
+                        ((ObjectNode) adminSettings.getJsonValue()).remove("password");
+                    }
+                    case MQTT_AUTHORIZATION -> {
+                        // TODO: check for NPE
+                        var mqttAuthSettings = JacksonUtil.convertValue(adminSettings.getJsonValue(), MqttAuthSettings.class);
+                        systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
+                    }
+                }
             }
             return adminSettings;
         } catch (Exception e) {
@@ -105,9 +121,9 @@ public class AdminController extends BaseController {
     public void sendTestMail(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         try {
             adminSettings = checkNotNull(adminSettings);
-            if (adminSettings.getKey().equals("mail")) {
+            if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
                 if (!adminSettings.getJsonValue().has("password")) {
-                    AdminSettings mailSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey("mail"));
+                    AdminSettings mailSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey()));
                     ((ObjectNode) adminSettings.getJsonValue()).put("password", mailSettings.getJsonValue().get("password").asText());
                 }
                 String email = getCurrentUser().getEmail();

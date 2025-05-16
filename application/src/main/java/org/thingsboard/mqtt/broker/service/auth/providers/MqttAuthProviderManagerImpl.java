@@ -18,169 +18,51 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
-import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 
-import java.util.UUID;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MqttAuthProviderManagerImpl implements MqttAuthProviderManager {
 
-    // TODO: we have only 3 possible providers at the current stage. No need to try fetch more
-    private static final PageLink DEFAULT_PAGE_LINK = new PageLink(3, 0);
+    @Value("${security.mqtt.basic.enabled}")
+    private boolean basicAuthEnabled;
+    @Value("${security.mqtt.ssl.enabled}")
+    private boolean sslAuthEnabled;
 
-    private final MqttAuthProviderService mqttAuthProviderService;
-    private final MqttAuthProviderFactory mqttAuthProviderFactory;
+    private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
+    private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
 
-    private volatile BasicMqttClientAuthProvider basicProvider;
-    private volatile SslMqttClientAuthProvider sslProvider;
-    private volatile JwtMqttClientAuthProvider jwtProvider;
+    private Map<MqttAuthProviderType, MqttClientAuthProvider> authProviders;
 
     @PostConstruct
     public void init() {
-        PageData<MqttAuthProvider> enabledAuthProvidersDto = mqttAuthProviderService.getEnabledAuthProviders(DEFAULT_PAGE_LINK);
-        if (enabledAuthProvidersDto == null || enabledAuthProvidersDto.getData().isEmpty()) {
-            log.info("MQTT Authentication options are disabled!");
-            return;
+        Map<MqttAuthProviderType, MqttClientAuthProvider> tmpProvidersMap = new HashMap<>();
+
+        if (basicAuthEnabled) {
+            tmpProvidersMap.put(MqttAuthProviderType.BASIC, basicMqttClientAuthProvider);
         }
-        for (var dto : enabledAuthProvidersDto.getData()) {
-            try {
-                switch (dto.getType()) {
-                    case BASIC -> basicProvider = mqttAuthProviderFactory.createBasicProvider((BasicMqttAuthProviderConfiguration) dto.getConfiguration());
-                    case SSL -> sslProvider = mqttAuthProviderFactory.createSslProvider((SslMqttAuthProviderConfiguration) dto.getConfiguration());
-                    case JWT -> jwtProvider = mqttAuthProviderFactory.createJwtProvider((JwtMqttAuthProviderConfiguration) dto.getConfiguration());
-                    default -> throw new IllegalStateException("Unexpected MQTT client auth provider type: " + dto.getType());
-                }
-            } catch (Exception ex) {
-                // TODO: should we throw an exception here?
-                log.error("[{}][{}] Failed to initialize provider: ", dto.getId(), dto.getType(), ex);
-            }
+        if (sslAuthEnabled) {
+            tmpProvidersMap.put(MqttAuthProviderType.X_509, sslMqttClientAuthProvider);
         }
+
+        this.authProviders = Collections.unmodifiableMap(tmpProvidersMap);
     }
 
     @Override
-    public boolean isAuthEnabled() {
-        return isBasicEnabled() || isSslEnabled() || isSslEnabled();
+    public Map<MqttAuthProviderType, MqttClientAuthProvider> getActiveAuthProviders() {
+        return authProviders;
     }
 
     @Override
-    public boolean isJwtEnabled() {
-        return jwtProvider != null && jwtProvider.isEnabled();
+    public void handleProviderNotification(MqttAuthProviderProto notification) {
+
     }
-
-    @Override
-    public boolean isBasicEnabled() {
-        return basicProvider != null && basicProvider.isEnabled();
-    }
-
-    @Override
-    public boolean isSslEnabled() {
-        return sslProvider != null && sslProvider.isEnabled();
-    }
-
-    @Override
-    public boolean isVerifyJwtFirst() {
-        return isJwtEnabled() && jwtProvider.getConfiguration().isVerifyJwtFirst();
-    }
-
-    @Override
-    public JwtMqttClientAuthProvider getJwtMqttAuthProvider() {
-        return jwtProvider;
-    }
-
-    @Override
-    public BasicMqttClientAuthProvider getBasicMqttAuthProvider() {
-        return basicProvider;
-    }
-
-    @Override
-    public SslMqttClientAuthProvider getSslMqttAuthProvider() {
-        return sslProvider;
-    }
-
-    @Override
-    public void handleProviderNotification(MqttAuthProviderProto providerNotificationProto) {
-        UUID uuid = toUUID(providerNotificationProto);
-        log.trace("Received MQTT Auth provider notification: {}, {}", uuid, providerNotificationProto.getEventType());
-
-        var providerType = MqttAuthProviderType.fromProtoNumber(providerNotificationProto.getProviderType().ordinal());
-
-        switch (providerNotificationProto.getEventType()) {
-
-            case PROVIDER_CREATED -> {
-                String configStr = providerNotificationProto.getConfiguration();
-                boolean enabled = providerNotificationProto.getEnabled();
-                switch (providerType) {
-                    case BASIC -> basicProvider = mqttAuthProviderFactory.createBasicProvider(toBasicAuthProviderConfiguration(configStr), enabled);
-                    case SSL -> sslProvider = mqttAuthProviderFactory.createSslProvider(toSslAuthProviderConfiguration(configStr), enabled);
-                    case JWT -> jwtProvider = mqttAuthProviderFactory.createJwtProvider(toJwtAuthProviderConfiguration(configStr), enabled);
-                }
-            }
-
-            case PROVIDER_UPDATED -> {
-                String configStr = providerNotificationProto.getConfiguration();
-                switch (providerType) {
-                    case BASIC -> basicProvider.updateConfiguration(toBasicAuthProviderConfiguration(configStr));
-                    case SSL -> sslProvider.updateConfiguration(toSslAuthProviderConfiguration(configStr));
-                    case JWT -> jwtProvider.updateConfiguration(toJwtAuthProviderConfiguration(configStr));
-                }
-            }
-
-            case PROVIDER_ENABLED -> {
-                switch (providerType) {
-                    // TODO: handle via ID. Since providerType is uknown on enable.
-                    case BASIC -> basicProvider.enable();
-                    case SSL -> sslProvider.enable();
-                    case JWT -> jwtProvider.enable();
-                }
-            }
-
-            case PROVIDER_DISABLED -> {
-                switch (providerType) {
-                    // TODO: handle via ID. Since providerType is uknown on disable.
-                    case BASIC -> basicProvider.disable();
-                    case SSL -> sslProvider.disable();
-                    case JWT -> jwtProvider.disable();
-                }
-            }
-            case PROVIDER_DELETED -> {
-                switch (providerType) {
-                    // TODO: handle via ID. Since providerType is uknown on delete.
-                    case BASIC -> basicProvider = null;
-                    case SSL -> sslProvider = null;
-                    case JWT -> jwtProvider = null;
-                }
-            }
-        }
-    }
-
-    private static BasicMqttAuthProviderConfiguration toBasicAuthProviderConfiguration(String configuration) {
-        return JacksonUtil.fromString(configuration, BasicMqttAuthProviderConfiguration.class);
-    }
-
-    private static SslMqttAuthProviderConfiguration toSslAuthProviderConfiguration(String configuration) {
-        return JacksonUtil.fromString(configuration, SslMqttAuthProviderConfiguration.class);
-    }
-
-    private static JwtMqttAuthProviderConfiguration toJwtAuthProviderConfiguration(String configuration) {
-        return JacksonUtil.fromString(configuration, JwtMqttAuthProviderConfiguration.class);
-    }
-
-    private UUID toUUID(MqttAuthProviderProto notification) {
-        return new UUID(notification.getMqttAuthProviderIdMSB(), notification.getMqttAuthProviderIdLSB());
-    }
-
-
-
 }

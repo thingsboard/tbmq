@@ -26,7 +26,7 @@ public class SslMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     @Override
     public MqttAuthProviderType getType() {
-        return MqttAuthProviderType.SSL;
+        return MqttAuthProviderType.X_509;
     }
 
 }

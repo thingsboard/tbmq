@@ -13,9 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.common.data.security.model;
 
-public enum AuthProviderType {
-    BASIC,
-    X_509_CERTIFICATE_CHAIN
+import lombok.Data;
+
+import java.io.Serial;
+import java.io.Serializable;
+
+@Data
+public class MqttAuthSettings implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = -8045245463193283033L;
+
+    private boolean useListenerBasedProviderOnly;
+    private boolean jwtFirst;
 }

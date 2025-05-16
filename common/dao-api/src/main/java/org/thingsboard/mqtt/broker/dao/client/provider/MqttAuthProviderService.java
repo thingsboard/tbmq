@@ -19,6 +19,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -31,12 +32,12 @@ public interface MqttAuthProviderService {
 
     boolean deleteAuthProvider(UUID id);
 
-    PageData<ShortMqttAuthProvider> getAuthProviders(PageLink pageLink);
+    PageData<ShortMqttAuthProvider> getShortAuthProviders(PageLink pageLink);
 
-    PageData<MqttAuthProvider> getEnabledAuthProviders(PageLink pageLink);
+    PageData<MqttAuthProvider> getAuthProviders(PageLink pageLink);
 
-    boolean enableAuthProvider(UUID id);
+    Optional<MqttAuthProviderType> enableAuthProvider(UUID id);
 
-    boolean disableAuthProvider(UUID id);
+    Optional<MqttAuthProviderType> disableAuthProvider(UUID id);
 
 }

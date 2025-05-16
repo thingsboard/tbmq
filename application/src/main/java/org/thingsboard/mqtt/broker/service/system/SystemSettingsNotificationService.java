@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.system;
 
-import lombok.extern.slf4j.Slf4j;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
+import org.thingsboard.mqtt.broker.common.data.security.model.MqttAuthSettings;
 
+public interface SystemSettingsNotificationService {
 
-@Slf4j
-public class JwtMqttClientAuthProvider implements MqttClientAuthProvider {
-
-    @Override
-    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
-        return AuthResponse.defaultAuthResponse();
-    }
+    void onMqttAuthSettingUpdate(MqttAuthSettings mqttAuthSettings);
 
 }

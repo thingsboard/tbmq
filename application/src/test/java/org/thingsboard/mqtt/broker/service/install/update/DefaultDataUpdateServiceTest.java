@@ -16,7 +16,6 @@
 package org.thingsboard.mqtt.broker.service.install.update;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +24,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,14 +46,14 @@ public class DefaultDataUpdateServiceTest {
     @Test
     public void testUpdateData_createsWsClientSettingsWhenNotExist() throws Exception {
         // Given
-        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey()))
                 .willReturn(null);
 
         // When
         service.updateData();
 
         // Then
-        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey());
         then(adminSettingsService).should().saveAdminSettings(any(AdminSettings.class));
 
         ArgumentCaptor<AdminSettings> captor = ArgumentCaptor.forClass(AdminSettings.class);
@@ -62,7 +61,7 @@ public class DefaultDataUpdateServiceTest {
 
         AdminSettings savedSettings = captor.getValue();
         assertThat(savedSettings).isNotNull();
-        assertThat(savedSettings.getKey()).isEqualTo(BrokerConstants.WEBSOCKET_KEY);
+        assertThat(savedSettings.getKey()).isEqualTo(SysAdminSettingType.WEBSOCKET.getKey());
         assertThat(savedSettings.getJsonValue()).isNotNull();
     }
 
@@ -70,17 +69,17 @@ public class DefaultDataUpdateServiceTest {
     public void testUpdateData_updatesJsonValueWhenNull() throws Exception {
         // Given
         AdminSettings wsSettings = new AdminSettings();
-        wsSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsSettings.setKey(SysAdminSettingType.WEBSOCKET.getKey());
         wsSettings.setJsonValue(null);
 
-        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey()))
                 .willReturn(wsSettings);
 
         // When
         service.updateData();
 
         // Then
-        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey());
         then(adminSettingsService).should().saveAdminSettings(wsSettings);
         assertThat(wsSettings.getJsonValue()).isNotNull();
     }
@@ -92,17 +91,17 @@ public class DefaultDataUpdateServiceTest {
         given(jsonValue.get("maxMessages")).willReturn(null);
 
         AdminSettings wsSettings = new AdminSettings();
-        wsSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsSettings.setKey(SysAdminSettingType.WEBSOCKET.getKey());
         wsSettings.setJsonValue(jsonValue);
 
-        given(adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY))
+        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey()))
                 .willReturn(wsSettings);
 
         // When
         service.updateData();
 
         // Then
-        then(adminSettingsService).should().findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        then(adminSettingsService).should().findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey());
         then(adminSettingsService).should().saveAdminSettings(wsSettings);
         then(jsonValue).should().put("maxMessages", 1000);
     }

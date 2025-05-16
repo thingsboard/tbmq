@@ -203,6 +203,4 @@ public class BrokerConstants {
     public static final String WS_CONNECTIVITY = "ws";
     public static final String WSS_CONNECTIVITY = "wss";
 
-    public static final String CONNECTIVITY_KEY = "connectivity";
-    public static final String WEBSOCKET_KEY = "websocket";
 }

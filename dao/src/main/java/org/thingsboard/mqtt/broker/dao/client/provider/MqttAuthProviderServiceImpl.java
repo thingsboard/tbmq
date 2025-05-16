@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
 import org.thingsboard.mqtt.broker.dao.util.exception.DbExceptionUtil;
@@ -75,7 +76,7 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
     }
 
     @Override
-    public PageData<ShortMqttAuthProvider> getAuthProviders(PageLink pageLink) {
+    public PageData<ShortMqttAuthProvider> getShortAuthProviders(PageLink pageLink) {
         log.trace("Executing getAuthProviders, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
         PageData<MqttAuthProvider> pageData = mqttAuthProviderDao.findAll(pageLink);
@@ -85,15 +86,15 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
     }
 
     @Override
-    public PageData<MqttAuthProvider> getEnabledAuthProviders(PageLink pageLink) {
+    public PageData<MqttAuthProvider> getAuthProviders(PageLink pageLink) {
         log.trace("Executing getEnabledAuthProviders, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
-        return mqttAuthProviderDao.findAllEnabled(pageLink);
+        return mqttAuthProviderDao.findAll(pageLink);
     }
 
     @Override
     @Transactional
-    public boolean enableAuthProvider(UUID id) {
+    public Optional<MqttAuthProviderType> enableAuthProvider(UUID id) {
         log.trace("Executing enableAuthProvider [{}]", id);
         var authProvider = mqttAuthProviderDao.findById(id);
         if (authProvider == null) {
@@ -101,14 +102,14 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
         }
         if (authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already enabled!", id, authProvider.getType());
-            return false;
+            return Optional.empty();
         }
-        return mqttAuthProviderDao.enableById(id);
+        return mqttAuthProviderDao.enableById(id) ? Optional.of(authProvider.getType()) : Optional.empty();
     }
 
     @Override
     @Transactional
-    public boolean disableAuthProvider(UUID id) {
+    public Optional<MqttAuthProviderType> disableAuthProvider(UUID id) {
         log.trace("Executing disableAuthProvider [{}]", id);
         var authProvider = mqttAuthProviderDao.findById(id);
         if (authProvider == null) {
@@ -116,9 +117,9 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
         }
         if (!authProvider.isEnabled()) {
             log.debug("[{}][{}] Auth provider is already disabled!", id, authProvider.getType());
-            return false;
+            return Optional.empty();
         }
-        return mqttAuthProviderDao.disableById(id);
+        return mqttAuthProviderDao.disableById(id) ? Optional.of(authProvider.getType()) : Optional.empty();
     }
 
     private final DataValidator<MqttAuthProvider> authProviderValidator =

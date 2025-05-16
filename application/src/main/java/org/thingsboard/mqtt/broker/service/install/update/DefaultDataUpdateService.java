@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 
@@ -48,7 +48,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
     }
 
     void updateWsClientSettings() {
-        AdminSettings wsSettings = adminSettingsService.findAdminSettingsByKey(BrokerConstants.WEBSOCKET_KEY);
+        AdminSettings wsSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey());
         if (wsSettings == null) {
             saveWsClientSettings();
             return;

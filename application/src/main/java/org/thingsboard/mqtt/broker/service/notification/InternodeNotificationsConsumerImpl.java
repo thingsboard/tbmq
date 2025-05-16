@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.queue.TbQueueConsumer;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
@@ -45,6 +46,7 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     private final ServiceInfoProvider serviceInfoProvider;
     private final MqttAuthProviderManager mqttAuthProviderManager;
     private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
+    private final AuthorizationRoutingService authorizationRoutingService;
 
     private volatile boolean stopped = false;
 
@@ -90,6 +92,11 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
         // TODO: how to use this key? (serviceId at the current stage)
         String serviceId = msg.getKey();
         InternodeNotificationProto notificationProto = msg.getValue();
+        if (notificationProto.hasMqttAuthSettingsProto()) {
+            log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
+            authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
+            return;
+        }
         if (notificationProto.hasMqttAuthProviderProto()) {
             log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
             mqttAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());

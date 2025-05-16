@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security;
+package org.thingsboard.mqtt.broker.common.data;
 
 import lombok.Getter;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Getter
-public enum MqttAuthProviderType {
+public enum SysAdminSettingType {
 
-    BASIC(0), X_509(1), JWT(2);
+    MAIL("mail"), CONNECTIVITY("connectivity"), WEBSOCKET("websocket"), SECURITY_SETTINGS("securitySettings"), MQTT_AUTHORIZATION("mqttAuthorization");
 
-    private final int protoNumber;
-
-    private static final Map<Integer, MqttAuthProviderType> LOOKUP_MAP =
-            Arrays.stream(values()).collect(Collectors.toMap(type -> type.protoNumber, Function.identity()));
-
-    MqttAuthProviderType(int protoNumber) {
-        this.protoNumber = protoNumber;
+    SysAdminSettingType(String key) {
+        this.key = key;
     }
 
-    public static MqttAuthProviderType fromProtoNumber(int protoNumber) {
-        return LOOKUP_MAP.get(protoNumber);
+    private final String key;
+
+    public static Optional<SysAdminSettingType> parse(String rawKey) {
+        if (rawKey == null) {
+            return Optional.empty();
+        }
+        return Arrays.stream(SysAdminSettingType.values())
+                .filter(type -> type.key.equals(rawKey)).findFirst();
     }
-
-
 }

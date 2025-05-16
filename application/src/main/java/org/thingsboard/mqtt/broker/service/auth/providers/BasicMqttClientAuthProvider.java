@@ -19,15 +19,16 @@ import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -43,8 +44,9 @@ import java.util.Collections;
 import java.util.List;
 
 @Slf4j
+@Service
 @RequiredArgsConstructor
-public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicMqttAuthProviderConfiguration> {
+public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
@@ -52,52 +54,16 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     private BCryptPasswordEncoder passwordEncoder;
     private HashFunction hashFunction;
 
-    private boolean enabled;
-    private BasicMqttAuthProviderConfiguration configuration;
-
+    @Autowired
     public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
                                        MqttClientCredentialsService clientCredentialsService,
                                        CacheNameResolver cacheNameResolver,
-                                       BCryptPasswordEncoder passwordEncoder,
-                                       boolean enabled,
-                                       BasicMqttAuthProviderConfiguration configuration) {
+                                       @Lazy BCryptPasswordEncoder passwordEncoder) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
         this.cacheNameResolver = cacheNameResolver;
         this.passwordEncoder = passwordEncoder;
         this.hashFunction = Hashing.sha256();
-        this.enabled = enabled;
-        this.configuration = configuration;
-    }
-
-    @Override
-    public MqttAuthProviderType getType() {
-        return MqttAuthProviderType.BASIC;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    @Override
-    public void enable() {
-        this.enabled = true;
-    }
-
-    @Override
-    public void disable() {
-        this.enabled = false;
-    }
-
-    @Override
-    public BasicMqttAuthProviderConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    @Override
-    public void updateConfiguration(BasicMqttAuthProviderConfiguration configuration) {
-        this.configuration = configuration;
     }
 
     @Override
@@ -175,7 +141,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
 
     private boolean isMatchingPassword(String password, BasicMqttCredentials basicMqttCredentials) {
         return basicMqttCredentials.getPassword() == null
-                || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
+               || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
     }
 
     private String passwordBytesToString(byte[] passwordBytes) {

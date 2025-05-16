@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.session;
+package org.thingsboard.mqtt.broker.service.system;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,34 +21,32 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.security.model.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsService;
 
 import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ClientSessionStatsServiceImplTest {
+public class SystemSettingsNotificationServiceImplTest {
 
     @Mock
-    private InternodeNotificationsService notificationsService;
+    private InternodeNotificationsService internodeNotificationsService;
 
-    private ClientSessionStatsServiceImpl service;
+    private SystemSettingsNotificationServiceImpl service;
 
     @Before
     public void setUp() {
-        service = new ClientSessionStatsServiceImpl(notificationsService);
+        service = new SystemSettingsNotificationServiceImpl(internodeNotificationsService);
     }
 
     @Test
-    public void testBroadcastCleanupClientSessionStatsRequest() {
-        // given
-        String clientId = "client-007";
-        InternodeNotificationProto expectedProto = ProtoConverter.toClientSessionStatsCleanupProto(clientId);
+    public void testOnMqttAuthSettingUpdate_shouldBroadcastConvertedProto() {
+        MqttAuthSettings settings = new MqttAuthSettings();
+        InternodeNotificationProto mqttAuthSettingUpdateProto = ProtoConverter.toMqttAuthSettingUpdateProto(settings);
 
-        // when
-        service.broadcastCleanupClientSessionStatsRequest(clientId);
+        service.onMqttAuthSettingUpdate(settings);
 
-        // then
-        verify(notificationsService).broadcast(expectedProto);
+        verify(internodeNotificationsService).broadcast(mqttAuthSettingUpdateProto);
     }
 }

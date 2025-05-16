@@ -31,9 +31,11 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 
 import java.util.UUID;
 
+// TODO: Consider adding a method that will just update the auth provider configuration. Similar to enable/disable
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -87,7 +89,7 @@ public class MqttAuthProviderController extends BaseController {
                                                             @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         try {
             PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(mqttAuthProviderService.getAuthProviders(pageLink));
+            return checkNotNull(mqttAuthProviderService.getShortAuthProviders(pageLink));
         } catch (Exception e) {
             throw handleException(e);
         }
@@ -106,11 +108,12 @@ public class MqttAuthProviderController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}", method = RequestMethod.DELETE)
     @ResponseStatus(HttpStatus.OK)
+    @ApiOperation(value = "Delete MQTT auth provider", hidden = true)
     public void deleteAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         try {
             UUID uuid = toUUID(strAuthProviderId);
             checkAuthProviderId(uuid);
-            mqttAuthProviderManagerService.deleteAuthProvider(uuid);
+            mqttAuthProviderService.deleteAuthProvider(uuid);
         } catch (Exception e) {
             throw handleException(e);
         }
