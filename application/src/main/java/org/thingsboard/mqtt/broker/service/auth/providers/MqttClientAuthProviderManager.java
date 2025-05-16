@@ -20,7 +20,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 
 import java.util.Map;
 
-public interface MqttAuthProviderManager {
+public interface MqttClientAuthProviderManager {
 
     void handleProviderNotification(MqttAuthProviderProto notification);
 

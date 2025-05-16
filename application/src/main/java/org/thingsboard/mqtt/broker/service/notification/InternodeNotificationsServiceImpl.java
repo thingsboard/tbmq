@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     private final ServiceInfoProvider serviceInfoProvider;
     private final InternodeNotificationsHelper helper;
 
-    private final MqttAuthProviderManager mqttAuthProviderManager;
+    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
     private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
     private final AuthorizationRoutingService authorizationRoutingService;
 
@@ -68,7 +68,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
             }
             if (notificationProto.hasMqttAuthProviderProto()) {
                 log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());
-                mqttAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
+                mqttClientAuthProviderManager.handleProviderNotification(notificationProto.getMqttAuthProviderProto());
                 continue;
             }
             if (notificationProto.hasClientSessionStatsCleanupProto()) {

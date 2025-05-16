@@ -27,7 +27,7 @@ import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.BasicMqttClientAuthProvider;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.auth.providers.SslMqttClientAuthProvider;
 
 import java.nio.charset.StandardCharsets;
@@ -42,13 +42,13 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class DefaultAuthenticationServiceTest {
 
-    MqttAuthProviderManager mqttAuthProviderManager;
+    MqttClientAuthProviderManager mqttClientAuthProviderManager;
     DefaultAuthenticationService authenticationService;
 
     @Test
     public void testAuthenticateNoProviders() throws AuthenticationException {
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
 
         AuthContext authContext = getAuthContext(null);
         AuthResponse authResponse = authenticationService.authenticate(authContext);
@@ -60,12 +60,12 @@ public class DefaultAuthenticationServiceTest {
 
     @Test
     public void testAuthenticateFailureUsingBasic() throws AuthenticationException {
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
@@ -81,12 +81,12 @@ public class DefaultAuthenticationServiceTest {
     @Test
     public void testAuthenticateFailureUsingSsl() throws AuthenticationException {
         SslHandler sslHandler = mock(SslHandler.class);
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
@@ -102,12 +102,12 @@ public class DefaultAuthenticationServiceTest {
     @Test
     public void testAuthenticateSuccessUsingSsl() throws AuthenticationException {
         SslHandler sslHandler = mock(SslHandler.class);
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
@@ -121,12 +121,12 @@ public class DefaultAuthenticationServiceTest {
 
     @Test
     public void testAuthenticateSuccessUsingBasic() throws AuthenticationException {
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
@@ -139,12 +139,12 @@ public class DefaultAuthenticationServiceTest {
 
     @Test
     public void testAuthenticateSuccessUsingBasicWhenBothAuthStrategySet() throws AuthenticationException {
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
@@ -158,12 +158,12 @@ public class DefaultAuthenticationServiceTest {
     @Test
     public void testAuthenticateSuccessUsingSslWhenBothAuthStrategySet() throws AuthenticationException {
         SslHandler sslHandler = mock(SslHandler.class);
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, ClientType.DEVICE, null));
@@ -178,12 +178,12 @@ public class DefaultAuthenticationServiceTest {
     @Test
     public void testAuthenticateSuccessUsingBasicWhenBothAuthStrategySetAndSslContextUsed() throws AuthenticationException {
         SslHandler sslHandler = mock(SslHandler.class);
-        mqttAuthProviderManager = mock(MqttAuthProviderManager.class);
+        mqttClientAuthProviderManager = mock(MqttClientAuthProviderManager.class);
         BasicMqttClientAuthProvider basicMqttClientAuthProvider = mock(BasicMqttClientAuthProvider.class);
         SslMqttClientAuthProvider sslMqttClientAuthProvider = mock(SslMqttClientAuthProvider.class);
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
-        authenticationService = spy(new DefaultAuthenticationService(mqttAuthProviderManager));
+        authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
         authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
@@ -196,7 +196,7 @@ public class DefaultAuthenticationServiceTest {
 
     private void mockGetActiveAuthProviders(BasicMqttClientAuthProvider basicMqttClientAuthProvider,
                                             SslMqttClientAuthProvider sslMqttClientAuthProvider) {
-        when(mqttAuthProviderManager.getActiveAuthProviders()).thenReturn(Map.of(
+        when(mqttClientAuthProviderManager.getActiveAuthProviders()).thenReturn(Map.of(
                 MqttAuthProviderType.BASIC, basicMqttClientAuthProvider,
                 MqttAuthProviderType.X_509, sslMqttClientAuthProvider
         ));

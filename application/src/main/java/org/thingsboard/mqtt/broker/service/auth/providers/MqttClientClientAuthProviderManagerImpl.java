@@ -30,7 +30,7 @@ import java.util.Map;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class MqttAuthProviderManagerImpl implements MqttAuthProviderManager {
+public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthProviderManager {
 
     @Value("${security.mqtt.basic.enabled}")
     private boolean basicAuthEnabled;

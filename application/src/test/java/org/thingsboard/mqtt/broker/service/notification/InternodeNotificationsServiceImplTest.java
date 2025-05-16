@@ -30,7 +30,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
@@ -56,7 +56,7 @@ public class InternodeNotificationsServiceImplTest {
     private InternodeNotificationsHelper helper;
 
     @Mock
-    private MqttAuthProviderManager mqttAuthProviderManager;
+    private MqttClientAuthProviderManager mqttClientAuthProviderManager;
 
     @Mock
     private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
@@ -78,7 +78,7 @@ public class InternodeNotificationsServiceImplTest {
                 queueFactory,
                 serviceInfoProvider,
                 helper,
-                mqttAuthProviderManager,
+                mqttClientAuthProviderManager,
                 clientSessionStatsCleanupProcessor,
                 authorizationRoutingService
         );
@@ -113,7 +113,7 @@ public class InternodeNotificationsServiceImplTest {
         service.broadcast(proto);
 
         verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
-        verifyNoInteractions(mqttAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
+        verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor, producer);
     }
 
     @Test
@@ -126,7 +126,7 @@ public class InternodeNotificationsServiceImplTest {
 
         service.broadcast(proto);
 
-        verify(mqttAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
+        verify(mqttClientAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
         verifyNoInteractions(authorizationRoutingService, clientSessionStatsCleanupProcessor, producer);
     }
 
@@ -141,7 +141,7 @@ public class InternodeNotificationsServiceImplTest {
         service.broadcast(proto);
 
         verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
-        verifyNoInteractions(authorizationRoutingService, mqttAuthProviderManager, producer);
+        verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager, producer);
     }
 
     @Test

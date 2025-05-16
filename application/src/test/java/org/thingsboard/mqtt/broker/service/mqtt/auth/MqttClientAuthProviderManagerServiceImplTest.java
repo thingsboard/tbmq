@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class MqttAuthProviderManagerServiceImplTest {
+public class MqttClientAuthProviderManagerServiceImplTest {
 
     private final UUID PROVIDER_UUID = UUID.fromString("d24777b7-b490-4f86-bfaa-e052997c1e4d");
 

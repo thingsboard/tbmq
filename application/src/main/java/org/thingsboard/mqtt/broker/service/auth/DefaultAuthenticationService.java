@@ -23,7 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 
 import java.util.Map;
@@ -38,7 +38,7 @@ public class DefaultAuthenticationService implements AuthenticationService {
     @Value("${security.mqtt.auth_strategy:BOTH}")
     private AuthStrategy authStrategy;
 
-    public DefaultAuthenticationService(MqttAuthProviderManager authProviderManager) {
+    public DefaultAuthenticationService(MqttClientAuthProviderManager authProviderManager) {
         this.authProviders = authProviderManager.getActiveAuthProviders();
     }
 
