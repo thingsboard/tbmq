@@ -22,6 +22,12 @@ server:
   address: "${HTTP_BIND_ADDRESS:0.0.0.0}"
   # HTTP Server bind port (has no effect if web-environment is disabled)
   port: "${HTTP_BIND_PORT:8083}"
+  # Server headers forwarding strategy. Required for SWAGGER UI when reverse proxy is used
+  forward_headers_strategy: "${HTTP_FORWARD_HEADERS_STRATEGY:framework}"
+  # HTTP/2 support (takes effect only if server SSL is enabled)
+  http2:
+    # Enable/disable HTTP/2 support
+    enabled: "${HTTP2_ENABLED:true}"
   # Log errors with stacktrace when REST API throws exception
   log_controller_error_stack_trace: "${HTTP_LOG_CONTROLLER_ERROR_STACK_TRACE:false}"
   # Server SSL configuration
@@ -344,7 +350,7 @@ queue:
         # A list of class names or class types, ordered by preference, of supported partition assignment strategies that the client will use to distribute partition ownership amongst consumer instances when group management is used
         partition-assignment-strategy: "${TB_KAFKA_DEFAULT_CONSUMER_PARTITION_ASSIGNMENT_STRATEGY:org.apache.kafka.clients.consumer.StickyAssignor}"
         # The timeout in milliseconds used to detect client failures when using Kafka's group management facility
-        session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:300000}"
+        session-timeout-ms: "${TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS:10000}"
         # The maximum delay in milliseconds between invocations of poll() when using consumer group management
         max-poll-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_POLL_INTERVAL_MS:300000}"
         # The maximum number of records returned in a single call to poll()
@@ -353,6 +359,11 @@ queue:
         max-partition-fetch-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_MAX_PARTITION_FETCH_BYTES:16777216}"
         # The maximum amount of data in bytes the server should return for a fetch request
         fetch-max-bytes: "${TB_KAFKA_DEFAULT_CONSUMER_FETCH_MAX_BYTES:134217728}"
+        # The expected time between heartbeats to the consumer coordinator when using Kafka’s group management facilities.
+        # Heartbeats are used to ensure that the consumer’s session stays active and to facilitate rebalancing when new consumers join or leave the group.
+        # The value must be set lower than TB_KAFKA_DEFAULT_CONSUMER_SESSION_TIMEOUT_MS, but typically should be set no higher than 1/3 of that value.
+        # It can be adjusted even lower to control the expected time for normal rebalances. Value in milliseconds. Default is 3 sec
+        heartbeat-interval-ms: "${TB_KAFKA_DEFAULT_CONSUMER_HEARTBEAT_INTERVAL_MS:3000}"
       producer:
         # The number of acknowledgments the producer requires the leader to have received before considering a request complete
         acks: "${TB_KAFKA_DEFAULT_PRODUCER_ACKS:1}"
@@ -369,6 +380,8 @@ queue:
     admin:
       # List of configs separated by semicolon used for admin kafka client creation
       config: "${TB_KAFKA_ADMIN_CONFIG:retries:1}"
+      # Kafka Admin client command timeout (in seconds). Applies to operations like describeCluster, listTopics, etc
+      command-timeout: "${TB_KAFKA_ADMIN_COMMAND_TIMEOUT_SEC:30}"
     consumer-stats:
       # Prints lag if enabled between consumer group offset and last messages offset in Kafka topics
       enabled: "${TB_KAFKA_CONSUMER_STATS_ENABLED:true}"
@@ -716,6 +729,10 @@ lettuce:
   # Maximum time in milliseconds to buffer commands before flushing, regardless of cmd count
   flush-interval-ms: "${REDIS_LETTUCE_FLUSH_INTERVAL_MS:5}"
   config:
+    # Maximum time (in seconds) to wait for a lettuce command to complete.
+    # This affects health checks and any command execution (e.g. GET, SET, PING).
+    # Reduce this to fail fast if Redis is unresponsive
+    command-timeout: "${REDIS_LETTUCE_COMMAND_TIMEOUT_SEC:30}"
     # The shutdown quiet period for lettuce client set in seconds
     shutdown-quiet-period: "${REDIS_LETTUCE_SHUTDOWN_QUIET_PERIOD_SEC:1}"
     # The shutdown timeout for lettuce client set in seconds
@@ -770,6 +787,9 @@ spring:
       maximumPoolSize: "${SPRING_DATASOURCE_MAXIMUM_POOL_SIZE:16}"
       # This property controls the max lifetime in milliseconds of a connection. Only when it is closed will it then be removed. Default is 10 minutes
       maxLifetime: "${SPRING_DATASOURCE_MAX_LIFETIME:600000}"
+      # Maximum time (in milliseconds) HikariCP will wait to acquire a connection from the pool.
+      # If exceeded, an exception is thrown. Default is 30 seconds
+      connectionTimeout: "${SPRING_DATASOURCE_CONNECTION_TIMEOUT_MS:30000}"
 
 # General Spring parameters
 spring.lifecycle.timeout-per-shutdown-phase: "${SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE:1m}" # The server will wait for active requests to finish their work up to a specified amount of time before graceful shutdown
@@ -1112,11 +1132,25 @@ historical-data-report:
 
 # Metrics management parameters
 management:
+  health:
+    diskspace:
+      # Enable/disable disk space health check
+      enabled: "${HEALTH_DISKSPACE_ENABLED:false}"
+  endpoint:
+    health:
+      # Controls whether health endpoint shows full component details (e.g., Redis, DB, TBMQ).
+      # Options:
+      # - 'never': always hide details (default if security is enabled).
+      # - 'when-authorized': show details only to authenticated users.
+      # - 'always': always include full health details in the response
+      show-details: "${HEALTH_SHOW_DETAILS:never}"
   endpoints:
     web:
       exposure:
-        # Expose metrics endpoint (use value 'info' to disable prometheus metrics)
-        include: "${METRICS_ENDPOINTS_EXPOSE:prometheus}"
+        # Specify which Actuator endpoints should be exposed via HTTP.
+        # Use 'health,info' to expose only basic health and information endpoints.
+        # For exposing Prometheus metrics, update this to include 'prometheus' in the list (e.g., 'health,info,prometheus')
+        include: "${METRICS_ENDPOINTS_EXPOSE:health,info,prometheus}"
 
 # Spring CORS configuration
 spring.mvc.cors:

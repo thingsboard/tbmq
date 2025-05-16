@@ -37,36 +37,40 @@
                   min="6"
                   max="50"
                   required/>
-                @if (securitySettingsForm.get('passwordPolicy.minimumLength').hasError('required')) {
-                  <mat-error>
-                    {{ 'admin.minimum-password-length-required' | translate }}
-                  </mat-error>
-                }
-                @if (securitySettingsForm.get('passwordPolicy.minimumLength').hasError('min')) {
-                  <mat-error>
-                    {{ 'admin.minimum-password-length-range' | translate }}
-                  </mat-error>
-                }
-                @if (securitySettingsForm.get('passwordPolicy.minimumLength').hasError('max')) {
-                  <mat-error>
-                    {{ 'admin.minimum-password-length-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-password-length-required' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.minimumLength').hasError('required')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-password-length-range' | translate }}"
+                          [class.!hidden]="!(securitySettingsForm.get('passwordPolicy.minimumLength').hasError('max') ||
+                                             securitySettingsForm.get('passwordPolicy.minimumLength').hasError('min'))"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
                 <mat-label translate>admin.maximum-password-length</mat-label>
                 <input matInput type="number" formControlName="maximumLength" step="1" min="6"/>
                 <mat-hint></mat-hint>
-                @if (securitySettingsForm.get('passwordPolicy.maximumLength').hasError('min')) {
-                  <mat-error>
-                    {{ 'admin.maximum-password-length-min' | translate }}
-                  </mat-error>
-                }
-                @if (securitySettingsForm.get('passwordPolicy.maximumLength').hasError('lessMin')) {
-                  <mat-error>
-                    {{ 'admin.maximum-password-length-less-min' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.maximum-password-length-min' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.maximumLength').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.maximum-password-length-less-min' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.maximumLength').hasError('lessMin')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
             <div class="flex flex-row xs:flex-col gt-xs:gap-2">
@@ -76,12 +80,13 @@
                   formControlName="minimumUppercaseLetters"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.minimumUppercaseLetters').hasError('min')) {
-                  <mat-error
-                    >
-                    {{ 'admin.minimum-uppercase-letters-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-uppercase-letters-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.minimumUppercaseLetters').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-form-field class="flex flex-1">
                 <mat-label translate>admin.minimum-lowercase-letters</mat-label>
@@ -89,12 +94,13 @@
                   formControlName="minimumLowercaseLetters"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.minimumLowercaseLetters').hasError('min')) {
-                  <mat-error
-                    >
-                    {{ 'admin.minimum-lowercase-letters-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-lowercase-letters-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.minimumLowercaseLetters').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
             <div class="flex flex-row xs:flex-col gt-xs:gap-2">
@@ -104,11 +110,13 @@
                   formControlName="minimumDigits"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.minimumDigits').hasError('min')) {
-                  <mat-error>
-                    {{ 'admin.minimum-digits-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-digits-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.minimumDigits').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-form-field class="flex flex-1">
                 <mat-label translate>admin.minimum-special-characters</mat-label>
@@ -116,12 +124,13 @@
                   formControlName="minimumSpecialCharacters"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.minimumSpecialCharacters').hasError('min')) {
-                  <mat-error
-                    >
-                    {{ 'admin.minimum-special-characters-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.minimum-special-characters-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.minimumSpecialCharacters').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
             <div class="flex flex-row xs:flex-col gt-xs:gap-2">
@@ -131,12 +140,13 @@
                   formControlName="passwordExpirationPeriodDays"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.passwordExpirationPeriodDays').hasError('min')) {
-                  <mat-error
-                    >
-                    {{ 'admin.password-expiration-period-days-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.password-expiration-period-days-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.passwordExpirationPeriodDays').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
               <mat-form-field class="flex flex-1">
                 <mat-label translate>admin.password-reuse-frequency-days</mat-label>
@@ -144,12 +154,13 @@
                   formControlName="passwordReuseFrequencyDays"
                   step="1"
                   min="0"/>
-                @if (securitySettingsForm.get('passwordPolicy.passwordReuseFrequencyDays').hasError('min')) {
-                  <mat-error
-                    >
-                    {{ 'admin.password-reuse-frequency-days-range' | translate }}
-                  </mat-error>
-                }
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'admin.password-reuse-frequency-days-range' | translate }}"
+                          [class.!hidden]="!securitySettingsForm.get('passwordPolicy.passwordReuseFrequencyDays').hasError('min')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
               </mat-form-field>
             </div>
             <div class="flex flex-row xs:flex-col gt-xs:gap-2">

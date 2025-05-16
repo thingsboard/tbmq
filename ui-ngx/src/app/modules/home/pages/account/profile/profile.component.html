@@ -41,16 +41,20 @@
         <mat-form-field class="mat-block">
           <mat-label translate>user.email</mat-label>
           <input matInput formControlName="email" required/>
-          @if (profile.get('email').hasError('required')) {
-            <mat-error>
-              {{ 'user.email-required' | translate }}
-            </mat-error>
-          }
-          @if (profile.get('email').hasError('email')) {
-            <mat-error>
-              {{ 'user.invalid-email-format' | translate }}
-            </mat-error>
-          }
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'user.email-required' | translate }}"
+                    [class.!hidden]="!profile.get('email').hasError('required')"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'user.invalid-email-format' | translate }}"
+                    [class.!hidden]="!profile.get('email').hasError('email')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field class="mat-block">
           <mat-label translate>user.first-name</mat-label>

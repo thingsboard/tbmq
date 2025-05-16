@@ -55,7 +55,7 @@ public class SqlDatabaseUpgradeService implements DatabaseEntitiesUpgradeService
     }
 
     private Path getSchemaUpdateFile(String version) {
-        return Paths.get(installScripts.getDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
+        return Paths.get(installScripts.getAppDataDir(), "upgrade", version, SCHEMA_UPDATE_SQL);
     }
 
     private void loadSql(Path sqlFile) {

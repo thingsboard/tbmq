@@ -16,7 +16,7 @@
 
 import { AfterContentChecked, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 import { DialogComponent } from '@shared/components/dialog.component';
 import { Store } from '@ngrx/store';
@@ -32,7 +32,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
-import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { ColorInputComponent } from '@shared/components/color-input.component';
@@ -40,8 +40,10 @@ import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent } from '@angular/material/expansion';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { takeUntil } from 'rxjs/operators';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { saveTopicsToLocalStorage, filterTopics } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
@@ -53,7 +55,7 @@ export interface AddWsClientSubscriptionDialogData {
     selector: 'tb-subscription-dialog',
     templateUrl: './subscription-dialog.component.html',
     styleUrls: ['./subscription-dialog.component.scss'],
-    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, MatError, ColorInputComponent, MatSelect, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent]
+    imports: [FormsModule, ReactiveFormsModule, MatToolbar, TranslateModule, MatIconButton, MatDialogClose, MatTooltip, MatIcon, MatProgressBar, MatDialogContent, MatFormField, MatLabel, MatInput, CopyButtonComponent, MatSuffix, ColorInputComponent, MatSelect, MatOption, MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent, MatSlideToggle, MatDialogActions, MatButton, AsyncPipe, QosSelectComponent, MatAutocompleteTrigger, MatAutocomplete]
 })
 export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDialogComponent>
   implements OnInit, OnDestroy, AfterContentChecked {
@@ -64,6 +66,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   actionButtonLabel = 'action.add';
   entity: WebSocketSubscription;
   topicFilterDuplicate: boolean;
+  filteredTopics: Observable<string[]>;
 
   private destroy$ = new Subject<void>();
 
@@ -91,6 +94,11 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     this.formGroup.get('topicFilter').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(topicFilter => this.topicFilterDuplicate = connectionTopicFilterList.includes(topicFilter));
+    this.filteredTopics = this.formGroup.get('topicFilter').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      startWith(''),
+      map(value => filterTopics(value || ''))
+    );
   }
 
   ngAfterContentChecked(): void {
@@ -124,6 +132,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
     delete formValues.options.subscriptionId;
     const result: WebSocketSubscription = {...this.entity, ...{ configuration: formValues } };
     if (!this.topicFilterDuplicate) {
+      saveTopicsToLocalStorage(formValues.topicFilter);
       this.dialogRef.close(result);
     } else {
       this.store.dispatch(new ActionNotificationShow(

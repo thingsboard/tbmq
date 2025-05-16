@@ -27,7 +27,7 @@ import {
   Validator,
   Validators, ReactiveFormsModule, ValidatorFn, FormControl
 } from '@angular/forms';
-import { HttpTopicFilter, Integration } from '@shared/models/integration.models';
+import { IntegrationTopicFilter, Integration } from '@shared/models/integration.models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -38,13 +38,14 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
-import { isDefinedAndNotNull } from '@core/utils';
+import { filterTopics, getLocalStorageTopics, isDefinedAndNotNull } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
+import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
 @Component({
-  selector: 'tb-http-topic-filters',
-  templateUrl: './http-topic-filters.component.html',
-  styleUrls: ['./http-topic-filters.component.scss'],
+  selector: 'tb-integration-topic-filters',
+  templateUrl: './integration-topic-filters.component.html',
+  styleUrls: ['./integration-topic-filters.component.scss'],
   imports: [
     ReactiveFormsModule,
     MatFormField,
@@ -57,22 +58,25 @@ import { CopyButtonComponent } from '@shared/components/button/copy-button.compo
     MatLabel,
     MatError,
     MatSuffix,
-    CopyButtonComponent
+    CopyButtonComponent,
+    MatAutocomplete,
+    MatOption,
+    MatAutocompleteTrigger
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => HttpTopicFiltersComponent),
+    useExisting: forwardRef(() => IntegrationTopicFiltersComponent),
     multi: true
   },
   {
     provide: NG_VALIDATORS,
-    useExisting: forwardRef(() => HttpTopicFiltersComponent),
+    useExisting: forwardRef(() => IntegrationTopicFiltersComponent),
     multi: true,
   }]
 })
-export class HttpTopicFiltersComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class IntegrationTopicFiltersComponent implements ControlValueAccessor, Validator, OnDestroy {
 
-  httpTopicFiltersForm: UntypedFormGroup;
+  integrationTopicFiltersForm: UntypedFormGroup;
 
   @Input()
   disabled: boolean;
@@ -82,16 +86,17 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
   isEdit = input<boolean>();
   activeSubscriptions: string[] = [];
   subscriptionsLoaded = false;
+  filteredTopics = [];
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
 
   constructor(private fb: UntypedFormBuilder,
               private integrationService: IntegrationService) {
-    this.httpTopicFiltersForm = this.fb.group({
+    this.integrationTopicFiltersForm = this.fb.group({
       filters: this.fb.array([], [Validators.required, this.isUnique])
     });
-    this.httpTopicFiltersForm.valueChanges.pipe(
+    this.integrationTopicFiltersForm.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe((value) => {
       this.updateModel(value.filters);
@@ -106,36 +111,35 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
     this.destroy$.complete();
   }
 
-  writeValue(value: HttpTopicFilter[]) {
+  writeValue(value: IntegrationTopicFilter[]) {
     this.subscriptionsLoaded = false;
-    // TODO refactor component / model HttpTopicFilter
-    // @ts-ignore
-    value = value.map(el => {
-      return {filter: el}
-    });
-    if (this.httpFiltersFromArray.length === value?.length) {
-      this.httpTopicFiltersForm.get('filters').patchValue(value, {emitEvent: false});
+    if (this.integrationFiltersFromArray.length === value?.length) {
+      const filters = value.map(el => {
+        return {filter: el}
+      });
+      this.integrationTopicFiltersForm.get('filters').patchValue(filters, {emitEvent: false});
     } else {
       const filtersControls: Array<AbstractControl> = [];
       if (value) {
         value.forEach((filter) => {
           filtersControls.push(this.fb.group({
-            filter: [filter.filter, [Validators.required]]
+            filter: [filter, [Validators.required]]
           }));
         });
       }
-      this.httpTopicFiltersForm.setControl('filters', this.fb.array(filtersControls), {emitEvent: true});
-      this.httpTopicFiltersForm.addValidators(this.isUnique());
+      this.integrationTopicFiltersForm.setControl('filters', this.fb.array(filtersControls), {emitEvent: true});
+      this.integrationTopicFiltersForm.addValidators(this.isUnique());
       if (this.disabled) {
-        this.httpTopicFiltersForm.disable({emitEvent: false});
+        this.integrationTopicFiltersForm.disable({emitEvent: false});
       } else {
-        this.httpTopicFiltersForm.enable({emitEvent: false});
+        this.integrationTopicFiltersForm.enable({emitEvent: false});
       }
-      this.httpTopicFiltersForm.updateValueAndValidity();
+      this.integrationTopicFiltersForm.updateValueAndValidity();
     }
     if (isDefinedAndNotNull(value)) {
       this.updateActiveSubscriptions();
     }
+    this.topicFiltersSubscribeValueChanges();
   }
 
   registerOnChange(fn: any) {
@@ -147,34 +151,52 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
   setDisabledState(isDisabled: boolean): void {
     this.disabled = isDisabled;
     if (this.disabled) {
-      this.httpTopicFiltersForm.disable({emitEvent: false});
+      this.integrationTopicFiltersForm.disable({emitEvent: false});
     } else {
-      this.httpTopicFiltersForm.enable({emitEvent: false});
+      this.integrationTopicFiltersForm.enable({emitEvent: false});
     }
   }
 
-  get httpFiltersFromArray(): UntypedFormArray {
-    return this.httpTopicFiltersForm.get('filters') as UntypedFormArray;
+  get integrationFiltersFromArray(): UntypedFormArray {
+    return this.integrationTopicFiltersForm.get('filters') as UntypedFormArray;
   }
 
   addTopicFilter() {
-    this.httpFiltersFromArray.push(this.fb.group({
+    const formGroup = this.fb.group({
       filter: ['', [Validators.required]]
-    }));
+    });
+    this.subscribeTopicValueChanges(formGroup);
+    this.integrationFiltersFromArray.push(formGroup);
   }
 
-  private updateModel(value: HttpTopicFilter[]) {
+  private updateModel(value: IntegrationTopicFilter[]) {
     const transformedValue = value.map(el => el.filter);
     this.propagateChange(transformedValue);
   }
 
+  topicFiltersSubscribeValueChanges() {
+    this.integrationFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
+  }
+
+  clearFilteredOptions() {
+    setTimeout(() => {
+      this.filteredTopics = getLocalStorageTopics();
+    }, 100);
+  }
+
+  private subscribeTopicValueChanges(control) {
+    control.get('filter').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.filteredTopics = filterTopics(value));
+  }
+
   validate(): ValidationErrors | null {
-    return this.httpTopicFiltersForm.valid ? null : {
-      httpTopicFilters: {valid: false}
+    return this.integrationTopicFiltersForm.valid ? null : {
+      integrationTopicFilters: {valid: false}
     };
   }
 
-  subscriptionActive(topicFilter: AbstractControl<HttpTopicFilter>): boolean {
+  subscriptionActive(topicFilter: AbstractControl<IntegrationTopicFilter>): boolean {
     return this.activeSubscriptions.indexOf(topicFilter.value.filter) > -1;
   }
 
@@ -195,7 +217,7 @@ export class HttpTopicFiltersComponent implements ControlValueAccessor, Validato
 
   private isUnique(): ValidatorFn {
     return (control: FormControl) => {
-      const filtersList = this.httpFiltersFromArray.value.map(item => item.filter);
+      const filtersList = this.integrationFiltersFromArray.value.map(item => item.filter);
       const formArrayHasDuplicates = filtersList.some((item, idx) => filtersList.indexOf(item) !== idx);
       if (formArrayHasDuplicates) {
         this.topicFiltersHasDuplicates.set(true);

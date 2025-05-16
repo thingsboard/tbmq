@@ -21,6 +21,7 @@ import { defaultHttpOptionsFromConfig, RequestConfig } from '@core/http/http-uti
 import { Observable, Subject } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { Integration, IntegrationInfo } from '@shared/models/integration.models';
+import { saveTopicsToLocalStorage } from '@core/utils';
 
 @Injectable({
   providedIn: 'root'
@@ -42,6 +43,7 @@ export class IntegrationService {
   }
 
   public saveIntegration(integration: Integration, config?: RequestConfig): Observable<Integration> {
+    saveTopicsToLocalStorage(integration.configuration.topicFilters);
     return this.http.post<Integration>('/api/integration', integration, defaultHttpOptionsFromConfig(config));
   }
 

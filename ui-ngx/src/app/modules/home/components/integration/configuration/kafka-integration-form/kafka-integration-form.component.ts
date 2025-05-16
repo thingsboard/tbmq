@@ -49,8 +49,8 @@ import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import {
-  HttpTopicFiltersComponent
-} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+  IntegrationTopicFiltersComponent
+} from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
@@ -76,7 +76,7 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatSuffix,
     MatIcon,
     MatTooltip,
-    HttpTopicFiltersComponent,
+    IntegrationTopicFiltersComponent,
     MatSlideToggle,
     CopyButtonComponent,
     HintTooltipIconComponent

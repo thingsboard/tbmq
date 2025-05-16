@@ -24,6 +24,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.Future;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -45,6 +46,7 @@ public abstract class AbstractMqttServerBootstrap implements MqttServerBootstrap
     @Value("#{${listener.so_receive_buffer:0} * 1024}")
     private int soReceiveBuffer;
 
+    @Getter
     private Channel serverChannel;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;

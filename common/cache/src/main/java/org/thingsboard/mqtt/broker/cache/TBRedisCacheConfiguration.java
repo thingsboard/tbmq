@@ -112,7 +112,9 @@ public abstract class TBRedisCacheConfiguration<C extends RedisConfiguration> {
         lettucePoolingClientConfigBuilder.shutdownQuietPeriod(Duration.ofSeconds(lettuceConfig.getShutdownQuietPeriod()));
         lettucePoolingClientConfigBuilder.shutdownTimeout(Duration.ofSeconds(lettuceConfig.getShutdownTimeout()));
 
-        lettucePoolingClientConfigBuilder.clientOptions(getLettuceClientOptions());
+        lettucePoolingClientConfigBuilder
+                .commandTimeout(Duration.ofSeconds(lettuceConfig.getCommandTimeout()))
+                .clientOptions(getLettuceClientOptions());
 
         return new LettuceConnectionFactory(getRedisConfiguration(), lettucePoolingClientConfigBuilder.build());
     }

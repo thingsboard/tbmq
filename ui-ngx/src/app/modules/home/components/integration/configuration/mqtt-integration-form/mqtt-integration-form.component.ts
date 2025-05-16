@@ -25,8 +25,8 @@ import {
   Validator,
   Validators, ReactiveFormsModule
 } from '@angular/forms';
-import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
-import { takeUntil } from 'rxjs/operators';
+import { filterTopics, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
   Integration,
@@ -34,7 +34,7 @@ import {
 } from '@shared/models/integration.models';
 import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
 import { TranslateModule } from '@ngx-translate/core';
 import {
   MatExpansionPanel,
@@ -46,8 +46,8 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import {
-  HttpTopicFiltersComponent
-} from '@home/components/integration/http-topic-filters/http-topic-filters.component';
+  IntegrationTopicFiltersComponent
+} from '@home/components/integration/integration-topic-filters/integration-topic-filters.component';
 import { MatIconButton } from '@angular/material/button';
 import { clientIdRandom } from '@shared/models/ws-client.model';
 import {
@@ -60,6 +60,8 @@ import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'tb-mqtt-integration-form',
@@ -81,13 +83,16 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatSuffix,
     MatIcon,
     MatTooltip,
-    HttpTopicFiltersComponent,
+    IntegrationTopicFiltersComponent,
     MatIconButton,
     IntegrationCredentialsComponent,
     QosSelectComponent,
     MatSlideToggle,
     CopyButtonComponent,
-    HintTooltipIconComponent
+    HintTooltipIconComponent,
+    AsyncPipe,
+    MatAutocomplete,
+    MatAutocompleteTrigger
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -109,6 +114,7 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
   isNew: boolean;
   IntegrationCredentialType = IntegrationCredentialType;
   mqttVersions = MqttVersions;
+  filteredTopics: Observable<string[]>;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -253,6 +259,12 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
         this.clientConfigurationFormGroup.get('retained').disable();
       }
     }, 0);
+
+    this.filteredTopics = this.clientConfigurationFormGroup.get('topicName').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      startWith(''),
+      map(value => filterTopics(value || ''))
+    );
   }
 
   private updateView(value: MqttIntegration) {

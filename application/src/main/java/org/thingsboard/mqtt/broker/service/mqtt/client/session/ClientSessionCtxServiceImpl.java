@@ -48,7 +48,7 @@ public class ClientSessionCtxServiceImpl implements ClientSessionCtxService {
 
     @Override
     public void registerSession(ClientSessionCtx clientSessionCtx) throws MqttException {
-        String clientId = clientSessionCtx.getSessionInfo().getClientInfo().getClientId();
+        String clientId = clientSessionCtx.getClientId();
         if (isTraceEnabled) {
             log.trace("Executing registerSession: {}. Current size: {}", clientId, clientContextMap.size());
         }

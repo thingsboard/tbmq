@@ -31,15 +31,23 @@
       @for (topicFilter of subscriptionsFormArray().controls; track topicFilter) {
         <div [formGroup]="topicFilter" class="subscriptions-container flex flex-row items-center gap-2.5">
           <mat-form-field class="flex flex-1 basis-[60%]" appearance="outline" subscriptSizing="dynamic">
-            <input matInput name="topicFilter" formControlName="topicFilter" required>
+            <input matInput name="topicFilter" formControlName="topicFilter" required
+                   [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
+            <mat-autocomplete #auto="matAutocomplete">
+                @for (option of filteredTopics; track option) {
+                  <mat-option [value]="option">{{option}}</mat-option>
+                }
+            </mat-autocomplete>
             <tb-copy-button [style]="{color: 'rgba(0,0,0,0.38)'}" [class.!hidden]="!topicFilter.get('topicFilter')?.value?.length" matSuffix
                             [copyText]="topicFilter.get('topicFilter').value">
             </tb-copy-button>
-            @if (topicFilter.invalid) {
-              <mat-error>
-                {{ 'mqtt-client-session.topic-filter-required' | translate }}
-              </mat-error>
-            }
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'mqtt-client-session.topic-filter-required' | translate }}"
+                      [class.!hidden]="!(topicFilter.invalid && topicFilter.touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
           </mat-form-field>
           <tb-qos-select class="flex flex-1 basis-[30%]" formControlName="qos" displayLabel="false" appearance="outline" subscriptSizing="dynamic">
           </tb-qos-select>

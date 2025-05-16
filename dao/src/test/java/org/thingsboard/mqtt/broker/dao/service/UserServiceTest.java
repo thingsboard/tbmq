@@ -97,7 +97,7 @@ public class UserServiceTest extends AbstractServiceTest {
     public void testSaveUserWithInvalidEmail() {
         User user = new User();
         user.setAuthority(Authority.SYS_ADMIN);
-        user.setEmail("tenant_thingsboard.org");
+        user.setEmail("test_thingsboard.org");
         userService.saveUser(user);
     }
 

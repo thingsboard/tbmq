@@ -19,7 +19,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { FormBuilder, FormControl, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
-import { isDefinedAndNotNull } from '@core/utils';
+import { saveTopicsToLocalStorage, filterTopics, isDefinedAndNotNull } from '@core/utils';
 import { MatDialog } from '@angular/material/dialog';
 import { WsPublishMessagePropertiesDialogComponent, PropertiesDialogComponentData } from '@home/pages/ws-client/messages/ws-publish-message-properties-dialog.component';
 import {
@@ -34,7 +34,7 @@ import {
 } from '@shared/models/ws-client.model';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
-import { map, takeUntil } from 'rxjs/operators';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -53,13 +53,14 @@ import { WsJsonObjectEditComponent } from './ws-json-object-edit.component';
 import { MatIcon } from '@angular/material/icon';
 import { DEFAULT_QOS } from '@shared/models/session.model';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
-import { Subject } from 'rxjs';
+import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { Observable, Subject } from 'rxjs';
 
 @Component({
     selector: 'tb-messanger',
     templateUrl: './messanger.component.html',
     styleUrls: ['./messanger.component.scss'],
-    imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent]
+    imports: [TranslateModule, ToggleSelectComponent, FormsModule, MessageFilterConfigComponent, MatButton, MessagesComponent, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatError, ColorInputComponent, MatSuffix, MatSelect, MatOption, MatSlideToggle, MatTooltip, WsJsonObjectEditComponent, MatIconButton, MatIcon, AsyncPipe, QosSelectComponent, MatAutocomplete, MatAutocompleteTrigger]
 })
 export class MessangerComponent implements OnInit, OnDestroy {
 
@@ -79,6 +80,7 @@ export class MessangerComponent implements OnInit, OnDestroy {
 
   publishMsgProps: PublishMessageProperties = null;
   isLtLg = this.breakpointObserver.observe(MediaBreakpoints['lt-lg']).pipe(map(({matches}) => !!matches));
+  filteredTopics: Observable<string[]>;
 
   private destroy$ = new Subject<void>();
 
@@ -143,9 +145,15 @@ export class MessangerComponent implements OnInit, OnDestroy {
         this.isPayloadValid = true;
       }
     });
+
+    this.filteredTopics = this.messangerFormGroup.get('topic').valueChanges.pipe(
+      takeUntil(this.destroy$),
+      startWith(''),
+      map(value => filterTopics(value || ''))
+    );
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -179,6 +187,7 @@ export class MessangerComponent implements OnInit, OnDestroy {
       if (isDefinedAndNotNull(properties?.responseTopic)) options.properties.responseTopic = properties.responseTopic;
     }
     this.mqttJsClientService.publishMessage(topic, message, options);
+    saveTopicsToLocalStorage(topic);
   }
 
   clearHistory() {

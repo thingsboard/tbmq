@@ -32,16 +32,17 @@
           }
           <div tb-toast class="layout-padding flex flex-col">
             <mat-divider style="width: 100%;"></mat-divider>
-            <!--            <span style="height: 50px;"></span>-->
             <mat-form-field class="tb-appearance-transparent">
               <mat-label translate>login.username</mat-label>
               <input id="username-input" matInput type="email" autofocus formControlName="username" email required/>
               <mat-icon matPrefix>email</mat-icon>
-              @if (loginFormGroup.get('username').invalid) {
-                <mat-error>
-                  {{ 'user.invalid-email-format' | translate }}
-                </mat-error>
-              }
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'user.invalid-email-format' | translate }}"
+                        [class.!hidden]="!(loginFormGroup.get('username').invalid && loginFormGroup.get('username').touched)"
+                        class="tb-error">
+                warning
+              </mat-icon>
             </mat-form-field>
             <mat-form-field class="tb-appearance-transparent">
               <mat-label translate>common.password</mat-label>
