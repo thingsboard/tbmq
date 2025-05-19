@@ -151,6 +151,7 @@ public class ActorProcessorImplTest {
         SessionInitMsg sessionInitMsg = getSessionInitMsg(getClientSessionCtx());
         actorProcessor.onInit(clientActorState, sessionInitMsg);
 
+        verify(unauthorizedClientManager).removeClientUnauthorized(clientActorState);
         assertEquals(SessionState.INITIALIZED, clientActorState.getCurrentSessionState());
         assertEquals(sessionInitMsg.getClientSessionCtx(), clientActorState.getCurrentSessionCtx());
         assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthRulePatterns().size());
@@ -263,8 +264,6 @@ public class ActorProcessorImplTest {
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
 
         verify(sessionCtxMock).getSessionId();
-//        verify(sessionCtxMock).getAddressBytes();
-//        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
@@ -363,7 +362,6 @@ public class ActorProcessorImplTest {
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
-//        when(authResponse.enhancedAuthFailure()).thenReturn(CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
 
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onReAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
@@ -376,8 +374,6 @@ public class ActorProcessorImplTest {
         assertThat(mqttDisconnectMsg.getSessionId()).isEqualTo(sessionId);
         assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
         verify(sessionCtxMock).getSessionId();
-//        verify(sessionCtxMock).getAddressBytes();
-//        verify(sessionCtxMock).getSslHandler();
         verifyNoMoreInteractions(sessionCtxMock);
     }
 
@@ -424,6 +420,7 @@ public class ActorProcessorImplTest {
 
         verify(clientMqttActorManager).connect(eq("clientId"), any(MqttConnectMsg.class));
         verifyNoMoreInteractions(clientMqttActorManager);
+        verify(unauthorizedClientManager).removeClientUnauthorized(clientActorState);
 
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.INITIALIZED);
     }
@@ -449,8 +446,6 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
-//        verify(sessionCtxMock).getAddressBytes();
-//        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);
@@ -481,8 +476,6 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
-//        verify(sessionCtxMock).getAddressBytes();
-//        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);
@@ -505,8 +498,6 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, mock(MqttAuthMsg.class));
 
-//        verify(sessionCtxMock).getAddressBytes();
-//        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
