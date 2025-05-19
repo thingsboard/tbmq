@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.actors.client.service;
 
-import com.google.common.util.concurrent.Futures;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttConnectPayload;
@@ -38,9 +37,7 @@ import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.DefaultClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
-import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
-import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
@@ -48,6 +45,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -81,7 +79,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_CHALLENGE_FAILED;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_METHOD_MISMATCH;
-import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
 
@@ -95,7 +92,7 @@ public class ActorProcessorImplTest {
     EnhancedAuthenticationService enhancedAuthenticationService;
     MqttMessageGenerator mqttMessageGenerator;
     ClientMqttActorManager clientMqttActorManager;
-    UnauthorizedClientService unauthorizedClientService;
+    UnauthorizedClientManager unauthorizedClientManager;
 
     ClientActorState clientActorState;
 
@@ -106,9 +103,9 @@ public class ActorProcessorImplTest {
         mqttMessageGenerator = spy(MqttMessageGenerator.class);
         enhancedAuthenticationService = mock(EnhancedAuthenticationService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
-        unauthorizedClientService = mock(UnauthorizedClientService.class);
+        unauthorizedClientManager = mock(UnauthorizedClientManager.class);
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, enhancedAuthenticationService,
-                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientService));
+                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }
@@ -150,11 +147,11 @@ public class ActorProcessorImplTest {
 
         AuthResponse authResponse = getAuthResponse(true);
         doReturn(authResponse).when(authenticationService).authenticate(any());
-        when(unauthorizedClientService.remove(any())).thenReturn(Futures.immediateFuture(null));
 
         SessionInitMsg sessionInitMsg = getSessionInitMsg(getClientSessionCtx());
         actorProcessor.onInit(clientActorState, sessionInitMsg);
 
+        verify(unauthorizedClientManager).removeClientUnauthorized(clientActorState);
         assertEquals(SessionState.INITIALIZED, clientActorState.getCurrentSessionState());
         assertEquals(sessionInitMsg.getClientSessionCtx(), clientActorState.getCurrentSessionCtx());
         assertEquals(1, clientActorState.getCurrentSessionCtx().getAuthRulePatterns().size());
@@ -186,7 +183,6 @@ public class ActorProcessorImplTest {
 
         AuthResponse authResponse = getAuthResponse(false);
         doReturn(authResponse).when(authenticationService).authenticate(any());
-        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
 
         doNothing().when(actorProcessor).sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(any());
 
@@ -264,14 +260,10 @@ public class ActorProcessorImplTest {
         doReturn(enhancedAuthContinueResponse).when(enhancedAuthenticationService)
                 .onClientConnectMsg(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
 
-        when(unauthorizedClientService.save(any(UnauthorizedClient.class))).thenReturn(Futures.immediateFuture(null));
-
         EnhancedAuthInitMsg enhancedAuthInitMsg = getEnhancedAuthInitMsg(sessionCtxMock);
         actorProcessor.onEnhancedAuthInit(clientActorState, enhancedAuthInitMsg);
 
         verify(sessionCtxMock).getSessionId();
-        verify(sessionCtxMock).getAddressBytes();
-        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
@@ -279,7 +271,6 @@ public class ActorProcessorImplTest {
 
         verify(mqttMessageGenerator).createMqttConnAckMsg(eq(CONNECTION_REFUSED_NOT_AUTHORIZED_5));
         verify(ctxMock).writeAndFlush(any());
-        verify(unauthorizedClientService).save(any(UnauthorizedClient.class));
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.DISCONNECTED);
     }
 
@@ -371,9 +362,6 @@ public class ActorProcessorImplTest {
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
-        when(authResponse.enhancedAuthFailure()).thenReturn(CLIENT_FINAL_MESSAGE_EVALUATION_ERROR);
-
-        when(unauthorizedClientService.save(any(UnauthorizedClient.class))).thenReturn(Futures.immediateFuture(null));
 
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onReAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
@@ -386,8 +374,6 @@ public class ActorProcessorImplTest {
         assertThat(mqttDisconnectMsg.getSessionId()).isEqualTo(sessionId);
         assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
         verify(sessionCtxMock).getSessionId();
-        verify(sessionCtxMock).getAddressBytes();
-        verify(sessionCtxMock).getSslHandler();
         verifyNoMoreInteractions(sessionCtxMock);
     }
 
@@ -422,8 +408,6 @@ public class ActorProcessorImplTest {
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
 
-        when(unauthorizedClientService.remove(any())).thenReturn(Futures.immediateFuture(null));
-
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
         verify(sessionCtxMock).setAuthRulePatterns(authorizationRules);
@@ -436,7 +420,7 @@ public class ActorProcessorImplTest {
 
         verify(clientMqttActorManager).connect(eq("clientId"), any(MqttConnectMsg.class));
         verifyNoMoreInteractions(clientMqttActorManager);
-        verify(unauthorizedClientService).remove(UnauthorizedClient.builder().clientId("clientId").build());
+        verify(unauthorizedClientManager).removeClientUnauthorized(clientActorState);
 
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.INITIALIZED);
     }
@@ -460,12 +444,8 @@ public class ActorProcessorImplTest {
         doReturn(authResponse).when(enhancedAuthenticationService)
                 .onAuthContinue(any(ClientSessionCtx.class), any(EnhancedAuthContext.class));
 
-        when(unauthorizedClientService.save(any(UnauthorizedClient.class))).thenReturn(Futures.immediateFuture(null));
-
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
-        verify(sessionCtxMock).getAddressBytes();
-        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);
@@ -486,8 +466,6 @@ public class ActorProcessorImplTest {
 
         clientActorState.setClientSessionCtx(sessionCtxMock);
 
-        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
-
         MqttAuthMsg authMsg = getMqttAuthMsg(sessionId);
         EnhancedAuthFinalResponse authResponse = mock(EnhancedAuthFinalResponse.class);
         when(authResponse.success()).thenReturn(false);
@@ -498,15 +476,12 @@ public class ActorProcessorImplTest {
 
         actorProcessor.onEnhancedAuthContinue(clientActorState, authMsg);
 
-        verify(sessionCtxMock).getAddressBytes();
-        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verifyNoMoreInteractions(sessionCtxMock);
 
         verify(mqttMessageGenerator).createMqttConnAckMsg(eq(CONNECTION_REFUSED_UNSPECIFIED_ERROR));
         verify(ctxMock).writeAndFlush(any());
-        verify(unauthorizedClientService).save(any(UnauthorizedClient.class));
         assertThat(clientActorState.getCurrentSessionState()).isEqualTo(SessionState.DISCONNECTED);
     }
 
@@ -521,12 +496,8 @@ public class ActorProcessorImplTest {
 
         clientActorState.setClientSessionCtx(sessionCtxMock);
 
-        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
-
         actorProcessor.onEnhancedAuthContinue(clientActorState, mock(MqttAuthMsg.class));
 
-        verify(sessionCtxMock).getAddressBytes();
-        verify(sessionCtxMock).getSslHandler();
         verify(sessionCtxMock).getChannel();
         verify(sessionCtxMock).closeChannel();
         verify(sessionCtxMock).getMqttVersion();
@@ -578,8 +549,6 @@ public class ActorProcessorImplTest {
 
         clientActorState.setClientSessionCtx(sessionCtxMock);
 
-        when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
-
         var enhancedAuthContinueResponse = EnhancedAuthContinueResponse.failure(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR);
         when(enhancedAuthenticationService.onReAuth(any(ClientSessionCtx.class), any(EnhancedAuthContext.class)))
                 .thenReturn(enhancedAuthContinueResponse);
@@ -593,7 +562,6 @@ public class ActorProcessorImplTest {
         assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
         assertThat(mqttDisconnectMsg.getReason().getMessage()).isEqualTo(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR.getReasonLog());
         verifyNoMoreInteractions(clientMqttActorManager);
-        verify(unauthorizedClientService).save(any(UnauthorizedClient.class));
     }
 
     @Test
