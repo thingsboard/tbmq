@@ -32,6 +32,7 @@ export enum EntityType {
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
   INTEGRATION = 'INTEGRATION',
   RESOURCE_USAGE = 'RESOURCE_USAGE',
+  MQTT_AUTH_PROVIDER = 'MQTT_AUTH_PROVIDER',
 }
 
 export interface EntityTypeTranslation {
@@ -252,6 +253,12 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
         noEntities: 'monitoring.resource-usage.no-resource-usage-text',
       }
     ],
+    [
+      EntityType.MQTT_AUTH_PROVIDER,
+      {
+        details: 'authentication.details',
+      }
+    ],
   ]
 );
 
@@ -309,6 +316,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.INTEGRATION,
       {
         helpLinkId: 'integrations'
+      }
+    ],
+    [
+      EntityType.MQTT_AUTH_PROVIDER,
+      {
+        helpLinkId: 'mqttAuthProviders'
       }
     ],
   ]

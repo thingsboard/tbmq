@@ -20,7 +20,12 @@ import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { SecuritySettings } from '@shared/models/settings.models';
+import {
+  AdminSettings,
+  mqttAuthorizationSettingsKey,
+  MqttAuthSettings,
+  SecuritySettings
+} from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
@@ -33,18 +38,26 @@ import { MatButton } from '@angular/material/button';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { takeUntil } from 'rxjs/operators';
+import { HelpComponent } from '@shared/components/help.component';
 
 @Component({
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip]
+  imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
   securitySettingsForm: UntypedFormGroup;
+  mqttAuthSettingsForm: UntypedFormGroup;
+
+  authStrategyLabel: string;
+  authStrategyTooltip: string;
 
   private securitySettings: SecuritySettings;
+  private mqttAuthSettings: AdminSettings<MqttAuthSettings>;
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
@@ -52,13 +65,57 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildSecuritySettingsForm();
-    this.settingsService.getSecuritySettings().subscribe(
-      securitySettings => this.processSecuritySettings(securitySettings));
+    this.buildMqttAuthSettingsForm();
+    this.getSettings();
   }
 
   ngOnDestroy() {
     this.destroy$.complete();
     super.ngOnDestroy();
+  }
+
+  saveSecuritySettings() {
+    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
+    this.settingsService.saveSecuritySettings(this.securitySettings).subscribe(
+      securitySettings => this.processSecuritySettings(securitySettings)
+    );
+  }
+
+  discardSecuritySettings(): void {
+    this.securitySettingsForm.reset(this.securitySettings);
+  }
+
+  discardMqttAuthSettings(): void {
+    this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
+  }
+
+  confirmForm(): UntypedFormGroup {
+    if (this.mqttAuthSettingsForm.dirty) {
+      return this.mqttAuthSettingsForm;
+    }
+    return this.securitySettingsForm;
+  }
+
+  saveMqttAuthSettings() {
+    const mqttAuthSettings: AdminSettings<MqttAuthSettings> = JSON.parse(JSON.stringify(this.mqttAuthSettings));
+    mqttAuthSettings.jsonValue = {...mqttAuthSettings.jsonValue, ...this.mqttAuthSettingsForm.value};
+    this.settingsService.saveAdminSettings(mqttAuthSettings).subscribe(
+      settings => this.processMqttAuthSettings(settings)
+    );
+  }
+
+  private getSettings() {
+    this.getMqttAuthSettings();
+    this.getSecuritySettings();
+  }
+
+  private getMqttAuthSettings() {
+    this.settingsService.getAdminSettings<MqttAuthSettings>(mqttAuthorizationSettingsKey)
+      .subscribe(settings => this.processMqttAuthSettings(settings));
+  }
+
+  private getSecuritySettings() {
+    this.settingsService.getSecuritySettings().subscribe(settings => this.processSecuritySettings(settings));
   }
 
   private buildSecuritySettingsForm() {
@@ -80,15 +137,17 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     });
   }
 
-  saveSecuritySettings() {
-    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
-    this.settingsService.saveSecuritySettings(this.securitySettings).subscribe(
-      securitySettings => this.processSecuritySettings(securitySettings)
-    );
-  }
-
-  discardSettings(): void {
-    this.securitySettingsForm.reset(this.securitySettings);
+  private buildMqttAuthSettingsForm() {
+    this.mqttAuthSettingsForm = this.fb.group({
+      useListenerBasedProviderOnly: [null, []],
+      jwtFirst: [null, []],
+    });
+    this.mqttAuthSettingsForm.get('useListenerBasedProviderOnly').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.authStrategyLabel = value ? 'admin.auth-strategy-single' : 'admin.auth-strategy-both';
+        this.authStrategyTooltip = value ? 'admin.auth-strategy-single-hint' : 'admin.auth-strategy-both-hint';
+      })
   }
 
   private processSecuritySettings(settings: SecuritySettings): void {
@@ -108,8 +167,9 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     };
   }
 
-  confirmForm(): UntypedFormGroup {
-    return this.securitySettingsForm;
+  private processMqttAuthSettings(settings: AdminSettings<MqttAuthSettings>): void {
+    this.mqttAuthSettings = settings;
+    this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 
 }

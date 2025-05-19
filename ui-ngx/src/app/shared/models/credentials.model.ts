@@ -26,11 +26,15 @@ import {
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 
+// TODO refactor as MqttAuthProviderType, move to authentication.models
 export enum CredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
   SSL = 'SSL',
   SCRAM = 'SCRAM',
+  JWT = 'JWT',
 }
+
+export const CredentialsTypes = Object.values(CredentialsType).filter(el => el !== CredentialsType.JWT);
 
 export const ANY_CHARACTERS = '.*';
 export const wsSystemCredentialsName = 'TBMQ WebSockets MQTT Credentials';
@@ -39,7 +43,8 @@ export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
     [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl'],
-    [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram']
+    [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram'],
+    [CredentialsType.JWT, 'authentication.type-jwt'],
   ]
 );
 

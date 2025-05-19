@@ -78,6 +78,7 @@
   "admin": {
     "admins": "Admins",
     "authentication": "Authentication",
+    "authentication-settings": "Authentication Settings",
     "allow-whitespace": "Allow whitespace",
     "connection-settings": "Connection settings",
     "general": "General",
@@ -143,7 +144,8 @@
     "twilio-account-token-required": "Twilio Account Token is required",
     "send-test-sms": "Send test SMS",
     "test-sms-sent": "Test SMS was successfully sent!",
-    "security-settings": "Security settings",
+    "security-settings": "Security Settings",
+    "security-auth-strategy": "Authentication strategy",
     "password-policy": "Password policy",
     "minimum-password-length": "Minimum password length",
     "minimum-password-length-required": "Minimum password length is required",
@@ -172,6 +174,12 @@
     "error-verification-url": "A domain name shouldn't contain symbols '/' and ':'. Example: thingsboard.io",
     "force-reset-password-if-no-valid": "Force to reset password if not valid",
     "force-reset-password-if-no-valid-hint": "Please be careful when enabling this feature: it will require users with not valid password to reset their password via email.",
+    "auth-strategy-single": "Use 'Single' strategy",
+    "auth-strategy-single-hint": "'Single' strategy authenticates once using either basic or SSL, depending on the connection.",
+    "auth-strategy-both": "Use 'Both' strategy",
+    "auth-strategy-both-hint": "'Both' strategy tries basic authentication first, then SSL if it fails.",
+    "jwt-first": "JWT first",
+    "jwt-first-hint": "Try JWT authentication before other configured MQTT auth strategies.",
     "settings": {
       "connectivity": "Connectivity",
       "connectivity-settings": "Connectivity settings",
@@ -205,6 +213,22 @@
     "sum": "Sum",
     "count": "Count",
     "none": "None"
+  },
+  "authentication": {
+    "authentication": "Authentication",
+    "authentication-providers": "Authentication providers",
+    "description": "Description",
+    "details": "MQTT authentication provider details",
+    "enable": "Enable auth provider",
+    "enabled": "Enable provider",
+    "disable": "Disable auth provider",
+    "type": "Type",
+    "type-jwt": "JWT",
+    "skip-cert-validity-check": "Skip certificate validity check for client certificates",
+    "status": "Status",
+    "status-active": "Active",
+    "status-disabled": "Disabled",
+    "providers": "Providers"
   },
   "confirm-on-exit": {
     "message": "You have unsaved changes. Are you sure you want to leave this page?",

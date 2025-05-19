@@ -20,7 +20,12 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import {
+  ClientCredentials,
+  CredentialsType,
+  CredentialsTypes,
+  credentialsTypeTranslationMap
+} from '@shared/models/credentials.model';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { isDefinedAndNotNull } from '@core/utils';
@@ -46,7 +51,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 export class ClientCredentialsComponent extends EntityComponent<ClientCredentials> {
 
   credentialsType = CredentialsType;
-  credentialsTypes = Object.values(CredentialsType);
+  credentialsTypes = CredentialsTypes;
   credentialsTypeTranslationMap = credentialsTypeTranslationMap;
   clientTypes = Object.values(ClientType);
 

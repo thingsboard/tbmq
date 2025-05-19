@@ -69,6 +69,7 @@ export const HelpLinks = {
     integrationHttp: helpBaseUrl + '/docs/mqtt-broker/integrations/http',
     integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/integrations/mqtt',
     integrationKafka: helpBaseUrl + '/docs/mqtt-broker/integrations/kafka',
+    mqttAuthSettings: helpBaseUrl + '/docs/mqtt-broker/security/authentication',
   }
 };
 
