@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscript
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
@@ -52,6 +53,8 @@ import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -64,7 +67,6 @@ import org.thingsboard.mqtt.broker.util.MqttQosUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -626,5 +628,18 @@ public class ProtoConverter {
 
     public static String getClientId(PublishMsgProto publishMsgProto) {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
+    }
+
+    /**
+     * Blocked client
+     */
+
+    public static BlockedClientProto convertToBlockedClientProto(BlockedClient blockedClient) {
+        return BlockedClientProto.newBuilder().build();
+    }
+
+    public static BlockedClient convertProtoToBlockedClient(BlockedClientProto blockedClientProto) {
+        // fix this
+        return new ClientIdBlockedClient(null);
     }
 }

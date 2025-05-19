@@ -47,6 +47,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalRespon
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -93,6 +94,7 @@ public class ActorProcessorImplTest {
     MqttMessageGenerator mqttMessageGenerator;
     ClientMqttActorManager clientMqttActorManager;
     UnauthorizedClientManager unauthorizedClientManager;
+    BlockedClientService blockedClientService;
 
     ClientActorState clientActorState;
 
@@ -104,8 +106,9 @@ public class ActorProcessorImplTest {
         enhancedAuthenticationService = mock(EnhancedAuthenticationService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         unauthorizedClientManager = mock(UnauthorizedClientManager.class);
+        blockedClientService = mock(BlockedClientService.class);
         actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, enhancedAuthenticationService,
-                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager));
+                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientManager, blockedClientService));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }

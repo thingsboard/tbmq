@@ -43,6 +43,7 @@ import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
@@ -59,9 +60,11 @@ import java.util.stream.Stream;
 
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_ACCEPTED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BAD_AUTHENTICATION_METHOD;
+import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_BANNED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED_5;
 import static io.netty.handler.codec.mqtt.MqttConnectReturnCode.CONNECTION_REFUSED_UNSPECIFIED_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.BLOCKED_CLIENT;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.INVALID_CLIENT_STATE_FOR_AUTH_PACKET;
 
 @Slf4j
@@ -75,6 +78,7 @@ public class ActorProcessorImpl implements ActorProcessor {
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientMqttActorManager clientMqttActorManager;
     private final UnauthorizedClientManager unauthorizedClientManager;
+    private final BlockedClientService blockedClientService;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -82,6 +86,13 @@ public class ActorProcessorImpl implements ActorProcessor {
             log.trace("[{}] Processing SESSION_INIT_MSG onInit {}", state.getClientId(), sessionInitMsg);
         }
         ClientSessionCtx sessionCtx = sessionInitMsg.getClientSessionCtx();
+
+        if (isClientBlocked(sessionCtx, sessionInitMsg.getUsername())) {
+            log.warn("[{}] Client is blocked during init: {}", state.getClientId(), CONNECTION_REFUSED_BANNED);
+            unauthorizedClientManager.persistClientUnauthorized(state, sessionInitMsg, "Blocked client");
+            sendConnectionRefusedBannedMsgAndCloseChannel(sessionCtx);
+            return;
+        }
 
         if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
             tryDisconnectSameSession(state, sessionCtx);
@@ -117,6 +128,14 @@ public class ActorProcessorImpl implements ActorProcessor {
             log.trace("[{}] Processing ENHANCED_AUTH_INIT_MSG onEnhancedAuthInit {}", state.getClientId(), enhancedAuthInitMsg);
         }
         var sessionCtx = enhancedAuthInitMsg.getClientSessionCtx();
+
+        if (isClientBlocked(sessionCtx, null)) {
+            log.warn("[{}] Client is blocked during enhanced auth init: {}", state.getClientId(), CONNECTION_REFUSED_BANNED);
+            unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, null, false,
+                    BLOCKED_CLIENT.getReasonLog());
+            sendConnectionRefusedBannedMsgAndCloseChannel(sessionCtx);
+            return;
+        }
 
         if (sessionCtx.getSessionId().equals(state.getCurrentSessionId())) {
             tryDisconnectSameSession(state, sessionCtx);
@@ -253,6 +272,11 @@ public class ActorProcessorImpl implements ActorProcessor {
                 MqttReasonCodeResolver.connectionRefusedNotAuthorized(sessionCtx));
     }
 
+    private void sendConnectionRefusedBannedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
+        sendConnectionRefusedMsgAndCloseChannel(sessionCtx,
+                MqttReasonCodeResolver.connectionRefusedBanned(sessionCtx));
+    }
+
     private void sendConnectionRefusedMsgAndCloseChannel(ClientSessionCtx sessionCtx, MqttConnectReturnCode returnCode) {
         MqttConnAckMessage msg = mqttMessageGenerator.createMqttConnAckMsg(returnCode);
         sessionCtx.getChannel().writeAndFlush(msg);
@@ -371,4 +395,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         return new MqttDisconnectMsg(sessionId, reason);
     }
 
+    private boolean isClientBlocked(ClientSessionCtx sessionCtx, String username) {
+        return blockedClientService.isBlocked(sessionCtx.getClientId(), username, sessionCtx.getHostAddress());
+    }
 }

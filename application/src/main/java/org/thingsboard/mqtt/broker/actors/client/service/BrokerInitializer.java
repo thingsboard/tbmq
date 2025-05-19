@@ -37,6 +37,9 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientConsumerService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -65,10 +68,12 @@ public class BrokerInitializer {
     private final ClientSessionConsumer clientSessionConsumer;
     private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final RetainedMsgConsumer retainedMsgConsumer;
+    private final BlockedClientConsumerService blockedClientConsumer;
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgListenerService;
+    private final BlockedClientService blockedClientService;
 
     private final ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
@@ -97,6 +102,9 @@ public class BrokerInitializer {
 
             initRetainedMessages();
             retainedMsgListenerService.startListening(retainedMsgConsumer);
+
+            initBlockedClients();
+            blockedClientService.startListening(blockedClientConsumer);
 
             log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
             startConsuming();
@@ -145,6 +153,12 @@ public class BrokerInitializer {
         Map<String, RetainedMsg> allRetainedMessages = retainedMsgConsumer.initLoad();
         log.info("Loaded {} stored retained messages from Kafka.", allRetainedMessages.size());
         retainedMsgListenerService.init(allRetainedMessages);
+    }
+
+    private void initBlockedClients() throws QueuePersistenceException {
+        Map<String, BlockedClient> allBlockedClients = blockedClientConsumer.initLoad();
+        log.info("Loaded {} stored blocked clients from Kafka.", allBlockedClients.size());
+        blockedClientService.init(allBlockedClients);
     }
 
     private void startConsuming() {

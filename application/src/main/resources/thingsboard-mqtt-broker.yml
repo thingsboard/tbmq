@@ -336,6 +336,11 @@ queue:
   integration-uplink-notifications:
     # Interval in milliseconds to poll messages from 'tbmq.ie.uplink.notifications' topics
     poll-interval: "${TB_IE_UPLINK_NOTIFICATIONS_POLL_INTERVAL:100}"
+  blocked-client:
+    # Interval in milliseconds to poll messages from 'tbmq.client.blocked' topic
+    poll-interval: "${TB_BLOCKED_CLIENT_POLL_INTERVAL:100}"
+    # Interval in milliseconds to wait for system messages to be delivered to 'tbmq.client.blocked' topic
+    acknowledge-wait-timeout-ms: "${TB_BLOCKED_CLIENT_ACK_WAIT_TIMEOUT_MS:500}"
 
   kafka:
     # List of kafka bootstrap servers used to establish connection
@@ -564,6 +569,15 @@ queue:
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    blocked-client:
+      # Topic for blocked clients
+      topic: "${TB_KAFKA_BLOCKED_CLIENT_TOPIC:tbmq.client.blocked}"
+      # Kafka topic properties separated by semicolon for `tbmq.client.blocked` topic
+      topic-properties: "${TB_KAFKA_BLOCKED_CLIENT_TOPIC_PROPERTIES:segment.bytes:26214400;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.client.blocked` topic
+      additional-consumer-config: "${TB_KAFKA_BLOCKED_CLIENT_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.client.blocked` topic
+      additional-producer-config: "${TB_KAFKA_BLOCKED_CLIENT_ADDITIONAL_PRODUCER_CONFIG:}"
     # The common prefix for all Kafka topics, producers, consumer groups, and consumers. Defaults to empty string meaning no prefix is added
     kafka-prefix: "${TB_KAFKA_PREFIX:}"
     # Custom consumer configuration per Kafka topic

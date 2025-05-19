@@ -174,6 +174,7 @@ public class BrokerConstants {
     public static final String CLIENT_SESSION_CG_PREFIX = "client-session-consumer-group-";
     public static final String CLIENT_SUBSCRIPTIONS_CG_PREFIX = "client-subscriptions-consumer-group-";
     public static final String RETAINED_MSG_CG_PREFIX = "retained-msg-consumer-group-";
+    public static final String BLOCKED_CLIENT_CG_PREFIX = "blocked-client-consumer-group-";
 
     public static final String SYSTEMS_TOPIC_PREFIX = "$SYS/tbmq/";
     public static final String CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "cs/stats/cleanup";
