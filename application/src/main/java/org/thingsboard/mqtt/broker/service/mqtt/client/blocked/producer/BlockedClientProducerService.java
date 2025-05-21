@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer;
 
-import jakarta.annotation.Nullable;
-import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 
-@FunctionalInterface
-public interface BlockedClientChangesCallback {
+public interface BlockedClientProducerService {
 
-    void accept(String clientId, String serviceId, @Nullable BlockedClient blockedClient);
+    void persistBlockedClient(String key, BlockedClientProto blockedClientProto, BasicCallback callback);
+
+    void persistDummyBlockedClient(String key, BlockedClientProto blockedClientProto) throws QueuePersistenceException;
 
 }

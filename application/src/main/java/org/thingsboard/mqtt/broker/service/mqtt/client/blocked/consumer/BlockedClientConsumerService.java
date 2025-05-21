@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer;
 
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;

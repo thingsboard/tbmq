@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -63,19 +63,19 @@ public class BlockedClientProducerServiceImpl implements BlockedClientProducerSe
     }
 
     @Override
-    public void persistBlockedClient(String clientId, BlockedClientProto retainedMsgProto, BasicCallback callback) {
-        log.trace("[{}] Persisting blocked client - {}", clientId, retainedMsgProto);
-        blockedClientProducer.send(generateRequest(clientId, retainedMsgProto), new BlockedClientCallback(callback));
+    public void persistBlockedClient(String key, BlockedClientProto blockedClientProto, BasicCallback callback) {
+        log.trace("[{}] Persisting blocked client - {}", key, blockedClientProto);
+        blockedClientProducer.send(generateRequest(key, blockedClientProto), new BlockedClientCallback(callback));
     }
 
     @Override
-    public void persistDummyBlockedClient(String clientId, BlockedClientProto blockedClientProto) throws QueuePersistenceException {
-        log.trace("[{}] Persisting dummy blocked client - {}", clientId, blockedClientProto);
+    public void persistDummyBlockedClient(String key, BlockedClientProto blockedClientProto) throws QueuePersistenceException {
+        log.trace("[{}] Persisting dummy blocked client - {}", key, blockedClientProto);
 
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
         CountDownLatch updateWaiter = new CountDownLatch(1);
 
-        blockedClientProducer.send(generateRequest(clientId, blockedClientProto), new BlockedClientDummyCallback(errorRef, updateWaiter));
+        blockedClientProducer.send(generateRequest(key, blockedClientProto), new BlockedClientDummyCallback(errorRef, updateWaiter));
 
         boolean waitSuccessful = false;
         try {
@@ -86,14 +86,14 @@ public class BlockedClientProducerServiceImpl implements BlockedClientProducerSe
         Throwable error = errorRef.get();
         if (!waitSuccessful || error != null) {
             log.warn("[{}] Failed to persist blocked client. Reason - {}.",
-                    clientId, error != null ? error.getMessage() : "timeout waiting");
+                    key, error != null ? error.getMessage() : "timeout waiting");
             if (error != null) {
                 log.trace("Detailed error:", error);
             }
             if (!waitSuccessful) {
-                throw new QueuePersistenceException("Timed out to persist blocked client " + clientId);
+                throw new QueuePersistenceException("Timed out to persist blocked client " + key);
             } else {
-                throw new QueuePersistenceException("Failed to persist blocked client " + clientId);
+                throw new QueuePersistenceException("Failed to persist blocked client " + key);
             }
         }
     }

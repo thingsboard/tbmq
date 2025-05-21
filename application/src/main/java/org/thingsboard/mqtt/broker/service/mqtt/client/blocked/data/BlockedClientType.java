@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
+import lombok.Getter;
+
+@Getter
 public enum BlockedClientType {
 
     CLIENT_ID("clientId"),
@@ -26,5 +29,14 @@ public enum BlockedClientType {
 
     BlockedClientType(String label) {
         this.label = label;
+    }
+
+    public static BlockedClientType fromLabel(String label) {
+        for (BlockedClientType type : BlockedClientType.values()) {
+            if (type.label.equals(label)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown BlockedClientType label: " + label);
     }
 }

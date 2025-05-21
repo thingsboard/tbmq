@@ -1015,6 +1015,10 @@ mqtt:
   # If not set the broker will not reply with response info to mqtt 5 clients that connect with "request response info" = 1.
   # Set it to topic to be used for request-response feature, e.g. "example/"
   response-info: "${MQTT_RESPONSE_INFO:}"
+  blocked-client:
+    cleanup:
+      # The parameter to specify the period of execution cleanup task for expired blocked clients. Value set in seconds. Default value corresponds to one minute
+      period: "${BLOCKED_CLIENT_CLEANUP_PERIOD_SEC:60}"
 
 # Cache parameters
 cache:

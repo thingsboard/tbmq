@@ -15,11 +15,14 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.util.regex.Pattern;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.COLON;
 
 @EqualsAndHashCode(of = {"pattern", "regexMatchTarget"}, callSuper = false)
 @Data
@@ -29,6 +32,7 @@ public class RegexBlockedClient extends AbstractBlockedClient {
     private String pattern;
     private RegexMatchTarget regexMatchTarget;
 
+    @JsonIgnore
     private transient Pattern compiledPattern;
 
     public RegexBlockedClient(String pattern, RegexMatchTarget regexMatchTarget) {
@@ -43,6 +47,16 @@ public class RegexBlockedClient extends AbstractBlockedClient {
         this.pattern = pattern;
         this.regexMatchTarget = regexMatchTarget;
         this.compiledPattern = Pattern.compile(pattern);
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+        this.compiledPattern = Pattern.compile(pattern);
+    }
+
+    @Override
+    public String getKey() {
+        return super.getKey() + COLON + regexMatchTarget.getLabel();
     }
 
     @Override

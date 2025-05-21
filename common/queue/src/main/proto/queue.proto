@@ -194,7 +194,7 @@ enum RegexMatchTargetProto {
 message BlockedClientProto {
   BlockedClientTypeProto type = 1;
   int64 expirationTime = 2;
-  string description = 3;
+  optional string description = 3;
   string value = 4;
   optional RegexMatchTargetProto regexMatchTarget = 5;
 }

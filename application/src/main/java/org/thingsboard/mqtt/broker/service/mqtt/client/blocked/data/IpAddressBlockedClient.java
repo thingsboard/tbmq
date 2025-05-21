@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(of = {"ipAddress"}, callSuper = false)
 @Data
 @NoArgsConstructor
 public class IpAddressBlockedClient extends AbstractBlockedClient {

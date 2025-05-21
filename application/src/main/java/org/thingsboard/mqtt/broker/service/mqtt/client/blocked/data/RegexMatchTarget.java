@@ -15,10 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
+import lombok.Getter;
+
+@Getter
 public enum RegexMatchTarget {
 
-    BY_CLIENT_ID,
-    BY_USERNAME,
-    BY_IP_ADDRESS
+    BY_CLIENT_ID("byID"),
+    BY_USERNAME("byUN"),
+    BY_IP_ADDRESS("byIP");
 
+    private final String label;
+
+    RegexMatchTarget(String label) {
+        this.label = label;
+    }
 }

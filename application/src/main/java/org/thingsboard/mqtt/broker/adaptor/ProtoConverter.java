@@ -34,6 +34,8 @@ import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubs
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
@@ -43,6 +45,7 @@ import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.RegexMatchTargetProto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
@@ -55,6 +58,10 @@ import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -635,11 +642,40 @@ public class ProtoConverter {
      */
 
     public static BlockedClientProto convertToBlockedClientProto(BlockedClient blockedClient) {
-        return BlockedClientProto.newBuilder().build();
+        Builder builder = BlockedClientProto.newBuilder()
+                .setType(BlockedClientTypeProto.valueOf(blockedClient.getType().name()))
+                .setExpirationTime(blockedClient.getExpirationTime())
+                .setValue(blockedClient.getValue());
+        if (blockedClient.getDescription() != null) {
+            builder.setDescription(blockedClient.getDescription());
+        }
+        if (blockedClient.getRegexMatchTarget() != null) {
+            builder.setRegexMatchTarget(RegexMatchTargetProto.valueOf(blockedClient.getRegexMatchTarget().name()));
+        }
+        return builder.build();
     }
 
     public static BlockedClient convertProtoToBlockedClient(BlockedClientProto blockedClientProto) {
-        // fix this
-        return new ClientIdBlockedClient(null);
+        return switch (blockedClientProto.getType()) {
+            case CLIENT_ID ->
+                    new ClientIdBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case USERNAME ->
+                    new UsernameBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case IP_ADDRESS ->
+                    new IpAddressBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case REGEX ->
+                    new RegexBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue(), getMatchTarget(blockedClientProto));
+            default ->
+                    throw new IllegalArgumentException("Unsupported blocked client type: " + blockedClientProto.getType());
+        };
     }
+
+    private static String getDescription(BlockedClientProto blockedClientProto) {
+        return blockedClientProto.hasDescription() ? blockedClientProto.getDescription() : null;
+    }
+
+    private static RegexMatchTarget getMatchTarget(BlockedClientProto blockedClientProto) {
+        return RegexMatchTarget.valueOf(blockedClientProto.getRegexMatchTarget().name());
+    }
+
 }

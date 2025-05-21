@@ -18,11 +18,12 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 
 public interface BlockedClientPageService {
 
-    PageData<BlockedClient> getBlockedClients(PageLink pageLink);
+    PageData<BlockedClientDto> getBlockedClients(PageLink pageLink);
 
     PageData<BlockedClient> getBlockedClients(RetainedMsgQuery query);
 

@@ -15,10 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
-import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientResult;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 
-import java.util.List;
 import java.util.Map;
 
 public interface BlockedClientService {
@@ -27,21 +28,19 @@ public interface BlockedClientService {
 
     void startListening(BlockedClientConsumerService blockedClientConsumerService);
 
-    void addBlockedClientAndPersist(String topic, BlockedClient blockedClient);
+    BlockedClient addBlockedClientAndPersist(BlockedClient blockedClient);
 
-    void addBlockedClientAndPersist(String topic, BlockedClient blockedClient, BasicCallback callback);
+    void addBlockedClient(BlockedClient blockedClient);
 
-    void addBlockedClient(String topic, BlockedClient blockedClient);
+    void removeBlockedClientAndPersist(BlockedClient blockedClient);
 
-    void removeBlockedClientAndPersist(String topic);
+    void removeBlockedClient(BlockedClient blockedClient);
 
-    void removeBlockedClientAndPersist(String topic, BasicCallback callback);
+    void removeBlockedClient(BlockedClientType type, String key);
 
-    void removeBlockedClient(String topic);
+    Map<BlockedClientType, Map<String, BlockedClient>> getBlockedClients();
 
-    List<BlockedClient> getBlockedClients();
+    BlockedClient getBlockedClient(BlockedClientType type, String key);
 
-    List<BlockedClient> getRegexBlockedClients();
-
-    boolean isBlocked(String clientId, String username, String ipAddress);
+    BlockedClientResult checkBlocked(String clientId, String username, String ipAddress);
 }

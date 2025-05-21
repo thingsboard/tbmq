@@ -30,7 +30,7 @@ public enum EnhancedAuthFailure {
     CLIENT_FINAL_MESSAGE_EVALUATION_ERROR("Failed to verify the client's proof of password knowledge!"),
     CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR("Failed to evaluate client re-AUTH message!"),
     INVALID_CLIENT_STATE_FOR_AUTH_PACKET("Received AUTH continue message while client is in wrong state!"),
-    BLOCKED_CLIENT("Enhanced auth blocked client");
+    BLOCKED_CLIENT("Enhanced auth blocked client by ");
 
     private final String reasonLog;
 

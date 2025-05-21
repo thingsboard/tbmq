@@ -55,7 +55,6 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof IpAddressBlockedClient).isTrue();
-
     }
 
     @Test
@@ -69,16 +68,29 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof UsernameBlockedClient).isTrue();
-
     }
 
     @Test
     public void test4() {
 
-        RegexBlockedClient regexBlockedClient1 = new RegexBlockedClient(1, "asd", "one-two-three", RegexMatchTarget.BY_CLIENT_ID);
-        RegexBlockedClient regexBlockedClient2 = new RegexBlockedClient(2, "asd123", "one-two-three", RegexMatchTarget.BY_USERNAME);
+        ObjectNode objectNode = JacksonUtil.newObjectNode();
+        objectNode.put("type", "regex");
+        objectNode.put("pattern", "clientId");
+        objectNode.put("regexMatchTarget", "BY_CLIENT_ID");
+        objectNode.put("expirationTime", System.currentTimeMillis());
+        objectNode.put("description", "1 2 3 4 5 6 7 8 9");
 
-        assertThat(regexBlockedClient1).isEqualTo(regexBlockedClient2);
+        BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
+        assertThat(blockedClient instanceof RegexBlockedClient).isTrue();
+    }
+
+    @Test
+    public void test5() {
+
+        RegexBlockedClient regexBlockedClient1 = new RegexBlockedClient(1, "asd", "one-two-three", RegexMatchTarget.BY_CLIENT_ID);
+        RegexBlockedClient regexBlockedClient2 = new RegexBlockedClient(1, "asd", "one-two-three", RegexMatchTarget.BY_USERNAME);
+
+        assertThat(regexBlockedClient1).isNotEqualTo(regexBlockedClient2);
     }
 
 

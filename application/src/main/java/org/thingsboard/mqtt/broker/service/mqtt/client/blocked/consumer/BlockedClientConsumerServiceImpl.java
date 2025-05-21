@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
 import org.thingsboard.mqtt.broker.queue.provider.BlockedClientQueueFactory;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedClientProducerService;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,7 +80,7 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
         long startTime = System.nanoTime();
         long totalMessageCount = 0L;
 
-        String dummyClientId = persistDummyBlockedClient();
+        String dummyBlockedClientKey = persistDummyBlockedClient();
         blockedClientConsumer.assignOrSubscribe();
 
         List<TbProtoQueueMsg<BlockedClientProto>> messages;
@@ -92,17 +93,17 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
                 log.debug("Read {} blocked clients from single poll", packSize);
                 totalMessageCount += packSize;
                 for (TbProtoQueueMsg<BlockedClientProto> msg : messages) {
-                    String clientId = msg.getKey();
+                    String key = msg.getKey();
                     if (isBlockedClientProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
-                        log.trace("[{}] Encountered empty BlockedClient", clientId);
-                        blockedClientMap.remove(clientId);
+                        log.trace("[{}] Encountered empty BlockedClient", key);
+                        blockedClientMap.remove(key);
                     } else {
                         BlockedClient blockedClient = convertToBlockedClient(msg);
-                        if (dummyClientId.equals(clientId)) {
+                        if (dummyBlockedClientKey.equals(key)) {
                             encounteredDummyClient = true;
                         } else {
-                            blockedClientMap.put(clientId, blockedClient);
+                            blockedClientMap.put(key, blockedClient);
                         }
                     }
                 }
@@ -113,7 +114,7 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
             }
         } while (!stopped && !encounteredDummyClient);
 
-        clearDummyBlockedClient(dummyClientId);
+        clearDummyBlockedClient(dummyBlockedClientKey);
 
         initializing = false;
 
@@ -138,14 +139,14 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
                         continue;
                     }
                     for (TbProtoQueueMsg<BlockedClientProto> msg : messages) {
-                        String clientId = msg.getKey();
+                        String key = msg.getKey();
                         String serviceId = BytesUtil.bytesToString(msg.getHeaders().get(BrokerConstants.SERVICE_ID_HEADER));
 
                         if (isBlockedClientProtoEmpty(msg.getValue())) {
-                            callback.accept(clientId, serviceId, null);
+                            callback.accept(key, serviceId, null);
                         } else {
-                            BlockedClient retainedMsg = convertToBlockedClient(msg);
-                            callback.accept(clientId, serviceId, retainedMsg);
+                            BlockedClient blockedClient = convertToBlockedClient(msg);
+                            callback.accept(key, serviceId, blockedClient);
                         }
                     }
                     blockedClientConsumer.commitSync();
@@ -168,19 +169,18 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
     }
 
     private String persistDummyBlockedClient() throws QueuePersistenceException {
-        String dummyClientId = UUIDUtil.randomUuid();
-        BlockedClient blockedClient = new ClientIdBlockedClient(dummyClientId);
-        producerService.persistDummyBlockedClient(dummyClientId, ProtoConverter.convertToBlockedClientProto(blockedClient));
-        return dummyClientId;
+        String dummyBlockedClientKey = UUIDUtil.randomUuid();
+        BlockedClient blockedClient = new ClientIdBlockedClient(dummyBlockedClientKey);
+        producerService.persistDummyBlockedClient(dummyBlockedClientKey, ProtoConverter.convertToBlockedClientProto(blockedClient));
+        return dummyBlockedClientKey;
     }
 
-    private void clearDummyBlockedClient(String topic) throws QueuePersistenceException {
-        producerService.persistDummyBlockedClient(topic, QueueConstants.EMPTY_BLOCKED_CLIENT_PROTO);
+    private void clearDummyBlockedClient(String dummyBlockedClientKey) throws QueuePersistenceException {
+        producerService.persistDummyBlockedClient(dummyBlockedClientKey, QueueConstants.EMPTY_BLOCKED_CLIENT_PROTO);
     }
 
     private boolean isBlockedClientProtoEmpty(BlockedClientProto blockedClientProto) {
-        // fix this
-        return BlockedClientProto.getDefaultInstance().equals(blockedClientProto);
+        return QueueConstants.EMPTY_BLOCKED_CLIENT_PROTO.equals(blockedClientProto);
     }
 
     @PreDestroy

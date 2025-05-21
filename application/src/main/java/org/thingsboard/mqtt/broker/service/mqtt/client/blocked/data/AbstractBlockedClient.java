@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
 import lombok.Data;
 
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.COLON;
+
 @Data
 public abstract class AbstractBlockedClient implements BlockedClient {
 
@@ -29,5 +31,18 @@ public abstract class AbstractBlockedClient implements BlockedClient {
     public AbstractBlockedClient(long expirationTime, String description) {
         this.expirationTime = expirationTime;
         this.description = description;
+    }
+
+    @Override
+    public String getKey() {
+        return getType().getLabel() + COLON + getValue();
+    }
+
+    @Override
+    public boolean isExpired() {
+        if (expirationTime <= 0) {
+            return false;
+        }
+        return System.currentTimeMillis() > expirationTime;
     }
 }

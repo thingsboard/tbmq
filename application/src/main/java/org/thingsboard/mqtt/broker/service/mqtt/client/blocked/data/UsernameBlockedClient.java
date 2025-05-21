@@ -19,7 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(of = {"username"}, callSuper = false)
 @Data
 @NoArgsConstructor
 public class UsernameBlockedClient extends AbstractBlockedClient {

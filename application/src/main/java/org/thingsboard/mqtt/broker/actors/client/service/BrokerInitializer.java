@@ -37,8 +37,8 @@ import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
-import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
@@ -157,7 +157,7 @@ public class BrokerInitializer {
 
     private void initBlockedClients() throws QueuePersistenceException {
         Map<String, BlockedClient> allBlockedClients = blockedClientConsumer.initLoad();
-        log.info("Loaded {} stored blocked clients from Kafka.", allBlockedClients.size());
+        log.info("Loaded {} stored blocked clients from Kafka", allBlockedClients.size());
         blockedClientService.init(allBlockedClients);
     }
 

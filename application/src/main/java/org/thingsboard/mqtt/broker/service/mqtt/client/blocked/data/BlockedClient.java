@@ -15,19 +15,27 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
+        @JsonSubTypes.Type(value = RegexBlockedClient.class, name = "regex"),
         @JsonSubTypes.Type(value = ClientIdBlockedClient.class, name = "clientId"),
         @JsonSubTypes.Type(value = UsernameBlockedClient.class, name = "username"),
         @JsonSubTypes.Type(value = IpAddressBlockedClient.class, name = "ipAddress")})
 public interface BlockedClient {
 
+    @JsonIgnore
+    String getKey();
+
     BlockedClientType getType();
 
     long getExpirationTime();
+
+    @JsonIgnore
+    boolean isExpired();
 
     String getDescription();
 

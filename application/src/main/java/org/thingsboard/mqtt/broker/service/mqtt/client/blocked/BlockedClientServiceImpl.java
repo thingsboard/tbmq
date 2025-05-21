@@ -16,29 +16,45 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.queue.constants.QueueConstants;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientResult;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedClientProducerService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.util.BlockedClientKeyUtil;
 
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+import static org.thingsboard.mqtt.broker.common.data.util.CallbackUtil.createCallback;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientResult.blocked;
+import static org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientResult.notBlocked;
 
 @Slf4j
 @Service
 public class BlockedClientServiceImpl implements BlockedClientService {
 
+    private final BlockedClientProducerService blockedClientProducerService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final Map<BlockedClientType, Map<String, BlockedClient>> blockedClientMap;
-    private final Set<RegexBlockedClient> regexBlockedClients;
 
-    public BlockedClientServiceImpl(ServiceInfoProvider serviceInfoProvider) {
+    public BlockedClientServiceImpl(BlockedClientProducerService blockedClientProducerService,
+                                    ServiceInfoProvider serviceInfoProvider) {
+        this.blockedClientProducerService = blockedClientProducerService;
         this.serviceInfoProvider = serviceInfoProvider;
 
         EnumMap<BlockedClientType, Map<String, BlockedClient>> temp = new EnumMap<>(BlockedClientType.class);
@@ -46,13 +62,11 @@ public class BlockedClientServiceImpl implements BlockedClientService {
             temp.put(type, new ConcurrentHashMap<>());
         }
         this.blockedClientMap = Collections.unmodifiableMap(temp);
-
-        this.regexBlockedClients = ConcurrentHashMap.newKeySet();
     }
 
     @Override
     public void init(Map<String, BlockedClient> initBlockedClientMap) {
-
+        initBlockedClientMap.forEach((key, client) -> blockedClientMap.get(client.getType()).put(key, client));
     }
 
     @Override
@@ -61,78 +75,142 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     }
 
     @Override
-    public void addBlockedClientAndPersist(String topic, BlockedClient blockedClient) {
+    public BlockedClient addBlockedClientAndPersist(BlockedClient blockedClient) {
+        log.trace("[{}] Executing addBlockedClientAndPersist", blockedClient);
+        addBlockedClient(blockedClient);
 
+        BlockedClientProto blockedClientProto = ProtoConverter.convertToBlockedClientProto(blockedClient);
+        BasicCallback callback = createCallback(
+                () -> log.trace("[{}] Persisted blocked client", blockedClient),
+                t -> log.warn("[{}] Failed to persist blocked client", blockedClient, t));
+        blockedClientProducerService.persistBlockedClient(blockedClient.getKey(), blockedClientProto, callback);
+
+        return blockedClient;
     }
 
     @Override
-    public void addBlockedClientAndPersist(String topic, BlockedClient blockedClient, BasicCallback callback) {
-
+    public void addBlockedClient(BlockedClient blockedClient) {
+        validate(blockedClient);
+        blockedClientMap.get(blockedClient.getType()).put(blockedClient.getKey(), blockedClient);
     }
 
     @Override
-    public void addBlockedClient(String topic, BlockedClient blockedClient) {
+    public void removeBlockedClientAndPersist(BlockedClient blockedClient) {
+        log.trace("Executing removeBlockedClientAndPersist {}", blockedClient);
+        removeBlockedClient(blockedClient);
 
+        BasicCallback callback = createCallback(
+                () -> log.trace("Persisted removed blocked client {}", blockedClient),
+                t -> log.warn("Failed to persist removed blocked client {}", blockedClient, t));
+        blockedClientProducerService.persistBlockedClient(blockedClient.getKey(), QueueConstants.EMPTY_BLOCKED_CLIENT_PROTO, callback);
     }
 
     @Override
-    public void removeBlockedClientAndPersist(String topic) {
-
+    public void removeBlockedClient(BlockedClient blockedClient) {
+        log.trace("Executing removeBlockedClient {}", blockedClient);
+        removeBlockedClient(blockedClient.getType(), blockedClient.getKey());
     }
 
     @Override
-    public void removeBlockedClientAndPersist(String topic, BasicCallback callback) {
-
+    public void removeBlockedClient(BlockedClientType type, String key) {
+        blockedClientMap.get(type).remove(key);
     }
 
     @Override
-    public void removeBlockedClient(String topic) {
-
+    public Map<BlockedClientType, Map<String, BlockedClient>> getBlockedClients() {
+        return new HashMap<>(blockedClientMap);
     }
 
     @Override
-    public List<BlockedClient> getBlockedClients() {
-        return List.of();
+    public BlockedClient getBlockedClient(BlockedClientType type, String key) {
+        return blockedClientMap.get(type).get(key);
     }
 
     @Override
-    public List<BlockedClient> getRegexBlockedClients() {
-        return List.of();
-    }
+    public BlockedClientResult checkBlocked(String clientId, String username, String ipAddress) {
+        BlockedClient blocked = findExactMatch(BlockedClientType.CLIENT_ID, clientId);
+        if (blocked != null) return blocked(blocked);
 
-    @Override
-    public boolean isBlocked(String clientId, String username, String ipAddress) {
-        if (clientId != null && blockedClientMap.get(BlockedClientType.CLIENT_ID).containsKey(clientId)) return true;
-        if (username != null && blockedClientMap.get(BlockedClientType.USERNAME).containsKey(username)) return true;
-        if (ipAddress != null && blockedClientMap.get(BlockedClientType.IP_ADDRESS).containsKey(ipAddress)) return true;
+        blocked = findExactMatch(BlockedClientType.USERNAME, username);
+        if (blocked != null) return blocked(blocked);
 
-        for (RegexBlockedClient r : regexBlockedClients) {
-            switch (r.getRegexMatchTarget()) {
-                case BY_CLIENT_ID -> {
-                    if (clientId != null && r.matches(clientId)) return true;
-                }
-                case BY_USERNAME -> {
-                    if (username != null && r.matches(username)) return true;
-                }
-                case BY_IP_ADDRESS -> {
-                    if (ipAddress != null && r.matches(ipAddress)) return true;
-                }
-            }
+        blocked = findExactMatch(BlockedClientType.IP_ADDRESS, ipAddress);
+        if (blocked != null) return blocked(blocked);
+
+        var regexMap = blockedClientMap.get(BlockedClientType.REGEX);
+        if (regexMap.isEmpty()) return notBlocked();
+
+        for (var blockedClient : regexMap.values()) {
+            if (!(blockedClient instanceof RegexBlockedClient rbc)) continue;
+
+            String value = switch (rbc.getRegexMatchTarget()) {
+                case BY_CLIENT_ID -> clientId;
+                case BY_USERNAME -> username;
+                case BY_IP_ADDRESS -> ipAddress;
+            };
+            if (value == null) continue;
+            if (isRegexBasedBlocked(value, rbc)) return blocked(rbc);
         }
-        return false;
+        return notBlocked();
     }
 
-    private void processRetainedMsgUpdate(String clientId, String serviceId, BlockedClient blockedClient) {
+    private BlockedClient findExactMatch(BlockedClientType type, String value) {
+        if (value == null) return null;
+
+        var map = blockedClientMap.get(type);
+        if (map.isEmpty()) return null;
+
+        BlockedClient client = map.get(BlockedClientKeyUtil.generateKey(type, value));
+        return (client != null && !client.isExpired()) ? client : null;
+    }
+
+    private boolean isRegexBasedBlocked(String value, RegexBlockedClient regexBlockedClient) {
+        try {
+            return regexBlockedClient.matches(value) && !regexBlockedClient.isExpired();
+        } catch (Exception e) {
+            log.warn("[{}] Failed to match regex blocked client {}", value, regexBlockedClient);
+            return false;
+        }
+    }
+
+    private void processRetainedMsgUpdate(String key, String serviceId, BlockedClient blockedClient) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-            log.trace("[{}] Blocked client was already processed", clientId);
+            log.trace("[{}] Blocked client was already processed", key);
             return;
         }
         if (blockedClient == null) {
-            log.trace("[{}][{}] Clearing blocked client", serviceId, clientId);
-//            blockedClientMap.remove(clientId);
+            log.trace("[{}][{}] Clearing blocked client", serviceId, key);
+            removeBlockedClient(BlockedClientKeyUtil.extractTypeFromKey(key), key);
         } else {
-            log.trace("[{}][{}] Saving blocked client", serviceId, clientId);
-//            blockedClientMap.put(clientId, blockedClient);
+            log.trace("[{}][{}] Saving blocked client", serviceId, key);
+            addBlockedClient(blockedClient);
         }
     }
+
+    private void validate(BlockedClient blockedClient) {
+        if (blockedClient.getType() == null) {
+            throw new DataValidationException("Blocked client type should be specified");
+        }
+        if (StringUtils.isEmpty(blockedClient.getValue())) {
+            throw new DataValidationException("Blocked client value should be specified");
+        }
+        if (BlockedClientType.REGEX.equals(blockedClient.getType()) && blockedClient.getRegexMatchTarget() == null) {
+            throw new DataValidationException("Blocked client regex match target should be specified for REGEX type");
+        }
+    }
+
+    @Scheduled(fixedRateString = "${mqtt.blocked-client.cleanup.period}", timeUnit = TimeUnit.SECONDS)
+    public void cleanUp() {
+        log.info("Starting cleaning up expired blocked client");
+        for (BlockedClientType type : BlockedClientType.values()) {
+            blockedClientMap.get(type).values().forEach(value -> {
+                if (value.isExpired()) {
+                    log.info("Removing expired blocked client {}", value);
+                    removeBlockedClient(value);
+                }
+            });
+        }
+        log.info("Cleanup of expired blocked client is finished");
+    }
+
 }

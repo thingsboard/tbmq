@@ -168,6 +168,7 @@ public class BrokerConstants {
 
     public static final String SUBSCRIPTION_ID_IS_0_ERROR_MSG = "It is a Protocol Error if the Subscription Identifier has a value of 0";
     public static final String FAILED_TO_CONNECT_CLIENT_MSG = "Failed to connect client";
+    public static final String BLOCKED_CLIENT_MSG = "Blocked client by ";
 
     public static final String BASIC_DOWNLINK_CG_PREFIX = "basic-downlink-msg-consumer-group-";
     public static final String PERSISTED_DOWNLINK_CG_PREFIX = "persisted-downlink-msg-consumer-group-";
