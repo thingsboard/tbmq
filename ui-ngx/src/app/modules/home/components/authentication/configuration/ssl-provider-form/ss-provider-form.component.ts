@@ -74,7 +74,7 @@ export class SslProviderFormComponent extends MqttAuthenticationProviderForm imp
   ngOnInit() {
     this.sslProviderConfigForm = this.fb.group({
       configuration: this.fb.group({
-        skipValidityCheckForClientCert: [false, []],
+        skipValidityCheckForClientCert: [null, []],
       })
     });
     this.sslProviderConfigForm.valueChanges

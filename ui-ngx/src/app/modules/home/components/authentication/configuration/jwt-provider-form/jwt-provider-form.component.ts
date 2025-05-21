@@ -17,21 +17,50 @@
 import { Component, forwardRef, input, OnInit } from '@angular/core';
 import {
   ControlValueAccessor,
-  UntypedFormBuilder,
-  UntypedFormGroup,
+  FormsModule,
   NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
+  ReactiveFormsModule,
+  UntypedFormBuilder,
+  UntypedFormGroup,
   ValidationErrors,
-  Validator,
-  ReactiveFormsModule
+  Validators,
+  Validator
 } from '@angular/forms';
 import { isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { TranslateModule } from '@ngx-translate/core';
-import { MqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import {
+  JwtAlgorithmType,
+  JwtAlgorithmTypeTranslation,
+  JwtMqttAuthProviderConfiguration,
+  JwtVerifierType,
+  MqttAuthProvider
+} from '@shared/models/mqtt-auth-provider.model';
 import {
   MqttAuthenticationProviderForm
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
+import { MatSlideToggle } from "@angular/material/slide-toggle";
+import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
+import { MatOption } from "@angular/material/core";
+import { MatSelect } from "@angular/material/select";
+import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
+import { KeyValMapComponent } from "@shared/components/key-val-map.component";
+import { ToggleOption } from "@shared/components/toggle-header.component";
+import { ToggleSelectComponent } from "@shared/components/toggle-select.component";
+import { NgTemplateOutlet } from "@angular/common";
+import { IntegrationCredentialType } from "@shared/models/integration.models";
+import { MatInput } from "@angular/material/input";
+import { FileInputComponent } from "@shared/components/file-input.component";
+import {
+  IntegrationCredentialsComponent
+} from "@home/components/integration/integration-credentials/integration-credentials.component";
+import { HeaderFilterMapComponent } from "@shared/components/header-filter-map.component";
+import { MatIcon } from "@angular/material/icon";
+import { MatTooltip } from "@angular/material/tooltip";
+import { TogglePasswordComponent } from "@shared/components/button/toggle-password.component";
+import { CredentialsType } from "@shared/models/credentials.model";
+import { HintTooltipIconComponent } from "@shared/components/hint-tooltip-icon.component";
 
 @Component({
   selector: 'tb-jwt-provider-config-form',
@@ -40,6 +69,25 @@ import {
   imports: [
     ReactiveFormsModule,
     TranslateModule,
+    MatFormField,
+    MatLabel,
+    MatOption,
+    MatSelect,
+    KeyValMapComponent,
+    ToggleOption,
+    ToggleSelectComponent,
+    NgTemplateOutlet,
+    FormsModule,
+    MatInput,
+    FileInputComponent,
+    IntegrationCredentialsComponent,
+    MatSlideToggle,
+    HeaderFilterMapComponent,
+    MatIcon,
+    MatSuffix,
+    MatTooltip,
+    TogglePasswordComponent,
+    HintTooltipIconComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -56,7 +104,18 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   provider = input<MqttAuthProvider>();
   isEdit = input<boolean>();
+
   jwtConfigForm: UntypedFormGroup;
+
+  clientTypes = Object.values(ClientType);
+  clientTypeTranslationMap = clientTypeTranslationMap;
+
+  JwtVerifierType = JwtVerifierType;
+  JwtAlgorithmType = JwtAlgorithmType;
+  jwtAlgorithmTypes = Object.values(JwtAlgorithmType);
+  jwtAlgorithmTypeTranslation = JwtAlgorithmTypeTranslation;
+
+  IntegrationCredentialType = IntegrationCredentialType;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -68,16 +127,35 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   ngOnInit() {
     this.jwtConfigForm = this.fb.group({
       configuration: this.fb.group({
+        clientType: [null, []],
+        claims: [null, []],
+        clientTypeClaims: [null, []],
+        jwtVerifierType: [null, []],
+        algorithmType: [null, []],
+        secret: [null, []],
+        publicKey: [null, []],
+        endpoint: [null, []],
+        refreshInterval: [null, []],
+        ssl: [null, []],
+        credentials: [null, []],
+        headers: [null, []],
       })
     });
     this.jwtConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
+    this.jwtConfigForm.get('configuration.jwtVerifierType').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((type) => this.updateJwtValidators(type));
   }
 
   writeValue(value: MqttAuthProvider) {
     if (isDefinedAndNotNull(value)) {
       this.jwtConfigForm.reset(value, {emitEvent: false});
+      if (value.type === CredentialsType.JWT) {
+        const jwtConfig = value.configuration as JwtMqttAuthProviderConfiguration;
+        this.updateJwtValidators(jwtConfig.jwtVerifierType);
+      }
     } else {
       this.propagateChangePending = true;
     }
@@ -104,7 +182,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     }
   }
 
-  private updateModels(value) {
+  private updateModels(value: MqttAuthProvider) {
     this.propagateChange(value);
   }
 
@@ -112,5 +190,38 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     return this.jwtConfigForm.valid ? null : {
       jwtProviderConfigForm: {valid: false}
     };
+  }
+
+  updateJwtValidators(type: JwtVerifierType) {
+    if (type === JwtVerifierType.JWKS) {
+      this.jwtConfigForm.get('configuration.algorithmType').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.secret').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.publicKey').disable({emitEvent: false});
+
+      this.jwtConfigForm.get('configuration.endpoint').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.endpoint').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('configuration.refreshInterval').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.ssl').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.credentials').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.headers').enable({emitEvent: false});
+    } else {
+      this.jwtConfigForm.get('configuration.algorithmType').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.publicKey').enable({emitEvent: false});
+
+      this.jwtConfigForm.get('configuration.secret').enable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.secret').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('configuration.endpoint').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.refreshInterval').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.ssl').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.credentials').disable({emitEvent: false});
+      this.jwtConfigForm.get('configuration.headers').disable({emitEvent: false});
+    }
+    this.jwtConfigForm.updateValueAndValidity();
+  }
+
+  displayEnableSsl() {
+    return this.jwtConfigForm.get('configuration.credentials').value?.type !== 'cert.PEM';
   }
 }

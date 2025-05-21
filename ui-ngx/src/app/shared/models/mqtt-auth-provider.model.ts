@@ -38,7 +38,7 @@ export interface SslMqttAuthProviderConfiguration {
   skipValidityCheckForClientCert: boolean;
 }
 
-export interface JwtMqttAuthProviderConfiguration {
+export interface JwtMqttAuthProviderConfiguration extends JwksVerifierConfiguration {
   jwtVerifierType: JwtVerifierType;
   defaultClientType: ClientType;
   authClaims?: {[key: string]: string} | null;
@@ -46,17 +46,31 @@ export interface JwtMqttAuthProviderConfiguration {
 }
 
 export interface JwksVerifierConfiguration {
-  endpoint: string;
-  refreshInterval: number;
-  ssl: boolean;
-  credentials: Credentials | BasicCredentials | CertPemCredentials;
-  headers: {[key: string]: string} | null;
+  endpoint?: string;
+  refreshInterval?: number;
+  ssl?: boolean;
+  credentials?: Credentials | BasicCredentials | CertPemCredentials;
+  headers?: {[key: string]: string} | null;
+  secret?: string
+  publicKey?: string;
 }
 
 export enum JwtVerifierType {
-  ALGORITHM_BASED= 'ALGORITHM_BASED',
-  JWKS= 'JWKS',
+  ALGORITHM_BASED = 'ALGORITHM_BASED',
+  JWKS = 'JWKS',
 }
+
+export enum JwtAlgorithmType {
+  HMAC = 'HMAC',
+  PUBLIC_KEY = 'PUBLIC_KEY'
+}
+
+export const JwtAlgorithmTypeTranslation = new Map<JwtAlgorithmType, string>(
+  [
+    [JwtAlgorithmType.HMAC, 'authentication.hmac'],
+    [JwtAlgorithmType.PUBLIC_KEY, 'authentication.public-key']
+  ]
+);
 
 export const mockProviders: MqttAuthProvider[] = [
   {

@@ -57,6 +57,7 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
   buildForm(entity: MqttAuthProvider): UntypedFormGroup {
     return this.fb.group(
       {
+        enabled: [entity ? entity.enabled : null],
         type: [entity ? entity.type : null],
         description: [entity ? entity.description : null],
         configuration: [entity ? entity.configuration : null, [Validators.required]],

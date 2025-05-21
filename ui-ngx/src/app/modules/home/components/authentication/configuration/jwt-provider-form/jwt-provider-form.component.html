@@ -15,4 +15,153 @@
     limitations under the License.
 
 -->
+<section [formGroup]="jwtConfigForm">
+  <section formGroupName="configuration" class="flex flex-col gap-4">
+    <section class="security-setting mat-padding">
+      <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>authentication.jwt-verifier</p>
+      <div class="tb-form-panel no-border no-padding toggle-group">
+        <tb-toggle-select appearance="fill" formControlName="jwtVerifierType" class="w-full">
+          <tb-toggle-option [value]="JwtVerifierType.ALGORITHM_BASED">{{ 'authentication.algorithm-based' | translate }}</tb-toggle-option>
+          <tb-toggle-option [value]="JwtVerifierType.JWKS">{{ "authentication.jwks" | translate }}</tb-toggle-option>
+        </tb-toggle-select>
+      </div>
+      <section class="flex flex-col gap-4">
+        @switch (jwtConfigForm.get('configuration.jwtVerifierType')?.value) {
+          @case (JwtVerifierType.ALGORITHM_BASED) {
+            <ng-container *ngTemplateOutlet="algorithm"></ng-container>
+          }
+          @case (JwtVerifierType.JWKS) {
+            <ng-container *ngTemplateOutlet="jwks"></ng-container>
+          }
+        }
+      </section>
+    </section>
+    <section class="security-setting mat-padding">
+      <p [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
+      <tb-key-val-map formControlName="claims"
+                      [noDataText]="'authentication.claims-none' | translate"
+                      [addText]="'authentication.claims-add' | translate"
+                      class="security-setting-content"
+                      isStrokedButton="true">
+      </tb-key-val-map>
+    </section>
+    <section class="security-setting mat-padding">
+      <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>mqtt-client.client-type</p>
+      <section class="flex flex-col gap-4 mt-2">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+          <mat-label translate>mqtt-client.client-type</mat-label>
+          <mat-select formControlName="clientType">
+            @for (clientType of clientTypes; track clientType) {
+              <mat-option [value]="clientType">
+                {{ clientTypeTranslationMap.get(clientType) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <section class="security-setting mat-padding">
+          <p translate>authentication.client-type-claims</p>
+          <tb-key-val-map formControlName="clientTypeClaims"
+                          [noDataText]="'authentication.claims-none' | translate"
+                          [addText]="'authentication.claims-add' | translate"
+                          class="security-setting-content"
+                          isStrokedButton="true">
+          </tb-key-val-map>
+        </section>
+      </section>
+    </section>
 
+    <ng-template #algorithm>
+      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+        <mat-label translate>authentication.algorithm-type</mat-label>
+        <mat-select formControlName="algorithmType">
+          @for (type of jwtAlgorithmTypes; track type) {
+            <mat-option [value]="type">
+              {{ jwtAlgorithmTypeTranslation.get(type) | translate }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      @switch (jwtConfigForm.get('configuration.algorithmType').value) {
+        @case (JwtAlgorithmType.HMAC) {
+          <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+            <mat-label translate>authentication.secret</mat-label>
+            <input matInput formControlName="secret"
+                   autocomplete="new-password" name="new-password"
+                   type="password">
+            <mat-icon matSuffix
+                      matTooltipClass="tb-error-tooltip"
+                      matTooltip="{{ 'authentication.secret-required' | translate }}"
+                      [class.!hidden]="!(jwtConfigForm.get('configuration.secret').hasError('required') && jwtConfigForm.get('configuration.secret').touched)"
+                      class="tb-error">
+              warning
+            </mat-icon>
+            <tb-toggle-password matSuffix></tb-toggle-password>
+          </mat-form-field>
+        }
+        @case (JwtAlgorithmType.PUBLIC_KEY) {
+          <tb-file-input [existingFileName]="jwtConfigForm.get('configuration.publicKey')?.value"
+                         formControlName="publicKey"
+                         [required]="false"
+                         dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                         [label]="'authentication.public-key' | translate"
+                         (fileNameChanged)="jwtConfigForm.get('configuration.publicKey').patchValue($event)"
+                         inputId="public-key">
+          </tb-file-input>
+        }
+      }
+    </ng-template>
+
+    <ng-template #jwks>
+      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+        <mat-label translate>authentication.jwks-endpoint</mat-label>
+        <input matInput formControlName="endpoint">
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'authentication.jwks-endpoint-required' | translate }}"
+                  [class.!hidden]="!(jwtConfigForm.get('configuration.endpoint').hasError('required') && jwtConfigForm.get('configuration.endpoint').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-endpoint-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+        <mat-label translate>authentication.jwks-refresh-interval</mat-label>
+        <input matInput formControlName="refreshInterval" type="number" min="60">
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'authentication.jwks-refresh-interval-min' | translate }}"
+                  [class.!hidden]="!jwtConfigForm.get('configuration.refreshInterval').hasError('min')"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-refresh-interval-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <tb-integration-credentials formControlName="credentials"
+                                  [passwordOptional]="true"
+                                  [userNameOptional]="true"
+                                  [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
+                                                         IntegrationCredentialType.Basic,
+                                                         IntegrationCredentialType.CertPEM]">
+        @if (displayEnableSsl()) {
+          <mat-slide-toggle formControlName="ssl">
+            {{ 'integration.enable-ssl' | translate }}
+          </mat-slide-toggle>
+        }
+      </tb-integration-credentials>
+      <section class="security-setting mat-padding">
+        <p translate>integration.headers</p>
+        <tb-header-filter-map
+          class="security-setting-content"
+          noDataText="integration.no-headers-filter"
+          keyPlaceholderText="integration.header"
+          isStrokedButton="true"
+          formControlName="headers">
+        </tb-header-filter-map>
+      </section>
+    </ng-template>
+  </section>
+</section>
