@@ -71,6 +71,14 @@ export class MqttAuthProviderTableConfigResolver {
         false
       ),
     );
+    this.config.headerActionDescriptors.push(
+      {
+        name: this.translate.instant('authentication.settings'),
+        icon: 'settings',
+        isEnabled: () => true,
+        onAction: ($event) => this.router.navigate(['/settings/security'])
+      }
+    );
     this.config.loadEntity = id => of(mockProviders.find(entity => entity.id === id)); //this.mqttAuthProviderService.getAuthProviderById(id);
     this.config.saveEntity = entity => this.mqttAuthProviderService.saveAuthProvider(entity as MqttAuthProvider);
     this.config.entitiesFetchFunction = pageLink => of(mockProvidersPageData); // this.mqttAuthProviderService.getAuthProviders(pageLink);
