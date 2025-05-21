@@ -23,19 +23,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
-import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.util.BlockedClientKeyUtil;
-
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -78,23 +76,18 @@ public class BlockedClientController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/v2", params = {"pageSize", "page"}, method = RequestMethod.GET)
     @ResponseBody
-    public PageData<RetainedMsgDto> getBlockedClientsV2(@RequestParam int pageSize,
-                                                        @RequestParam int page,
-                                                        @RequestParam(required = false) String textSearch,
-                                                        @RequestParam(required = false) String sortProperty,
-                                                        @RequestParam(required = false) String sortOrder,
-                                                        @RequestParam(required = false) Long startTime,
-                                                        @RequestParam(required = false) Long endTime,
-                                                        @RequestParam(required = false) String topicName,
-                                                        @RequestParam(required = false) String[] qosList,
-                                                        @RequestParam(required = false) String payload) throws ThingsboardException {
-        Set<Integer> allQos = collectIntegerQueryParams(qosList);
+    public PageData<BlockedClientDto> getBlockedClientsV2(@RequestParam int pageSize,
+                                                          @RequestParam int page,
+                                                          @RequestParam(required = false) String textSearch,
+                                                          @RequestParam(required = false) String sortProperty,
+                                                          @RequestParam(required = false) String sortOrder,
+                                                          @RequestParam(required = false) Long startTime,
+                                                          @RequestParam(required = false) Long endTime,
+                                                          @RequestParam(required = false) String type,
+                                                          @RequestParam(required = false) String value,
+                                                          @RequestParam(required = false) String regexMatchTarget) throws ThingsboardException {
 
         TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
-
-//            return checkNotNull(blockedClientPageService.getRetainedMessages(
-//                    new RetainedMsgQuery(pageLink, topicName, allQos, payload)
-//            ));
-        return null;
+        return checkNotNull(blockedClientPageService.getBlockedClients(new BlockedClientQuery(pageLink)));
     }
 }

@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.mqtt.retained.RetainedMsgQuery;
+import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
@@ -70,7 +70,7 @@ public class BlockedClientPageServiceImpl implements BlockedClientPageService {
 
 
     @Override
-    public PageData<BlockedClient> getBlockedClients(RetainedMsgQuery query) {
+    public PageData<BlockedClientDto> getBlockedClients(BlockedClientQuery query) {
 
         return null;
     }

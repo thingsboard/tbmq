@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
+package org.thingsboard.mqtt.broker.common.data.client.blocked;
 
-import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-public interface BlockedClientPageService {
+@Data
+@Builder
+@AllArgsConstructor
+public class BlockedClientQuery {
 
-    PageData<BlockedClientDto> getBlockedClients(PageLink pageLink);
-
-    PageData<BlockedClientDto> getBlockedClients(BlockedClientQuery query);
-
+    private TimePageLink pageLink;
+    // ...
 }
