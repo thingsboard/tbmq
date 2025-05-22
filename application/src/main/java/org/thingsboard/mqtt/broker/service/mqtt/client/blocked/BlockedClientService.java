@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
+import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientResult;
@@ -28,7 +29,7 @@ public interface BlockedClientService {
 
     void startListening(BlockedClientConsumerService blockedClientConsumerService);
 
-    BlockedClient addBlockedClientAndPersist(BlockedClient blockedClient);
+    BlockedClientDto addBlockedClientAndPersist(BlockedClient blockedClient);
 
     void addBlockedClient(BlockedClient blockedClient);
 
@@ -43,4 +44,6 @@ public interface BlockedClientService {
     BlockedClient getBlockedClient(BlockedClientType type, String key);
 
     BlockedClientResult checkBlocked(String clientId, String username, String ipAddress);
+
+    int getBlockedClientCleanupTtl();
 }

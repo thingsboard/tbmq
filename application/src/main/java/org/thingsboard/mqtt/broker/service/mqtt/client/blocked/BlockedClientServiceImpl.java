@@ -15,12 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -52,6 +55,10 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     private final ServiceInfoProvider serviceInfoProvider;
     private final Map<BlockedClientType, Map<String, BlockedClient>> blockedClientMap;
 
+    @Getter
+    @Value("${mqtt.blocked-client.cleanup.ttl:10080}")
+    private int blockedClientCleanupTtl;
+
     public BlockedClientServiceImpl(BlockedClientProducerService blockedClientProducerService,
                                     ServiceInfoProvider serviceInfoProvider) {
         this.blockedClientProducerService = blockedClientProducerService;
@@ -75,7 +82,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     }
 
     @Override
-    public BlockedClient addBlockedClientAndPersist(BlockedClient blockedClient) {
+    public BlockedClientDto addBlockedClientAndPersist(BlockedClient blockedClient) {
         log.trace("[{}] Executing addBlockedClientAndPersist", blockedClient);
         addBlockedClient(blockedClient);
 
@@ -85,7 +92,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
                 t -> log.warn("[{}] Failed to persist blocked client", blockedClient, t));
         blockedClientProducerService.persistBlockedClient(blockedClient.getKey(), blockedClientProto, callback);
 
-        return blockedClient;
+        return BlockedClientDto.newInstance(blockedClient);
     }
 
     @Override
@@ -129,36 +136,54 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     @Override
     public BlockedClientResult checkBlocked(String clientId, String username, String ipAddress) {
         BlockedClient blocked = findExactMatch(BlockedClientType.CLIENT_ID, clientId);
-        if (blocked != null) return blocked(blocked);
+        if (blocked != null) {
+            return blocked(blocked);
+        }
 
         blocked = findExactMatch(BlockedClientType.USERNAME, username);
-        if (blocked != null) return blocked(blocked);
+        if (blocked != null) {
+            return blocked(blocked);
+        }
 
         blocked = findExactMatch(BlockedClientType.IP_ADDRESS, ipAddress);
-        if (blocked != null) return blocked(blocked);
+        if (blocked != null) {
+            return blocked(blocked);
+        }
 
         var regexMap = blockedClientMap.get(BlockedClientType.REGEX);
-        if (regexMap.isEmpty()) return notBlocked();
+        if (regexMap.isEmpty()) {
+            return notBlocked();
+        }
 
         for (var blockedClient : regexMap.values()) {
-            if (!(blockedClient instanceof RegexBlockedClient rbc)) continue;
+            if (!(blockedClient instanceof RegexBlockedClient rbc)) {
+                continue;
+            }
 
             String value = switch (rbc.getRegexMatchTarget()) {
                 case BY_CLIENT_ID -> clientId;
                 case BY_USERNAME -> username;
                 case BY_IP_ADDRESS -> ipAddress;
             };
-            if (value == null) continue;
-            if (isRegexBasedBlocked(value, rbc)) return blocked(rbc);
+            if (value == null) {
+                continue;
+            }
+            if (isRegexBasedBlocked(value, rbc)) {
+                return blocked(rbc);
+            }
         }
         return notBlocked();
     }
 
     private BlockedClient findExactMatch(BlockedClientType type, String value) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
 
         var map = blockedClientMap.get(type);
-        if (map.isEmpty()) return null;
+        if (map.isEmpty()) {
+            return null;
+        }
 
         BlockedClient client = map.get(BlockedClientKeyUtil.generateKey(type, value));
         return (client != null && !client.isExpired()) ? client : null;
@@ -166,7 +191,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     private boolean isRegexBasedBlocked(String value, RegexBlockedClient regexBlockedClient) {
         try {
-            return regexBlockedClient.matches(value) && !regexBlockedClient.isExpired();
+            return !regexBlockedClient.isExpired() && regexBlockedClient.matches(value);
         } catch (Exception e) {
             log.warn("[{}] Failed to match regex blocked client {}", value, regexBlockedClient);
             return false;
@@ -199,18 +224,22 @@ public class BlockedClientServiceImpl implements BlockedClientService {
         }
     }
 
-    @Scheduled(fixedRateString = "${mqtt.blocked-client.cleanup.period}", timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedRateString = "${mqtt.blocked-client.cleanup.period}", timeUnit = TimeUnit.MINUTES)
     public void cleanUp() {
-        log.info("Starting cleaning up expired blocked client");
+        log.info("Starting cleaning up expired blocked clients");
         for (BlockedClientType type : BlockedClientType.values()) {
             blockedClientMap.get(type).values().forEach(value -> {
-                if (value.isExpired()) {
-                    log.info("Removing expired blocked client {}", value);
+                if (value.isExpired() && getBlockedClientRemovalTs(value) <= System.currentTimeMillis()) {
+                    log.info("Removing expired blocked client by ttl [{}][{} minutes]", value, blockedClientCleanupTtl);
                     removeBlockedClient(value);
                 }
             });
         }
-        log.info("Cleanup of expired blocked client is finished");
+        log.info("Cleanup of expired blocked clients is finished");
+    }
+
+    private long getBlockedClientRemovalTs(BlockedClient value) {
+        return value.getExpirationTime() + TimeUnit.MINUTES.toMillis(blockedClientCleanupTtl);
     }
 
 }

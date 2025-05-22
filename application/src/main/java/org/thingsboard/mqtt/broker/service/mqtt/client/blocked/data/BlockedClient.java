@@ -21,10 +21,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = RegexBlockedClient.class, name = "regex"),
-        @JsonSubTypes.Type(value = ClientIdBlockedClient.class, name = "clientId"),
-        @JsonSubTypes.Type(value = UsernameBlockedClient.class, name = "username"),
-        @JsonSubTypes.Type(value = IpAddressBlockedClient.class, name = "ipAddress")})
+        @JsonSubTypes.Type(value = RegexBlockedClient.class, name = "REGEX"),
+        @JsonSubTypes.Type(value = ClientIdBlockedClient.class, name = "CLIENT_ID"),
+        @JsonSubTypes.Type(value = UsernameBlockedClient.class, name = "USERNAME"),
+        @JsonSubTypes.Type(value = IpAddressBlockedClient.class, name = "IP_ADDRESS")})
 public interface BlockedClient {
 
     @JsonIgnore
@@ -39,6 +39,7 @@ public interface BlockedClient {
 
     String getDescription();
 
+    @JsonIgnore
     String getValue();
 
     default RegexMatchTarget getRegexMatchTarget() {

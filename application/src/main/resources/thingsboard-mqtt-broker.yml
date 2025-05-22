@@ -1017,8 +1017,10 @@ mqtt:
   response-info: "${MQTT_RESPONSE_INFO:}"
   blocked-client:
     cleanup:
-      # The parameter to specify the period of execution cleanup task for expired blocked clients. Value set in seconds. Default value corresponds to one minute
-      period: "${BLOCKED_CLIENT_CLEANUP_PERIOD_SEC:60}"
+      # The parameter to specify the period of execution cleanup task for expired blocked clients. Value set in minutes. Default value corresponds to five minutes
+      period: "${BLOCKED_CLIENT_CLEANUP_PERIOD_MINUTES:5}"
+      # Time to Live for expired blocked clients. After this time, the expired blocked client is removed completely. Value set in minutes. Default value corresponds to one week
+      ttl: "${BLOCKED_CLIENT_CLEANUP_TTL_MINUTES:10080}"
 
 # Cache parameters
 cache:

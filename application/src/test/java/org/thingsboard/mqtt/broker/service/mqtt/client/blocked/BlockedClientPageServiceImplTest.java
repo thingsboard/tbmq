@@ -244,11 +244,11 @@ class BlockedClientPageServiceImplTest {
         query.setPageLink(new TimePageLink(10, 0, "abc", null, 1000L, 6000L));
 
         var blockedClientMap = getBlockedClientsMap(List.of(
-                new RegexBlockedClient(1000L, "desc1", "abc.*", RegexMatchTarget.BY_CLIENT_ID),      // ✅ match
-                new RegexBlockedClient(3000L, "desc2", "def.*", RegexMatchTarget.BY_CLIENT_ID),      // ⛔ value doesn't match
-                new RegexBlockedClient(4000L, "desc3", "abc.*", RegexMatchTarget.BY_USERNAME),       // ⛔ match target doesn't match
-                new RegexBlockedClient(7000L, "desc4", "abc.*", RegexMatchTarget.BY_IP_ADDRESS),     // ⛔ match target doesn't match
-                new ClientIdBlockedClient(5000L, "desc5", "abc-client")                              // ⛔ type doesn't match
+                new RegexBlockedClient(1000L, "desc1", "abc.*", RegexMatchTarget.BY_CLIENT_ID),
+                new RegexBlockedClient(3000L, "desc2", "def.*", RegexMatchTarget.BY_CLIENT_ID),
+                new RegexBlockedClient(4000L, "desc3", "abc.*", RegexMatchTarget.BY_USERNAME),
+                new RegexBlockedClient(7000L, "desc4", ".*abc.*", RegexMatchTarget.BY_CLIENT_ID),
+                new ClientIdBlockedClient(5000L, "desc5", "abc-client")
         ));
 
         doReturn(blockedClientMap).when(blockedClientService).getBlockedClients();

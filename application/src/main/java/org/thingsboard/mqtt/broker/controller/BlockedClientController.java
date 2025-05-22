@@ -51,7 +51,7 @@ public class BlockedClientController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
-    public BlockedClient saveBlockedClient(@RequestBody BlockedClient blockedClient) throws ThingsboardException {
+    public BlockedClientDto saveBlockedClient(@RequestBody BlockedClient blockedClient) throws ThingsboardException {
         checkNotNull(blockedClient);
         return blockedClientService.addBlockedClientAndPersist(blockedClient);
     }
@@ -65,6 +65,13 @@ public class BlockedClientController extends BaseController {
         String key = BlockedClientKeyUtil.generateKey(type, value, regexMatchTarget);
         BlockedClient blockedClient = checkBlockedClient(type, key);
         blockedClientService.removeBlockedClientAndPersist(blockedClient);
+    }
+
+    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @RequestMapping(value = "/ttl", method = RequestMethod.GET)
+    @ResponseBody
+    public int getBlockedClientsTimeToLive() {
+        return blockedClientService.getBlockedClientCleanupTtl();
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")

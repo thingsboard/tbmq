@@ -34,10 +34,10 @@ class BlockedClientServiceImplTest {
     public void test1() {
 
         ObjectNode objectNode = JacksonUtil.newObjectNode();
-        objectNode.put("type", "clientId");
-        objectNode.put("clientId", "asd");
+        objectNode.put("type", "CLIENT_ID");
+        objectNode.put("clientId", "some_value");
         objectNode.put("expirationTime", System.currentTimeMillis());
-        objectNode.put("description", "1 2 3 4 5 6 7 8 9");
+        objectNode.put("description", "your_description");
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof ClientIdBlockedClient).isTrue();
@@ -48,10 +48,10 @@ class BlockedClientServiceImplTest {
     public void test2() {
 
         ObjectNode objectNode = JacksonUtil.newObjectNode();
-        objectNode.put("type", "ipAddress");
-        objectNode.put("ipAddress", "one-two-three");
+        objectNode.put("type", "IP_ADDRESS");
+        objectNode.put("ipAddress", "some_value");
         objectNode.put("expirationTime", System.currentTimeMillis());
-        objectNode.put("description", "1 2 3 4 5 6 7 8 9");
+        objectNode.put("description", "your_description");
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof IpAddressBlockedClient).isTrue();
@@ -61,10 +61,10 @@ class BlockedClientServiceImplTest {
     public void test3() {
 
         ObjectNode objectNode = JacksonUtil.newObjectNode();
-        objectNode.put("type", "username");
-        objectNode.put("username", "un");
+        objectNode.put("type", "USERNAME");
+        objectNode.put("username", "some_value");
         objectNode.put("expirationTime", System.currentTimeMillis());
-        objectNode.put("description", "1 2 3 4 5 6 7 8 9");
+        objectNode.put("description", "your_description");
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof UsernameBlockedClient).isTrue();
@@ -74,11 +74,11 @@ class BlockedClientServiceImplTest {
     public void test4() {
 
         ObjectNode objectNode = JacksonUtil.newObjectNode();
-        objectNode.put("type", "regex");
-        objectNode.put("pattern", "clientId");
+        objectNode.put("type", "REGEX");
+        objectNode.put("pattern", "some_value");
         objectNode.put("regexMatchTarget", "BY_CLIENT_ID");
         objectNode.put("expirationTime", System.currentTimeMillis());
-        objectNode.put("description", "1 2 3 4 5 6 7 8 9");
+        objectNode.put("description", "your_description");
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof RegexBlockedClient).isTrue();
