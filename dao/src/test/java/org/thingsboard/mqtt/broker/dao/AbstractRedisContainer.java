@@ -24,6 +24,7 @@ import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class AbstractRedisContainer {
@@ -41,6 +42,9 @@ public class AbstractRedisContainer {
         @Override
         protected void before() throws Throwable {
             redis.start();
+
+            Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+
             System.setProperty("redis.connection.type", "standalone");
             System.setProperty("redis.standalone.host", redis.getHost());
             System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
