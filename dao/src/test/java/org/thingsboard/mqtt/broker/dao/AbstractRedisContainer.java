@@ -20,7 +20,9 @@ import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -31,7 +33,8 @@ public class AbstractRedisContainer {
             .withExposedPorts(6379)
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withCommand("redis-server", "--requirepass", "password");
+            .withCommand("redis-server", "--requirepass", "password")
+            .waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofSeconds(10));
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {

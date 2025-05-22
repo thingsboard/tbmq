@@ -21,7 +21,9 @@ import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -38,42 +40,48 @@ public class AbstractRedisClusterContainer {
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
     @ClassRule
     public static GenericContainer redis2 = new GenericContainer("bitnami/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6372")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
     @ClassRule
     public static GenericContainer redis3 = new GenericContainer("bitnami/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6373")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
     @ClassRule
     public static GenericContainer redis4 = new GenericContainer("bitnami/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6374")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
     @ClassRule
     public static GenericContainer redis5 = new GenericContainer("bitnami/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6375")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
     @ClassRule
     public static GenericContainer redis6 = new GenericContainer("bitnami/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6376")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withEnv("REDIS_NODES", nodes);
+            .withEnv("REDIS_NODES", nodes)
+            .waitingFor(Wait.forListeningPort().withStartupTimeout(Duration.ofSeconds(10)));
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
