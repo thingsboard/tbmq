@@ -21,7 +21,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-import java.util.List;
 import java.util.Set;
 
 @Data
@@ -33,5 +32,5 @@ public class BlockedClientQuery {
     private TimePageLink pageLink;
     private Set<BlockedClientType> types;
     private String value;
-    private List<RegexMatchTarget> regexMatchTargets;
+    private Set<RegexMatchTarget> regexMatchTargets;
 }

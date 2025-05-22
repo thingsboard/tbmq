@@ -87,7 +87,7 @@ public class BlockedClientPageServiceImpl implements BlockedClientPageService {
         Long endTime = pageLink.getEndTime();
         Set<BlockedClientType> types = query.getTypes();
         String value = query.getValue();
-        List<RegexMatchTarget> regexMatchTargets = query.getRegexMatchTargets();
+        Set<RegexMatchTarget> regexMatchTargets = query.getRegexMatchTargets();
 
         Predicate<BlockedClient> textSearchFilter = bc -> StringUtils.isEmpty(textSearch) || bc.getValue().toLowerCase().contains(textSearch.toLowerCase());
         Predicate<BlockedClient> timeFilter = bc -> (startTime == null || bc.getExpirationTime() >= startTime) && (endTime == null || bc.getExpirationTime() <= endTime);

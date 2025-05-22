@@ -372,4 +372,16 @@ public abstract class BaseController {
         return new PageData<>(entities, totalPages, totalElements, hasNext);
     }
 
+    protected <E extends Enum<E>> Set<E> parseEnumSet(Class<E> enumType, String[] values) {
+        Set<E> result = new HashSet<>();
+        if (values != null) {
+            for (String val : values) {
+                if (!StringUtils.isEmpty(val)) {
+                    result.add(Enum.valueOf(enumType, val));
+                }
+            }
+        }
+        return result;
+    }
+
 }

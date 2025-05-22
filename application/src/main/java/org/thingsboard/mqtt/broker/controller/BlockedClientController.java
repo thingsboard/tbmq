@@ -17,9 +17,11 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,7 +29,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
@@ -36,9 +37,6 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClien
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.util.BlockedClientKeyUtil;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -49,7 +47,7 @@ public class BlockedClientController extends BaseController {
     private final BlockedClientPageService blockedClientPageService;
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @PostMapping(value = "")
     @ResponseBody
     public BlockedClientDto saveBlockedClient(@RequestBody BlockedClient blockedClient) throws ThingsboardException {
         checkNotNull(blockedClient);
@@ -57,7 +55,7 @@ public class BlockedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"value", "type"}, method = RequestMethod.DELETE)
+    @DeleteMapping(value = "", params = {"value", "type"})
     @ResponseBody
     public void deleteBlockedClient(@RequestParam BlockedClientType type,
                                     @RequestParam String value,
@@ -68,14 +66,14 @@ public class BlockedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/ttl", method = RequestMethod.GET)
+    @GetMapping(value = "/ttl")
     @ResponseBody
     public int getBlockedClientsTimeToLive() {
         return blockedClientService.getBlockedClientCleanupTtl();
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @GetMapping(value = "", params = {"pageSize", "page"})
     @ResponseBody
     public PageData<BlockedClientDto> getBlockedClients(@RequestParam int pageSize,
                                                         @RequestParam int page,
@@ -87,7 +85,7 @@ public class BlockedClientController extends BaseController {
     }
 
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/v2", params = {"pageSize", "page"}, method = RequestMethod.GET)
+    @GetMapping(value = "/v2", params = {"pageSize", "page"})
     @ResponseBody
     public PageData<BlockedClientDto> getBlockedClientsV2(@RequestParam int pageSize,
                                                           @RequestParam int page,
@@ -99,22 +97,8 @@ public class BlockedClientController extends BaseController {
                                                           @RequestParam(required = false) String[] typeList,
                                                           @RequestParam(required = false) String value,
                                                           @RequestParam(required = false) String[] regexMatchTargetList) throws ThingsboardException {
-        Set<BlockedClientType> types = new HashSet<>();
-        if (typeList != null) {
-            for (String strType : typeList) {
-                if (!StringUtils.isEmpty(strType)) {
-                    types.add(BlockedClientType.valueOf(strType));
-                }
-            }
-        }
-        List<RegexMatchTarget> regexMatchTargets = new ArrayList<>();
-        if (regexMatchTargetList != null) {
-            for (String strRegexMatchTarget : regexMatchTargetList) {
-                if (!StringUtils.isEmpty(strRegexMatchTarget)) {
-                    regexMatchTargets.add(RegexMatchTarget.valueOf(strRegexMatchTarget));
-                }
-            }
-        }
+        Set<BlockedClientType> types = parseEnumSet(BlockedClientType.class, typeList);
+        Set<RegexMatchTarget> regexMatchTargets = parseEnumSet(RegexMatchTarget.class, regexMatchTargetList);
 
         TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
         return checkNotNull(blockedClientPageService.getBlockedClients(new BlockedClientQuery(pageLink, types, value, regexMatchTargets)));

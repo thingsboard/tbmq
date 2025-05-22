@@ -206,7 +206,7 @@ class BlockedClientPageServiceImplTest {
     @Test
     void givenBlockedClients_whenFilteredByRegexMatchTarget_thenOnlyMatchingTargetsReturned() {
         BlockedClientQuery query = new BlockedClientQuery();
-        query.setRegexMatchTargets(List.of(RegexMatchTarget.BY_USERNAME));
+        query.setRegexMatchTargets(Set.of(RegexMatchTarget.BY_USERNAME));
         query.setPageLink(new TimePageLink(10, 0));
         var blockedClientMap = getBlockedClientsMap(List.of(
                 new RegexBlockedClient(1000L, "desc", ".*admin.*", RegexMatchTarget.BY_USERNAME),
@@ -239,7 +239,7 @@ class BlockedClientPageServiceImplTest {
     void givenBlockedClients_whenFilteredByMultipleCriteria_thenOnlyMatchingClientsReturned() {
         BlockedClientQuery query = new BlockedClientQuery();
         query.setTypes(Set.of(BlockedClientType.REGEX));
-        query.setRegexMatchTargets(List.of(RegexMatchTarget.BY_CLIENT_ID));
+        query.setRegexMatchTargets(Set.of(RegexMatchTarget.BY_CLIENT_ID));
         query.setValue("abc");
         query.setPageLink(new TimePageLink(10, 0, "abc", null, 1000L, 6000L));
 
