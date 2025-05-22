@@ -31,6 +31,8 @@ import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -61,11 +63,15 @@ public class BrokerInitializerTest {
     @MockBean
     RetainedMsgConsumer retainedMsgConsumer;
     @MockBean
+    BlockedClientConsumerService blockedClientConsumerService;
+    @MockBean
     ClientSessionService clientSessionService;
     @MockBean
     ClientSubscriptionService clientSubscriptionService;
     @MockBean
     RetainedMsgListenerService retainedMsgListenerService;
+    @MockBean
+    BlockedClientService blockedClientService;
     @MockBean
     ActorSystemContext actorSystemContext;
     @MockBean

@@ -276,7 +276,7 @@ public class ActorProcessorImpl implements ActorProcessor {
                 MqttReasonCodeResolver.connectionRefusedNotAuthorized(sessionCtx));
     }
 
-    private void sendConnectionRefusedBannedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
+    void sendConnectionRefusedBannedMsgAndCloseChannel(ClientSessionCtx sessionCtx) {
         sendConnectionRefusedMsgAndCloseChannel(sessionCtx,
                 MqttReasonCodeResolver.connectionRefusedBanned(sessionCtx));
     }
