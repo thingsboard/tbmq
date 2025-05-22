@@ -15,10 +15,10 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
-import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientQuery;
 
 public interface BlockedClientPageService {
 

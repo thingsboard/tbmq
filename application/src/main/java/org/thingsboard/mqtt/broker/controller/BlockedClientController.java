@@ -23,17 +23,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientPageService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientQuery;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.util.BlockedClientKeyUtil;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -83,11 +89,27 @@ public class BlockedClientController extends BaseController {
                                                           @RequestParam(required = false) String sortOrder,
                                                           @RequestParam(required = false) Long startTime,
                                                           @RequestParam(required = false) Long endTime,
-                                                          @RequestParam(required = false) String type,
+                                                          @RequestParam(required = false) String[] typeList,
                                                           @RequestParam(required = false) String value,
-                                                          @RequestParam(required = false) String regexMatchTarget) throws ThingsboardException {
+                                                          @RequestParam(required = false) String[] regexMatchTargetList) throws ThingsboardException {
+        Set<BlockedClientType> types = new HashSet<>();
+        if (typeList != null) {
+            for (String strType : typeList) {
+                if (!StringUtils.isEmpty(strType)) {
+                    types.add(BlockedClientType.valueOf(strType));
+                }
+            }
+        }
+        List<RegexMatchTarget> regexMatchTargets = new ArrayList<>();
+        if (regexMatchTargetList != null) {
+            for (String strRegexMatchTarget : regexMatchTargetList) {
+                if (!StringUtils.isEmpty(strRegexMatchTarget)) {
+                    regexMatchTargets.add(RegexMatchTarget.valueOf(strRegexMatchTarget));
+                }
+            }
+        }
 
         TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
-        return checkNotNull(blockedClientPageService.getBlockedClients(new BlockedClientQuery(pageLink)));
+        return checkNotNull(blockedClientPageService.getBlockedClients(new BlockedClientQuery(pageLink, types, value, regexMatchTargets)));
     }
 }

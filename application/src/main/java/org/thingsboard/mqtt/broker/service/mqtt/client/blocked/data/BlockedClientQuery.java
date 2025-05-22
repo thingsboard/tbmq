@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.client.blocked;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+
+import java.util.List;
+import java.util.Set;
 
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class BlockedClientQuery {
 
     private TimePageLink pageLink;
-    // ...
+    private Set<BlockedClientType> types;
+    private String value;
+    private List<RegexMatchTarget> regexMatchTargets;
 }

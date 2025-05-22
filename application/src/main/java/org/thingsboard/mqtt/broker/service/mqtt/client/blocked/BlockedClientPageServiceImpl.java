@@ -18,15 +18,23 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.client.blocked.BlockedClientQuery;
+import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.util.ComparableUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientQuery;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,9 +79,29 @@ public class BlockedClientPageServiceImpl implements BlockedClientPageService {
 
     @Override
     public PageData<BlockedClientDto> getBlockedClients(BlockedClientQuery query) {
+        Map<BlockedClientType, Map<String, BlockedClient>> blockedClients = blockedClientService.getBlockedClients();
 
-        return null;
+        TimePageLink pageLink = query.getPageLink();
+        String textSearch = pageLink.getTextSearch();
+        Long startTime = pageLink.getStartTime();
+        Long endTime = pageLink.getEndTime();
+        Set<BlockedClientType> types = query.getTypes();
+        String value = query.getValue();
+        List<RegexMatchTarget> regexMatchTargets = query.getRegexMatchTargets();
+
+        Predicate<BlockedClient> textSearchFilter = bc -> StringUtils.isEmpty(textSearch) || bc.getValue().toLowerCase().contains(textSearch.toLowerCase());
+        Predicate<BlockedClient> timeFilter = bc -> (startTime == null || bc.getExpirationTime() >= startTime) && (endTime == null || bc.getExpirationTime() <= endTime);
+        Predicate<BlockedClient> typeFilter = bc -> CollectionUtils.isEmpty(types) || types.contains(bc.getType());
+        Predicate<BlockedClient> valueFilter = bc -> StringUtils.isEmpty(value) || bc.getValue().toLowerCase().contains(value.toLowerCase());
+        Predicate<BlockedClient> regexMatchTargetFilter = bc -> CollectionUtils.isEmpty(regexMatchTargets) || bc.getRegexMatchTarget() != null && regexMatchTargets.contains(bc.getRegexMatchTarget());
+
+        List<BlockedClient> filteredBlockedClients = blockedClients
+                .values().stream()
+                .flatMap(typeMap -> typeMap.values().stream())
+                .filter(textSearchFilter.and(typeFilter).and(valueFilter).and(timeFilter).and(regexMatchTargetFilter))
+                .toList();
+
+        return mapToPageDataResponse(filteredBlockedClients, pageLink);
     }
-
 
 }
