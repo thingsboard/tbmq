@@ -19,6 +19,7 @@ import { MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router } from "@angular/router";
 
 @Component({
     selector: 'tb-help-page',
@@ -29,12 +30,18 @@ import { TranslateModule } from '@ngx-translate/core';
 export class HelpPageComponent {
 
   readonly page = input<string>();
+  readonly label = input<string>('help.help-page');
+  readonly tooltip = input<string>('help.goto-help-page');
+  readonly icon = input<string>('help');
 
-  constructor() {
+  constructor(private router: Router) {
   }
 
   navigate() {
-    window.open(this.page(), '_blank');
+    if (this.page().startsWith('http')) {
+      window.open(this.page(), '_blank');
+    }
+    this.router.navigate([this.page()]);
   }
 }
 

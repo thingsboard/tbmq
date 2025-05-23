@@ -15,10 +15,22 @@
     limitations under the License.
 
 -->
-<button mat-stroked-button color="primary"
-        (click)="navigate()"
-        [matTooltip]="tooltip() | translate">
-  <mat-icon color="primary" class="material-icons">{{ icon() }}</mat-icon>
-  <span translate>{{ label() }}</span>
-</button>
-
+<section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration">
+  @switch (providerType()) {
+    @case (credentialsType.SSL) {
+      <tb-ssl-provider-config-form
+        formControlName="configuration"
+        [provider]="provider()"
+        [isEdit]="isEdit()">
+      </tb-ssl-provider-config-form>
+    }
+    @case (credentialsType.JWT) {
+      <tb-jwt-provider-config-form
+        formControlName="configuration"
+        [provider]="provider()"
+        [isEdit]="isEdit()">
+      </tb-jwt-provider-config-form>
+    }
+    @default {}
+  }
+</section>

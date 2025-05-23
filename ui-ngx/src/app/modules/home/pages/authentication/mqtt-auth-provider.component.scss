@@ -14,18 +14,4 @@
  * limitations under the License.
  */
 :host {
-  display: flex;
-  flex: 1 1 auto;
-  height: 70px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 0 12px;
-
-  ::ng-deep {
-    .mat-mdc-outlined-button.mat-mdc-button-base {
-      width: 100%;
-      height: 100%;
-    }
-  }
 }

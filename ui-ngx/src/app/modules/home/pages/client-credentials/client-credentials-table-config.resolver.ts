@@ -109,6 +109,14 @@ export class ClientCredentialsTableConfigResolver {
         onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
+    this.config.headerActionDescriptors.push(
+      {
+        name: this.translate.instant('mqtt-client-credentials.connectivity-settings'),
+        icon: 'settings',
+        isEnabled: () => true,
+        onAction: ($event) => this.router.navigate(['/settings/general'])
+      }
+    )
 
     this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credential-title',
       { clientCredentialsName: mqttClient.name });

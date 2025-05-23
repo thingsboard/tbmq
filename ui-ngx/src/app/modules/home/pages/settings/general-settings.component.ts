@@ -165,7 +165,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   private getConnectivitySettings() {
-    this.settingsService.getGeneralSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(settings => this.processConnectivitySettings(settings));
+    this.settingsService.getAdminSettings<ConnectivitySettings>(connectivitySettingsKey).subscribe(settings => this.processConnectivitySettings(settings));
   }
 
   private getWebSocketGeneralSettings() {

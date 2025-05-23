@@ -15,10 +15,10 @@
     limitations under the License.
 
 -->
-<button mat-stroked-button color="primary"
-        (click)="navigate()"
-        [matTooltip]="tooltip() | translate">
-  <mat-icon color="primary" class="material-icons">{{ icon() }}</mat-icon>
-  <span translate>{{ label() }}</span>
-</button>
-
+<section [formGroup]="sslProviderConfigForm">
+  <section formGroupName="configuration">
+    <mat-slide-toggle formControlName="skipValidityCheckForClientCert">
+      {{ 'authentication.skip-cert-validity-check' | translate }}
+    </mat-slide-toggle>
+  </section>
+</section>
