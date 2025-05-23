@@ -149,13 +149,13 @@ public class BrokerInitializer {
         return currentNodeSessions;
     }
 
-    private void initRetainedMessages() throws QueuePersistenceException {
+    void initRetainedMessages() throws QueuePersistenceException {
         Map<String, RetainedMsg> allRetainedMessages = retainedMsgConsumer.initLoad();
         log.info("Loaded {} stored retained messages from Kafka.", allRetainedMessages.size());
         retainedMsgListenerService.init(allRetainedMessages);
     }
 
-    private void initBlockedClients() throws QueuePersistenceException {
+    void initBlockedClients() throws QueuePersistenceException {
         Map<String, BlockedClient> allBlockedClients = blockedClientConsumer.initLoad();
         log.info("Loaded {} stored blocked clients from Kafka", allBlockedClients.size());
         blockedClientService.init(allBlockedClients);
@@ -170,7 +170,7 @@ public class BrokerInitializer {
         persistentDownLinkConsumer.startConsuming();
     }
 
-    private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
+    void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
