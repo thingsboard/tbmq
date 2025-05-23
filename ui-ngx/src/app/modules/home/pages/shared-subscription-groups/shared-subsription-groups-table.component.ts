@@ -20,9 +20,9 @@ import { TranslateService } from '@ngx-translate/core';
 import { SharedSubscriptionService } from '@core/http/shared-subscription.service';
 import {
   SharedSubscriptionGroupsTableConfig
-} from "@home/pages/shared-subscription-groups/shared-subscription-groups-table-config";
-import { ClientSessionService } from "@core/http/client-session.service";
-import { MatDialog } from "@angular/material/dialog";
+} from '@home/pages/shared-subscription-groups/shared-subscription-groups-table-config';
+import { ClientSessionService } from '@core/http/client-session.service';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
     selector: 'tb-shared-subsriptions-groups-table',

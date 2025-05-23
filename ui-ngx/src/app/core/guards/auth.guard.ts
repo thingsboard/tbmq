@@ -26,7 +26,7 @@ import { enterZone } from '@core/operator/enterZone';
 import { Authority } from '@shared/models/authority.enum';
 import { DialogService } from '@core/services/dialog.service';
 import { isObject } from '@core/utils';
-import { AuthService } from "@core/http/auth.service";
+import { AuthService } from '@core/http/auth.service';
 
 @Injectable({
   providedIn: 'root'

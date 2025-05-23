@@ -30,7 +30,7 @@ import {
 import { SettingsService } from '@core/http/settings.service';
 import { takeUntil } from 'rxjs/operators';
 import { isUndefined } from '@core/utils';
-import { MqttJsClientService } from "@core/http/mqtt-js-client.service";
+import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 import { NgTemplateOutlet, AsyncPipe } from '@angular/common';
@@ -131,12 +131,19 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   saveConnectivitySettings() {
-    const connectivitySettings: AdminSettings<ConnectivitySettings> = JSON.parse(JSON.stringify(this.connectivitySettings));
-    connectivitySettings.jsonValue = {...connectivitySettings.jsonValue, ...this.connectivitySettingsForm.value};
-    this.settingsService.saveAdminSettings(connectivitySettings)
+    const settings = JSON.parse(JSON.stringify(this.connectivitySettings)) as AdminSettings<ConnectivitySettings>;
+    const form = this.connectivitySettingsForm.value;
+    for (const key of Object.keys(form)) {
+      settings.jsonValue[key].enabled = form[key].enabled;
+      if (form[key].enabled) {
+        settings.jsonValue[key].host = this.connectivitySettingsForm.value[key].host;
+        settings.jsonValue[key].port = this.connectivitySettingsForm.value[key].port.toString();
+      }
+    }
+    this.settingsService.saveAdminSettings(settings)
       .subscribe(settings => {
         this.processConnectivitySettings(settings);
-        this.settingsService.fetchConnectivitySettings().subscribe();
+        this.settingsService.getConnectivitySettings(settings.jsonValue).subscribe();
       });
   }
 

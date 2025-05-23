@@ -20,7 +20,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
-import { SharedSubscription } from "@shared/models/shared-subscription.model";
+import { SharedSubscription } from '@shared/models/shared-subscription.model';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';

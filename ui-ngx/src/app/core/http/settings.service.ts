@@ -23,7 +23,6 @@ import {
   AdminSettings,
   ConnectivitySettings,
   connectivitySettingsKey,
-  defaultConnectivitySettings,
   SecuritySettings, WebSocketSettings, webSocketSettingsKey
 } from '@shared/models/settings.models';
 import { ConfigService } from '@core/http/config.service';
@@ -63,12 +62,14 @@ export class SettingsService {
     return this.getGeneralSettings<WebSocketSettings>(webSocketSettingsKey);
   }
 
-  public fetchConnectivitySettings(): Observable<ConnectivitySettings> {
+  public getConnectivitySettings(newSettings = null): Observable<ConnectivitySettings> {
     return this.configService.fetchBrokerConfig().pipe(
       mergeMap((brokerConfig) => {
         return this.getGeneralSettings(connectivitySettingsKey).pipe(
           mergeMap(connectivitySettings => {
-            this.connectivitySettings = this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
+            console.log('newSettings', newSettings);
+            console.log('connectivitySettings', connectivitySettings);
+            this.connectivitySettings = newSettings || this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
             // @ts-ignore
             window.tbmqSettings = this.connectivitySettings;
             return of(this.connectivitySettings);
@@ -79,7 +80,7 @@ export class SettingsService {
   }
 
   private buildConnectivitySettings(settings: ConnectivitySettings, brokerConfig: BrokerConfig): ConnectivitySettings {
-    const connectivitySettings = JSON.parse(JSON.stringify(defaultConnectivitySettings));
+    const connectivitySettings = JSON.parse(JSON.stringify(settings));
     connectivitySettings.mqtt.port = brokerConfig.tcpPort;
     connectivitySettings.mqtts.port = brokerConfig.tlsPort;
     connectivitySettings.ws.port = brokerConfig.wsPort;
