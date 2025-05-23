@@ -37,8 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
@@ -73,11 +72,11 @@ import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFail
 public class ActorProcessorImpl implements ActorProcessor {
 
     private final DisconnectService disconnectService;
-    private final AuthenticationService authenticationService;
     private final EnhancedAuthenticationService enhancedAuthenticationService;
     private final MqttMessageGenerator mqttMessageGenerator;
     private final ClientMqttActorManager clientMqttActorManager;
     private final UnauthorizedClientService unauthorizedClientService;
+    private final AuthorizationRoutingService authorizationRoutingService;
 
     @Override
     public void onInit(ClientActorState state, SessionInitMsg sessionInitMsg) {
@@ -92,7 +91,8 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
-        AuthResponse authResponse = authenticateClient(authContext);
+        // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc.)
+        AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
         if (!authResponse.isSuccess()) {
             log.warn("[{}] Connection is not established due to: {}", state.getClientId(), CONNECTION_REFUSED_NOT_AUTHORIZED);
@@ -334,18 +334,6 @@ public class ActorProcessorImpl implements ActorProcessor {
 
     private void disconnect(ClientActorState state, MqttDisconnectMsg disconnectMsg) {
         disconnectService.disconnect(state, disconnectMsg);
-    }
-
-    private AuthResponse authenticateClient(AuthContext authContext) {
-        try {
-            // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc.)
-            return authenticationService.authenticate(authContext);
-        } catch (AuthenticationException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Authentication failed.", authContext.getClientId(), e);
-            }
-            return AuthResponse.failure(e.getMessage());
-        }
     }
 
     private AuthContext buildAuthContext(ClientActorState state, SessionInitMsg sessionInitMsg) {

@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.system;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
+import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
-public interface SystemSettingsNotificationService {
+@Service
+public class DefaultJwtAuthenticationService implements JwtAuthenticationService {
 
-    void onMqttAuthSettingUpdate(MqttAuthSettings mqttAuthSettings);
+    @Override
+    public AuthResponse authenticate(AuthContext authContext) {
+        return AuthResponse.defaultAuthResponse();
+    }
 
 }

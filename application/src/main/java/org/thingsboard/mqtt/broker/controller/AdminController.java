@@ -33,7 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.model.MqttAuthSettings;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
@@ -104,7 +104,6 @@ public class AdminController extends BaseController {
                         ((ObjectNode) adminSettings.getJsonValue()).remove("password");
                     }
                     case MQTT_AUTHORIZATION -> {
-                        // TODO: check for NPE
                         var mqttAuthSettings = JacksonUtil.convertValue(adminSettings.getJsonValue(), MqttAuthSettings.class);
                         systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
                     }

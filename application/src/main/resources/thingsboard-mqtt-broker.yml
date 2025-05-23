@@ -803,10 +803,6 @@ spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATE
 # Security parameters
 security:
   mqtt:
-    # BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
-    # and then by 'ssl' provider if 'basic' is not successful;
-    # the latter means only one attempt is done according to the listener communication chosen (see listener.tcp/listener.ssl)
-    auth_strategy: "${SECURITY_MQTT_AUTH_STRATEGY:BOTH}"
     basic:
       # If enabled the server will try to authenticate client with clientId and/or username and/or password
       enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"

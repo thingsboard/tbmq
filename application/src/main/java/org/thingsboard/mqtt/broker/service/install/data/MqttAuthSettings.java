@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security.model;
+package org.thingsboard.mqtt.broker.service.install.data;
 
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -28,4 +31,15 @@ public class MqttAuthSettings implements Serializable {
 
     private boolean useListenerBasedProviderOnly;
     private boolean jwtFirst;
+
+    public static AdminSettings createDefaultMqttAuthSettings() {
+        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
+        mqttAuthSettings.setUseListenerBasedProviderOnly(false);
+        mqttAuthSettings.setJwtFirst(false);
+
+        AdminSettings adminSettings = new AdminSettings();
+        adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
+        adminSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
+        return adminSettings;
+    }
 }

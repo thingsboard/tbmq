@@ -51,7 +51,7 @@ public class DefaultAuthenticationServiceTest {
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
 
         AuthContext authContext = getAuthContext(null);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, false);
 
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.DEVICE, authResponse.getClientType());
@@ -66,12 +66,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(null);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, true);
 
         Assert.assertFalse(authResponse.isSuccess());
         Assert.assertNull(authResponse.getClientType());
@@ -87,12 +86,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, null, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, true);
 
         Assert.assertFalse(authResponse.isSuccess());
         Assert.assertNull(authResponse.getClientType());
@@ -108,12 +106,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, true);
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.APPLICATION, authResponse.getClientType());
         Assert.assertNull(authResponse.getAuthRulePatterns());
@@ -127,12 +124,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.SINGLE);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(null);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, true);
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.DEVICE, authResponse.getClientType());
     }
@@ -145,12 +141,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(null);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, false);
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.DEVICE, authResponse.getClientType());
     }
@@ -164,13 +159,12 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(false, ClientType.DEVICE, null));
         when(sslMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.APPLICATION, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, false);
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.APPLICATION, authResponse.getClientType());
     }
@@ -184,12 +178,11 @@ public class DefaultAuthenticationServiceTest {
         mockGetActiveAuthProviders(basicMqttClientAuthProvider, sslMqttClientAuthProvider);
 
         authenticationService = spy(new DefaultAuthenticationService(mqttClientAuthProviderManager));
-        authenticationService.setAuthStrategy(AuthStrategy.BOTH);
 
         when(basicMqttClientAuthProvider.authenticate(any())).thenReturn(new AuthResponse(true, ClientType.DEVICE, null));
 
         AuthContext authContext = getAuthContext(sslHandler);
-        AuthResponse authResponse = authenticationService.authenticate(authContext);
+        AuthResponse authResponse = authenticationService.authenticate(authContext, false);
         Assert.assertTrue(authResponse.isSuccess());
         Assert.assertEquals(ClientType.DEVICE, authResponse.getClientType());
     }

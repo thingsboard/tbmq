@@ -21,6 +21,6 @@ import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
 public interface AuthenticationService {
 
-    AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
+    AuthResponse authenticate(AuthContext authContext, boolean useListenerBasedProviderOnly);
 
 }

@@ -42,7 +42,7 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
-import org.thingsboard.mqtt.broker.service.auth.AuthenticationService;
+import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
@@ -91,24 +91,24 @@ public class ActorProcessorImplTest {
     ActorProcessorImpl actorProcessor;
 
     DisconnectService disconnectService;
-    AuthenticationService authenticationService;
     EnhancedAuthenticationService enhancedAuthenticationService;
     MqttMessageGenerator mqttMessageGenerator;
     ClientMqttActorManager clientMqttActorManager;
     UnauthorizedClientService unauthorizedClientService;
+    AuthorizationRoutingService authorizationRoutingService;
 
     ClientActorState clientActorState;
 
     @Before
     public void setUp() {
         disconnectService = mock(DisconnectService.class);
-        authenticationService = mock(AuthenticationService.class);
         mqttMessageGenerator = spy(MqttMessageGenerator.class);
         enhancedAuthenticationService = mock(EnhancedAuthenticationService.class);
         clientMqttActorManager = mock(ClientMqttActorManager.class);
         unauthorizedClientService = mock(UnauthorizedClientService.class);
-        actorProcessor = spy(new ActorProcessorImpl(disconnectService, authenticationService, enhancedAuthenticationService,
-                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientService));
+        authorizationRoutingService = mock(AuthorizationRoutingService.class);
+        actorProcessor = spy(new ActorProcessorImpl(disconnectService, enhancedAuthenticationService,
+                mqttMessageGenerator, clientMqttActorManager, unauthorizedClientService, authorizationRoutingService));
 
         clientActorState = new DefaultClientActorState("clientId", false, 0);
     }
@@ -145,11 +145,11 @@ public class ActorProcessorImplTest {
     }
 
     @Test
-    public void givenDisconnectedSession_whenOnInit_thenOk() throws AuthenticationException {
+    public void givenDisconnectedSession_whenOnInit_thenOk() {
         updateSessionState(SessionState.DISCONNECTED);
 
         AuthResponse authResponse = getAuthResponse(true);
-        doReturn(authResponse).when(authenticationService).authenticate(any());
+        doReturn(authResponse).when(authorizationRoutingService).executeAuthFlow(any());
         when(unauthorizedClientService.remove(any())).thenReturn(Futures.immediateFuture(null));
 
         SessionInitMsg sessionInitMsg = getSessionInitMsg(getClientSessionCtx());
@@ -177,7 +177,7 @@ public class ActorProcessorImplTest {
 
         assertEquals(SessionState.DISCONNECTING, clientActorState.getCurrentSessionState());
         verify(disconnectService, times(1)).disconnect(any(), any());
-        verify(authenticationService, never()).authenticate(any());
+        verify(authorizationRoutingService, never()).executeAuthFlow(any());
     }
 
     @Test
@@ -185,7 +185,7 @@ public class ActorProcessorImplTest {
         updateSessionState(SessionState.DISCONNECTED);
 
         AuthResponse authResponse = getAuthResponse(false);
-        doReturn(authResponse).when(authenticationService).authenticate(any());
+        doReturn(authResponse).when(authorizationRoutingService).executeAuthFlow(any());
         when(unauthorizedClientService.save(any())).thenReturn(Futures.immediateFuture(null));
 
         doNothing().when(actorProcessor).sendConnectionRefusedNotAuthorizedMsgAndCloseChannel(any());

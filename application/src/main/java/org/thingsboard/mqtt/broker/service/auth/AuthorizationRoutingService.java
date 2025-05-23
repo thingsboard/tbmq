@@ -16,9 +16,12 @@
 package org.thingsboard.mqtt.broker.service.auth;
 
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
 public interface AuthorizationRoutingService {
 
     void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto);
 
+    AuthResponse executeAuthFlow(AuthContext authContext);
 }

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.system;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
-public interface SystemSettingsNotificationService {
+public interface JwtAuthenticationService {
 
-    void onMqttAuthSettingUpdate(MqttAuthSettings mqttAuthSettings);
+    AuthResponse authenticate(AuthContext authContext);
 
 }
