@@ -24,8 +24,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -86,10 +84,6 @@ public class BrokerInitializerTest {
     RetainedMsgListenerService retainedMsgListenerService;
     @MockBean
     BlockedClientService blockedClientService;
-    @MockBean
-    ActorSystemContext actorSystemContext;
-    @MockBean
-    TbActorSystem actorSystem;
     @MockBean
     ClientSessionEventService clientSessionEventService;
     @MockBean
@@ -231,7 +225,7 @@ public class BrokerInitializerTest {
 
         verify(clientSubscriptionConsumer).initLoad();
         verify(clientSubscriptionService).init(anyMap());
-        verify(clientSubscriptionConsumer).listen(any());
+        verify(clientSubscriptionService).startListening(any());
 
         verify(retainedMsgConsumer).initLoad();
         verify(retainedMsgListenerService).init(anyMap());

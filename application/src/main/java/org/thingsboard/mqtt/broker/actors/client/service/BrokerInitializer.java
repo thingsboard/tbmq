@@ -22,17 +22,9 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.actors.TbActorRef;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
-import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
-import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -75,9 +67,6 @@ public class BrokerInitializer {
     private final RetainedMsgListenerService retainedMsgListenerService;
     private final BlockedClientService blockedClientService;
 
-    private final ActorSystemContext actorSystemContext;
-    private final TbActorSystem actorSystem;
-
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final RateLimitCacheService rateLimitCacheService;
@@ -98,7 +87,7 @@ public class BrokerInitializer {
             initClientSubscriptions(allClientSessions);
 
             clientSessionService.startListening(clientSessionConsumer);
-            startSubscriptionListening();
+            clientSubscriptionService.startListening(clientSubscriptionConsumer);
 
             initRetainedMessages();
             retainedMsgListenerService.startListening(retainedMsgConsumer);
@@ -189,35 +178,6 @@ public class BrokerInitializer {
                 }
             }
         }
-    }
-
-    private void startSubscriptionListening() {
-        clientSubscriptionConsumer.listen((clientId, serviceId, topicSubscriptions) -> {
-            if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Msg was already processed.", clientId);
-                }
-                return false;
-            }
-
-            TbActorRef clientActorRef = getActor(clientId);
-            if (clientActorRef == null) {
-                // TODO: get ClientInfo and check if clientId is generated
-                clientActorRef = createRootActor(clientId);
-            }
-
-            clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
-            return true;
-        });
-    }
-
-    private TbActorRef createRootActor(String clientId) {
-        return actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                new ClientActorCreator(actorSystemContext, clientId, true));
-    }
-
-    private TbActorRef getActor(String clientId) {
-        return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
     }
 
     boolean isCleanSession(ClientSessionInfo clientSessionInfo) {
