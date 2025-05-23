@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -56,6 +57,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     private final Map<BlockedClientType, Map<String, BlockedClient>> blockedClientMap;
 
     @Getter
+    @Setter
     @Value("${mqtt.blocked-client.cleanup.ttl:10080}")
     private int blockedClientCleanupTtl;
 
@@ -78,7 +80,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     @Override
     public void startListening(BlockedClientConsumerService consumerService) {
-        consumerService.listen(this::processRetainedMsgUpdate);
+        consumerService.listen(this::processBlockedClientUpdate);
     }
 
     @Override
@@ -198,7 +200,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
         }
     }
 
-    private void processRetainedMsgUpdate(String key, String serviceId, BlockedClient blockedClient) {
+    void processBlockedClientUpdate(String key, String serviceId, BlockedClient blockedClient) {
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
             log.trace("[{}] Blocked client was already processed", key);
             return;
