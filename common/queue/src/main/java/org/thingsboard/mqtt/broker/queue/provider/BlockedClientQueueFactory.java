@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.queue.provider;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
+import org.thingsboard.mqtt.broker.queue.TbQueueControlledOffsetConsumer;
+import org.thingsboard.mqtt.broker.queue.TbQueueProducer;
+import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 
-public interface SubscriptionChangesManager {
+public interface BlockedClientQueueFactory {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    TbQueueProducer<TbProtoQueueMsg<BlockedClientProto>> createProducer();
+
+    TbQueueControlledOffsetConsumer<TbProtoQueueMsg<BlockedClientProto>> createConsumer(String consumerId, String groupId);
 
 }

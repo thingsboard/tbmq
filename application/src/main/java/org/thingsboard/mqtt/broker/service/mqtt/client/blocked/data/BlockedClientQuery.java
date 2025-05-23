@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 
-public interface SubscriptionChangesManager {
+import java.util.Set;
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class BlockedClientQuery {
 
+    private TimePageLink pageLink;
+    private Set<BlockedClientType> types;
+    private String value;
+    private Set<RegexMatchTarget> regexMatchTargets;
 }

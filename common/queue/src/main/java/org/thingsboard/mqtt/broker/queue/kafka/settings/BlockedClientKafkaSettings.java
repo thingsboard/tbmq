@@ -13,12 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.queue.kafka.settings;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-public interface SubscriptionChangesManager {
+@Data
+@Component
+@ConfigurationProperties(prefix = "queue.kafka.blocked-client")
+public class BlockedClientKafkaSettings extends AbstractKafkaSettings {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    private String topic;
+    private String topicProperties;
+    private String additionalProducerConfig;
+    private String additionalConsumerConfig;
 
+    @Override
+    public String getKafkaTopic() {
+        return kafkaPrefix + topic;
+    }
 }

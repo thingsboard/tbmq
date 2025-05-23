@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.dto.BlockedClientDto;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientQuery;
 
-public interface SubscriptionChangesManager {
+public interface BlockedClientPageService {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    PageData<BlockedClientDto> getBlockedClients(PageLink pageLink);
+
+    PageData<BlockedClientDto> getBlockedClients(BlockedClientQuery query);
 
 }

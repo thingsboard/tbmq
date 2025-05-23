@@ -48,6 +48,9 @@ import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
@@ -92,6 +95,8 @@ public abstract class BaseController {
     protected UnauthorizedClientService unauthorizedClientService;
     @Autowired
     protected IntegrationService integrationService;
+    @Autowired
+    protected BlockedClientService blockedClientService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
@@ -234,6 +239,12 @@ public abstract class BaseController {
         return checkNotNull(retainedMsg);
     }
 
+    BlockedClient checkBlockedClient(BlockedClientType type, String key) throws ThingsboardException {
+        validateString(key, "Incorrect key " + key);
+        BlockedClient blockedClient = blockedClientService.getBlockedClient(type, key);
+        return checkNotNull(blockedClient);
+    }
+
     protected SecurityUser getCurrentUser() throws ThingsboardException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof SecurityUser) {
@@ -359,6 +370,18 @@ public abstract class BaseController {
             hasNext = totalElements > startIndex + entities.size();
         }
         return new PageData<>(entities, totalPages, totalElements, hasNext);
+    }
+
+    protected <E extends Enum<E>> Set<E> parseEnumSet(Class<E> enumType, String[] values) {
+        Set<E> result = new HashSet<>();
+        if (values != null) {
+            for (String val : values) {
+                if (!StringUtils.isEmpty(val)) {
+                    result.add(Enum.valueOf(enumType, val));
+                }
+            }
+        }
+        return result;
     }
 
 }

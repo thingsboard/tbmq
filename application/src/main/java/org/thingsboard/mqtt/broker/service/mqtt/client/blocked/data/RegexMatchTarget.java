@@ -13,12 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import lombok.Getter;
 
-public interface SubscriptionChangesManager {
+@Getter
+public enum RegexMatchTarget {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    BY_CLIENT_ID("byID"),
+    BY_USERNAME("byUN"),
+    BY_IP_ADDRESS("byIP");
 
+    private final String label;
+
+    RegexMatchTarget(String label) {
+        this.label = label;
+    }
 }

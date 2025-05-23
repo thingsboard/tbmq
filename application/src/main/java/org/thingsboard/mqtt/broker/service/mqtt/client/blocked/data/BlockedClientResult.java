@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import lombok.Data;
 
-public interface SubscriptionChangesManager {
+@Data
+public class BlockedClientResult {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    private final boolean isBlocked;
+    private final BlockedClient blockedClient;
 
+    public static BlockedClientResult blocked(BlockedClient blockedClient) {
+        return new BlockedClientResult(true, blockedClient);
+    }
+
+    public static BlockedClientResult notBlocked() {
+        return new BlockedClientResult(false, null);
+    }
+
+    public String getKey() {
+        return blockedClient.getKey();
+    }
 }
