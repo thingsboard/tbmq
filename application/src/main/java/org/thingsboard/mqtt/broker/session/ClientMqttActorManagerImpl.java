@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
@@ -168,6 +169,16 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
             clientActorRef = createRootActor(clientId, true);
         }
         clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
+    }
+
+    @Override
+    public void processSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg msg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            // TODO: pass correct 'isClientIdGenerated' here
+            clientActorRef = createRootActor(clientId, true);
+        }
+        clientActorRef.tellWithHighPriority(msg);
     }
 
     private TbActorRef createRootActor(String clientId, boolean isClientIdGenerated) {
