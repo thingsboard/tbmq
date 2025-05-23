@@ -51,10 +51,10 @@ import {
 } from '@angular/material/expansion';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatInput } from '@angular/material/input';
-import { MatSlideToggle } from "@angular/material/slide-toggle";
-import { ContentType, contentTypesMap } from "@shared/models/constants";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { ContentType, contentTypesMap } from '@shared/models/constants';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
 
 @Component({

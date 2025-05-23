@@ -21,7 +21,7 @@ import { DOCUMENT } from '@angular/common';
 import { WINDOW } from '@core/services/window.service';
 import { Tokens, marked, TokenizerObject} from 'marked';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ConnectivitySettings, defaultConnectivitySettings } from '@shared/models/settings.models';
+import { ConnectivitySettings, DEFAULT_HOST } from '@shared/models/settings.models';
 
 const copyCodeBlock = '{:copy-code}';
 const codeStyleRegex = '^{:code-style="(.*)"}\n';
@@ -35,16 +35,9 @@ const targetBlankBlock = '{:target=&quot;_blank&quot;}';
 export class MarkedOptionsService implements MarkedOptions {
 
   renderer = new MarkedRenderer();
-  headerIds = true;
-  gfm = true;
   breaks = false;
-  pedantic = false;
-  smartLists = true;
-  smartypants = false;
-  mangle = false;
 
   private renderer2 = new MarkedRenderer();
-
   private id = 1;
 
   constructor(private translate: TranslateService,
@@ -208,27 +201,27 @@ function processCode(code: string): CodeContext {
   };
   if (context.code.endsWith(copyCodeBlock)) {
     // @ts-ignore
-    const connectivitySettings: ConnectivitySettings = window.tbmqSettings || defaultConnectivitySettings;
+    const connectivitySettings: ConnectivitySettings = window.tbmqSettings;
     if (code.includes('{:mqttHost}')) {
-      context.code = context.code.replace('{:mqttHost}', connectivitySettings.mqtt.host);
+      context.code = context.code.replace('{:mqttHost}', connectivitySettings.mqtt.host || DEFAULT_HOST);
     }
     if (code.includes('{:mqttPort}')) {
       context.code = context.code.replace('{:mqttPort}', connectivitySettings.mqtt.port.toString());
     }
     if (code.includes('{:mqttsHost}')) {
-      context.code = context.code.replace('{:mqttsHost}', connectivitySettings.mqtts.host);
+      context.code = context.code.replace('{:mqttsHost}', connectivitySettings.mqtts.host || DEFAULT_HOST);
     }
     if (code.includes('{:mqttsPort}')) {
       context.code = context.code.replace('{:mqttsPort}', connectivitySettings.mqtts.port.toString());
     }
     if (code.includes('{:wsHost}')) {
-      context.code = context.code.replace('{:wsHost}', connectivitySettings.ws.host);
+      context.code = context.code.replace('{:wsHost}', connectivitySettings.ws.host || DEFAULT_HOST);
     }
     if (code.includes('{:wsPort}')) {
       context.code = context.code.replace('{:wsPort}', connectivitySettings.ws.port.toString());
     }
     if (code.includes('{:wssHost}')) {
-      context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.host);
+      context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.host || DEFAULT_HOST);
     }
     if (code.includes('{:wssHost}')) {
       context.code = context.code.replace('{:wssHost}', connectivitySettings.wss.port.toString());

@@ -38,7 +38,7 @@ import {
 import { MatChipEditedEvent, MatChipInputEvent, MatChipGrid, MatChipRow, MatChipRemove, MatChipInput } from '@angular/material/chips';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { clientUserNameRandom } from '@shared/models/ws-client.model';
-import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatSuffix, MatHint } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';

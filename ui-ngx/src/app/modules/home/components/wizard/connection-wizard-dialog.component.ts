@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { ChangeDetectorRef, Component, Inject, viewChild } from '@angular/core';
+import { Component, Inject, viewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions } from '@angular/material/dialog';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -51,7 +51,7 @@ import {
 import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { BasicClientCredentials } from '@home/pages/client-credentials/client-credentials.component';
 import { WebSocketConnectionService } from '@core/http/ws-connection.service';
-import { ConnectivitySettings } from '@shared/models/settings.models';
+import { ConnectivitySettings, DEFAULT_HOST } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { MatToolbar } from '@angular/material/toolbar';
 import { TranslateModule } from '@ngx-translate/core';
@@ -126,12 +126,12 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   private urlConfig = {
     [WsAddressProtocolType.WS]: {
       protocol: 'ws://',
-      host: this.connectivitySettings.ws.host,
+      host: this.connectivitySettings.ws.host || DEFAULT_HOST,
       port: this.connectivitySettings.ws.port
     },
     [WsAddressProtocolType.WSS]: {
       protocol: 'wss://',
-      host: this.connectivitySettings.wss.host,
+      host: this.connectivitySettings.wss.host || DEFAULT_HOST,
       port: this.connectivitySettings.wss.port
     }
   };
@@ -145,7 +145,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
               private breakpointObserver: BreakpointObserver,
               private settingsService: SettingsService,
               private fb: FormBuilder,
-              private cd: ChangeDetectorRef,
               @Inject(MAT_DIALOG_DATA) public data: ConnectionDialogData) {
     super(store, router, dialogRef);
     this.connection = this.data.entity;

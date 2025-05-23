@@ -25,7 +25,7 @@ import {
   GettingStartedLink
 } from '@shared/models/getting-started.model';
 import { ConfigService } from '@core/http/config.service';
-import { animatedScroll } from "@core/utils";
+import { animatedScroll } from '@core/utils';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
 

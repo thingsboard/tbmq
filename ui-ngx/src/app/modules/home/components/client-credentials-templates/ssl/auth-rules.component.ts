@@ -26,7 +26,7 @@ import {
   SslAuthRulesMapping,
   SslCredentialsAuthRules
 } from '@shared/models/credentials.model';
-import { ENTER, TAB } from "@angular/cdk/keycodes";
+import { ENTER, TAB } from '@angular/cdk/keycodes';
 import { MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelDescription } from '@angular/material/expansion';
 import { TranslateModule } from '@ngx-translate/core';
 

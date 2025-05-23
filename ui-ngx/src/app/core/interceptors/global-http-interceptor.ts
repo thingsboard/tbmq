@@ -28,7 +28,7 @@ import { ActionLoadFinish, ActionLoadStart } from './load.actions';
 import { ActionNotificationShow } from '@app/core/notification/notification.actions';
 import { DialogService } from '@core/services/dialog.service';
 import { TranslateService } from '@ngx-translate/core';
-import { AuthService } from "@core/http/auth.service";
+import { AuthService } from '@core/http/auth.service';
 
 let tmpHeaders = {};
 

@@ -275,7 +275,7 @@ export class AuthService {
     const loadUserSubject = new ReplaySubject<AuthPayload>();
     forkJoin([
       this.validateJwtToken(doTokenRefresh),
-      this.settingsService.fetchConnectivitySettings()
+      this.settingsService.getConnectivitySettings()
     ]).subscribe(
       () => {
         const authPayload = {} as AuthPayload;
