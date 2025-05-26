@@ -34,8 +34,13 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBloc
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedClientProducerService;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -100,6 +105,95 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof UsernameBlockedClient).isTrue();
+    }
+
+    @Test
+    public void testDeserializeRegexBlockedClient_withValidRegex() {
+        ObjectNode objectNode = JacksonUtil.newObjectNode();
+        objectNode.put("type", "REGEX");
+        objectNode.put("pattern", "^client-[0-9]+$");
+        objectNode.put("regexMatchTarget", "BY_CLIENT_ID");
+        objectNode.put("expirationTime", System.currentTimeMillis());
+        objectNode.put("description", "valid regex test");
+
+        BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
+        assertThat(blockedClient).isInstanceOf(RegexBlockedClient.class);
+
+        RegexBlockedClient regexBlockedClient = (RegexBlockedClient) blockedClient;
+        assertThat(regexBlockedClient).isNotNull();
+        assertThat(regexBlockedClient.getCompiledPattern()).isNotNull();
+        assertThat(regexBlockedClient.matches("client-123")).isTrue();
+        assertThat(regexBlockedClient.matches("user-123")).isFalse();
+    }
+
+    @Test
+    public void testDeserializeRegexBlockedClient_withInvalidRegex() {
+        ObjectNode objectNode = JacksonUtil.newObjectNode();
+        objectNode.put("type", "REGEX");
+        objectNode.put("pattern", "[invalid-regex");
+        objectNode.put("regexMatchTarget", "BY_CLIENT_ID");
+        objectNode.put("expirationTime", System.currentTimeMillis());
+        objectNode.put("description", "invalid regex test");
+
+        assertThatThrownBy(() -> JacksonUtil.convertValue(objectNode, BlockedClient.class))
+                .isInstanceOf(IllegalArgumentException.class)
+                .cause()
+                .hasMessageContaining("Unclosed character class");
+    }
+
+    @Test
+    public void testCheckBlockedPerformanceWithRegexRule_Parallel() throws InterruptedException {
+        assertThat(service.getBlockedClients().get(BlockedClientType.REGEX)).isEmpty();
+
+        RegexBlockedClient regexBlockedClient = new RegexBlockedClient(
+                "^client-[0-9]+$", RegexMatchTarget.BY_CLIENT_ID
+        );
+        regexBlockedClient.setExpirationTime(System.currentTimeMillis() + 60_000);
+        regexBlockedClient.setDescription("Parallel regex test");
+
+        service.addBlockedClientAndPersist(regexBlockedClient);
+        assertThat(service.getBlockedClients().get(BlockedClientType.REGEX)).hasSize(1);
+
+        int threadCount = 4;
+        int callsPerThread = 250_000;
+        int totalCalls = threadCount * callsPerThread;
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(totalCalls);
+
+        String matchingClientId = "client-123";
+        String username = "user";
+        String ipAddress = "127.0.0.1";
+
+        AtomicInteger blockedCounter = new AtomicInteger(0);
+
+        long startTime = System.nanoTime();
+
+        for (int i = 0; i < totalCalls; i++) {
+            executor.submit(() -> {
+                try {
+                    BlockedClientResult result = service.checkBlocked(matchingClientId, username, ipAddress);
+                    if (result.isBlocked()) {
+                        blockedCounter.incrementAndGet();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        long durationNs = System.nanoTime() - startTime;
+        executor.shutdownNow();
+
+        double durationMs = durationNs / 1_000_000.0;
+
+        System.out.println("Blocked " + blockedCounter.get() + " times out of " + totalCalls);
+        System.out.printf("Total time: %.2f ms%n", durationMs);
+        System.out.printf("Average per call: %.4f ms%n", durationMs / totalCalls);
+
+        assertThat(blockedCounter.get()).isEqualTo(totalCalls);
+        assertThat(durationMs).isLessThan(5000);
     }
 
     @Test
@@ -221,7 +315,7 @@ class BlockedClientServiceImplTest {
 
     @Test
     void testExpiredClientIsIgnored() {
-        BlockedClient expiredClient = new ClientIdBlockedClient(System.currentTimeMillis() - 1000, null, CLIENT_ID);
+        BlockedClient expiredClient = new ClientIdBlockedClient(System.currentTimeMillis() - 60000, null, CLIENT_ID);
         service.addBlockedClient(expiredClient);
 
         BlockedClientResult result = service.checkBlocked(CLIENT_ID, null, null);

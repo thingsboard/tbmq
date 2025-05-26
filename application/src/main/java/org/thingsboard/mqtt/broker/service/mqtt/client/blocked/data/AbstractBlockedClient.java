@@ -34,6 +34,7 @@ public abstract class AbstractBlockedClient implements BlockedClient {
 
     @Override
     public String getKey() {
+        // Maybe improve to have this pre-computed
         return BlockedClientKeyUtil.generateKey(getType(), getValue(), getRegexMatchTarget());
     }
 
