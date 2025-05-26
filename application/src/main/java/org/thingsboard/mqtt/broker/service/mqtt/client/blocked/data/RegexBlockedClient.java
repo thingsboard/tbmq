@@ -22,8 +22,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.regex.Pattern;
 
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.COLON;
-
 @EqualsAndHashCode(of = {"pattern", "regexMatchTarget"}, callSuper = false)
 @Data
 @NoArgsConstructor
@@ -52,11 +50,6 @@ public class RegexBlockedClient extends AbstractBlockedClient {
     public void setPattern(String pattern) {
         this.pattern = pattern;
         this.compiledPattern = Pattern.compile(pattern);
-    }
-
-    @Override
-    public String getKey() {
-        return super.getKey() + COLON + regexMatchTarget.getLabel();
     }
 
     @Override

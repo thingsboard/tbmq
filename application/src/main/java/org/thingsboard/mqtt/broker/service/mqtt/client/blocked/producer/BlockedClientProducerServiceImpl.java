@@ -98,8 +98,8 @@ public class BlockedClientProducerServiceImpl implements BlockedClientProducerSe
         }
     }
 
-    private TbProtoQueueMsg<BlockedClientProto> generateRequest(String clientId, BlockedClientProto blockedClientProto) {
-        TbProtoQueueMsg<BlockedClientProto> request = new TbProtoQueueMsg<>(clientId, blockedClientProto);
+    private TbProtoQueueMsg<BlockedClientProto> generateRequest(String key, BlockedClientProto blockedClientProto) {
+        TbProtoQueueMsg<BlockedClientProto> request = new TbProtoQueueMsg<>(key, blockedClientProto);
         request.getHeaders().put(BrokerConstants.SERVICE_ID_HEADER, BytesUtil.stringToBytes(serviceInfoProvider.getServiceId()));
         return request;
     }

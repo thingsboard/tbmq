@@ -233,7 +233,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
             blockedClientMap.get(type).values().forEach(value -> {
                 if (value.isExpired() && getBlockedClientRemovalTs(value) <= System.currentTimeMillis()) {
                     log.info("Removing expired blocked client by ttl [{}][{} minutes]", value, blockedClientCleanupTtl);
-                    removeBlockedClient(value);
+                    removeBlockedClientAndPersist(value);
                 }
             });
         }

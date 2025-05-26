@@ -164,7 +164,7 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
         });
     }
 
-    private static BlockedClient convertToBlockedClient(TbProtoQueueMsg<BlockedClientProto> msg) {
+    private BlockedClient convertToBlockedClient(TbProtoQueueMsg<BlockedClientProto> msg) {
         return ProtoConverter.convertProtoToBlockedClient(msg.getValue());
     }
 

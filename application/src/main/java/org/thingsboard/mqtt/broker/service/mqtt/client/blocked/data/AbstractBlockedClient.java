@@ -16,8 +16,7 @@
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 
 import lombok.Data;
-
-import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.COLON;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.util.BlockedClientKeyUtil;
 
 @Data
 public abstract class AbstractBlockedClient implements BlockedClient {
@@ -35,7 +34,7 @@ public abstract class AbstractBlockedClient implements BlockedClient {
 
     @Override
     public String getKey() {
-        return getType().getLabel() + COLON + getValue();
+        return BlockedClientKeyUtil.generateKey(getType(), getValue(), getRegexMatchTarget());
     }
 
     @Override
