@@ -37,6 +37,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientServ
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -177,7 +178,7 @@ public class BrokerInitializerTest {
 
     @Test
     public void testInitBlockedClients() throws QueuePersistenceException {
-        Map<String, BlockedClient> map = Map.of("key", new ClientIdBlockedClient("clientId"));
+        Map<String, BlockedClient> map = Map.of("key", new ClientIdBlockedClient("clientId"), "anotherKey", new IpAddressBlockedClient("localhost"));
         when(blockedClientConsumer.initLoad()).thenReturn(map);
 
         brokerInitializer.initBlockedClients();

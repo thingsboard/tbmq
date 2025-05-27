@@ -34,15 +34,11 @@ public abstract class AbstractBlockedClient implements BlockedClient {
 
     @Override
     public String getKey() {
-        // Maybe improve to have this pre-computed
         return BlockedClientKeyUtil.generateKey(getType(), getValue(), getRegexMatchTarget());
     }
 
     @Override
     public boolean isExpired() {
-        if (expirationTime <= 0) {
-            return false;
-        }
-        return System.currentTimeMillis() > expirationTime;
+        return expirationTime > 0 && System.currentTimeMillis() > expirationTime;
     }
 }

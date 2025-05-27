@@ -84,6 +84,7 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof ClientIdBlockedClient).isTrue();
+        assertThat(blockedClient.getKey()).isEqualTo("clientId:some_value");
     }
 
     @Test
@@ -96,6 +97,7 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof IpAddressBlockedClient).isTrue();
+        assertThat(blockedClient.getKey()).isEqualTo("ipAddress:some_value");
     }
 
     @Test
@@ -108,6 +110,7 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof UsernameBlockedClient).isTrue();
+        assertThat(blockedClient.getKey()).isEqualTo("username:some_value");
     }
 
     @Test
@@ -124,6 +127,7 @@ class BlockedClientServiceImplTest {
 
         RegexBlockedClient regexBlockedClient = (RegexBlockedClient) blockedClient;
         assertThat(regexBlockedClient).isNotNull();
+        assertThat(blockedClient.getKey()).isEqualTo("regex:^client-[0-9]+$:byID");
         assertThat(regexBlockedClient.getCompiledPattern()).isNotNull();
         assertThat(regexBlockedClient.matches("client-123")).isTrue();
         assertThat(regexBlockedClient.matches("user-123")).isFalse();
@@ -290,6 +294,7 @@ class BlockedClientServiceImplTest {
 
         BlockedClient blockedClient = JacksonUtil.convertValue(objectNode, BlockedClient.class);
         assertThat(blockedClient instanceof RegexBlockedClient).isTrue();
+        assertThat(blockedClient.getKey()).isEqualTo("regex:some_value:byID");
     }
 
     @Test
