@@ -15,8 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +55,6 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     private final BlockedClientProducerService blockedClientProducerService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final Map<BlockedClientType, Map<String, BlockedClient>> blockedClientMap;
-    private final Cache<String, BlockedClientResult> blockedClientCache;
 
     @Getter
     @Setter
@@ -74,10 +71,6 @@ public class BlockedClientServiceImpl implements BlockedClientService {
             temp.put(type, new ConcurrentHashMap<>());
         }
         this.blockedClientMap = Collections.unmodifiableMap(temp);
-        this.blockedClientCache = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterAccess(1, TimeUnit.MINUTES)
-                .build();
     }
 
     @Override
@@ -107,7 +100,6 @@ public class BlockedClientServiceImpl implements BlockedClientService {
     @Override
     public void addBlockedClient(BlockedClient blockedClient) {
         validate(blockedClient);
-        invalidateRegexCache(blockedClient.getType());
         blockedClientMap.get(blockedClient.getType()).put(blockedClient.getKey(), blockedClient);
     }
 
@@ -130,7 +122,6 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     @Override
     public void removeBlockedClient(BlockedClientType type, String key) {
-        invalidateRegexCache(type);
         blockedClientMap.get(type).remove(key);
     }
 
@@ -179,17 +170,8 @@ public class BlockedClientServiceImpl implements BlockedClientService {
             if (value == null) {
                 continue;
             }
-
-            String cacheKey = blockedClient.getKey();
-            BlockedClientResult cached = blockedClientCache.getIfPresent(cacheKey);
-            if (cached != null) {
-                return cached;
-            }
-
             if (isRegexBasedBlocked(value, rbc)) {
-                BlockedClientResult result = blocked(rbc);
-                blockedClientCache.put(cacheKey, result);
-                return result;
+                return blocked(rbc);
             }
         }
         return notBlocked();
@@ -262,9 +244,4 @@ public class BlockedClientServiceImpl implements BlockedClientService {
         return value.getExpirationTime() + TimeUnit.MINUTES.toMillis(blockedClientCleanupTtl);
     }
 
-    private void invalidateRegexCache(BlockedClientType type) {
-        if (BlockedClientType.REGEX == type) {
-            blockedClientCache.invalidateAll();
-        }
-    }
 }

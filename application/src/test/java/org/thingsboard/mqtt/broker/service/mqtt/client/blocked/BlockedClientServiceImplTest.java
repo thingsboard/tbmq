@@ -33,7 +33,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTa
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedClientProducerService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -139,6 +142,86 @@ class BlockedClientServiceImplTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .cause()
                 .hasMessageContaining("Unclosed character class");
+    }
+
+    @Test
+    public void testCheckBlockedPerformanceWithMultipleRegexRules_Parallel() throws InterruptedException {
+        assertThat(service.getBlockedClients().get(BlockedClientType.REGEX)).isEmpty();
+
+        int regexRuleCount = 10;
+        int matchingClientIdsPerRule = 5;
+
+        long expirationTime = System.currentTimeMillis() + 60_000;
+
+        for (int i = 0; i < regexRuleCount; i++) {
+            String pattern = "^client" + i + "-[0-9]{1,4}$";
+            RegexBlockedClient regexBlockedClient = new RegexBlockedClient(pattern, RegexMatchTarget.BY_CLIENT_ID);
+            regexBlockedClient.setExpirationTime(expirationTime);
+            regexBlockedClient.setDescription("Regex rule " + i);
+            service.addBlockedClientAndPersist(regexBlockedClient);
+        }
+
+        assertThat(service.getBlockedClients().get(BlockedClientType.REGEX)).hasSize(regexRuleCount);
+
+        List<String> matchingIds = new ArrayList<>(regexRuleCount * matchingClientIdsPerRule);
+        List<String> nonMatchingIds = new ArrayList<>(regexRuleCount);
+        for (int i = 0; i < regexRuleCount; i++) {
+            for (int j = 0; j < matchingClientIdsPerRule; j++) {
+                matchingIds.add("client" + i + "-" + j);
+            }
+            nonMatchingIds.add("nonmatching-" + i);
+        }
+
+        int totalChecks = 1_000_000;
+        int totalMatching = totalChecks / 2;
+        int totalNonMatching = totalChecks - totalMatching;
+
+        CountDownLatch latch = new CountDownLatch(totalChecks);
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+
+        AtomicInteger matchedCount = new AtomicInteger(0);
+        Random rand = new Random();
+
+        long start = System.nanoTime();
+
+        for (int i = 0; i < totalMatching; i++) {
+            String clientId = matchingIds.get(rand.nextInt(matchingIds.size()));
+            executor.submit(() -> {
+                try {
+                    if (service.checkBlocked(clientId, "user", "127.0.0.1").isBlocked()) {
+                        matchedCount.incrementAndGet();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        for (int i = 0; i < totalNonMatching; i++) {
+            String clientId = nonMatchingIds.get(rand.nextInt(nonMatchingIds.size()));
+            executor.submit(() -> {
+                try {
+                    if (service.checkBlocked(clientId, "user", "127.0.0.1").isBlocked()) {
+                        matchedCount.incrementAndGet();
+                    }
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        long durationNs = System.nanoTime() - start;
+        executor.shutdownNow();
+
+        double durationMs = durationNs / 1_000_000.0;
+
+        System.out.println("Matched " + matchedCount.get() + " times out of " + totalChecks);
+        System.out.printf("Total time: %.2f ms%n", durationMs);
+        System.out.printf("Average per call: %.4f ms%n", durationMs / totalChecks);
+
+        assertThat(matchedCount.get()).isEqualTo(totalMatching);
+        assertThat(durationMs).isLessThan(10_000);
     }
 
     @Test
