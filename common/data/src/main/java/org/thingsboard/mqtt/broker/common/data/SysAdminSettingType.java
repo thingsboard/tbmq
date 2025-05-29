@@ -23,7 +23,7 @@ import java.util.Optional;
 @Getter
 public enum SysAdminSettingType {
 
-    MAIL("mail"), CONNECTIVITY("connectivity"), WEBSOCKET("websocket"), SECURITY_SETTINGS("securitySettings"), MQTT_AUTHORIZATION("mqttAuthorization");
+    GENERAL("general"), MAIL("mail"), CONNECTIVITY("connectivity"), WEBSOCKET("websocket"), SECURITY_SETTINGS("securitySettings"), MQTT_AUTHORIZATION("mqttAuthorization");
 
     SysAdminSettingType(String key) {
         this.key = key;

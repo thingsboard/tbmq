@@ -91,7 +91,6 @@ public class ActorProcessorImpl implements ActorProcessor {
         }
 
         AuthContext authContext = buildAuthContext(state, sessionInitMsg);
-        // TODO: make it with Plugin architecture (to be able to use LDAP, OAuth etc.)
         AuthResponse authResponse = authorizationRoutingService.executeAuthFlow(authContext);
 
         if (!authResponse.isSuccess()) {

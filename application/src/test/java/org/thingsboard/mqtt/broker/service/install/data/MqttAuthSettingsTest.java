@@ -30,9 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MqttAuthSettingsTest {
 
     @Test
-    public void testCreateDefaultMqttAuthSettings() {
+    public void testCreateDefaults() {
         // When
-        AdminSettings adminSettings = MqttAuthSettings.createDefaultMqttAuthSettings();
+        AdminSettings adminSettings = MqttAuthSettings.createDefaults();
 
         // Then
         assertThat(adminSettings).isNotNull();

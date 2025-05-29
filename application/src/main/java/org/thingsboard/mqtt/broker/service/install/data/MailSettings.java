@@ -15,33 +15,30 @@
  */
 package org.thingsboard.mqtt.broker.service.install.data;
 
-import lombok.Data;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.List;
-
-@Data
-public class MqttAuthSettings implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -8045245463193283033L;
-
-    private boolean useListenerBasedProviderOnly;
-    private List<MqttAuthProviderType> priorities;
+public class MailSettings {
 
     public static AdminSettings createDefaults() {
-        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setUseListenerBasedProviderOnly(false);
-        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
-
-        AdminSettings adminSettings = new AdminSettings();
-        adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        adminSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
-        return adminSettings;
+        AdminSettings mailSettings = new AdminSettings();
+        mailSettings.setKey(SysAdminSettingType.MAIL.getKey());
+        ObjectNode node = JacksonUtil.newObjectNode();
+        node.put("mailFrom", "ThingsBoard <sysadmin@localhost.localdomain>");
+        node.put("smtpProtocol", "smtp");
+        node.put("smtpHost", "localhost");
+        node.put("smtpPort", "25");
+        node.put("timeout", "10000");
+        node.put("enableTls", false);
+        node.put("username", "");
+        node.put("password", ""); //NOSONAR, key used to identify password field (not password value itself)
+        node.put("tlsVersion", "TLSv1.2");
+        node.put("enableProxy", false);
+        node.put("showChangePassword", false);
+        mailSettings.setJsonValue(node);
+        return mailSettings;
     }
+
 }

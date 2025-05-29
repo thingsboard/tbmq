@@ -15,33 +15,20 @@
  */
 package org.thingsboard.mqtt.broker.service.install.data;
 
-import lombok.Data;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.List;
-
-@Data
-public class MqttAuthSettings implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = -8045245463193283033L;
-
-    private boolean useListenerBasedProviderOnly;
-    private List<MqttAuthProviderType> priorities;
+public class GeneralSettings {
 
     public static AdminSettings createDefaults() {
-        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setUseListenerBasedProviderOnly(false);
-        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
-
-        AdminSettings adminSettings = new AdminSettings();
-        adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        adminSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
-        return adminSettings;
+        AdminSettings generalSettings = new AdminSettings();
+        generalSettings.setKey(SysAdminSettingType.GENERAL.getKey());
+        ObjectNode node = JacksonUtil.newObjectNode();
+        node.put("baseUrl", "http://localhost:8083");
+        node.put("prohibitDifferentUrl", false);
+        generalSettings.setJsonValue(node);
+        return generalSettings;
     }
 }
