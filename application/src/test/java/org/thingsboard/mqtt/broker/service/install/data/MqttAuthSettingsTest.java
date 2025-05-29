@@ -15,10 +15,15 @@
  */
 package org.thingsboard.mqtt.broker.service.install.data;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,8 +43,15 @@ public class MqttAuthSettingsTest {
         assertThat(jsonValue).isNotNull();
         assertThat(jsonValue.has("useListenerBasedProviderOnly")).isTrue();
         assertThat(jsonValue.get("useListenerBasedProviderOnly").asBoolean()).isFalse();
-        assertThat(jsonValue.has("jwtFirst")).isTrue();
-        assertThat(jsonValue.get("jwtFirst").asBoolean()).isFalse();
+        assertThat(jsonValue.has("priorities")).isTrue();
+        JsonNode prioritiesNode = jsonValue.get("priorities");
+        assertThat(prioritiesNode.isArray()).isTrue();
+
+        // Verify priority list matches default enum order
+        List<MqttAuthProviderType> expectedPriorities = MqttAuthProviderType.getDefaultPriorityList();
+        List<MqttAuthProviderType> actualPriorities = JacksonUtil.convertValue(prioritiesNode, new TypeReference<>() {});
+        assertThat(actualPriorities).containsExactlyElementsOf(expectedPriorities);
+
     }
 
 }

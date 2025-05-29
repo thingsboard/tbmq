@@ -18,10 +18,12 @@ package org.thingsboard.mqtt.broker.service.install.data;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 public class MqttAuthSettings implements Serializable {
@@ -30,12 +32,12 @@ public class MqttAuthSettings implements Serializable {
     private static final long serialVersionUID = -8045245463193283033L;
 
     private boolean useListenerBasedProviderOnly;
-    private boolean jwtFirst;
+    private List<MqttAuthProviderType> priorities;
 
     public static AdminSettings createDefaultMqttAuthSettings() {
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
         mqttAuthSettings.setUseListenerBasedProviderOnly(false);
-        mqttAuthSettings.setJwtFirst(false);
+        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
 
         AdminSettings adminSettings = new AdminSettings();
         adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());

@@ -127,11 +127,6 @@ message DisconnectClientCommandProto {
   optional string reasonType = 4;
 }
 
-message MqttAuthSettingsProto {
-  bool jwtFirst = 1;
-  bool useListenerBasedProviderOnly = 2;
-}
-
 enum MqttAuthProviderEventProto {
   PROVIDER_UPDATED = 0;
   PROVIDER_ENABLED = 1;
@@ -142,6 +137,11 @@ enum MqttAuthProviderTypeProto {
   BASIC = 0;
   X_509 = 1;
   JWT = 2;
+}
+
+message MqttAuthSettingsProto {
+  repeated MqttAuthProviderTypeProto priorities = 1;
+  bool useListenerBasedProviderOnly = 2;
 }
 
 message MqttAuthProviderProto {

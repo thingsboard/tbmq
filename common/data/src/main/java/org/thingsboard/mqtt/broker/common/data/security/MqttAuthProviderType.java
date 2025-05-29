@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data.security;
 import lombok.Getter;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -25,20 +26,25 @@ import java.util.stream.Collectors;
 @Getter
 public enum MqttAuthProviderType {
 
-    BASIC(0), X_509(1), JWT(2);
+    BASIC(0, "Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT");
 
     private final int protoNumber;
+    private final String displayName;
 
     private static final Map<Integer, MqttAuthProviderType> LOOKUP_MAP =
             Arrays.stream(values()).collect(Collectors.toMap(type -> type.protoNumber, Function.identity()));
 
-    MqttAuthProviderType(int protoNumber) {
+    MqttAuthProviderType(int protoNumber, String displayName) {
         this.protoNumber = protoNumber;
+        this.displayName = displayName;
     }
 
     public static MqttAuthProviderType fromProtoNumber(int protoNumber) {
         return LOOKUP_MAP.get(protoNumber);
     }
 
+    public static List<MqttAuthProviderType> getDefaultPriorityList() {
+        return Arrays.asList(MqttAuthProviderType.values());
+    }
 
 }

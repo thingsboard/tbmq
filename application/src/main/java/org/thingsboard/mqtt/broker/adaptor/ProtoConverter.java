@@ -77,6 +77,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
@@ -637,10 +638,29 @@ public class ProtoConverter {
     public static InternodeNotificationProto toMqttAuthSettingUpdateProto(MqttAuthSettings mqttAuthSettings) {
         return InternodeNotificationProto.newBuilder()
                 .setMqttAuthSettingsProto(MqttAuthSettingsProto.newBuilder()
-                        .setJwtFirst(mqttAuthSettings.isJwtFirst())
+                        .addAllPriorities(toMqttAuthPriorities(mqttAuthSettings.getPriorities()))
                         .setUseListenerBasedProviderOnly(mqttAuthSettings.isUseListenerBasedProviderOnly())
                         .build()).build();
     }
+
+    public static List<MqttAuthProviderTypeProto> toMqttAuthPriorities(List<MqttAuthProviderType> priorities) {
+        if (priorities == null) {
+            return Collections.emptyList();
+        }
+        return priorities.stream()
+                .map(type -> MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<MqttAuthProviderType> fromMqttAuthPriorities(List<MqttAuthProviderTypeProto> prioritiesList) {
+        if (prioritiesList == null) {
+            return Collections.emptyList();
+        }
+        return prioritiesList.stream()
+                .map(type -> MqttAuthProviderType.fromProtoNumber(type.getNumber()))
+                .collect(Collectors.toList());
+    }
+
 
     public static InternodeNotificationProto toClientSessionStatsCleanupProto(String clientId) {
         return InternodeNotificationProto.newBuilder()

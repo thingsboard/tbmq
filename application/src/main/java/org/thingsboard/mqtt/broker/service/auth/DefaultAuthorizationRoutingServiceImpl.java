@@ -18,6 +18,8 @@ package org.thingsboard.mqtt.broker.service.auth;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -30,16 +32,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultAuthorizationRoutingServiceImpl implements AuthorizationRoutingService {
 
-    private volatile boolean jwtFirst;
+    private volatile List<MqttAuthProviderType> priorities;
     private volatile boolean useListenerBasedProviderOnly;
 
     private final AuthenticationService defaultAuthenticationService;
     private final JwtAuthenticationService jwtAuthenticationService;
 
-
     @Override
     public void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto) {
-        jwtFirst = mqttAuthSettingsProto.getJwtFirst();
+        priorities = ProtoConverter.fromMqttAuthPriorities(mqttAuthSettingsProto.getPrioritiesList());
         useListenerBasedProviderOnly = mqttAuthSettingsProto.getUseListenerBasedProviderOnly();
     }
 
@@ -47,32 +48,35 @@ public class DefaultAuthorizationRoutingServiceImpl implements AuthorizationRout
     public AuthResponse executeAuthFlow(AuthContext authContext) {
         logTraceAuthenticationAttempt(authContext);
 
-        List<String> failureReasons = new ArrayList<>(3);
+        List<String> failureReasons = new ArrayList<>(priorities.size());
 
-        if (jwtFirst) {
-            AuthResponse jwtAuthResponse = jwtAuthenticationService.authenticate(authContext);
-            if (jwtAuthResponse.isSuccess()) {
-                return jwtAuthResponse;
+        for (MqttAuthProviderType providerType : priorities) {
+            AuthResponse response;
+            String authType = providerType.getDisplayName();
+
+            switch (providerType) {
+                case JWT -> {
+                    response = jwtAuthenticationService.authenticate(authContext);
+                    authType = providerType.getDisplayName();
+                }
+                case BASIC, X_509 -> {
+                    response = defaultAuthenticationService.authenticate(authContext, useListenerBasedProviderOnly);
+                    authType = useListenerBasedProviderOnly ? getBasicOrX509AuthType(authContext) :
+                            "Both: " + MqttAuthProviderType.X_509.getDisplayName() + " + " + MqttAuthProviderType.BASIC.getDisplayName();
+                }
+                default ->
+                        response = AuthResponse.failure("[" + authContext.getClientId() + "] " + "Unsupported auth type: " + providerType);
             }
-            addFailureReason(authContext, jwtAuthResponse, "JWT", failureReasons);
-        }
-
-        AuthResponse basicOrSslAuthResponse = defaultAuthenticationService.authenticate(authContext, useListenerBasedProviderOnly);
-        if (basicOrSslAuthResponse.isSuccess()) {
-            return basicOrSslAuthResponse;
-        }
-        String listenerBased = authContext.isSecurePortUsed() ? "X.509 Certificate chain" : "Basic";
-        String authType = useListenerBasedProviderOnly ? listenerBased : "Both: X.509 Certificate chain + Basic";
-        addFailureReason(authContext, basicOrSslAuthResponse, authType, failureReasons);
-
-        if (!jwtFirst) {
-            AuthResponse jwtAuthResponse = jwtAuthenticationService.authenticate(authContext);
-            if (jwtAuthResponse.isSuccess()) {
-                return jwtAuthResponse;
+            if (response.isSuccess()) {
+                return response;
             }
-            addFailureReason(authContext, jwtAuthResponse, "JWT", failureReasons);
+            addFailureReason(authContext, response, authType, failureReasons);
         }
         return getFinalFailureAuthResponse(authContext, failureReasons);
+    }
+
+    private String getBasicOrX509AuthType(AuthContext authContext) {
+        return authContext.isSecurePortUsed() ? MqttAuthProviderType.X_509.getDisplayName() : MqttAuthProviderType.BASIC.getDisplayName();
     }
 
     private void logTraceAuthenticationAttempt(AuthContext authContext) {
