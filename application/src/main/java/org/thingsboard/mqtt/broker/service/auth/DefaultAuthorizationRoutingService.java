@@ -32,7 +32,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultAuthorizationRoutingService implements AuthorizationRoutingService {
 
-    private volatile List<MqttAuthProviderType> priorities;
+    // TODO: update to fetch from DB the priority list on service Init.
+    private volatile List<MqttAuthProviderType> priorities = MqttAuthProviderType.getDefaultPriorityList();
     private volatile boolean useListenerBasedProviderOnly;
 
     private final BasicAuthenticationService basicAuthenticationService;
