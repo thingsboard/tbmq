@@ -13,20 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth;
 
-import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
-public interface MqttClientAuthProviderManager {
+public interface BasicAuthenticationService {
 
-    void handleProviderNotification(MqttAuthProviderProto notification);
-
-    boolean isBasicEnabled();
-
-    BasicMqttClientAuthProvider getBasicProvider();
-
-    boolean isSslEnabled();
-
-    SslMqttClientAuthProvider getSslProvider();
+    AuthResponse authenticate(AuthContext authContext);
 
 }

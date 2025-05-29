@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
@@ -35,6 +36,10 @@ public class AuthResponse {
 
     public static AuthResponse failure(String reason) {
         return AuthResponse.builder().success(false).reason(reason).build();
+    }
+
+    public static AuthResponse providerDisabled(MqttAuthProviderType providerType) {
+        return AuthResponse.builder().success(false).reason(providerType.getDisplayName() + " authentication is disabled!").build();
     }
 
     public static AuthResponse defaultAuthResponse() {

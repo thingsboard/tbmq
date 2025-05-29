@@ -30,12 +30,13 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DefaultAuthorizationRoutingServiceImpl implements AuthorizationRoutingService {
+public class DefaultAuthorizationRoutingService implements AuthorizationRoutingService {
 
     private volatile List<MqttAuthProviderType> priorities;
     private volatile boolean useListenerBasedProviderOnly;
 
-    private final AuthenticationService defaultAuthenticationService;
+    private final BasicAuthenticationService basicAuthenticationService;
+    private final SslAuthenticationService sslAuthenticationService;
     private final JwtAuthenticationService jwtAuthenticationService;
 
     @Override
@@ -46,43 +47,33 @@ public class DefaultAuthorizationRoutingServiceImpl implements AuthorizationRout
 
     @Override
     public AuthResponse executeAuthFlow(AuthContext authContext) {
-        logTraceAuthenticationAttempt(authContext);
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Authenticating client", authContext.getClientId());
+        }
 
-        List<String> failureReasons = new ArrayList<>(priorities.size());
+        List<MqttAuthProviderType> prioritiesForCurrentAuthContext = getPrioritiesForCurrentAuthContext(authContext);
+        List<String> failureReasons = new ArrayList<>(prioritiesForCurrentAuthContext.size());
 
-        for (MqttAuthProviderType providerType : priorities) {
-            AuthResponse response;
-            String authType = providerType.getDisplayName();
-
-            switch (providerType) {
-                case JWT -> {
-                    response = jwtAuthenticationService.authenticate(authContext);
-                    authType = providerType.getDisplayName();
-                }
-                case BASIC, X_509 -> {
-                    response = defaultAuthenticationService.authenticate(authContext, useListenerBasedProviderOnly);
-                    authType = useListenerBasedProviderOnly ? getBasicOrX509AuthType(authContext) :
-                            "Both: " + MqttAuthProviderType.X_509.getDisplayName() + " + " + MqttAuthProviderType.BASIC.getDisplayName();
-                }
-                default ->
-                        response = AuthResponse.failure("[" + authContext.getClientId() + "] " + "Unsupported auth type: " + providerType);
-            }
+        for (MqttAuthProviderType providerType : prioritiesForCurrentAuthContext) {
+            AuthResponse response = switch (providerType) {
+                case JWT -> jwtAuthenticationService.authenticate(authContext);
+                case BASIC -> basicAuthenticationService.authenticate(authContext);
+                case X_509 -> sslAuthenticationService.authenticate(authContext);
+            };
             if (response.isSuccess()) {
                 return response;
             }
-            addFailureReason(authContext, response, authType, failureReasons);
+            addFailureReason(authContext, response, providerType.getDisplayName(), failureReasons);
         }
         return getFinalFailureAuthResponse(authContext, failureReasons);
     }
 
-    private String getBasicOrX509AuthType(AuthContext authContext) {
-        return authContext.isSecurePortUsed() ? MqttAuthProviderType.X_509.getDisplayName() : MqttAuthProviderType.BASIC.getDisplayName();
-    }
-
-    private void logTraceAuthenticationAttempt(AuthContext authContext) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticating client", authContext.getClientId());
+    private List<MqttAuthProviderType> getPrioritiesForCurrentAuthContext(AuthContext authContext) {
+        List<MqttAuthProviderType> effectivePriorities = new ArrayList<>(priorities);
+        if (useListenerBasedProviderOnly) {
+            effectivePriorities.remove(authContext.isSecurePortUsed() ? MqttAuthProviderType.BASIC : MqttAuthProviderType.X_509);
         }
+        return effectivePriorities;
     }
 
     private void addFailureReason(AuthContext authContext, AuthResponse response, String authType, List<String> failureReasons) {

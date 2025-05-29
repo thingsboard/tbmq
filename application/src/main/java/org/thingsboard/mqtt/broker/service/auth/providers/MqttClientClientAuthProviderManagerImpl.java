@@ -15,17 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -40,25 +34,24 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
 
-    private Map<MqttAuthProviderType, MqttClientAuthProvider> authProviders;
-
-    @PostConstruct
-    public void init() {
-        Map<MqttAuthProviderType, MqttClientAuthProvider> tmpProvidersMap = new HashMap<>();
-
-        if (basicAuthEnabled) {
-            tmpProvidersMap.put(MqttAuthProviderType.BASIC, basicMqttClientAuthProvider);
-        }
-        if (sslAuthEnabled) {
-            tmpProvidersMap.put(MqttAuthProviderType.X_509, sslMqttClientAuthProvider);
-        }
-
-        this.authProviders = Collections.unmodifiableMap(tmpProvidersMap);
+    @Override
+    public boolean isBasicEnabled() {
+        return basicAuthEnabled;
     }
 
     @Override
-    public Map<MqttAuthProviderType, MqttClientAuthProvider> getActiveAuthProviders() {
-        return authProviders;
+    public BasicMqttClientAuthProvider getBasicProvider() {
+        return basicMqttClientAuthProvider;
+    }
+
+    @Override
+    public boolean isSslEnabled() {
+        return sslAuthEnabled;
+    }
+
+    @Override
+    public SslMqttClientAuthProvider getSslProvider() {
+        return sslMqttClientAuthProvider;
     }
 
     @Override
