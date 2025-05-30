@@ -55,7 +55,6 @@ import { FileInputComponent } from "@shared/components/file-input.component";
 import {
   IntegrationCredentialsComponent
 } from "@home/components/integration/integration-credentials/integration-credentials.component";
-import { HeaderFilterMapComponent } from "@shared/components/header-filter-map.component";
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
 import { TogglePasswordComponent } from "@shared/components/button/toggle-password.component";
@@ -82,7 +81,6 @@ import { HintTooltipIconComponent } from "@shared/components/hint-tooltip-icon.c
     FileInputComponent,
     IntegrationCredentialsComponent,
     MatSlideToggle,
-    HeaderFilterMapComponent,
     MatIcon,
     MatSuffix,
     MatTooltip,
@@ -109,6 +107,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   clientTypes = Object.values(ClientType);
   clientTypeTranslationMap = clientTypeTranslationMap;
+  ClientType = ClientType;
 
   JwtVerifierType = JwtVerifierType;
   JwtAlgorithmType = JwtAlgorithmType;
