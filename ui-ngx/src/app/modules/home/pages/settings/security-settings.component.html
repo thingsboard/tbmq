@@ -21,26 +21,77 @@
       <span class="mat-headline-5" translate>admin.authentication-settings</span>
     </mat-card-title>
     <span class="flex flex-1"></span>
+    <div>
+      <button mat-icon-button
+        type="button"
+        (click)="goToProviders()"
+        matTooltip="{{'authentication.authentication-providers-go-to' | translate}}"
+        matTooltipPosition="above">
+      <mat-icon svgIcon="mdi:shield-lock"></mat-icon>
+    </button>
+    </div>
     <div tb-help="mqttAuthSettings"></div>
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="mqttAuthSettingsForm" (ngSubmit)="saveMqttAuthSettings()" autocomplete="off">
       <fieldset [disabled]="isLoading$ | async">
-        <fieldset class="fields-group">
-          <legend class="group-title" translate>admin.security-auth-strategy</legend>
-          <div class="container">
-            <section class="pb-6" tb-hint-tooltip-icon="{{ 'admin.jwt-first-hint' | translate }}">
-              <mat-slide-toggle formControlName="jwtFirst">
-                <span translate>admin.jwt-first</span>
-              </mat-slide-toggle>
-            </section>
-            <section class="pb-6" tb-hint-tooltip-icon="{{ authStrategyTooltip | translate }}">
-              <mat-slide-toggle formControlName="useListenerBasedProviderOnly">
-                <span>{{ authStrategyLabel | translate }}</span>
-              </mat-slide-toggle>
-            </section>
-          </div>
-        </fieldset>
+        <section class="flex flex-col gap-4">
+          <mat-form-field class="mat-block tb-keys-field" appearance="outline" subscriptSizing="dynamic">
+            <mat-label translate>authentication.authentication-providers</mat-label>
+            <mat-chip-grid #chipList formControlName="priorities" class="pl-1">
+              <div class="tb-datakeys-container"
+                   [dndDropzone]="[dndId]"
+                   [dndHorizontal]="true"
+                   dndEffectAllowed="move"
+                   dndAllowExternal="true"
+                   (dndDrop)="onChipDrop($event)">
+                <div #placeholderChipRow
+                     dndPlaceholderRef
+                     class="mat-mdc-chip mat-mdc-chip-row mdc-evolution-chip mat-mdc-standard-chip tb-datakey-chip tb-datakey-chip-dnd-placeholder">
+                </div>
+                @for (provider of providers; let index = $index; track provider) {
+                  <mat-chip-row #chipRow
+                                class="tb-datakey-chip"
+                                (dndStart)="chipDragStart($index, chipRow, placeholderChipRow)"
+                                (dndEnd)="chipDragEnd()"
+                                [dndDraggable]="provider"
+                                dndType="{{ dndId }}"
+                                dndEffectAllowed="move"
+                                dndDraggingSourceClass="tb-chip-dragging">
+                    <div dndDragImageRef class="tb-attribute-chip flex flex-row items-center justify-start gap-1"
+                         [class.tb-dragging-chip-image]="$index === dragIndex">
+                      <div class="tb-absolute-fill tb-dragging-chip-image-fill"></div>
+                      @if (!dragDisabled) {
+                        <div dndHandle class="tb-chip-drag-handle">
+                          <mat-icon class="tb-mat-18">drag_indicator</mat-icon>
+                        </div>
+                      }
+                      <div class="tb-chip-labels" [class.tb-transparent]="dragDisabled">
+                        <div class="tb-chip-label tb-chip-text">
+                          <span>{{credentialsTypeTranslationMap.get(provider) | translate}}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </mat-chip-row>
+                }
+                <input matInput type="text" #keyInput disabled [matChipInputFor]="chipList">
+              </div>
+            </mat-chip-grid>
+            <mat-hint translate>authentication.authentication-providers-hint</mat-hint>
+          </mat-form-field>
+          <section tb-hint-tooltip-icon="{{ authStrategyTooltip | translate }}">
+            <mat-slide-toggle formControlName="useListenerBasedProviderOnly">
+              <span>{{ authStrategyLabel | translate }}</span>
+            </mat-slide-toggle>
+            <mat-icon matSuffix
+                      matTooltip="{{ 'admin.auth-strategy-both-warning' | translate }}"
+                      [class.!hidden]="mqttAuthSettingsForm.get('useListenerBasedProviderOnly').value"
+                      style="color: #ff9a00"
+                      class="tb-mat-18">
+              warning
+            </mat-icon>
+          </section>
+        </section>
         <div class="layout-wrap flex flex-row items-center justify-end gap-2 xs:flex-col" style="margin-top: 16px">
           <button mat-button color="primary"
                   [disabled]="mqttAuthSettingsForm.pristine"

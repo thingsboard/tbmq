@@ -7757,6 +7757,13 @@ ngx-clipboard@^16.0.0:
     ngx-window-token ">=7.0.0"
     tslib "^2.0.0"
 
+ngx-drag-drop@^18.0.2:
+  version "18.0.2"
+  resolved "https://registry.yarnpkg.com/ngx-drag-drop/-/ngx-drag-drop-18.0.2.tgz#a8d805db20d75ad450db75f65d26fafdf0e2ec97"
+  integrity sha512-I2u5hhUGysRfAhxFCReG9DVUGnPZpu5r3qXZuU9dS22PfzriwtkGrBeD/pgGlUB1BREZd77fb8tY6okpUTvIBw==
+  dependencies:
+    tslib "^2.3.0"
+
 ngx-hm-carousel@^18.0.0:
   version "18.0.0"
   resolved "https://registry.yarnpkg.com/ngx-hm-carousel/-/ngx-hm-carousel-18.0.0.tgz#f5982b0c39bd5559e92081ae2c006221e6a2319e"

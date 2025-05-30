@@ -154,7 +154,6 @@
             <p translate>integration.other-properties</p>
             <tb-key-val-map
               class="security-setting-content"
-              isStrokedButton="true"
               addText="integration.add-property"
               noDataText="integration.no-properties"
               formControlName="otherProperties">
@@ -164,9 +163,11 @@
             <p translate>integration.kafka-headers</p>
             <div class="flex flex-col gap-6">
               <tb-key-val-map
+                formControlName="kafkaHeaders"
                 class="security-setting-content"
-                isStrokedButton="true"
-                formControlName="kafkaHeaders">
+                noDataText="integration.no-headers-filter"
+                addText="key-val.add-header"
+                keyLabel="integration.header">
               </tb-key-val-map>
               <mat-form-field class="mat-block flex-1" appearance="outline">
                 <mat-label translate>integration.charset-encoding</mat-label>

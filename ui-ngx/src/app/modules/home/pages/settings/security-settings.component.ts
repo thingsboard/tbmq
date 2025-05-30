@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, Renderer2 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
@@ -34,19 +34,31 @@ import { MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/fo
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { takeUntil } from 'rxjs/operators';
 import { HelpComponent } from '@shared/components/help.component';
+import { MatChipGrid, MatChipInput, MatChipRow } from '@angular/material/chips';
+import {
+  DndDraggableDirective,
+  DndDragImageRefDirective,
+  DndDropEvent,
+  DndDropzoneDirective,
+  DndHandleDirective, DndPlaceholderRefDirective
+} from 'ngx-drag-drop';
+import { guid, isUndefined } from '@core/utils';
+import { moveItemInArray } from '@angular/cdk/drag-drop';
+import { CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-  imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent]
+  imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
@@ -56,12 +68,21 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   authStrategyLabel: string;
   authStrategyTooltip: string;
 
+  providers: CredentialsType[] = Object.values(CredentialsType);
+  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
+
+  dndId = guid();
+  dragIndex: number;
+  dragDisabled = false;
+
   private securitySettings: SecuritySettings;
   private mqttAuthSettings: AdminSettings<MqttAuthSettings>;
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               private settingsService: SettingsService,
+              private renderer: Renderer2,
+              private router: Router,
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildSecuritySettingsForm();
@@ -140,7 +161,7 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   private buildMqttAuthSettingsForm() {
     this.mqttAuthSettingsForm = this.fb.group({
       useListenerBasedProviderOnly: [null, []],
-      jwtFirst: [null, []],
+      priorities: [this.providers, []]
     });
     this.mqttAuthSettingsForm.get('useListenerBasedProviderOnly').valueChanges
       .pipe(takeUntil(this.destroy$))
@@ -172,4 +193,26 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 
+  chipDragStart(index: number, chipRow: MatChipRow, placeholderChipRow: Element) {
+    this.renderer.setStyle(placeholderChipRow, 'width', chipRow._elementRef.nativeElement.offsetWidth + 'px');
+    this.dragIndex = index;
+  }
+
+  chipDragEnd() {
+    this.dragIndex = -1;
+  }
+
+  onChipDrop(event: DndDropEvent) {
+    let index = event.index;
+    if (isUndefined(index)) {
+      index = this.providers.length;
+    }
+    moveItemInArray(this.providers, this.dragIndex, index);
+    this.mqttAuthSettingsForm.get('priorities').setValue(this.providers);
+    this.dragIndex = -1;
+  }
+
+  goToProviders() {
+    this.router.navigate(['authentication', 'providers']);
+  }
 }

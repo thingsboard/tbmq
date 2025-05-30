@@ -18,13 +18,15 @@
 <section [formGroup]="jwtConfigForm">
   <section formGroupName="configuration" class="flex flex-col gap-4">
     <section class="security-setting mat-padding">
-      <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>authentication.jwt-verifier</p>
-      <div class="tb-form-panel no-border no-padding toggle-group">
-        <tb-toggle-select appearance="fill" formControlName="jwtVerifierType" class="w-full">
+      <section class="mb-4 flex flex-row items-center justify-between">
+        <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>
+          authentication.jwt-verifier
+        </p>
+        <tb-toggle-select formControlName="jwtVerifierType">
           <tb-toggle-option [value]="JwtVerifierType.ALGORITHM_BASED">{{ 'authentication.algorithm-based' | translate }}</tb-toggle-option>
           <tb-toggle-option [value]="JwtVerifierType.JWKS">{{ "authentication.jwks" | translate }}</tb-toggle-option>
         </tb-toggle-select>
-      </div>
+      </section>
       <section class="flex flex-col gap-4">
         @switch (jwtConfigForm.get('configuration.jwtVerifierType')?.value) {
           @case (JwtVerifierType.ALGORITHM_BASED) {
@@ -37,36 +39,31 @@
       </section>
     </section>
     <section class="security-setting mat-padding">
-      <p [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
-      <tb-key-val-map formControlName="claims"
-                      [noDataText]="'authentication.claims-none' | translate"
-                      [addText]="'authentication.claims-add' | translate"
-                      class="security-setting-content"
-                      isStrokedButton="true">
+      <p class="mb-3" [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
+      <tb-key-val-map
+        formControlName="claims"
+        class="security-setting-content"
+        noDataText="authentication.claims-none"
+        addText="authentication.claims-add"
+        keyLabel="authentication.claim">
       </tb-key-val-map>
     </section>
     <section class="security-setting mat-padding">
-      <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>mqtt-client.client-type</p>
-      <section class="flex flex-col gap-4 mt-2">
-        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-          <mat-label translate>mqtt-client.client-type</mat-label>
-          <mat-select formControlName="clientType">
-            @for (clientType of clientTypes; track clientType) {
-              <mat-option [value]="clientType">
-                {{ clientTypeTranslationMap.get(clientType) | translate }}
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-        <section class="security-setting mat-padding">
-          <p translate>authentication.client-type-claims</p>
-          <tb-key-val-map formControlName="clientTypeClaims"
-                          [noDataText]="'authentication.claims-none' | translate"
-                          [addText]="'authentication.claims-add' | translate"
-                          class="security-setting-content"
-                          isStrokedButton="true">
-          </tb-key-val-map>
-        </section>
+      <section class="mb-4 flex flex-row items-center justify-between">
+        <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>mqtt-client.client-type</p>
+        <tb-toggle-select formControlName="clientType">
+          <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
+          <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
+        </tb-toggle-select>
+      </section>
+      <section class="mt-2 flex flex-col gap-4">
+        <tb-key-val-map
+          formControlName="clientTypeClaims"
+          class="security-setting-content"
+          noDataText="authentication.claims-none"
+          addText="authentication.claims-client-type-add"
+          keyLabel="authentication.claim">
+        </tb-key-val-map>
       </section>
     </section>
 
@@ -154,13 +151,15 @@
       </tb-integration-credentials>
       <section class="security-setting mat-padding">
         <p translate>integration.headers</p>
-        <tb-header-filter-map
+        <tb-key-val-map
+          formControlName="headers"
           class="security-setting-content"
           noDataText="integration.no-headers-filter"
-          keyPlaceholderText="integration.header"
-          isStrokedButton="true"
-          formControlName="headers">
-        </tb-header-filter-map>
+          addText="key-val.add-header"
+          keyLabel="integration.header"
+          singlePredefinedKey="Content-Type"
+          singlePredefinedValue="application/json">
+        </tb-key-val-map>
       </section>
     </ng-template>
   </section>

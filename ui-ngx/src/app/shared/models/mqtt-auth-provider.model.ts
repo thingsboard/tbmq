@@ -108,6 +108,13 @@ export const mockProviders: MqttAuthProvider[] = [
       clientTypeClaims: null
     }
   },
+  {
+    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e255",
+    createdTime: 1747383888395,
+    type: CredentialsType.HTTP_SERVICE,
+    enabled: true,
+    configuration: {}
+  },
 ]
 
 export const mockProvidersPageData: PageData<ShortMqttAuthProvider> = {
@@ -140,8 +147,15 @@ export const mockProvidersPageData: PageData<ShortMqttAuthProvider> = {
       enabled: true,
       description: 'Auth with hashed and salted passwords.'
     },
+    {
+      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e255",
+      createdTime: 1747383888395,
+      type: CredentialsType.HTTP_SERVICE,
+      enabled: true,
+      description: 'Authenticate using an external HTTP service.'
+    },
   ],
   "totalPages": 1,
-  "totalElements": 4,
+  "totalElements": 5,
   "hasNext": false
 }
