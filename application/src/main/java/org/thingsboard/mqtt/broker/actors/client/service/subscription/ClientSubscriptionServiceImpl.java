@@ -21,12 +21,15 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +57,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
     private final SharedSubscriptionProcessor sharedSubscriptionProcessor;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final StatsManager statsManager;
+    private final ServiceInfoProvider serviceInfoProvider;
+    private final ClientMqttActorManager clientMqttActorManager;
 
     private ConcurrentMap<String, Set<TopicSubscription>> clientSubscriptionsMap;
 
@@ -71,6 +76,11 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
             subscriptionService.subscribe(clientId, topicSubscriptions);
             sharedSubscriptionCacheService.put(clientId, topicSubscriptions);
         });
+    }
+
+    @Override
+    public void startListening(ClientSubscriptionConsumer consumer) {
+        consumer.listen(this::processSubscriptionsUpdate);
     }
 
     @Override
@@ -246,5 +256,14 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     private TopicSharedSubscription topicSubscriptionToTopicSharedSubscription(TopicSubscription topicSubscription) {
         return TopicSharedSubscription.fromTopicSubscription(topicSubscription);
+    }
+
+    private boolean processSubscriptionsUpdate(String clientId, String serviceId, Set<TopicSubscription> topicSubscriptions) {
+        if (serviceInfoProvider.getServiceId().equals(serviceId)) {
+            log.trace("[{}] Subscription changed msg was already processed {}", clientId, topicSubscriptions);
+            return false;
+        }
+        clientMqttActorManager.processSubscriptionsChanged(clientId, topicSubscriptions);
+        return true;
     }
 }

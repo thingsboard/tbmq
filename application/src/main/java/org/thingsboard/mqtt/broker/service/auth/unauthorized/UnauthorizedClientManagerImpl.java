@@ -38,8 +38,13 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
 
     @Override
     public void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, AuthResponse authResponse) {
+        persistClientUnauthorized(state, sessionInitMsg, authResponse.getReason());
+    }
+
+    @Override
+    public void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, String reason) {
         persistClientUnauthorized(state, sessionInitMsg.getClientSessionCtx(), sessionInitMsg.getUsername(),
-                sessionInitMsg.getPasswordBytes() != null, authResponse.getReason());
+                sessionInitMsg.getPasswordBytes() != null, reason);
     }
 
     @Override

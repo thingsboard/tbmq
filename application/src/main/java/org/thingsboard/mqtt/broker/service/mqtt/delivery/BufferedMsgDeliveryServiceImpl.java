@@ -44,8 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Data
 public class BufferedMsgDeliveryServiceImpl implements BufferedMsgDeliveryService {
 
+    // @Lazy introduces a proxy, which has a slight runtime cost on method access.
+    // In performance-sensitive code, it's better to initialize eagerly or restructure dependencies
     private final @Lazy PublishMsgDeliveryService publishMsgDeliveryService;
-    private final @Lazy BufferedMsgDeliverySettings settings;
+    private final BufferedMsgDeliverySettings settings;
 
     @Value("${mqtt.write-and-flush:true}")
     private boolean writeAndFlush;

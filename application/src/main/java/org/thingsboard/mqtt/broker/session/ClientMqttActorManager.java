@@ -22,10 +22,14 @@ import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+
+import java.util.Set;
 
 public interface ClientMqttActorManager {
 
@@ -50,5 +54,9 @@ public interface ClientMqttActorManager {
     void notifyChannelNonWritable(String clientId, NonWritableChannelMsg nonWritableChannelMsg);
 
     void notifyChannelWritable(String clientId, WritableChannelMsg writableChannelMsg);
+
+    void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions);
+
+    void processSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg msg);
 
 }

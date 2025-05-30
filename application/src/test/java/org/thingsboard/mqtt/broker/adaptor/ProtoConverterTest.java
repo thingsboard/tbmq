@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
@@ -42,6 +43,12 @@ import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.SessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 import org.thingsboard.mqtt.broker.service.subscription.data.SourcedSubscriptions;
@@ -54,6 +61,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -486,5 +494,72 @@ public class ProtoConverterTest {
         Assert.assertEquals(0, afterPublishMsgProto.getPacketId());
         Assert.assertEquals(List.of(1, 2, 3), afterPublishMsgProto.getMqttProperties().getSubscriptionIdsList());
         Assert.assertEquals("test", afterPublishMsgProto.getMqttProperties().getContentType());
+    }
+
+    private final long expirationTime = System.currentTimeMillis() + 60000;
+    private final String description = "Test block entry";
+
+    @Test
+    public void givenClientIdBlockedClient_whenConvertedToProtoAndBack_thenFieldsArePreserved() {
+        ClientIdBlockedClient client = new ClientIdBlockedClient(expirationTime, description, "client123");
+
+        BlockedClientProto proto = ProtoConverter.convertToBlockedClientProto(client);
+        BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
+
+        assertInstanceOf(ClientIdBlockedClient.class, converted);
+        assertEquals(client.getValue(), converted.getValue());
+        assertEquals(client.getExpirationTime(), converted.getExpirationTime());
+        assertEquals(client.getDescription(), converted.getDescription());
+    }
+
+    @Test
+    public void givenUsernameBlockedClient_whenConvertedToProtoAndBack_thenFieldsArePreserved() {
+        UsernameBlockedClient client = new UsernameBlockedClient(expirationTime, description, "user");
+
+        BlockedClientProto proto = ProtoConverter.convertToBlockedClientProto(client);
+        BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
+
+        assertInstanceOf(UsernameBlockedClient.class, converted);
+        assertEquals(client.getValue(), converted.getValue());
+        assertEquals(client.getExpirationTime(), converted.getExpirationTime());
+        assertEquals(client.getDescription(), converted.getDescription());
+    }
+
+    @Test
+    public void givenIpAddressBlockedClient_whenConvertedToProtoAndBack_thenFieldsArePreserved() {
+        IpAddressBlockedClient client = new IpAddressBlockedClient(expirationTime, description, "192.168.1.1");
+
+        BlockedClientProto proto = ProtoConverter.convertToBlockedClientProto(client);
+        BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
+
+        assertInstanceOf(IpAddressBlockedClient.class, converted);
+        assertEquals(client.getValue(), converted.getValue());
+        assertEquals(client.getExpirationTime(), converted.getExpirationTime());
+        assertEquals(client.getDescription(), converted.getDescription());
+    }
+
+    @Test
+    public void givenRegexBlockedClient_whenConvertedToProtoAndBack_thenFieldsAndMatchTargetArePreserved() {
+        RegexBlockedClient client = new RegexBlockedClient(expirationTime, description, "^test_.*", RegexMatchTarget.BY_CLIENT_ID);
+
+        BlockedClientProto proto = ProtoConverter.convertToBlockedClientProto(client);
+        BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
+
+        assertInstanceOf(RegexBlockedClient.class, converted);
+        assertEquals(client.getValue(), converted.getValue());
+        assertEquals(client.getExpirationTime(), converted.getExpirationTime());
+        assertEquals(client.getDescription(), converted.getDescription());
+        assertEquals(client.getRegexMatchTarget(), converted.getRegexMatchTarget());
+    }
+
+    @Test
+    public void givenNullDescription_whenConvertedToProtoAndBack_thenDescriptionIsNull() {
+        ClientIdBlockedClient client = new ClientIdBlockedClient(expirationTime, null, "client456");
+
+        BlockedClientProto proto = ProtoConverter.convertToBlockedClientProto(client);
+        assertFalse(proto.hasDescription());
+
+        BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
+        assertNull(converted.getDescription());
     }
 }

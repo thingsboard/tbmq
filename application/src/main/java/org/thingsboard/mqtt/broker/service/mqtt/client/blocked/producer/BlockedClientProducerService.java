@@ -13,12 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import org.thingsboard.mqtt.broker.common.data.BasicCallback;
+import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 
-public interface SubscriptionChangesManager {
+public interface BlockedClientProducerService {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    void persistBlockedClient(String key, BlockedClientProto blockedClientProto, BasicCallback callback);
+
+    void persistDummyBlockedClient(String key, BlockedClientProto blockedClientProto) throws QueuePersistenceException;
 
 }

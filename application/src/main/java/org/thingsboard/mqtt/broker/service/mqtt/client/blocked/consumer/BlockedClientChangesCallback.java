@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors.client.service.subscription;
+package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer;
 
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
+import jakarta.annotation.Nullable;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 
-public interface SubscriptionChangesManager {
+@FunctionalInterface
+public interface BlockedClientChangesCallback {
 
-    void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+    void accept(String key, String serviceId, @Nullable BlockedClient blockedClient);
 
 }

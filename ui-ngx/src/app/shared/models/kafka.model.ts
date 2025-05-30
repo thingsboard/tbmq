@@ -57,6 +57,7 @@ export const KafkaTopicsTooltipMap = {
   'tbmq.ie.uplink.notifications.': 'Direct replies from Integration Executor to specific TBMQ nodes — typically responses to validation or connection check requests',
   'tbmq.ie.uplink': 'Messages sent from Integration Executor to TBMQ, including lifecycle, error, and statistics events',
   'tbmq.msg.ie.': 'Integration message processing topic. Contains MQTT messages to be forwarded by the Integration Executor to the external system configured for the specific integration',
+  'tbmq.client.blocked': 'All configured blocked clients',
 };
 
 export enum KafkaTable {
