@@ -15,14 +15,19 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +37,28 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultAuthorizationRoutingService implements AuthorizationRoutingService {
 
-    // TODO: update to fetch from DB the priority list on service Init.
-    private volatile List<MqttAuthProviderType> priorities = MqttAuthProviderType.getDefaultPriorityList();
+    private volatile List<MqttAuthProviderType> priorities;
     private volatile boolean useListenerBasedProviderOnly;
 
     private final BasicAuthenticationService basicAuthenticationService;
     private final SslAuthenticationService sslAuthenticationService;
     private final JwtAuthenticationService jwtAuthenticationService;
+
+    private final AdminSettingsService adminSettingsService;
+
+    @PostConstruct
+    public void init() {
+        AdminSettings mqttAuthorization = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
+        if (mqttAuthorization == null) {
+            priorities = MqttAuthProviderType.getDefaultPriorityList();
+            log.warn("Failed to find MQTT authorization settings. Going to apply default settings. " +
+                     "Auth Priorities {}, Use listener based provider only: {}", priorities, useListenerBasedProviderOnly);
+            return;
+        }
+        MqttAuthSettings mqttAuthSettings = MqttAuthSettings.fromJsonValue(mqttAuthorization.getJsonValue());
+        useListenerBasedProviderOnly = mqttAuthSettings.isUseListenerBasedProviderOnly();
+        priorities = mqttAuthSettings.getPriorities();
+    }
 
     @Override
     public void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto) {

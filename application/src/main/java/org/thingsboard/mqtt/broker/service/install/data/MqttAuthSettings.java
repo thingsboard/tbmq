@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.install.data;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
@@ -43,5 +44,9 @@ public class MqttAuthSettings implements Serializable {
         adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
         adminSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
         return adminSettings;
+    }
+
+    public static MqttAuthSettings fromJsonValue(JsonNode jsonValue) {
+        return JacksonUtil.toValue(jsonValue, MqttAuthSettings.class);
     }
 }

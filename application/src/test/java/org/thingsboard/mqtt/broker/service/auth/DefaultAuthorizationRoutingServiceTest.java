@@ -20,10 +20,19 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -45,9 +54,56 @@ public class DefaultAuthorizationRoutingServiceTest {
     @Mock
     private AuthContext authContext;
 
+    @Mock
+    private AdminSettingsService adminSettingsService;
+
     @InjectMocks
     private DefaultAuthorizationRoutingService service;
 
+    @Test
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    public void shouldApplyDefaultSettings_WhenNoAdminSettingsFound() {
+        // given
+        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey())).willReturn(null);
+
+        // when
+        service.init();
+
+        // then
+        List<MqttAuthProviderType> priorities =
+                (List<MqttAuthProviderType>) ReflectionTestUtils.getField(service, "priorities");
+        boolean useListenerBasedProviderOnly = (boolean) ReflectionTestUtils.getField(service, "useListenerBasedProviderOnly");
+
+        assertThat(priorities).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
+        assertThat(useListenerBasedProviderOnly).isFalse();
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    public void shouldLoadAdminSettings_WhenPresent() {
+        // given
+        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
+        mqttAuthSettings.setUseListenerBasedProviderOnly(true);
+        mqttAuthSettings.setPriorities(List.of(MqttAuthProviderType.JWT, MqttAuthProviderType.BASIC));
+
+        AdminSettings mockSettings = new AdminSettings();
+        mockSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
+
+        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
+                .willReturn(mockSettings);
+
+        // when
+        service.init();
+
+        // then
+        List<MqttAuthProviderType> priorities =
+                (List<MqttAuthProviderType>) ReflectionTestUtils.getField(service, "priorities");
+        boolean useListenerBasedProviderOnly =
+                (boolean) ReflectionTestUtils.getField(service, "useListenerBasedProviderOnly");
+
+        assertThat(priorities).containsExactly(MqttAuthProviderType.JWT, MqttAuthProviderType.BASIC);
+        assertThat(useListenerBasedProviderOnly).isTrue();
+    }
 
     @Test
     public void shouldAuthenticateSuccessfullyWithBasic() {
