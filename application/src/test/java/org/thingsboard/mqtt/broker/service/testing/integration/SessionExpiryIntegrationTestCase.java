@@ -48,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = SessionExpiryIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=false",
         "mqtt.client-session-expiry.cron=* * * ? * *" // every second
 })
 @DaoSqlTest

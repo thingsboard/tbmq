@@ -61,9 +61,6 @@ import static org.thingsboard.mqtt.broker.service.test.util.TestUtils.getTopicNa
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppPersistedSessionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -88,6 +85,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
     public void init() throws Exception {
         TEST_CLIENT_ID = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID, null));
+        enabledBasicProvider();
     }
 
     @After

@@ -802,15 +802,7 @@ spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATE
 
 # Security parameters
 security:
-  mqtt:
-    basic:
-      # If enabled the server will try to authenticate client with clientId and/or username and/or password
-      enabled: "${SECURITY_MQTT_BASIC_ENABLED:false}"
-    ssl:
-      # If enabled the server will try to authenticate client with client certificate chain
-      enabled: "${SECURITY_MQTT_SSL_ENABLED:false}"
-      # Skip certificate validity check for client certificates
-      skip_validity_check_for_client_cert: "${SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT:false}"
+  # TODO: consider what to do with SECURITY_MQTT_BASIC_ENABLED, SECURITY_MQTT_SSL_ENABLED.
   # JWT Token parameters
   jwt:
     # User JWT Token expiration time in seconds (2.5 hours)

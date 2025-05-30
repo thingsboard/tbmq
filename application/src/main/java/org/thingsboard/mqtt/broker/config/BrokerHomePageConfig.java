@@ -48,12 +48,6 @@ public class BrokerHomePageConfig {
     private int tcpMaxPayloadSize;
     @Value("${listener.ssl.netty.max_payload_size}")
     private int tlsMaxPayloadSize;
-    // TODO: to remove. This will be handled by MQTT auth providers.
-    @Value("${security.mqtt.basic.enabled}")
-    private boolean basicAuthEnabled;
-    // TODO: to remove. This will be handled by MQTT auth providers.
-    @Value("${security.mqtt.ssl.enabled}")
-    private boolean x509AuthEnabled;
 
     @Value("${listener.ws.bind_port}")
     private int wsPort;
@@ -78,9 +72,10 @@ public class BrokerHomePageConfig {
             connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
             });
         }
+        // TODO: fix HomePage info about basic and x509 auth if needed.
         return HomePageConfigDto.builder()
-                .basicAuthEnabled(isBasicAuthEnabled())
-                .x509AuthEnabled(isX509AuthEnabled())
+                .basicAuthEnabled(false)
+                .x509AuthEnabled(false)
                 .tcpPort(getTcpPort(connectivityInfoMap))
                 .tlsPort(getTlsPort(connectivityInfoMap))
                 .wsPort(getWsPort(connectivityInfoMap))
@@ -157,24 +152,6 @@ public class BrokerHomePageConfig {
             return Integer.parseInt(tlsMaxPayloadSizeStr);
         } else {
             return tlsMaxPayloadSize;
-        }
-    }
-
-    private boolean isBasicAuthEnabled() {
-        String basicAuthEnabledStr = System.getenv("SECURITY_MQTT_BASIC_ENABLED");
-        if (basicAuthEnabledStr != null) {
-            return Boolean.parseBoolean(basicAuthEnabledStr);
-        } else {
-            return basicAuthEnabled;
-        }
-    }
-
-    private boolean isX509AuthEnabled() {
-        String x509AuthEnabledStr = System.getenv("SECURITY_MQTT_SSL_ENABLED");
-        if (x509AuthEnabledStr != null) {
-            return Boolean.parseBoolean(x509AuthEnabledStr);
-        } else {
-            return x509AuthEnabled;
         }
     }
 

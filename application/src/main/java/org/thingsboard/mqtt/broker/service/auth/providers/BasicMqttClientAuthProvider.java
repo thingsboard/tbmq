@@ -86,6 +86,11 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
         return new AuthResponse(true, basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
     }
 
+    @Override
+    public void onConfigurationUpdate(String configuration) {
+        // Configuration for Basic provider is static so no logic here now.
+    }
+
     private BasicAuthResponse authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {
         List<String> credentialIds = getCredentialIds(clientId, username);
         List<MqttClientCredentials> matchingCredentialsList = clientCredentialsService.findMatchingCredentials(credentialIds);

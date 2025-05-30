@@ -26,8 +26,6 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
     // TODO: we should save base64 formatted value to DB.
     @NoXss
     private String secret;
-    // omit for initial implementation
-    // private boolean secretBased64Encoded;
 
     @Override
     public JwtSignAlgorithm getAlgorithm() {
@@ -39,6 +37,12 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
         if (StringUtils.isBlank(secret)) {
             throw new DataValidationException("Secret should be specified for HMAC based algorithm!");
         }
+    }
+
+    public static HmacBasedAlgorithmConfiguration defaultConfiguration() {
+        var config = new HmacBasedAlgorithmConfiguration();
+        config.setSecret("secret");
+        return config;
     }
 
 }

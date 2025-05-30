@@ -19,6 +19,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -37,4 +40,29 @@ public class MqttAuthProvider extends BaseData {
     private MqttAuthProviderType type;
     private MqttAuthProviderConfiguration configuration;
 
+    public static MqttAuthProvider defaultBasicAuthProvider() {
+        MqttAuthProvider basicMqttAuthProvider = new MqttAuthProvider();
+        basicMqttAuthProvider.setType(MqttAuthProviderType.BASIC);
+        basicMqttAuthProvider.setEnabled(false);
+        basicMqttAuthProvider.setConfiguration(new BasicMqttAuthProviderConfiguration());
+        return basicMqttAuthProvider;
+    }
+
+    public static MqttAuthProvider defaultSslAuthProvider() {
+        MqttAuthProvider sslMqttAuthProvider = new MqttAuthProvider();
+        sslMqttAuthProvider.setType(MqttAuthProviderType.X_509);
+        sslMqttAuthProvider.setEnabled(false);
+        var sslConfig = new SslMqttAuthProviderConfiguration();
+        sslConfig.setSkipValidityCheckForClientCert(false);
+        sslMqttAuthProvider.setConfiguration(sslConfig);
+        return sslMqttAuthProvider;
+    }
+
+    public static MqttAuthProvider defaultJwtAuthProvider() {
+        MqttAuthProvider jwtMqttAuthProvider = new MqttAuthProvider();
+        jwtMqttAuthProvider.setType(MqttAuthProviderType.JWT);
+        jwtMqttAuthProvider.setEnabled(false);
+        jwtMqttAuthProvider.setConfiguration(JwtMqttAuthProviderConfiguration.defaultConfiguration());
+        return jwtMqttAuthProvider;
+    }
 }

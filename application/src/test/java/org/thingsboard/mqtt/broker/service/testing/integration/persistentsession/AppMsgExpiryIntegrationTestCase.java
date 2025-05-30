@@ -49,9 +49,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppMsgExpiryIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -70,6 +67,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, MSG_EXPIRY_USER_NAME)
         );
+        enabledBasicProvider();
     }
 
     @After

@@ -45,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = SessionsLimitIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true",
         "mqtt.sessions-limit=1"
 })
 @DaoSqlTest
@@ -64,6 +63,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
     @Before
     public void init() {
         credentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, USER_NAME));
+        enabledBasicProvider();
     }
 
     @After

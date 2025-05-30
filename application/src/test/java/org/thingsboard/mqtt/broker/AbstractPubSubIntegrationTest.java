@@ -46,10 +46,15 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.testing.integration.executor.ExternalExecutorService;
 
 import java.nio.charset.StandardCharsets;
@@ -93,6 +98,10 @@ public abstract class AbstractPubSubIntegrationTest {
     protected BCryptPasswordEncoder passwordEncoder;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttAuthProviderService mqttAuthProviderService;
+    @Autowired
+    protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
     @Autowired
     @Lazy
     protected ExternalExecutorService externalExecutorService;
@@ -174,5 +183,12 @@ public abstract class AbstractPubSubIntegrationTest {
         pubOptions.setCleanStart(cleanStart);
         pubOptions.setUserName(username);
         return pubOptions;
+    }
+
+    protected void enabledBasicProvider() {
+        List<MqttAuthProvider> providers = mqttAuthProviderService.getAuthProviders(new PageLink(10)).getData();
+        providers.stream()
+                .filter(mqttAuthProvider -> mqttAuthProvider.getType().equals(MqttAuthProviderType.BASIC))
+                .findFirst().ifPresent(mqttAuthProvider -> mqttAuthProviderManagerService.enableAuthProvider(mqttAuthProvider.getId()));
     }
 }

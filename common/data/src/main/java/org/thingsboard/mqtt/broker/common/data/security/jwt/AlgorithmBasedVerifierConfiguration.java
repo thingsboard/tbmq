@@ -42,4 +42,11 @@ public class AlgorithmBasedVerifierConfiguration implements JwtVerifierConfigura
         jwtSignAlgorithmConfiguration.validate();
     }
 
+    public static AlgorithmBasedVerifierConfiguration defaultConfiguration() {
+        var config = new AlgorithmBasedVerifierConfiguration();
+        config.setAlgorithm(JwtSignAlgorithm.HMAC_BASED);
+        config.setJwtSignAlgorithmConfiguration(HmacBasedAlgorithmConfiguration.defaultConfiguration());
+        return config;
+    }
+
 }

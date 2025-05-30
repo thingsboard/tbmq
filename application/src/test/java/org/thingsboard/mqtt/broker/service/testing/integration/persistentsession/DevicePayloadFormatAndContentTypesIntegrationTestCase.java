@@ -40,9 +40,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = DevicePayloadFormatAndContentTypesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class DevicePayloadFormatAndContentTypesIntegrationTestCase extends AbstractPayloadFormatAndContentTypesIntegrationTestCase {
@@ -50,6 +47,7 @@ public class DevicePayloadFormatAndContentTypesIntegrationTestCase extends Abstr
     @Before
     public void init() {
         super.init(TestUtils.createDeviceClientCredentials(null, PAYLOAD_FORMAT_AND_CONTENT_TYPES_USER_NAME));
+        enabledBasicProvider();
     }
 
     @After

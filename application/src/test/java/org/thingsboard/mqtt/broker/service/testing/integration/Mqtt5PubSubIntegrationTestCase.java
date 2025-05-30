@@ -54,9 +54,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = Mqtt5PubSubIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -81,6 +78,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     public void init() throws Exception {
         pubCredentials = saveCredentials(PUB_CLIENT_ID, List.of(TEST_TOPIC));
         subCredentials = saveCredentials(SUB_CLIENT_ID, List.of(MY_TOPIC));
+        enabledBasicProvider();
     }
 
     private MqttClientCredentials saveCredentials(String pubClientId, List<String> pubAuthRulePatterns) {

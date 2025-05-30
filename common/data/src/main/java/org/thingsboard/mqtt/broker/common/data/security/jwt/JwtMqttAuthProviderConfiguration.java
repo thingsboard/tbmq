@@ -43,8 +43,6 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     // omit for initial implementation
     // private boolean disconnectAfterExpiration;
 
-    private boolean verifyJwtFirst;
-
     @Override
     public MqttAuthProviderType getType() {
         return MqttAuthProviderType.JWT;
@@ -64,7 +62,6 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
         jwtVerifierConfiguration.validate();
     }
 
-    // TODO: Application or Device by default?
     public ClientType getDefaultClientType() {
         return Objects.requireNonNullElse(defaultClientType, ClientType.APPLICATION);
     }
@@ -75,6 +72,14 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     public Map<String, String> getClientTypeClaims() {
         return CollectionUtils.isEmpty(clientTypeClaims) ? Map.of() : clientTypeClaims;
+    }
+
+    public static JwtMqttAuthProviderConfiguration defaultConfiguration() {
+        var jwtConfig = new JwtMqttAuthProviderConfiguration();
+        jwtConfig.setDefaultClientType(ClientType.APPLICATION);
+        jwtConfig.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
+        jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());
+        return jwtConfig;
     }
 
 }

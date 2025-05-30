@@ -43,9 +43,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = ClientMqttVersionIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=false"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class ClientMqttVersionIntegrationTestCase extends AbstractPubSubIntegrationTest {

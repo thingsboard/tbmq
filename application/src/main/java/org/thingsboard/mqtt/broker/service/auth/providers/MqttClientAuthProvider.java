@@ -21,4 +21,6 @@ public interface MqttClientAuthProvider {
 
     AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
 
+    void onConfigurationUpdate(String configuration);
+
 }

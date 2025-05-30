@@ -29,4 +29,8 @@ public interface MqttClientAuthProviderManager {
 
     SslMqttClientAuthProvider getSslProvider();
 
+    boolean isJwtEnabled();
+
+    JwtMqttClientAuthProvider getJwtProvider();
+
 }

@@ -42,9 +42,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppPersistedMessagesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -69,6 +66,7 @@ public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubInteg
         deviceCredentials = credentialsService.saveCredentials(
                 TestUtils.createDeviceClientCredentials(PUBLISHING_CLIENT, DEV_USERNAME)
         );
+        enabledBasicProvider();
     }
 
     @After

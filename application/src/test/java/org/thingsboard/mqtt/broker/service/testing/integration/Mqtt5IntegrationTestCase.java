@@ -46,9 +46,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = Mqtt5IntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=false"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {

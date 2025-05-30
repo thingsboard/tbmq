@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractFl
 @ContextConfiguration(classes = DeviceFlowControlIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.max-in-flight-msgs=500",
-        "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
@@ -45,6 +44,7 @@ public class DeviceFlowControlIntegrationTestCase extends AbstractFlowControlInt
     @Before
     public void init() {
         super.init(TestUtils.createDeviceClientCredentials(null, FLOW_CONTROL_USER_NAME));
+        enabledBasicProvider();
     }
 
     @After

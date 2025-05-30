@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslM
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
@@ -61,8 +62,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     private final AuthorizationRuleService authorizationRuleService;
     private final CacheNameResolver cacheNameResolver;
 
-    @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
-    private boolean skipValidityCheckForClientCert;
+    private volatile SslMqttAuthProviderConfiguration configuration;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -90,6 +90,11 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
         return new AuthResponse(true, clientTypeSslMqttCredentials.getType(), authRulePatterns);
+    }
+
+    @Override
+    public void onConfigurationUpdate(String configuration) {
+        this.configuration =  JacksonUtil.fromString(configuration, SslMqttAuthProviderConfiguration.class);
     }
 
     private ClientTypeSslMqttCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {
@@ -169,7 +174,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
 
     private void checkCertValidity(String clientId, X509Certificate certificate) throws AuthenticationException {
         try {
-            if (!skipValidityCheckForClientCert) {
+            if (!configuration.isSkipValidityCheckForClientCert()) {
                 certificate.checkValidity();
             }
         } catch (Exception e) {

@@ -25,8 +25,10 @@ import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
@@ -50,6 +52,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
     private final WebSocketConnectionService webSocketConnectionService;
     private final UserService userService;
 
@@ -104,6 +107,13 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         for (User user : foundUsers) {
             webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), systemWebSocketCredentials.getId());
         }
+    }
+
+    @Override
+    public void createMqttAuthProviders() {
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider());
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultSslAuthProvider());
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultJwtAuthProvider());
     }
 
 }

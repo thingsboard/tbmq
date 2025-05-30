@@ -29,4 +29,6 @@ public interface SystemDataLoaderService {
 
     void createDefaultWebSocketConnections() throws ThingsboardException;
 
+    void createMqttAuthProviders();
+
 }

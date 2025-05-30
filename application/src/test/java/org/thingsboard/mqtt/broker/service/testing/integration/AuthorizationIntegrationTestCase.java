@@ -41,9 +41,6 @@ import java.util.List;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -60,6 +57,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
     @Before
     public void init() throws Exception {
         credentials = saveCredentials();
+        enabledBasicProvider();
     }
 
     private MqttClientCredentials saveCredentials() {

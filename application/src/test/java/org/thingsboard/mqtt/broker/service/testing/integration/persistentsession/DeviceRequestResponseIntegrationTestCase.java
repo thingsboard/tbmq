@@ -40,9 +40,6 @@ import static org.junit.Assert.assertTrue;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = DeviceRequestResponseIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class DeviceRequestResponseIntegrationTestCase extends AbstractRequestResponseIntegrationTestCase {
@@ -50,6 +47,7 @@ public class DeviceRequestResponseIntegrationTestCase extends AbstractRequestRes
     @Before
     public void init() {
         super.init(TestUtils.createDeviceClientCredentials(null, REQUEST_RESPONSE_USER_NAME));
+        enabledBasicProvider();
     }
 
     @After

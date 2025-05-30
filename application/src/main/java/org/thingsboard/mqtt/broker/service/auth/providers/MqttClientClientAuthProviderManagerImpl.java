@@ -15,24 +15,51 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthProviderManager {
 
-    @Value("${security.mqtt.basic.enabled}")
-    private boolean basicAuthEnabled;
-    @Value("${security.mqtt.ssl.enabled}")
-    private boolean sslAuthEnabled;
+    private volatile boolean basicAuthEnabled;
+    private volatile boolean sslAuthEnabled;
+    private volatile boolean jwtAuthEnabled;
 
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
+    private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
+    private final MqttAuthProviderService mqttAuthProviderService;
+
+    @PostConstruct
+    public void init() {
+        // TODO: maybe use list instead of Pages?
+        List<MqttAuthProvider> providers = mqttAuthProviderService.getAuthProviders(new PageLink(10)).getData();
+        if (providers.isEmpty()) {
+            log.warn("No MQTT authentication providers registered!");
+            // TODO: on install we should not do this:
+//            throw new IllegalStateException("No MQTT authentication providers registered!");
+        }
+        for (MqttAuthProvider provider : providers) {
+            switch (provider.getType()) {
+                case BASIC -> basicAuthEnabled = provider.isEnabled();
+                case X_509 -> sslAuthEnabled = provider.isEnabled();
+                case JWT -> jwtAuthEnabled = provider.isEnabled();
+            }
+        }
+        log.info("Initialized auth provider states: BASIC={}, X_509={}, JWT={}", basicAuthEnabled, sslAuthEnabled, jwtAuthEnabled);
+    }
 
     @Override
     public boolean isBasicEnabled() {
@@ -55,7 +82,46 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
     }
 
     @Override
+    public boolean isJwtEnabled() {
+        return jwtAuthEnabled;
+    }
+
+    @Override
+    public JwtMqttClientAuthProvider getJwtProvider() {
+        return jwtMqttClientAuthProvider;
+    }
+
+    @Override
     public void handleProviderNotification(MqttAuthProviderProto notification) {
+        log.trace("Received MQTT authentication provider notification: {}", notification);
+        MqttAuthProviderType type = MqttAuthProviderType.fromProtoNumber(notification.getProviderType().getNumber());
+        switch (notification.getEventType()) {
+            case PROVIDER_UPDATED -> {
+                switch (type) {
+                    case BASIC -> {
+                        basicAuthEnabled = notification.getEnabled();
+                        basicMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
+                    }
+                    case X_509 -> {
+                        sslAuthEnabled = notification.getEnabled();
+                        sslMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
+                    }
+                    case JWT -> {
+                        jwtAuthEnabled = notification.getEnabled();
+                        jwtMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
+                    }
+                }
+
+            }
+            case PROVIDER_ENABLED, PROVIDER_DISABLED -> {
+                boolean enabled = notification.getEventType() == MqttAuthProviderEventProto.PROVIDER_ENABLED;
+                switch (type) {
+                    case BASIC -> basicAuthEnabled = enabled;
+                    case X_509 -> sslAuthEnabled = enabled;
+                    case JWT -> jwtAuthEnabled = enabled;
+                }
+            }
+        }
 
     }
 }
