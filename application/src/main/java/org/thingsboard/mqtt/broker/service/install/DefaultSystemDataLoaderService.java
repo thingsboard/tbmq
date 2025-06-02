@@ -114,6 +114,7 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider());
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultSslAuthProvider());
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultJwtAuthProvider());
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultScramAuthProvider());
     }
 
 }

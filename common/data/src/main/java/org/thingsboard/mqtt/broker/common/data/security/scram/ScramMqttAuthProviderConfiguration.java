@@ -13,25 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.common.data.security.scram;
 
-import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
-public interface MqttClientAuthProviderManager {
+public class ScramMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
 
-    void handleProviderNotification(MqttAuthProviderProto notification);
+    @Override
+    public MqttAuthProviderType getType() {
+        return MqttAuthProviderType.SCRAM;
+    }
 
-    boolean isBasicEnabled();
-
-    BasicMqttClientAuthProvider getBasicProvider();
-
-    boolean isSslEnabled();
-
-    SslMqttClientAuthProvider getSslProvider();
-
-    boolean isJwtEnabled();
-
-    JwtMqttClientAuthProvider getJwtProvider();
-
-    boolean isEnhancedAuthEnabled();
 }

@@ -21,6 +21,7 @@ import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
@@ -65,4 +66,13 @@ public class MqttAuthProvider extends BaseData {
         jwtMqttAuthProvider.setConfiguration(JwtMqttAuthProviderConfiguration.defaultConfiguration());
         return jwtMqttAuthProvider;
     }
+
+    public static MqttAuthProvider defaultScramAuthProvider() {
+        MqttAuthProvider scramMqttAuthProvider = new MqttAuthProvider();
+        scramMqttAuthProvider.setType(MqttAuthProviderType.SCRAM);
+        scramMqttAuthProvider.setEnabled(false);
+        scramMqttAuthProvider.setConfiguration(new ScramMqttAuthProviderConfiguration());
+        return scramMqttAuthProvider;
+    }
+
 }

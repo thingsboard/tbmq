@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -62,7 +63,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void setUp() {
         MqttClientCredentialsService credentialsServiceMock = mock(MqttClientCredentialsService.class);
         AuthorizationRuleService authorizationRuleServiceMock = mock(AuthorizationRuleService.class);
-        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(credentialsServiceMock, authorizationRuleServiceMock));
+        MqttClientAuthProviderManager mqttClientAuthProviderManagerMock = mock(MqttClientAuthProviderManager.class);
+        when(mqttClientAuthProviderManagerMock.isEnhancedAuthEnabled()).thenReturn(true);
+        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(credentialsServiceMock, authorizationRuleServiceMock, mqttClientAuthProviderManagerMock));
     }
 
     @Test
@@ -81,6 +84,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void givenScramServerInitiated_whenOnClientConnectMsgEvalSuccess_thenVerifyInvocations() throws Exception {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
+        enhancedAuthenticationService.init();
 
         var scramSaslServer = mock(ScramSaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
@@ -104,6 +108,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void givenScramServerInitiated_whenOnClientConnectMsgEvalFailure_thenVerifyInvocations() throws Exception {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
+        enhancedAuthenticationService.init();
 
         var scramSaslServer = mock(ScramSaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
@@ -129,6 +134,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
@@ -146,6 +152,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var saslServer = mock(SaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doReturn(saslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
@@ -162,6 +169,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doThrow(SaslException.class).when(enhancedAuthenticationService).createSaslServer(any(), any());
 

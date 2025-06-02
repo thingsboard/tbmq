@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Getter
 public enum MqttAuthProviderType {
 
-    BASIC(0, "Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT");
+    BASIC(0, "Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT"), SCRAM(3, "SCRAM");
 
     private final int protoNumber;
     private final String displayName;
@@ -44,7 +44,9 @@ public enum MqttAuthProviderType {
     }
 
     public static List<MqttAuthProviderType> getDefaultPriorityList() {
-        return Arrays.asList(MqttAuthProviderType.values());
+        return Arrays.stream(MqttAuthProviderType.values())
+                .filter(type -> type != MqttAuthProviderType.SCRAM)
+                .collect(Collectors.toList());
     }
 
 }

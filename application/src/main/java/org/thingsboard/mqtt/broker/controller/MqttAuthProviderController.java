@@ -35,7 +35,6 @@ import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 
 import java.util.UUID;
 
-// TODO: Consider adding a method that will just update the auth provider configuration. Similar to enable/disable
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor

@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueRes
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramAuthCallbackHandler;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -42,6 +43,7 @@ import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFail
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.ENHANCED_AUTH_DISABLED;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.FAILED_TO_INIT_SCRAM_SERVER;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_DATA;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_METHOD;
@@ -57,6 +59,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
 
     @PostConstruct
     public void init() {
@@ -65,6 +68,9 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     @Override
     public EnhancedAuthContinueResponse onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        if (!mqttClientAuthProviderManager.isEnhancedAuthEnabled()) {
+            return EnhancedAuthContinueResponse.failure(ENHANCED_AUTH_DISABLED);
+        }
         String clientId = authContext.getClientId();
         String authMethod = authContext.getAuthMethod();
         boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);

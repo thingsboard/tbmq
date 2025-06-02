@@ -23,6 +23,7 @@ public enum EnhancedAuthFailure {
     MISSING_AUTH_METHOD("Received AUTH message while authentication method is not set in the client session ctx!"),
     AUTH_METHOD_MISMATCH("Received AUTH message while authentication method mismatch with value from the client session ctx!"),
     MISSING_AUTH_DATA("No authentication data found!"),
+    ENHANCED_AUTH_DISABLED("Enhanced authentication provider is disabled by broker configuration"),
     MISSING_SCRAM_SERVER("Received AUTH continue message while SCRAM server is null!"),
     FAILED_TO_INIT_SCRAM_SERVER("Failed to initialize SCRAM server!"),
     AUTH_CHALLENGE_FAILED("Client's proof of password knowledge was evaluated, but the authentication challenge wasn't completed successfully!"),

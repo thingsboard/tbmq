@@ -57,12 +57,12 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
         }
         MqttAuthSettings mqttAuthSettings = MqttAuthSettings.fromJsonValue(mqttAuthorization.getJsonValue());
         useListenerBasedProviderOnly = mqttAuthSettings.isUseListenerBasedProviderOnly();
-        priorities = mqttAuthSettings.getPriorities();
+        priorities = getPriorities(mqttAuthSettings.getPriorities());
     }
 
     @Override
     public void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto) {
-        priorities = ProtoConverter.fromMqttAuthPriorities(mqttAuthSettingsProto.getPrioritiesList());
+        priorities = getPriorities(ProtoConverter.fromMqttAuthPriorities(mqttAuthSettingsProto.getPrioritiesList()));
         useListenerBasedProviderOnly = mqttAuthSettingsProto.getUseListenerBasedProviderOnly();
     }
 
@@ -80,6 +80,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
                 case JWT -> jwtAuthenticationService.authenticate(authContext);
                 case BASIC -> basicAuthenticationService.authenticate(authContext);
                 case X_509 -> sslAuthenticationService.authenticate(authContext);
+                default -> throw new IllegalStateException("Unexpected provider type: " + providerType);
             };
             if (response.isSuccess()) {
                 return response;
@@ -110,6 +111,12 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
         var re = new RuntimeException(fullReason);
         log.warn("[{}] Failed to authenticate client", authContext.getClientId(), re);
         return AuthResponse.failure(String.join(" | ", failureReasons));
+    }
+
+    private List<MqttAuthProviderType> getPriorities(List<MqttAuthProviderType> mqttAuthPriorities) {
+        return mqttAuthPriorities.stream()
+                .filter(providerType -> providerType != MqttAuthProviderType.SCRAM)
+                .toList();
     }
 
 }

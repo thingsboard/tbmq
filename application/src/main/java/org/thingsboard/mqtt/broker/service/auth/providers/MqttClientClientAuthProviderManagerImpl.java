@@ -38,6 +38,7 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
     private volatile boolean basicAuthEnabled;
     private volatile boolean sslAuthEnabled;
     private volatile boolean jwtAuthEnabled;
+    private volatile boolean enhancedAuthEnabled;
 
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
@@ -46,7 +47,6 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
 
     @PostConstruct
     public void init() {
-        // TODO: maybe use list instead of Pages?
         List<MqttAuthProvider> providers = mqttAuthProviderService.getAuthProviders(new PageLink(10)).getData();
         if (providers.isEmpty()) {
             return;
@@ -56,6 +56,7 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
                 case BASIC -> basicAuthEnabled = provider.isEnabled();
                 case X_509 -> sslAuthEnabled = provider.isEnabled();
                 case JWT -> jwtAuthEnabled = provider.isEnabled();
+                case SCRAM -> enhancedAuthEnabled = provider.isEnabled();
             }
         }
         log.info("Initialized auth provider states: BASIC={}, X_509={}, JWT={}", basicAuthEnabled, sslAuthEnabled, jwtAuthEnabled);
@@ -92,6 +93,11 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
     }
 
     @Override
+    public boolean isEnhancedAuthEnabled() {
+        return enhancedAuthEnabled;
+    }
+
+    @Override
     public void handleProviderNotification(MqttAuthProviderProto notification) {
         log.trace("Received MQTT authentication provider notification: {}", notification);
         MqttAuthProviderType type = MqttAuthProviderType.fromProtoNumber(notification.getProviderType().getNumber());
@@ -110,6 +116,7 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
                         jwtAuthEnabled = notification.getEnabled();
                         jwtMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
                     }
+                    case SCRAM -> enhancedAuthEnabled = notification.getEnabled();
                 }
 
             }
@@ -119,6 +126,7 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
                     case BASIC -> basicAuthEnabled = enabled;
                     case X_509 -> sslAuthEnabled = enabled;
                     case JWT -> jwtAuthEnabled = enabled;
+                    case SCRAM -> enhancedAuthEnabled = enabled;
                 }
             }
         }

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -32,7 +33,8 @@ import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderC
 @JsonSubTypes({
         @JsonSubTypes.Type(value = BasicMqttAuthProviderConfiguration.class, name = "BASIC"),
         @JsonSubTypes.Type(value = SslMqttAuthProviderConfiguration.class, name = "SSL"),
-        @JsonSubTypes.Type(value = JwtMqttAuthProviderConfiguration.class, name = "JWT")})
+        @JsonSubTypes.Type(value = JwtMqttAuthProviderConfiguration.class, name = "JWT"),
+        @JsonSubTypes.Type(value = ScramMqttAuthProviderConfiguration.class, name = "SCRAM")})
 public interface MqttAuthProviderConfiguration {
 
     @JsonIgnore

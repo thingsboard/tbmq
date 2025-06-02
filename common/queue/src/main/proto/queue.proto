@@ -137,6 +137,7 @@ enum MqttAuthProviderTypeProto {
   BASIC = 0;
   X_509 = 1;
   JWT = 2;
+  SCRAM = 3;
 }
 
 message MqttAuthSettingsProto {

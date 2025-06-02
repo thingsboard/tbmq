@@ -46,7 +46,6 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -187,11 +186,26 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     protected void enabledBasicProvider() {
-        Optional<MqttAuthProvider> basicProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
-        MqttAuthProvider basicProvider = basicProviderOpt.orElseGet(() ->
-                mqttAuthProviderManagerService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider()));
-        if (!basicProvider.isEnabled()) {
-            mqttAuthProviderManagerService.enableAuthProvider(basicProvider.getId());
+        enableProvider(MqttAuthProviderType.BASIC);
+    }
+
+    protected void enabledScramProvider() {
+        enableProvider(MqttAuthProviderType.SCRAM);
+    }
+
+    private void enableProvider(MqttAuthProviderType type) {
+        Optional<MqttAuthProvider> scramProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
+        MqttAuthProvider scramProvider = scramProviderOpt.orElseGet(() -> {
+            MqttAuthProvider authProvider = switch (type) {
+                case BASIC -> MqttAuthProvider.defaultBasicAuthProvider();
+                case X_509 -> MqttAuthProvider.defaultSslAuthProvider();
+                case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
+                case SCRAM -> MqttAuthProvider.defaultScramAuthProvider();
+            };
+            return mqttAuthProviderManagerService.saveAuthProvider(authProvider);
+        });
+        if (!scramProvider.isEnabled()) {
+            mqttAuthProviderManagerService.enableAuthProvider(scramProvider.getId());
         }
     }
 }

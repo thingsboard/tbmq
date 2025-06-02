@@ -15,16 +15,29 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 
 @Service
+@RequiredArgsConstructor
 public class DefaultJwtAuthenticationService implements JwtAuthenticationService {
+
+    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        return AuthResponse.defaultAuthResponse();
+        if (!mqttClientAuthProviderManager.isJwtEnabled()) {
+            return AuthResponse.providerDisabled(MqttAuthProviderType.JWT);
+        }
+        try {
+            return mqttClientAuthProviderManager.getJwtProvider().authenticate(authContext);
+        } catch (Exception e) {
+            return AuthResponse.failure(e.getMessage());
+        }
     }
 
 }
