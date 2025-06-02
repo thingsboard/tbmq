@@ -66,6 +66,12 @@ public class MqttAuthProviderServiceImpl implements MqttAuthProviderService {
     }
 
     @Override
+    public Optional<MqttAuthProvider> getAuthProviderByType(MqttAuthProviderType type) {
+        log.trace("Executing getAuthProviderByType [{}]", type);
+        return Optional.ofNullable(mqttAuthProviderDao.findByType(type));
+    }
+
+    @Override
     public boolean deleteAuthProvider(UUID id) {
         log.trace("Executing deleteAuthProvider [{}]", id);
         var authProvider = mqttAuthProviderDao.findById(id);

@@ -30,6 +30,8 @@ public interface MqttAuthProviderService {
 
     Optional<MqttAuthProvider> getAuthProviderById(UUID id);
 
+    Optional<MqttAuthProvider> getAuthProviderByType(MqttAuthProviderType type);
+
     boolean deleteAuthProvider(UUID id);
 
     PageData<ShortMqttAuthProvider> getShortAuthProviders(PageLink pageLink);

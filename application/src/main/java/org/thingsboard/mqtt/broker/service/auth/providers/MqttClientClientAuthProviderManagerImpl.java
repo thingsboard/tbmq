@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -30,6 +31,7 @@ import java.util.List;
 
 @Slf4j
 @Service
+@Profile("!install")
 @RequiredArgsConstructor
 public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthProviderManager {
 
@@ -47,9 +49,7 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
         // TODO: maybe use list instead of Pages?
         List<MqttAuthProvider> providers = mqttAuthProviderService.getAuthProviders(new PageLink(10)).getData();
         if (providers.isEmpty()) {
-            log.warn("No MQTT authentication providers registered!");
-            // TODO: on install we should not do this:
-//            throw new IllegalStateException("No MQTT authentication providers registered!");
+            return;
         }
         for (MqttAuthProvider provider : providers) {
             switch (provider.getType()) {

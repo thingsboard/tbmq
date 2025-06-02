@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.dao.client.provider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.Dao;
 
 import java.util.UUID;
@@ -26,9 +27,12 @@ public interface MqttAuthProviderDao extends Dao<MqttAuthProvider> {
 
     PageData<MqttAuthProvider> findAll(PageLink pageLink);
 
+    MqttAuthProvider findByType(MqttAuthProviderType type);
+
     PageData<MqttAuthProvider> findAllEnabled(PageLink pageLink);
 
     boolean enableById(UUID id);
 
     boolean disableById(UUID id);
+
 }

@@ -114,7 +114,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
     }
 
     @Test
-    public void testFindMqttAuthProvider() {
+    public void testFindMqttAuthProviderById() {
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider();
 
         MqttAuthProvider savedAuthProvider = mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
@@ -127,6 +127,22 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         assertThat(foundAuthProvider.isPresent()).isTrue();
         assertThat(foundAuthProvider.get()).isEqualTo(savedAuthProvider);
     }
+
+    @Test
+    public void testFindMqttAuthProviderByType() {
+        MqttAuthProvider mqttAuthProvider = getMqttAuthProvider();
+
+        MqttAuthProvider savedAuthProvider = mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
+        assertThat(savedAuthProvider).isNotNull();
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getConfiguration()).isNotNull();
+        assertThat(savedAuthProvider.isEnabled()).isFalse();
+
+        Optional<MqttAuthProvider> foundAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        assertThat(foundAuthProvider.isPresent()).isTrue();
+        assertThat(foundAuthProvider.get()).isEqualTo(savedAuthProvider);
+    }
+
 
     @Test
     public void testDeleteNonExistingMqttAuthProvider() {

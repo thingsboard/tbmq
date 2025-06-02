@@ -21,6 +21,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.model.MqttAuthProviderEntity;
 
 import java.util.UUID;
@@ -42,4 +43,5 @@ public interface MqttAuthProviderRepository extends JpaRepository<MqttAuthProvid
     @Query("UPDATE MqttAuthProviderEntity p SET p.enabled = :enabled WHERE p.id = :id")
     int updateEnabled(@Param("id") UUID id, @Param("enabled") boolean enabled);
 
+    MqttAuthProviderEntity findByType(MqttAuthProviderType type);
 }

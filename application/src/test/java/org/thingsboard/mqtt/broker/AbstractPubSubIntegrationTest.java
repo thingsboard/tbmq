@@ -59,6 +59,7 @@ import org.thingsboard.mqtt.broker.service.testing.integration.executor.External
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @ActiveProfiles("test")
@@ -186,9 +187,11 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     protected void enabledBasicProvider() {
-        List<MqttAuthProvider> providers = mqttAuthProviderService.getAuthProviders(new PageLink(10)).getData();
-        providers.stream()
-                .filter(mqttAuthProvider -> mqttAuthProvider.getType().equals(MqttAuthProviderType.BASIC))
-                .findFirst().ifPresent(mqttAuthProvider -> mqttAuthProviderManagerService.enableAuthProvider(mqttAuthProvider.getId()));
+        Optional<MqttAuthProvider> basicProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        MqttAuthProvider basicProvider = basicProviderOpt.orElseGet(() ->
+                mqttAuthProviderManagerService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider()));
+        if (!basicProvider.isEnabled()) {
+            mqttAuthProviderManagerService.enableAuthProvider(basicProvider.getId());
+        }
     }
 }

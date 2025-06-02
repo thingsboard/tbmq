@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.AbstractDao;
 import org.thingsboard.mqtt.broker.dao.DaoUtil;
 import org.thingsboard.mqtt.broker.dao.model.MqttAuthProviderEntity;
@@ -54,6 +55,11 @@ public class DefaultMqttAuthProviderDao extends AbstractDao<MqttAuthProviderEnti
         return DaoUtil.toPageData(mqttAuthProviderRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
+    }
+
+    @Override
+    public MqttAuthProvider findByType(MqttAuthProviderType type) {
+        return DaoUtil.getData(mqttAuthProviderRepository.findByType(type));
     }
 
     @Override

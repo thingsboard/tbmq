@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -83,7 +83,7 @@ public class MqttClientClientAuthProviderManagerImplTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void shouldThrowException_WhenNoAuthProvidersConfigured() {
+    public void shouldDoNothing_WhenNoAuthProvidersConfigured() {
         // given
         given(providerService.getAuthProviders(new PageLink(10)))
                 .willReturn(new PageData<>(Collections.emptyList(), 1, 0, false));
@@ -91,9 +91,7 @@ public class MqttClientClientAuthProviderManagerImplTest {
         // when
         manager.init();
 
-        assertThatThrownBy(() -> manager.init())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No MQTT authentication providers registered!");
+        assertThatNoException().isThrownBy(() -> manager.init());
     }
 
     @Test
