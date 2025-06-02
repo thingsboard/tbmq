@@ -29,6 +29,7 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
@@ -46,7 +47,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
+public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<BasicMqttAuthProviderConfiguration> {
 
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
@@ -87,7 +88,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     @Override
-    public void onConfigurationUpdate(String configuration) {
+    public void onConfigurationUpdate(BasicMqttAuthProviderConfiguration configuration) {
         // Configuration for Basic provider is static so no logic here now.
     }
 

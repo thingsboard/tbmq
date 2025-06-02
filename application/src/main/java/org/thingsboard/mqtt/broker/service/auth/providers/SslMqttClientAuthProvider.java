@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
@@ -56,13 +55,13 @@ import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
+public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqttAuthProviderConfiguration> {
 
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
     private final CacheNameResolver cacheNameResolver;
 
-    private volatile SslMqttAuthProviderConfiguration configuration;
+    private volatile SslMqttAuthProviderConfiguration configuration = SslMqttAuthProviderConfiguration.defaultConfiguration();
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -93,8 +92,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     @Override
-    public void onConfigurationUpdate(String configuration) {
-        this.configuration =  JacksonUtil.fromString(configuration, SslMqttAuthProviderConfiguration.class);
+    public void onConfigurationUpdate(SslMqttAuthProviderConfiguration configuration) {
+        this.configuration = configuration;
     }
 
     private ClientTypeSslMqttCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {

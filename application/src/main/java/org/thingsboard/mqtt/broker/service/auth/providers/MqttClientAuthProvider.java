@@ -15,12 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
-public interface MqttClientAuthProvider {
+public interface MqttClientAuthProvider<C extends MqttAuthProviderConfiguration> {
 
     AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
 
-    void onConfigurationUpdate(String configuration);
+    void onConfigurationUpdate(C configuration);
 
 }

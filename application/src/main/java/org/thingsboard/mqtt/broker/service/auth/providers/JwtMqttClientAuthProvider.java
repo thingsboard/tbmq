@@ -18,15 +18,14 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 
 
 @Slf4j
 @Service
-public class JwtMqttClientAuthProvider implements MqttClientAuthProvider {
+public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqttAuthProviderConfiguration> {
 
-    private volatile JwtMqttAuthProviderConfiguration configuration;
+    private volatile JwtMqttAuthProviderConfiguration configuration = JwtMqttAuthProviderConfiguration.defaultConfiguration();
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -34,8 +33,8 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider {
     }
 
     @Override
-    public void onConfigurationUpdate(String configuration) {
-        this.configuration =  JacksonUtil.fromString(configuration, JwtMqttAuthProviderConfiguration.class);
+    public void onConfigurationUpdate(JwtMqttAuthProviderConfiguration configuration) {
+        this.configuration = configuration;
     }
 
 }

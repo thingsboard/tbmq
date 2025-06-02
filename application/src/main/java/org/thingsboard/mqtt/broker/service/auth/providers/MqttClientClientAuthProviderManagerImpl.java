@@ -23,6 +23,9 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
@@ -54,8 +57,14 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
         for (MqttAuthProvider provider : providers) {
             switch (provider.getType()) {
                 case BASIC -> basicAuthEnabled = provider.isEnabled();
-                case X_509 -> sslAuthEnabled = provider.isEnabled();
-                case JWT -> jwtAuthEnabled = provider.isEnabled();
+                case X_509 -> {
+                    sslAuthEnabled = provider.isEnabled();
+                    sslMqttClientAuthProvider.onConfigurationUpdate((SslMqttAuthProviderConfiguration) provider.getConfiguration());
+                }
+                case JWT -> {
+                    jwtAuthEnabled = provider.isEnabled();
+                    jwtMqttClientAuthProvider.onConfigurationUpdate((JwtMqttAuthProviderConfiguration) provider.getConfiguration());
+                }
                 case SCRAM -> enhancedAuthEnabled = provider.isEnabled();
             }
         }
@@ -104,17 +113,18 @@ public class MqttClientClientAuthProviderManagerImpl implements MqttClientAuthPr
         switch (notification.getEventType()) {
             case PROVIDER_UPDATED -> {
                 switch (type) {
-                    case BASIC -> {
-                        basicAuthEnabled = notification.getEnabled();
-                        basicMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
-                    }
+                    case BASIC -> basicAuthEnabled = notification.getEnabled();
                     case X_509 -> {
                         sslAuthEnabled = notification.getEnabled();
-                        sslMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
+                        sslMqttClientAuthProvider.onConfigurationUpdate(
+                                JacksonUtil.fromString(notification.getConfiguration(), SslMqttAuthProviderConfiguration.class)
+                        );
                     }
                     case JWT -> {
                         jwtAuthEnabled = notification.getEnabled();
-                        jwtMqttClientAuthProvider.onConfigurationUpdate(notification.getConfiguration());
+                        jwtMqttClientAuthProvider.onConfigurationUpdate(
+                                JacksonUtil.fromString(notification.getConfiguration(), JwtMqttAuthProviderConfiguration.class)
+                        );
                     }
                     case SCRAM -> enhancedAuthEnabled = notification.getEnabled();
                 }
