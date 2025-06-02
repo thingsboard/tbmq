@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.processing.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.MqttQoS;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.service.processing.MsgProcessingCallback;
@@ -88,34 +89,39 @@ public class PersistentMsgSubscriptions {
     public void processSubscriptions(List<Subscription> subscriptions, PublishMsgProto publishMsgProto,
                                      MsgProcessingCallback callback) {
         if (isNonPersistentByPubQos(publishMsgProto)) {
+            int subscriptionsCount = subscriptions.size();
             if (processSubscriptionsInParallel) {
-                subscriptions.parallelStream().forEach(subscription -> {
-                    addToIntegrations(subscription, subscriptions.size());
-                    callback.accept(subscription);
-                });
+                subscriptions.parallelStream().forEach(sub -> processNonPersistentSubscriptionByPubQos(sub, subscriptionsCount, callback));
             } else {
-                for (Subscription subscription : subscriptions) {
-                    addToIntegrations(subscription, subscriptions.size());
-                    callback.accept(subscription);
+                for (Subscription sub : subscriptions) {
+                    processNonPersistentSubscriptionByPubQos(sub, subscriptionsCount, callback);
                 }
             }
         } else {
-            process(subscriptions, callback);
+            processPersistentSubscriptionByPubQos(subscriptions, callback);
         }
     }
 
-    public void process(List<Subscription> subscriptions, MsgProcessingCallback callback) {
+    private void processNonPersistentSubscriptionByPubQos(Subscription subscription, int size, MsgProcessingCallback callback) {
+        if (ClientType.INTEGRATION.equals(subscription.getClientType())) {
+            addToIntegrations(subscription, size);
+        } else {
+            callback.accept(subscription);
+        }
+    }
+
+    public void processPersistentSubscriptionByPubQos(List<Subscription> subscriptions, MsgProcessingCallback callback) {
         int size = subscriptions.size();
         if (processSubscriptionsInParallel) {
-            subscriptions.parallelStream().forEach(subscription -> processSubscription(subscription, size, callback));
+            subscriptions.parallelStream().forEach(sub -> handleSubscriptionByPersistence(sub, size, callback));
         } else {
-            for (Subscription subscription : subscriptions) {
-                processSubscription(subscription, size, callback);
+            for (Subscription sub : subscriptions) {
+                handleSubscriptionByPersistence(sub, size, callback);
             }
         }
     }
 
-    private void processSubscription(Subscription subscription, int size, MsgProcessingCallback callback) {
+    private void handleSubscriptionByPersistence(Subscription subscription, int size, MsgProcessingCallback callback) {
         if (isPersistentBySubInfo(subscription)) {
             switch (subscription.getClientType()) {
                 case APPLICATION -> addToApplications(subscription, size);
@@ -128,10 +134,10 @@ public class PersistentMsgSubscriptions {
     }
 
     private boolean isPersistentBySubInfo(Subscription subscription) {
-        return subscription.getClientSessionInfo().isPersistent() && isQosPersistent(subscription);
+        return subscription.getClientSessionInfo().isPersistent() && isPersistentBySubQos(subscription);
     }
 
-    private boolean isQosPersistent(Subscription subscription) {
+    private boolean isPersistentBySubQos(Subscription subscription) {
         return subscription.getQos() != MqttQoS.AT_MOST_ONCE.value();
     }
 
