@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.processing.data;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -25,6 +26,9 @@ import org.thingsboard.mqtt.broker.service.processing.MsgProcessingCallback;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -166,6 +170,47 @@ class PersistentMsgSubscriptionsTest {
 
         verify(callback).accept(any());
         assertThat(parallelSubs.getIntegrationSubscriptions().size()).isEqualTo(1);
+    }
+
+    @RepeatedTest(10)
+        // repeat to increase chances of race triggering
+    void givenParallelProcessing_whenManyApplicationSubs_thenShouldNotThrowOrLoseData() throws Exception {
+        int threads = 20;
+        int subsPerThread = 50;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        PersistentMsgSubscriptions subscriptions = new PersistentMsgSubscriptions(true, null);
+        CountDownLatch ready = new CountDownLatch(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(threads);
+
+        Runnable task = () -> {
+            try {
+                ready.countDown();     // signal ready
+                start.await();         // wait for go
+                for (int i = 0; i < subsPerThread; i++) {
+                    Subscription sub = mockSub(ClientType.APPLICATION, true, MqttQoS.AT_LEAST_ONCE.value());
+                    subscriptions.addToApplications(sub, threads * subsPerThread);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                done.countDown();
+            }
+        };
+
+        for (int i = 0; i < threads; i++) {
+            executor.submit(task);
+        }
+
+        ready.await(); // wait for all threads to be ready
+        start.countDown(); // release all threads
+        done.await(); // wait for all to finish
+
+        executor.shutdownNow();
+
+        // Expecting threads * subsPerThread subscriptions stored
+        assertThat(subscriptions.getApplicationSubscriptions()).hasSize(threads * subsPerThread);
     }
 
 }

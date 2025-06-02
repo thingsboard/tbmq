@@ -62,21 +62,33 @@ public class PersistentMsgSubscriptions {
 
     public void addToDevices(Subscription subscription, int size) {
         if (deviceSubscriptions == null) {
-            deviceSubscriptions = initArrayList(size);
+            synchronized (this) {
+                if (deviceSubscriptions == null) {
+                    deviceSubscriptions = initArrayList(size);
+                }
+            }
         }
         deviceSubscriptions.add(subscription);
     }
 
     public void addToApplications(Subscription subscription, int size) {
         if (applicationSubscriptions == null) {
-            applicationSubscriptions = initArrayList(size);
+            synchronized (this) {
+                if (applicationSubscriptions == null) {
+                    applicationSubscriptions = initArrayList(size);
+                }
+            }
         }
         applicationSubscriptions.add(subscription);
     }
 
     public void addToIntegrations(Subscription subscription, int size) {
         if (integrationSubscriptions == null) {
-            integrationSubscriptions = initArrayList(size);
+            synchronized (this) {
+                if (integrationSubscriptions == null) {
+                    integrationSubscriptions = initArrayList(size);
+                }
+            }
         }
         integrationSubscriptions.add(subscription);
     }
