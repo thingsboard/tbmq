@@ -29,9 +29,5 @@ public class SslMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
         return MqttAuthProviderType.X_509;
     }
 
-    public static SslMqttAuthProviderConfiguration defaultConfiguration() {
-        return new SslMqttAuthProviderConfiguration();
-    }
-
 
 }
