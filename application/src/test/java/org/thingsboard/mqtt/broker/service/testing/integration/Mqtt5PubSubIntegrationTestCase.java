@@ -77,7 +77,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     public void beforeTest() throws Exception {
         pubCredentials = saveCredentials(PUB_CLIENT_ID, List.of(TEST_TOPIC));
         subCredentials = saveCredentials(SUB_CLIENT_ID, List.of(MY_TOPIC));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     private MqttClientCredentials saveCredentials(String pubClientId, List<String> pubAuthRulePatterns) {

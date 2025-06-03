@@ -36,10 +36,8 @@ import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotifi
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
@@ -90,10 +88,7 @@ public class InternodeNotificationsConsumerImplTest {
     }
 
     @Test
-    public void testStartConsuming_AndProcessesMessageWithAuthSettings() throws InterruptedException {
-        // Prepare a latch to wait for async execution
-        CountDownLatch latch = new CountDownLatch(1);
-
+    public void testStartConsuming_AndProcessesMessageWithAuthSettings() {
         InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
                 .setMqttAuthSettingsProto(MqttAuthSettingsProto.getDefaultInstance())
                 .build();
@@ -101,16 +96,14 @@ public class InternodeNotificationsConsumerImplTest {
         TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
 
         when(consumer.poll(anyLong()))
-                .thenAnswer(invocation -> {
-                    latch.countDown();
-                    return List.of(msg);
-                }).thenReturn(List.of()); // to avoid continuous processing
+                .thenReturn(List.of(msg))
+                .thenReturn(List.of()); // to avoid continuous processing
 
         notificationsConsumer.startConsuming();
 
-        assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto()));
 
-        verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
         verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
 
         notificationsConsumer.destroy();
@@ -118,10 +111,7 @@ public class InternodeNotificationsConsumerImplTest {
     }
 
     @Test
-    public void testStartConsuming_AndProcessesMessageWithAuthProvider() throws InterruptedException {
-        // Prepare a latch to wait for async execution
-        CountDownLatch latch = new CountDownLatch(1);
-
+    public void testStartConsuming_AndProcessesMessageWithAuthProvider() {
         InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
                 .setMqttAuthProviderProto(MqttAuthProviderProto.getDefaultInstance())
                 .build();
@@ -129,16 +119,14 @@ public class InternodeNotificationsConsumerImplTest {
         TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
 
         when(consumer.poll(anyLong()))
-                .thenAnswer(invocation -> {
-                    latch.countDown();
-                    return List.of(msg);
-                }).thenReturn(List.of()); // to avoid continuous processing
+                .thenReturn(List.of(msg))
+                .thenReturn(List.of()); // Stop further processing
 
         notificationsConsumer.startConsuming();
 
-        assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(mqttClientAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto()));
 
-        verify(mqttClientAuthProviderManager).handleProviderNotification(proto.getMqttAuthProviderProto());
         verifyNoInteractions(authorizationRoutingService, clientSessionStatsCleanupProcessor);
 
         notificationsConsumer.destroy();
@@ -146,9 +134,7 @@ public class InternodeNotificationsConsumerImplTest {
     }
 
     @Test
-    public void testStartConsuming_AndProcessesMessageWithClientSessionStatsCleanupRequest() throws InterruptedException {
-        // Prepare a latch to wait for async execution
-        CountDownLatch latch = new CountDownLatch(1);
+    public void testStartConsuming_AndProcessesMessageWithClientSessionStatsCleanupRequest() {
 
         InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
                 .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.getDefaultInstance())
@@ -157,16 +143,14 @@ public class InternodeNotificationsConsumerImplTest {
         TbProtoQueueMsg<InternodeNotificationProto> msg = new TbProtoQueueMsg<>("nodeA", proto);
 
         when(consumer.poll(anyLong()))
-                .thenAnswer(invocation -> {
-                    latch.countDown();
-                    return List.of(msg);
-                }).thenReturn(List.of()); // to avoid continuous processing
+                .thenReturn(List.of(msg))
+                .thenReturn(List.of()); // to avoid continuous processing
 
         notificationsConsumer.startConsuming();
 
-        assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
+        Awaitility.await().atMost(2, TimeUnit.SECONDS).untilAsserted(() ->
+                verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto()));
 
-        verify(clientSessionStatsCleanupProcessor).processClientSessionStatsCleanup(proto.getClientSessionStatsCleanupProto());
         verifyNoInteractions(authorizationRoutingService, mqttClientAuthProviderManager);
 
         notificationsConsumer.destroy();

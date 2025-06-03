@@ -46,7 +46,7 @@ public class DeviceRequestResponseIntegrationTestCase extends AbstractRequestRes
     @Before
     public void beforeTest() throws Exception {
         super.init(TestUtils.createDeviceClientCredentials(null, REQUEST_RESPONSE_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

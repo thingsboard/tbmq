@@ -24,7 +24,6 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -46,7 +45,7 @@ public class AppRequestResponseIntegrationTestCase extends AbstractRequestRespon
     @Before
     public void beforeTest() throws Exception {
         super.init(TestUtils.createApplicationClientCredentials(null, REQUEST_RESPONSE_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

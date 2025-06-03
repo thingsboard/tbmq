@@ -66,7 +66,7 @@ public class DeviceMsgExpiryIntegrationTestCase extends AbstractPubSubIntegratio
         deviceCredentials = credentialsService.saveCredentials(
                 TestUtils.createDeviceClientCredentials(null, MSG_EXPIRY_USER_NAME)
         );
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

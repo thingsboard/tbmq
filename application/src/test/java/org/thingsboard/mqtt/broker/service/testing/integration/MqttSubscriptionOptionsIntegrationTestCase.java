@@ -71,7 +71,7 @@ public class MqttSubscriptionOptionsIntegrationTestCase extends AbstractPubSubIn
         genericCredentials = saveCredentials(TestUtils.createDeviceClientCredentials(null, GENERIC_USER_NAME));
         devCredentials = saveCredentials(TestUtils.createDeviceClientCredentials(DEV_CLIENT_ID, null));
         appCredentials = saveCredentials(TestUtils.createApplicationClientCredentials(APP_CLIENT_ID, null));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     private MqttClientCredentials saveCredentials(MqttClientCredentials credentials) {

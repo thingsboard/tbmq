@@ -63,7 +63,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
     @Before
     public void beforeTest() {
         credentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

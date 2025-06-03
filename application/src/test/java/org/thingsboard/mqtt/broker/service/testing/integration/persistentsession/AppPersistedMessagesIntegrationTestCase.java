@@ -65,7 +65,7 @@ public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubInteg
         deviceCredentials = credentialsService.saveCredentials(
                 TestUtils.createDeviceClientCredentials(PUBLISHING_CLIENT, DEV_USERNAME)
         );
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

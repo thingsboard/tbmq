@@ -66,7 +66,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, MSG_EXPIRY_USER_NAME)
         );
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

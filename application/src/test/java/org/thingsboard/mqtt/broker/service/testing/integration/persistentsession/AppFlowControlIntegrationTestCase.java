@@ -45,7 +45,7 @@ public class AppFlowControlIntegrationTestCase extends AbstractFlowControlIntegr
     @Before
     public void beforeTest() throws Exception {
         super.init(TestUtils.createApplicationClientCredentials(null, FLOW_CONTROL_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

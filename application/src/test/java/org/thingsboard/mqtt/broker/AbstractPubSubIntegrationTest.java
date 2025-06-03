@@ -104,7 +104,7 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         return pubOptions;
     }
 
-    protected void enabledBasicProvider() {
+    protected void enableBasicProvider() {
         enableProvider(MqttAuthProviderType.BASIC);
     }
 

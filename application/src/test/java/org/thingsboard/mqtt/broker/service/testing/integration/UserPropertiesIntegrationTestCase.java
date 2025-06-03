@@ -79,7 +79,7 @@ public class UserPropertiesIntegrationTestCase extends AbstractPubSubIntegration
         devPubCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(PUB_CLIENT_ID_DEV, null));
         devSubCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(SUB_CLIENT_ID_DEV, null));
         defaultCredentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, DEFAULT_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

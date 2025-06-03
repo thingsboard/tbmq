@@ -42,7 +42,7 @@ public class AppQoSVerificationIntegrationTestCase extends AbstractQoSVerificati
     @Before
     public void beforeTest() throws Exception {
         super.beforeTest();
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @Test

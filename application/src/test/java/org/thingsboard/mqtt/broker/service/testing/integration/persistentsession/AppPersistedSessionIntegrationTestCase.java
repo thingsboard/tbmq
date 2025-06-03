@@ -84,7 +84,7 @@ public class AppPersistedSessionIntegrationTestCase extends AbstractPubSubIntegr
     public void beforeTest() throws Exception {
         TEST_CLIENT_ID = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(TEST_CLIENT_ID, null));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

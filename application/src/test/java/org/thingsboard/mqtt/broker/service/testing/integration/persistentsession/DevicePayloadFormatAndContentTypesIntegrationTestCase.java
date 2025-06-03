@@ -46,7 +46,7 @@ public class DevicePayloadFormatAndContentTypesIntegrationTestCase extends Abstr
     @Before
     public void beforeTest() throws Exception {
         super.init(TestUtils.createDeviceClientCredentials(null, PAYLOAD_FORMAT_AND_CONTENT_TYPES_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

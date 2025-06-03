@@ -56,7 +56,7 @@ public class AuthorizationIntegrationTestCase extends AbstractPubSubIntegrationT
     @Before
     public void beforeTest() throws Exception {
         credentials = saveCredentials();
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     private MqttClientCredentials saveCredentials() {

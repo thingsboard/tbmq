@@ -107,7 +107,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
 
         applicationSharedSubscription = applicationSharedSubscriptionService.saveSharedSubscription(getSubscription());
         applicationTopicService.createSharedTopic(applicationSharedSubscription);
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     private ApplicationSharedSubscription getSubscription() {

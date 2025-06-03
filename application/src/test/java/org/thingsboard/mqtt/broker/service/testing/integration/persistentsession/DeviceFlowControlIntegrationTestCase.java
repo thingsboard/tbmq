@@ -44,7 +44,7 @@ public class DeviceFlowControlIntegrationTestCase extends AbstractFlowControlInt
     @Before
     public void beforeTest() {
         super.init(TestUtils.createDeviceClientCredentials(null, FLOW_CONTROL_USER_NAME));
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

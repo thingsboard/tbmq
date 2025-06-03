@@ -78,7 +78,7 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
         appClientId = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(appClientId, null));
         defaultCredentials = credentialsService.saveSystemWebSocketCredentials();
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After

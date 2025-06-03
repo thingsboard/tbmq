@@ -66,7 +66,7 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, APP_CLIENTS_LIMIT_USER_NAME)
         );
-        enabledBasicProvider();
+        enableBasicProvider();
     }
 
     @After
