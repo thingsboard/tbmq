@@ -66,11 +66,14 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
 
     @PostConstruct
     public void init() {
-        Optional<MqttAuthProvider> basicAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
-        basicAuthProvider.ifPresent(mqttAuthProvider -> {
-            this.enabled = mqttAuthProvider.isEnabled();
-            this.configuration = (BasicMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
-        });
+        Optional<MqttAuthProvider> basicAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        if (basicAuthProviderOpt.isEmpty()) {
+            log.warn("JWT authentication provider does not exist! JWT authentication is disabled!");
+            return;
+        }
+        MqttAuthProvider basicAuthProvider = basicAuthProviderOpt.get();
+        this.enabled = basicAuthProvider.isEnabled();
+        this.configuration = (BasicMqttAuthProviderConfiguration) basicAuthProvider.getConfiguration();
     }
 
     @Autowired

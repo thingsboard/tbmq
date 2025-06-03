@@ -42,3 +42,39 @@ VALUES ('6eaaefa6-4612-11e7-a919-92ebcb67fe33', 1592576748000, 'mail', '{
 	"username": "",
 	"password": ""
 }');
+
+INSERT INTO admin_settings (id, created_time, key, json_value)
+VALUES (
+           '7ca448f2-780e-4b38-ac15-c064a8f20bb5',
+           1748975222000,
+           'mqttAuthorization',
+           '{"useListenerBasedProviderOnly":false,"priorities":["BASIC","X_509","JWT"]}'
+       );
+
+INSERT INTO mqtt_auth_provider (id, created_time, enabled, type, configuration)
+VALUES
+-- BASIC
+('bc0a90bf-de56-4953-92ca-7ef7b159c2fd', 1748975222000, false, 'BASIC', '{"type": "BASIC"}'::jsonb),
+
+-- X_509
+('e5b71665-0a22-4398-8f93-5c7c3c145a7d', 1748975222000, false, 'X_509', '{"type": "SSL", "skipValidityCheckForClientCert": false}'::jsonb),
+
+-- JWT
+('5590d101-628f-414c-9960-5966a9c42c31', 1748975222000, false, 'JWT', '{
+  "type": "JWT",
+  "authClaims": {},
+  "jwtVerifierType": "ALGORITHM_BASED",
+  "clientTypeClaims": {},
+  "defaultClientType": "APPLICATION",
+  "jwtVerifierConfiguration": {
+    "algorithm": "HMAC_BASED",
+    "jwtVerifierType": "ALGORITHM_BASED",
+    "jwtSignAlgorithmConfiguration": {
+      "secret": "secret",
+      "algorithm": "HMAC_BASED"
+    }
+  }
+}'::jsonb),
+
+-- SCRAM
+('3a7ffd44-eb9c-4334-951d-a8bb3cb4804f', 1748975222000, false, 'SCRAM', '{"type": "SCRAM"}'::jsonb);

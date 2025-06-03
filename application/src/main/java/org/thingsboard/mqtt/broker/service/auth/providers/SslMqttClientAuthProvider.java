@@ -72,11 +72,14 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
 
     @PostConstruct
     public void init() {
-        Optional<MqttAuthProvider> sslAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509);
-        sslAuthProvider.ifPresent(mqttAuthProvider -> {
-            enabled = mqttAuthProvider.isEnabled();
-            configuration = (SslMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
-        });
+        Optional<MqttAuthProvider> sslAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509);
+        if (sslAuthProviderOpt.isEmpty()) {
+            log.warn("X_509 Certificate chain authentication provider does not exist! X_509 authentication is disabled!");
+            return;
+        }
+        MqttAuthProvider sslAuthProvider = sslAuthProviderOpt.get();
+        this.enabled = sslAuthProvider.isEnabled();
+        this.configuration = (SslMqttAuthProviderConfiguration) sslAuthProvider.getConfiguration();
     }
 
     @Override

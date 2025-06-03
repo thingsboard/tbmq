@@ -42,11 +42,14 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
 
     @PostConstruct
     public void init() {
-        Optional<MqttAuthProvider> jwtAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.JWT);
-        jwtAuthProvider.ifPresent(mqttAuthProvider -> {
-            enabled = mqttAuthProvider.isEnabled();
-            configuration = (JwtMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
-        });
+        Optional<MqttAuthProvider> jwtAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.JWT);
+        if (jwtAuthProviderOpt.isEmpty()) {
+            log.warn("JWT authentication provider does not exist! JWT authentication is disabled!");
+            return;
+        }
+        MqttAuthProvider jwtAuthProvider = jwtAuthProviderOpt.get();
+        this.enabled = jwtAuthProvider.isEnabled();
+        this.configuration = (JwtMqttAuthProviderConfiguration) jwtAuthProvider.getConfiguration();
     }
 
     @Override
