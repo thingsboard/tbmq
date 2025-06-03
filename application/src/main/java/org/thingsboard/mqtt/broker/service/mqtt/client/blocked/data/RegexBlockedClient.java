@@ -19,8 +19,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 @EqualsAndHashCode(of = {"pattern", "regexMatchTarget"}, callSuper = false)
 @Data
@@ -37,19 +39,21 @@ public class RegexBlockedClient extends AbstractBlockedClient {
         super();
         this.pattern = pattern;
         this.regexMatchTarget = regexMatchTarget;
-        this.compiledPattern = Pattern.compile(pattern);
     }
 
     public RegexBlockedClient(long expirationTime, String description, String pattern, RegexMatchTarget regexMatchTarget) {
         super(expirationTime, description);
         this.pattern = pattern;
         this.regexMatchTarget = regexMatchTarget;
-        this.compiledPattern = Pattern.compile(pattern);
     }
 
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
-        this.compiledPattern = Pattern.compile(pattern);
+    // Must be called after deserialization
+    public void validatePatternAndInit() {
+        try {
+            this.compiledPattern = Pattern.compile(pattern);
+        } catch (PatternSyntaxException e) {
+            throw new DataValidationException("Invalid regex pattern: " + pattern, e);
+        }
     }
 
     @Override

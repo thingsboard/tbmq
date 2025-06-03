@@ -75,7 +75,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     @Override
     public void init(Map<String, BlockedClient> initBlockedClientMap) {
-        initBlockedClientMap.forEach((key, client) -> blockedClientMap.get(client.getType()).put(key, client));
+        initBlockedClientMap.forEach(this::addBlockedClient);
     }
 
     @Override
@@ -99,8 +99,18 @@ public class BlockedClientServiceImpl implements BlockedClientService {
 
     @Override
     public void addBlockedClient(BlockedClient blockedClient) {
+        addBlockedClient(blockedClient.getKey(), blockedClient);
+    }
+
+    @Override
+    public void addBlockedClient(String key, BlockedClient blockedClient) {
         validate(blockedClient);
-        blockedClientMap.get(blockedClient.getType()).put(blockedClient.getKey(), blockedClient);
+
+        if (blockedClientMap.get(blockedClient.getType()).containsKey(key)) {
+            throw new DataValidationException("Such blocked client already exists!");
+        }
+
+        blockedClientMap.get(blockedClient.getType()).put(key, blockedClient);
     }
 
     @Override
@@ -221,8 +231,11 @@ public class BlockedClientServiceImpl implements BlockedClientService {
         if (StringUtils.isEmpty(blockedClient.getValue())) {
             throw new DataValidationException("Blocked client value should be specified");
         }
-        if (BlockedClientType.REGEX.equals(blockedClient.getType()) && blockedClient.getRegexMatchTarget() == null) {
-            throw new DataValidationException("Blocked client regex match target should be specified for REGEX type");
+        if (BlockedClientType.REGEX.equals(blockedClient.getType())) {
+            if (blockedClient.getRegexMatchTarget() == null) {
+                throw new DataValidationException("Blocked client regex match target should be specified for REGEX type");
+            }
+            ((RegexBlockedClient) blockedClient).validatePatternAndInit();
         }
     }
 
