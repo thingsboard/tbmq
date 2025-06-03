@@ -33,6 +33,8 @@ public interface BlockedClientService {
 
     void addBlockedClient(BlockedClient blockedClient);
 
+    void addBlockedClient(String key, BlockedClient blockedClient);
+
     void removeBlockedClientAndPersist(BlockedClient blockedClient);
 
     void removeBlockedClient(BlockedClient blockedClient);

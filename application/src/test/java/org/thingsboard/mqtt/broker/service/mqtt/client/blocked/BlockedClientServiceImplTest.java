@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.producer.BlockedC
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -128,7 +129,11 @@ class BlockedClientServiceImplTest {
         RegexBlockedClient regexBlockedClient = (RegexBlockedClient) blockedClient;
         assertThat(regexBlockedClient).isNotNull();
         assertThat(blockedClient.getKey()).isEqualTo("regex:^client-[0-9]+$:byID");
+        assertThat(regexBlockedClient.getCompiledPattern()).isNull();
+
+        regexBlockedClient.validatePatternAndInit();
         assertThat(regexBlockedClient.getCompiledPattern()).isNotNull();
+
         assertThat(regexBlockedClient.matches("client-123")).isTrue();
         assertThat(regexBlockedClient.matches("user-123")).isFalse();
     }
@@ -142,8 +147,8 @@ class BlockedClientServiceImplTest {
         objectNode.put("expirationTime", System.currentTimeMillis());
         objectNode.put("description", "invalid regex test");
 
-        assertThatThrownBy(() -> JacksonUtil.convertValue(objectNode, BlockedClient.class))
-                .isInstanceOf(IllegalArgumentException.class)
+        assertThatThrownBy(() -> Objects.requireNonNull(JacksonUtil.convertValue(objectNode, RegexBlockedClient.class)).validatePatternAndInit())
+                .isInstanceOf(DataValidationException.class)
                 .cause()
                 .hasMessageContaining("Unclosed character class");
     }

@@ -66,13 +66,18 @@ public class BlockedClientDto {
     public static Comparator<BlockedClientDto> getComparator(SortOrder sortOrder) {
         return switch (sortOrder.getProperty()) {
             case "type" -> getComparatorBy(sortOrder, BlockedClientDto::getType);
-            case "expirationTime" -> getComparatorBy(sortOrder, BlockedClientDto::getExpirationTime);
+            case "expirationTime" -> getComparatorBy(sortOrder, dto -> getSortableExpiration(dto.getExpirationTime()));
             case "status" -> getComparatorBy(sortOrder, BlockedClientDto::getStatus);
             case "description" -> getComparatorBy(sortOrder, BlockedClientDto::getDescription);
             case "value" -> getComparatorBy(sortOrder, BlockedClientDto::getValue);
             case "regexMatchTarget" -> getComparatorBy(sortOrder, BlockedClientDto::getRegexMatchTarget);
             default -> null;
         };
+    }
+
+    // Helper method to treat 0L as far future so it goes last in ascending order
+    private static Long getSortableExpiration(long expirationTime) {
+        return expirationTime <= 0L ? Long.MAX_VALUE : expirationTime;
     }
 
 }
