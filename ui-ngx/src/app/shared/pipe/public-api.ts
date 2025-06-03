@@ -17,7 +17,4 @@
 export * from './highlight.pipe';
 export * from './milliseconds-to-time-string.pipe';
 export * from './nospace.pipe';
-export * from './boolean.pipe';
 export * from './truncate.pipe';
-export * from './selectable-columns.pipe';
-export * from './date-ago.pipe';
