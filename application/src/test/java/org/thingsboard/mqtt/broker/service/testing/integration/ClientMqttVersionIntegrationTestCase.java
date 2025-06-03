@@ -21,16 +21,13 @@ import org.awaitility.Awaitility;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
@@ -55,14 +52,6 @@ public class ClientMqttVersionIntegrationTestCase extends AbstractPubSubIntegrat
     public ClientSessionService clientSessionService;
     @Autowired
     public CacheNameResolver cacheNameResolver;
-
-    @Before
-    public void init() {
-    }
-
-    @After
-    public void clear() throws Exception {
-    }
 
     @Test
     public void givenConnectingMqtt3Client_whenCheckClientMqttVersion_thenReturnExpectedResult() throws Throwable {

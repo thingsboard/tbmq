@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
@@ -72,7 +71,7 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     @PostConstruct
     public void init() {
         ScramSaslServerProvider.initialize();
-        Optional<MqttAuthProvider> sslAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509);
+        Optional<MqttAuthProvider> sslAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM);
         sslAuthProvider.ifPresent(mqttAuthProvider -> {
             enabled = mqttAuthProvider.isEnabled();
             configuration = (ScramMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();

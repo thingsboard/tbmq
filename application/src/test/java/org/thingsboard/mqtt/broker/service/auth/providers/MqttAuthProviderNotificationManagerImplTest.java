@@ -83,19 +83,19 @@ public class MqttAuthProviderNotificationManagerImplTest {
     @Test
     public void shouldUpdateBasicProvider() {
         // given
-        var basicMqttAuthProviderConfiguration = new BasicMqttAuthProviderConfiguration();
+        var mockedConfiguration = new BasicMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.BASIC)
                 .setEnabled(true)
-                .setConfiguration(JacksonUtil.toString(basicMqttAuthProviderConfiguration))
+                .setConfiguration(JacksonUtil.toString(mockedConfiguration))
                 .build();
 
         // when
         manager.handleProviderNotification(notification);
 
         // then
-        then(basicProvider).should().onProviderUpdate(true, basicMqttAuthProviderConfiguration);
+        then(basicProvider).should().onProviderUpdate(true, mockedConfiguration);
     }
 
     @Test
@@ -131,19 +131,19 @@ public class MqttAuthProviderNotificationManagerImplTest {
     @Test
     public void shouldUpdateSslProvider() {
         // given
-        SslMqttAuthProviderConfiguration configuration = new SslMqttAuthProviderConfiguration();
+        var mockedConfiguration = new SslMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.X_509)
                 .setEnabled(false)
-                .setConfiguration(JacksonUtil.toString(configuration))
+                .setConfiguration(JacksonUtil.toString(mockedConfiguration))
                 .build();
 
         // when
         manager.handleProviderNotification(notification);
 
         // then
-        then(sslProvider).should().onProviderUpdate(false, configuration);
+        then(sslProvider).should().onProviderUpdate(false, mockedConfiguration);
     }
 
     @Test
@@ -179,7 +179,7 @@ public class MqttAuthProviderNotificationManagerImplTest {
     @Test
     public void shouldUpdateJwtProvider() {
         // given
-        JwtMqttAuthProviderConfiguration mockedConfiguration = new JwtMqttAuthProviderConfiguration();
+        var mockedConfiguration = new JwtMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.JWT)
@@ -228,7 +228,7 @@ public class MqttAuthProviderNotificationManagerImplTest {
     @Test
     public void shouldUpdateScramProvider() {
         // given
-        ScramMqttAuthProviderConfiguration mockedConfiguration = new ScramMqttAuthProviderConfiguration();
+        var mockedConfiguration = new ScramMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.SCRAM)

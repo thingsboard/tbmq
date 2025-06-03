@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
@@ -63,7 +62,7 @@ public class AppMsgExpiryIntegrationTestCase extends AbstractPubSubIntegrationTe
     private MqttClient persistedClient;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, MSG_EXPIRY_USER_NAME)
         );

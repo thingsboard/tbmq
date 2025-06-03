@@ -29,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.SubscriptionService;
@@ -75,7 +74,7 @@ public class Mqtt5PubSubIntegrationTestCase extends AbstractPubSubIntegrationTes
     private MqttClientCredentials subCredentials;
 
     @Before
-    public void init() throws Exception {
+    public void beforeTest() throws Exception {
         pubCredentials = saveCredentials(PUB_CLIENT_ID, List.of(TEST_TOPIC));
         subCredentials = saveCredentials(SUB_CLIENT_ID, List.of(MY_TOPIC));
         enabledBasicProvider();

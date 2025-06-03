@@ -40,8 +40,8 @@ import org.thingsboard.mqtt.broker.service.testing.integration.AbstractQoSVerifi
 public class AppQoSVerificationIntegrationTestCase extends AbstractQoSVerificationIntegrationTestCase {
 
     @Before
-    public void init() {
-        super.init();
+    public void beforeTest() throws Exception {
+        super.beforeTest();
         enabledBasicProvider();
     }
 

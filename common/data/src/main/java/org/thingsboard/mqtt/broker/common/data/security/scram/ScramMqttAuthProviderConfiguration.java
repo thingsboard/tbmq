@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.scram;
 
+import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
+@Data
 public class ScramMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
 
     @Override

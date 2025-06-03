@@ -27,6 +27,7 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.ArrayList;
@@ -39,6 +40,8 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
     private volatile List<MqttAuthProviderType> priorities;
     private volatile boolean useListenerBasedProviderOnly;
+
+    private final MqttAuthProviderNotificationManager mqttAuthProviderNotificationManager;
 
     private final BasicAuthenticationService basicAuthenticationService;
     private final SslAuthenticationService sslAuthenticationService;
@@ -70,6 +73,10 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     public AuthResponse executeAuthFlow(AuthContext authContext) {
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client", authContext.getClientId());
+        }
+
+        if (!mqttAuthProviderNotificationManager.defaultProvidersEnabled()) {
+            return AuthResponse.defaultAuthResponse();
         }
 
         List<MqttAuthProviderType> prioritiesForCurrentAuthContext = getPrioritiesForCurrentAuthContext(authContext);

@@ -96,7 +96,7 @@ public class Mqtt5AuthIntegrationTestCase extends AbstractPubSubIntegrationTest 
     private MqttClientCredentials clientCredentials;
 
     @Before
-    public void before() throws Exception {
+    public void beforeTest() throws Exception {
         clientCredentials = saveCredentials();
         enabledScramProvider();
     }

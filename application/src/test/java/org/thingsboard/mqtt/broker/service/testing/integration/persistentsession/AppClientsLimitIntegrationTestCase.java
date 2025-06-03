@@ -62,7 +62,7 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
     private MqttClient persistedClient;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, APP_CLIENTS_LIMIT_USER_NAME)
         );

@@ -42,7 +42,7 @@ public class DeviceFlowControlIntegrationTestCase extends AbstractFlowControlInt
     private static final String DEV_FLOW_CONTROL_CLIENT = "devFlowControlClient";
 
     @Before
-    public void init() {
+    public void beforeTest() {
         super.init(TestUtils.createDeviceClientCredentials(null, FLOW_CONTROL_USER_NAME));
         enabledBasicProvider();
     }

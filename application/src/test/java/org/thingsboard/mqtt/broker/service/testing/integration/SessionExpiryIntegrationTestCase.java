@@ -23,9 +23,7 @@ import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,14 +59,6 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
     private ClientSessionCache clientSessionCache;
     @Autowired
     private ClientSubscriptionCache clientSubscriptionCache;
-
-    @Before
-    public void init() throws Exception {
-    }
-
-    @After
-    public void clear() {
-    }
 
     @Test
     public void givenSessionWithCleanStartAndSessionExpiryInterval_whenDisconnect_thenSessionIsClearedAfterDelay() throws Throwable {

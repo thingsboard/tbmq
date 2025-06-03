@@ -61,7 +61,7 @@ public class SessionsLimitIntegrationTestCase extends AbstractPubSubIntegrationT
     private MqttClientCredentials credentials;
 
     @Before
-    public void init() {
+    public void beforeTest() {
         credentials = credentialsService.saveCredentials(TestUtils.createDeviceClientCredentials(null, USER_NAME));
         enabledBasicProvider();
     }

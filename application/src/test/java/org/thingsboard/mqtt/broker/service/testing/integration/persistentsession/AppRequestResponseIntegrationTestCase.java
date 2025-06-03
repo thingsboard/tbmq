@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 public class AppRequestResponseIntegrationTestCase extends AbstractRequestResponseIntegrationTestCase {
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         super.init(TestUtils.createApplicationClientCredentials(null, REQUEST_RESPONSE_USER_NAME));
         enabledBasicProvider();
     }

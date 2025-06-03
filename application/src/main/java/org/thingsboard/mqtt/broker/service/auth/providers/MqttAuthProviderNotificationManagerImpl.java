@@ -73,6 +73,13 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
                 }
             }
         }
-
     }
+
+    @Override
+    public boolean defaultProvidersEnabled() {
+        return basicMqttClientAuthProvider.isEnabled() ||
+               sslMqttClientAuthProvider.isEnabled() ||
+               jwtMqttClientAuthProvider.isEnabled();
+    }
+
 }

@@ -43,7 +43,7 @@ public class AppFlowControlIntegrationTestCase extends AbstractFlowControlIntegr
     private static final String APP_FLOW_CONTROL_CLIENT = "appFlowControlClient";
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         super.init(TestUtils.createApplicationClientCredentials(null, FLOW_CONTROL_USER_NAME));
         enabledBasicProvider();
     }

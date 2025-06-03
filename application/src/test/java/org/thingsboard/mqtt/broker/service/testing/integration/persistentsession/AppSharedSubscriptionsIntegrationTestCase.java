@@ -32,7 +32,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.MqttClient;
 import org.thingsboard.mqtt.MqttClientConfig;
@@ -88,7 +87,7 @@ public class AppSharedSubscriptionsIntegrationTestCase extends AbstractPubSubInt
     ApplicationSharedSubscription applicationSharedSubscription;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         log.warn("Before test start...");
         applicationCredentials1 = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials("test_sub_client1", null)

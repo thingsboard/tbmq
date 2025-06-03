@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.List;
@@ -56,6 +57,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
     @Mock
     private AdminSettingsService adminSettingsService;
+
+    @Mock
+    private MqttAuthProviderNotificationManager mqttAuthProviderNotificationManager;
 
     @InjectMocks
     private DefaultAuthorizationRoutingService service;
@@ -114,6 +118,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(basicAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
@@ -136,6 +142,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(sslAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
@@ -158,6 +166,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(jwtAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
@@ -181,6 +191,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(authContext.isSecurePortUsed()).willReturn(true);
         given(sslAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
@@ -205,6 +217,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(authContext.isSecurePortUsed()).willReturn(false);
         given(basicAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
@@ -230,6 +244,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
+        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
+                .willReturn(true);
         given(basicAuthenticationService.authenticate(authContext))
                 .willReturn(AuthResponse.failure("basic failed"));
         given(sslAuthenticationService.authenticate(authContext))
