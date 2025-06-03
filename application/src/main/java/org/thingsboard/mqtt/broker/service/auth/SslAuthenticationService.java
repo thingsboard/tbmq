@@ -15,11 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
-import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-
-public interface SslAuthenticationService {
-
-    AuthResponse authenticate(AuthContext authContext);
+public interface SslAuthenticationService extends DefaultAuthenticationService {
 
 }

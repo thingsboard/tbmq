@@ -22,6 +22,12 @@ public interface MqttClientAuthProvider<C extends MqttAuthProviderConfiguration>
 
     AuthResponse authenticate(AuthContext authContext) throws AuthenticationException;
 
-    void onConfigurationUpdate(C configuration);
+    void onProviderUpdate(boolean enabled, C configuration);
+
+    void enable();
+
+    void disable();
+
+    boolean isEnabled();
 
 }

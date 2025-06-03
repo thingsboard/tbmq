@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import io.netty.handler.ssl.SslHandler;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -25,11 +26,14 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheValue;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -42,6 +46,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.FAILED_TO_GET_CERT_CN;
@@ -60,8 +65,19 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     private final MqttClientCredentialsService clientCredentialsService;
     private final AuthorizationRuleService authorizationRuleService;
     private final CacheNameResolver cacheNameResolver;
+    private final MqttAuthProviderService mqttAuthProviderService;
 
-    private volatile SslMqttAuthProviderConfiguration configuration = SslMqttAuthProviderConfiguration.defaultConfiguration();
+    private volatile boolean enabled;
+    private volatile SslMqttAuthProviderConfiguration configuration;
+
+    @PostConstruct
+    public void init() {
+        Optional<MqttAuthProvider> sslAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509);
+        sslAuthProvider.ifPresent(mqttAuthProvider -> {
+            enabled = mqttAuthProvider.isEnabled();
+            configuration = (SslMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
+        });
+    }
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -92,8 +108,29 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     }
 
     @Override
-    public void onConfigurationUpdate(SslMqttAuthProviderConfiguration configuration) {
+    public void onProviderUpdate(boolean enabled, SslMqttAuthProviderConfiguration configuration) {
+        this.enabled = enabled;
         this.configuration = configuration;
+    }
+
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        this.enabled = false;
+    }
+
+    public void enabled(boolean enabled, SslMqttAuthProviderConfiguration configuration) {
+        this.enabled = enabled;
+        this.configuration = configuration;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
     }
 
     private ClientTypeSslMqttCredentials authWithSSLCredentials(String clientId, SslHandler sslHandler) throws AuthenticationException {

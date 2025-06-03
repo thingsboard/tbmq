@@ -20,30 +20,20 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
+import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
-public class MqttClientClientAuthProviderManagerImplTest {
+public class MqttAuthProviderNotificationManagerImplTest {
 
     @Mock
     private BasicMqttClientAuthProvider basicProvider;
@@ -55,49 +45,10 @@ public class MqttClientClientAuthProviderManagerImplTest {
     private JwtMqttClientAuthProvider jwtProvider;
 
     @Mock
-    private MqttAuthProviderService providerService;
+    private EnhancedAuthenticationService enhancedAuthenticationService;
 
     @InjectMocks
-    private MqttClientClientAuthProviderManagerImpl manager;
-
-    @Test
-    public void shouldInitializeProviderFlagsCorrectly() {
-        // given
-        MqttAuthProvider basicAuth = new MqttAuthProvider();
-        basicAuth.setType(MqttAuthProviderType.BASIC);
-        basicAuth.setEnabled(true);
-
-        MqttAuthProvider sslAuth = new MqttAuthProvider();
-        sslAuth.setType(MqttAuthProviderType.X_509);
-        sslAuth.setEnabled(false);
-
-        MqttAuthProvider jwtAuth = new MqttAuthProvider();
-        jwtAuth.setType(MqttAuthProviderType.JWT);
-        jwtAuth.setEnabled(true);
-
-        given(providerService.getAuthProviders(new PageLink(10)))
-                .willReturn(new PageData<>(List.of(basicAuth, sslAuth, jwtAuth), 1, 3, false));
-
-        // when
-        manager.init();
-
-        // then
-        assertThat(manager.isBasicEnabled()).isTrue();
-        assertThat(manager.isSslEnabled()).isFalse();
-        assertThat(manager.isJwtEnabled()).isTrue();
-    }
-
-    @Test
-    public void shouldDoNothing_WhenNoAuthProvidersConfigured() {
-        // given
-        given(providerService.getAuthProviders(new PageLink(10)))
-                .willReturn(new PageData<>(Collections.emptyList(), 1, 0, false));
-
-        // when
-        manager.init();
-
-        assertThatNoException().isThrownBy(() -> manager.init());
-    }
+    private MqttAuthProviderNotificationManagerImpl manager;
 
     @Test
     public void shouldEnableBasicProvider() {
@@ -111,7 +62,7 @@ public class MqttClientClientAuthProviderManagerImplTest {
         manager.handleProviderNotification(notification);
 
         // then
-        assertThat(manager.isBasicEnabled()).isTrue();
+        then(basicProvider).should().enable();
     }
 
     @Test
@@ -126,49 +77,55 @@ public class MqttClientClientAuthProviderManagerImplTest {
         manager.handleProviderNotification(notification);
 
         // then
-        assertThat(manager.isBasicEnabled()).isFalse();
+        then(basicProvider).should().disable();
     }
 
     @Test
     public void shouldUpdateBasicProvider() {
         // given
+        var basicMqttAuthProviderConfiguration = new BasicMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.BASIC)
                 .setEnabled(true)
-                .setConfiguration("any configuration string")
+                .setConfiguration(JacksonUtil.toString(basicMqttAuthProviderConfiguration))
                 .build();
 
         // when
         manager.handleProviderNotification(notification);
 
         // then
-        assertThat(manager.isBasicEnabled()).isTrue();
-        then(basicProvider).should(never()).onConfigurationUpdate(any());
+        then(basicProvider).should().onProviderUpdate(true, basicMqttAuthProviderConfiguration);
     }
 
     @Test
     public void shouldEnableSslProvider() {
+        // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
                 .setProviderType(MqttAuthProviderTypeProto.X_509)
                 .build();
 
+        // when
         manager.handleProviderNotification(notification);
 
-        assertThat(manager.isSslEnabled()).isTrue();
+        // then
+        then(sslProvider).should().enable();
     }
 
     @Test
     public void shouldDisableSslProvider() {
+        // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
                 .setProviderType(MqttAuthProviderTypeProto.X_509)
                 .build();
 
+        // when
         manager.handleProviderNotification(notification);
 
-        assertThat(manager.isSslEnabled()).isFalse();
+        // then
+        then(sslProvider).should().disable();
     }
 
     @Test
@@ -178,7 +135,7 @@ public class MqttClientClientAuthProviderManagerImplTest {
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.X_509)
-                .setEnabled(true)
+                .setEnabled(false)
                 .setConfiguration(JacksonUtil.toString(configuration))
                 .build();
 
@@ -186,36 +143,42 @@ public class MqttClientClientAuthProviderManagerImplTest {
         manager.handleProviderNotification(notification);
 
         // then
-        assertThat(manager.isSslEnabled()).isTrue();
-        then(sslProvider).should().onConfigurationUpdate(new SslMqttAuthProviderConfiguration());
+        then(sslProvider).should().onProviderUpdate(false, configuration);
     }
 
     @Test
     public void shouldEnableJwtProvider() {
+        // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
                 .setProviderType(MqttAuthProviderTypeProto.JWT)
                 .build();
 
+        // when
         manager.handleProviderNotification(notification);
 
-        assertThat(manager.isJwtEnabled()).isTrue();
+        // then
+        then(jwtProvider).should().enable();
     }
 
     @Test
     public void shouldDisableJwtProvider() {
+        // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
                 .setProviderType(MqttAuthProviderTypeProto.JWT)
                 .build();
 
+        // when
         manager.handleProviderNotification(notification);
 
-        assertThat(manager.isJwtEnabled()).isFalse();
+        // then
+        then(jwtProvider).should().disable();
     }
 
     @Test
     public void shouldUpdateJwtProvider() {
+        // given
         JwtMqttAuthProviderConfiguration mockedConfiguration = new JwtMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
@@ -224,9 +187,60 @@ public class MqttClientClientAuthProviderManagerImplTest {
                 .setConfiguration(JacksonUtil.toString(mockedConfiguration))
                 .build();
 
+        // when
         manager.handleProviderNotification(notification);
 
-        assertThat(manager.isJwtEnabled()).isTrue();
-        then(jwtProvider).should().onConfigurationUpdate(mockedConfiguration);
+        // then
+        then(jwtProvider).should().onProviderUpdate(true, mockedConfiguration);
     }
+
+
+    @Test
+    public void shouldEnableScramProvider() {
+        // given
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
+                .setProviderType(MqttAuthProviderTypeProto.SCRAM)
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(enhancedAuthenticationService).should().enable();
+    }
+
+    @Test
+    public void shouldDisableScramProvider() {
+        // given
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
+                .setProviderType(MqttAuthProviderTypeProto.SCRAM)
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(enhancedAuthenticationService).should().disable();
+    }
+
+    @Test
+    public void shouldUpdateScramProvider() {
+        // given
+        ScramMqttAuthProviderConfiguration mockedConfiguration = new ScramMqttAuthProviderConfiguration();
+        MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
+                .setProviderType(MqttAuthProviderTypeProto.SCRAM)
+                .setEnabled(true)
+                .setConfiguration(JacksonUtil.toString(mockedConfiguration))
+                .build();
+
+        // when
+        manager.handleProviderNotification(notification);
+
+        // then
+        then(enhancedAuthenticationService).should().onProviderUpdate(true, mockedConfiguration);
+    }
+
 }

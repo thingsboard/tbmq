@@ -15,6 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
-public interface BasicAuthenticationService extends DefaultAuthenticationService {
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+
+public interface DefaultAuthenticationService {
+
+    AuthResponse authenticate(AuthContext authContext);
 
 }

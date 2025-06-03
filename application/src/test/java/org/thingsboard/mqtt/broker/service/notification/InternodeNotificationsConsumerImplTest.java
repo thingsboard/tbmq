@@ -32,7 +32,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
@@ -59,7 +59,7 @@ public class InternodeNotificationsConsumerImplTest {
     private ServiceInfoProvider serviceInfoProvider;
 
     @Mock
-    private MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
 
     @Mock
     private ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;

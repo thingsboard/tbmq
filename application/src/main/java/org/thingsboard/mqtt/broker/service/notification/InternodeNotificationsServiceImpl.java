@@ -28,7 +28,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.queue.common.TbProtoQueueMsg;
 import org.thingsboard.mqtt.broker.queue.provider.InternodeNotificationsQueueFactory;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRoutingService;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsCleanupProcessor;
 
 import java.util.List;
@@ -42,7 +42,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
     private final ServiceInfoProvider serviceInfoProvider;
     private final InternodeNotificationsHelper helper;
 
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final MqttAuthProviderNotificationManager mqttClientAuthProviderManager;
     private final ClientSessionStatsCleanupProcessor clientSessionStatsCleanupProcessor;
     private final AuthorizationRoutingService authorizationRoutingService;
 

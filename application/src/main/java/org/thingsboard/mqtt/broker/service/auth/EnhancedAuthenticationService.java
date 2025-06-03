@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.auth;
 
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
@@ -30,4 +31,9 @@ public interface EnhancedAuthenticationService {
 
     EnhancedAuthFinalResponse onReAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext);
 
+    void onProviderUpdate(boolean enabled, ScramMqttAuthProviderConfiguration configuration);
+
+    void enable();
+
+    void disable();
 }

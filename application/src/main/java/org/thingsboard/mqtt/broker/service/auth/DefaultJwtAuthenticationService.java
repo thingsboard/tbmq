@@ -20,21 +20,21 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.JwtMqttClientAuthProvider;
 
 @Service
 @RequiredArgsConstructor
 public class DefaultJwtAuthenticationService implements JwtAuthenticationService {
 
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        if (!mqttClientAuthProviderManager.isJwtEnabled()) {
+        if (!jwtMqttClientAuthProvider.isEnabled()) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.JWT);
         }
         try {
-            return mqttClientAuthProviderManager.getJwtProvider().authenticate(authContext);
+            return jwtMqttClientAuthProvider.authenticate(authContext);
         } catch (Exception e) {
             return AuthResponse.failure(e.getMessage());
         }

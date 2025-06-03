@@ -20,21 +20,21 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.BasicMqttClientAuthProvider;
 
 @Service
 @RequiredArgsConstructor
 public class BasicAuthenticationServiceImpl implements BasicAuthenticationService {
 
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        if (!mqttClientAuthProviderManager.isBasicEnabled()) {
+        if (!basicMqttClientAuthProvider.isEnabled()) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.BASIC);
         }
         try {
-            return mqttClientAuthProviderManager.getBasicProvider().authenticate(authContext);
+            return basicMqttClientAuthProvider.authenticate(authContext);
         } catch (Exception e) {
             return AuthResponse.failure(e.getMessage());
         }

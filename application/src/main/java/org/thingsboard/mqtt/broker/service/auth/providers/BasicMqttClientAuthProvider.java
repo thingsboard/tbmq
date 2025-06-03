@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +29,15 @@ import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicAuthResponse;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -43,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -52,17 +57,32 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     private final AuthorizationRuleService authorizationRuleService;
     private final MqttClientCredentialsService clientCredentialsService;
     private final CacheNameResolver cacheNameResolver;
+    private final MqttAuthProviderService mqttAuthProviderService;
     private BCryptPasswordEncoder passwordEncoder;
     private HashFunction hashFunction;
+
+    private volatile boolean enabled;
+    private volatile BasicMqttAuthProviderConfiguration configuration;
+
+    @PostConstruct
+    public void init() {
+        Optional<MqttAuthProvider> basicAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        basicAuthProvider.ifPresent(mqttAuthProvider -> {
+            this.enabled = mqttAuthProvider.isEnabled();
+            this.configuration = (BasicMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
+        });
+    }
 
     @Autowired
     public BasicMqttClientAuthProvider(AuthorizationRuleService authorizationRuleService,
                                        MqttClientCredentialsService clientCredentialsService,
                                        CacheNameResolver cacheNameResolver,
+                                       MqttAuthProviderService mqttAuthProviderService,
                                        @Lazy BCryptPasswordEncoder passwordEncoder) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
         this.cacheNameResolver = cacheNameResolver;
+        this.mqttAuthProviderService = mqttAuthProviderService;
         this.passwordEncoder = passwordEncoder;
         this.hashFunction = Hashing.sha256();
     }
@@ -88,8 +108,24 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     }
 
     @Override
-    public void onConfigurationUpdate(BasicMqttAuthProviderConfiguration configuration) {
-        // Configuration for Basic provider is static so no logic here now.
+    public void onProviderUpdate(boolean enabled, BasicMqttAuthProviderConfiguration configuration) {
+        this.enabled = enabled;
+        this.configuration = configuration;
+    }
+
+    @Override
+    public void enable() {
+        enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        enabled = false;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
     }
 
     private BasicAuthResponse authWithBasicCredentials(String clientId, String username, byte[] passwordBytes) {

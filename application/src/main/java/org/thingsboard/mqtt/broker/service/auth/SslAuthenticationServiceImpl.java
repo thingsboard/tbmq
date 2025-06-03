@@ -20,21 +20,21 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.SslMqttClientAuthProvider;
 
 @Service
 @RequiredArgsConstructor
 public class SslAuthenticationServiceImpl implements SslAuthenticationService {
 
-    private final MqttClientAuthProviderManager mqttClientAuthProviderManager;
+    private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        if (!mqttClientAuthProviderManager.isSslEnabled()) {
+        if (!sslMqttClientAuthProvider.isEnabled()) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.X_509);
         }
         try {
-            return mqttClientAuthProviderManager.getSslProvider().authenticate(authContext);
+            return sslMqttClientAuthProvider.authenticate(authContext);
         } catch (Exception e) {
             return AuthResponse.failure(e.getMessage());
         }

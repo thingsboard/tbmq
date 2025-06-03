@@ -15,17 +15,39 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
+
+import java.util.Optional;
 
 
 @Slf4j
 @Service
 public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqttAuthProviderConfiguration> {
 
-    private volatile JwtMqttAuthProviderConfiguration configuration = JwtMqttAuthProviderConfiguration.defaultConfiguration();
+    private final MqttAuthProviderService mqttAuthProviderService;
+
+    private volatile boolean enabled;
+    private volatile JwtMqttAuthProviderConfiguration configuration;
+
+    public JwtMqttClientAuthProvider(MqttAuthProviderService mqttAuthProviderService) {
+        this.mqttAuthProviderService = mqttAuthProviderService;
+    }
+
+    @PostConstruct
+    public void init() {
+        Optional<MqttAuthProvider> jwtAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.JWT);
+        jwtAuthProvider.ifPresent(mqttAuthProvider -> {
+            enabled = mqttAuthProvider.isEnabled();
+            configuration = (JwtMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
+        });
+    }
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
@@ -33,8 +55,24 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
     }
 
     @Override
-    public void onConfigurationUpdate(JwtMqttAuthProviderConfiguration configuration) {
+    public void onProviderUpdate(boolean enabled, JwtMqttAuthProviderConfiguration configuration) {
+        this.enabled = enabled;
         this.configuration = configuration;
+    }
+
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        this.enabled = false;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
     }
 
 }

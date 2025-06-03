@@ -21,14 +21,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProviderManager;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
@@ -63,9 +64,9 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void setUp() {
         MqttClientCredentialsService credentialsServiceMock = mock(MqttClientCredentialsService.class);
         AuthorizationRuleService authorizationRuleServiceMock = mock(AuthorizationRuleService.class);
-        MqttClientAuthProviderManager mqttClientAuthProviderManagerMock = mock(MqttClientAuthProviderManager.class);
-        when(mqttClientAuthProviderManagerMock.isEnhancedAuthEnabled()).thenReturn(true);
-        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(credentialsServiceMock, authorizationRuleServiceMock, mqttClientAuthProviderManagerMock));
+        MqttAuthProviderService mqttAuthProviderService = mock(MqttAuthProviderService.class);
+        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(credentialsServiceMock, authorizationRuleServiceMock, mqttAuthProviderService));
+        ReflectionTestUtils.setField(enhancedAuthenticationService, "enabled", true);
     }
 
     @Test

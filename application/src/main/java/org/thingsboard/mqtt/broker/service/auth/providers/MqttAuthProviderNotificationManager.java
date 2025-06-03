@@ -17,21 +17,8 @@ package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 
-public interface MqttClientAuthProviderManager {
+public interface MqttAuthProviderNotificationManager {
 
     void handleProviderNotification(MqttAuthProviderProto notification);
 
-    boolean isBasicEnabled();
-
-    BasicMqttClientAuthProvider getBasicProvider();
-
-    boolean isSslEnabled();
-
-    SslMqttClientAuthProvider getSslProvider();
-
-    boolean isJwtEnabled();
-
-    JwtMqttClientAuthProvider getJwtProvider();
-
-    boolean isEnhancedAuthEnabled();
 }
