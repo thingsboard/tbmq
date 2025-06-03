@@ -14,9 +14,10 @@
 /// limitations under the License.
 ///
 
-import { ActivatedRoute, ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import {
   CellActionDescriptor,
+  CellActionDescriptorType,
   EntityTableColumn,
   EntityTableConfig,
   GroupActionDescriptor
@@ -42,7 +43,7 @@ import { BlockedClientsTableHeaderComponent } from '@home/pages/blocked-clients/
 import { DialogService } from '@core/services/dialog.service';
 import { BlockedClientComponent } from '@home/pages/blocked-clients/blocked-client.component';
 import { Direction } from '@shared/models/page/sort-order';
-import { MINUTE } from '@shared/models/time/time.models';
+import { forAllTimeInterval, MINUTE } from '@shared/models/time/time.models';
 import moment from 'moment';
 
 @Injectable()
@@ -70,6 +71,9 @@ export class BlockedClientsTableConfigResolver {
     this.config.detailsPanelEnabled = false;
     this.config.entityComponent = BlockedClientComponent;
     this.config.headerComponent = BlockedClientsTableHeaderComponent;
+    this.config.useTimePageLink = true;
+    this.config.forAllTimeEnabled = true;
+    this.config.defaultTimewindowInterval = forAllTimeInterval();
 
     this.config.groupActionDescriptors = this.configureGroupActions();
     this.config.cellActionDescriptors = this.configureCellActions();
@@ -96,7 +100,24 @@ export class BlockedClientsTableConfigResolver {
         entity => this.translate.instant(blockedClientTypeTranslationMap.get(entity.type))),
       new EntityTableColumn<BlockedClient>('regexMatchTarget', 'blocked-client.regex-match-target', '120px',
         entity => entity.regexMatchTarget ? this.translate.instant(regexMatchTargetTranslationMap.get(entity.regexMatchTarget)) : ''),
-      new EntityTableColumn<BlockedClient>('value', 'blocked-client.value', '30%'),
+      new EntityTableColumn<BlockedClient>('value', 'blocked-client.value', '30%',
+        entity => entity.value, undefined, true, undefined, undefined, false,
+        {
+          name: this.translate.instant('action.copy'),
+          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.value,
+          icon: 'content_copy',
+          style: {
+            padding: '0px',
+            'font-size': '16px',
+            'line-height': '16px',
+            height: '16px',
+            color: 'rgba(0,0,0,.87)'
+          },
+          isEnabled: () => true,
+          onAction: ($event, entity) => entity.value,
+          type: CellActionDescriptorType.COPY_BUTTON
+        }
+      ),
       new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '30%'),
       new EntityTableColumn<BlockedClient>('status', 'blocked-client.status', '120px',
         entity => this.statusContent(entity),
@@ -116,7 +137,7 @@ export class BlockedClientsTableConfigResolver {
     );
   }
 
-  resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<BlockedClient>> {
+  resolve(route: ActivatedRouteSnapshot): Observable<EntityTableConfig<BlockedClient>> {
     this.config.componentsData = {};
     this.config.componentsData.blockedClientsFilterConfig = {};
     for (const key of Object.keys(route.queryParams)) {
