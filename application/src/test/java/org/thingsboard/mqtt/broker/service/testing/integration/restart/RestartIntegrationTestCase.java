@@ -72,6 +72,7 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     @Before
     public void beforeTest() throws Exception {
+        super.beforeTest();
         persistedClient = initClient();
     }
 
