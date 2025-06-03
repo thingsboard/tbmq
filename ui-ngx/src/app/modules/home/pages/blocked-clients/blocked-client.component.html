@@ -15,13 +15,11 @@
     limitations under the License.
 
 -->
-<div class="tb-details-buttons flex flex-row xs:flex-col">
-</div>
-<div class="mat-padding flex flex-col">
+<div class="mat-padding mt-4 flex flex-col">
   <form [formGroup]="entityForm">
     <fieldset [disabled]="(isLoading$ | async) || !isEdit" class="flex flex-col gap-4">
       <section class="flex flex-row gap-2">
-        <mat-form-field class="flex max-w-70% flex-1" subscriptSizing="dynamic">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
           <mat-label translate>blocked-client.type</mat-label>
           <mat-select formControlName="type">
             @for (type of blockedClientTypes; track type) {
@@ -31,7 +29,7 @@
             }
           </mat-select>
         </mat-form-field>
-        <mat-form-field class="flex max-w-30% flex-1" subscriptSizing="dynamic">
+        <mat-form-field class="flex max-w-50% flex-1" [class.hidden]="!isRegexType" subscriptSizing="dynamic">
           <mat-label translate>blocked-client.regex-match-target</mat-label>
           <mat-select formControlName="regexMatchTarget" [disabled]="true">
             @for (type of regexMatchTargets; track type) {
@@ -53,32 +51,32 @@
           warning
         </mat-icon>
       </mat-form-field>
+        <section class="security-setting flex flex-col gap-4 p-4">
+          <mat-slide-toggle [(ngModel)]="neverExpires" [ngModelOptions]="{standalone: true}" (ngModelChange)="onNeverExpiresChange()">
+            <span>{{neverExpiresLabel | translate}}</span>
+          </mat-slide-toggle>
+          <section class="flex flex-row items-center gap-4 xs:flex-col xs:items-stretch xs:gap-0"
+                    [class.hidden]="neverExpires">
+            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+              <mat-label translate>blocked-client.expiration-date</mat-label>
+              <mat-datetimepicker-toggle [for]="expirationDatePicker" matPrefix></mat-datetimepicker-toggle>
+              <mat-datetimepicker #expirationDatePicker type="date" openOnFocus="true"></mat-datetimepicker>
+              <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationDatePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
+                     [disabled]="neverExpires">
+            </mat-form-field>
+            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+              <mat-label translate>blocked-client.expiration-time</mat-label>
+              <mat-datetimepicker-toggle [for]="expirationTimePicker" matPrefix></mat-datetimepicker-toggle>
+              <mat-datetimepicker #expirationTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
+              <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationTimePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
+                     [disabled]="neverExpires">
+            </mat-form-field>
+          </section>
+        </section>
       <mat-form-field class="mat-block" subscriptSizing="dynamic">
         <mat-label translate>blocked-client.description</mat-label>
         <textarea matInput formControlName="description" rows="2"></textarea>
       </mat-form-field>
-      <fieldset class="fields-group">
-        <legend class="group-title" translate>blocked-client.expiration</legend>
-        <section class="flex flex-row items-center gap-4 xs:flex-col xs:items-stretch xs:gap-0">
-          <mat-slide-toggle [(ngModel)]="neverExpires" [ngModelOptions]="{standalone: true}">
-            <span translate>blocked-client.expiration-time-never</span>
-          </mat-slide-toggle>
-          <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-            <mat-label translate>blocked-client.expiration-date</mat-label>
-            <mat-datetimepicker-toggle [for]="expirationDatePicker" matPrefix></mat-datetimepicker-toggle>
-            <mat-datetimepicker #expirationDatePicker type="date" openOnFocus="true"></mat-datetimepicker>
-            <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationDatePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
-                   [disabled]="neverExpires">
-          </mat-form-field>
-          <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-            <mat-label translate>blocked-client.expiration-time</mat-label>
-            <mat-datetimepicker-toggle [for]="expirationTimePicker" matPrefix></mat-datetimepicker-toggle>
-            <mat-datetimepicker #expirationTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
-            <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationTimePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
-                   [disabled]="neverExpires">
-          </mat-form-field>
-        </section>
-      </fieldset>
     </fieldset>
   </form>
 </div>

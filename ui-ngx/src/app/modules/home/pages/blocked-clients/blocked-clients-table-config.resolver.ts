@@ -65,7 +65,7 @@ export class BlockedClientsTableConfigResolver {
     this.config.entityResources = entityTypeResources.get(EntityType.BLOCKED_CLIENT);
     this.config.tableTitle = this.translate.instant('blocked-client.blocked-clients');
     this.config.defaultSortOrder = {property: 'expirationTime', direction: Direction.ASC};
-    this.config.addDialogStyle = {height: 'fit-content'};
+    this.config.addDialogStyle = {height: '550px'};
     this.config.entitiesDeleteEnabled = false;
     this.config.detailsPanelEnabled = false;
     this.config.entityComponent = BlockedClientComponent;
@@ -97,8 +97,8 @@ export class BlockedClientsTableConfigResolver {
       new EntityTableColumn<BlockedClient>('regexMatchTarget', 'blocked-client.regex-match-target', '120px',
         entity => entity.regexMatchTarget ? this.translate.instant(regexMatchTargetTranslationMap.get(entity.regexMatchTarget)) : ''),
       new EntityTableColumn<BlockedClient>('value', 'blocked-client.value', '30%'),
-      new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '20%'),
-      new EntityTableColumn<BlockedClient>('status', 'blocked-client.status', '100px',
+      new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '30%'),
+      new EntityTableColumn<BlockedClient>('status', 'blocked-client.status', '120px',
         entity => this.statusContent(entity),
         entity => this.statusStyle(entity),
         true,
@@ -268,7 +268,6 @@ export class BlockedClientsTableConfigResolver {
     const styleObj = {
       fontSize: '14px',
       color: '#198038',
-      cursor: 'pointer'
     };
     switch (entity.status) {
       case BlockedClientStatus.EXPIRED:

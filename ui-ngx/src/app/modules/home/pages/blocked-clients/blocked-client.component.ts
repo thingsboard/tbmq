@@ -56,6 +56,11 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
 
   expirationDate = this.defaultExpirationDate();
   neverExpires = true;
+  neverExpiresLabel: string;
+
+  get isRegexType(): boolean {
+    return this.entityForm.get('type').value === BlockedClientType.REGEX;
+  }
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: BlockedClient,
@@ -63,9 +68,10 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
               public fb: UntypedFormBuilder,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
+    this.onNeverExpiresChange();
   }
 
-  buildForm(entity: BlockedClient): UntypedFormGroup {
+  buildForm(): UntypedFormGroup {
     const form = this.fb.group(
       {
         type: [BlockedClientType.CLIENT_ID, []],
@@ -107,6 +113,10 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
         this.expirationDate = this.defaultExpirationDate();
       }
     }
+  }
+
+  onNeverExpiresChange() {
+    this.neverExpiresLabel = this.neverExpires ? 'blocked-client.expires-never' : 'blocked-client.expires';
   }
 
   private updateValidators() {
