@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -44,6 +45,9 @@ public class BlockedClientPageServiceImpl implements BlockedClientPageService {
 
     private final BlockedClientService blockedClientService;
 
+    @Value("${mqtt.blocked-client.cleanup.ttl:10080}")
+    private int blockedClientCleanupTtl;
+
     @Override
     public PageData<BlockedClientDto> getBlockedClients(PageLink pageLink) {
         List<BlockedClient> filteredBlockedClients = blockedClientService.getBlockedClients()
@@ -63,7 +67,7 @@ public class BlockedClientPageServiceImpl implements BlockedClientPageService {
 
     private PageData<BlockedClientDto> mapToPageDataResponse(List<BlockedClient> filteredBlockedClients, PageLink pageLink) {
         List<BlockedClientDto> data = filteredBlockedClients.stream()
-                .map(BlockedClientDto::newInstance)
+                .map(blockedClient -> BlockedClientDto.newInstance(blockedClient, blockedClientCleanupTtl))
                 .sorted(sorted(pageLink))
                 .skip((long) pageLink.getPage() * pageLink.getPageSize())
                 .limit(pageLink.getPageSize())

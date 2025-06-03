@@ -94,7 +94,7 @@ public class BlockedClientServiceImpl implements BlockedClientService {
                 t -> log.warn("[{}] Failed to persist blocked client", blockedClient, t));
         blockedClientProducerService.persistBlockedClient(blockedClient.getKey(), blockedClientProto, callback);
 
-        return BlockedClientDto.newInstance(blockedClient);
+        return BlockedClientDto.newInstance(blockedClient, blockedClientCleanupTtl);
     }
 
     @Override

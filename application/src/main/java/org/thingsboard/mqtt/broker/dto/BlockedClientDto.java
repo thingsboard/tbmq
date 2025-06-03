@@ -22,6 +22,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClien
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
 
 import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
 
 import static org.thingsboard.mqtt.broker.common.data.util.ComparableUtil.getComparatorBy;
 
@@ -30,27 +31,43 @@ public class BlockedClientDto {
 
     private final BlockedClientType type;
     private final long expirationTime;
-    private final boolean expired;
+    private final BlockedClientStatus status;
     private final String description;
     private final String value;
     private final RegexMatchTarget regexMatchTarget;
 
-    public static BlockedClientDto newInstance(BlockedClient blockedClient) {
+    public static BlockedClientDto newInstance(BlockedClient blockedClient, int cleanupTtlMinutes) {
         return new BlockedClientDto(
                 blockedClient.getType(),
                 blockedClient.getExpirationTime(),
-                blockedClient.isExpired(),
+                getStatus(blockedClient, cleanupTtlMinutes),
                 blockedClient.getDescription(),
                 blockedClient.getValue(),
                 blockedClient.getRegexMatchTarget()
         );
     }
 
+    private static BlockedClientStatus getStatus(BlockedClient blockedClient, int cleanupTtlMinutes) {
+        long expirationTime = blockedClient.getExpirationTime();
+        long currentTime = System.currentTimeMillis();
+        long ttlMillis = TimeUnit.MINUTES.toMillis(cleanupTtlMinutes);
+
+        if (blockedClient.isExpired()) {
+            if ((currentTime - expirationTime) >= ttlMillis / 2) {
+                return BlockedClientStatus.DELETING_SOON;
+            } else {
+                return BlockedClientStatus.EXPIRED;
+            }
+        } else {
+            return BlockedClientStatus.ACTIVE;
+        }
+    }
+
     public static Comparator<BlockedClientDto> getComparator(SortOrder sortOrder) {
         return switch (sortOrder.getProperty()) {
             case "type" -> getComparatorBy(sortOrder, BlockedClientDto::getType);
             case "expirationTime" -> getComparatorBy(sortOrder, BlockedClientDto::getExpirationTime);
-            case "expired" -> getComparatorBy(sortOrder, BlockedClientDto::isExpired);
+            case "status" -> getComparatorBy(sortOrder, BlockedClientDto::getStatus);
             case "description" -> getComparatorBy(sortOrder, BlockedClientDto::getDescription);
             case "value" -> getComparatorBy(sortOrder, BlockedClientDto::getValue);
             case "regexMatchTarget" -> getComparatorBy(sortOrder, BlockedClientDto::getRegexMatchTarget);
