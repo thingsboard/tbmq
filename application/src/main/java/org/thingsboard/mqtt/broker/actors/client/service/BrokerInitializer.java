@@ -22,21 +22,16 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.actors.TbActorRef;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
-import org.thingsboard.mqtt.broker.actors.TbTypeActorId;
-import org.thingsboard.mqtt.broker.actors.client.ClientActorCreator;
-import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
-import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.id.ActorType;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
@@ -65,13 +60,12 @@ public class BrokerInitializer {
     private final ClientSessionConsumer clientSessionConsumer;
     private final ClientSubscriptionConsumer clientSubscriptionConsumer;
     private final RetainedMsgConsumer retainedMsgConsumer;
+    private final BlockedClientConsumerService blockedClientConsumer;
 
     private final ClientSessionService clientSessionService;
     private final ClientSubscriptionService clientSubscriptionService;
     private final RetainedMsgListenerService retainedMsgListenerService;
-
-    private final ActorSystemContext actorSystemContext;
-    private final TbActorSystem actorSystem;
+    private final BlockedClientService blockedClientService;
 
     private final ClientSessionEventService clientSessionEventService;
     private final ServiceInfoProvider serviceInfoProvider;
@@ -93,10 +87,13 @@ public class BrokerInitializer {
             initClientSubscriptions(allClientSessions);
 
             clientSessionService.startListening(clientSessionConsumer);
-            startSubscriptionListening();
+            clientSubscriptionService.startListening(clientSubscriptionConsumer);
 
             initRetainedMessages();
             retainedMsgListenerService.startListening(retainedMsgConsumer);
+
+            initBlockedClients();
+            blockedClientService.startListening(blockedClientConsumer);
 
             log.info("Starting Queue consumers that depend on Client Sessions or Subscriptions.");
             startConsuming();
@@ -141,10 +138,16 @@ public class BrokerInitializer {
         return currentNodeSessions;
     }
 
-    private void initRetainedMessages() throws QueuePersistenceException {
+    void initRetainedMessages() throws QueuePersistenceException {
         Map<String, RetainedMsg> allRetainedMessages = retainedMsgConsumer.initLoad();
         log.info("Loaded {} stored retained messages from Kafka.", allRetainedMessages.size());
         retainedMsgListenerService.init(allRetainedMessages);
+    }
+
+    void initBlockedClients() throws QueuePersistenceException {
+        Map<String, BlockedClient> allBlockedClients = blockedClientConsumer.initLoad();
+        log.info("Loaded {} stored blocked clients from Kafka", allBlockedClients.size());
+        blockedClientService.init(allBlockedClients);
     }
 
     private void startConsuming() {
@@ -156,7 +159,7 @@ public class BrokerInitializer {
         persistentDownLinkConsumer.startConsuming();
     }
 
-    private void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
+    void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {
         Map<SubscriptionsSourceKey, Set<TopicSubscription>> allClientSubscriptions = clientSubscriptionConsumer.initLoad();
         log.info("Loaded {} stored client subscriptions from Kafka.", allClientSubscriptions.size());
 
@@ -175,35 +178,6 @@ public class BrokerInitializer {
                 }
             }
         }
-    }
-
-    private void startSubscriptionListening() {
-        clientSubscriptionConsumer.listen((clientId, serviceId, topicSubscriptions) -> {
-            if (serviceInfoProvider.getServiceId().equals(serviceId)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Msg was already processed.", clientId);
-                }
-                return false;
-            }
-
-            TbActorRef clientActorRef = getActor(clientId);
-            if (clientActorRef == null) {
-                // TODO: get ClientInfo and check if clientId is generated
-                clientActorRef = createRootActor(clientId);
-            }
-
-            clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
-            return true;
-        });
-    }
-
-    private TbActorRef createRootActor(String clientId) {
-        return actorSystem.createRootActor(ActorSystemLifecycle.CLIENT_DISPATCHER_NAME,
-                new ClientActorCreator(actorSystemContext, clientId, true));
-    }
-
-    private TbActorRef getActor(String clientId) {
-        return actorSystem.getActor(new TbTypeActorId(ActorType.CLIENT, clientId));
     }
 
     boolean isCleanSession(ClientSessionInfo clientSessionInfo) {

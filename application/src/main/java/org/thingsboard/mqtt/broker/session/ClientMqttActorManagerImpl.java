@@ -28,14 +28,19 @@ import org.thingsboard.mqtt.broker.actors.client.messages.EnhancedAuthInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.NonWritableChannelMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscribeCommandMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.UnsubscribeCommandMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.WritableChannelMsg;
+import org.thingsboard.mqtt.broker.actors.client.messages.cluster.SessionClusterManagementMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttAuthMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttConnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttDisconnectMsg;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.QueueableMqttMsg;
 import org.thingsboard.mqtt.broker.actors.config.ActorSystemLifecycle;
 import org.thingsboard.mqtt.broker.common.data.id.ActorType;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -154,6 +159,26 @@ public class ClientMqttActorManagerImpl implements ClientMqttActorManager {
         } else {
             clientActorRef.tellWithHighPriority(writableChannelMsg);
         }
+    }
+
+    @Override
+    public void processSubscriptionsChanged(String clientId, Set<TopicSubscription> topicSubscriptions) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            // TODO: get ClientInfo and check if clientId is generated
+            clientActorRef = createRootActor(clientId, true);
+        }
+        clientActorRef.tellWithHighPriority(new SubscriptionChangedEventMsg(topicSubscriptions));
+    }
+
+    @Override
+    public void processSessionClusterManagementMsg(String clientId, SessionClusterManagementMsg msg) {
+        TbActorRef clientActorRef = getActor(clientId);
+        if (clientActorRef == null) {
+            // TODO: pass correct 'isClientIdGenerated' here
+            clientActorRef = createRootActor(clientId, true);
+        }
+        clientActorRef.tellWithHighPriority(msg);
     }
 
     private TbActorRef createRootActor(String clientId, boolean isClientIdGenerated) {
