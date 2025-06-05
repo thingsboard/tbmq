@@ -143,7 +143,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.settingsService.saveAdminSettings(settings)
       .subscribe(settings => {
         this.processConnectivitySettings(settings);
-        this.settingsService.getConnectivitySettings(settings.jsonValue).subscribe();
+        this.settingsService.getConnectivitySettings().subscribe();
       });
   }
 

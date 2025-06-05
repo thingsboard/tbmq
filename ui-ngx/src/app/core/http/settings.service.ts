@@ -23,10 +23,13 @@ import {
   AdminSettings,
   ConnectivitySettings,
   connectivitySettingsKey,
-  SecuritySettings, WebSocketSettings, webSocketSettingsKey
+  DEFAULT_HOST,
+  SecuritySettings,
+  WebSocketSettings,
+  webSocketSettingsKey
 } from '@shared/models/settings.models';
 import { ConfigService } from '@core/http/config.service';
-import { BrokerConfig } from '@shared/models/config.model';
+import { BrokerConfig, settingsConfigPortMap } from '@shared/models/config.model';
 
 @Injectable({
   providedIn: 'root'
@@ -62,35 +65,26 @@ export class SettingsService {
     return this.getGeneralSettings<WebSocketSettings>(webSocketSettingsKey);
   }
 
-  public getConnectivitySettings(newSettings = null): Observable<ConnectivitySettings> {
+  public getConnectivitySettings(): Observable<ConnectivitySettings> {
     return this.configService.fetchBrokerConfig().pipe(
       mergeMap((brokerConfig) => {
         return this.getGeneralSettings(connectivitySettingsKey).pipe(
           mergeMap(connectivitySettings => {
-            console.log('newSettings', newSettings);
-            console.log('connectivitySettings', connectivitySettings);
-            this.connectivitySettings = newSettings || this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
+            this.connectivitySettings = this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
             // @ts-ignore
             window.tbmqSettings = this.connectivitySettings;
             return of(this.connectivitySettings);
           })
         );
       })
-    )
+    );
   }
 
   private buildConnectivitySettings(settings: ConnectivitySettings, brokerConfig: BrokerConfig): ConnectivitySettings {
     const connectivitySettings = JSON.parse(JSON.stringify(settings));
-    connectivitySettings.mqtt.port = brokerConfig.tcpPort;
-    connectivitySettings.mqtts.port = brokerConfig.tlsPort;
-    connectivitySettings.ws.port = brokerConfig.wsPort;
-    connectivitySettings.wss.port = brokerConfig.wssPort;
     for (const prop of Object.keys(settings)) {
-      if (settings[prop]?.enabled) {
-        connectivitySettings[prop].enabled = true;
-        connectivitySettings[prop].host = settings[prop].host;
-        connectivitySettings[prop].port = settings[prop].port;
-      }
+      connectivitySettings[prop].host = settings[prop].enabled ? settings[prop].host : DEFAULT_HOST;
+      connectivitySettings[prop].port = settings[prop].enabled ? settings[prop].port : brokerConfig[settingsConfigPortMap.get(prop)];
     }
     return connectivitySettings;
   }
