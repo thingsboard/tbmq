@@ -26,7 +26,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { deepClone } from '@core/utils';
 import { Injectable } from '@angular/core';
@@ -52,7 +52,7 @@ export class BlockedClientsTableConfigResolver {
   private readonly config: EntityTableConfig<BlockedClient> = new EntityTableConfig<BlockedClient>();
 
   blockedClientsFilterConfig: BlockedClientFilterConfig = {};
-  private timeToLive: number = 0;
+  private timeToLive = 0;
 
   constructor(private blockedClientService: BlockedClientService,
               private translate: TranslateService,
@@ -89,7 +89,7 @@ export class BlockedClientsTableConfigResolver {
         },
         undefined, undefined, undefined,
           entity => {
-            const label = entity.status !== BlockedClientStatus.ACTIVE ? 'blocked-client.status-expired' : 'blocked-client.expires';
+            const label = this.isActive(entity) ? 'blocked-client.expires' : 'blocked-client.status-expired';
             if (this.isNeverExpires(entity)) {
               return;
             }
@@ -118,7 +118,8 @@ export class BlockedClientsTableConfigResolver {
           type: CellActionDescriptorType.COPY_BUTTON
         }
       ),
-      new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '30%'),
+      new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '30%',
+        undefined, () => { return { textWrap: 'wrap' }}),
       new EntityTableColumn<BlockedClient>('status', 'blocked-client.status', '120px',
         entity => this.statusContent(entity),
         entity => this.statusStyle(entity),
@@ -145,8 +146,11 @@ export class BlockedClientsTableConfigResolver {
         this.config.componentsData.blockedClientsFilterConfig[key] = route.queryParams[key];
       }
     }
-    this.blockedClientService.getBlockedClientsTimeToLive().subscribe(value => this.timeToLive = value);
-    return of(this.config);
+    return this.blockedClientService.getBlockedClientsTimeToLive()
+      .pipe(mergeMap(ttl => {
+        this.timeToLive = ttl;
+        return of(this.config);
+      }));
   }
 
   private fetchEntities(pageLink: TimePageLink): Observable<PageData<BlockedClient>> {
@@ -302,7 +306,7 @@ export class BlockedClientsTableConfigResolver {
   }
 
   private statusTooltip(entity: BlockedClient): string {
-    if (this.isNeverExpires(entity)) {
+    if (this.isNeverExpires(entity) || this.isActive(entity)) {
       return;
     }
     const timeLeftToLiveMs = this.timeToLive * MINUTE;
@@ -314,5 +318,9 @@ export class BlockedClientsTableConfigResolver {
 
   private isNeverExpires(entity: BlockedClient): boolean {
     return entity.expirationTime === 0;
+  }
+
+  private isActive(entity: BlockedClient): boolean {
+    return entity.status === BlockedClientStatus.ACTIVE;
   }
 }

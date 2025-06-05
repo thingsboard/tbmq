@@ -65,7 +65,7 @@
                      [disabled]="neverExpires">
             </mat-form-field>
             <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-              <mat-label translate>blocked-client.expiration-time</mat-label>
+              <mat-label translate>common.time</mat-label>
               <mat-datetimepicker-toggle [for]="expirationTimePicker" matPrefix></mat-datetimepicker-toggle>
               <mat-datetimepicker #expirationTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
               <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationTimePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"

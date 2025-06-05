@@ -35,7 +35,7 @@ export class BlockedClientService {
   }
 
   public deleteBlockedClient(entity: BlockedClient, config?: RequestConfig) {
-    let url = `/api/blockedClient?type=${entity.type}&value=${entity.value}`;
+    let url = `/api/blockedClient?type=${entity.type}&value=${encodeURIComponent(entity.value)}`;
     if (isDefinedAndNotNull(entity.regexMatchTarget)) {
       url += `&regexMatchTarget=${entity.regexMatchTarget}`;
     }
