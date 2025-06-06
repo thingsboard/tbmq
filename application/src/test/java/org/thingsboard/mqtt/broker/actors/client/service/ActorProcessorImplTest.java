@@ -588,7 +588,7 @@ public class ActorProcessorImplTest {
     }
 
     private AuthResponse getAuthResponse(boolean success) {
-        return new AuthResponse(success, ClientType.APPLICATION, getAuthorizationRules());
+        return AuthResponse.builder().success(success).clientType(ClientType.APPLICATION).authRulePatterns(getAuthorizationRules()).build();
     }
 
     private List<AuthRulePatterns> getAuthorizationRules() {

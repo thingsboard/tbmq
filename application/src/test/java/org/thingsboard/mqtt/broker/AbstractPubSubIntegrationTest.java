@@ -108,6 +108,10 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         enableProvider(MqttAuthProviderType.BASIC);
     }
 
+    protected void enabledAlgorithmBasedHmacJwtProvider() {
+        enableProvider(MqttAuthProviderType.JWT);
+    }
+
     protected void enabledScramProvider() {
         enableProvider(MqttAuthProviderType.SCRAM);
     }
@@ -116,18 +120,30 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         disableProvider(MqttAuthProviderType.BASIC);
     }
 
+    protected void disableJwtProvider() {
+        disableProvider(MqttAuthProviderType.JWT);
+    }
+
     private void disableProvider(MqttAuthProviderType type) {
-        MqttAuthProvider provider = getOrCreateMqttAuthProvider(type);
+        MqttAuthProvider provider = getMqttAuthProvider(type);
         if (provider.isEnabled()) {
             mqttAuthProviderManagerService.disableAuthProvider(provider.getId());
         }
     }
 
     private void enableProvider(MqttAuthProviderType type) {
-        MqttAuthProvider provider = getOrCreateMqttAuthProvider(type);
+        MqttAuthProvider provider = getMqttAuthProvider(type);
         if (!provider.isEnabled()) {
             mqttAuthProviderManagerService.enableAuthProvider(provider.getId());
         }
+    }
+
+    public MqttAuthProvider getMqttAuthProvider(MqttAuthProviderType type) {
+        var mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
+        if (mqttAuthProviderOpt.isEmpty()) {
+            throw new IllegalStateException("No " + type.getDisplayName() + " provider found!");
+        }
+        return mqttAuthProviderOpt.get();
     }
 
     private MqttAuthProvider getOrCreateMqttAuthProvider(MqttAuthProviderType type) {

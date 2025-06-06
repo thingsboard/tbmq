@@ -29,6 +29,9 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
+import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 
 import static org.mockito.BDDMockito.then;
 

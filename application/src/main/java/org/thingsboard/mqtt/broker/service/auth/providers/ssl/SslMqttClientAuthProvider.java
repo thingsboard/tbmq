@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth.providers.ssl;
 
 import io.netty.handler.ssl.SslHandler;
 import jakarta.annotation.PostConstruct;
@@ -37,6 +37,9 @@ import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 import org.thingsboard.mqtt.broker.util.SslUtil;
 
@@ -46,16 +49,15 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.FAILED_TO_GET_CERT_CN;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.FAILED_TO_GET_CLIENT_CERT_CN;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_CERTS_IN_CHAIN;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_X_509_CREDS_FOUND;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.PEER_IDENTITY_NOT_VERIFIED;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.SSL_HANDLER_NOT_CONSTRUCTED;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.X_509_AUTH_FAILURE;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.FAILED_TO_GET_CERT_CN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.FAILED_TO_GET_CLIENT_CERT_CN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.NO_CERTS_IN_CHAIN;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.NO_X_509_CREDS_FOUND;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.PEER_IDENTITY_NOT_VERIFIED;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.SSL_HANDLER_NOT_CONSTRUCTED;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.X_509_AUTH_FAILURE;
 
 @Slf4j
 @Service
@@ -72,12 +74,8 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
 
     @PostConstruct
     public void init() {
-        Optional<MqttAuthProvider> sslAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509);
-        if (sslAuthProviderOpt.isEmpty()) {
-            log.warn("X_509 Certificate chain authentication provider does not exist! X_509 authentication is disabled!");
-            return;
-        }
-        MqttAuthProvider sslAuthProvider = sslAuthProviderOpt.get();
+        MqttAuthProvider sslAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.X_509)
+                .orElseThrow(() -> new IllegalStateException("Failed to initialize X_509 Certificate chain authentication provider! Provider is missing in the DB!"));
         this.enabled = sslAuthProvider.isEnabled();
         this.configuration = (SslMqttAuthProviderConfiguration) sslAuthProvider.getConfiguration();
     }
@@ -88,7 +86,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
             log.error(logErrorMsg, authContext);
-            return new AuthResponse(false, null, null, errorMsg);
+            return AuthResponse.failure(errorMsg);
         }
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
@@ -97,7 +95,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         if (clientTypeSslMqttCredentials == null) {
             String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
             log.warn(errorMsg);
-            return new AuthResponse(false, null, null, errorMsg);
+            return AuthResponse.failure(errorMsg);
         }
         putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
         if (log.isDebugEnabled()) {
@@ -107,7 +105,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         }
         String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
         List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
-        return new AuthResponse(true, clientTypeSslMqttCredentials.getType(), authRulePatterns);
+        return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
     }
 
     @Override

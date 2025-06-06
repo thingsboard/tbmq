@@ -20,6 +20,8 @@ import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
+import java.nio.charset.StandardCharsets;
+
 @Data
 public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfiguration {
 
@@ -37,11 +39,16 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
         if (StringUtils.isBlank(secret)) {
             throw new DataValidationException("Secret should be specified for HMAC based algorithm!");
         }
+        byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
+        int minLength = 32;
+        if (secretBytes.length < minLength) {
+            throw new DataValidationException("HMAC secret is too short! Must be at least 32 bytes.");
+        }
     }
 
     public static HmacBasedAlgorithmConfiguration defaultConfiguration() {
         var config = new HmacBasedAlgorithmConfiguration();
-        config.setSecret("secret");
+        config.setSecret("please-change-this-32-char-jwt-secret");
         return config;
     }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth.providers;
+package org.thingsboard.mqtt.broker.service.auth.providers.basic;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -41,13 +41,15 @@ import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
+import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.auth.providers.MqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -66,12 +68,8 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
 
     @PostConstruct
     public void init() {
-        Optional<MqttAuthProvider> basicAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
-        if (basicAuthProviderOpt.isEmpty()) {
-            log.warn("JWT authentication provider does not exist! JWT authentication is disabled!");
-            return;
-        }
-        MqttAuthProvider basicAuthProvider = basicAuthProviderOpt.get();
+        MqttAuthProvider basicAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC)
+                .orElseThrow(() -> new IllegalStateException("Failed to initialize BASIC authentication provider! Provider is missing in the DB!"));
         this.enabled = basicAuthProvider.isEnabled();
         this.configuration = (BasicMqttAuthProviderConfiguration) basicAuthProvider.getConfiguration();
     }
@@ -98,7 +96,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
         BasicAuthResponse basicAuthResponse = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
         if (basicAuthResponse.isFailure()) {
             log.warn(basicAuthResponse.getErrorMsg());
-            return new AuthResponse(false, null, null, basicAuthResponse.getErrorMsg());
+            return AuthResponse.failure(basicAuthResponse.getErrorMsg());
         }
         MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
         putIntoClientSessionCredsCache(authContext, basicCredentials);
@@ -107,7 +105,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
         }
         BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
         AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
-        return new AuthResponse(true, basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
+        return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
     }
 
     @Override

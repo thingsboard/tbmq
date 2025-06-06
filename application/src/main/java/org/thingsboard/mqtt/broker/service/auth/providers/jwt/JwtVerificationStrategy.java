@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.auth;
+package org.thingsboard.mqtt.broker.service.auth.providers.jwt;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
 
-@Service
-@RequiredArgsConstructor
-public class DefaultJwtAuthenticationService implements JwtAuthenticationService {
+public interface JwtVerificationStrategy {
 
-    private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
-
-    @Override
-    public AuthResponse authenticate(AuthContext authContext) {
-        try {
-            return jwtMqttClientAuthProvider.authenticate(authContext);
-        } catch (Exception e) {
-            return AuthResponse.failure(e.getMessage());
-        }
-    }
+    AuthResponse authenticateJwt(AuthContext authContext, String jwt) throws Exception;
 
 }

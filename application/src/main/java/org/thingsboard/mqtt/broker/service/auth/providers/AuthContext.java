@@ -36,10 +36,6 @@ public class AuthContext {
         return sslHandler != null;
     }
 
-    public boolean isNotSecurePortUsed() {
-        return !isSecurePortUsed();
-    }
-
     @Override
     public String toString() {
         return "AuthContext{" +

@@ -65,12 +65,13 @@ VALUES
   "authClaims": {},
   "jwtVerifierType": "ALGORITHM_BASED",
   "clientTypeClaims": {},
+  "authRules": {},
   "defaultClientType": "APPLICATION",
   "jwtVerifierConfiguration": {
     "algorithm": "HMAC_BASED",
     "jwtVerifierType": "ALGORITHM_BASED",
     "jwtSignAlgorithmConfiguration": {
-      "secret": "secret",
+      "secret": "please-change-this-32-char-jwt-secret",
       "algorithm": "HMAC_BASED"
     }
   }

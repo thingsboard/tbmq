@@ -15,7 +15,6 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
@@ -26,7 +25,6 @@ import java.util.List;
 
 @Getter
 @Builder(toBuilder = true)
-@AllArgsConstructor
 public class AuthResponse {
 
     private final boolean success;
@@ -43,11 +41,11 @@ public class AuthResponse {
     }
 
     public static AuthResponse defaultAuthResponse() {
-        return new AuthResponse(true, ClientType.DEVICE, null);
+        return AuthResponse.builder().success(true).clientType(ClientType.DEVICE).authRulePatterns(null).build();
     }
 
-    public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
-        this(success, clientType, authRulePatterns, null);
+    public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+        return AuthResponse.builder().success(true).clientType(clientType).authRulePatterns(authRulePatterns).build();
     }
 
     public boolean isFailure() {

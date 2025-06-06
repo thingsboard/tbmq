@@ -18,8 +18,11 @@ package org.thingsboard.mqtt.broker.common.data.security.jwt;
 import lombok.Data;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.SinglePubSubAuthRulesAware;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
@@ -27,7 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 
 @Data
-public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
+public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration, SinglePubSubAuthRulesAware {
 
     @NoXss
     private JwtVerifierType jwtVerifierType;
@@ -39,6 +42,8 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     private Map<String, String> authClaims;
     // optional: will be used to manage creation of the non-default client type.
     private Map<String, String> clientTypeClaims;
+
+    private PubSubAuthorizationRules authRules;
 
     // omit for initial implementation
     // private boolean disconnectAfterExpiration;
@@ -53,6 +58,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
         if (ClientType.INTEGRATION.equals(defaultClientType)) {
             throw new DataValidationException("INTEGRATION client type is not supported!");
         }
+        AuthRulesUtil.validateAndCompileAuthRules(authRules);
         if (jwtVerifierType == null) {
             throw new DataValidationException("Jwt verifier type should be specified!");
         }

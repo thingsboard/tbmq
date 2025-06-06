@@ -71,12 +71,8 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
     @PostConstruct
     public void init() {
         ScramSaslServerProvider.initialize();
-        Optional<MqttAuthProvider> scramAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM);
-        if (scramAuthProviderOpt.isEmpty()) {
-            log.warn("SCRAM authentication provider does not exist! MQTT 5 Enhanced authentication is disabled!");
-            return;
-        }
-        MqttAuthProvider scramAuthProvider = scramAuthProviderOpt.get();
+        MqttAuthProvider scramAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM)
+                .orElseThrow(() -> new IllegalStateException("Failed to initialize SCRAM MQTT 5 Enhanced authentication provider! Provider is missing in the DB!"));;
         enabled = scramAuthProvider.isEnabled();
         configuration = (ScramMqttAuthProviderConfiguration) scramAuthProvider.getConfiguration();
     }

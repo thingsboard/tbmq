@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.SslMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 
 @Service
 @RequiredArgsConstructor

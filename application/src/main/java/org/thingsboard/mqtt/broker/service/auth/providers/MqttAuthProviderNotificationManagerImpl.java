@@ -26,6 +26,9 @@ import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
 import org.thingsboard.mqtt.broker.service.auth.EnhancedAuthenticationService;
+import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 
 @Slf4j
 @Service

@@ -27,11 +27,13 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCrede
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 
@@ -121,4 +123,9 @@ public class TestUtils {
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return mqttClientCredentials;
     }
+
+    public static String generateHmac32Secret() {
+        return Base64.getEncoder().encodeToString(BytesUtil.generateSafeTokenBytes(32));
+    }
+
 }
