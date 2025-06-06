@@ -214,13 +214,6 @@ public abstract class BaseController {
         return checkNotNull(integrationById);
     }
 
-    void checkEntityId(String entityId) throws ThingsboardException {
-        List<String> allEntityIds = tbQueueAdmin.getBrokerServiceIds();
-        if (!BrokerConstants.ENTITY_ID_TOTAL.equals(entityId) && !allEntityIds.contains(entityId)) {
-            throw new ThingsboardException("Entity with requested id wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
-        }
-    }
-
     MqttClientCredentials checkClientCredentialsId(UUID clientCredentialsId) throws ThingsboardException {
         validateId(clientCredentialsId, "Incorrect clientCredentialsId " + clientCredentialsId);
         Optional<MqttClientCredentials> credentials = mqttClientCredentialsService.getCredentialsById(clientCredentialsId);
