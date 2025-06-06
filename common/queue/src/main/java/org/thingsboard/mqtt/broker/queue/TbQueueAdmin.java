@@ -49,6 +49,7 @@ public interface TbQueueAdmin {
 
     PageData<KafkaTopic> getTopics(PageLink pageLink);
 
+    @Deprecated(since = "2.2.0", forRemoval = true)
     List<String> getBrokerServiceIds();
 
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);

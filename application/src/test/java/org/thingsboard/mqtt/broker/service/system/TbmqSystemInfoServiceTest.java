@@ -38,6 +38,7 @@ import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import java.util.List;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -54,6 +55,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MEMORY_USA
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_DISK_SPACE;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.TOTAL_MEMORY;
 import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ;
+import static org.thingsboard.mqtt.broker.common.data.queue.ServiceType.TBMQ_INTEGRATION_EXECUTOR;
 
 public class TbmqSystemInfoServiceTest {
 
@@ -203,6 +205,18 @@ public class TbmqSystemInfoServiceTest {
         assertNull(dto.getTotalDiskSpace());
         assertEquals(0, dto.getLastUpdateTime());
         assertEquals(ServiceStatus.OUTDATED, dto.getStatus());
+    }
+
+    @Test
+    public void testGetTbmqServiceIds() {
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(
+                Map.of("tbmq1", TBMQ.name(), "tbmq-ie1", TBMQ_INTEGRATION_EXECUTOR.name(),
+                        "tbmq2", TBMQ.name(), "tbmq-ie2", TBMQ_INTEGRATION_EXECUTOR.name())
+        );
+
+        List<String> tbmqServiceIds = systemInfoService.getTbmqServiceIds();
+        assertEquals(2, tbmqServiceIds.size());
+        assertThat(tbmqServiceIds).containsAll(List.of("tbmq1", "tbmq2"));
     }
 
     private SettableFuture<List<TsKvEntry>> getListSettableFuture(long ts) {
