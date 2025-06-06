@@ -30,4 +30,13 @@ class ServiceStatusTest {
         assertEquals(ServiceStatus.OUTDATED, ServiceStatus.fromLastUpdateTime(now - (8L * 24 * 60 * 60 * 1000)));
     }
 
+    @Test
+    void testServiceStatusFromLastUpdateTimeIsNullOrNil() {
+        Long lastUpdateTime = 0L;
+        assertEquals(ServiceStatus.OUTDATED, ServiceStatus.fromLastUpdateTime(lastUpdateTime));
+
+        lastUpdateTime = null;
+        assertEquals(ServiceStatus.OUTDATED, ServiceStatus.fromLastUpdateTime(lastUpdateTime));
+    }
+
 }

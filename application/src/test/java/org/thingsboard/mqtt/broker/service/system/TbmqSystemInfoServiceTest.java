@@ -40,6 +40,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.eq;
@@ -177,6 +178,33 @@ public class TbmqSystemInfoServiceTest {
         assertEquals(ServiceStatus.ACTIVE, dto.getStatus());
     }
 
+    @Test
+    public void testGetOutdatedServiceInfos() throws Exception {
+        String serviceId = "tbmq";
+        String serviceType = TBMQ.name();
+
+        when(hashOperations.entries(SERVICE_REGISTRY_KEY)).thenReturn(Map.of(serviceId, serviceType));
+
+        SettableFuture<List<TsKvEntry>> future = getNullListSettableFuture(System.currentTimeMillis());
+        when(timeseriesService.findLatest(eq(serviceId), anyList())).thenReturn(future);
+
+        var resultFuture = systemInfoService.getServiceInfos();
+        PageData<ServiceInfoDto> result = resultFuture.get();
+
+        assertEquals(1, result.getData().size());
+        ServiceInfoDto dto = result.getData().get(0);
+        assertEquals(serviceId, dto.getServiceId());
+        assertEquals(serviceType, dto.getServiceType());
+        assertNull(dto.getCpuUsage());
+        assertNull(dto.getMemoryUsage());
+        assertNull(dto.getDiskUsage());
+        assertNull(dto.getCpuCount());
+        assertNull(dto.getTotalMemory());
+        assertNull(dto.getTotalDiskSpace());
+        assertEquals(0, dto.getLastUpdateTime());
+        assertEquals(ServiceStatus.OUTDATED, dto.getStatus());
+    }
+
     private SettableFuture<List<TsKvEntry>> getListSettableFuture(long ts) {
         List<TsKvEntry> kvEntries = List.of(
                 new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, 10L)),
@@ -185,6 +213,21 @@ public class TbmqSystemInfoServiceTest {
                 new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, 4L)),
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, 8192L)),
                 new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, 100000L))
+        );
+
+        SettableFuture<List<TsKvEntry>> future = SettableFuture.create();
+        future.set(kvEntries);
+        return future;
+    }
+
+    private SettableFuture<List<TsKvEntry>> getNullListSettableFuture(long ts) {
+        List<TsKvEntry> kvEntries = List.of(
+                new BasicTsKvEntry(ts, new LongDataEntry(CPU_USAGE, null)),
+                new BasicTsKvEntry(ts, new LongDataEntry(MEMORY_USAGE, null)),
+                new BasicTsKvEntry(ts, new LongDataEntry(DISK_USAGE, null)),
+                new BasicTsKvEntry(ts, new LongDataEntry(CPU_COUNT, null)),
+                new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_MEMORY, null)),
+                new BasicTsKvEntry(ts, new LongDataEntry(TOTAL_DISK_SPACE, null))
         );
 
         SettableFuture<List<TsKvEntry>> future = SettableFuture.create();

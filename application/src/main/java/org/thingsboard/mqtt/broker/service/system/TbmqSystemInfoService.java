@@ -183,7 +183,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
                         case DISK_USAGE -> dto.setDiskUsage(entry.getLongValue().orElse(null));
                         case TOTAL_DISK_SPACE -> dto.setTotalDiskSpace(entry.getLongValue().orElse(null));
                     }
-                    dto.setLastUpdateTime(entry.getTs());
+                    dto.setLastUpdateTime(dto.isDataPresent() ? entry.getTs() : 0L);
                 }
                 dto.setStatus(ServiceStatus.fromLastUpdateTime(dto.getLastUpdateTime()));
                 response.add(dto);
