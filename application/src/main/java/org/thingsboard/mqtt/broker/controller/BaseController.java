@@ -15,19 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
 import org.springframework.web.context.request.async.DeferredResult;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -43,6 +47,8 @@ import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
+import org.thingsboard.mqtt.broker.dao.service.ConstraintValidator;
+import org.thingsboard.mqtt.broker.dao.service.Validator;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
@@ -62,11 +68,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
@@ -119,6 +127,20 @@ public abstract class BaseController {
         errorResponseHandler.handle(ex, response);
     }
 
+    /**
+     * @deprecated Exceptions that are not of {@link ThingsboardException} type
+     * are now caught and mapped to {@link ThingsboardException} by
+     * {@link ExceptionHandler} {@link BaseController#handleControllerException(Exception, HttpServletResponse)}
+     * which basically acts like the following boilerplate:
+     * {@code
+     *  try {
+     *      someExceptionThrowingMethod();
+     *  } catch (Exception e) {
+     *      throw handleException(e);
+     *  }
+     * }
+     * */
+    @Deprecated
     ThingsboardException handleException(Exception exception) {
         return handleException(exception, true);
     }
@@ -129,23 +151,49 @@ public abstract class BaseController {
                 SecurityUser user = getCurrentUser();
                 log.error("[{}] Error", user.getId(), exception);
             } catch (Exception e) {
-                log.error("Error", e);
+                log.error("Error", exception);
             }
         }
 
-        String cause = BrokerConstants.EMPTY_STR;
-        if (exception.getCause() != null) {
-            cause = exception.getCause().getClass().getCanonicalName();
-        }
-
+        Throwable cause = exception.getCause();
         if (exception instanceof ThingsboardException) {
             return (ThingsboardException) exception;
         } else if (exception instanceof IllegalArgumentException || exception instanceof IncorrectParameterException
-                || exception instanceof DataValidationException || cause.contains("IncorrectParameterException")) {
+                || exception instanceof DataValidationException || cause instanceof IncorrectParameterException) {
             return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.BAD_REQUEST_PARAMS);
-        } else {
-            return new ThingsboardException(exception.getMessage(), ThingsboardErrorCode.GENERAL);
+        } else if (exception instanceof MessagingException) {
+            return new ThingsboardException("Unable to send mail", ThingsboardErrorCode.GENERAL);
+        } else if (exception instanceof AsyncRequestTimeoutException) {
+            return new ThingsboardException("Request timeout", ThingsboardErrorCode.GENERAL);
+        } else if (exception instanceof DataAccessException) {
+            return new ThingsboardException(exception, ThingsboardErrorCode.DATABASE);
         }
+        return new ThingsboardException(exception.getMessage(), exception, ThingsboardErrorCode.GENERAL);
+    }
+
+    /**
+     * Handles validation error for controller method arguments annotated with @{@link jakarta.validation.Valid}
+     * */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public void handleValidationError(MethodArgumentNotValidException validationError, HttpServletResponse response) {
+        List<ConstraintViolation<Object>> constraintsViolations = validationError.getFieldErrors().stream()
+                .map(fieldError -> {
+                    try {
+                        return (ConstraintViolation<Object>) fieldError.unwrap(ConstraintViolation.class);
+                    } catch (Exception e) {
+                        log.warn("FieldError source is not of type ConstraintViolation");
+                        return null; // should not happen
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        String errorMessage = "Validation error: " + ConstraintValidator.getErrorMessage(constraintsViolations);
+        ThingsboardException thingsboardException = new ThingsboardException(errorMessage, ThingsboardErrorCode.BAD_REQUEST_PARAMS);
+        handleControllerException(thingsboardException, response);
+    }
+
+    <T> T checkNotNull(T reference) throws ThingsboardException {
+        return checkNotNull(reference, "Requested item wasn't found!");
     }
 
     <T> T checkNotNull(Optional<T> reference) throws ThingsboardException {
@@ -158,13 +206,6 @@ public abstract class BaseController {
         } else {
             throw new ThingsboardException(notFoundMessage, ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
-    }
-
-    <T> T checkNotNull(T reference) throws ThingsboardException {
-        if (reference == null) {
-            throw new ThingsboardException("Requested item wasn't found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
-        }
-        return reference;
     }
 
     <T> T checkNotNull(T reference, String notFoundMessage) throws ThingsboardException {
@@ -247,14 +288,21 @@ public abstract class BaseController {
         }
     }
 
-    UUID toUUID(String id) {
-        return UUID.fromString(id);
+    UUID toUUID(String id) throws ThingsboardException {
+        try {
+            return UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw handleException(e, false);
+        }
     }
 
     PageLink createPageLink(int pageSize, int page, String textSearch, String sortProperty, String sortOrder) throws ThingsboardException {
-        if (!StringUtils.isEmpty(sortProperty)) {
+        if (StringUtils.isNotEmpty(sortProperty)) {
+            if (!Validator.isValidProperty(sortProperty)) {
+                throw new IllegalArgumentException("Invalid sort property");
+            }
             SortOrder.Direction direction = SortOrder.Direction.ASC;
-            if (!StringUtils.isEmpty(sortOrder)) {
+            if (StringUtils.isNotEmpty(sortOrder)) {
                 try {
                     direction = SortOrder.Direction.valueOf(sortOrder.toUpperCase());
                 } catch (IllegalArgumentException e) {
@@ -297,7 +345,7 @@ public abstract class BaseController {
 
     void handleError(Throwable e, final DeferredResult<ResponseEntity> response, HttpStatus defaultErrorStatus) {
         ResponseEntity responseEntity;
-        if (e instanceof IllegalArgumentException || e instanceof IncorrectParameterException) {
+        if (e instanceof IllegalArgumentException || e instanceof IncorrectParameterException || e instanceof DataValidationException) {
             responseEntity = new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         } else {
             responseEntity = new ResponseEntity<>(defaultErrorStatus);

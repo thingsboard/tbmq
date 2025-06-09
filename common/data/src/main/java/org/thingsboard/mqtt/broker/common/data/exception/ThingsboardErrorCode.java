@@ -28,7 +28,11 @@ public enum ThingsboardErrorCode {
     BAD_REQUEST_PARAMS(31),
     ITEM_NOT_FOUND(32),
     TOO_MANY_REQUESTS(33),
-    TOO_MANY_UPDATES(34);
+    TOO_MANY_UPDATES(34),
+    VERSION_CONFLICT(35),
+    SUBSCRIPTION_VIOLATION(40),
+    PASSWORD_VIOLATION(45),
+    DATABASE(46);
 
     private final int errorCode;
 
