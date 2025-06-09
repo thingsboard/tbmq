@@ -17,12 +17,11 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -30,15 +29,14 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifierConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.util.MqttAuthProviderUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,12 +48,6 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
     @Before
     public void beforeTest() throws Exception {
         loginSysAdmin();
-    }
-
-    @After
-    public void afterTest() throws Exception {
-        loginSysAdmin();
-
         PageData<ShortMqttAuthProvider> pageData = doGetTypedWithPageLink("/api/mqtt/auth/providers?",
                 new TypeReference<>() {
                 }, new PageLink(10));
@@ -73,7 +65,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
         Assert.assertNotNull(savedMqttAuthProvider);
         Assert.assertNotNull(savedMqttAuthProvider.getId());
-        Assert.assertEquals(savedMqttAuthProvider.getType(), MqttAuthProviderType.BASIC);
+        Assert.assertEquals(MqttAuthProviderType.BASIC, savedMqttAuthProvider.getType());
         Assert.assertTrue(savedMqttAuthProvider.getConfiguration() instanceof BasicMqttAuthProviderConfiguration);
         Assert.assertTrue(savedMqttAuthProvider.getCreatedTime() > 0);
         Assert.assertTrue(savedMqttAuthProvider.isEnabled());
@@ -93,7 +85,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
         Assert.assertNotNull(savedMqttAuthProvider);
         Assert.assertNotNull(savedMqttAuthProvider.getId());
-        Assert.assertEquals(savedMqttAuthProvider.getType(), MqttAuthProviderType.X_509);
+        Assert.assertEquals(MqttAuthProviderType.X_509, savedMqttAuthProvider.getType());
         Assert.assertTrue(savedMqttAuthProvider.getConfiguration() instanceof SslMqttAuthProviderConfiguration);
         Assert.assertTrue(savedMqttAuthProvider.getCreatedTime() > 0);
         Assert.assertTrue(savedMqttAuthProvider.isEnabled());
@@ -126,7 +118,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
 
         Assert.assertNotNull(savedMqttAuthProvider);
         Assert.assertNotNull(savedMqttAuthProvider.getId());
-        Assert.assertEquals(savedMqttAuthProvider.getType(), MqttAuthProviderType.JWT);
+        Assert.assertEquals(MqttAuthProviderType.JWT, savedMqttAuthProvider.getType());
         Assert.assertTrue(savedMqttAuthProvider.getConfiguration() instanceof JwtMqttAuthProviderConfiguration);
         Assert.assertTrue(savedMqttAuthProvider.getCreatedTime() > 0);
         Assert.assertTrue(savedMqttAuthProvider.isEnabled());
@@ -156,17 +148,13 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
     }
 
     private MqttAuthProvider getJwtMqttAuthProvider() {
-        HmacBasedAlgorithmConfiguration algorithmConfiguration = new HmacBasedAlgorithmConfiguration();
-        algorithmConfiguration.setSecret(RandomStringUtils.randomAlphanumeric(10));
-
-        AlgorithmBasedVerifierConfiguration verifierConfiguration = new AlgorithmBasedVerifierConfiguration();
-        verifierConfiguration.setAlgorithm(JwtSignAlgorithm.HMAC_BASED);
-        verifierConfiguration.setJwtSignAlgorithmConfiguration(algorithmConfiguration);
+        AlgorithmBasedVerifierConfiguration verifierConfiguration = AlgorithmBasedVerifierConfiguration.defaultConfiguration();
 
         JwtMqttAuthProviderConfiguration configuration = new JwtMqttAuthProviderConfiguration();
         configuration.setDefaultClientType(ClientType.APPLICATION);
         configuration.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         configuration.setJwtVerifierConfiguration(verifierConfiguration);
+        configuration.setAuthRules(PubSubAuthorizationRules.newInstance(Collections.emptyList()));
 
         MqttAuthProvider provider = new MqttAuthProvider();
         provider.setEnabled(true);
