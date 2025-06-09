@@ -45,10 +45,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
     @Before
     public void setUp() {
-    }
-
-    @After
-    public void tearDown() throws Exception {
+        // All providers loaded into DB using initDB script. So we need to clean up before test start.
         PageData<ShortMqttAuthProvider> authProviders = mqttAuthProviderService.getShortAuthProviders(new PageLink(1000));
         for (var provider : authProviders.getData()) {
             mqttAuthProviderService.deleteAuthProvider(provider.getId());
