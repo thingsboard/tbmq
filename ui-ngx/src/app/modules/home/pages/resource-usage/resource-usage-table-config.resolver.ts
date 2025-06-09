@@ -18,7 +18,8 @@ import {
   CellActionDescriptor,
   DateEntityTableColumn,
   EntityTableColumn,
-  EntityTableConfig
+  EntityTableConfig,
+  cellWithIcon
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -65,12 +66,12 @@ export class ResourceUsageTableConfigResolver {
       new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'monitoring.resource-usage.last-update-time', this.datePipe, '150px', undefined, undefined, false),
       new EntityTableColumn<ResourceUsage>('serviceId', 'monitoring.resource-usage.service-id', '20%', undefined, undefined, false),
       new EntityTableColumn<ResourceUsage>('serviceType', 'monitoring.resource-usage.service-type', '20%', undefined, undefined, false),
-      new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '15%', (entity) => this.toPercentage(entity.cpuUsage),
-        undefined, false, undefined, (entity) => `${this.translate.instant('home.total')} ${entity.cpuCount} ${this.translate.instant('monitoring.resource-usage.cpu-count')}`),
-      new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '15%', (entity) => this.toPercentage(entity.memoryUsage),
-        undefined, false, undefined, (entity) => `${this.translate.instant('home.total')} ${this.toGb(entity.totalMemory)}`),
-      new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '15%', (entity) => this.toPercentage(entity.diskUsage),
-        undefined, false, undefined, (entity) => `${this.translate.instant('home.total')} ${this.toGb(entity.totalDiskSpace)}`),
+      new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '15%', (entity) => this.usageCell(entity.cpuUsage),
+        undefined, false, undefined, (entity) => this.usageTooltip(entity.cpuUsage, 'cpu', entity.cpuCount)),
+      new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '15%', (entity) => this.usageCell(entity.memoryUsage),
+        undefined, false, undefined, (entity) => this.usageTooltip(entity.memoryUsage, 'ram', entity.totalMemory)),
+      new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '15%', (entity) => this.usageCell(entity.diskUsage),
+        undefined, false, undefined, (entity) => this.usageTooltip(entity.diskUsage, 'disk', entity.totalDiskSpace)),
       new EntityTableColumn<ResourceUsage>('status', 'monitoring.resource-usage.status', '15%',
         (entity) => this.translate.instant(resourceUsageStatusTranslationMap.get(entity.status)), undefined, false, undefined,
         (entity) => this.translate.instant(resourceUsageTooltipTranslationMap.get(entity.status))),
@@ -119,6 +120,45 @@ export class ResourceUsageTableConfigResolver {
   }
 
   private toPercentage(value: number): string {
+    if (!value) {
+      return '';
+    }
     return value + '%';
+  }
+
+  private usageCell(usage: number): string {
+    const value = this.toPercentage(usage);
+    let iconColor;
+    if (this.isCritical(usage)) {
+      iconColor = '#d12730';
+    } else if (this.isHigh(usage)) {
+      iconColor = '#ff9a00';
+    } else {
+      return value;
+    }
+    return cellWithIcon(value,  'warning', 'rgba(255,236,128,0)', iconColor, 'inherit');
+  }
+
+  private usageTooltip(usage: number, type: string, value: number): string  {
+    if (this.isCritical(usage)) {
+      return this.translate.instant(`monitoring.resource-usage.${type}-critical-text`);
+    } else if (this.isHigh(usage)) {
+      return this.translate.instant(`monitoring.resource-usage.${type}-warning-text`);
+    } else {
+      const prefix = this.translate.instant('home.total');
+      if (type === 'cpu') {
+        return `${prefix} ${value} ${this.translate.instant('monitoring.resource-usage.cpu-count')}`;
+      } else {
+        return `${prefix} ${this.toGb(value)}`;
+      }
+    }
+  }
+
+  private isCritical(usage: number): boolean {
+    return usage > 85;
+  }
+
+  private isHigh(usage: number): boolean {
+    return usage > 75;
   }
 }
