@@ -15,9 +15,13 @@
  */
 package org.thingsboard.mqtt.broker.common.data.util;
 
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.util.Base64URL;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -37,9 +41,13 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.NamedParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +75,27 @@ public class SslUtil {
     @SneakyThrows
     public static List<X509Certificate> readCertFileByPath(String filePath) {
         return readCertFile(new FileReader(filePath));
+    }
+
+    public static PublicKey readPublicKey(String pem) {
+        try {
+            // Try as X.509 certificate
+            List<X509Certificate> certs = readCertFile(pem);
+            if (!certs.isEmpty()) {
+                return certs.get(0).getPublicKey();
+            }
+        } catch (Exception ignored) {}
+        // Try as a PEM public key
+        try (PEMParser pemParser = new PEMParser(new StringReader(pem))) {
+            Object object = pemParser.readObject();
+            if (object instanceof SubjectPublicKeyInfo) {
+                return new JcaPEMKeyConverter().setProvider(DEFAULT_PROVIDER)
+                        .getPublicKey((SubjectPublicKeyInfo) object);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse public PEM key: " + e.getMessage(), e);
+        }
+        throw new IllegalArgumentException("Unsupported or invalid PEM public key format.");
     }
 
     private static List<X509Certificate> readCertFile(Reader reader) throws IOException, CertificateException {
@@ -131,6 +160,47 @@ public class SslUtil {
 
     public static char[] getPassword(String passStr) {
         return StringUtils.isEmpty(passStr) ? EMPTY_PASS : passStr.toCharArray();
+    }
+
+    public static OctetKeyPair edEcPublicKeyToOctetKeyPair(EdECPublicKey edEcPublicKey) {
+        if (edEcPublicKey.getParams() == null) {
+            throw new IllegalArgumentException("EdEC public key parameters must be not null.");
+        }
+        NamedParameterSpec spec = edEcPublicKey.getParams();
+        Curve curve = Curve.parse(spec.getName());
+
+        // Extract the 32 bytes from the end of the X.509 encoding
+        byte[] encoded = edEcPublicKey.getEncoded();
+        int keyLen = 32;
+        byte[] x = new byte[keyLen];
+        System.arraycopy(encoded, encoded.length - keyLen, x, 0, keyLen);
+
+        return new OctetKeyPair.Builder(curve, Base64URL.encode(x)).build();
+    }
+
+    public static OctetKeyPair edEcPrivateKeyToOctetKeyPair(EdECPublicKey publicKey, EdECPrivateKey privateKey) {
+        if (privateKey.getParams() == null) {
+            throw new IllegalArgumentException("EdEC key parameters must not be null.");
+        }
+
+        NamedParameterSpec spec = privateKey.getParams();
+        Curve curve = Curve.parse(spec.getName());
+
+        int keyLen = 32;
+
+        // Extract private part (d) from end of PKCS#8 encoding
+        byte[] privateEncoded = privateKey.getEncoded();
+        byte[] d = new byte[keyLen];
+        System.arraycopy(privateEncoded, privateEncoded.length - keyLen, d, 0, keyLen);
+
+        // Extract public part (x) from X.509 public key encoding
+        byte[] publicEncoded = publicKey.getEncoded();
+        byte[] x = new byte[keyLen];
+        System.arraycopy(publicEncoded, publicEncoded.length - keyLen, x, 0, keyLen);
+
+        return new OctetKeyPair.Builder(curve, Base64URL.encode(x))
+                .d(Base64URL.encode(d))
+                .build();
     }
 
 }

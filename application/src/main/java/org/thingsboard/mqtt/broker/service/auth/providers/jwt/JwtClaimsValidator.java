@@ -62,7 +62,7 @@ public record JwtClaimsValidator(JwtMqttAuthProviderConfiguration configuration,
         return defaultClientType == ClientType.DEVICE ? ClientType.APPLICATION : ClientType.DEVICE;
     }
 
-    public boolean validateAuthClaims(AuthContext authContext, JWTClaimsSet claims) throws ParseException {
+    private boolean validateAuthClaims(AuthContext authContext, JWTClaimsSet claims) throws ParseException {
         for (var entry : configuration.getAuthClaims().entrySet()) {
             String claimName = entry.getKey();
             String expectedPattern = entry.getValue();

@@ -79,6 +79,7 @@
         <jaxb.version>4.0.2</jaxb.version>
         <jjwt.version>0.12.5</jjwt.version>
         <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
+        <google-crypto-tink.version>1.11.0</google-crypto-tink.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
         <bucket4j.version>8.13.0</bucket4j.version>
         <passay.version>1.6.4</passay.version>
@@ -927,6 +928,11 @@
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.crypto.tink</groupId>
+                <artifactId>tink</artifactId>
+                <version>${google-crypto-tink.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>

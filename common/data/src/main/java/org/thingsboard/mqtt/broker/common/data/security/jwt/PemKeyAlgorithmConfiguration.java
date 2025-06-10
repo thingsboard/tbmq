@@ -16,9 +16,15 @@
 package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
 import lombok.Data;
+import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
+
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.EdECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 
 @Data
 public class PemKeyAlgorithmConfiguration implements JwtSignAlgorithmConfiguration {
@@ -33,9 +39,21 @@ public class PemKeyAlgorithmConfiguration implements JwtSignAlgorithmConfigurati
 
     @Override
     public void validate() {
-        // TODO: Validate PEM key structure somehow?
         if (StringUtils.isBlank(publicPemKey)) {
             throw new DataValidationException("Public PEM key should be specified for PEM based algorithm!");
+        }
+        try {
+            PublicKey pk = SslUtil.readPublicKey(publicPemKey);
+            if (pk instanceof RSAPublicKey || pk instanceof ECPublicKey) {
+                return;
+            }
+            if (pk instanceof EdECPublicKey edECPublicKey &&
+                "Ed25519".equals(edECPublicKey.getParams().getName())) {
+                    return;
+            }
+            throw new DataValidationException("Only RSA, EC, or Ed25519 public keys are supported!");
+        } catch (Exception e) {
+            throw new DataValidationException("Failed to parse public PEM key: " + e.getMessage(), e);
         }
     }
 

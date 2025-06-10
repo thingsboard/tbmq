@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmCo
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
@@ -66,6 +67,10 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
             if (JwtSignAlgorithm.HMAC_BASED.equals(conf.getAlgorithm())) {
                 String rawSecret = ((HmacBasedAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getSecret();
                 return new HmacJwtVerificationStrategy(rawSecret, new JwtClaimsValidator(configuration, authRulePatterns));
+            }
+            if (JwtSignAlgorithm.PEM_KEY.equals(conf.getAlgorithm())) {
+                String publicPemKey = ((PemKeyAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getPublicPemKey();
+                return new PemKeyJwtVerificationStrategy(publicPemKey, new JwtClaimsValidator(configuration, authRulePatterns));
             }
         }
         // TODO: add other strategies
