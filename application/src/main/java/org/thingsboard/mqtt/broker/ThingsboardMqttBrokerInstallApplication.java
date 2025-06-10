@@ -31,7 +31,8 @@ import java.util.Properties;
         "org.thingsboard.mqtt.broker.service.install",
         "org.thingsboard.mqtt.broker.service.user",
         "org.thingsboard.mqtt.broker.dao",
-        "org.thingsboard.mqtt.broker.cache"})
+        "org.thingsboard.mqtt.broker.cache",
+        "org.thingsboard.mqtt.broker.config.bcrypt"})
 public class ThingsboardMqttBrokerInstallApplication {
 
     private static final String SPRING_CONFIG_NAME_KEY = "--spring.config.name";

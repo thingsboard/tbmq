@@ -28,7 +28,6 @@ import org.passay.PasswordValidator;
 import org.passay.Rule;
 import org.passay.RuleResult;
 import org.passay.WhitespaceRule;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
@@ -58,7 +57,7 @@ import java.util.concurrent.TimeUnit;
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
     private final UserService userService;
-    private final @Lazy BCryptPasswordEncoder encoder;
+    private final BCryptPasswordEncoder encoder;
     private final AdminSettingsService adminSettingsService;
 
     @Override

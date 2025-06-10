@@ -13,31 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.dto;
+package org.thingsboard.mqtt.broker.config.bcrypt;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import java.util.UUID;
+@Configuration
+public class CryptoConfig {
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AdminDto {
-
-    private UUID id;
-    private long createdTime;
-    private String email;
-    private String password;
-    private String firstName;
-    private String lastName;
-    private JsonNode additionalInfo;
-
-    public static AdminDto fromEmail(String email) {
-        return AdminDto.builder().email(email).build();
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+
 }

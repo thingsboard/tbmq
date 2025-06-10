@@ -59,12 +59,7 @@ public class AdminController extends BaseController {
     @RequestMapping(value = "", method = RequestMethod.POST)
     @ResponseBody
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
-        try {
-            checkNotNull(adminDto);
-            return adminService.createAdmin(adminDto, true);
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return adminService.createAdmin(adminDto, true);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -171,6 +166,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
     @RequestMapping(value = "/user", method = RequestMethod.POST)
     @ResponseBody
+    @Deprecated(since = "2.2.0", forRemoval = true)
     public User saveAdminUser(@RequestBody User user) throws ThingsboardException {
         try {
             checkNotNull(user);

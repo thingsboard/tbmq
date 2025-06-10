@@ -64,9 +64,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findUserByEmail(String email) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findUserByEmail [{}]", email);
-        }
+        log.trace("Executing findUserByEmail [{}]", email);
         validateString(email, "Incorrect email " + email);
         if (userLoginCaseSensitive) {
             return userDao.findByEmail(email);
@@ -77,18 +75,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User findUserById(UUID userId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findUserById [{}]", userId);
-        }
+        log.trace("Executing findUserById [{}]", userId);
         validateId(userId, INCORRECT_USER_ID + userId);
         return userDao.findById(userId);
     }
 
     @Override
     public User saveUser(User user) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveUser [{}]", user);
-        }
+        log.trace("Executing saveUser [{}]", user);
         userValidator.validate(user);
         if (!userLoginCaseSensitive) {
             user.setEmail(user.getEmail().toLowerCase());
@@ -106,27 +100,21 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserCredentials findUserCredentialsByUserId(UUID userId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findUserCredentialsByUserId [{}]", userId);
-        }
+        log.trace("Executing findUserCredentialsByUserId [{}]", userId);
         validateId(userId, INCORRECT_USER_ID + userId);
         return userCredentialsDao.findByUserId(userId);
     }
 
     @Override
     public UserCredentials saveUserCredentials(UserCredentials userCredentials) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveUserCredentials [{}]", userCredentials);
-        }
+        log.trace("Executing saveUserCredentials [{}]", userCredentials);
         userCredentialsValidator.validate(userCredentials);
         return saveUserCredentialsAndPasswordHistory(userCredentials);
     }
 
     @Override
     public UserCredentials replaceUserCredentials(UserCredentials userCredentials) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing replaceUserCredentials [{}]", userCredentials);
-        }
+        log.trace("Executing replaceUserCredentials [{}]", userCredentials);
         userCredentialsValidator.validate(userCredentials);
         userCredentialsDao.removeById(userCredentials.getId());
         userCredentials.setId(null);
@@ -136,9 +124,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(UUID userId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteUser [{}]", userId);
-        }
+        log.trace("Executing deleteUser [{}]", userId);
         validateId(userId, INCORRECT_USER_ID + userId);
         UserCredentials userCredentials = userCredentialsDao.findByUserId(userId);
         if (userCredentials == null) {
@@ -150,18 +136,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public PageData<User> findUsers(PageLink pageLink) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findUsers, pageLink [{}]", pageLink);
-        }
+        log.trace("Executing findUsers, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
         return userDao.findAll(pageLink);
     }
 
     @Override
     public void onUserLoginSuccessful(UUID userId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing onUserLoginSuccessful [{}]", userId);
-        }
+        log.trace("Executing onUserLoginSuccessful [{}]", userId);
         User user = findUserById(userId);
         setLastLoginTs(user);
         saveUser(user);
@@ -169,9 +151,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserCredentials requestPasswordReset(String email) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing requestPasswordReset email [{}]", email);
-        }
+        log.trace("Executing requestPasswordReset email [{}]", email);
         DataValidator.validateEmail(email);
         User user = findUserByEmail(email);
         if (user == null) {
@@ -197,9 +177,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserCredentials findUserCredentialsByResetToken(String resetToken) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findUserCredentialsByResetToken [{}]", resetToken);
-        }
+        log.trace("Executing findUserCredentialsByResetToken [{}]", resetToken);
         validateString(resetToken, "Incorrect resetToken " + resetToken);
         return userCredentialsDao.findByResetToken(resetToken);
     }
