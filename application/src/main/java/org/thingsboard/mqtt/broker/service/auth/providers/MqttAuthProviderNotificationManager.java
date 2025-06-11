@@ -21,6 +21,4 @@ public interface MqttAuthProviderNotificationManager {
 
     void handleProviderNotification(MqttAuthProviderProto notification);
 
-    boolean defaultProvidersEnabled();
-
 }

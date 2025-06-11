@@ -28,6 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmCo
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
@@ -36,6 +37,9 @@ import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatter
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +81,7 @@ public class JwtMqttClientAuthProviderTest {
     }
 
     @Test
-    public void testInitSucceedsWithEnabledProvider() throws Exception {
+    public void testInitSucceedsWithEnabledHmacProvider() throws Exception {
         HmacBasedAlgorithmConfiguration hmacConfig = mock(HmacBasedAlgorithmConfiguration.class);
         when(hmacConfig.getSecret()).thenReturn(TestUtils.generateHmac32Secret());
 
@@ -104,6 +108,41 @@ public class JwtMqttClientAuthProviderTest {
         JwtVerificationStrategy strategyField = (JwtVerificationStrategy) ReflectionTestUtils.getField(provider, "verificationStrategy");
         assertThat(strategyField).isNotNull().isInstanceOf(HmacJwtVerificationStrategy.class);
     }
+
+    @Test
+    public void testInitSucceedsWithEnabledPubKeyProvider() throws Exception {
+        PemKeyAlgorithmConfiguration pemBasedConfig = mock(PemKeyAlgorithmConfiguration.class);
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
+
+        when(pemBasedConfig.getPublicPemKey()).thenReturn(TestUtils.toPemString(publicKey));
+
+        AlgorithmBasedVerifierConfiguration algConfig = mock(AlgorithmBasedVerifierConfiguration.class);
+        when(algConfig.getAlgorithm()).thenReturn(JwtSignAlgorithm.PEM_KEY);
+        when(algConfig.getJwtSignAlgorithmConfiguration()).thenReturn(pemBasedConfig);
+
+        JwtMqttAuthProviderConfiguration config = mock(JwtMqttAuthProviderConfiguration.class);
+        when(config.getJwtVerifierType()).thenReturn(JwtVerifierType.ALGORITHM_BASED);
+        when(config.getJwtVerifierConfiguration()).thenReturn(algConfig);
+
+        MqttAuthProvider authProvider = mock(MqttAuthProvider.class);
+        when(authProvider.getConfiguration()).thenReturn(config);
+        when(authProvider.isEnabled()).thenReturn(true);
+
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.JWT)).thenReturn(Optional.of(authProvider));
+        when(authorizationRuleService.parseAuthorizationRule(config)).thenReturn(authRulePatterns);
+
+        provider.init();
+
+        assertThat(provider.isEnabled()).isTrue();
+
+        JwtVerificationStrategy strategyField = (JwtVerificationStrategy) ReflectionTestUtils.getField(provider, "verificationStrategy");
+        assertThat(strategyField).isNotNull().isInstanceOf(PemKeyJwtVerificationStrategy.class);
+    }
+
 
     @Test
     public void testInitSucceedsWithDisabledProvider() throws Exception {

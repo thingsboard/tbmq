@@ -27,7 +27,9 @@ import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.ArrayList;
@@ -41,11 +43,9 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private volatile List<MqttAuthProviderType> priorities;
     private volatile boolean useListenerBasedProviderOnly;
 
-    private final MqttAuthProviderNotificationManager mqttAuthProviderNotificationManager;
-
-    private final BasicAuthenticationService basicAuthenticationService;
-    private final SslAuthenticationService sslAuthenticationService;
-    private final JwtAuthenticationService jwtAuthenticationService;
+    private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
+    private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
+    private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
 
     private final AdminSettingsService adminSettingsService;
 
@@ -75,7 +75,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
             log.trace("[{}] Authenticating client", authContext.getClientId());
         }
 
-        if (!mqttAuthProviderNotificationManager.defaultProvidersEnabled()) {
+        if (!defaultProvidersEnabled()) {
             return AuthResponse.defaultAuthResponse();
         }
 
@@ -84,9 +84,9 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
         for (MqttAuthProviderType providerType : prioritiesForCurrentAuthContext) {
             AuthResponse response = switch (providerType) {
-                case JWT -> jwtAuthenticationService.authenticate(authContext);
-                case BASIC -> basicAuthenticationService.authenticate(authContext);
-                case X_509 -> sslAuthenticationService.authenticate(authContext);
+                case JWT -> jwtMqttClientAuthProvider.authenticate(authContext);
+                case BASIC -> basicMqttClientAuthProvider.authenticate(authContext);
+                case X_509 -> sslMqttClientAuthProvider.authenticate(authContext);
                 default -> throw new IllegalStateException("Unexpected provider type: " + providerType);
             };
             if (response.isSuccess()) {
@@ -95,6 +95,12 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
             addFailureReason(authContext, response, providerType.getDisplayName(), failureReasons);
         }
         return getFinalFailureAuthResponse(authContext, failureReasons);
+    }
+
+    private boolean defaultProvidersEnabled() {
+        return basicMqttClientAuthProvider.isEnabled() ||
+               sslMqttClientAuthProvider.isEnabled() ||
+               jwtMqttClientAuthProvider.isEnabled();
     }
 
     private List<MqttAuthProviderType> getPrioritiesForCurrentAuthContext(AuthContext authContext) {

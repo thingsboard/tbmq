@@ -39,7 +39,6 @@ import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
-import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -89,23 +88,30 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     }
 
     @Override
-    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) {
+        if (!enabled) {
+            return AuthResponse.providerDisabled(MqttAuthProviderType.BASIC);
+        }
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());
         }
-        BasicAuthResponse basicAuthResponse = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
-        if (basicAuthResponse.isFailure()) {
-            log.warn(basicAuthResponse.getErrorMsg());
-            return AuthResponse.failure(basicAuthResponse.getErrorMsg());
+        try {
+            BasicAuthResponse basicAuthResponse = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
+            if (basicAuthResponse.isFailure()) {
+                log.warn(basicAuthResponse.getErrorMsg());
+                return AuthResponse.failure(basicAuthResponse.getErrorMsg());
+            }
+            MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
+            putIntoClientSessionCredsCache(authContext, basicCredentials);
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
+            }
+            BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
+            AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
+            return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
+        } catch (Exception e) {
+            return AuthResponse.failure(e.getMessage());
         }
-        MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
-        putIntoClientSessionCredsCache(authContext, basicCredentials);
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
-        }
-        BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
-        AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
-        return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
     }
 
     @Override

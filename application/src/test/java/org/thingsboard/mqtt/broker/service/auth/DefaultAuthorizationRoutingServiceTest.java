@@ -30,7 +30,9 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
-import org.thingsboard.mqtt.broker.service.auth.providers.MqttAuthProviderNotificationManager;
+import org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider;
+import org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslMqttClientAuthProvider;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 
 import java.util.List;
@@ -44,22 +46,19 @@ import static org.mockito.BDDMockito.then;
 public class DefaultAuthorizationRoutingServiceTest {
 
     @Mock
-    private BasicAuthenticationService basicAuthenticationService;
+    private BasicMqttClientAuthProvider basicMqttClientAuthProvider;
 
     @Mock
-    private SslAuthenticationService sslAuthenticationService;
+    private SslMqttClientAuthProvider sslMqttClientAuthProvider;
 
     @Mock
-    private JwtAuthenticationService jwtAuthenticationService;
+    private JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
 
     @Mock
     private AuthContext authContext;
 
     @Mock
     private AdminSettingsService adminSettingsService;
-
-    @Mock
-    private MqttAuthProviderNotificationManager mqttAuthProviderNotificationManager;
 
     @InjectMocks
     private DefaultAuthorizationRoutingService service;
@@ -118,9 +117,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
-        given(basicAuthenticationService.authenticate(authContext))
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
+        given(basicMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
         // when
@@ -128,9 +126,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        then(basicAuthenticationService).should().authenticate(authContext);
-        then(sslAuthenticationService).shouldHaveNoInteractions();
-        then(jwtAuthenticationService).shouldHaveNoInteractions();
+        then(basicMqttClientAuthProvider).should().authenticate(authContext);
+        then(sslMqttClientAuthProvider).shouldHaveNoInteractions();
+        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
     }
 
     @Test
@@ -142,9 +140,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
-        given(sslAuthenticationService.authenticate(authContext))
+        given(sslMqttClientAuthProvider.isEnabled()).willReturn(true);
+        given(sslMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
         // when
@@ -152,9 +149,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        then(sslAuthenticationService).should().authenticate(authContext);
-        then(basicAuthenticationService).shouldHaveNoInteractions();
-        then(jwtAuthenticationService).shouldHaveNoInteractions();
+        then(sslMqttClientAuthProvider).should().authenticate(authContext);
+        assertThat(then(basicMqttClientAuthProvider).should().isEnabled()).isFalse();
+        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
     }
 
     @Test
@@ -166,9 +163,8 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
-        given(jwtAuthenticationService.authenticate(authContext))
+        given(jwtMqttClientAuthProvider.isEnabled()).willReturn(true);
+        given(jwtMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
         // when
@@ -176,9 +172,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        then(jwtAuthenticationService).should().authenticate(authContext);
-        then(basicAuthenticationService).shouldHaveNoInteractions();
-        then(sslAuthenticationService).shouldHaveNoInteractions();
+        then(jwtMqttClientAuthProvider).should().authenticate(authContext);
+        assertThat(then(basicMqttClientAuthProvider).should().isEnabled()).isFalse();
+        assertThat(then(sslMqttClientAuthProvider).should().isEnabled()).isFalse();
     }
 
     @Test
@@ -191,10 +187,9 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
+        given(sslMqttClientAuthProvider.isEnabled()).willReturn(true);
         given(authContext.isSecurePortUsed()).willReturn(true);
-        given(sslAuthenticationService.authenticate(authContext))
+        given(sslMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
         // when
@@ -202,9 +197,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        then(sslAuthenticationService).should().authenticate(authContext);
-        then(basicAuthenticationService).shouldHaveNoInteractions();
-        then(jwtAuthenticationService).shouldHaveNoInteractions();
+        then(sslMqttClientAuthProvider).should().authenticate(authContext);
+        assertThat(then(basicMqttClientAuthProvider).should().isEnabled()).isFalse();
+        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
     }
 
     @Test
@@ -217,10 +212,9 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
         given(authContext.isSecurePortUsed()).willReturn(false);
-        given(basicAuthenticationService.authenticate(authContext))
+        given(basicMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.defaultAuthResponse());
 
         // when
@@ -228,9 +222,9 @@ public class DefaultAuthorizationRoutingServiceTest {
 
         // then
         assertThat(result.isSuccess()).isTrue();
-        then(basicAuthenticationService).should().authenticate(authContext);
-        then(sslAuthenticationService).shouldHaveNoInteractions();
-        then(jwtAuthenticationService).shouldHaveNoInteractions();
+        then(basicMqttClientAuthProvider).should().authenticate(authContext);
+        then(sslMqttClientAuthProvider).shouldHaveNoInteractions();
+        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
     }
 
     @Test
@@ -244,13 +238,13 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
-        given(mqttAuthProviderNotificationManager.defaultProvidersEnabled())
-                .willReturn(true);
-        given(basicAuthenticationService.authenticate(authContext))
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
+
+        given(basicMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.failure("basic failed"));
-        given(sslAuthenticationService.authenticate(authContext))
+        given(sslMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.failure("ssl failed"));
-        given(jwtAuthenticationService.authenticate(authContext))
+        given(jwtMqttClientAuthProvider.authenticate(authContext))
                 .willReturn(AuthResponse.failure("jwt failed"));
 
         // when
@@ -263,9 +257,9 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .contains("ssl failed")
                 .contains("jwt failed");
 
-        then(basicAuthenticationService).should().authenticate(authContext);
-        then(sslAuthenticationService).should().authenticate(authContext);
-        then(jwtAuthenticationService).should().authenticate(authContext);
+        then(basicMqttClientAuthProvider).should().authenticate(authContext);
+        then(sslMqttClientAuthProvider).should().authenticate(authContext);
+        then(jwtMqttClientAuthProvider).should().authenticate(authContext);
     }
 
 }

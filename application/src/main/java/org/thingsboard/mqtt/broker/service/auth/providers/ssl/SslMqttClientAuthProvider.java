@@ -81,7 +81,10 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     }
 
     @Override
-    public AuthResponse authenticate(AuthContext authContext) throws AuthenticationException {
+    public AuthResponse authenticate(AuthContext authContext) {
+        if (!enabled) {
+            return AuthResponse.providerDisabled(MqttAuthProviderType.X_509);
+        }
         if (authContext.getSslHandler() == null) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
@@ -91,21 +94,25 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
         }
-        ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
-        if (clientTypeSslMqttCredentials == null) {
-            String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
-            log.warn(errorMsg);
-            return AuthResponse.failure(errorMsg);
+        try {
+            ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
+            if (clientTypeSslMqttCredentials == null) {
+                String errorMsg = NO_X_509_CREDS_FOUND.getErrorMsg();
+                log.warn(errorMsg);
+                return AuthResponse.failure(errorMsg);
+            }
+            putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
+            if (log.isDebugEnabled()) {
+                String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
+                log.debug("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
+                        authContext.getClientId(), clientTypeSslMqttCredentials.getType(), protocol);
+            }
+            String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
+            List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
+            return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
+        } catch (Exception e) {
+            return AuthResponse.failure(e.getMessage());
         }
-        putIntoClientSessionCredsCache(authContext, clientTypeSslMqttCredentials);
-        if (log.isDebugEnabled()) {
-            String protocol = authContext.getSslHandler().engine().getSession().getProtocol();
-            log.debug("[{}] Successfully authenticated with SSL credentials as {}. Version {}",
-                    authContext.getClientId(), clientTypeSslMqttCredentials.getType(), protocol);
-        }
-        String clientCommonName = getClientCertificateCommonName(authContext.getSslHandler());
-        List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
-        return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
     }
 
     @Override

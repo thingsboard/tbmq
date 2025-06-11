@@ -24,8 +24,6 @@ import com.nimbusds.jose.crypto.Ed25519Signer;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -33,9 +31,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
+import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -66,7 +63,7 @@ public class PemKeyJwtVerificationStrategyTest {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("Ed448");
         KeyPair keyPair = keyGen.generateKeyPair();
         PublicKey ed448PublicKey = keyPair.getPublic();
-        String pem = toPemString(ed448PublicKey);
+        String pem = TestUtils.toPemString(ed448PublicKey);
 
         // WHEN-THEN
         assertThatThrownBy(() -> new PemKeyJwtVerificationStrategy(pem, claimsValidatorMock))
@@ -81,7 +78,7 @@ public class PemKeyJwtVerificationStrategyTest {
         KeyPair keyPair = keyGen.generateKeyPair();
 
         PublicKey dsaPublicKey = keyPair.getPublic();
-        String pem = toPemString(dsaPublicKey);
+        String pem = TestUtils.toPemString(dsaPublicKey);
 
         // WHEN-THEN
         assertThatThrownBy(() -> new PemKeyJwtVerificationStrategy(pem, claimsValidatorMock))
@@ -99,7 +96,7 @@ public class PemKeyJwtVerificationStrategyTest {
 
         RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
         RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-        String publicPemKeyStr = toPemString(publicKey);
+        String publicPemKeyStr = TestUtils.toPemString(publicKey);
 
         strategy = new PemKeyJwtVerificationStrategy(publicPemKeyStr, claimsValidatorMock);
 
@@ -131,7 +128,7 @@ public class PemKeyJwtVerificationStrategyTest {
         RSAPrivateKey signingKey = (RSAPrivateKey) correctKeyPair.getPrivate();
         RSAPublicKey wrongPublicKey = (RSAPublicKey) wrongKeyPair.getPublic();
 
-        String wrongPublicPem = toPemString(wrongPublicKey);
+        String wrongPublicPem = TestUtils.toPemString(wrongPublicKey);
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder().subject("test").build();
 
@@ -158,7 +155,7 @@ public class PemKeyJwtVerificationStrategyTest {
 
         ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
         ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
-        String publicPemKeyStr = toPemString(publicKey);
+        String publicPemKeyStr = TestUtils.toPemString(publicKey);
 
         strategy = new PemKeyJwtVerificationStrategy(publicPemKeyStr, claimsValidatorMock);
 
@@ -186,7 +183,7 @@ public class PemKeyJwtVerificationStrategyTest {
 
         EdECPublicKey publicKey = (EdECPublicKey) keyPair.getPublic();
         EdECPrivateKey privateKey = (EdECPrivateKey) keyPair.getPrivate();
-        String publicPemKeyStr = toPemString(publicKey);
+        String publicPemKeyStr = TestUtils.toPemString(publicKey);
 
         strategy = new PemKeyJwtVerificationStrategy(publicPemKeyStr, claimsValidatorMock);
 
@@ -224,15 +221,6 @@ public class PemKeyJwtVerificationStrategyTest {
         SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.EdDSA), claimsSet);
         jwt.sign(signer);
         return jwt.serialize();
-    }
-
-    private static String toPemString(PublicKey publicKey) throws IOException {
-        StringWriter str = new StringWriter();
-        PemWriter pemWriter = new PemWriter(str);
-        pemWriter.writeObject(new PemObject("PUBLIC KEY", publicKey.getEncoded()));
-        pemWriter.flush();
-        pemWriter.close();
-        return str.toString();
     }
 
 }

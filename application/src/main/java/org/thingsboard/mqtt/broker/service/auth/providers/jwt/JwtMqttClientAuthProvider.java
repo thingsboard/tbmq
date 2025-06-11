@@ -27,8 +27,6 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifi
 import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
@@ -63,32 +61,35 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
     }
 
     private JwtVerificationStrategy createStrategy() throws JOSEException {
-        if (JwtVerifierType.ALGORITHM_BASED.equals(configuration.getJwtVerifierType())) {
-            var conf = (AlgorithmBasedVerifierConfiguration) configuration.getJwtVerifierConfiguration();
-            if (JwtSignAlgorithm.HMAC_BASED.equals(conf.getAlgorithm())) {
-                String rawSecret = ((HmacBasedAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getSecret();
-                return new HmacJwtVerificationStrategy(rawSecret, new JwtClaimsValidator(configuration, authRulePatterns));
+        return switch (configuration.getJwtVerifierType()) {
+            case ALGORITHM_BASED -> {
+                var conf = (AlgorithmBasedVerifierConfiguration) configuration.getJwtVerifierConfiguration();
+                yield switch (conf.getAlgorithm()) {
+                    case HMAC_BASED -> {
+                        String rawSecret = ((HmacBasedAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getSecret();
+                        yield new HmacJwtVerificationStrategy(rawSecret, new JwtClaimsValidator(configuration, authRulePatterns));
+                    }
+                    case PEM_KEY -> {
+                        String publicPemKey = ((PemKeyAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getPublicPemKey();
+                        yield new PemKeyJwtVerificationStrategy(publicPemKey, new JwtClaimsValidator(configuration, authRulePatterns));
+                    }
+                };
             }
-            if (JwtSignAlgorithm.PEM_KEY.equals(conf.getAlgorithm())) {
-                String publicPemKey = ((PemKeyAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getPublicPemKey();
-                return new PemKeyJwtVerificationStrategy(publicPemKey, new JwtClaimsValidator(configuration, authRulePatterns));
+            case JWKS -> {
+                var conf = (JwksVerifierConfiguration) configuration.getJwtVerifierConfiguration();
+                yield new JwksVerificationStrategy(conf, new JwtClaimsValidator(configuration, authRulePatterns));
             }
-        }
-        if (!JwtVerifierType.JWKS.equals(configuration.getJwtVerifierType())) {
-            throw new IllegalStateException("Invalid JWT verifier type: " + configuration.getJwtVerifierType());
-        }
-        var jwksConf = (JwksVerifierConfiguration) configuration.getJwtVerifierConfiguration();
-        return new JwksVerificationStrategy(jwksConf, new JwtClaimsValidator(configuration, authRulePatterns));
+        };
     }
 
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Trying to authenticate client using JWT provider...", authContext.getClientId());
-        }
         JwtVerificationStrategy verificationStrategy = this.verificationStrategy;
         if (verificationStrategy == null) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.JWT);
+        }
+        if (log.isTraceEnabled()) {
+            log.trace("[{}] Authenticating client using JWT provider...", authContext.getClientId());
         }
         byte[] passwordBytes = authContext.getPasswordBytes();
         if (passwordBytes == null) {
