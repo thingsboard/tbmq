@@ -82,6 +82,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     public static JwtMqttAuthProviderConfiguration defaultConfiguration() {
         var jwtConfig = new JwtMqttAuthProviderConfiguration();
+        jwtConfig.setAuthRules(new PubSubAuthorizationRules());
         jwtConfig.setDefaultClientType(ClientType.APPLICATION);
         jwtConfig.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());

@@ -50,11 +50,16 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class JwtMqttClientAuthProviderTest {
 
-    @Mock private MqttAuthProviderService mqttAuthProviderService;
-    @Mock private AuthorizationRuleService authorizationRuleService;
-    @Mock private JwtVerificationStrategy verificationStrategy;
-    @Mock private AuthRulePatterns authRulePatterns;
-    @Mock private AuthContext authContext;
+    @Mock
+    private MqttAuthProviderService mqttAuthProviderService;
+    @Mock
+    private AuthorizationRuleService authorizationRuleService;
+    @Mock
+    private JwtVerificationStrategy verificationStrategy;
+    @Mock
+    private AuthRulePatterns authRulePatterns;
+    @Mock
+    private AuthContext authContext;
 
     private JwtMqttClientAuthProvider provider;
 
@@ -253,7 +258,6 @@ public class JwtMqttClientAuthProviderTest {
 
     @Test
     public void testAuthenticateReturnsProviderDisabledIfStrategyIsNull() {
-        AuthContext authContext = mock(AuthContext.class);
         AuthResponse response = provider.authenticate(authContext);
 
         assertThat(response.isFailure()).isTrue();
@@ -264,7 +268,6 @@ public class JwtMqttClientAuthProviderTest {
     public void testAuthenticateReturnsFailureIfPasswordIsNull() throws Exception {
         ReflectionTestUtils.setField(provider, "verificationStrategy", verificationStrategy);
 
-        AuthContext authContext = mock(AuthContext.class);
         when(authContext.getPasswordBytes()).thenReturn(null);
 
         AuthResponse response = provider.authenticate(authContext);
@@ -278,7 +281,6 @@ public class JwtMqttClientAuthProviderTest {
     public void testAuthenticateCallsStrategyAndReturnsResult() throws Exception {
         ReflectionTestUtils.setField(provider, "verificationStrategy", verificationStrategy);
 
-        AuthContext authContext = mock(AuthContext.class);
         byte[] passwordBytes = "jwtToken".getBytes(StandardCharsets.UTF_8);
         when(authContext.getPasswordBytes()).thenReturn(passwordBytes);
 

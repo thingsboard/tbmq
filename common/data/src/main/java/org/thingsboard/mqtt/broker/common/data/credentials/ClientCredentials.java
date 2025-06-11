@@ -21,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
+import java.security.NoSuchAlgorithmException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -37,4 +39,14 @@ public interface ClientCredentials {
     default SslContext initSslContext() throws SSLException {
         return SslContextBuilder.forClient().build();
     }
+
+    /**
+     * Initializes a Javax (JSSE) SSLContext for use in standard HTTPS connections.
+     * Used by non-Netty components like JWKS HTTP retrieval.
+     */
+    @JsonIgnore
+    default javax.net.ssl.SSLContext initJSSESslContext() throws NoSuchAlgorithmException {
+        return SSLContext.getDefault();
+    }
+
 }

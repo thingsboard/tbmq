@@ -24,10 +24,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.thingsboard.mqtt.broker.common.data.util.SslUtil;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
@@ -70,6 +74,24 @@ public class CertPemCredentials implements ClientCredentials {
         } catch (Exception e) {
             log.error("[{}:{}] Creating TLS factory failed!", caCert, cert, e);
             throw new RuntimeException("Creating TLS factory failed!", e);
+        }
+    }
+
+    @Override
+    public SSLContext initJSSESslContext() {
+        try {
+            Security.addProvider(new BouncyCastleProvider());
+            TrustManager[] trustManagers = StringUtils.hasLength(caCert) ?
+                    createAndInitTrustManagerFactory().getTrustManagers() : null;
+            KeyManager[] keyManagers = StringUtils.hasLength(cert) && StringUtils.hasLength(privateKey) ?
+                    createAndInitKeyManagerFactory().getKeyManagers() : null;
+
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers, trustManagers, new SecureRandom());
+            return sslContext;
+        } catch (Exception e) {
+            log.error("[{}:{}] Creating Javax TLS factory failed!", caCert, cert, e);
+            throw new RuntimeException("Creating Javax TLS factory failed!", e);
         }
     }
 

@@ -28,7 +28,7 @@ import java.util.Objects;
 @Data
 public class JwksVerifierConfiguration implements JwtVerifierConfiguration {
 
-    private static final int MIN_REFRESH_INTERVAL_IN_SECONDS = 60;
+    private static final int MIN_REFRESH_INTERVAL_IN_SECONDS = 300;
 
     @NoXss
     private String endpoint;
@@ -36,7 +36,6 @@ public class JwksVerifierConfiguration implements JwtVerifierConfiguration {
 
     private int refreshInterval;
 
-    private boolean ssl;
     private ClientCredentials credentials;
 
     @Override
@@ -54,7 +53,7 @@ public class JwksVerifierConfiguration implements JwtVerifierConfiguration {
     }
 
     public int getRefreshInterval() {
-        return Math.max(60, refreshInterval);
+        return Math.max(MIN_REFRESH_INTERVAL_IN_SECONDS, refreshInterval);
     }
 
     public ClientCredentials getCredentials() {

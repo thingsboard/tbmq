@@ -68,7 +68,7 @@ public class JwtHmacAuthorizationIntegrationTestCase extends AbstractPubSubInteg
 
     @After
     public void afterTest() {
-        disableJwtProvider();
+        resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType.JWT);
     }
 
     @Test

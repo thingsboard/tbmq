@@ -38,7 +38,6 @@ import org.thingsboard.mqtt.broker.service.testing.integration.executor.External
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Optional;
 
 public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationTest {
 
@@ -146,17 +145,18 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         return mqttAuthProviderOpt.get();
     }
 
-    private MqttAuthProvider getOrCreateMqttAuthProvider(MqttAuthProviderType type) {
-        Optional<MqttAuthProvider> providerOpt = mqttAuthProviderService.getAuthProviderByType(type);
-        return providerOpt.orElseGet(() -> {
-            MqttAuthProvider authProvider = switch (type) {
-                case BASIC -> MqttAuthProvider.defaultBasicAuthProvider();
-                case X_509 -> MqttAuthProvider.defaultSslAuthProvider();
-                case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
-                case SCRAM -> MqttAuthProvider.defaultScramAuthProvider();
-            };
-            return mqttAuthProviderManagerService.saveAuthProvider(authProvider);
-        });
+    public void resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType type) {
+        var mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
+        if (mqttAuthProviderOpt.isEmpty()) {
+            throw new IllegalStateException("No " + type.getDisplayName() + " provider found!");
+        }
+        MqttAuthProvider mqttAuthProvider = mqttAuthProviderOpt.get();
+        switch (type) {
+            case BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider().getConfiguration());
+            case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider().getConfiguration());
+            case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider().getConfiguration());
+            case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider().getConfiguration());
+        }
+        mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
     }
-
 }

@@ -25,6 +25,7 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.HmacBasedAlgorithmConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
@@ -73,8 +74,11 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
                 return new PemKeyJwtVerificationStrategy(publicPemKey, new JwtClaimsValidator(configuration, authRulePatterns));
             }
         }
-        // TODO: add other strategies
-        throw new UnsupportedOperationException("No suitable verification strategy configured!");
+        if (!JwtVerifierType.JWKS.equals(configuration.getJwtVerifierType())) {
+            throw new IllegalStateException("Invalid JWT verifier type: " + configuration.getJwtVerifierType());
+        }
+        var jwksConf = (JwksVerifierConfiguration) configuration.getJwtVerifierConfiguration();
+        return new JwksVerificationStrategy(jwksConf, new JwtClaimsValidator(configuration, authRulePatterns));
     }
 
     @Override
