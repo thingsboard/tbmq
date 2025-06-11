@@ -64,6 +64,7 @@ import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -423,6 +424,23 @@ public abstract class BaseController {
             }
         }
         return result;
+    }
+
+    protected <T> ResponseEntity<T> response(HttpStatus status) {
+        return ResponseEntity.status(status).build();
+    }
+
+    protected <T> ResponseEntity<T> redirectTo(String location) {
+        URI uri;
+        try {
+            uri = URI.create(location);
+        } catch (IllegalArgumentException e) {
+            log.error("Failed to create URI from '{}'", location, e);
+            throw e;
+        }
+        return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                .location(uri)
+                .build();
     }
 
 }
