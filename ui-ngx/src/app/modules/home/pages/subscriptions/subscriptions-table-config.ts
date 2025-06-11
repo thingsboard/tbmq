@@ -18,8 +18,9 @@ import {
   CellActionDescriptor,
   CellActionDescriptorType,
   checkBoxCell,
+  copyContentActionCell,
   EntityTableColumn,
-  EntityTableConfig,
+  EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
@@ -73,21 +74,7 @@ export class SubscriptionsTableConfig extends EntityTableConfig<ClientSubscripti
     this.columns.push(
       new EntityTableColumn<ClientSubscription>('clientId', 'mqtt-client.client-id', '25%',
         undefined, () => undefined, true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientId,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: () => true,
-          onAction: ($event, entity) => entity.clientId,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        copyContentActionCell('clientId', this.translate)),
       new EntityTableColumn<ClientSubscription>('topicFilter', 'subscription.topic-filter', '25%',
         entity => entity.subscription.topicFilter, () => undefined, true, () => ({}), () => undefined, false,
         {

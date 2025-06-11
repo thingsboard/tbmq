@@ -18,11 +18,12 @@ import {
   CellActionDescriptor,
   checkBoxCell,
   cellWithIcon,
-  connectedStateCell,
+  cellStatus,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
-  GroupActionDescriptor, CellActionDescriptorType
+  GroupActionDescriptor,
+  copyContentActionCell
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -85,7 +86,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
     this.columns.push(
       new DateEntityTableColumn<DetailedClientSessionInfo>('connectedAt', 'mqtt-client-session.connected-at', this.datePipe, '150px'),
       new EntityTableColumn<DetailedClientSessionInfo>('connectionState', 'mqtt-client-session.connected-status', '100px',
-        (entity) => connectedStateCell(this.translate.instant(connectionStateTranslationMap.get(entity.connectionState)), connectionStateColor.get(entity.connectionState))),
+        (entity) => {
+          const content = this.translate.instant(connectionStateTranslationMap.get(entity.connectionState));
+          const color = connectionStateColor.get(entity.connectionState).content;
+          const background = connectionStateColor.get(entity.connectionState).background;
+          return cellStatus(content, color, background);
+        }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
         (entity) => {
         const clientType = entity.clientType;
@@ -96,42 +102,12 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
         return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
       }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '50%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientId,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.clientId?.length,
-          onAction: ($event, entity) => entity.clientId,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('clientId', this.translate)
       ),
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientIpAdr,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.clientIpAdr?.length,
-          onAction: ($event, entity) => entity.clientIpAdr,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('clientIpAdr', this.translate)),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),

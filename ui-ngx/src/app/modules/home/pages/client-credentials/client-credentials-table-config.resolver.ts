@@ -19,7 +19,9 @@ import {
   cellWithIcon,
   DateEntityTableColumn,
   EntityTableColumn,
-  EntityTableConfig
+  EntityTableConfig,
+  cellStatus,
+  STATUS_COLOR
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -128,12 +130,10 @@ export class ClientCredentialsTableConfigResolver {
           (entity) => {
             if ((entity.credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
               (entity.credentialsType === CredentialsType.SSL && !brokerConfig.x509AuthEnabled)) {
-              const value = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
-              const icon = 'warning';
-              const backgroundColor = 'rgba(255,236,128,0)';
-              const iconColor = '#ff9a00';
-              const valueColor = 'inherit';
-              return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
+              const content = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
+              const color = STATUS_COLOR.INACTIVE.content;
+              const background = STATUS_COLOR.INACTIVE.background;
+              return cellStatus(content, color, background);
             }
             return '';
           }, () => null, false

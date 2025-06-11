@@ -26,6 +26,7 @@ import {
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { TopicSubscription } from '@shared/models/ws-client.model';
+import { StatusColor, STATUS_COLOR } from '@home/models/entity/entities-table-config.models';
 
 export interface DetailedClientSessionInfo extends BaseData {
   clientId: string;
@@ -76,10 +77,10 @@ export enum ConnectionState {
   DISCONNECTED = 'DISCONNECTED'
 }
 
-export const connectionStateColor = new Map<ConnectionState, string>(
+export const connectionStateColor = new Map<ConnectionState, StatusColor>(
   [
-    [ConnectionState.CONNECTED, '#008A00'],
-    [ConnectionState.DISCONNECTED, '#e33737']
+    [ConnectionState.CONNECTED, STATUS_COLOR.ACTIVE],
+    [ConnectionState.DISCONNECTED, STATUS_COLOR.INACTIVE]
   ]
 );
 

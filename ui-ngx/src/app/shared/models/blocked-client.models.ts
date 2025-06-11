@@ -23,6 +23,7 @@ import {
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 import { BaseData } from '@shared/models/base-data';
+import { STATUS_COLOR, StatusColor } from '@home/models/entity/entities-table-config.models';
 
 export interface BlockedClient extends BaseData {
   type: BlockedClientType;
@@ -74,6 +75,14 @@ export const blockedClientStatusTranslationMap = new Map<BlockedClientStatus, st
     [BlockedClientStatus.ACTIVE, 'blocked-client.status-active'],
     [BlockedClientStatus.EXPIRED, 'blocked-client.status-expired'],
     [BlockedClientStatus.DELETING_SOON, 'blocked-client.status-deleting-soon'],
+  ]
+);
+
+export const blockedClientStatusStyle = new Map<BlockedClientStatus, StatusColor>(
+  [
+    [BlockedClientStatus.ACTIVE, STATUS_COLOR.ACTIVE],
+    [BlockedClientStatus.EXPIRED, STATUS_COLOR.DISABLED],
+    [BlockedClientStatus.DELETING_SOON, STATUS_COLOR.INACTIVE],
   ]
 );
 

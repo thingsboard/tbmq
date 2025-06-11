@@ -19,7 +19,9 @@ import {
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
-  cellWithIcon
+  cellWithIcon,
+  cellStatus,
+  STATUS_COLOR
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -31,8 +33,10 @@ import { DataSizeUnitType, DataSizeUnitTypeTranslationMap } from '@shared/models
 import {
   ResourceUsage,
   ResourceUsageStatus,
+  resourceUsageStatusStyle,
   resourceUsageStatusTranslationMap,
-  resourceUsageTooltipTranslationMap
+  resourceUsageTooltipTranslationMap,
+  serviceTypeMap
 } from '@app/shared/models/resource-usage.model';
 import { DialogService } from '@core/services/dialog.service';
 
@@ -63,17 +67,23 @@ export class ResourceUsageTableConfigResolver {
     this.config.entitiesFetchFunction = () => this.statsService.getServiceInfos();
 
     this.config.columns.push(
-      new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'monitoring.resource-usage.last-update-time', this.datePipe, '150px', undefined, undefined, false),
+      new DateEntityTableColumn<ResourceUsage>('lastUpdateTime', 'common.update-time', this.datePipe, '150px', undefined, undefined, false),
       new EntityTableColumn<ResourceUsage>('serviceId', 'monitoring.resource-usage.service-id', '20%', undefined, undefined, false),
-      new EntityTableColumn<ResourceUsage>('serviceType', 'monitoring.resource-usage.service-type', '20%', undefined, undefined, false),
-      new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '15%', (entity) => this.usageCell(entity.cpuUsage),
+      new EntityTableColumn<ResourceUsage>('serviceType', 'monitoring.resource-usage.service-type', '20%',
+          entity => serviceTypeMap.get(entity.serviceType), undefined, false),
+      new EntityTableColumn<ResourceUsage>('cpuUsage', 'monitoring.resource-usage.cpu-usage', '100px', (entity) => this.usageCell(entity.cpuUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.cpuUsage, 'cpu', entity.cpuCount)),
-      new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '15%', (entity) => this.usageCell(entity.memoryUsage),
+      new EntityTableColumn<ResourceUsage>('memoryUsage', 'monitoring.resource-usage.memory-usage', '100px', (entity) => this.usageCell(entity.memoryUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.memoryUsage, 'ram', entity.totalMemory)),
-      new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '15%', (entity) => this.usageCell(entity.diskUsage),
+      new EntityTableColumn<ResourceUsage>('diskUsage', 'monitoring.resource-usage.disk-usage', '100px', (entity) => this.usageCell(entity.diskUsage),
         undefined, false, undefined, (entity) => this.usageTooltip(entity.diskUsage, 'disk', entity.totalDiskSpace)),
       new EntityTableColumn<ResourceUsage>('status', 'monitoring.resource-usage.status', '15%',
-        (entity) => this.translate.instant(resourceUsageStatusTranslationMap.get(entity.status)), undefined, false, undefined,
+        (entity) => {
+          const content = this.translate.instant(resourceUsageStatusTranslationMap.get(entity.status));
+          const color = resourceUsageStatusStyle.get(entity.status).content;
+          const background = resourceUsageStatusStyle.get(entity.status).background;
+          return cellStatus(content, color, background);
+        }, undefined, false, undefined,
         (entity) => this.translate.instant(resourceUsageTooltipTranslationMap.get(entity.status))),
     );
   }
@@ -130,13 +140,13 @@ export class ResourceUsageTableConfigResolver {
     const value = this.toPercentage(usage);
     let iconColor;
     if (this.isCritical(usage)) {
-      iconColor = '#d12730';
+      iconColor = STATUS_COLOR.INACTIVE.content;
     } else if (this.isHigh(usage)) {
-      iconColor = '#ff9a00';
+      iconColor = STATUS_COLOR.PENDING.content;
     } else {
       return value;
     }
-    return cellWithIcon(value,  'warning', 'rgba(255,236,128,0)', iconColor, 'inherit');
+    return cellWithIcon(value,  'warning', 'transparent', iconColor);
   }
 
   private usageTooltip(usage: number, type: string, value: number): string  {

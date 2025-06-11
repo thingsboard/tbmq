@@ -17,10 +17,11 @@
 import { ActivatedRoute, ActivatedRouteSnapshot, Router } from '@angular/router';
 import {
   CellActionDescriptor,
-  CellActionDescriptorType,
+  copyContentActionCell,
   EntityTableColumn,
   EntityTableConfig,
-  GroupActionDescriptor
+  GroupActionDescriptor,
+  cellStatus
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -35,6 +36,8 @@ import {
   BlockedClientFilterConfig,
   BlockedClientsQuery,
   BlockedClientStatus,
+  blockedClientStatusStyle,
+  blockedClientStatusTranslationMap,
   blockedClientTypeTranslationMap,
   regexMatchTargetTranslationMap
 } from '@shared/models/blocked-client.models';
@@ -102,31 +105,11 @@ export class BlockedClientsTableConfigResolver {
         entity => entity.regexMatchTarget ? this.translate.instant(regexMatchTargetTranslationMap.get(entity.regexMatchTarget)) : ''),
       new EntityTableColumn<BlockedClient>('value', 'blocked-client.value', '30%',
         entity => entity.value, undefined, true, undefined, undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.value,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: () => true,
-          onAction: ($event, entity) => entity.value,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }
-      ),
+        copyContentActionCell('value', this.translate)),
       new EntityTableColumn<BlockedClient>('description', 'blocked-client.description', '30%',
         undefined, () => { return { textWrap: 'wrap' }}),
       new EntityTableColumn<BlockedClient>('status', 'blocked-client.status', '120px',
-        entity => this.statusContent(entity),
-        entity => this.statusStyle(entity),
-        true,
-        undefined,
-        entity => this.statusTooltip(entity)
-      ),
+        entity => this.statusContent(entity), undefined, true, undefined, entity => this.statusTooltip(entity))
     );
     this.config.addActionDescriptors.push(
       {
@@ -272,37 +255,11 @@ export class BlockedClientsTableConfigResolver {
   }
 
   private statusContent(entity: BlockedClient): string {
-    let translateKey = 'blocked-client.status-active';
-    let backgroundColor = 'rgba(25, 128, 56, 0.08)';
-    switch (entity.status) {
-      case BlockedClientStatus.EXPIRED:
-        translateKey = 'blocked-client.status-expired';
-        backgroundColor = 'rgba(0, 0, 0, 0.08)';
-        break;
-      case BlockedClientStatus.DELETING_SOON:
-        translateKey = 'blocked-client.status-deleting-soon';
-        backgroundColor = 'rgba(209, 39, 48, 0.08)';
-        break;
-    }
-    return `<div class="status" style="border-radius: 16px; height: 32px; line-height: 32px; padding: 0 12px; width: fit-content; background-color: ${backgroundColor}">
-                ${this.translate.instant(translateKey)}
-            </div>`;
-  }
-
-  private statusStyle(entity: BlockedClient): object {
-    const styleObj = {
-      fontSize: '14px',
-      color: '#198038',
-    };
-    switch (entity.status) {
-      case BlockedClientStatus.EXPIRED:
-        styleObj.color = 'rgba(0, 0, 0, 0.54)';
-        break;
-      case BlockedClientStatus.DELETING_SOON:
-        styleObj.color = '#d12730';
-        break;
-    }
-    return styleObj;
+    const status = this.translate.instant(entity.status);
+    const content = this.translate.instant(blockedClientStatusTranslationMap.get(status));
+    const color = blockedClientStatusStyle.get(status).content;
+    const background = blockedClientStatusStyle.get(status).background;
+    return cellStatus(content, color, background);
   }
 
   private statusTooltip(entity: BlockedClient): string {

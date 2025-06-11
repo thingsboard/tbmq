@@ -15,7 +15,9 @@
 ///
 
 import {
-  CellActionDescriptor, CellActionDescriptorType, checkBoxCell,
+  CellActionDescriptor,
+  checkBoxCell,
+  copyContentActionCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig,
@@ -98,41 +100,11 @@ export class UnauthorizedClientTableConfig extends EntityTableConfig<Unauthorize
     this.columns.push(
       new DateEntityTableColumn<UnauthorizedClient>('ts', 'common.update-time', this.datePipe, '150px'),
       new EntityTableColumn<UnauthorizedClient>('clientId', 'mqtt-client.client-id', '15%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.clientId,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.clientId?.length,
-          onAction: ($event, entity) => entity.clientId,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('clientId', this.translate)),
       new EntityTableColumn<UnauthorizedClient>('username', 'common.username', '15%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.username,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.username?.length,
-          onAction: ($event, entity) => entity.username,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('username', this.translate)),
       new EntityTableColumn<UnauthorizedClient>('passwordProvided', 'unauthorized-client.password', '60px',
           entity => checkBoxCell(entity?.passwordProvided), undefined, undefined, undefined,
         (entity) => this.passwordProvidedTooltip(entity)),
