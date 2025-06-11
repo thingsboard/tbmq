@@ -25,7 +25,9 @@ import java.nio.charset.StandardCharsets;
 @Data
 public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfiguration {
 
-    // TODO: we should save base64 formatted value to DB.
+    public static final String DEFAULT_JWT_SECRET = "please-change-this-32-char-jwt-secret";
+
+    // TODO: should we save base64 formatted value to DB?
     @NoXss
     private String secret;
 
@@ -48,7 +50,7 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
 
     public static HmacBasedAlgorithmConfiguration defaultConfiguration() {
         var config = new HmacBasedAlgorithmConfiguration();
-        config.setSecret("please-change-this-32-char-jwt-secret");
+        config.setSecret(DEFAULT_JWT_SECRET);
         return config;
     }
 
