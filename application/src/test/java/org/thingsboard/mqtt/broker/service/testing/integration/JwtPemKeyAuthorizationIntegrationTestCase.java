@@ -74,6 +74,7 @@ public class JwtPemKeyAuthorizationIntegrationTestCase extends AbstractPubSubInt
 
     @Before
     public void beforeTest() throws Exception {
+        super.beforeTest();
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
         KeyPair keyPair = keyGen.generateKeyPair();
@@ -101,11 +102,6 @@ public class JwtPemKeyAuthorizationIntegrationTestCase extends AbstractPubSubInt
         configuration.setAuthRules(pubSubAuthorizationRules);
         provider.setConfiguration(configuration);
         mqttAuthProviderManagerService.saveAuthProvider(provider);
-    }
-
-    @After
-    public void afterTest() {
-        resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType.JWT);
     }
 
     @Test

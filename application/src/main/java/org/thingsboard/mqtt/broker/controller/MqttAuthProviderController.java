@@ -31,7 +31,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
-import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 
 import java.util.UUID;
 
@@ -99,20 +98,6 @@ public class MqttAuthProviderController extends BaseController {
     public MqttAuthProvider getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         try {
             return checkNotNull(mqttAuthProviderService.getAuthProviderById(toUUID(strAuthProviderId)).orElse(null));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
-    }
-
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/mqtt/auth/provider/{authProviderId}", method = RequestMethod.DELETE)
-    @ResponseStatus(HttpStatus.OK)
-    @ApiOperation(value = "Delete MQTT auth provider", hidden = true)
-    public void deleteAuthProvider(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
-        try {
-            UUID uuid = toUUID(strAuthProviderId);
-            checkAuthProviderId(uuid);
-            mqttAuthProviderService.deleteAuthProvider(uuid);
         } catch (Exception e) {
             throw handleException(e);
         }

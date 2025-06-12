@@ -48,7 +48,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
             case PROVIDER_UPDATED -> {
                 final boolean enabled = notification.getEnabled();
                 switch (type) {
-                    case BASIC -> basicMqttClientAuthProvider.onProviderUpdate(enabled,
+                    case MQTT_BASIC -> basicMqttClientAuthProvider.onProviderUpdate(enabled,
                             JacksonUtil.fromString(notification.getConfiguration(), BasicMqttAuthProviderConfiguration.class));
                     case X_509 -> sslMqttClientAuthProvider.onProviderUpdate(enabled,
                             JacksonUtil.fromString(notification.getConfiguration(), SslMqttAuthProviderConfiguration.class));
@@ -61,7 +61,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
             }
             case PROVIDER_DISABLED -> {
                 switch (type) {
-                    case BASIC -> basicMqttClientAuthProvider.disable();
+                    case MQTT_BASIC -> basicMqttClientAuthProvider.disable();
                     case X_509 -> sslMqttClientAuthProvider.disable();
                     case JWT -> jwtMqttClientAuthProvider.disable();
                     case SCRAM -> enhancedAuthenticationService.disable();
@@ -69,7 +69,7 @@ public class MqttAuthProviderNotificationManagerImpl implements MqttAuthProvider
             }
             case PROVIDER_ENABLED -> {
                 switch (type) {
-                    case BASIC -> basicMqttClientAuthProvider.enable();
+                    case MQTT_BASIC -> basicMqttClientAuthProvider.enable();
                     case X_509 -> sslMqttClientAuthProvider.enable();
                     case JWT -> jwtMqttClientAuthProvider.enable();
                     case SCRAM -> enhancedAuthenticationService.enable();

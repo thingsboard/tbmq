@@ -85,7 +85,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
         for (MqttAuthProviderType providerType : prioritiesForCurrentAuthContext) {
             AuthResponse response = switch (providerType) {
                 case JWT -> jwtMqttClientAuthProvider.authenticate(authContext);
-                case BASIC -> basicMqttClientAuthProvider.authenticate(authContext);
+                case MQTT_BASIC -> basicMqttClientAuthProvider.authenticate(authContext);
                 case X_509 -> sslMqttClientAuthProvider.authenticate(authContext);
                 default -> throw new IllegalStateException("Unexpected provider type: " + providerType);
             };
@@ -106,7 +106,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private List<MqttAuthProviderType> getPrioritiesForCurrentAuthContext(AuthContext authContext) {
         List<MqttAuthProviderType> effectivePriorities = new ArrayList<>(priorities);
         if (useListenerBasedProviderOnly) {
-            effectivePriorities.remove(authContext.isSecurePortUsed() ? MqttAuthProviderType.BASIC : MqttAuthProviderType.X_509);
+            effectivePriorities.remove(authContext.isSecurePortUsed() ? MqttAuthProviderType.MQTT_BASIC : MqttAuthProviderType.X_509);
         }
         return effectivePriorities;
     }

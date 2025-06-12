@@ -45,7 +45,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
-import org.thingsboard.mqtt.broker.AbstractIntegrationTest;
+import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.config.SecurityConfiguration;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.RefreshTokenRequest;
@@ -68,7 +68,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
 @Slf4j
-public abstract class AbstractWebTest extends AbstractIntegrationTest {
+public abstract class AbstractWebTest extends AbstractPubSubIntegrationTest {
 
     protected static final String SYS_ADMIN_EMAIL = "sysadmin@thingsboard.org";
     private static final String SYS_ADMIN_PASSWORD = "sysadmin";

@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.auth.providers.jwt;
 
 import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory;
 import com.nimbusds.jose.jwk.source.JWKSource;
@@ -41,6 +42,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -53,25 +56,31 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
 
     private final JWKSource<SecurityContext> jwkSource;
     private final JwtClaimsValidator claimsValidator;
+    private final DefaultJWSVerifierFactory defaultJWSVerifierFactory;
+    private final ConcurrentMap<JWSAlgorithm, JWSKeySelector<SecurityContext>> selectorCache;
 
     public JwksVerificationStrategy(JwksVerifierConfiguration configuration, JwtClaimsValidator jwtClaimsValidator) {
         this.jwkSource = initializeJWKSource(configuration);
         this.claimsValidator = jwtClaimsValidator;
+        this.defaultJWSVerifierFactory = new DefaultJWSVerifierFactory();
+        this.selectorCache = new ConcurrentHashMap<>();
     }
 
     @Override
     public AuthResponse authenticateJwt(AuthContext authContext, String jwt) throws Exception {
         SignedJWT signedJWT = SignedJWT.parse(jwt);
-        JWSAlgorithm alg = signedJWT.getHeader().getAlgorithm();
+        JWSHeader header = signedJWT.getHeader();
+        JWSAlgorithm alg = header.getAlgorithm();
 
-        JWSKeySelector<SecurityContext> selector = new JWSVerificationKeySelector<>(alg, jwkSource);
-        List<? extends Key> keys = selector.selectJWSKeys(signedJWT.getHeader(), null);
+        JWSKeySelector<SecurityContext> selector = selectorCache
+                .computeIfAbsent(alg, a -> new JWSVerificationKeySelector<>(alg, jwkSource));
+        List<? extends Key> keys = selector.selectJWSKeys(header, null);
 
         if (keys.isEmpty()) {
             return AuthResponse.failure("No matching key found in JWKS for JWT verification.");
         }
 
-        JWSVerifier verifier = new DefaultJWSVerifierFactory().createJWSVerifier(signedJWT.getHeader(), keys.get(0));
+        JWSVerifier verifier = defaultJWSVerifierFactory.createJWSVerifier(header, keys.get(0));
         if (!signedJWT.verify(verifier)) {
             return AuthResponse.failure("JWT signature validation failed.");
         }
@@ -109,7 +118,6 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
     private Map<String, List<String>> prepareResourceRetrieverHeaders(JwksVerifierConfiguration configuration, ClientCredentials clientCredentials) {
         Map<String, String> headers = configuration.getHeaders();
         if (clientCredentials instanceof BasicCredentials basicCredentials) {
-            // TODO: similar logic in TbHttpClient.
             String authString = basicCredentials.getUsername() + ":" + basicCredentials.getPassword();
             String encodedAuthString = new String(Base64.getEncoder().encode(authString.getBytes(StandardCharsets.UTF_8)));
             headers.put("Authorization", "Basic " + encodedAuthString);

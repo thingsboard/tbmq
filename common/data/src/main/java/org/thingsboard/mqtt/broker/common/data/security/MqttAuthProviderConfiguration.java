@@ -31,8 +31,8 @@ import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderC
         include = JsonTypeInfo.As.PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = BasicMqttAuthProviderConfiguration.class, name = "BASIC"),
-        @JsonSubTypes.Type(value = SslMqttAuthProviderConfiguration.class, name = "SSL"),
+        @JsonSubTypes.Type(value = BasicMqttAuthProviderConfiguration.class, name = "MQTT_BASIC"),
+        @JsonSubTypes.Type(value = SslMqttAuthProviderConfiguration.class, name = "X_509"),
         @JsonSubTypes.Type(value = JwtMqttAuthProviderConfiguration.class, name = "JWT"),
         @JsonSubTypes.Type(value = ScramMqttAuthProviderConfiguration.class, name = "SCRAM")})
 public interface MqttAuthProviderConfiguration {

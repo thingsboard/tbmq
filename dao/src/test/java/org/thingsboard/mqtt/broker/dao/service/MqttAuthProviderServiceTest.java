@@ -44,8 +44,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
     @Before
     public void setUp() {
-        // All providers loaded into DB using initDB script.
-        Optional<MqttAuthProvider> basicProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        Optional<MqttAuthProvider> basicProviderOpt = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC);
         assertThat(basicProviderOpt).isPresent();
         basicAuthProvider = basicProviderOpt.get();
     }
@@ -56,7 +55,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
             return;
         }
         basicAuthProvider.setEnabled(false);
-        basicAuthProvider.setType(MqttAuthProviderType.BASIC);
+        basicAuthProvider.setType(MqttAuthProviderType.MQTT_BASIC);
         basicAuthProvider.setConfiguration(new BasicMqttAuthProviderConfiguration());
         mqttAuthProviderService.saveAuthProvider(basicAuthProvider);
     }
@@ -94,7 +93,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
     @Test
     public void testUpdateMqttAuthProviderType() {
         assertThat(basicAuthProvider).isNotNull();
-        assertThat(basicAuthProvider.getType()).isEqualTo(MqttAuthProviderType.BASIC);
+        assertThat(basicAuthProvider.getType()).isEqualTo(MqttAuthProviderType.MQTT_BASIC);
 
         basicAuthProvider.setType(MqttAuthProviderType.X_509);
 
@@ -113,7 +112,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
     @Test
     public void testSaveMqttAuthProviderWithNullConfiguration() {
-        MqttAuthProvider mqttAuthProvider = getNewBasicMqttAuthProvider(MqttAuthProviderType.BASIC, null);
+        MqttAuthProvider mqttAuthProvider = getNewBasicMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC, null);
         assertThatThrownBy(() -> mqttAuthProviderService.saveAuthProvider(mqttAuthProvider))
                 .isInstanceOf(DataValidationException.class)
                 .hasMessage("MQTT auth provider configuration should be specified!");
@@ -142,7 +141,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         assertThat(basicAuthProvider).isNotNull();
         assertThat(basicAuthProvider.getId()).isNotNull();
 
-        Optional<MqttAuthProvider> foundAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC);
+        Optional<MqttAuthProvider> foundAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC);
         assertThat(foundAuthProvider.isPresent()).isTrue();
         assertThat(foundAuthProvider.get()).isEqualTo(basicAuthProvider);
     }
@@ -178,7 +177,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         MqttAuthProvider savedAuthProvider = mqttAuthProviderService.saveAuthProvider(basicAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
-        assertThat(savedAuthProvider.getType()).isEqualTo(MqttAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttAuthProviderType.MQTT_BASIC);
         assertThat(savedAuthProvider.getConfiguration()).isNotNull();
         assertThat(savedAuthProvider.isEnabled()).isTrue();
 
@@ -209,7 +208,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
         MqttAuthProvider savedAuthProvider = mqttAuthProviderService.saveAuthProvider(basicAuthProvider);
 
         assertThat(savedAuthProvider).isNotNull();
-        assertThat(savedAuthProvider.getType()).isEqualTo(MqttAuthProviderType.BASIC);
+        assertThat(savedAuthProvider.getType()).isEqualTo(MqttAuthProviderType.MQTT_BASIC);
         assertThat(savedAuthProvider.getConfiguration()).isNotNull();
         assertThat(savedAuthProvider.isEnabled()).isTrue();
 
@@ -242,7 +241,7 @@ public class MqttAuthProviderServiceTest extends AbstractServiceTest {
 
 
     private MqttAuthProvider getNewBasicMqttAuthProvider() {
-        return getNewBasicMqttAuthProvider(MqttAuthProviderType.BASIC, new BasicMqttAuthProviderConfiguration());
+        return getNewBasicMqttAuthProvider(MqttAuthProviderType.MQTT_BASIC, new BasicMqttAuthProviderConfiguration());
     }
 
     private MqttAuthProvider getNewBasicMqttAuthProvider(MqttAuthProviderType type, MqttAuthProviderConfiguration configuration) {

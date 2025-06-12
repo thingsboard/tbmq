@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.notification;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
@@ -35,10 +36,10 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStat
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -86,20 +87,78 @@ public class InternodeNotificationsServiceImplTest {
     }
 
     @Test
-    public void testBroadcast_ToAnotherNode() {
+    public void testBroadcast_ToAnotherNodes() {
         InternodeNotificationProto proto = InternodeNotificationProto.getDefaultInstance();
 
-        when(helper.getServiceIds()).thenReturn(List.of("nodeA", "nodeB"));
+        when(helper.getServiceIds()).thenReturn(List.of("nodeA", "nodeB", "nodeC"));
         when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+        when(helper.getServiceTopic("nodeC")).thenReturn("topicC");
 
         service.broadcast(proto);
 
-        verify(producer).send(
-                eq("topicB"),
+        ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<TbProtoQueueMsg<InternodeNotificationProto>> msgCaptor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+
+        // Capture interactions twice: once for nodeB, once for nodeC
+        verify(producer, times(2)).send(
+                topicCaptor.capture(),
                 isNull(),
-                argThat(msg -> "nodeB".equals(msg.getKey()) && msg.getValue().equals(proto)),
+                msgCaptor.capture(),
                 any(TbQueueCallback.class)
         );
+
+        List<String> topics = topicCaptor.getAllValues();
+        List<TbProtoQueueMsg<InternodeNotificationProto>> messages = msgCaptor.getAllValues();
+
+        assertThat(topics).containsExactlyInAnyOrder("topicB", "topicC");
+
+        assertThat(messages)
+                .hasSize(2)
+                .allSatisfy(msg -> {
+                    assertThat(msg.getValue()).isEqualTo(proto);
+                    assertThat(List.of("nodeB", "nodeC")).contains(msg.getKey());
+                });
+    }
+
+    @Test
+    public void testBroadcast_ToSelfAndOthers_WithAuthSettings() {
+        InternodeNotificationProto proto = InternodeNotificationProto.newBuilder()
+                .setMqttAuthSettingsProto(MqttAuthSettingsProto.getDefaultInstance())
+                .build();
+
+        when(helper.getServiceIds()).thenReturn(List.of("nodeA", "nodeB", "nodeC"));
+        when(helper.getServiceTopic("nodeB")).thenReturn("topicB");
+        when(helper.getServiceTopic("nodeC")).thenReturn("topicC");
+
+        service.broadcast(proto);
+
+        // Verify that local handler is invoked
+        verify(authorizationRoutingService).onMqttAuthSettingsUpdate(proto.getMqttAuthSettingsProto());
+
+        // Verify that messages are sent to other nodes
+        ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<TbProtoQueueMsg<InternodeNotificationProto>> msgCaptor = ArgumentCaptor.forClass(TbProtoQueueMsg.class);
+
+        verify(producer, times(2)).send(
+                topicCaptor.capture(),
+                isNull(),
+                msgCaptor.capture(),
+                any(TbQueueCallback.class)
+        );
+
+        List<String> topics = topicCaptor.getAllValues();
+        List<TbProtoQueueMsg<InternodeNotificationProto>> messages = msgCaptor.getAllValues();
+
+        assertThat(topics).containsExactlyInAnyOrder("topicB", "topicC");
+
+        assertThat(messages)
+                .hasSize(2)
+                .allSatisfy(msg -> {
+                    assertThat(msg.getValue()).isEqualTo(proto);
+                    assertThat(List.of("nodeB", "nodeC")).contains(msg.getKey());
+                });
+
+        verifyNoInteractions(mqttClientAuthProviderManager, clientSessionStatsCleanupProcessor);
     }
 
     @Test

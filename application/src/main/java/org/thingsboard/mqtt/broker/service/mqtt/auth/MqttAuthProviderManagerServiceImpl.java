@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsSe
 
 import java.util.UUID;
 
-// TODO: send disable event if provider deleted API will be called?
 @Service
 @RequiredArgsConstructor
 public class MqttAuthProviderManagerServiceImpl implements MqttAuthProviderManagerService {
