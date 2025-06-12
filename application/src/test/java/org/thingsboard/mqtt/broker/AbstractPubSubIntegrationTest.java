@@ -151,6 +151,7 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
             throw new IllegalStateException("No " + type.getDisplayName() + " provider found!");
         }
         MqttAuthProvider mqttAuthProvider = mqttAuthProviderOpt.get();
+        mqttAuthProvider.setEnabled(false);
         switch (type) {
             case BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider().getConfiguration());
             case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider().getConfiguration());
