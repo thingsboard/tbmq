@@ -15,6 +15,7 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
+import { MqttAuthProviderType } from '@shared/models/mqtt-auth-provider.model';
 
 export interface BrokerConfig {
   tcpPort: number;
@@ -84,3 +85,10 @@ export interface SystemVersionInfo {
   name: string;
   newestVersion: string;
 }
+
+export const ConfigParamAuthProviderMap = new Map<ConfigParams, MqttAuthProviderType>(
+  [
+    [ConfigParams.basicAuthEnabled, MqttAuthProviderType.BASIC],
+    [ConfigParams.x509AuthEnabled, MqttAuthProviderType.X_509],
+  ]
+);

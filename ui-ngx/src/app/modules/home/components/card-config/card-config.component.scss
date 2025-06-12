@@ -55,4 +55,10 @@
   .mat-mdc-cell, .mat-mdc-header-cell {
     border: none !important;
   }
+
+  .small-toggle {
+    transform: scale(0.6);
+    transform-origin: left center;
+    width: 24px;
+  }
 }

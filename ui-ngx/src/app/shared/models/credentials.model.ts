@@ -26,7 +26,7 @@ import {
 } from '@core/utils';
 import { TimePageLink } from '@shared/models/page/page-link';
 
-// TODO refactor as MqttAuthProviderType, move to authentication.models
+// TODO combine with MqttAuthProviderType after backend refactoring
 export enum CredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
   SSL = 'SSL',
