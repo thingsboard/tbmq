@@ -35,7 +35,8 @@ import {
   JwtAlgorithmTypeTranslation,
   JwtMqttAuthProviderConfiguration,
   JwtVerifierType,
-  MqttAuthProvider
+  MqttAuthProvider,
+  MqttAuthProviderType
 } from '@shared/models/mqtt-auth-provider.model';
 import {
   MqttAuthenticationProviderForm
@@ -58,7 +59,6 @@ import {
 import { MatIcon } from "@angular/material/icon";
 import { MatTooltip } from "@angular/material/tooltip";
 import { TogglePasswordComponent } from "@shared/components/button/toggle-password.component";
-import { CredentialsType } from "@shared/models/credentials.model";
 import { HintTooltipIconComponent } from "@shared/components/hint-tooltip-icon.component";
 
 @Component({
@@ -151,7 +151,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   writeValue(value: MqttAuthProvider) {
     if (isDefinedAndNotNull(value)) {
       this.jwtConfigForm.reset(value, {emitEvent: false});
-      if (value.type === CredentialsType.JWT) {
+      if (value.type === MqttAuthProviderType.JWT) {
         const jwtConfig = value.configuration as JwtMqttAuthProviderConfiguration;
         this.updateJwtValidators(jwtConfig.jwtVerifierType);
       }

@@ -21,12 +21,13 @@ import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { MatButton } from '@angular/material/button';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
-import { MqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
-import { CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import {
+  MqttAuthProvider,
+  MqttAuthProviderType,
+  mqttAuthProviderTypeTranslationMap
+} from '@shared/models/mqtt-auth-provider.model';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
 import {
   MqttAuthenticationProviderConfigurationComponent
@@ -38,12 +39,12 @@ import { MatSelect } from '@angular/material/select';
     selector: 'tb-mqtt-auth-provider',
     templateUrl: './mqtt-auth-provider.component.html',
     styleUrls: ['./mqtt-auth-provider.component.scss'],
-  imports: [MatButton, TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, AsyncPipe, MatSlideToggle, MqttAuthenticationProviderConfigurationComponent, MatOption, MatSelect]
+    imports: [TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, AsyncPipe, MatSlideToggle, MqttAuthenticationProviderConfigurationComponent, MatOption, MatSelect]
 })
 export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider> {
 
-  CredentialsTypes = Object.values(CredentialsType);
-  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
+  authProviderTypes = Object.values(MqttAuthProviderType);
+  mqttAuthProviderTypeMap = mqttAuthProviderTypeTranslationMap;
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: MqttAuthProvider,
@@ -65,11 +66,16 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
     );
   }
 
+  updateFormState() {
+    super.updateFormState();
+    this.entityForm.get('type').disable({ emitEvent: false });
+  }
+
   updateForm(entity: MqttAuthProvider) {
+    this.entityForm.patchValue({enabled: entity.enabled});
     this.entityForm.patchValue({type: entity.type});
     this.entityForm.patchValue({description: entity.description});
     this.entityForm.patchValue({configuration: entity.configuration});
-    this.entityForm.get('type').disable();
     this.entityForm.updateValueAndValidity();
   }
 }

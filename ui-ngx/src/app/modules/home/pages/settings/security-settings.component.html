@@ -49,7 +49,7 @@
                      dndPlaceholderRef
                      class="mat-mdc-chip mat-mdc-chip-row mdc-evolution-chip mat-mdc-standard-chip tb-datakey-chip tb-datakey-chip-dnd-placeholder">
                 </div>
-                @for (provider of providers; let index = $index; track provider) {
+                @for (provider of mqttAuthSettingsForm.get('priorities')?.value; let index = $index; track provider) {
                   <mat-chip-row #chipRow
                                 class="tb-datakey-chip"
                                 (dndStart)="chipDragStart($index, chipRow, placeholderChipRow)"
@@ -68,7 +68,7 @@
                       }
                       <div class="tb-chip-labels" [class.tb-transparent]="dragDisabled">
                         <div class="tb-chip-label tb-chip-text">
-                          <span>{{credentialsTypeTranslationMap.get(provider) | translate}}</span>
+                          <span>{{mqttAuthProviderTypeMap.get(provider) | translate}}</span>
                         </div>
                       </div>
                     </div>

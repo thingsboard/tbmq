@@ -41,4 +41,20 @@ export class MqttAuthProviderService {
   public getAuthProviderById(id: string, config?: RequestConfig): Observable<MqttAuthProvider> {
     return this.http.get<MqttAuthProvider>(`/api/mqtt/auth/provider/${id}`, defaultHttpOptionsFromConfig(config));
   }
+
+  public enableAuthProvider(id: string, config?: RequestConfig): Observable<void> {
+    return this.http.post<void>(`/api/mqtt/auth/provider/${id}/enable`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public disableAuthProvider(id: string, config?: RequestConfig): Observable<void> {
+    return this.http.post<void>(`/api/mqtt/auth/provider/${id}/disable`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public switchAuthProvider(id: string, enabled: boolean, config?: RequestConfig): Observable<void> {
+    if (enabled) {
+      return this.disableAuthProvider(id, config);
+    } else {
+      return this.enableAuthProvider(id, config);
+    }
+  }
 }

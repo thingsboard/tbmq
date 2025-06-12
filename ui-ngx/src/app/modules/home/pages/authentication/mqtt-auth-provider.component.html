@@ -31,9 +31,9 @@
       <mat-form-field class="mat-block">
         <mat-label translate>authentication.type</mat-label>
         <mat-select formControlName="type">
-          @for (credentialsType of CredentialsTypes; track credentialsType) {
-            <mat-option [value]="credentialsType">
-              {{ credentialsTypeTranslationMap.get(credentialsType) | translate }}
+          @for (provider of authProviderTypes; track provider) {
+            <mat-option [value]="provider">
+              {{ mqttAuthProviderTypeMap.get(provider) | translate }}
             </mat-option>
           }
         </mat-select>

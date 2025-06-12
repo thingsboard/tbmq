@@ -17,14 +17,14 @@
 -->
 <section [formGroup]="providerForm" class="tb-mqtt-auth-provider-configuration">
   @switch (providerType()) {
-    @case (credentialsType.SSL) {
+    @case (mqttAuthProviderType.X_509) {
       <tb-ssl-provider-config-form
         formControlName="configuration"
         [provider]="provider()"
         [isEdit]="isEdit()">
       </tb-ssl-provider-config-form>
     }
-    @case (credentialsType.JWT) {
+    @case (mqttAuthProviderType.JWT) {
       <tb-jwt-provider-config-form
         formControlName="configuration"
         [provider]="provider()"
