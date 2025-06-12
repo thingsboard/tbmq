@@ -15,40 +15,28 @@
     limitations under the License.
 
 -->
-<!--<div class="tb-details-buttons xs:flex xs:flex-col">
-  <div class="flex flex-row flex-wrap xs:flex-col" style="padding-left: 8px">
-    <button mat-raised-button color="primary"
-      [disabled]="(isLoading$ | async)"
-      (click)="onEntityAction($event, 'open')"
-      [class.!hidden]="!(!isEdit && !isDetailsPage)">
-      {{'common.open-details-page' | translate }}
-    </button>
-  </div>
-</div>-->
-<div class="mat-padding form-container flex flex-col">
-  <form [formGroup]="entityForm">
-    <fieldset [disabled]="(isLoading$ | async) || !isEdit">
-      <mat-form-field class="mat-block">
-        <mat-label translate>authentication.type</mat-label>
-        <mat-select formControlName="type">
-          @for (provider of authProviderTypes; track provider) {
-            <mat-option [value]="provider">
-              {{ mqttAuthProviderTypeMap.get(provider) | translate }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      <div class="row !mb-6 flex flex-col gap-2">
-        <mat-slide-toggle formControlName="enabled">
-          {{ 'authentication.enabled' | translate }}
-        </mat-slide-toggle>
-      </div>
-      <tb-mqtt-authentication-provider-configuration
-        formGroupName="configuration"
-        [provider]="entityValue"
-        [providerType]="entityForm.get('type').value"
-        [isEdit]="isEdit"
-      ></tb-mqtt-authentication-provider-configuration>
-    </fieldset>
-  </form>
-</div>
+<form [formGroup]="entityForm" class="mat-padding">
+  <fieldset [disabled]="(isLoading$ | async) || !isEdit">
+    <mat-form-field class="mat-block">
+      <mat-label translate>authentication.type</mat-label>
+      <mat-select formControlName="type">
+        @for (provider of authProviderTypes; track provider) {
+          <mat-option [value]="provider">
+            {{ mqttAuthProviderTypeMap.get(provider) | translate }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <div class="row !mb-6 flex flex-col gap-2">
+      <mat-slide-toggle formControlName="enabled">
+        {{ 'authentication.enabled' | translate }}
+      </mat-slide-toggle>
+    </div>
+    <tb-mqtt-authentication-provider-configuration
+      formControlName="configuration"
+      [provider]="entityValue"
+      [providerType]="entityForm.get('type').value"
+      [isEdit]="isEdit"
+    ></tb-mqtt-authentication-provider-configuration>
+  </fieldset>
+</form>

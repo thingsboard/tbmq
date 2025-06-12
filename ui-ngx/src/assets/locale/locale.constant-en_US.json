@@ -1447,6 +1447,8 @@
     "wss-listener": "WSS Listener",
     "ws-listener-max-payload-size": "WS Listener Max Payload Size",
     "wss-listener-max-payload-size": "WSS Listener Max Payload Size",
+    "jwt-auth": "JWT Auth",
+    "scram-auth": "SCRAM Auth",
     "copy-port": "Copy port",
     "warning": "You have created credentials with the authentication method '{{type}}' that is disabled in TBMQ config"
   },

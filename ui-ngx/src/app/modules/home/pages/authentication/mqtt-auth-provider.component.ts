@@ -15,13 +15,13 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
 import {
   MqttAuthProvider,
@@ -34,6 +34,7 @@ import {
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-configuration.component';
 import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
+import { isDefined } from '@core/utils';
 
 @Component({
     selector: 'tb-mqtt-auth-provider',
@@ -50,7 +51,6 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
               @Inject('entity') protected entityValue: MqttAuthProvider,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<MqttAuthProvider>,
               public fb: UntypedFormBuilder,
-              private translate: TranslateService,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }
@@ -60,8 +60,7 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
       {
         enabled: [entity ? entity.enabled : null],
         type: [entity ? entity.type : null],
-        description: [entity ? entity.description : null],
-        configuration: [entity ? entity.configuration : null, [Validators.required]],
+        configuration: this.fb.control([entity ? entity.configuration : null]),
       }
     );
   }
@@ -72,10 +71,10 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
   }
 
   updateForm(entity: MqttAuthProvider) {
-    this.entityForm.patchValue({enabled: entity.enabled});
-    this.entityForm.patchValue({type: entity.type});
-    this.entityForm.patchValue({description: entity.description});
-    this.entityForm.patchValue({configuration: entity.configuration});
-    this.entityForm.updateValueAndValidity();
+    this.entityForm.patchValue({
+      type: entity.type,
+      enabled: isDefined(entity.enabled) ? entity.enabled : true,
+      configuration: entity.configuration,
+    });
   }
 }

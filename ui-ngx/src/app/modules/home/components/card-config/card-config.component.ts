@@ -134,6 +134,7 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
 
   private switchAuthProvider(providerType: MqttAuthProviderType, value: boolean) {
     const providerId = this.authProviders.find(e => e.type === providerType).id;
-    this.mqttAuthProviderService.switchAuthProvider(providerId, value).subscribe();
+    this.mqttAuthProviderService.switchAuthProvider(providerId, value)
+      .subscribe(() => this.configService.fetchBrokerConfig().subscribe());
   }
 }

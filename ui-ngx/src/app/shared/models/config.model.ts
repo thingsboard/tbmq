@@ -34,6 +34,8 @@ export interface BrokerConfig {
   wssMaxPayloadSize: number;
   existsBasicCredentials: boolean;
   existsX509Credentials: boolean;
+  jwtAuthEnabled: boolean;
+  scramAuthEnabled: boolean;
 }
 
 export interface BrokerConfigTable extends BaseData {
@@ -57,7 +59,9 @@ export enum ConfigParams {
   wsMaxPayloadSize = 'wsMaxPayloadSize',
   wssMaxPayloadSize = 'wssMaxPayloadSize',
   existsBasicCredentials = 'existsBasicCredentials',
-  existsX509Credentials = 'existsX509Credentials'
+  existsX509Credentials = 'existsX509Credentials',
+  jwtAuthEnabled = 'jwtAuthEnabled',
+  scramAuthEnabled = 'scramAuthEnabled',
 }
 
 export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
@@ -75,7 +79,9 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.wsListenerEnabled, 'config.ws-listener'],
     [ConfigParams.wssListenerEnabled, 'config.wss-listener'],
     [ConfigParams.wsMaxPayloadSize, 'config.ws-listener-max-payload-size'],
-    [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size']
+    [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size'],
+    [ConfigParams.jwtAuthEnabled, 'config.jwt-auth'],
+    [ConfigParams.scramAuthEnabled, 'config.scram-auth'],
   ]
 );
 
@@ -88,7 +94,9 @@ export interface SystemVersionInfo {
 
 export const ConfigParamAuthProviderMap = new Map<ConfigParams, MqttAuthProviderType>(
   [
-    [ConfigParams.basicAuthEnabled, MqttAuthProviderType.BASIC],
+    [ConfigParams.basicAuthEnabled, MqttAuthProviderType.MQTT_BASIC],
     [ConfigParams.x509AuthEnabled, MqttAuthProviderType.X_509],
+    [ConfigParams.jwtAuthEnabled, MqttAuthProviderType.JWT],
+    [ConfigParams.scramAuthEnabled, MqttAuthProviderType.SCRAM],
   ]
 );

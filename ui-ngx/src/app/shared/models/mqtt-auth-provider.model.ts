@@ -19,7 +19,7 @@ import { ClientType } from '@shared/models/client.model';
 import { BasicCredentials, CertPemCredentials, Credentials } from '@shared/models/integration.models';
 
 export enum MqttAuthProviderType {
-  BASIC = 'BASIC',
+  MQTT_BASIC = 'MQTT_BASIC',
   X_509 = 'X_509',
   SCRAM = 'SCRAM',
   JWT = 'JWT',
@@ -28,7 +28,7 @@ export enum MqttAuthProviderType {
 
 export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, string>(
   [
-    [MqttAuthProviderType.BASIC, 'mqtt-client-credentials.type-basic'],
+    [MqttAuthProviderType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
     [MqttAuthProviderType.X_509, 'mqtt-client-credentials.type-ssl'],
     [MqttAuthProviderType.SCRAM, 'mqtt-client-credentials.type-scram'],
     [MqttAuthProviderType.JWT, 'authentication.type-jwt'],
