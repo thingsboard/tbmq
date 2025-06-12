@@ -39,7 +39,10 @@ public class MqttAuthSettings implements Serializable {
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
         mqttAuthSettings.setUseListenerBasedProviderOnly(false);
         mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
+        return toAdminSettings(mqttAuthSettings);
+    }
 
+    public static AdminSettings toAdminSettings(MqttAuthSettings mqttAuthSettings) {
         AdminSettings adminSettings = new AdminSettings();
         adminSettings.setKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
         adminSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));

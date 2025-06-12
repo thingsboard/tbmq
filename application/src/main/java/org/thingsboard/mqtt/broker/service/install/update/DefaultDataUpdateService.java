@@ -1,12 +1,12 @@
 /**
  * Copyright © 2016-2025 The Thingsboard Authors
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,16 +15,21 @@
  */
 package org.thingsboard.mqtt.broker.service.install.update;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
-import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
+
+import java.util.Optional;
 
 @Service
 @Profile("install")
@@ -32,46 +37,105 @@ import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 @RequiredArgsConstructor
 public class DefaultDataUpdateService implements DataUpdateService {
 
+    @Value("${security.mqtt.auth_strategy:BOTH}")
+    private String authStrategy;
+    @Value("${security.mqtt.basic.enabled:false}")
+    private boolean basicAuthEnabled;
+    @Value("${security.mqtt.ssl.enabled:false}")
+    private boolean x509AuthEnabled;
+    @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
+    private boolean skipValidityCheckForClientCert;
+
     private final AdminSettingsService adminSettingsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
 
     @Override
     public void updateData() throws Exception {
         log.info("Updating data ...");
-        updateWsClientSettings();
+        //TODO: should be cleaned after each release
+        createMqttAuthSettingsIfNotExist();
+        createMqttAuthProvidersIfNotExist();
         log.info("Data updated.");
     }
 
-    private void saveWsClientSettings() {
-        log.info("Creating WebSocket client settings ...");
-        adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
-        log.info("WebSocket client settings created!");
+    private void createMqttAuthSettingsIfNotExist() {
+        log.info("Starting MQTT auth setting creation...");
+        try {
+            AdminSettings settings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
+            if (settings != null) {
+                log.info("MQTT auth settings already exists. Skipping!");
+                return;
+            }
+            MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
+            mqttAuthSettings.setUseListenerBasedProviderOnly(isUseListenerBasedProviderOnly());
+            mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
+            AdminSettings adminSettings = MqttAuthSettings.toAdminSettings(mqttAuthSettings);
+            adminSettingsService.saveAdminSettings(adminSettings);
+        } catch (Exception e) {
+            log.error("Failed to create MQTT auth settings", e);
+        }
+        log.info("Finished MQTT auth setting creation!");
     }
 
-    void updateWsClientSettings() {
-        AdminSettings wsSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.WEBSOCKET.getKey());
-        if (wsSettings == null) {
-            saveWsClientSettings();
-            return;
+    private void createMqttAuthProvidersIfNotExist() {
+        log.info("Starting MQTT auth providers creation...");
+        for (var type : MqttAuthProviderType.values()) {
+            try {
+                Optional<MqttAuthProvider> mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
+                if (mqttAuthProviderOpt.isPresent()) {
+                    log.info("Mqtt auth provider: {} already exists. Skipping!", type);
+                    continue;
+                }
+                log.info("Creating {} auth provider", type.getDisplayName());
+                MqttAuthProvider mqttAuthProvider = switch (type) {
+                    case MQTT_BASIC -> {
+                        MqttAuthProvider mqttBasicProvider = MqttAuthProvider.defaultBasicAuthProvider();
+                        mqttBasicProvider.setEnabled(isBasicAuthEnabled());
+                        yield mqttBasicProvider;
+                    }
+                    case X_509 -> {
+                        MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider();
+                        x509AuthProvider.setEnabled(isX509AuthEnabled());
+                        var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
+                        configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
+                        x509AuthProvider.setConfiguration(configuration);
+                        yield x509AuthProvider;
+                    }
+                    case SCRAM -> {
+                        MqttAuthProvider scramAuthProvider = MqttAuthProvider.defaultScramAuthProvider();
+                        scramAuthProvider.setEnabled(true);
+                        yield scramAuthProvider;
+                    }
+                    case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
+                };
+                mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
+                log.info("Created mqtt auth provider: {}", type);
+            } catch (Exception e) {
+                log.error("Failed to create mqtt auth provider: {}", type, e);
+            }
         }
-        JsonNode jsonValue = wsSettings.getJsonValue();
-        if (jsonValue == null) {
-            log.info("Creating correct JSON value for WebSocket client settings ...");
-            wsSettings.setJsonValue(WebSocketClientSettings.createWsClientJsonValue());
-            adminSettingsService.saveAdminSettings(wsSettings);
-            log.info("WebSocket client settings updated with correct JSON value!");
-            return;
-        }
-        JsonNode maxMessages = jsonValue.get("maxMessages");
-        if (maxMessages == null || maxMessages.isNull()) {
-            log.info("Setting 'maxMessages' value for WebSocket client settings ...");
+        log.info("Finished MQTT auth providers creation!");
+    }
 
-            ObjectNode objectNode = (ObjectNode) jsonValue;
-            objectNode.put("maxMessages", 1000);
+    boolean isUseListenerBasedProviderOnly() {
+        return Optional.ofNullable(System.getenv("SECURITY_MQTT_AUTH_STRATEGY"))
+                .map(String::trim).map("SINGLE"::equalsIgnoreCase).orElse("SINGLE".equalsIgnoreCase(authStrategy));
+    }
 
-            wsSettings.setJsonValue(objectNode);
-            adminSettingsService.saveAdminSettings(wsSettings);
-            log.info("WebSocket client settings updated with 'maxMessages' value!");
-        }
+    boolean isBasicAuthEnabled() {
+        return getLegacyConfig("SECURITY_MQTT_BASIC_ENABLED", basicAuthEnabled);
+    }
+
+    boolean isX509AuthEnabled() {
+        return getLegacyConfig("SECURITY_MQTT_SSL_ENABLED", x509AuthEnabled);
+    }
+
+    boolean isX509SkipValidityCheckForClientCertIsSetToTrue() {
+        return getLegacyConfig("SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT", skipValidityCheckForClientCert);
+    }
+
+    boolean getLegacyConfig(String env, boolean ymlProperty) {
+        return Optional.ofNullable(System.getenv(env)).map(Boolean::parseBoolean).orElse(ymlProperty);
     }
 
 }
