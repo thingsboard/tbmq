@@ -634,7 +634,6 @@ public class ProtoConverter {
      * Internode notifications
      */
 
-    // TODO: should we handle remove cases?
     public static InternodeNotificationProto toMqttAuthSettingUpdateProto(MqttAuthSettings mqttAuthSettings) {
         return InternodeNotificationProto.newBuilder()
                 .setMqttAuthSettingsProto(MqttAuthSettingsProto.newBuilder()

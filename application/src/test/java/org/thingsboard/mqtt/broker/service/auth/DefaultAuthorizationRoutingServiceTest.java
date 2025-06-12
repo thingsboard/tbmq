@@ -87,7 +87,7 @@ public class DefaultAuthorizationRoutingServiceTest {
         // given
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
         mqttAuthSettings.setUseListenerBasedProviderOnly(true);
-        mqttAuthSettings.setPriorities(List.of(MqttAuthProviderType.JWT, MqttAuthProviderType.BASIC));
+        mqttAuthSettings.setPriorities(List.of(MqttAuthProviderType.JWT, MqttAuthProviderType.MQTT_BASIC));
 
         AdminSettings mockSettings = new AdminSettings();
         mockSettings.setJsonValue(JacksonUtil.valueToTree(mqttAuthSettings));
@@ -104,7 +104,7 @@ public class DefaultAuthorizationRoutingServiceTest {
         boolean useListenerBasedProviderOnly =
                 (boolean) ReflectionTestUtils.getField(service, "useListenerBasedProviderOnly");
 
-        assertThat(priorities).containsExactly(MqttAuthProviderType.JWT, MqttAuthProviderType.BASIC);
+        assertThat(priorities).containsExactly(MqttAuthProviderType.JWT, MqttAuthProviderType.MQTT_BASIC);
         assertThat(useListenerBasedProviderOnly).isTrue();
     }
 
@@ -112,7 +112,7 @@ public class DefaultAuthorizationRoutingServiceTest {
     public void shouldAuthenticateSuccessfullyWithBasic() {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.BASIC)
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .setUseListenerBasedProviderOnly(false)
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
@@ -181,7 +181,7 @@ public class DefaultAuthorizationRoutingServiceTest {
     public void shouldRespectListenerBasedFiltering_SecurePort_RemovesBasic() {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.BASIC)
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .addPriorities(MqttAuthProviderTypeProto.X_509)
                 .setUseListenerBasedProviderOnly(true)
                 .build();
@@ -206,7 +206,7 @@ public class DefaultAuthorizationRoutingServiceTest {
     public void shouldRespectListenerBasedFiltering_NonSecurePort_RemovesSsl() {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.BASIC)
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .addPriorities(MqttAuthProviderTypeProto.X_509)
                 .setUseListenerBasedProviderOnly(true)
                 .build();
@@ -231,7 +231,7 @@ public class DefaultAuthorizationRoutingServiceTest {
     public void shouldAggregateFailures_WhenAllProvidersFail() {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.BASIC)
+                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .addPriorities(MqttAuthProviderTypeProto.X_509)
                 .addPriorities(MqttAuthProviderTypeProto.JWT)
                 .setUseListenerBasedProviderOnly(false)

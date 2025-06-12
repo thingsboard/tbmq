@@ -111,7 +111,9 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createMqttAuthProviders() {
-        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider());
+        MqttAuthProvider defaultBasicAuthProvider = MqttAuthProvider.defaultBasicAuthProvider();
+        defaultBasicAuthProvider.setEnabled(true);
+        mqttAuthProviderService.saveAuthProvider(defaultBasicAuthProvider);
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultSslAuthProvider());
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultJwtAuthProvider());
         mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultScramAuthProvider());

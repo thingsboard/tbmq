@@ -89,7 +89,6 @@ public class InternodeNotificationsConsumerImpl implements InternodeNotification
     }
 
     private void processInternodeNotification(TbProtoQueueMsg<InternodeNotificationProto> msg) {
-        // TODO: how to use this key? (serviceId at the current stage)
         String serviceId = msg.getKey();
         InternodeNotificationProto notificationProto = msg.getValue();
         if (notificationProto.hasMqttAuthSettingsProto()) {

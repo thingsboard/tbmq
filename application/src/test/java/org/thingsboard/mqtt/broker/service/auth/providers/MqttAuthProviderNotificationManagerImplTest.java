@@ -58,7 +58,7 @@ public class MqttAuthProviderNotificationManagerImplTest {
         // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
-                .setProviderType(MqttAuthProviderTypeProto.BASIC)
+                .setProviderType(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .build();
 
         // when
@@ -73,7 +73,7 @@ public class MqttAuthProviderNotificationManagerImplTest {
         // given
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
-                .setProviderType(MqttAuthProviderTypeProto.BASIC)
+                .setProviderType(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .build();
 
         // when
@@ -89,7 +89,7 @@ public class MqttAuthProviderNotificationManagerImplTest {
         var mockedConfiguration = new BasicMqttAuthProviderConfiguration();
         MqttAuthProviderProto notification = MqttAuthProviderProto.newBuilder()
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
-                .setProviderType(MqttAuthProviderTypeProto.BASIC)
+                .setProviderType(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .setEnabled(true)
                 .setConfiguration(JacksonUtil.toString(mockedConfiguration))
                 .build();

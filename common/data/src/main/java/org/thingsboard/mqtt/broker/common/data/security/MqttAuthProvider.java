@@ -43,7 +43,7 @@ public class MqttAuthProvider extends BaseData {
 
     public static MqttAuthProvider defaultBasicAuthProvider() {
         MqttAuthProvider basicMqttAuthProvider = new MqttAuthProvider();
-        basicMqttAuthProvider.setType(MqttAuthProviderType.BASIC);
+        basicMqttAuthProvider.setType(MqttAuthProviderType.MQTT_BASIC);
         basicMqttAuthProvider.setEnabled(false);
         basicMqttAuthProvider.setConfiguration(new BasicMqttAuthProviderConfiguration());
         return basicMqttAuthProvider;

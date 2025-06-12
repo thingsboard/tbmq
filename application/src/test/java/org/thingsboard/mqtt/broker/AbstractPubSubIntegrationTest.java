@@ -20,26 +20,54 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.rules.ExternalResource;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.web.WebAppConfiguration;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
+import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.testing.integration.executor.ExternalExecutorService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
-public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationTest {
+@Slf4j
+@ActiveProfiles("test")
+@Import(AbstractPubSubIntegrationTest.KafkaTestContainersConfiguration.class)
+@ComponentScan({"org.thingsboard.mqtt.broker"})
+@WebAppConfiguration
+@SpringBootTest(classes = ThingsboardMqttBrokerApplication.class)
+public abstract class AbstractPubSubIntegrationTest {
 
     public static final int ONE_HOUR_MS = 3600000;
     public static final String LOCALHOST = "localhost";
@@ -61,9 +89,21 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
 
     protected final ObjectMapper mapper = new ObjectMapper();
 
+    @BeforeClass
+    public static void setup() throws Exception {
+        System.setProperty("tbmq.graceful.shutdown.timeout.sec", "1");
+    }
+
+    @Before
+    public void beforeTest() throws Exception {
+        resetMqttAuthProvidersToDefaultConfiguration();
+    }
+
     @Autowired
     @Lazy
     protected BCryptPasswordEncoder passwordEncoder;
+    @Autowired
+    protected MqttClientCredentialsService mqttClientCredentialsService;
     @Autowired
     protected MqttAuthProviderService mqttAuthProviderService;
     @Autowired
@@ -75,11 +115,6 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
     @Value("${listener.tcp.bind_port}")
     protected int mqttPort;
 
-    @Before
-    public void beforeTest() throws Exception {
-        disableBasicProvider();
-    }
-
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
@@ -88,6 +123,59 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         public int publisherId;
         public int sequenceId;
         public boolean isLast;
+    }
+
+    @ClassRule
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
+
+    @ClassRule
+    public static GenericContainer redis = new GenericContainer("redis:7.2.5")
+            .withExposedPorts(6379)
+            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withEnv("REDIS_PASSWORD", "password")
+            .withCommand("redis-server", "--requirepass", "password");
+
+    @ClassRule
+    public static ExternalResource resource = new ExternalResource() {
+        @Override
+        protected void before() {
+            redis.start();
+            System.setProperty("redis.connection.type", "standalone");
+            System.setProperty("redis.standalone.host", redis.getHost());
+            System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.password", "password");
+        }
+
+        @Override
+        protected void after() {
+            redis.stop();
+            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port")
+                    .forEach(System.getProperties()::remove);
+        }
+    };
+
+    public static class ReplaceKafkaPropertiesBeanPostProcessor implements BeanPostProcessor {
+        @Override
+        public Object postProcessAfterInitialization(@NotNull Object bean, @NotNull String beanName) throws BeansException {
+            if (bean instanceof TbKafkaConsumerSettings kafkaSettings) {
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaProducerSettings kafkaSettings) {
+                kafkaSettings.setServers(kafka.getBootstrapServers());
+            }
+            if (bean instanceof TbKafkaAdminSettings kafkaAdminSettings) {
+                kafkaAdminSettings.setServers(kafka.getBootstrapServers());
+            }
+            return bean;
+        }
+    }
+
+    @TestConfiguration
+    static class KafkaTestContainersConfiguration {
+        @Bean
+        ReplaceKafkaPropertiesBeanPostProcessor beanPostProcessor() {
+            return new ReplaceKafkaPropertiesBeanPostProcessor();
+        }
     }
 
     @NotNull
@@ -103,31 +191,17 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         return pubOptions;
     }
 
-    protected void enableBasicProvider() {
-        enableProvider(MqttAuthProviderType.BASIC);
+    protected MqttAuthProvider getMqttAuthProvider(MqttAuthProviderType type) {
+        return mqttAuthProviderService.getAuthProviderByType(type)
+                .orElseThrow(() -> new IllegalStateException("No " + type.getDisplayName() + " provider found!"));
     }
 
-    protected void enabledAlgorithmBasedHmacJwtProvider() {
-        enableProvider(MqttAuthProviderType.JWT);
+    protected void enableBasicProvider() {
+        enableProvider(MqttAuthProviderType.MQTT_BASIC);
     }
 
     protected void enabledScramProvider() {
         enableProvider(MqttAuthProviderType.SCRAM);
-    }
-
-    protected void disableBasicProvider() {
-        disableProvider(MqttAuthProviderType.BASIC);
-    }
-
-    protected void disableJwtProvider() {
-        disableProvider(MqttAuthProviderType.JWT);
-    }
-
-    private void disableProvider(MqttAuthProviderType type) {
-        MqttAuthProvider provider = getMqttAuthProvider(type);
-        if (provider.isEnabled()) {
-            mqttAuthProviderManagerService.disableAuthProvider(provider.getId());
-        }
     }
 
     private void enableProvider(MqttAuthProviderType type) {
@@ -137,26 +211,20 @@ public abstract class AbstractPubSubIntegrationTest extends AbstractIntegrationT
         }
     }
 
-    public MqttAuthProvider getMqttAuthProvider(MqttAuthProviderType type) {
-        var mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
-        if (mqttAuthProviderOpt.isEmpty()) {
-            throw new IllegalStateException("No " + type.getDisplayName() + " provider found!");
-        }
-        return mqttAuthProviderOpt.get();
+    private void resetMqttAuthProvidersToDefaultConfiguration() {
+        Arrays.stream(MqttAuthProviderType.values()).forEach(this::resetMqttAuthProviderToDefaultConfiguration);
     }
 
-    public void resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType type) {
-        var mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
-        if (mqttAuthProviderOpt.isEmpty()) {
-            throw new IllegalStateException("No " + type.getDisplayName() + " provider found!");
-        }
-        MqttAuthProvider mqttAuthProvider = mqttAuthProviderOpt.get();
+    private void resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType type) {
+        MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(type);
+        mqttAuthProvider.setEnabled(false);
         switch (type) {
-            case BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider().getConfiguration());
+            case MQTT_BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider().getConfiguration());
             case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider().getConfiguration());
             case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider().getConfiguration());
             case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider().getConfiguration());
         }
         mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
     }
+
 }

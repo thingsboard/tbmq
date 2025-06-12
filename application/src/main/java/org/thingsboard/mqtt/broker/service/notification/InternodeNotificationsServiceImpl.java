@@ -64,7 +64,7 @@ public class InternodeNotificationsServiceImpl implements InternodeNotifications
             if (notificationProto.hasMqttAuthSettingsProto()) {
                 log.trace("[{}] Forwarding message to local MQTT authorization routing service {}", serviceId, notificationProto.getMqttAuthSettingsProto());
                 authorizationRoutingService.onMqttAuthSettingsUpdate(notificationProto.getMqttAuthSettingsProto());
-                return;
+                continue;
             }
             if (notificationProto.hasMqttAuthProviderProto()) {
                 log.trace("[{}] Forwarding message to local MQTT auth provider manager {}", serviceId, notificationProto.getMqttAuthProviderProto());

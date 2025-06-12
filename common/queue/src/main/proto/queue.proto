@@ -134,7 +134,7 @@ enum MqttAuthProviderEventProto {
 }
 
 enum MqttAuthProviderTypeProto {
-  BASIC = 0;
+  MQTT_BASIC = 0;
   X_509 = 1;
   JWT = 2;
   SCRAM = 3;

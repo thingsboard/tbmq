@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Getter
 public enum MqttAuthProviderType {
 
-    BASIC(0, "Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT"), SCRAM(3, "SCRAM");
+    MQTT_BASIC(0, "MQTT Basic"), X_509(1, "X.509 Certificate chain"), JWT(2, "JWT"), SCRAM(3, "SCRAM");
 
     private final int protoNumber;
     private final String displayName;

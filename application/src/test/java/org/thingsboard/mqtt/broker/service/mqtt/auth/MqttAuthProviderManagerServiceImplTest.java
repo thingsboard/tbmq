@@ -58,7 +58,7 @@ public class MqttAuthProviderManagerServiceImplTest {
     public void testSaveAuthProvider_shouldBroadcastUpdateNotification() {
         MqttAuthProvider authProviderMock = mock(MqttAuthProvider.class);
         MqttAuthProvider savedProvider = new MqttAuthProvider();
-        savedProvider.setType(MqttAuthProviderType.BASIC);
+        savedProvider.setType(MqttAuthProviderType.MQTT_BASIC);
         savedProvider.setConfiguration(new BasicMqttAuthProviderConfiguration());
         InternodeNotificationProto expectedProto = ProtoConverter.toMqttAuthProviderUpdatedEvent(savedProvider);
 

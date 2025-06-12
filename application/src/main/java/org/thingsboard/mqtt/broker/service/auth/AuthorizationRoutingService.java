@@ -21,7 +21,8 @@ import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
 public interface AuthorizationRoutingService {
 
+    AuthResponse executeAuthFlow(AuthContext authContext);
+
     void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto);
 
-    AuthResponse executeAuthFlow(AuthContext authContext);
 }

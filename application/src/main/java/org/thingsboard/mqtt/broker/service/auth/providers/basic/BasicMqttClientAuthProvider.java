@@ -67,7 +67,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
 
     @PostConstruct
     public void init() {
-        MqttAuthProvider basicAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.BASIC)
+        MqttAuthProvider basicAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.MQTT_BASIC)
                 .orElseThrow(() -> new IllegalStateException("Failed to initialize BASIC authentication provider! Provider is missing in the DB!"));
         this.enabled = basicAuthProvider.isEnabled();
         this.configuration = (BasicMqttAuthProviderConfiguration) basicAuthProvider.getConfiguration();
@@ -90,7 +90,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
     @Override
     public AuthResponse authenticate(AuthContext authContext) {
         if (!enabled) {
-            return AuthResponse.providerDisabled(MqttAuthProviderType.BASIC);
+            return AuthResponse.providerDisabled(MqttAuthProviderType.MQTT_BASIC);
         }
         if (log.isTraceEnabled()) {
             log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());

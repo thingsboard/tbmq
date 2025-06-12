@@ -24,7 +24,7 @@ public class BasicMqttAuthProviderConfiguration implements MqttAuthProviderConfi
 
     @Override
     public MqttAuthProviderType getType() {
-        return MqttAuthProviderType.BASIC;
+        return MqttAuthProviderType.MQTT_BASIC;
     }
 
 }

@@ -64,6 +64,7 @@ public class JwtHmacAuthorizationIntegrationTestCase extends AbstractPubSubInteg
 
     @Before
     public void beforeTest() throws Exception {
+        super.beforeTest();
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
         PubSubAuthorizationRules pubSubAuthorizationRules = new PubSubAuthorizationRules(
@@ -74,11 +75,6 @@ public class JwtHmacAuthorizationIntegrationTestCase extends AbstractPubSubInteg
         configuration.setAuthRules(pubSubAuthorizationRules);
         provider.setConfiguration(configuration);
         mqttAuthProviderManagerService.saveAuthProvider(provider);
-    }
-
-    @After
-    public void afterTest() {
-        resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType.JWT);
     }
 
     @Test

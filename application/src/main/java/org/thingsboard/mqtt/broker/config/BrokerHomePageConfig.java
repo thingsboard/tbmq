@@ -23,10 +23,13 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 
@@ -62,8 +65,9 @@ public class BrokerHomePageConfig {
     @Value("${listener.wss.netty.max_payload_size}")
     private int wssMaxPayloadSize;
 
-    public final MqttClientCredentialsService mqttClientCredentialsService;
-    public final AdminSettingsService adminSettingsService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final AdminSettingsService adminSettingsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
 
     public HomePageConfigDto getConfig() {
         AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
@@ -72,10 +76,11 @@ public class BrokerHomePageConfig {
             connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
             });
         }
-        // TODO: fix HomePage info about basic and x509 auth if needed.
         return HomePageConfigDto.builder()
-                .basicAuthEnabled(false)
-                .x509AuthEnabled(false)
+                .basicAuthEnabled(isBasicAuthEnabled())
+                .x509AuthEnabled(isX509AuthEnabled())
+                .scramAuthEnabled(isScramAuthEnabled())
+                .jwtAuthEnabled(isJwtAuthEnabled())
                 .tcpPort(getTcpPort(connectivityInfoMap))
                 .tlsPort(getTlsPort(connectivityInfoMap))
                 .wsPort(getWsPort(connectivityInfoMap))
@@ -153,6 +158,27 @@ public class BrokerHomePageConfig {
         } else {
             return tlsMaxPayloadSize;
         }
+    }
+
+    private boolean isBasicAuthEnabled() {
+        return isProviderEnabled(MqttAuthProviderType.MQTT_BASIC);
+    }
+
+    private boolean isX509AuthEnabled() {
+        return isProviderEnabled(MqttAuthProviderType.X_509);
+    }
+
+    private boolean isScramAuthEnabled() {
+        return isProviderEnabled(MqttAuthProviderType.SCRAM);
+    }
+
+    private boolean isJwtAuthEnabled() {
+        return isProviderEnabled(MqttAuthProviderType.JWT);
+    }
+
+    private Boolean isProviderEnabled(MqttAuthProviderType providerType) {
+        return mqttAuthProviderService.getAuthProviderByType(providerType)
+                .map(MqttAuthProvider::isEnabled).orElse(false);
     }
 
     private int getWsPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
