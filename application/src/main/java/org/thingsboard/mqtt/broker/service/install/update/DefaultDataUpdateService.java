@@ -60,59 +60,51 @@ public class DefaultDataUpdateService implements DataUpdateService {
 
     private void createMqttAuthSettingsIfNotExist() {
         log.info("Starting MQTT auth setting creation...");
-        try {
-            AdminSettings settings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-            if (settings != null) {
-                log.info("MQTT auth settings already exists. Skipping!");
-                return;
-            }
-            MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-            mqttAuthSettings.setUseListenerBasedProviderOnly(isUseListenerBasedProviderOnly());
-            mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
-            AdminSettings adminSettings = MqttAuthSettings.toAdminSettings(mqttAuthSettings);
-            adminSettingsService.saveAdminSettings(adminSettings);
-        } catch (Exception e) {
-            log.error("Failed to create MQTT auth settings", e);
+        AdminSettings settings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
+        if (settings != null) {
+            log.info("MQTT auth settings already exists. Skipping!");
+            return;
         }
+        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
+        mqttAuthSettings.setUseListenerBasedProviderOnly(isUseListenerBasedProviderOnly());
+        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
+        AdminSettings adminSettings = MqttAuthSettings.toAdminSettings(mqttAuthSettings);
+        adminSettingsService.saveAdminSettings(adminSettings);
         log.info("Finished MQTT auth setting creation!");
     }
 
     private void createMqttAuthProvidersIfNotExist() {
         log.info("Starting MQTT auth providers creation...");
         for (var type : MqttAuthProviderType.values()) {
-            try {
-                Optional<MqttAuthProvider> mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
-                if (mqttAuthProviderOpt.isPresent()) {
-                    log.info("Mqtt auth provider: {} already exists. Skipping!", type);
-                    continue;
-                }
-                log.info("Creating {} auth provider", type.getDisplayName());
-                MqttAuthProvider mqttAuthProvider = switch (type) {
-                    case MQTT_BASIC -> {
-                        MqttAuthProvider mqttBasicProvider = MqttAuthProvider.defaultBasicAuthProvider();
-                        mqttBasicProvider.setEnabled(isBasicAuthEnabled());
-                        yield mqttBasicProvider;
-                    }
-                    case X_509 -> {
-                        MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider();
-                        x509AuthProvider.setEnabled(isX509AuthEnabled());
-                        var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
-                        configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
-                        x509AuthProvider.setConfiguration(configuration);
-                        yield x509AuthProvider;
-                    }
-                    case SCRAM -> {
-                        MqttAuthProvider scramAuthProvider = MqttAuthProvider.defaultScramAuthProvider();
-                        scramAuthProvider.setEnabled(true);
-                        yield scramAuthProvider;
-                    }
-                    case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
-                };
-                mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
-                log.info("Created mqtt auth provider: {}", type);
-            } catch (Exception e) {
-                log.error("Failed to create mqtt auth provider: {}", type, e);
+            Optional<MqttAuthProvider> mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
+            if (mqttAuthProviderOpt.isPresent()) {
+                log.info("Mqtt auth provider: {} already exists. Skipping!", type);
+                continue;
             }
+            log.info("Creating {} auth provider...", type.getDisplayName());
+            MqttAuthProvider mqttAuthProvider = switch (type) {
+                case MQTT_BASIC -> {
+                    MqttAuthProvider mqttBasicProvider = MqttAuthProvider.defaultBasicAuthProvider();
+                    mqttBasicProvider.setEnabled(isBasicAuthEnabled());
+                    yield mqttBasicProvider;
+                }
+                case X_509 -> {
+                    MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider();
+                    x509AuthProvider.setEnabled(isX509AuthEnabled());
+                    var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
+                    configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
+                    x509AuthProvider.setConfiguration(configuration);
+                    yield x509AuthProvider;
+                }
+                case SCRAM -> {
+                    MqttAuthProvider scramAuthProvider = MqttAuthProvider.defaultScramAuthProvider();
+                    scramAuthProvider.setEnabled(true);
+                    yield scramAuthProvider;
+                }
+                case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
+            };
+            mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
+            log.info("Created {} auth provider!", type.getDisplayName());
         }
         log.info("Finished MQTT auth providers creation!");
     }
