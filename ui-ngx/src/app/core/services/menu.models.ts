@@ -55,4 +55,5 @@ export enum MenuId {
   system_settings_security = 'system_settings_security',
   mqtt_auth_provider = 'mqtt_auth_provider',
   authentication = 'authentication',
+  blocked_clients = 'blocked_clients',
 }

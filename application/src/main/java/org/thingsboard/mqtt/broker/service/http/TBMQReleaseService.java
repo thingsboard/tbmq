@@ -22,11 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.io.IOException;
 import java.net.URI;
@@ -53,10 +53,10 @@ public class TBMQReleaseService extends AbstractServiceProvider {
     private HttpRequest request;
 
     @Autowired
-    public TBMQReleaseService(TbQueueAdmin tbQueueAdmin,
+    public TBMQReleaseService(SystemInfoService systemInfoService,
                               ServiceInfoProvider serviceInfoProvider,
                               RetainedMsgListenerService retainedMsgListenerService) {
-        super(tbQueueAdmin, serviceInfoProvider);
+        super(systemInfoService, serviceInfoProvider);
         this.retainedMsgListenerService = retainedMsgListenerService;
     }
 

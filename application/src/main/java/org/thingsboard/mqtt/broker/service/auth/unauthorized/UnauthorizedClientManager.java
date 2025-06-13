@@ -26,6 +26,8 @@ public interface UnauthorizedClientManager {
 
     void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, AuthResponse authResponse);
 
+    void persistClientUnauthorized(ClientActorState state, SessionInitMsg sessionInitMsg, String reason);
+
     void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthContinueResponse authResponse);
 
     void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx, EnhancedAuthFinalResponse authResponse);

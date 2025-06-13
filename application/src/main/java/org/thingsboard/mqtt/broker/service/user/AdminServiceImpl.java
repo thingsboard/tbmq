@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.user;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,33 +29,23 @@ import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 
 @Service
+@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
     private final UserService userService;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final @Lazy BCryptPasswordEncoder passwordEncoder;
     private final WebSocketConnectionService webSocketConnectionService;
-
-    public AdminServiceImpl(UserService userService, @Lazy BCryptPasswordEncoder passwordEncoder,
-                            WebSocketConnectionService webSocketConnectionService) {
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-        this.webSocketConnectionService = webSocketConnectionService;
-    }
 
     @Override
     @Transactional
     public User createAdmin(AdminDto adminDto, boolean saveDefaultWsConnection) throws ThingsboardException {
-        User user = toUser(adminDto);
-        user = userService.saveUser(user);
+        User user = userService.saveUser(toUser(adminDto));
         UserCredentials userCredentials = userService.findUserCredentialsByUserId(user.getId());
         if (userCredentials == null) {
             throw new IllegalArgumentException("User credentials were not created for user.");
         }
         if (adminDto.getId() == null) {
-            userCredentials.setPassword(passwordEncoder.encode(adminDto.getPassword()));
-            userCredentials.setEnabled(true);
-            userCredentials.setActivateToken(null);
-            userService.saveUserCredentials(userCredentials);
+            updateUserCredentials(adminDto, userCredentials);
             if (saveDefaultWsConnection) {
                 webSocketConnectionService.saveDefaultWebSocketConnection(user.getId(), null);
             }
@@ -72,5 +63,12 @@ public class AdminServiceImpl implements AdminService {
         user.setAdditionalInfo(adminDto.getAdditionalInfo());
         user.setCreatedTime(adminDto.getCreatedTime());
         return user;
+    }
+
+    private void updateUserCredentials(AdminDto adminDto, UserCredentials userCredentials) {
+        userCredentials.setPassword(passwordEncoder.encode(adminDto.getPassword()));
+        userCredentials.setEnabled(true);
+        userCredentials.setActivateToken(null);
+        userService.saveUserCredentials(userCredentials);
     }
 }

@@ -132,7 +132,7 @@ public class AppController extends BaseController {
     @ResponseBody
     public List<String> getBrokerServiceIds() throws ThingsboardException {
         try {
-            return checkNotNull(tbQueueAdmin.getBrokerServiceIds());
+            return checkNotNull(systemInfoService.getTbmqServiceIds());
         } catch (Exception e) {
             throw handleException(e);
         }

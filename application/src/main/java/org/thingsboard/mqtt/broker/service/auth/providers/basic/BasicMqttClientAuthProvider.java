@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
@@ -78,7 +77,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
                                        MqttClientCredentialsService clientCredentialsService,
                                        CacheNameResolver cacheNameResolver,
                                        MqttAuthProviderService mqttAuthProviderService,
-                                       @Lazy BCryptPasswordEncoder passwordEncoder) {
+                                       BCryptPasswordEncoder passwordEncoder) {
         this.authorizationRuleService = authorizationRuleService;
         this.clientCredentialsService = clientCredentialsService;
         this.cacheNameResolver = cacheNameResolver;

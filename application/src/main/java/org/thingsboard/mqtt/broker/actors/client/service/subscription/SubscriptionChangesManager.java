@@ -18,5 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import org.thingsboard.mqtt.broker.actors.client.messages.SubscriptionChangedEventMsg;
 
 public interface SubscriptionChangesManager {
+
     void processSubscriptionChangedEvent(String clientId, SubscriptionChangedEventMsg msg);
+
 }

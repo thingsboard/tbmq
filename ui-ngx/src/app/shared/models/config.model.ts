@@ -84,3 +84,12 @@ export interface SystemVersionInfo {
   name: string;
   newestVersion: string;
 }
+
+export const settingsConfigPortMap = new Map<string, string>(
+  [
+    ['mqtt', 'tcpPort'],
+    ['mqtts', 'tlsPort'],
+    ['ws', 'wsPort'],
+    ['wss', 'wssPort'],
+  ]
+);

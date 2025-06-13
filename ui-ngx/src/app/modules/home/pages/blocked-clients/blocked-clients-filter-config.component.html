@@ -1,0 +1,114 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+@if (panelMode) {
+  <ng-container *ngTemplateOutlet="blockedClientsPanel"></ng-container>
+} @else {
+  @if (buttonMode()) {
+    <button color="primary"
+      matTooltip="{{buttonDisplayTooltip}}"
+      matTooltipPosition="above"
+      mat-stroked-button
+      (click)="toggleFilterPanel($event)">
+      <mat-icon>filter_list</mat-icon>{{buttonDisplayValue}}
+    </button>
+  } @else {
+    <div class="tb-form-panel tb-blocked-clients-filter-config-component no-padding no-border" [formGroup]="filterConfigForm">
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>blocked-client.type</div>
+        <mat-chip-listbox multiple formControlName="typeList">
+          @for (value of blockedClientTypes; track value) {
+            <mat-chip-option [value]="value">
+              {{ blockedClientTypeTranslationMap.get(value) | translate }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>blocked-client.regex-match-target</div>
+        <mat-chip-listbox multiple formControlName="regexMatchTargetList">
+          @for (value of regexMatchTargets; track value) {
+            <mat-chip-option [value]="value">
+              {{ regexMatchTargetTranslationMap.get(value) | translate }}
+            </mat-chip-option>
+          }
+        </mat-chip-listbox>
+      </div>
+      <div class="tb-form-row space-between column-xs">
+        <div class="fixed-title-width" translate>blocked-client.value</div>
+        <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+          <input matInput type="text" formControlName="value">
+        </mat-form-field>
+      </div>
+    </div>
+  }
+}
+<ng-template #blockedClientsPanel>
+  <form class="mat-content mat-padding flex flex-col" (ngSubmit)="update()">
+    <ng-container *ngTemplateOutlet="blockedClientsFilter"></ng-container>
+    <div class="tb-panel-actions flex flex-row items-center justify-end">
+      <button type="button"
+        mat-button
+        color="primary"
+        (click)="reset()">
+        {{ 'action.reset' | translate }}
+      </button>
+      <span class="flex flex-1"></span>
+      <button type="button"
+        mat-button
+        (click)="cancel()">
+        {{ 'action.cancel' | translate }}
+      </button>
+      <button type="submit"
+        mat-raised-button
+        color="primary"
+        [disabled]="filterConfigForm.invalid || !filterConfigForm.dirty">
+        {{ 'action.update' | translate }}
+      </button>
+    </div>
+  </form>
+</ng-template>
+<ng-template #blockedClientsFilter>
+  <div class="tb-form-panel tb-blocked-clients-filter-config-component no-padding no-border" [formGroup]="filterConfigForm">
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>blocked-client.type</div>
+      <mat-chip-listbox multiple formControlName="typeList">
+        @for (value of blockedClientTypes; track value) {
+          <mat-chip-option [value]="value">
+            {{ blockedClientTypeTranslationMap.get(value) | translate }}
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>blocked-client.regex-match-target</div>
+      <mat-chip-listbox multiple formControlName="regexMatchTargetList">
+        @for (value of regexMatchTargets; track value) {
+          <mat-chip-option [value]="value">
+            {{ regexMatchTargetTranslationMap.get(value) | translate }}
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+    </div>
+    <div class="tb-form-row space-between column-xs">
+      <div class="fixed-title-width" translate>blocked-client.value</div>
+      <mat-form-field class="flex" appearance="outline" subscriptSizing="dynamic">
+        <input matInput type="text" formControlName="value">
+      </mat-form-field>
+    </div>
+  </div>
+</ng-template>

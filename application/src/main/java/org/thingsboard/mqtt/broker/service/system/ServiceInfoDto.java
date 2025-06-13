@@ -42,4 +42,7 @@ public class ServiceInfoDto {
     @Schema(description = "Current service status based on last update time.")
     private ServiceStatus status;
 
+    public boolean isDataPresent() {
+        return cpuUsage != null || cpuCount != null || memoryUsage != null || totalMemory != null || diskUsage != null || totalDiskSpace != null;
+    }
 }

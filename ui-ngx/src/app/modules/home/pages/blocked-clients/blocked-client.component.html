@@ -1,0 +1,82 @@
+<!--
+
+    Copyright © 2016-2025 The Thingsboard Authors
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<div class="mat-padding mt-4 flex flex-col">
+  <form [formGroup]="entityForm">
+    <fieldset [disabled]="(isLoading$ | async) || !isEdit" class="flex flex-col gap-4">
+      <section class="flex flex-row gap-2">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+          <mat-label translate>blocked-client.type</mat-label>
+          <mat-select formControlName="type">
+            @for (type of blockedClientTypes; track type) {
+              <mat-option [value]="type">
+                {{ blockedClientTypeTranslationMap.get(type) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field class="flex max-w-50% flex-1" [class.hidden]="!isRegexType" subscriptSizing="dynamic">
+          <mat-label translate>blocked-client.regex-match-target</mat-label>
+          <mat-select formControlName="regexMatchTarget" [disabled]="true">
+            @for (type of regexMatchTargets; track type) {
+              <mat-option [value]="type">
+                {{ regexMatchTargetTranslationMap.get(type) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </section>
+      <mat-form-field floatLabel="always" class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>blocked-client.value</mat-label>
+        <input matInput formControlName="value" placeholder="{{'action.set' | translate}}" required>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'blocked-client.value-required' | translate }}"
+                  [class.!hidden]="!(entityForm.get('value').hasError('required') && entityForm.get('value').touched)"
+                  class="tb-error">
+          warning
+        </mat-icon>
+      </mat-form-field>
+        <section class="security-setting flex flex-col gap-4 p-4">
+          <mat-slide-toggle [(ngModel)]="neverExpires" [ngModelOptions]="{standalone: true}" (ngModelChange)="onNeverExpiresChange()">
+            <span>{{neverExpiresLabel | translate}}</span>
+          </mat-slide-toggle>
+          <section class="flex flex-row items-center gap-4 xs:flex-col xs:items-stretch xs:gap-0"
+                    [class.hidden]="neverExpires">
+            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+              <mat-label translate>blocked-client.expiration-date</mat-label>
+              <mat-datetimepicker-toggle [for]="expirationDatePicker" matPrefix></mat-datetimepicker-toggle>
+              <mat-datetimepicker #expirationDatePicker type="date" openOnFocus="true"></mat-datetimepicker>
+              <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationDatePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
+                     [disabled]="neverExpires">
+            </mat-form-field>
+            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+              <mat-label translate>common.time</mat-label>
+              <mat-datetimepicker-toggle [for]="expirationTimePicker" matPrefix></mat-datetimepicker-toggle>
+              <mat-datetimepicker #expirationTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
+              <input matInput [(ngModel)]="expirationDate" [matDatetimepicker]="expirationTimePicker" [ngModelOptions]="{standalone: true}" (ngModelChange)="onExpirationDateChange()"
+                     [disabled]="neverExpires">
+            </mat-form-field>
+          </section>
+        </section>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>blocked-client.description</mat-label>
+        <textarea matInput formControlName="description" rows="2"></textarea>
+      </mat-form-field>
+    </fieldset>
+  </form>
+</div>

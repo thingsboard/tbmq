@@ -18,8 +18,8 @@ package org.thingsboard.mqtt.broker.service.provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public abstract class AbstractServiceProvider {
 
-    private final TbQueueAdmin tbQueueAdmin;
+    private final SystemInfoService systemInfoService;
     private final ServiceInfoProvider serviceInfoProvider;
 
     protected boolean isCurrentNodeShouldCleanUp() {
@@ -43,7 +43,7 @@ public abstract class AbstractServiceProvider {
     }
 
     private boolean isThisNodeResponsibleForTask(String serviceId, String logMsg) {
-        List<String> brokerServiceIds = tbQueueAdmin.getBrokerServiceIds().stream().sorted().toList();
+        List<String> brokerServiceIds = systemInfoService.getTbmqServiceIds().stream().sorted().toList();
         if (!CollectionUtils.isEmpty(brokerServiceIds)) {
             String firstServiceId = brokerServiceIds.get(0);
             return serviceId.equals(firstServiceId);

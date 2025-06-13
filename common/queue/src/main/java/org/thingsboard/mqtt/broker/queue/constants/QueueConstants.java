@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.queue.constants;
 
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 
@@ -30,6 +31,7 @@ public class QueueConstants {
 
     public static final ClientSessionInfoProto EMPTY_CLIENT_SESSION_INFO_PROTO = ClientSessionInfoProto.newBuilder().build();
     public static final RetainedMsgProto EMPTY_RETAINED_MSG_PROTO = RetainedMsgProto.newBuilder().build();
+    public static final BlockedClientProto EMPTY_BLOCKED_CLIENT_PROTO = BlockedClientProto.getDefaultInstance();
 
     /**
      * TBMQ Integration executor downlink topics constants

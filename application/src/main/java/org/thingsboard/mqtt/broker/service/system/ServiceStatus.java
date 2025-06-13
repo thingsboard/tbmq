@@ -25,7 +25,7 @@ public enum ServiceStatus {
     private static final long ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
     public static ServiceStatus fromLastUpdateTime(Long lastUpdateTime) {
-        if (lastUpdateTime == null) return OUTDATED;
+        if (lastUpdateTime == null || lastUpdateTime == 0) return OUTDATED;
 
         long now = System.currentTimeMillis();
         long age = now - lastUpdateTime;
