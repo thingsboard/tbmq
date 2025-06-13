@@ -20,11 +20,18 @@ import org.apache.kafka.common.security.scram.internals.ScramSaslServerProvider;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramAlgorithm;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
+import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.ScramServerWithCallbackHandler;
@@ -38,9 +45,11 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -56,13 +65,39 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
     private static final String CLIENT_ID = "clientId";
 
+    @Mock
+    MqttAuthProviderService mqttAuthProviderService;
+
     DefaultEnhancedAuthenticationService enhancedAuthenticationService;
 
     @Before
     public void setUp() {
         MqttClientCredentialsService credentialsServiceMock = mock(MqttClientCredentialsService.class);
         AuthorizationRuleService authorizationRuleServiceMock = mock(AuthorizationRuleService.class);
-        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(credentialsServiceMock, authorizationRuleServiceMock));
+        mqttAuthProviderService = mock(MqttAuthProviderService.class);
+
+        MqttAuthProvider scramAuthProvider = mock(MqttAuthProvider.class);
+        when(scramAuthProvider.isEnabled()).thenReturn(true);
+
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM))
+                .thenReturn(Optional.of(scramAuthProvider));
+
+        enhancedAuthenticationService = spy(new DefaultEnhancedAuthenticationService(
+                credentialsServiceMock,
+                authorizationRuleServiceMock,
+                mqttAuthProviderService
+        ));
+    }
+
+    @Test
+    public void givenNoScramAuthProvider_whenInit_thenThrowException() {
+        // GIVEN
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM))
+                .thenReturn(Optional.empty());
+        // WHEN-THEN
+        assertThatThrownBy(enhancedAuthenticationService::init)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Failed to initialize SCRAM MQTT 5 Enhanced authentication provider! Provider is missing in the DB!");
     }
 
     @Test
@@ -78,9 +113,50 @@ public class DefaultEnhancedAuthenticationServiceTest {
     }
 
     @Test
+    public void givenAuthProviderDisabled_whenOnClientConnectMsg_thenReturnEnhancedAuthDisabled() {
+        // GIVEN
+        MqttAuthProvider disabledProvider = mock(MqttAuthProvider.class);
+        when(disabledProvider.isEnabled()).thenReturn(false);
+        when(disabledProvider.getConfiguration()).thenReturn(new ScramMqttAuthProviderConfiguration());
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM))
+                .thenReturn(Optional.of(disabledProvider));
+
+        enhancedAuthenticationService.init();
+
+        // WHEN
+        EnhancedAuthContinueResponse response = enhancedAuthenticationService.onClientConnectMsg(
+                mock(ClientSessionCtx.class), mock(EnhancedAuthContext.class));
+
+        // THEN
+        assertThat(response.success()).isFalse();
+        assertThat(response.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.ENHANCED_AUTH_DISABLED);
+    }
+
+    @Test
+    public void givenAuthProviderDisabled_whenReAuth_thenReturnEnhancedAuthDisabled() {
+        // GIVEN
+        MqttAuthProvider disabledProvider = mock(MqttAuthProvider.class);
+        when(disabledProvider.isEnabled()).thenReturn(false);
+        when(disabledProvider.getConfiguration()).thenReturn(new ScramMqttAuthProviderConfiguration());
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM))
+                .thenReturn(Optional.of(disabledProvider));
+
+        enhancedAuthenticationService.init();
+
+        // WHEN
+        EnhancedAuthContinueResponse response = enhancedAuthenticationService.onReAuth(
+                mock(ClientSessionCtx.class), mock(EnhancedAuthContext.class));
+
+        // THEN
+        assertThat(response.success()).isFalse();
+        assertThat(response.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.ENHANCED_AUTH_DISABLED);
+    }
+
+    @Test
     public void givenScramServerInitiated_whenOnClientConnectMsgEvalSuccess_thenVerifyInvocations() throws Exception {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
+        enhancedAuthenticationService.init();
 
         var scramSaslServer = mock(ScramSaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
@@ -104,6 +180,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
     public void givenScramServerInitiated_whenOnClientConnectMsgEvalFailure_thenVerifyInvocations() throws Exception {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
+        enhancedAuthenticationService.init();
 
         var scramSaslServer = mock(ScramSaslServer.class);
         var scramSaslServerWithCallbackMock = mock(ScramServerWithCallbackHandler.class);
@@ -129,6 +206,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
@@ -146,6 +224,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         var enhancedAuthContext = getEnhancedAuthContext();
         var saslServer = mock(SaslServer.class);
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doReturn(saslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
@@ -162,6 +241,7 @@ public class DefaultEnhancedAuthenticationServiceTest {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
         var clientSessionCtxMock = mock(ClientSessionCtx.class);
+        enhancedAuthenticationService.init();
 
         doThrow(SaslException.class).when(enhancedAuthenticationService).createSaslServer(any(), any());
 
@@ -466,6 +546,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(authMethodFromConnect);
 
+        enhancedAuthenticationService.init();
+
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
@@ -483,6 +565,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
+
+        enhancedAuthenticationService.init();
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
@@ -505,6 +589,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException("Evaluation failed"));
+
+        enhancedAuthenticationService.init();
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
@@ -532,6 +618,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(challenge);
 
+        enhancedAuthenticationService.init();
+
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
@@ -542,6 +630,53 @@ public class DefaultEnhancedAuthenticationServiceTest {
         verify(clientSessionCtxMock).getScramServerWithCallbackHandler();
         verifyNoMoreInteractions(clientSessionCtxMock);
         verify(scramSaslServerWithCallbackMock).evaluateResponse(enhancedAuthContext.getAuthData());
+    }
+
+    @Test
+    public void givenValidInput_whenOnProviderUpdate_thenFieldsAreUpdated() {
+        // GIVEN
+        ReflectionTestUtils.setField(enhancedAuthenticationService, "configuration", null);
+        ReflectionTestUtils.setField(enhancedAuthenticationService, "enabled", false);
+
+        ScramMqttAuthProviderConfiguration config = new ScramMqttAuthProviderConfiguration();
+
+        // WHEN
+        enhancedAuthenticationService.onProviderUpdate(true, config);
+
+        // THEN
+        ScramMqttAuthProviderConfiguration actualConfig =
+                (ScramMqttAuthProviderConfiguration) ReflectionTestUtils.getField(enhancedAuthenticationService, "configuration");
+        Boolean enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
+        assertThat(actualConfig).isEqualTo(config);
+        assertThat(enabled).isTrue();
+
+    }
+
+    @Test
+    public void whenDisable_thenEnabledIsFalse() {
+        // GIVEN
+        ReflectionTestUtils.setField(enhancedAuthenticationService, "enabled", true);
+
+        // WHEN
+        enhancedAuthenticationService.disable();
+
+        // THEN
+        Boolean enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
+        assertThat(enabled).isFalse();
+    }
+
+    @Test
+    public void whenEnable_thenEnabledIsTrue() {
+        // GIVEN
+        Boolean enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
+        assertThat(enabled).isFalse();
+
+        // WHEN
+        enhancedAuthenticationService.enable();
+
+        // THEN
+        enabled = (Boolean) ReflectionTestUtils.getField(enhancedAuthenticationService, "enabled");
+        assertThat(enabled).isTrue();
     }
 
     private AuthRulePatterns getAuthRulePatterns() {

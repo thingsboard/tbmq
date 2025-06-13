@@ -15,17 +15,16 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
 
 @Getter
 @Builder(toBuilder = true)
-@AllArgsConstructor
 public class AuthResponse {
 
     private final boolean success;
@@ -37,12 +36,16 @@ public class AuthResponse {
         return AuthResponse.builder().success(false).reason(reason).build();
     }
 
-    public static AuthResponse defaultAuthResponse() {
-        return new AuthResponse(true, ClientType.DEVICE, null);
+    public static AuthResponse providerDisabled(MqttAuthProviderType providerType) {
+        return AuthResponse.builder().success(false).reason(providerType.getDisplayName() + " authentication is disabled!").build();
     }
 
-    public AuthResponse(boolean success, ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
-        this(success, clientType, authRulePatterns, null);
+    public static AuthResponse defaultAuthResponse() {
+        return AuthResponse.builder().success(true).clientType(ClientType.DEVICE).authRulePatterns(null).build();
+    }
+
+    public static AuthResponse success(ClientType clientType, List<AuthRulePatterns> authRulePatterns) {
+        return AuthResponse.builder().success(true).clientType(clientType).authRulePatterns(authRulePatterns).build();
     }
 
     public boolean isFailure() {

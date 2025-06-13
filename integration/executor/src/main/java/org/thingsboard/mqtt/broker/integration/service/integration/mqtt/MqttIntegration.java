@@ -34,9 +34,9 @@ import org.thingsboard.mqtt.broker.integration.api.AbstractIntegration;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.TbIntegrationInitParams;
 import org.thingsboard.mqtt.broker.integration.api.callback.IntegrationMsgCallback;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.BasicCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.CredentialsType;
+import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
 
 import javax.net.ssl.SSLException;
 import java.nio.charset.StandardCharsets;

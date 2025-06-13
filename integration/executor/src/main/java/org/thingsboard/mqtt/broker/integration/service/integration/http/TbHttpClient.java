@@ -37,9 +37,9 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
 import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.BasicCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.CredentialsType;
+import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 

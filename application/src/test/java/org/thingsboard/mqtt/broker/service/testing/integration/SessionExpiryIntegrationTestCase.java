@@ -23,9 +23,7 @@ import org.eclipse.paho.mqttv5.client.MqttClient;
 import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +46,6 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = SessionExpiryIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=false",
         "mqtt.client-session-expiry.cron=* * * ? * *" // every second
 })
 @DaoSqlTest
@@ -62,14 +59,6 @@ public class SessionExpiryIntegrationTestCase extends AbstractPubSubIntegrationT
     private ClientSessionCache clientSessionCache;
     @Autowired
     private ClientSubscriptionCache clientSubscriptionCache;
-
-    @Before
-    public void init() throws Exception {
-    }
-
-    @After
-    public void clear() {
-    }
 
     @Test
     public void givenSessionWithCleanStartAndSessionExpiryInterval_whenDisconnect_thenSessionIsClearedAfterDelay() throws Throwable {

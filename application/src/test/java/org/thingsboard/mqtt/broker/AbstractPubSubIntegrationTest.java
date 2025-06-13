@@ -25,6 +25,7 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
 import org.eclipse.paho.mqttv5.common.packet.UserProperty;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
@@ -46,13 +47,18 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaAdminSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaConsumerSettings;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.TbKafkaProducerSettings;
+import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.testing.integration.executor.ExternalExecutorService;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
@@ -88,11 +94,20 @@ public abstract class AbstractPubSubIntegrationTest {
         System.setProperty("tbmq.graceful.shutdown.timeout.sec", "1");
     }
 
+    @Before
+    public void beforeTest() throws Exception {
+        resetMqttAuthProvidersToDefaultConfiguration();
+    }
+
     @Autowired
     @Lazy
     protected BCryptPasswordEncoder passwordEncoder;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttAuthProviderService mqttAuthProviderService;
+    @Autowired
+    protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
     @Autowired
     @Lazy
     protected ExternalExecutorService externalExecutorService;
@@ -123,7 +138,7 @@ public abstract class AbstractPubSubIntegrationTest {
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
         @Override
-        protected void before() throws Throwable {
+        protected void before() {
             redis.start();
             System.setProperty("redis.connection.type", "standalone");
             System.setProperty("redis.standalone.host", redis.getHost());
@@ -175,4 +190,41 @@ public abstract class AbstractPubSubIntegrationTest {
         pubOptions.setUserName(username);
         return pubOptions;
     }
+
+    protected MqttAuthProvider getMqttAuthProvider(MqttAuthProviderType type) {
+        return mqttAuthProviderService.getAuthProviderByType(type)
+                .orElseThrow(() -> new IllegalStateException("No " + type.getDisplayName() + " provider found!"));
+    }
+
+    protected void enableBasicProvider() {
+        enableProvider(MqttAuthProviderType.MQTT_BASIC);
+    }
+
+    protected void enabledScramProvider() {
+        enableProvider(MqttAuthProviderType.SCRAM);
+    }
+
+    private void enableProvider(MqttAuthProviderType type) {
+        MqttAuthProvider provider = getMqttAuthProvider(type);
+        if (!provider.isEnabled()) {
+            mqttAuthProviderManagerService.enableAuthProvider(provider.getId());
+        }
+    }
+
+    private void resetMqttAuthProvidersToDefaultConfiguration() {
+        Arrays.stream(MqttAuthProviderType.values()).forEach(this::resetMqttAuthProviderToDefaultConfiguration);
+    }
+
+    private void resetMqttAuthProviderToDefaultConfiguration(MqttAuthProviderType type) {
+        MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(type);
+        mqttAuthProvider.setEnabled(false);
+        switch (type) {
+            case MQTT_BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider(false).getConfiguration());
+            case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider(false).getConfiguration());
+            case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider(false).getConfiguration());
+            case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider(false).getConfiguration());
+        }
+        mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
+    }
+
 }

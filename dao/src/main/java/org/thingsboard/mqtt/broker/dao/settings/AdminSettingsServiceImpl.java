@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.HostNameValidator;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -69,8 +69,8 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
             log.trace("Executing saveAdminSettings [{}]", adminSettings);
         }
         adminSettingsDataValidator.validate(adminSettings);
-        if (adminSettings.getKey().equals("mail") && !adminSettings.getJsonValue().has("password")) {
-            AdminSettings mailSettings = findAdminSettingsByKey("mail");
+        if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey()) && !adminSettings.getJsonValue().has("password")) {
+            AdminSettings mailSettings = findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey());
             if (mailSettings != null) {
                 ((ObjectNode) adminSettings.getJsonValue()).put("password", mailSettings.getJsonValue().get("password").asText());
             }
@@ -115,7 +115,7 @@ public class AdminSettingsServiceImpl implements AdminSettingsService {
                     if (adminSettings.getJsonValue() == null) {
                         throw new DataValidationException("Admin Settings json should be specified!");
                     }
-                    if (adminSettings.getKey().equals(BrokerConstants.CONNECTIVITY_KEY)) {
+                    if (adminSettings.getKey().equals(SysAdminSettingType.CONNECTIVITY.getKey())) {
                         Map<String, ConnectivityInfo> connectivityInfoMap = JacksonUtil.convertValue(adminSettings.getJsonValue(), new TypeReference<>() {
                         });
                         if (connectivityInfoMap != null) {

@@ -21,7 +21,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { SubscriptSizing, MatFormField, MatLabel } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField } from '@angular/material/form-field';
 import { isDefinedAndNotNull, isEqual } from '@core/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
@@ -29,6 +29,7 @@ import { MatInput } from '@angular/material/input';
 import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
+import { MatDivider } from '@angular/material/divider';
 
 @Component({
     selector: 'tb-key-val-map',
@@ -46,7 +47,7 @@ import { MatIcon } from '@angular/material/icon';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatLabel]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatDivider]
 })
 export class KeyValMapComponent extends PageComponent implements ControlValueAccessor, OnInit, OnDestroy, Validator {
 
@@ -57,12 +58,14 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
   readonly keyPlaceholderText = input<string>();
   readonly valuePlaceholderText = input<string>();
   readonly noDataText = input<string>();
+  readonly singleMode = input<boolean>(false);
   readonly singlePredefinedKey = input<string>();
+  readonly singlePredefinedValue = input<string>();
   readonly addText = input<string>('action.add');
   readonly keyLabel = input<string>('key-val.key');
   readonly valueLabel = input<string>('key-val.value');
-  readonly isStrokedButton = input(false);
-  readonly subscriptSizing = input<SubscriptSizing>('fixed');
+  readonly isStrokedButton = input(true);
+  readonly subscriptSizing = input<SubscriptSizing>('dynamic');
 
   kvListFormGroup: UntypedFormGroup;
   private destroy$ = new Subject<void>();
@@ -121,7 +124,7 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
       }
     }
     this.kvListFormGroup.setControl('keyVals', this.fb.array(keyValsControls), {emitEvent: false});
-    if (this.isSinglePredefinedKey && !keyValsControls.length) {
+    if (this.isSingleMode && this.isSinglePredefinedKey && !keyValsControls.length) {
       this.addKeyVal();
     }
     if (this.disabled) {
@@ -136,10 +139,13 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
   }
 
   public addKeyVal() {
-    const keyValsFormArray = this.kvListFormGroup.get('keyVals') as UntypedFormArray;
+    const keyValsFormArray = this.keyValsFormArray();
+    const isFirstKey = keyValsFormArray.length === 0;
     keyValsFormArray.push(this.fb.group({
-      key: [this.isSinglePredefinedKey ? this.singlePredefinedKey() : '', [Validators.required]],
-      value: ['', this.isValueRequired() ? [Validators.required] : []]
+      key: [this.isSinglePredefinedKey && isFirstKey ? this.singlePredefinedKey() : null,
+        this.isValueRequired() ? [Validators.required] : []],
+      value: [this.isSinglePredefinedValue && isFirstKey ? this.singlePredefinedValue() : null,
+        this.isValueRequired() ? [Validators.required] : []]
     }));
   }
 
@@ -148,11 +154,15 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
   }
 
   get isSingleMode(): boolean {
-    return isDefinedAndNotNull(this.singlePredefinedKey());
+    return this.singleMode();
   }
 
   get isSinglePredefinedKey(): boolean {
     return isDefinedAndNotNull(this.singlePredefinedKey());
+  }
+
+  get isSinglePredefinedValue(): boolean {
+    return isDefinedAndNotNull(this.singlePredefinedValue());
   }
 
   private updateModel() {

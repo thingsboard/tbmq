@@ -48,6 +48,14 @@ CREATE TABLE IF NOT EXISTS user_credentials (
     user_id uuid UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS mqtt_auth_provider (
+    id uuid NOT NULL CONSTRAINT mqtt_auth_provider_pkey PRIMARY KEY,
+    created_time bigint NOT NULL,
+    enabled boolean,
+    type varchar(255) UNIQUE,
+    configuration jsonb
+);
+
 CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     id uuid NOT NULL CONSTRAINT mqtt_client_credentials_pkey PRIMARY KEY,
     created_time bigint NOT NULL,

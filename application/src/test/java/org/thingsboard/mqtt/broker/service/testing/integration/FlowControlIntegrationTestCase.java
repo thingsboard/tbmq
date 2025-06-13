@@ -42,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 @ContextConfiguration(classes = FlowControlIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.max-in-flight-msgs=500",
-        "security.mqtt.basic.enabled=false"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)

@@ -43,7 +43,7 @@ import {
   ClientCredentialsFilterConfig,
   clientCredentialsFilterConfigEquals,
   credentialsTypeTranslationMap,
-  CredentialsType
+  CredentialsTypes
 } from '@shared/models/credentials.model';
 import { NgTemplateOutlet } from '@angular/common';
 import { MatButton } from '@angular/material/button';
@@ -89,7 +89,7 @@ export class ClientCredentialsFilterConfigComponent implements OnInit, OnDestroy
   clientTypes = Object.values(ClientType);
   clientTypeTranslationMap = clientTypeTranslationMap;
   clientTypeIcon = clientTypeIcon;
-  clientCredentialsTypes = Object.values(CredentialsType);
+  clientCredentialsTypes = CredentialsTypes;
   clientCredentialsTypeTranslationMap = credentialsTypeTranslationMap;
   panelMode = false;
   buttonDisplayValue = this.translate.instant('mqtt-client-credentials.filter-title');

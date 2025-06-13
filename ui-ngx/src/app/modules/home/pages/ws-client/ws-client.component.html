@@ -40,7 +40,12 @@
         <section class="client-section auto-flex">
           <tb-ws-subscriptions></tb-ws-subscriptions>
         </section>
-        <section class="client-section">
+        <section class="client-section pr-4 pl-4 flex flex-row gap-4 items-between">
+          <tb-help-page [label]="'ws-client.settings'"
+                        [page]="'/settings/general'"
+                        [icon]="'settings'"
+                        [tooltip]="'ws-client.settings-navigate'">
+          </tb-help-page>
           <tb-help-page [page]="'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'"></tb-help-page>
         </section>
       </section>

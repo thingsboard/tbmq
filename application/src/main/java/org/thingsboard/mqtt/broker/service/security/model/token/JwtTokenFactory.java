@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+// TODO: switch to Nimbus JOSE + JWT
 @Component
 @Slf4j
 public class JwtTokenFactory {

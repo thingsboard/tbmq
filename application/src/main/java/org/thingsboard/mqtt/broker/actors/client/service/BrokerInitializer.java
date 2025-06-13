@@ -40,6 +40,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceM
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
+import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsConsumer;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
@@ -77,6 +78,7 @@ public class BrokerInitializer {
     private final DeviceMsgQueueConsumer deviceMsgQueueConsumer;
     private final BasicDownLinkConsumer basicDownLinkConsumer;
     private final PersistentDownLinkConsumer persistentDownLinkConsumer;
+    private final InternodeNotificationsConsumer internodeNotificationsConsumer;
 
     @EventListener(ApplicationReadyEvent.class)
     @Order(value = 1)
@@ -157,6 +159,7 @@ public class BrokerInitializer {
         deviceMsgQueueConsumer.startConsuming();
         basicDownLinkConsumer.startConsuming();
         persistentDownLinkConsumer.startConsuming();
+        internodeNotificationsConsumer.startConsuming();
     }
 
     void initClientSubscriptions(Map<String, ClientSessionInfo> allClientSessions) throws QueuePersistenceException {

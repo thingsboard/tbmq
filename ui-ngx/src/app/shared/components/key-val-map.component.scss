@@ -24,5 +24,12 @@
         color: rgba(0, 0, 0, .38);
       }
     }
+
+    .tb-title + div > span {
+      flex: 1 1 0%;
+      font-weight: 400;
+      color: rgba(0, 0, 0, 0.54);
+      padding-bottom: 12px;
+    }
   }
 }

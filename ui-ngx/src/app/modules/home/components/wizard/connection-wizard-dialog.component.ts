@@ -27,8 +27,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
-import { isDefinedAndNotNull, isNotEmptyStr, isObject, saveTopicsToLocalStorage } from '@core/utils';
-import { CredentialsType } from '@shared/models/credentials.model';
+import { isDefinedAndNotNull, isObject, saveTopicsToLocalStorage } from '@core/utils';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import {
@@ -94,7 +93,6 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   lastWillFormGroup: UntypedFormGroup;
   userPropertiesFormGroup: UntypedFormGroup;
 
-  credentialsType = CredentialsType;
   credentialsGeneratorType = WsCredentialsGeneratorType.AUTO;
 
   clientType = ClientType;

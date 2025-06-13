@@ -31,6 +31,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
@@ -73,7 +74,7 @@ public class DefaultMailService implements MailService {
 
     @Override
     public void updateMailConfiguration() {
-        AdminSettings settings = adminSettingsService.findAdminSettingsByKey("mail");
+        AdminSettings settings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey());
         if (settings != null) {
             JsonNode jsonConfig = settings.getJsonValue();
             mailSender = createMailSender(jsonConfig);

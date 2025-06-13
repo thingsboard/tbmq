@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.install.data;
 
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 
@@ -26,7 +27,7 @@ public class ConnectivitySettings {
 
     public static AdminSettings createConnectivitySettings() {
         AdminSettings connectivitySettings = new AdminSettings();
-        connectivitySettings.setKey(BrokerConstants.CONNECTIVITY_KEY);
+        connectivitySettings.setKey(SysAdminSettingType.CONNECTIVITY.getKey());
 
         Map<String, ConnectivityInfo> connectivityInfoMap = Map.of(
                 BrokerConstants.MQTT_CONNECTIVITY, new ConnectivityInfo(false, "", "1883"),

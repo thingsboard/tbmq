@@ -54,7 +54,7 @@ public abstract class AbstractQoSVerificationIntegrationTestCase extends Abstrac
     MqttClient subClient;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         log.warn("Before test start...");
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, TEST_SUB_UN)

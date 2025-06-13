@@ -45,7 +45,6 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppClientsLimitIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true",
         "mqtt.application-clients-limit=1"
 })
 @DaoSqlTest
@@ -63,10 +62,11 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
     private MqttClient persistedClient;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(null, APP_CLIENTS_LIMIT_USER_NAME)
         );
+        enableBasicProvider();
     }
 
     @After

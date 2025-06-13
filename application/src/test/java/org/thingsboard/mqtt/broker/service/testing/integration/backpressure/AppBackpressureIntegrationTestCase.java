@@ -55,7 +55,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppBackpressureIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true",
         "listener.write_buffer_high_water_mark=64",
         "listener.write_buffer_low_water_mark=32"
 })
@@ -75,10 +74,11 @@ public class AppBackpressureIntegrationTestCase extends AbstractPubSubIntegratio
     private String appClientId;
 
     @Before
-    public void init() throws Exception {
+    public void beforeTest() throws Exception {
         appClientId = RandomStringUtils.randomAlphabetic(15);
         applicationCredentials = credentialsService.saveCredentials(TestUtils.createApplicationClientCredentials(appClientId, null));
         defaultCredentials = credentialsService.saveSystemWebSocketCredentials();
+        enableBasicProvider();
     }
 
     @After

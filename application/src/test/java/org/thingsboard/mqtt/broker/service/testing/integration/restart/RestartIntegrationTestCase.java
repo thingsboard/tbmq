@@ -71,7 +71,8 @@ public class RestartIntegrationTestCase extends AbstractPubSubIntegrationTest {
     private MqttClient persistedClient;
 
     @Before
-    public void init() throws Exception {
+    public void beforeTest() throws Exception {
+        super.beforeTest();
         persistedClient = initClient();
     }
 

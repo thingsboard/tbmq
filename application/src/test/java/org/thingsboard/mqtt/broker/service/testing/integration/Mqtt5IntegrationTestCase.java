@@ -25,15 +25,12 @@ import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
 import org.eclipse.paho.mqttv5.common.MqttMessage;
 import org.eclipse.paho.mqttv5.common.MqttSubscription;
 import org.eclipse.paho.mqttv5.common.packet.MqttProperties;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
@@ -46,22 +43,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = Mqtt5IntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=false"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class Mqtt5IntegrationTestCase extends AbstractPubSubIntegrationTest {
 
     static final String MY_TOPIC = "my/topic";
-
-    @Before
-    public void init() throws Exception {
-    }
-
-    @After
-    public void clear() {
-    }
 
     @Test
     public void testSendLastWillOnDisconnectMsgWithSpecialReasonCode() throws Throwable {

@@ -22,7 +22,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.adaptor.ProtoConverter;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
@@ -47,7 +46,6 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
     private final RetainedMsgPersistenceService retainedMsgPersistenceService;
     private final ServiceInfoProvider serviceInfoProvider;
     private final StatsManager statsManager;
-    private final RetainedMsgSystemRequestProcessor retainedMsgSystemRequestProcessor;
 
     private ConcurrentMap<String, RetainedMsg> retainedMessagesMap;
 
@@ -174,21 +172,7 @@ public class RetainedMsgListenerServiceImpl implements RetainedMsgListenerServic
         return new ArrayList<>(collect);
     }
 
-    @Override
-    public void distributeRequestUsingRetainedMsg(RetainedMsg retainedMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing distributeRequestUsingRetainedMsg {}.", retainedMsg);
-        }
-        RetainedMsgProto retainedMsgProto = ProtoConverter.convertToRetainedMsgProto(retainedMsg);
-        retainedMsgPersistenceService.persistRetainedMsgAsync(retainedMsg.getTopic(), retainedMsgProto, null);
-    }
-
     private void processRetainedMsgUpdate(String topic, String serviceId, RetainedMsg retainedMsg) {
-        if (topic.equals(BrokerConstants.CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME)) {
-            retainedMsgSystemRequestProcessor.processClientSessionStatsCleanup(retainedMsg);
-            return;
-        }
-
         if (serviceInfoProvider.getServiceId().equals(serviceId)) {
             if (log.isTraceEnabled()) {
                 log.trace("[{}] Msg was already processed.", topic);

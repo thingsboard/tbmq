@@ -16,49 +16,64 @@
 
 -->
 <section class="tb-kv-map flex flex-col" [formGroup]="kvListFormGroup">
-  <label translate class="tb-title">{{ titleText() }}</label>
-  @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
-    <div class="flex flex-row items-center justify-start gap-2" formArrayName="keyVals">
-      <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
-        subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
-        @if ($index === 0 && keyLabel()) {
-          <mat-label translate>{{keyLabel()}}</mat-label>
-        }
-        <input [formControl]="keyValControl.get('key')" matInput required
-          placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'key-val.key') | translate }}"/>
-      </mat-form-field>
-      <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
-        subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
-        @if ($index === 0 && valueLabel()) {
-          <mat-label translate>{{valueLabel()}}</mat-label>
-        }
-        <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
-          placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'key-val.value') | translate }}"/>
-      </mat-form-field>
-      <button mat-icon-button color="primary"
-        style="top: 4px; align-self: baseline"
-        [class.!hidden]="disabled"
-        type="button"
-        (click)="removeKeyVal($index)"
-        [disabled]="isLoading$ | async"
-        matTooltip="{{ 'key-val.remove-entry' | translate }}"
-        matTooltipPosition="above">
-        <mat-icon>close</mat-icon>
-      </button>
+  <section class="security-setting">
+    <label translate class="tb-title">{{ titleText() }}</label>
+    @if (keyValsFormArray().length) {
+      <div class="flex flex-row items-center justify-start gap-3 pt-4">
+        <span class="pl-4" translate>{{keyLabel()}}</span>
+        <span class="pr-4" translate>{{valueLabel()}}</span>
+        <div class="w-[48px]"></div>
+      </div>
+      <mat-divider style="width: 100%" class="pb-4"></mat-divider>
+    }
+    <div class="flex w-full flex-col gap-3 pb-3">
+      @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
+        <div class="flex flex-row items-center justify-start gap-3 px-4" formArrayName="keyVals">
+          <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
+                          subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+            <input [formControl]="keyValControl.get('key')" matInput required
+                   placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'action.set') | translate }}"/>
+          </mat-form-field>
+          <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
+                          subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+            <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
+                   placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'action.set') | translate }}"/>
+          </mat-form-field>
+          <button mat-icon-button
+                  style="top: 4px; align-self: baseline"
+                  [class.!hidden]="disabled"
+                  type="button"
+                  (click)="removeKeyVal($index)"
+                  [disabled]="isLoading$ | async"
+                  matTooltip="{{ 'key-val.remove-entry' | translate }}"
+                  matTooltipPosition="above">
+            <mat-icon style="color: rgba(0,0,0,0.54)" svgIcon="mdi:trash-can-outline"></mat-icon>
+          </button>
+        </div>
+      }
     </div>
-  }
-  <span [class]="{
-          'disabled': disabled,
-          '!hidden': keyValsFormArray().length
-        }"
-  class="no-data-found flex items-center justify-center" translate>{{noDataText() ? noDataText() : 'key-val.no-data'}}</span>
+    <span [class]="{ 'disabled': disabled, '!hidden': keyValsFormArray().length}"
+          class="no-data-found flex items-center justify-center" translate>
+      {{ noDataText() ? noDataText() : 'key-val.no-data' }}
+    </span>
+  </section>
   <div style="margin-top: 8px;">
     @if (isStrokedButton()) {
-      <button mat-button mat-stroked-button color="primary"
+      <button mat-stroked-button color="primary"
         [class.!hidden]="disabled || (isSingleMode && keyValsFormArray().length)"
         [disabled]="isLoading$ | async"
         (click)="addKeyVal()"
-        type="button" style="width: 100%"
+        type="button"
+        matTooltip="{{ 'key-val.add-entry' | translate }}"
+        matTooltipPosition="above">
+        {{ addText() | translate }}
+      </button>
+    } @else {
+      <button mat-raised-button color="primary"
+        [class.!hidden]="disabled || (isSingleMode && keyValsFormArray().length)"
+        [disabled]="isLoading$ | async"
+        (click)="addKeyVal()"
+        type="button"
         matTooltip="{{ 'key-val.add-entry' | translate }}"
         matTooltipPosition="above">
         {{ addText() | translate }}

@@ -76,6 +76,7 @@ public class ThingsboardMqttBrokerInstallService {
 
                 systemDataLoaderService.createAdmin();
                 systemDataLoaderService.createAdminSettings();
+                systemDataLoaderService.createMqttAuthProviders();
                 systemDataLoaderService.createWebSocketMqttClientCredentials();
                 systemDataLoaderService.createDefaultWebSocketConnection();
 

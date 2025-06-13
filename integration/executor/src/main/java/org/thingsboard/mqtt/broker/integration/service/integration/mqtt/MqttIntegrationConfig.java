@@ -19,8 +19,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.AnonymousCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.AnonymousCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 
 import java.util.Objects;
 

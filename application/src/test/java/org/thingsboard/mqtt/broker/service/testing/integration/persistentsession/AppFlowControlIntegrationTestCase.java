@@ -34,7 +34,6 @@ import org.thingsboard.mqtt.broker.service.testing.integration.parent.AbstractFl
 @ContextConfiguration(classes = AppFlowControlIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @TestPropertySource(properties = {
         "mqtt.max-in-flight-msgs=500",
-        "security.mqtt.basic.enabled=true",
         "queue.kafka.application-persisted-msg.additional-consumer-config=fetch.min.bytes:1000"
 })
 @DaoSqlTest
@@ -44,8 +43,9 @@ public class AppFlowControlIntegrationTestCase extends AbstractFlowControlIntegr
     private static final String APP_FLOW_CONTROL_CLIENT = "appFlowControlClient";
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         super.init(TestUtils.createApplicationClientCredentials(null, FLOW_CONTROL_USER_NAME));
+        enableBasicProvider();
     }
 
     @After

@@ -17,8 +17,8 @@
 -->
 <button mat-stroked-button color="primary"
         (click)="navigate()"
-        [matTooltip]="'help.goto-help-page' | translate">
-  <mat-icon color="primary" class="material-icons">help</mat-icon>
-  <span translate>help.help-page</span>
+        [matTooltip]="tooltip() | translate">
+  <mat-icon color="primary" class="material-icons">{{ icon() }}</mat-icon>
+  <span translate>{{ label() }}</span>
 </button>
 

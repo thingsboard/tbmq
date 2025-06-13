@@ -23,8 +23,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.integration.api.data.ContentType;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.AnonymousCredentials;
-import org.thingsboard.mqtt.broker.integration.service.integration.credentials.ClientCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.AnonymousCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 
 import java.util.Map;
 import java.util.Objects;

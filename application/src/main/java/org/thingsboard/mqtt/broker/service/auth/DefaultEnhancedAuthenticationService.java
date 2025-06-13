@@ -22,7 +22,11 @@ import org.apache.kafka.common.security.scram.internals.ScramSaslServer;
 import org.apache.kafka.common.security.scram.internals.ScramSaslServerProvider;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContext;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
@@ -36,12 +40,14 @@ import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_CHALLENGE_FAILED;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.AUTH_METHOD_MISMATCH;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FINAL_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_FIRST_MESSAGE_EVALUATION_ERROR;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR;
+import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.ENHANCED_AUTH_DISABLED;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.FAILED_TO_INIT_SCRAM_SERVER;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_DATA;
 import static org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFailure.MISSING_AUTH_METHOD;
@@ -57,14 +63,25 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     private final MqttClientCredentialsService credentialsService;
     private final AuthorizationRuleService authorizationRuleService;
+    private final MqttAuthProviderService mqttAuthProviderService;
+
+    private volatile boolean enabled;
+    private volatile ScramMqttAuthProviderConfiguration configuration;
 
     @PostConstruct
     public void init() {
         ScramSaslServerProvider.initialize();
+        MqttAuthProvider scramAuthProvider = mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM)
+                .orElseThrow(() -> new IllegalStateException("Failed to initialize SCRAM MQTT 5 Enhanced authentication provider! Provider is missing in the DB!"));
+        enabled = scramAuthProvider.isEnabled();
+        configuration = (ScramMqttAuthProviderConfiguration) scramAuthProvider.getConfiguration();
     }
 
     @Override
     public EnhancedAuthContinueResponse onClientConnectMsg(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        if (!enabled) {
+            return EnhancedAuthContinueResponse.failure(ENHANCED_AUTH_DISABLED);
+        }
         String clientId = authContext.getClientId();
         String authMethod = authContext.getAuthMethod();
         boolean initiated = initiateScramServerWithCallback(clientId, authMethod, sessionCtx);
@@ -83,6 +100,9 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     @Override
     public EnhancedAuthContinueResponse onReAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        if (!enabled) {
+            return EnhancedAuthContinueResponse.failure(ENHANCED_AUTH_DISABLED);
+        }
         String clientId = authContext.getClientId();
         String authMethodFromConnect = sessionCtx.getAuthMethod();
         String authMethod = authContext.getAuthMethod();
@@ -120,6 +140,22 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
         var response = processAuthContinue(sessionCtx, authContext);
         logFinalResponse(authContext, response, true);
         return response;
+    }
+
+    @Override
+    public void onProviderUpdate(boolean enabled, ScramMqttAuthProviderConfiguration configuration) {
+        this.enabled = enabled;
+        this.configuration = configuration;
+    }
+
+    @Override
+    public void enable() {
+        this.enabled = true;
+    }
+
+    @Override
+    public void disable() {
+        this.enabled = false;
     }
 
     private EnhancedAuthFinalResponse processAuthContinue(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {

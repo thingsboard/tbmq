@@ -22,44 +22,91 @@ import { ConfirmOnExitGuard } from '@core/guards/confirm-on-exit.guard';
 import { entityDetailsPageBreadcrumbLabelFunction } from '@home/pages/home-pages.models';
 import { BreadCrumbConfig } from '@shared/components/breadcrumb';
 import { ClientCredentialsTableConfigResolver } from '@home/pages/client-credentials/client-credentials-table-config.resolver';
+import { MqttAuthProviderTableConfigResolver } from '@home/pages/authentication/mqtt-auth-provider-table-config-resolver.service';
 
 const routes: Routes = [
   {
-    path: 'client-credentials',
+    path: 'authentication',
+    loadComponent: () => import('@home/components/router-tabs.component').then(m => m.RouterTabsComponent),
     data: {
       auth: [Authority.SYS_ADMIN],
       breadcrumb: {
-        label: 'mqtt-client-credentials.client-credentials',
+        label: 'authentication.authentication',
         icon: 'mdi:shield-lock'
       }
     },
     children: [
       {
         path: '',
-        loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
+        children: [],
         data: {
           auth: [Authority.SYS_ADMIN],
-          title: 'mqtt-client-credentials.client-credentials'
-        },
-        resolve: {
-          entitiesTableConfig: ClientCredentialsTableConfigResolver
+          redirectTo: {
+            SYS_ADMIN: '/authentication/client-credentials'
+          }
         }
       },
       {
-        path: ':entityId',
-        loadComponent: () => import('@home/components/entity/entity-details-page.component').then(m => m.EntityDetailsPageComponent),
-        canDeactivate: [ConfirmOnExitGuard],
+        path: 'client-credentials',
         data: {
-          breadcrumb: {
-            labelFunction: entityDetailsPageBreadcrumbLabelFunction,
-            icon: 'mdi:shield-lock'
-          } as BreadCrumbConfig<EntityDetailsPageComponent>,
           auth: [Authority.SYS_ADMIN],
-          title: 'mqtt-client-credentials.client-credentials',
+          breadcrumb: {
+            label: 'mqtt-client-credentials.credentials',
+            icon: 'mdi:account-lock-outline'
+          }
         },
-        resolve: {
-          entitiesTableConfig: ClientCredentialsTableConfigResolver
-        }
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
+            data: {
+              auth: [Authority.SYS_ADMIN],
+              title: 'mqtt-client-credentials.client-credentials'
+            },
+            resolve: {
+              entitiesTableConfig: ClientCredentialsTableConfigResolver
+            },
+          },
+          {
+            path: ':entityId',
+            loadComponent: () => import('@home/components/entity/entity-details-page.component').then(m => m.EntityDetailsPageComponent),
+            canDeactivate: [ConfirmOnExitGuard],
+            data: {
+              breadcrumb: {
+                labelFunction: entityDetailsPageBreadcrumbLabelFunction,
+                icon: 'mdi:account-lock-outline'
+              } as BreadCrumbConfig<EntityDetailsPageComponent>,
+              auth: [Authority.SYS_ADMIN],
+              title: 'mqtt-client-credentials.client-credentials',
+            },
+            resolve: {
+              entitiesTableConfig: ClientCredentialsTableConfigResolver
+            }
+          },
+        ]
+      },
+      {
+        path: 'providers',
+        data: {
+          auth: [Authority.SYS_ADMIN],
+          breadcrumb: {
+            label: 'authentication.providers',
+            icon: 'settings'
+          }
+        },
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('@home/components/entity/entities-table.component').then(m => m.EntitiesTableComponent),
+            data: {
+              auth: [Authority.SYS_ADMIN],
+              title: 'authentication.providers'
+            },
+            resolve: {
+              entitiesTableConfig: MqttAuthProviderTableConfigResolver
+            },
+          },
+        ]
       }
     ]
   }
@@ -69,7 +116,8 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
   providers: [
-    ClientCredentialsTableConfigResolver
+    ClientCredentialsTableConfigResolver,
+    MqttAuthProviderTableConfigResolver
   ]
 })
 

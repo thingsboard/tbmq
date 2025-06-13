@@ -36,9 +36,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.thingsboard.mqtt.broker.service.auth.providers.BasicAuthFailure.CAN_NOT_PARSE_BASIC_CREDS;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.CAN_NOT_PARSE_SSL_CREDS;
-import static org.thingsboard.mqtt.broker.service.auth.providers.SslAuthFailure.NO_AUTH_RULES_FOR_CN_IN_CREDS;
+import static org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicAuthFailure.CAN_NOT_PARSE_PUB_SUB_RULES;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.CAN_NOT_PARSE_SSL_CREDS;
+import static org.thingsboard.mqtt.broker.service.auth.providers.ssl.SslAuthFailure.NO_AUTH_RULES_FOR_CN_IN_CREDS;
 
 @Service
 @Slf4j
@@ -78,7 +78,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
     @Override
     public AuthRulePatterns parseAuthorizationRule(SinglePubSubAuthRulesAware credentials) throws AuthenticationException {
         if (credentials == null) {
-            throw new AuthenticationException(CAN_NOT_PARSE_BASIC_CREDS.getErrorMsg());
+            throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
         }
         return newAuthRulePatterns(credentials.getAuthRules());
     }

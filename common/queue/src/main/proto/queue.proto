@@ -127,6 +127,41 @@ message DisconnectClientCommandProto {
   optional string reasonType = 4;
 }
 
+enum MqttAuthProviderEventProto {
+  PROVIDER_UPDATED = 0;
+  PROVIDER_ENABLED = 1;
+  PROVIDER_DISABLED = 2;
+}
+
+enum MqttAuthProviderTypeProto {
+  MQTT_BASIC = 0;
+  X_509 = 1;
+  JWT = 2;
+  SCRAM = 3;
+}
+
+message MqttAuthSettingsProto {
+  repeated MqttAuthProviderTypeProto priorities = 1;
+  bool useListenerBasedProviderOnly = 2;
+}
+
+message MqttAuthProviderProto {
+  MqttAuthProviderEventProto eventType = 1;
+  optional MqttAuthProviderTypeProto providerType = 2;
+  optional bool enabled = 3;
+  optional string configuration = 4;
+}
+
+message ClientSessionStatsCleanupProto {
+  string clientId = 1;
+}
+
+message InternodeNotificationProto {
+  MqttAuthSettingsProto mqttAuthSettingsProto = 1;
+  MqttAuthProviderProto mqttAuthProviderProto = 2;
+  ClientSessionStatsCleanupProto clientSessionStatsCleanupProto = 3;
+}
+
 message DevicePublishMsgProto {
   int64 serialNumber = 1;
   int64 time = 2;

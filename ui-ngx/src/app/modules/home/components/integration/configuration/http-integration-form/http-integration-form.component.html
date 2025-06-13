@@ -65,13 +65,15 @@
       </tb-integration-credentials>
       <section class="security-setting mat-padding">
         <p translate>integration.headers</p>
-        <tb-header-filter-map
+        <tb-key-val-map
+          formControlName="headers"
           class="security-setting-content"
           noDataText="integration.no-headers-filter"
-          keyPlaceholderText="integration.header"
-          isStrokedButton="true"
-          formControlName="headers">
-        </tb-header-filter-map>
+          addText="key-val.add-header"
+          keyLabel="integration.header"
+          singlePredefinedKey="Content-Type"
+          singlePredefinedValue="application/json">
+        </tb-key-val-map>
       </section>
     </section>
     <ng-container [ngTemplateOutlet]="executeRemotelyTemplate()">

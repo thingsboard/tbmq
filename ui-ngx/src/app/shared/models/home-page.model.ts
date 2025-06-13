@@ -172,20 +172,21 @@ export const SessionsHomeCardConfig: HomeCardFilter[] = [{
     }
   }];
 
-export const CredentialsHomeCardConfig = [{
-  key: 'deviceCredentialsCount',
-  label: 'mqtt-client-credentials.type-devices',
-  path: '/client-credentials',
-  value: 0,
-  type: HomeCardType.CLIENT_CREDENTIALS,
-  filter: {
-    clientTypeList: [ClientType.DEVICE]
-  }
-},
+export const CredentialsHomeCardConfig = [
+  {
+    key: 'deviceCredentialsCount',
+    label: 'mqtt-client-credentials.type-devices',
+    path: '/authentication/client-credentials',
+    value: 0,
+    type: HomeCardType.CLIENT_CREDENTIALS,
+    filter: {
+      clientTypeList: [ClientType.DEVICE]
+    }
+  },
   {
     key: 'applicationCredentialsCount',
     label: 'mqtt-client-credentials.type-applications',
-    path: '/client-credentials',
+    path: '/authentication/client-credentials',
     value: 0,
     type: HomeCardType.CLIENT_CREDENTIALS,
     filter: {
@@ -195,7 +196,7 @@ export const CredentialsHomeCardConfig = [{
   {
     key: 'totalCount',
     label: 'home.total',
-    path: '/client-credentials',
+    path: '/authentication/client-credentials',
     value: 0,
     type: HomeCardType.CLIENT_CREDENTIALS,
     filter: {

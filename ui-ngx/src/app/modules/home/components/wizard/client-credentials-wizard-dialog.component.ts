@@ -28,7 +28,7 @@ import { StepperSelectionEvent } from '@angular/cdk/stepper';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
 import { deepTrim, isDefinedAndNotNull } from '@core/utils';
-import { ClientCredentials, CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
+import { ClientCredentials, CredentialsType, CredentialsTypes, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
@@ -61,27 +61,16 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
   readonly addClientCredentialsWizardStepper = viewChild<MatStepper>('addClientCredentialsWizardStepper');
 
   stepperOrientation: Observable<StepperOrientation>;
-
   stepperLabelPosition: Observable<'bottom' | 'end'>;
-
   selectedIndex = 0;
-
   showNext = true;
-
   CredentialsType = CredentialsType;
-
   ClientType = ClientType;
-
-  CredentialsTypes = Object.values(CredentialsType);
-
+  CredentialsTypes = CredentialsTypes;
   credentialsTypeTranslationMap = credentialsTypeTranslationMap;
-
   clientTypeTranslationMap = clientTypeTranslationMap;
-
   clientTypes = Object.values(ClientType);
-
   clientCredentialsWizardFormGroup: UntypedFormGroup;
-
   authenticationFormGroup: UntypedFormGroup;
 
   constructor(protected store: Store<AppState>,
