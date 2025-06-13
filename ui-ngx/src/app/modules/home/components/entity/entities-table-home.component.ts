@@ -60,7 +60,7 @@ import { TbAnchorComponent } from '@shared/components/tb-anchor.component';
 import { isDefined, isEqual, isUndefined } from '@core/utils';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { MediaBreakpoints } from '@shared/models/constants';
-import { homePageTitleConfig, HomePageTitleType } from "@shared/models/home-page.model";
+import { homePageTitleConfig, HomePageTitleType } from '@shared/models/home-page.model';
 import { FullscreenDirective } from '@shared/components/fullscreen.directive';
 import { MatToolbar } from '@angular/material/toolbar';
 import { AsyncPipe } from '@angular/common';

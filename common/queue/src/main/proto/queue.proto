@@ -210,3 +210,26 @@ message SystemInfoProto {
   optional int64 diskUsage = 5;
   optional int64 totalDiskSpace = 6;
 }
+
+enum BlockedClientTypeProto {
+  UNKNOWN_TYPE = 0;
+  CLIENT_ID = 1;
+  USERNAME = 2;
+  IP_ADDRESS = 3;
+  REGEX = 4;
+}
+
+enum RegexMatchTargetProto {
+  UNKNOWN_FIELD = 0;
+  BY_CLIENT_ID = 1;
+  BY_USERNAME = 2;
+  BY_IP_ADDRESS = 3;
+}
+
+message BlockedClientProto {
+  BlockedClientTypeProto type = 1;
+  int64 expirationTime = 2;
+  optional string description = 3;
+  string value = 4;
+  optional RegexMatchTargetProto regexMatchTarget = 5;
+}

@@ -20,9 +20,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.event.EventService;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.concurrent.TimeUnit;
 
@@ -41,10 +41,10 @@ public class EventsCleanUpService extends AbstractServiceProvider {
 
     private final EventService eventService;
 
-    public EventsCleanUpService(TbQueueAdmin tbQueueAdmin,
+    public EventsCleanUpService(SystemInfoService systemInfoService,
                                 ServiceInfoProvider serviceInfoProvider,
                                 EventService eventService) {
-        super(tbQueueAdmin, serviceInfoProvider);
+        super(systemInfoService, serviceInfoProvider);
         this.eventService = eventService;
     }
 

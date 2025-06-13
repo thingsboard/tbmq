@@ -21,7 +21,7 @@ import { DOCUMENT } from '@angular/common';
 import { WINDOW } from '@core/services/window.service';
 import { Tokens, marked, TokenizerObject} from 'marked';
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ConnectivitySettings, defaultConnectivitySettings } from '@shared/models/settings.models';
+import { ConnectivitySettings } from '@shared/models/settings.models';
 
 const copyCodeBlock = '{:copy-code}';
 const codeStyleRegex = '^{:code-style="(.*)"}\n';
@@ -35,16 +35,9 @@ const targetBlankBlock = '{:target=&quot;_blank&quot;}';
 export class MarkedOptionsService implements MarkedOptions {
 
   renderer = new MarkedRenderer();
-  headerIds = true;
-  gfm = true;
   breaks = false;
-  pedantic = false;
-  smartLists = true;
-  smartypants = false;
-  mangle = false;
 
   private renderer2 = new MarkedRenderer();
-
   private id = 1;
 
   constructor(private translate: TranslateService,
@@ -208,7 +201,7 @@ function processCode(code: string): CodeContext {
   };
   if (context.code.endsWith(copyCodeBlock)) {
     // @ts-ignore
-    const connectivitySettings: ConnectivitySettings = window.tbmqSettings || defaultConnectivitySettings;
+    const connectivitySettings: ConnectivitySettings = window.tbmqSettings;
     if (code.includes('{:mqttHost}')) {
       context.code = context.code.replace('{:mqttHost}', connectivitySettings.mqtt.host);
     }

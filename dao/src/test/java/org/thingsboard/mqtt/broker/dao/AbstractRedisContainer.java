@@ -19,25 +19,31 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.ClassRule;
 import org.junit.rules.ExternalResource;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.output.OutputFrame;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class AbstractRedisContainer {
 
     @ClassRule
-    public static GenericContainer redis = new GenericContainer("redis:7.2.5")
+    public static GenericContainer<?> redis = new GenericContainer<>("redis:7.2.5")
             .withExposedPorts(6379)
-            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
+            .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
-            .withCommand("redis-server", "--requirepass", "password");
+            .withCommand("redis-server", "--requirepass", "password")
+            .waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofSeconds(10));
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
             redis.start();
+
+            Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+
             System.setProperty("redis.connection.type", "standalone");
             System.setProperty("redis.standalone.host", redis.getHost());
             System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
@@ -47,7 +53,7 @@ public class AbstractRedisContainer {
         @Override
         protected void after() {
             redis.stop();
-            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port")
+            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port", "redis.password")
                     .forEach(System.getProperties()::remove);
         }
     };

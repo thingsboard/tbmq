@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.actors.client.service.subscription;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionCache;
+import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 
 import java.util.Collection;
@@ -27,6 +28,8 @@ import java.util.Set;
 public interface ClientSubscriptionService extends ClientSubscriptionCache {
 
     void init(Map<SubscriptionsSourceKey, Set<TopicSubscription>> clientTopicSubscriptions);
+
+    void startListening(ClientSubscriptionConsumer consumer);
 
     void subscribeAndPersist(String clientId, Collection<TopicSubscription> topicSubscriptions);
 

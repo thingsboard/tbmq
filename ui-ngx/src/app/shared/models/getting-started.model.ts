@@ -182,8 +182,8 @@ export const gettingStartedActions: GettingStartedLink[] = [
     title: 'getting-started.guide.docs',
     url: 'https://thingsboard.io/docs/mqtt-broker/getting-started/'
   },
-  /*{
+  {
     title: 'getting-started.guide.pricing',
-    url: 'https://thingsboard.io/pricing/?section=mqtt-broker-options'
-  }*/
+    url: 'https://thingsboard.io/pricing/?section=tbmq'
+  }
 ]

@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.common.data.kv.BasicTsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.LongDataEntry;
 import org.thingsboard.mqtt.broker.common.data.kv.TsKvEntry;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
+import org.thingsboard.mqtt.broker.common.data.queue.ServiceType;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardExecutors;
 import org.thingsboard.mqtt.broker.common.util.ThingsBoardThreadFactory;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
@@ -183,7 +184,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
                         case DISK_USAGE -> dto.setDiskUsage(entry.getLongValue().orElse(null));
                         case TOTAL_DISK_SPACE -> dto.setTotalDiskSpace(entry.getLongValue().orElse(null));
                     }
-                    dto.setLastUpdateTime(entry.getTs());
+                    dto.setLastUpdateTime(dto.isDataPresent() ? entry.getTs() : 0L);
                 }
                 dto.setStatus(ServiceStatus.fromLastUpdateTime(dto.getLastUpdateTime()));
                 response.add(dto);
@@ -198,6 +199,15 @@ public class TbmqSystemInfoService implements SystemInfoService {
         if (delete == 0) {
             throw new ThingsboardException("Provided service id is not found!", ThingsboardErrorCode.ITEM_NOT_FOUND);
         }
+    }
+
+    @Override
+    public List<String> getTbmqServiceIds() {
+        return redisTemplate.opsForHash().entries(SERVICE_REGISTRY_KEY)
+                .entrySet().stream()
+                .filter(entry -> ServiceType.TBMQ.equals(ServiceType.valueOf(String.valueOf(entry.getValue()))))
+                .map(entry -> String.valueOf(entry.getKey()))
+                .toList();
     }
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {

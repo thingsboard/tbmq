@@ -20,6 +20,7 @@ export const smtpPortPattern: RegExp = /^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3
 export const connectivitySettingsKey = 'connectivity';
 export const webSocketSettingsKey = 'websocket';
 export const mqttAuthorizationSettingsKey = 'mqttAuthorization';
+export const DEFAULT_HOST = window.location.hostname;
 
 export interface AdminSettings<T> {
   key: string;
@@ -81,26 +82,3 @@ export interface MqttAuthSettings {
   useListenerBasedProviderOnly: boolean;
   priorities: MqttAuthProviderType[];
 }
-
-export const defaultConnectivitySettings = {
-  mqtt: {
-    enabled: false,
-    host: window.location.hostname,
-    port: 1883
-  },
-  mqtts: {
-    enabled: false,
-    host: window.location.hostname,
-    port: 8883
-  },
-  ws: {
-    enabled: false,
-    host: window.location.hostname,
-    port: 8084
-  },
-  wss: {
-    enabled: false,
-    host: window.location.hostname,
-    port: 8085
-  }
-};

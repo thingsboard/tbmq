@@ -119,6 +119,13 @@ export class MenuService {
         icon: 'no_accounts'
       },
       {
+        id: MenuId.blocked_clients,
+        name: 'blocked-client.blocked-clients',
+        type: 'link',
+        path: '/blocked-clients',
+        icon: 'person_off'
+      },
+      {
         id: MenuId.web_socket_client,
         name: 'ws-client.ws-client',
         type: 'link',

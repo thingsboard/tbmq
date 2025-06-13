@@ -31,12 +31,14 @@ import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
+import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
@@ -52,6 +54,7 @@ import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.RegexMatchTargetProto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.ServiceInfo;
@@ -61,7 +64,14 @@ import org.thingsboard.mqtt.broker.gen.queue.SubscriptionsSourceProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.RegexMatchTarget;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.UsernameBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ConnectionResponse;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.subscription.Subscription;
@@ -703,6 +713,47 @@ public class ProtoConverter {
 
     public static String getClientId(PublishMsgProto publishMsgProto) {
         return publishMsgProto != null ? publishMsgProto.getClientId() : null;
+    }
+
+    /**
+     * Blocked client
+     */
+
+    public static BlockedClientProto convertToBlockedClientProto(BlockedClient blockedClient) {
+        Builder builder = BlockedClientProto.newBuilder()
+                .setType(BlockedClientTypeProto.valueOf(blockedClient.getType().name()))
+                .setExpirationTime(blockedClient.getExpirationTime())
+                .setValue(blockedClient.getValue());
+        if (blockedClient.getDescription() != null) {
+            builder.setDescription(blockedClient.getDescription());
+        }
+        if (blockedClient.getRegexMatchTarget() != null) {
+            builder.setRegexMatchTarget(RegexMatchTargetProto.valueOf(blockedClient.getRegexMatchTarget().name()));
+        }
+        return builder.build();
+    }
+
+    public static BlockedClient convertProtoToBlockedClient(BlockedClientProto blockedClientProto) {
+        return switch (blockedClientProto.getType()) {
+            case CLIENT_ID ->
+                    new ClientIdBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case USERNAME ->
+                    new UsernameBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case IP_ADDRESS ->
+                    new IpAddressBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue());
+            case REGEX ->
+                    new RegexBlockedClient(blockedClientProto.getExpirationTime(), getDescription(blockedClientProto), blockedClientProto.getValue(), getMatchTarget(blockedClientProto));
+            default ->
+                    throw new IllegalArgumentException("Unsupported blocked client type: " + blockedClientProto.getType());
+        };
+    }
+
+    private static String getDescription(BlockedClientProto blockedClientProto) {
+        return blockedClientProto.hasDescription() ? blockedClientProto.getDescription() : null;
+    }
+
+    private static RegexMatchTarget getMatchTarget(BlockedClientProto blockedClientProto) {
+        return RegexMatchTarget.valueOf(blockedClientProto.getRegexMatchTarget().name());
     }
 
 }

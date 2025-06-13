@@ -100,3 +100,12 @@ export const ConfigParamAuthProviderMap = new Map<ConfigParams, MqttAuthProvider
     [ConfigParams.scramAuthEnabled, MqttAuthProviderType.SCRAM],
   ]
 );
+
+export const settingsConfigPortMap = new Map<string, string>(
+  [
+    ['mqtt', 'tcpPort'],
+    ['mqtts', 'tlsPort'],
+    ['ws', 'wsPort'],
+    ['wss', 'wssPort'],
+  ]
+);

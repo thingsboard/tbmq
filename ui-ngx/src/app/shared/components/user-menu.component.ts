@@ -22,7 +22,7 @@ import { AppState } from '@core/core.state';
 import { selectAuthUser, selectUserDetails } from '@core/auth/auth.selectors';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
-import { AuthService } from "@core/http/auth.service";
+import { AuthService } from '@core/http/auth.service';
 import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatIconButton } from '@angular/material/button';

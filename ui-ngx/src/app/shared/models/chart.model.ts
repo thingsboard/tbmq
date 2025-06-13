@@ -136,7 +136,7 @@ const crosshairPlugin = {
   },
 };
 
-const lineChartParams = {
+const baseChartConfig = {
   type: 'line',
   plugins: [
     crosshairPlugin,
@@ -229,7 +229,7 @@ const lineChartParams = {
   }
 }
 
-function getParams(type) {
+function pageChartConfig(type: ChartPage): object {
   if (type === ChartPage.monitoring) {
     return {
       options: {
@@ -320,7 +320,12 @@ function getParams(type) {
               displayFormats: {
                 minute: 'HH:mm'
               }
-            }
+            },
+            ticks: {
+              major: {
+                enabled: false
+              }
+            },
           },
           y: {
             ticks: {
@@ -354,9 +359,10 @@ function getParams(type) {
   return {};
 }
 
-export const chartJsParams = (type: string) => {
-  const options = getParams(type);
-  return _.merge(options, lineChartParams);
+export const chartJsParams = (type: ChartPage) => {
+  const baseConfig = _.cloneDeep(baseChartConfig);
+  const pageConfig = pageChartConfig(type);
+  return _.merge(baseConfig, pageConfig);
 }
 
 export interface LegendConfig {

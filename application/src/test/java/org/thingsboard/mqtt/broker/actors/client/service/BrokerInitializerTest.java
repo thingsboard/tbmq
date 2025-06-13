@@ -19,23 +19,31 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
-import org.thingsboard.mqtt.broker.actors.TbActorSystem;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
+import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
+import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.consumer.BlockedClientConsumerService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
+import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.IpAddressBlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.disconnect.DisconnectClientCommandConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.client.event.ClientSessionEventService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceMsgQueueConsumer;
+import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsConsumer;
@@ -44,14 +52,21 @@ import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.subscription.ClientSubscriptionConsumer;
+import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.util.ClientSessionInfoFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-// TODO: 19/05/2022 add more tests
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BrokerInitializer.class)
 public class BrokerInitializerTest {
@@ -63,15 +78,15 @@ public class BrokerInitializerTest {
     @MockBean
     RetainedMsgConsumer retainedMsgConsumer;
     @MockBean
+    BlockedClientConsumerService blockedClientConsumer;
+    @MockBean
     ClientSessionService clientSessionService;
     @MockBean
     ClientSubscriptionService clientSubscriptionService;
     @MockBean
     RetainedMsgListenerService retainedMsgListenerService;
     @MockBean
-    ActorSystemContext actorSystemContext;
-    @MockBean
-    TbActorSystem actorSystem;
+    BlockedClientService blockedClientService;
     @MockBean
     ClientSessionEventService clientSessionEventService;
     @MockBean
@@ -116,6 +131,8 @@ public class BrokerInitializerTest {
 
         Assert.assertNotNull(clientSessionInfo);
         Assert.assertFalse(clientSessionInfo.isConnected());
+        verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
+        verify(clientSessionEventService).requestClientSessionCleanup(any());
     }
 
     private ClientSessionInfo getSessionForServiceId(Map<String, ClientSessionInfo> allClientSessions) {
@@ -151,4 +168,84 @@ public class BrokerInitializerTest {
                 .sessionExpiryInterval(sessionExpiryInterval)
                 .build();
     }
+
+    @Test
+    public void testInitRetainedMessages() throws QueuePersistenceException {
+        Map<String, RetainedMsg> map = Map.of("key", new RetainedMsg("topic", BrokerConstants.DUMMY_PAYLOAD));
+        when(retainedMsgConsumer.initLoad()).thenReturn(map);
+
+        brokerInitializer.initRetainedMessages();
+
+        verify(retainedMsgConsumer).initLoad();
+        verify(retainedMsgListenerService).init(eq(map));
+    }
+
+    @Test
+    public void testInitBlockedClients() throws QueuePersistenceException {
+        Map<String, BlockedClient> map = Map.of("key", new ClientIdBlockedClient("clientId"), "anotherKey", new IpAddressBlockedClient("localhost"));
+        when(blockedClientConsumer.initLoad()).thenReturn(map);
+
+        brokerInitializer.initBlockedClients();
+
+        verify(blockedClientConsumer).initLoad();
+        verify(blockedClientService).init(eq(map));
+    }
+
+    @Test
+    public void testInitEmptyClientSubscriptions() throws QueuePersistenceException {
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> map = new HashMap<>(Map.of(
+                SubscriptionsSourceKey.newInstance("test1"), Set.of(new ClientTopicSubscription("#")),
+                SubscriptionsSourceKey.newInstance("test2"), Set.of(new ClientTopicSubscription("test/#"), new ClientTopicSubscription("temp/#"))
+        ));
+        when(clientSubscriptionConsumer.initLoad()).thenReturn(map);
+
+        brokerInitializer.initClientSubscriptions(Map.of());
+
+        verify(clientSubscriptionConsumer).initLoad();
+        verify(clientSubscriptionService).init(eq(Map.of()));
+    }
+
+    @Test
+    public void testInitClientSubscriptions() throws QueuePersistenceException {
+        Map<SubscriptionsSourceKey, Set<TopicSubscription>> map = new HashMap<>(Map.of(
+                SubscriptionsSourceKey.newInstance("clientId1"), Set.of(new ClientTopicSubscription("#")),
+                SubscriptionsSourceKey.newInstance("clientId2"), Set.of(new ClientTopicSubscription("test/#"), new ClientTopicSubscription("temp/#"))
+        ));
+        when(clientSubscriptionConsumer.initLoad()).thenReturn(map);
+
+        brokerInitializer.initClientSubscriptions(prepareSessions());
+
+        verify(clientSubscriptionConsumer).initLoad();
+        verify(clientSubscriptionService).init(eq(map));
+    }
+
+    @Test
+    public void testOnApplicationEvent() throws QueuePersistenceException {
+        ApplicationReadyEvent readyEvent = mock(ApplicationReadyEvent.class);
+        brokerInitializer.onApplicationEvent(readyEvent);
+
+        verify(clientSessionConsumer).initLoad();
+        verify(clientSessionService).init(anyMap());
+        verify(clientSessionService).startListening(any());
+
+        verify(clientSubscriptionConsumer).initLoad();
+        verify(clientSubscriptionService).init(anyMap());
+        verify(clientSubscriptionService).startListening(any());
+
+        verify(retainedMsgConsumer).initLoad();
+        verify(retainedMsgListenerService).init(anyMap());
+        verify(retainedMsgListenerService).startListening(any());
+
+        verify(blockedClientConsumer).initLoad();
+        verify(blockedClientService).init(anyMap());
+        verify(retainedMsgListenerService).startListening(any());
+
+        verify(clientSessionEventConsumer).startConsuming();
+        verify(publishMsgConsumerService).startConsuming();
+        verify(disconnectClientCommandConsumer).startConsuming();
+        verify(deviceMsgQueueConsumer).startConsuming();
+        verify(basicDownLinkConsumer).startConsuming();
+        verify(persistentDownLinkConsumer).startConsuming();
+    }
+
 }

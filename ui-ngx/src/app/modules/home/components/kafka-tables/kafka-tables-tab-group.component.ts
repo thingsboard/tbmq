@@ -18,7 +18,7 @@ import { Component, OnInit } from '@angular/core';
 import { KafkaTable, KafkaTableTranslationMap } from '@shared/models/kafka.model';
 import { KafkaService } from '@core/http/kafka.service';
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
-import { HomePageTitleType } from "@shared/models/home-page.model";
+import { HomePageTitleType } from '@shared/models/home-page.model';
 import { DialogService } from '@core/services/dialog.service';
 import { KafkaConsumerGroupsHomeTableConfig } from '@home/components/kafka-tables/kafka-consumer-groups-home-table-config';
 import { KafkaTopicsHomeTableConfig } from '@home/components/kafka-tables/kafka-topics-home-table-config';

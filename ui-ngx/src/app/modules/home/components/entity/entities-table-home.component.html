@@ -40,12 +40,6 @@
           matTooltipPosition="above">
           <mat-icon class="home-page-material-icons">open_in_new</mat-icon>
         </button>
-        <!--<button mat-icon-button
-        [disabled]="isLoading$ | async" (click)="isFullscreen = !isFullscreen"
-        matTooltip="{{(isFullscreen ? 'fullscreen.exit' : 'fullscreen.expand') | translate}}"
-        matTooltipPosition="above">
-        <mat-icon class="home-page-material-icons">{{ isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-      </button>-->
     </div>
   </mat-toolbar>
   <mat-toolbar class="mat-table-toolbar" [class.!hidden]="!(textSearchMode && dataSource.selection.isEmpty())">
@@ -55,7 +49,7 @@
         matTooltipPosition="above">
         <mat-icon class="home-page-material-icons">search</mat-icon>
       </button>
-      <mat-form-field class="flex max-w-40% flex-row xs:max-w-100%" appearance="outline" style="padding-top: 12px">
+      <mat-form-field class="flex max-w-40% flex-row xs:max-w-100%">
         <input #searchInput matInput
           [(ngModel)]="pageLink.textSearch"
           placeholder="{{ translations.search | translate }}"/>

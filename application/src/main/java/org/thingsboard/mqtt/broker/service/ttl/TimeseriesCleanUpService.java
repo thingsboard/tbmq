@@ -20,9 +20,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.dao.timeseries.TimeseriesService;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.provider.AbstractServiceProvider;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 @Slf4j
 @Service
@@ -35,10 +35,10 @@ public class TimeseriesCleanUpService extends AbstractServiceProvider {
 
     private final TimeseriesService timeseriesService;
 
-    public TimeseriesCleanUpService(TbQueueAdmin tbQueueAdmin,
+    public TimeseriesCleanUpService(SystemInfoService systemInfoService,
                                     ServiceInfoProvider serviceInfoProvider,
                                     TimeseriesService timeseriesService) {
-        super(tbQueueAdmin, serviceInfoProvider);
+        super(systemInfoService, serviceInfoProvider);
         this.timeseriesService = timeseriesService;
     }
 

@@ -23,12 +23,14 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
 import org.thingsboard.mqtt.broker.service.subscription.SubscriptionPersistenceService;
 import org.thingsboard.mqtt.broker.service.subscription.data.SubscriptionsSourceKey;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
+import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
 
 import java.util.Collections;
 import java.util.Map;
@@ -53,6 +55,8 @@ public class ClientSubscriptionServiceImplTest {
     SharedSubscriptionProcessor sharedSubscriptionProcessor;
     SharedSubscriptionCacheService sharedSubscriptionCacheService;
     StatsManager statsManager;
+    ServiceInfoProvider serviceInfoProvider;
+    ClientMqttActorManager clientMqttActorManager;
     ClientSubscriptionServiceImpl clientSubscriptionService;
 
     @Before
@@ -62,12 +66,16 @@ public class ClientSubscriptionServiceImplTest {
         sharedSubscriptionProcessor = mock(SharedSubscriptionProcessor.class);
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
         statsManager = mock(StatsManager.class);
+        serviceInfoProvider = mock(ServiceInfoProvider.class);
+        clientMqttActorManager = mock(ClientMqttActorManager.class);
         clientSubscriptionService = spy(new ClientSubscriptionServiceImpl(
                 subscriptionPersistenceService,
                 subscriptionService,
                 sharedSubscriptionProcessor,
                 sharedSubscriptionCacheService,
-                statsManager));
+                statsManager,
+                serviceInfoProvider,
+                clientMqttActorManager));
 
         clientSubscriptionService.init(getClientTopicSubscriptions());
     }

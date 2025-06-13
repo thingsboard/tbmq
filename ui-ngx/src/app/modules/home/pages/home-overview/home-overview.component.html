@@ -15,8 +15,8 @@
     limitations under the License.
 
 -->
-<div class="tb-home-overview flex flex-row gap-3 lt-lg:flex-col">
-  <div class="flex max-w-70% flex-col gap-3 lt-lg:max-w-100%">
+<div class="tb-home-overview flex flex-row lt-lg:flex-col">
+  <div class="flex max-w-70% flex-col gap-3 pr-3 lt-lg:max-w-100% lt-lg:pb-3 lt-lg:pr-0">
     @defer {
       <tb-home-charts></tb-home-charts>
     }
@@ -37,7 +37,7 @@
       <tb-kafka-tables-tab-group class="tb-home-card"></tb-kafka-tables-tab-group>
     }
   </div>
-  <div class="flex max-w-30% flex-col gap-3 lt-lg:max-w-100%">
+  <div class="flex max-w-30% flex-1 flex-col gap-3 lt-lg:max-w-100%">
     @defer {
       <tb-getting-started class="tb-home-card xs:!hidden"></tb-getting-started>
     }
