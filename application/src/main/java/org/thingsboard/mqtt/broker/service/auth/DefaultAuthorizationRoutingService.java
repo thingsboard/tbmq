@@ -40,14 +40,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DefaultAuthorizationRoutingService implements AuthorizationRoutingService {
 
-    private volatile List<MqttAuthProviderType> priorities;
-    private volatile boolean useListenerBasedProviderOnly;
-
     private final BasicMqttClientAuthProvider basicMqttClientAuthProvider;
     private final SslMqttClientAuthProvider sslMqttClientAuthProvider;
     private final JwtMqttClientAuthProvider jwtMqttClientAuthProvider;
 
     private final AdminSettingsService adminSettingsService;
+
+    private volatile List<MqttAuthProviderType> priorities;
+    private volatile boolean useListenerBasedProviderOnly;
 
     @PostConstruct
     public void init() {

@@ -26,6 +26,7 @@ import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -82,7 +83,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
 
     public static JwtMqttAuthProviderConfiguration defaultConfiguration() {
         var jwtConfig = new JwtMqttAuthProviderConfiguration();
-        jwtConfig.setAuthRules(new PubSubAuthorizationRules());
+        jwtConfig.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(".*")));
         jwtConfig.setDefaultClientType(ClientType.APPLICATION);
         jwtConfig.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());

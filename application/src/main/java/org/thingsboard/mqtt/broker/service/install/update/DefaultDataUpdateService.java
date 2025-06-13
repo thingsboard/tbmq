@@ -83,25 +83,16 @@ public class DefaultDataUpdateService implements DataUpdateService {
             }
             log.info("Creating {} auth provider...", type.getDisplayName());
             MqttAuthProvider mqttAuthProvider = switch (type) {
-                case MQTT_BASIC -> {
-                    MqttAuthProvider mqttBasicProvider = MqttAuthProvider.defaultBasicAuthProvider();
-                    mqttBasicProvider.setEnabled(isBasicAuthEnabled());
-                    yield mqttBasicProvider;
-                }
+                case MQTT_BASIC -> MqttAuthProvider.defaultBasicAuthProvider(isBasicAuthEnabled());
+                case SCRAM -> MqttAuthProvider.defaultScramAuthProvider(true);
+                case JWT -> MqttAuthProvider.defaultJwtAuthProvider(false);
                 case X_509 -> {
-                    MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider();
-                    x509AuthProvider.setEnabled(isX509AuthEnabled());
+                    MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider(isX509AuthEnabled());
                     var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
                     configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
                     x509AuthProvider.setConfiguration(configuration);
                     yield x509AuthProvider;
                 }
-                case SCRAM -> {
-                    MqttAuthProvider scramAuthProvider = MqttAuthProvider.defaultScramAuthProvider();
-                    scramAuthProvider.setEnabled(true);
-                    yield scramAuthProvider;
-                }
-                case JWT -> MqttAuthProvider.defaultJwtAuthProvider();
             };
             mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
             log.info("Created {} auth provider!", type.getDisplayName());

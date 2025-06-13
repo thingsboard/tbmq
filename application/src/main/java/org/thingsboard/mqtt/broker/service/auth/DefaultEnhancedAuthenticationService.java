@@ -100,6 +100,9 @@ public class DefaultEnhancedAuthenticationService implements EnhancedAuthenticat
 
     @Override
     public EnhancedAuthContinueResponse onReAuth(ClientSessionCtx sessionCtx, EnhancedAuthContext authContext) {
+        if (!enabled) {
+            return EnhancedAuthContinueResponse.failure(ENHANCED_AUTH_DISABLED);
+        }
         String clientId = authContext.getClientId();
         String authMethodFromConnect = sessionCtx.getAuthMethod();
         String authMethod = authContext.getAuthMethod();

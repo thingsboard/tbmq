@@ -35,6 +35,7 @@ import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 
 import java.util.Map;
 
+// TODO: replace redundant logic for getting env variables with System.getenv(...)
 @Component
 @RequiredArgsConstructor
 public class BrokerHomePageConfig {

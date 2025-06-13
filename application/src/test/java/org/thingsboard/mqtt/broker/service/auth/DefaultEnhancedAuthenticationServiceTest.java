@@ -133,6 +133,26 @@ public class DefaultEnhancedAuthenticationServiceTest {
     }
 
     @Test
+    public void givenAuthProviderDisabled_whenReAuth_thenReturnEnhancedAuthDisabled() {
+        // GIVEN
+        MqttAuthProvider disabledProvider = mock(MqttAuthProvider.class);
+        when(disabledProvider.isEnabled()).thenReturn(false);
+        when(disabledProvider.getConfiguration()).thenReturn(new ScramMqttAuthProviderConfiguration());
+        when(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.SCRAM))
+                .thenReturn(Optional.of(disabledProvider));
+
+        enhancedAuthenticationService.init();
+
+        // WHEN
+        EnhancedAuthContinueResponse response = enhancedAuthenticationService.onReAuth(
+                mock(ClientSessionCtx.class), mock(EnhancedAuthContext.class));
+
+        // THEN
+        assertThat(response.success()).isFalse();
+        assertThat(response.enhancedAuthFailure()).isEqualTo(EnhancedAuthFailure.ENHANCED_AUTH_DISABLED);
+    }
+
+    @Test
     public void givenScramServerInitiated_whenOnClientConnectMsgEvalSuccess_thenVerifyInvocations() throws Exception {
         // GIVEN
         var enhancedAuthContext = getEnhancedAuthContext();
@@ -526,6 +546,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(authMethodFromConnect);
 
+        enhancedAuthenticationService.init();
+
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
 
@@ -543,6 +565,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
 
         when(clientSessionCtxMock.getAuthMethod()).thenReturn(ScramAlgorithm.SHA_256.getMqttAlgorithmName());
         doReturn(null).when(enhancedAuthenticationService).createSaslServer(any(), any());
+
+        enhancedAuthenticationService.init();
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
@@ -565,6 +589,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenThrow(new SaslException("Evaluation failed"));
+
+        enhancedAuthenticationService.init();
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
@@ -591,6 +617,8 @@ public class DefaultEnhancedAuthenticationServiceTest {
         doReturn(scramSaslServer).when(enhancedAuthenticationService).createSaslServer(any(), any());
         when(clientSessionCtxMock.getScramServerWithCallbackHandler()).thenReturn(scramSaslServerWithCallbackMock);
         when(scramSaslServerWithCallbackMock.evaluateResponse(any())).thenReturn(challenge);
+
+        enhancedAuthenticationService.init();
 
         // WHEN
         var enhancedAuthContinueResponse = enhancedAuthenticationService.onReAuth(clientSessionCtxMock, enhancedAuthContext);
