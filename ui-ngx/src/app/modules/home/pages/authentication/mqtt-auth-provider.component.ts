@@ -70,6 +70,16 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
     this.entityForm.get('type').disable({ emitEvent: false });
   }
 
+  prepareFormValue(formValue: MqttAuthProvider): MqttAuthProvider {
+    // @ts-ignore
+    formValue.configuration.type = formValue.type;
+    // @ts-ignore
+    formValue.configuration.jwtVerifierConfiguration.jwtVerifierType = formValue.configuration.jwtVerifierType;
+    // @ts-ignore
+    formValue.configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = formValue.configuration.jwtVerifierConfiguration.algorithm;
+    return super.prepareFormValue(formValue);
+  }
+
   updateForm(entity: MqttAuthProvider) {
     this.entityForm.patchValue({
       type: entity.type,

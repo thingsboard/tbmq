@@ -54,11 +54,13 @@ export interface SslMqttAuthProviderConfiguration {
   skipValidityCheckForClientCert: boolean;
 }
 
-export interface JwtMqttAuthProviderConfiguration extends JwksVerifierConfiguration {
+export interface JwtMqttAuthProviderConfiguration {
+  type: MqttAuthProviderType;
   jwtVerifierType: JwtVerifierType;
   defaultClientType: ClientType;
   authClaims?: {[key: string]: string} | null;
   clientTypeClaims?: {[key: string]: string} | null;
+  jwtVerifierConfiguration: JwksVerifierConfiguration
 }
 
 export interface JwksVerifierConfiguration {
@@ -77,13 +79,13 @@ export enum JwtVerifierType {
 }
 
 export enum JwtAlgorithmType {
-  HMAC = 'HMAC',
+  HMAC_BASED = 'HMAC_BASED',
   PUBLIC_KEY = 'PUBLIC_KEY'
 }
 
 export const JwtAlgorithmTypeTranslation = new Map<JwtAlgorithmType, string>(
   [
-    [JwtAlgorithmType.HMAC, 'authentication.hmac'],
+    [JwtAlgorithmType.HMAC_BASED, 'authentication.hmac'],
     [JwtAlgorithmType.PUBLIC_KEY, 'authentication.public-key']
   ]
 );

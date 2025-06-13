@@ -16,7 +16,7 @@
 
 -->
 <section [formGroup]="jwtConfigForm">
-  <section formGroupName="configuration" class="flex flex-col gap-4">
+  <section class="flex flex-col gap-4">
     <section class="security-setting mat-padding">
       <section class="mb-4 flex flex-row items-center justify-between">
         <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>
@@ -28,7 +28,7 @@
         </tb-toggle-select>
       </section>
       <section class="flex flex-col gap-4">
-        @switch (jwtConfigForm.get('configuration.jwtVerifierType')?.value) {
+        @switch (jwtConfigForm.get('jwtVerifierType')?.value) {
           @case (JwtVerifierType.ALGORITHM_BASED) {
             <ng-container *ngTemplateOutlet="algorithm"></ng-container>
           }
@@ -39,9 +39,72 @@
       </section>
     </section>
     <section class="security-setting mat-padding">
+      <div class="mt-2 flex flex-1 flex-col" formGroupName="authRules">
+        <p class="mb-3" [tb-hint-tooltip-icon]="'mqtt-client-credentials.authorization' | translate" translate>mqtt-client-credentials.authorization</p>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+          <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
+            @for (rule of pubRulesSet; track rule) {
+              <mat-chip-row
+                [value]="rule"
+                [editable]="isEdit()"
+                (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
+                [removable]="isEdit()"
+                (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+                {{ rule }}
+                @if (isEdit()) {
+                  <button matChipRemove aria-label="'remove' + rule">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </mat-chip-row>
+            }
+            <input matInput type="text"
+                   placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                   matChipInputAddOnBlur
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   [matChipInputFor]="chipListPub"
+                   (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+          </mat-chip-grid>
+          <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+            warning
+          </mat-icon>
+        </mat-form-field>
+        <mat-form-field class="mat-block">
+          <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+          <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
+            @for (rule of subRulesSet; track rule) {
+              <mat-chip-row
+                [value]="rule"
+                [editable]="isEdit()"
+                (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
+                [removable]="isEdit()"
+                (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+                {{ rule }}
+                @if (isEdit()) {
+                  <button matChipRemove aria-label="'remove' + rule">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </mat-chip-row>
+            }
+            <input matInput type="text"
+                   placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                   matChipInputAddOnBlur
+                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                   [matChipInputFor]="chipListSub"
+                   (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+          </mat-chip-grid>
+          <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+            warning
+          </mat-icon>
+        </mat-form-field>
+      </div>
+    </section>
+    <section class="security-setting mat-padding">
       <p class="mb-3" [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
       <tb-key-val-map
-        formControlName="claims"
+        formControlName="authClaims"
         class="security-setting-content"
         noDataText="authentication.claims-none"
         addText="authentication.claims-add"
@@ -51,7 +114,7 @@
     <section class="security-setting mat-padding">
       <section class="mb-4 flex flex-row items-center justify-between">
         <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>mqtt-client.client-type</p>
-        <tb-toggle-select formControlName="clientType">
+        <tb-toggle-select formControlName="defaultClientType">
           <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
           <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
         </tb-toggle-select>
@@ -68,54 +131,61 @@
     </section>
 
     <ng-template #algorithm>
-      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-        <mat-label translate>authentication.algorithm-type</mat-label>
-        <mat-select formControlName="algorithmType">
-          @for (type of jwtAlgorithmTypes; track type) {
-            <mat-option [value]="type">
-              {{ jwtAlgorithmTypeTranslation.get(type) | translate }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-      @switch (jwtConfigForm.get('configuration.algorithmType').value) {
-        @case (JwtAlgorithmType.HMAC) {
-          <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
-            <mat-label translate>authentication.secret</mat-label>
-            <input matInput formControlName="secret"
-                   autocomplete="new-password" name="new-password"
-                   type="password">
-            <mat-icon matSuffix
-                      matTooltipClass="tb-error-tooltip"
-                      matTooltip="{{ 'authentication.secret-required' | translate }}"
-                      [class.!hidden]="!(jwtConfigForm.get('configuration.secret').hasError('required') && jwtConfigForm.get('configuration.secret').touched)"
-                      class="tb-error">
-              warning
-            </mat-icon>
-            <tb-toggle-password matSuffix></tb-toggle-password>
-          </mat-form-field>
+      <section formGroupName="jwtVerifierConfiguration">
+        <mat-form-field class="flex flex-1">
+          <mat-label translate>authentication.algorithm-type</mat-label>
+          <mat-select formControlName="algorithm">
+            @for (type of jwtAlgorithmTypes; track type) {
+              <mat-option [value]="type">
+                {{ jwtAlgorithmTypeTranslation.get(type) | translate }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+      @switch (jwtConfigForm.get('jwtVerifierConfiguration.algorithm').value) {
+        @case (JwtAlgorithmType.HMAC_BASED) {
+          <section formGroupName="jwtSignAlgorithmConfiguration">
+            <mat-form-field class="flex flex-1">
+              <mat-label translate>authentication.secret</mat-label>
+              <input matInput formControlName="secret"
+                     autocomplete="new-password" name="new-password"
+                     type="password">
+              <mat-icon matSuffix
+                        matTooltipClass="tb-error-tooltip"
+                        matTooltip="{{ 'authentication.secret-required' | translate }}"
+                        [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').touched)"
+                        class="tb-error">
+                warning
+              </mat-icon>
+              <tb-toggle-password matSuffix></tb-toggle-password>
+            </mat-form-field>
+          </section>
         }
         @case (JwtAlgorithmType.PUBLIC_KEY) {
-          <tb-file-input [existingFileName]="jwtConfigForm.get('configuration.publicKey')?.value"
+          <tb-file-input [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.publicKey')?.value"
                          formControlName="publicKey"
                          [required]="false"
                          dropLabel="{{ 'integration.drop-file-or' | translate }}"
                          [label]="'authentication.public-key' | translate"
-                         (fileNameChanged)="jwtConfigForm.get('configuration.publicKey').patchValue($event)"
+                         (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.publicKey').patchValue($event)"
                          inputId="public-key">
           </tb-file-input>
         }
       }
+      </section>
     </ng-template>
 
     <ng-template #jwks>
-      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+      <section formGroupName="jwtVerifierConfiguration">
+
+      <mat-form-field class="flex flex-1">
         <mat-label translate>authentication.jwks-endpoint</mat-label>
         <input matInput formControlName="endpoint">
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"
                   matTooltip="{{ 'authentication.jwks-endpoint-required' | translate }}"
-                  [class.!hidden]="!(jwtConfigForm.get('configuration.endpoint').hasError('required') && jwtConfigForm.get('configuration.endpoint').touched)"
+                  [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.endpoint').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.endpoint').touched)"
                   class="tb-error">
           warning
         </mat-icon>
@@ -123,13 +193,13 @@
           help
         </mat-icon>
       </mat-form-field>
-      <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+      <mat-form-field class="flex flex-1">
         <mat-label translate>authentication.jwks-refresh-interval</mat-label>
         <input matInput formControlName="refreshInterval" type="number" min="300">
         <mat-icon matSuffix
                   matTooltipClass="tb-error-tooltip"
                   matTooltip="{{ 'authentication.jwks-refresh-interval-min' | translate }}"
-                  [class.!hidden]="!jwtConfigForm.get('configuration.refreshInterval').hasError('min')"
+                  [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('min')"
                   class="tb-error">
           warning
         </mat-icon>
@@ -143,11 +213,6 @@
                                   [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
                                                          IntegrationCredentialType.Basic,
                                                          IntegrationCredentialType.CertPEM]">
-        @if (displayEnableSsl()) {
-          <mat-slide-toggle formControlName="ssl">
-            {{ 'integration.enable-ssl' | translate }}
-          </mat-slide-toggle>
-        }
       </tb-integration-credentials>
       <section class="security-setting mat-padding">
         <p translate>integration.headers</p>
@@ -161,6 +226,8 @@
           singlePredefinedValue="application/json">
         </tb-key-val-map>
       </section>
+      </section>
     </ng-template>
   </section>
+  {{jwtConfigForm.getRawValue() | json}}
 </section>
