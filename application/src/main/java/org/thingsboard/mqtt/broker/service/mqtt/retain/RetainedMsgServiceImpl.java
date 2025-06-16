@@ -39,17 +39,13 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
 
     @Override
     public void saveRetainedMsg(String topic, RetainedMsg retainedMsg) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveRetainedMsg [{}] [{}]", topic, retainedMsg);
-        }
+        log.trace("Executing saveRetainedMsg [{}] [{}]", topic, retainedMsg);
         retainMsgTrie.put(topic, retainedMsg);
     }
 
     @Override
     public void clearRetainedMsg(String topic) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing clearRetainedMsg [{}]", topic);
-        }
+        log.trace("Executing clearRetainedMsg [{}]", topic);
         retainMsgTrie.delete(topic);
     }
 
@@ -63,9 +59,7 @@ public class RetainedMsgServiceImpl implements RetainedMsgService {
 
     @Override
     public void clearEmptyTopicNodes() throws RetainMsgTrieClearException {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing clearEmptyTopicNodes");
-        }
+        log.trace("Executing clearEmptyTopicNodes");
         retainMsgTrie.clearEmptyNodes();
     }
 

@@ -44,12 +44,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.USER_ID;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/admin")
 public class AdminController extends BaseController {
-
-    public static final String USER_ID = "userId";
 
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;

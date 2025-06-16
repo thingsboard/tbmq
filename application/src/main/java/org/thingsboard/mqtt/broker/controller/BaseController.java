@@ -366,7 +366,7 @@ public abstract class BaseController {
         }
         Set<Integer> resultSet = new HashSet<>();
         for (String strValue : array) {
-            if (!StringUtils.isEmpty(strValue)) {
+            if (StringUtils.isNotEmpty(strValue)) {
                 resultSet.add(Integer.valueOf(strValue));
             }
         }
@@ -379,7 +379,7 @@ public abstract class BaseController {
         }
         List<Boolean> resultList = new ArrayList<>();
         for (String strValue : array) {
-            if (!StringUtils.isEmpty(strValue)) {
+            if (StringUtils.isNotEmpty(strValue)) {
                 resultList.add(Boolean.valueOf(strValue));
             }
         }
@@ -414,13 +414,27 @@ public abstract class BaseController {
         return new PageData<>(entities, totalPages, totalElements, hasNext);
     }
 
+    protected <E extends Enum<E>> List<E> parseEnumList(Class<E> enumType, String[] values) {
+        if (values == null || values.length == 0) {
+            return List.of();
+        }
+        List<E> result = new ArrayList<>();
+        for (String val : values) {
+            if (StringUtils.isNotEmpty(val)) {
+                result.add(Enum.valueOf(enumType, val));
+            }
+        }
+        return result;
+    }
+
     protected <E extends Enum<E>> Set<E> parseEnumSet(Class<E> enumType, String[] values) {
+        if (values == null || values.length == 0) {
+            return Set.of();
+        }
         Set<E> result = new HashSet<>();
-        if (values != null) {
-            for (String val : values) {
-                if (!StringUtils.isEmpty(val)) {
-                    result.add(Enum.valueOf(enumType, val));
-                }
+        for (String val : values) {
+            if (StringUtils.isNotEmpty(val)) {
+                result.add(Enum.valueOf(enumType, val));
             }
         }
         return result;
