@@ -71,8 +71,8 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   dragIndex: number;
   dragDisabled = false;
   mqttAuthProviderTypeMap = mqttAuthProviderTypeTranslationMap;
+  priorities: MqttAuthProviderType[];
 
-  private priorities: MqttAuthProviderType[];
   private securitySettings: SecuritySettings;
   private mqttAuthSettings: AdminSettings<MqttAuthSettings>;
   private destroy$ = new Subject<void>();
@@ -192,6 +192,7 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 
+  // TODO move as separate component
   chipDragStart(index: number, chipRow: MatChipRow, placeholderChipRow: Element) {
     this.renderer.setStyle(placeholderChipRow, 'width', chipRow._elementRef.nativeElement.offsetWidth + 'px');
     this.dragIndex = index;
@@ -203,11 +204,13 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   onChipDrop(event: DndDropEvent) {
     let index = event.index;
+    const prioritiesCopy = [...this.priorities];
     if (isUndefined(index)) {
       index = this.priorities.length;
     }
-    moveItemInArray(this.priorities, this.dragIndex, index);
-    this.mqttAuthSettingsForm.get('priorities').setValue(this.priorities);
+    moveItemInArray(prioritiesCopy, this.dragIndex, index);
+    this.mqttAuthSettingsForm.get('priorities').setValue(prioritiesCopy);
+    this.priorities = prioritiesCopy;
     this.dragIndex = -1;
   }
 

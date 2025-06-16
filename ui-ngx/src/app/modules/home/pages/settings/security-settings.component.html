@@ -49,22 +49,21 @@
                      dndPlaceholderRef
                      class="mat-mdc-chip mat-mdc-chip-row mdc-evolution-chip mat-mdc-standard-chip tb-datakey-chip tb-datakey-chip-dnd-placeholder">
                 </div>
-                @for (provider of mqttAuthSettingsForm.get('priorities')?.value; let index = $index; track provider) {
+                @for (provider of priorities; track provider; let ind = $index) {
                   <mat-chip-row #chipRow
                                 class="tb-datakey-chip"
-                                (dndStart)="chipDragStart($index, chipRow, placeholderChipRow)"
+                                (dndStart)="chipDragStart(ind, chipRow, placeholderChipRow)"
                                 (dndEnd)="chipDragEnd()"
                                 [dndDraggable]="provider"
                                 dndType="{{ dndId }}"
                                 dndEffectAllowed="move"
                                 dndDraggingSourceClass="tb-chip-dragging">
-                    <div dndDragImageRef class="tb-attribute-chip flex flex-row items-center justify-start gap-1"
+                    <div dndHandle dndDragImageRef
+                         class="tb-attribute-chip tb-chip-drag-handle flex flex-row items-center justify-start gap-1"
                          [class.tb-dragging-chip-image]="$index === dragIndex">
                       <div class="tb-absolute-fill tb-dragging-chip-image-fill"></div>
                       @if (!dragDisabled) {
-                        <div dndHandle class="tb-chip-drag-handle">
-                          <mat-icon class="tb-mat-18">drag_indicator</mat-icon>
-                        </div>
+                        <mat-icon class="tb-mat-18">drag_indicator</mat-icon>
                       }
                       <div class="tb-chip-labels" [class.tb-transparent]="dragDisabled">
                         <div class="tb-chip-label tb-chip-text">
