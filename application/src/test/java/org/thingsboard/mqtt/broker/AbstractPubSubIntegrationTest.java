@@ -219,10 +219,10 @@ public abstract class AbstractPubSubIntegrationTest {
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(type);
         mqttAuthProvider.setEnabled(false);
         switch (type) {
-            case MQTT_BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider().getConfiguration());
-            case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider().getConfiguration());
-            case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider().getConfiguration());
-            case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider().getConfiguration());
+            case MQTT_BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider(false).getConfiguration());
+            case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider(false).getConfiguration());
+            case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider(false).getConfiguration());
+            case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider(false).getConfiguration());
         }
         mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
     }

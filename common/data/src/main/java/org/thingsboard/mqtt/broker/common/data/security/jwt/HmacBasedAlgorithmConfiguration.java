@@ -27,7 +27,6 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
 
     public static final String DEFAULT_JWT_SECRET = "please-change-this-32-char-jwt-secret";
 
-    // TODO: should we save base64 formatted value to DB?
     @NoXss
     private String secret;
 

@@ -30,7 +30,7 @@ public class HmacJwtVerificationStrategy implements JwtVerificationStrategy {
     private final JwtClaimsValidator claimsValidator;
 
     public HmacJwtVerificationStrategy(String rawSecret, JwtClaimsValidator claimsValidator) throws JOSEException {
-        this.verifier = new MACVerifier(rawSecret); // TODO: Base64 decode if needed
+        this.verifier = new MACVerifier(rawSecret);
         this.claimsValidator = claimsValidator;
     }
 

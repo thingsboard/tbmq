@@ -262,6 +262,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.wiremock.integrations.testcontainers</groupId>
+            <artifactId>wiremock-testcontainers-module</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.hivemq</groupId>
             <artifactId>hivemq-mqtt-client</artifactId>
             <scope>test</scope>

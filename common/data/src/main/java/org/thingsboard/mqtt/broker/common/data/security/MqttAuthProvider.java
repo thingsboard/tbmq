@@ -41,38 +41,34 @@ public class MqttAuthProvider extends BaseData {
     private MqttAuthProviderType type;
     private MqttAuthProviderConfiguration configuration;
 
-    public static MqttAuthProvider defaultBasicAuthProvider() {
-        MqttAuthProvider basicMqttAuthProvider = new MqttAuthProvider();
-        basicMqttAuthProvider.setType(MqttAuthProviderType.MQTT_BASIC);
-        basicMqttAuthProvider.setEnabled(false);
-        basicMqttAuthProvider.setConfiguration(new BasicMqttAuthProviderConfiguration());
-        return basicMqttAuthProvider;
+    public static MqttAuthProvider defaultBasicAuthProvider(boolean enabled) {
+        return defaultAuthProvider(MqttAuthProviderType.MQTT_BASIC, enabled);
     }
 
-    public static MqttAuthProvider defaultSslAuthProvider() {
-        MqttAuthProvider sslMqttAuthProvider = new MqttAuthProvider();
-        sslMqttAuthProvider.setType(MqttAuthProviderType.X_509);
-        sslMqttAuthProvider.setEnabled(false);
-        var sslConfig = new SslMqttAuthProviderConfiguration();
-        sslConfig.setSkipValidityCheckForClientCert(false);
-        sslMqttAuthProvider.setConfiguration(sslConfig);
-        return sslMqttAuthProvider;
+    public static MqttAuthProvider defaultSslAuthProvider(boolean enabled) {
+        return defaultAuthProvider(MqttAuthProviderType.X_509, enabled);
     }
 
-    public static MqttAuthProvider defaultJwtAuthProvider() {
-        MqttAuthProvider jwtMqttAuthProvider = new MqttAuthProvider();
-        jwtMqttAuthProvider.setType(MqttAuthProviderType.JWT);
-        jwtMqttAuthProvider.setEnabled(false);
-        jwtMqttAuthProvider.setConfiguration(JwtMqttAuthProviderConfiguration.defaultConfiguration());
-        return jwtMqttAuthProvider;
+    public static MqttAuthProvider defaultJwtAuthProvider(boolean enabled) {
+        return defaultAuthProvider(MqttAuthProviderType.JWT, enabled);
     }
 
-    public static MqttAuthProvider defaultScramAuthProvider() {
-        MqttAuthProvider scramMqttAuthProvider = new MqttAuthProvider();
-        scramMqttAuthProvider.setType(MqttAuthProviderType.SCRAM);
-        scramMqttAuthProvider.setEnabled(false);
-        scramMqttAuthProvider.setConfiguration(new ScramMqttAuthProviderConfiguration());
-        return scramMqttAuthProvider;
+    public static MqttAuthProvider defaultScramAuthProvider(boolean enabled) {
+        return defaultAuthProvider(MqttAuthProviderType.SCRAM, enabled);
+    }
+
+    public static MqttAuthProvider defaultAuthProvider(MqttAuthProviderType type, boolean enabled) {
+        MqttAuthProvider mqttAuthProvider = new MqttAuthProvider();
+        mqttAuthProvider.setEnabled(enabled);
+        mqttAuthProvider.setType(type);
+        mqttAuthProvider.setConfiguration(
+                switch (type) {
+                    case MQTT_BASIC -> new BasicMqttAuthProviderConfiguration();
+                    case X_509 -> new SslMqttAuthProviderConfiguration();
+                    case JWT -> JwtMqttAuthProviderConfiguration.defaultConfiguration();
+                    case SCRAM -> new ScramMqttAuthProviderConfiguration();
+                });
+        return mqttAuthProvider;
     }
 
 }
