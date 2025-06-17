@@ -21,8 +21,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
 import org.thingsboard.mqtt.broker.queue.kafka.settings.InternodeNotificationsKafkaSettings;
+import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
 import java.util.List;
 
@@ -36,7 +36,7 @@ public class InternodeNotificationsHelperImplTest {
     private InternodeNotificationsKafkaSettings kafkaSettings;
 
     @Mock
-    private TbQueueAdmin queueAdmin;
+    private SystemInfoService systemInfoService;
 
     private InternodeNotificationsHelperImpl helper;
 
@@ -45,7 +45,7 @@ public class InternodeNotificationsHelperImplTest {
         String kafkaPrefix = "custom-prefix.";
         when(kafkaSettings.getTopicPrefix()).thenReturn("internode");
 
-        helper = new InternodeNotificationsHelperImpl(kafkaSettings, queueAdmin);
+        helper = new InternodeNotificationsHelperImpl(kafkaSettings, systemInfoService);
 
         ReflectionTestUtils.setField(helper, "kafkaPrefix", kafkaPrefix);
 
@@ -66,7 +66,7 @@ public class InternodeNotificationsHelperImplTest {
     @Test
     public void testGetServiceIds() {
         List<String> mockIds = List.of("nodeA", "nodeB");
-        when(queueAdmin.getBrokerServiceIds()).thenReturn(mockIds);
+        when(systemInfoService.getTbmqServiceIds()).thenReturn(mockIds);
 
         assertThat(helper.getServiceIds()).containsExactlyInAnyOrder("nodeA", "nodeB");
     }

@@ -90,7 +90,7 @@ public abstract class BaseController {
     @Autowired
     protected MqttAuthProviderService mqttAuthProviderService;
     @Autowired
-    ClientSessionStatsService clientSessionStatsService;
+    protected ClientSessionStatsService clientSessionStatsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired

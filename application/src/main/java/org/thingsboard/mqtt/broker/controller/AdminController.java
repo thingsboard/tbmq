@@ -33,12 +33,12 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
@@ -93,23 +93,20 @@ public class AdminController extends BaseController {
     @ResponseBody
     public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
         try {
-            checkNotNull(adminSettings);
-            adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
-            String rawKey = adminSettings.getKey();
-            var sysAdminSettingTypeOptional = SysAdminSettingType.parse(rawKey);
-            if (sysAdminSettingTypeOptional.isPresent()) {
-                switch (sysAdminSettingTypeOptional.get()) {
+            AdminSettings savedAdminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
+            SysAdminSettingType.parse(savedAdminSettings.getKey()).ifPresent(type -> {
+                switch (type) {
                     case MAIL -> {
                         mailService.updateMailConfiguration();
-                        ((ObjectNode) adminSettings.getJsonValue()).remove("password");
+                        ((ObjectNode) savedAdminSettings.getJsonValue()).remove("password");
                     }
                     case MQTT_AUTHORIZATION -> {
-                        var mqttAuthSettings = JacksonUtil.convertValue(adminSettings.getJsonValue(), MqttAuthSettings.class);
+                        var mqttAuthSettings = JacksonUtil.convertValue(savedAdminSettings.getJsonValue(), MqttAuthSettings.class);
                         systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
                     }
                 }
-            }
-            return adminSettings;
+            });
+            return savedAdminSettings;
         } catch (Exception e) {
             throw handleException(e);
         }
