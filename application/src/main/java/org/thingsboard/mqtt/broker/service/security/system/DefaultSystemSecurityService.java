@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.common.data.SysAdminSettingType.GENERAL;
+
 @Service
 @RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
@@ -179,7 +181,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
     @Override
     public String getBaseUrl(HttpServletRequest httpServletRequest) {
         String baseUrl = null;
-        AdminSettings generalSettings = adminSettingsService.findAdminSettingsByKey("general");
+        AdminSettings generalSettings = adminSettingsService.findAdminSettingsByKey(GENERAL.getKey());
 
         JsonNode prohibitDifferentUrl = generalSettings.getJsonValue().get("prohibitDifferentUrl");
 
