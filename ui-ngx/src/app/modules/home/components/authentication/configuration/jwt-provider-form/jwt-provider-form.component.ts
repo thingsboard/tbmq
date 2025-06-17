@@ -66,7 +66,7 @@ import {
   MatChipRemove,
   MatChipRow
 } from '@angular/material/chips';
-import { AuthRulePatternsType } from '@shared/models/credentials.model';
+import { ANY_CHARACTERS, AuthRulePatternsType } from '@shared/models/credentials.model';
 import { ENTER, TAB } from '@angular/cdk/keycodes';
 
 @Component({
@@ -138,46 +138,26 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     super();
   }
 
-mockData = {
-  type: "JWT",
-  jwtVerifierType: "ALGORITHM_BASED",
-  defaultClientType: "APPLICATION",
-  jwtVerifierConfiguration: {
-    jwtVerifierType: "ALGORITHM_BASED",
-    algorithm: "HMAC_BASED",
-    jwtSignAlgorithmConfiguration: {
-      algorithm: "HMAC_BASED",
-      secret: "please-change-this-32-char-jwt-secret"
-    }
-  },
-  authClaims: {},
-  clientTypeClaims: {},
-  authRules: {
-    pubAuthRulePatterns: null,
-    subAuthRulePatterns: null
-  }
-}
-
   ngOnInit() {
     this.jwtConfigForm = this.fb.group({
-      defaultClientType: [null, []],
+      defaultClientType: [null, [Validators.required]],
       authClaims: [null, []],
       authRules: this.fb.group({
         pubAuthRulePatterns: [null, []],
         subAuthRulePatterns: [null, []]
       }),
       clientTypeClaims: [null, []],
-      jwtVerifierType: [null, []],
+      jwtVerifierType: [null, [Validators.required]],
       jwtVerifierConfiguration: this.fb.group({
         jwtSignAlgorithmConfiguration: this.fb.group({
           secret: [null, [Validators.required]],
         }),
-        algorithm: [null, []],
+        algorithm: [null, [Validators.required]],
         publicKey: [null, [Validators.required]],
         endpoint: [null, [Validators.required]],
-        refreshInterval: [null, []],
-        credentials: [null, []],
-        headers: [null, []],
+        refreshInterval: [null, [Validators.required]],
+        credentials: [null, [Validators.required]],
+        headers: [null, [Validators.required]],
       }),
     });
     this.jwtConfigForm.valueChanges
@@ -185,13 +165,23 @@ mockData = {
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
     this.jwtConfigForm.get('jwtVerifierType').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe((type) => this.updateJwtValidators(type));
+      .subscribe((type) => this.onJwtVerifierTypeChange(type));
   }
 
   writeValue(value: JwtMqttAuthProviderConfiguration) {
     if (isDefinedAndNotNull(value)) {
+      // TODO refactor authRules as separate component
+      this.clearRuleSets();
+      if (value.authRules) {
+        for (const rule of Object.keys(value.authRules)) {
+          if (value.authRules[rule]?.length) {
+            value.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
+          }
+        }
+      }
       this.jwtConfigForm.reset(value, {emitEvent: false});
-      this.updateJwtValidators(value.jwtVerifierType);
+      this.jwtConfigForm.get('jwtVerifierType').valueChanges.subscribe((value) => this.onJwtVerifierTypeChange(value));
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').valueChanges.subscribe((value) => this.onJwtVerifierAlgorithmChange(value));
     } else {
       this.propagateChangePending = true;
     }
@@ -228,39 +218,50 @@ mockData = {
     };
   }
 
-  updateJwtValidators(type: JwtVerifierType) {
-    const emitEvent = false;
-    if (type === JwtVerifierType.JWKS) {
-      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').enable({emitEvent});
+  onJwtVerifierTypeChange(type: JwtVerifierType) {
+    if (type === JwtVerifierType.ALGORITHM_BASED) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').enable();
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').disable({emitEvent: false});
+    } else if (type === JwtVerifierType.JWKS) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').enable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').setValidators([Validators.required]);
-      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').enable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').enable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').enable({emitEvent});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').patchValue(300);
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').patchValue({type: IntegrationCredentialType.Anonymous});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').enable({emitEvent: false});
 
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').disable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent});
-    } else if (type === JwtVerifierType.ALGORITHM_BASED) {
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').enable({emitEvent});
-
-      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').disable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').disable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').disable({emitEvent});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').disable({emitEvent});
-
-      if (this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').value === JwtAlgorithmType.HMAC_BASED) {
-        this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent});
-        this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
-
-        // this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent});
-      }  else if (this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').value === JwtAlgorithmType.PUBLIC_KEY) {
-        this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').enable({emitEvent});
-        this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').setValidators([Validators.required]);
-
-        this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent});
-      }
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
     }
-    this.jwtConfigForm.updateValueAndValidity({emitEvent});
+    this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
+  }
+
+  onJwtVerifierAlgorithmChange(type: JwtAlgorithmType) {
+    if (type === JwtAlgorithmType.HMAC_BASED) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
+    }  else if (type === JwtAlgorithmType.PUBLIC_KEY) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
+    } else {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').patchValue(JwtAlgorithmType.HMAC_BASED);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
+    }
+    this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
 
   addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
@@ -331,6 +332,22 @@ mockData = {
         break;
       case AuthRulePatternsType.SUBSCRIBE:
         this.jwtConfigForm.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
+    }
+  }
+
+  private clearRuleSets() {
+    this.pubRulesSet.clear();
+    this.subRulesSet.clear();
+  }
+
+  private addValueToAuthRulesSet(type: string, value: string = ANY_CHARACTERS) {
+    switch (type) {
+      case 'subAuthRulePatterns':
+        this.subRulesSet.add(value);
+        break;
+      case 'pubAuthRulePatterns':
+        this.pubRulesSet.add(value);
         break;
     }
   }

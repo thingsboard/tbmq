@@ -17,6 +17,7 @@
 import { BaseData } from '@shared/models/base-data';
 import { ClientType } from '@shared/models/client.model';
 import { BasicCredentials, CertPemCredentials, Credentials } from '@shared/models/integration.models';
+import { AuthRules } from '@shared/models/credentials.model';
 
 export enum MqttAuthProviderType {
   MQTT_BASIC = 'MQTT_BASIC',
@@ -58,6 +59,7 @@ export interface JwtMqttAuthProviderConfiguration {
   type: MqttAuthProviderType;
   jwtVerifierType: JwtVerifierType;
   defaultClientType: ClientType;
+  authRules?: AuthRules;
   authClaims?: {[key: string]: string} | null;
   clientTypeClaims?: {[key: string]: string} | null;
   jwtVerifierConfiguration: JwksVerifierConfiguration

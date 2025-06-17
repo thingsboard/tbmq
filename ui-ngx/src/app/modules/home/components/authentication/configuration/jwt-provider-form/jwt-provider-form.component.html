@@ -165,7 +165,7 @@
         @case (JwtAlgorithmType.PUBLIC_KEY) {
           <tb-file-input [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.publicKey')?.value"
                          formControlName="publicKey"
-                         [required]="false"
+                         [required]="true"
                          dropLabel="{{ 'integration.drop-file-or' | translate }}"
                          [label]="'authentication.public-key' | translate"
                          (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.publicKey').patchValue($event)"
@@ -178,56 +178,54 @@
 
     <ng-template #jwks>
       <section formGroupName="jwtVerifierConfiguration">
-
-      <mat-form-field class="flex flex-1">
-        <mat-label translate>authentication.jwks-endpoint</mat-label>
-        <input matInput formControlName="endpoint">
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'authentication.jwks-endpoint-required' | translate }}"
-                  [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.endpoint').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.endpoint').touched)"
-                  class="tb-error">
-          warning
-        </mat-icon>
-        <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-endpoint-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
-      <mat-form-field class="flex flex-1">
-        <mat-label translate>authentication.jwks-refresh-interval</mat-label>
-        <input matInput formControlName="refreshInterval" type="number" min="300">
-        <mat-icon matSuffix
-                  matTooltipClass="tb-error-tooltip"
-                  matTooltip="{{ 'authentication.jwks-refresh-interval-min' | translate }}"
-                  [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('min')"
-                  class="tb-error">
-          warning
-        </mat-icon>
-        <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-refresh-interval-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
-      <tb-integration-credentials formControlName="credentials"
-                                  [passwordOptional]="true"
-                                  [userNameOptional]="true"
-                                  [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
-                                                         IntegrationCredentialType.Basic,
-                                                         IntegrationCredentialType.CertPEM]">
-      </tb-integration-credentials>
-      <section class="security-setting mat-padding">
-        <p translate>integration.headers</p>
-        <tb-key-val-map
-          formControlName="headers"
-          class="security-setting-content"
-          noDataText="integration.no-headers-filter"
-          addText="key-val.add-header"
-          keyLabel="integration.header"
-          singlePredefinedKey="Content-Type"
-          singlePredefinedValue="application/json">
-        </tb-key-val-map>
-      </section>
+        <mat-form-field class="flex flex-1">
+          <mat-label translate>authentication.jwks-endpoint</mat-label>
+          <input matInput formControlName="endpoint">
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'authentication.jwks-endpoint-required' | translate }}"
+                    [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.endpoint').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.endpoint').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-endpoint-hint' | translate }}">
+            help
+          </mat-icon>
+        </mat-form-field>
+        <mat-form-field class="flex flex-1">
+          <mat-label translate>authentication.jwks-refresh-interval</mat-label>
+          <input matInput formControlName="refreshInterval" type="number" min="300">
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'authentication.jwks-refresh-interval-min' | translate }}"
+                    [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('min')"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix matTooltip="{{ 'authentication.jwks-refresh-interval-hint' | translate }}">
+            help
+          </mat-icon>
+        </mat-form-field>
+        <tb-integration-credentials formControlName="credentials"
+                                    [allowCredentialTypes]="[IntegrationCredentialType.Anonymous,
+                                                           IntegrationCredentialType.Basic,
+                                                           IntegrationCredentialType.CertPEM]">
+        </tb-integration-credentials>
+        <section class="security-setting mat-padding mt-5">
+          <p translate>integration.headers</p>
+          <tb-key-val-map
+            formControlName="headers"
+            class="security-setting-content"
+            noDataText="integration.no-headers-filter"
+            addText="key-val.add-header"
+            keyLabel="integration.header"
+            [singleMode]="true"
+            singlePredefinedKey="Content-Type"
+            singlePredefinedValue="application/json">
+          </tb-key-val-map>
+        </section>
       </section>
     </ng-template>
   </section>
-  {{jwtConfigForm.getRawValue() | json}}
+<!--  {{jwtConfigForm.getRawValue() | json}}-->
 </section>

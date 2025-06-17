@@ -13,14 +13,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-:host ::ng-deep {
-  .security-setting {
-    margin-bottom: 0;
-  }
-
-  .toggle-group {
-    max-width: 370px;
-    width: 100%;
-    margin: 0 auto 16px;
-  }
-}
+:host {}
