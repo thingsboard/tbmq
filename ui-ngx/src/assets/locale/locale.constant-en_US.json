@@ -1098,6 +1098,7 @@
     "add-authorization-rule-prompt": "Please add authorization rule",
     "authorization-rules-mapping": "Authorization rules mapping",
     "authorization": "Authorization rules",
+    "authorization-hint": "Authorization rule patterns control which topics clients can publish or subscribe to using regular expressions. E.g., the rule 'country/.*' allows access only to topics starting with 'country/'. The rule '.*' allows access to any topic. An empty rule forbids publishing/subscribing.",
     "authentication": "Authentication",
     "authorization-rule-patterns-pub": "Publish authorization rule patterns",
     "authorization-rule-patterns-sub": "Subscribe authorization rule patterns",

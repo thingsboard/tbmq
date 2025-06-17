@@ -97,7 +97,6 @@ import { ENTER, TAB } from '@angular/cdk/keycodes';
     MatChipInput,
     MatChipRemove,
     MatChipRow,
-    JsonPipe
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
