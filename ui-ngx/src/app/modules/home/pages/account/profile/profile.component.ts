@@ -82,7 +82,7 @@ export class ProfileComponent extends PageComponent implements OnInit, HasConfir
       this.user.additionalInfo = {};
     }
     this.user.additionalInfo.lang = this.profile.get('language').value;
-    this.adminService.saveAdminUser(this.user).subscribe(
+    this.adminService.saveUser(this.user).subscribe(
       (user) => {
         this.userLoaded(user);
         this.store.dispatch(new ActionAuthUpdateUserDetails({
