@@ -96,6 +96,7 @@ public class BrokerHomePageConfig {
                 .wssMaxPayloadSize(getWssMaxPayloadSize())
                 .existsBasicCredentials(existsBasicCredentials())
                 .existsX509Credentials(existsX509Credentials())
+                .existsScramCredentials(existsScramCredentials())
                 .build();
     }
 
@@ -245,11 +246,19 @@ public class BrokerHomePageConfig {
     }
 
     private boolean existsBasicCredentials() {
-        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        return existsByCredentialsType(ClientCredentialsType.MQTT_BASIC);
     }
 
     private boolean existsX509Credentials() {
-        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.SSL);
+        return existsByCredentialsType(ClientCredentialsType.SSL);
+    }
+
+    private boolean existsScramCredentials() {
+        return existsByCredentialsType(ClientCredentialsType.SCRAM);
+    }
+
+    private boolean existsByCredentialsType(ClientCredentialsType type) {
+        return mqttClientCredentialsService.existsByCredentialsType(type);
     }
 
     private int getPortFromConnectivitySettings(Map<String, ConnectivityInfo> connectivityInfoMap, String key) {

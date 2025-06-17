@@ -131,11 +131,6 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         this.enabled = false;
     }
 
-    public void enabled(boolean enabled, SslMqttAuthProviderConfiguration configuration) {
-        this.enabled = enabled;
-        this.configuration = configuration;
-    }
-
     @Override
     public boolean isEnabled() {
         return enabled;

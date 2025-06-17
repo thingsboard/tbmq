@@ -40,5 +40,6 @@ public class HomePageConfigDto {
     private int wssMaxPayloadSize;
     private boolean existsBasicCredentials;
     private boolean existsX509Credentials;
+    private boolean existsScramCredentials;
 
 }
