@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.controller;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,11 +34,15 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
+import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
+import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.ArrayList;
@@ -45,6 +50,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.thingsboard.mqtt.broker.controller.ControllerConstants.USER_ID;
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION;
 
 @RestController
 @RequiredArgsConstructor
@@ -55,6 +61,9 @@ public class AdminController extends BaseController {
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
     private final WebSocketConnectionService webSocketConnectionService;
+
+    @Value("${security.user_token_access_enabled:true}")
+    private boolean userTokenAccessEnabled;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
@@ -171,5 +180,26 @@ public class AdminController extends BaseController {
             }
         } while (pageData.hasNext());
         return webSocketConnections;
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/user/{userId}/token")
+    public JwtTokenPair getUserToken(@PathVariable(USER_ID) String strUserId) throws ThingsboardException {
+        checkParameter(USER_ID, strUserId);
+        if (!userTokenAccessEnabled) {
+            throw new ThingsboardException(YOU_DON_T_HAVE_PERMISSION_TO_PERFORM_THIS_OPERATION, ThingsboardErrorCode.PERMISSION_DENIED);
+        }
+        UUID userId = toUUID(strUserId);
+        User user = checkUserId(userId);
+        UserPrincipal principal = new UserPrincipal(user.getEmail());
+        UserCredentials credentials = userService.findUserCredentialsByUserId(userId);
+        SecurityUser securityUser = new SecurityUser(user, credentials.isEnabled(), principal);
+        return tokenFactory.createTokenPair(securityUser);
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/user/tokenAccessEnabled")
+    public boolean isUserTokenAccessEnabled() {
+        return userTokenAccessEnabled;
     }
 }

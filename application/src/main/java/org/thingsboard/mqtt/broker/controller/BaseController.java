@@ -61,6 +61,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionClea
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
+import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 import org.thingsboard.mqtt.broker.service.security.system.SystemSecurityService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionPaginationService;
 
@@ -106,6 +107,8 @@ public abstract class BaseController {
     protected IntegrationService integrationService;
     @Autowired
     protected BlockedClientService blockedClientService;
+    @Autowired
+    protected JwtTokenFactory tokenFactory;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter

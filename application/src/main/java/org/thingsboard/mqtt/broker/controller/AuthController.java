@@ -42,7 +42,6 @@ import org.thingsboard.mqtt.broker.service.security.model.ResetPasswordEmailRequ
 import org.thingsboard.mqtt.broker.service.security.model.ResetPasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
-import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 
 @RestController
 @RequiredArgsConstructor
@@ -51,7 +50,6 @@ import org.thingsboard.mqtt.broker.service.security.model.token.JwtTokenFactory;
 public class AuthController extends BaseController {
 
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtTokenFactory tokenFactory;
     private final MailService mailService;
 
     @PreAuthorize("isAuthenticated()")
