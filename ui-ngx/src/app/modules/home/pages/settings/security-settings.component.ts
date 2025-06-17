@@ -51,14 +51,14 @@ import {
 } from 'ngx-drag-drop';
 import { guid, isUndefined } from '@core/utils';
 import { moveItemInArray } from '@angular/cdk/drag-drop';
-import { CredentialsType, credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 import { Router } from '@angular/router';
+import { MqttAuthProviderType, mqttAuthProviderTypeTranslationMap } from '@shared/models/mqtt-auth-provider.model';
 
 @Component({
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-  imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
@@ -67,13 +67,11 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   authStrategyLabel: string;
   authStrategyTooltip: string;
-
-  providers: CredentialsType[] = Object.values(CredentialsType);
-  credentialsTypeTranslationMap = credentialsTypeTranslationMap;
-
   dndId = guid();
   dragIndex: number;
   dragDisabled = false;
+  mqttAuthProviderTypeMap = mqttAuthProviderTypeTranslationMap;
+  priorities: MqttAuthProviderType[];
 
   private securitySettings: SecuritySettings;
   private mqttAuthSettings: AdminSettings<MqttAuthSettings>;
@@ -161,7 +159,7 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   private buildMqttAuthSettingsForm() {
     this.mqttAuthSettingsForm = this.fb.group({
       useListenerBasedProviderOnly: [null, []],
-      priorities: [this.providers, []]
+      priorities: [null, []]
     });
     this.mqttAuthSettingsForm.get('useListenerBasedProviderOnly').valueChanges
       .pipe(takeUntil(this.destroy$))
@@ -190,9 +188,11 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   private processMqttAuthSettings(settings: AdminSettings<MqttAuthSettings>): void {
     this.mqttAuthSettings = settings;
+    this.priorities = settings.jsonValue.priorities;
     this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 
+  // TODO move as separate component
   chipDragStart(index: number, chipRow: MatChipRow, placeholderChipRow: Element) {
     this.renderer.setStyle(placeholderChipRow, 'width', chipRow._elementRef.nativeElement.offsetWidth + 'px');
     this.dragIndex = index;
@@ -204,11 +204,13 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   onChipDrop(event: DndDropEvent) {
     let index = event.index;
+    const prioritiesCopy = [...this.priorities];
     if (isUndefined(index)) {
-      index = this.providers.length;
+      index = this.priorities.length;
     }
-    moveItemInArray(this.providers, this.dragIndex, index);
-    this.mqttAuthSettingsForm.get('priorities').setValue(this.providers);
+    moveItemInArray(prioritiesCopy, this.dragIndex, index);
+    this.mqttAuthSettingsForm.get('priorities').setValue(prioritiesCopy);
+    this.priorities = prioritiesCopy;
     this.dragIndex = -1;
   }
 

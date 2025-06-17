@@ -81,6 +81,10 @@
         }
       }
 
+      .mdc-evolution-chip__action {
+        cursor: move;
+      }
+
       .mat-mdc-chip-action {
         overflow: hidden;
         .mat-mdc-chip-action-label {
@@ -103,7 +107,6 @@
           flex-direction: row;
           align-items: center;
           min-width: 0;
-          //background: rgba(0, 0, 0, 0.04);
           border-radius: 100px;
           padding: 2px 10px;
           &.tb-transparent {

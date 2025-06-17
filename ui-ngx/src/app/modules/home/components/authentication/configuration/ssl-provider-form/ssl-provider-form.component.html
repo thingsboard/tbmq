@@ -16,9 +16,7 @@
 
 -->
 <section [formGroup]="sslProviderConfigForm">
-  <section formGroupName="configuration">
-    <mat-slide-toggle formControlName="skipValidityCheckForClientCert">
-      {{ 'authentication.skip-cert-validity-check' | translate }}
-    </mat-slide-toggle>
-  </section>
+  <mat-slide-toggle formControlName="skipValidityCheckForClientCert">
+    {{ 'authentication.skip-cert-validity-check' | translate }}
+  </mat-slide-toggle>
 </section>

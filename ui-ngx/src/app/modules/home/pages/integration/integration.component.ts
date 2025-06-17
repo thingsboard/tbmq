@@ -18,8 +18,6 @@ import {
   ChangeDetectorRef,
   Component,
   Inject,
-  OnInit,
-  signal
 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -75,10 +73,9 @@ import { KeyValMapComponent } from '@shared/components/key-val-map.component';
     KeyValMapComponent
   ]
 })
-export class IntegrationComponent extends EntityComponent<Integration, PageLink, IntegrationInfo> implements OnInit {
+export class IntegrationComponent extends EntityComponent<Integration, PageLink, IntegrationInfo> {
 
   private integrationType: IntegrationType;
-  integration = signal<Integration>(null);
 
   constructor(protected store: Store<AppState>,
               protected translate: TranslateService,
@@ -88,10 +85,6 @@ export class IntegrationComponent extends EntityComponent<Integration, PageLink,
               protected integrationService: IntegrationService,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
-  }
-
-  ngOnInit() {
-    super.ngOnInit();
   }
 
   hideDelete() {

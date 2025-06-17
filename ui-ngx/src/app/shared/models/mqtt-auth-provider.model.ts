@@ -15,17 +15,34 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
-import { CredentialsType } from '@shared/models/credentials.model';
 import { ClientType } from '@shared/models/client.model';
 import { BasicCredentials, CertPemCredentials, Credentials } from '@shared/models/integration.models';
-import { PageData } from '@shared/models/page/page-data';
+import { AuthRules } from '@shared/models/credentials.model';
+
+export enum MqttAuthProviderType {
+  MQTT_BASIC = 'MQTT_BASIC',
+  X_509 = 'X_509',
+  SCRAM = 'SCRAM',
+  JWT = 'JWT',
+  HTTP_SERVICE = 'HTTP_SERVICE'
+}
+
+export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, string>(
+  [
+    [MqttAuthProviderType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
+    [MqttAuthProviderType.X_509, 'mqtt-client-credentials.type-ssl'],
+    [MqttAuthProviderType.SCRAM, 'mqtt-client-credentials.type-scram'],
+    [MqttAuthProviderType.JWT, 'authentication.type-jwt'],
+    [MqttAuthProviderType.HTTP_SERVICE, 'authentication.type-http-service'],
+  ]
+);
 
 export interface MqttAuthProvider extends ShortMqttAuthProvider {
   configuration: BasicMqttAuthProviderConfiguration | ScramMqttAuthProviderConfiguration | SslMqttAuthProviderConfiguration | JwtMqttAuthProviderConfiguration;
 }
 
 export interface ShortMqttAuthProvider extends BaseData {
-  type: CredentialsType;
+  type: MqttAuthProviderType;
   enabled: boolean;
   description?: string;
 }
@@ -38,21 +55,25 @@ export interface SslMqttAuthProviderConfiguration {
   skipValidityCheckForClientCert: boolean;
 }
 
-export interface JwtMqttAuthProviderConfiguration extends JwksVerifierConfiguration {
+export interface JwtMqttAuthProviderConfiguration {
+  type: MqttAuthProviderType;
   jwtVerifierType: JwtVerifierType;
   defaultClientType: ClientType;
+  authRules?: AuthRules;
   authClaims?: {[key: string]: string} | null;
   clientTypeClaims?: {[key: string]: string} | null;
+  jwtVerifierConfiguration: JwksVerifierConfiguration;
 }
 
 export interface JwksVerifierConfiguration {
+  jwtVerifierType?: JwtVerifierType;
+  jwtSignAlgorithmConfiguration?: JwtSignAlgorithmConfiguration;
+  algorithm?: JwtAlgorithmType;
   endpoint?: string;
   refreshInterval?: number;
   ssl?: boolean;
   credentials?: Credentials | BasicCredentials | CertPemCredentials;
   headers?: {[key: string]: string} | null;
-  secret?: string
-  publicKey?: string;
 }
 
 export enum JwtVerifierType {
@@ -61,101 +82,19 @@ export enum JwtVerifierType {
 }
 
 export enum JwtAlgorithmType {
-  HMAC = 'HMAC',
-  PUBLIC_KEY = 'PUBLIC_KEY'
+  HMAC_BASED = 'HMAC_BASED',
+  PEM_KEY = 'PEM_KEY'
 }
 
 export const JwtAlgorithmTypeTranslation = new Map<JwtAlgorithmType, string>(
   [
-    [JwtAlgorithmType.HMAC, 'authentication.hmac'],
-    [JwtAlgorithmType.PUBLIC_KEY, 'authentication.public-key']
+    [JwtAlgorithmType.HMAC_BASED, 'authentication.hmac'],
+    [JwtAlgorithmType.PEM_KEY, 'authentication.public-key']
   ]
 );
 
-export const mockProviders: MqttAuthProvider[] = [
-  {
-    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e251",
-    createdTime: 1747383888393,
-    type: CredentialsType.MQTT_BASIC,
-    enabled: true,
-    configuration: {}
-  },
-  {
-    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e252",
-    createdTime: 1747383888393,
-    type: CredentialsType.SCRAM,
-    enabled: true,
-    configuration: {}
-  },
-  {
-    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e253",
-    createdTime: 1747383888393,
-    type: CredentialsType.SSL,
-    enabled: true,
-    configuration: {
-      skipValidityCheckForClientCert: true
-    }
-  },
-  {
-    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e254",
-    createdTime: 1747383888393,
-    type: CredentialsType.JWT,
-    enabled: false,
-    configuration: {
-      jwtVerifierType: JwtVerifierType.ALGORITHM_BASED,
-      defaultClientType: ClientType.DEVICE,
-      authClaims: null,
-      clientTypeClaims: null
-    }
-  },
-  {
-    id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e255",
-    createdTime: 1747383888395,
-    type: CredentialsType.HTTP_SERVICE,
-    enabled: true,
-    configuration: {}
-  },
-]
-
-export const mockProvidersPageData: PageData<ShortMqttAuthProvider> = {
-  data: [
-    {
-      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e251",
-      createdTime: 1747383888391,
-      type: CredentialsType.MQTT_BASIC,
-      enabled: true,
-      description: 'Uses plain credentials for access control.'
-    },
-    {
-      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e253",
-      createdTime: 1747383888392,
-      type: CredentialsType.SSL,
-      enabled: true,
-      description: 'Secure auth using public key infrastructure.'
-    },
-    {
-      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e254",
-      createdTime: 1747383888393,
-      type: CredentialsType.JWT,
-      enabled: false,
-      description: 'Authenticate using signed JWT tokens.'
-    },
-    {
-      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e252",
-      createdTime: 1747383888394,
-      type: CredentialsType.SCRAM,
-      enabled: true,
-      description: 'Auth with hashed and salted passwords.'
-    },
-    {
-      id: "7d6999ff-cdd0-4175-9a34-fa2e53f8e255",
-      createdTime: 1747383888395,
-      type: CredentialsType.HTTP_SERVICE,
-      enabled: true,
-      description: 'Authenticate using an external HTTP service.'
-    },
-  ],
-  "totalPages": 1,
-  "totalElements": 5,
-  "hasNext": false
+export interface JwtSignAlgorithmConfiguration {
+  algorithm?: JwtAlgorithmType;
+  secret?: string;
+  publicPemKey?: string;
 }

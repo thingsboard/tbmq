@@ -30,6 +30,9 @@
             }
             @if (column.key === 'value') {
               <span>
+                @if (isAuthProviderParam(entity)) {
+                  <mat-slide-toggle class="small-toggle" [(ngModel)]="entity.value" (ngModelChange)="switchParam(entity)"></mat-slide-toggle>
+                }
                 {{ formatBytesToValue(entity) }}
                 <tb-copy-button [class.!hidden]="!showCopyButton(entity, configParams)"
                   [containerStyle]="{padding: 0}"

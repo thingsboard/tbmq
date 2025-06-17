@@ -18,7 +18,8 @@ import { Component } from '@angular/core';
 import {
   BrokerConfigTable,
   ConfigParams,
-  ConfigParamsTranslationMap,
+  ConfigParamAuthProviderMap,
+  ConfigParamsTranslationMap
 } from '@shared/models/config.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -35,18 +36,25 @@ import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
+import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import { PageLink } from '@shared/models/page/page-link';
 
 @Component({
     selector: 'tb-card-config',
     templateUrl: './card-config.component.html',
     styleUrls: ['./card-config.component.scss'],
-    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
+    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatSlideToggle, FormsModule]
 })
 export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
   configParamsTranslationMap = ConfigParamsTranslationMap;
   configParams = ConfigParams;
+  configParamAuthProviderMap = ConfigParamAuthProviderMap;
+  authProviders: ShortMqttAuthProvider[];
 
   fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
     map(data => {
@@ -63,6 +71,7 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,
+              private mqttAuthProviderService: MqttAuthProviderService,
               protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
   }
@@ -101,5 +110,31 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     return !entity.value &&
            ((entity.key === configParams.x509AuthEnabled && this.config.existsX509Credentials) ||
             (entity.key === configParams.basicAuthEnabled && this.config.existsBasicCredentials));
+  }
+
+  isAuthProviderParam(entity: BrokerConfigTable) {
+    return this.configParamAuthProviderMap.has(entity.key);
+  }
+
+  switchParam(entity: BrokerConfigTable) {
+    const providerType = this.configParamAuthProviderMap.get(entity.key);
+    const initValue = !entity.value;
+    if (!this.authProviders) {
+      const pageLink = new PageLink(10);
+      this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(
+        providersPageData => {
+          this.authProviders = providersPageData.data;
+          this.switchAuthProvider(providerType, initValue);
+        }
+      );
+    } else {
+      this.switchAuthProvider(providerType, initValue);
+    }
+  }
+
+  private switchAuthProvider(providerType: MqttAuthProviderType, value: boolean) {
+    const providerId = this.authProviders.find(e => e.type === providerType).id;
+    this.mqttAuthProviderService.switchAuthProvider(providerId, value)
+      .subscribe(() => this.configService.fetchBrokerConfig().subscribe());
   }
 }

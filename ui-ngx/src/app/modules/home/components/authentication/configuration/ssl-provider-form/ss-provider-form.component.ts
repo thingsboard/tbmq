@@ -34,7 +34,7 @@ import { MatSlideToggle } from "@angular/material/slide-toggle";
 import {
   MqttAuthenticationProviderForm
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
-import { MqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import { MqttAuthProvider, SslMqttAuthProviderConfiguration } from '@shared/models/mqtt-auth-provider.model';
 
 @Component({
   selector: 'tb-ssl-provider-config-form',
@@ -73,9 +73,7 @@ export class SslProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   ngOnInit() {
     this.sslProviderConfigForm = this.fb.group({
-      configuration: this.fb.group({
-        skipValidityCheckForClientCert: [null, []],
-      })
+      skipValidityCheckForClientCert: [null, []],
     });
     this.sslProviderConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
@@ -111,7 +109,7 @@ export class SslProviderFormComponent extends MqttAuthenticationProviderForm imp
     }
   }
 
-  private updateModels(value) {
+  private updateModels(value: SslMqttAuthProviderConfiguration) {
     this.propagateChange(value);
   }
 

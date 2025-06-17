@@ -34,8 +34,7 @@ import {
 } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { CredentialsType } from '@shared/models/credentials.model';
-import { MqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import { MqttAuthProvider, MqttAuthProviderType } from '@shared/models/mqtt-auth-provider.model';
 import {
   SslProviderFormComponent
 } from '@home/components/authentication/configuration/ssl-provider-form/ss-provider-form.component';
@@ -67,9 +66,9 @@ import {
 export class MqttAuthenticationProviderConfigurationComponent implements ControlValueAccessor, Validator, OnDestroy {
 
   providerForm: UntypedFormGroup;
-  credentialsType = CredentialsType;
+  mqttAuthProviderType = MqttAuthProviderType;
 
-  readonly providerType = input<CredentialsType>();
+  readonly providerType = input<MqttAuthProviderType>();
   readonly provider = input<MqttAuthProvider>();
   readonly isEdit = input<boolean>();
   disabled = model<boolean>();

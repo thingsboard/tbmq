@@ -125,7 +125,7 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
     }
     this.kvListFormGroup.setControl('keyVals', this.fb.array(keyValsControls), {emitEvent: false});
     if (this.isSingleMode && this.isSinglePredefinedKey && !keyValsControls.length) {
-      this.addKeyVal();
+      setTimeout(() => this.addKeyVal(), 0);
     }
     if (this.disabled) {
       this.kvListFormGroup.disable({emitEvent: false});

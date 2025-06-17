@@ -26,15 +26,12 @@ import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
 import {
-  mockProviders,
-  mockProvidersPageData,
   MqttAuthProvider,
+  mqttAuthProviderTypeTranslationMap,
   ShortMqttAuthProvider
 } from '@shared/models/mqtt-auth-provider.model';
 import { MqttAuthProviderComponent } from '@home/pages/authentication/mqtt-auth-provider.component';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
-import { Integration, IntegrationInfo } from '@shared/models/integration.models';
-import { credentialsTypeTranslationMap } from '@shared/models/credentials.model';
 
 @Injectable()
 export class MqttAuthProviderTableConfigResolver {
@@ -51,19 +48,18 @@ export class MqttAuthProviderTableConfigResolver {
     this.config.entityComponent = MqttAuthProviderComponent;
 
     this.config.tableTitle = this.translate.instant('authentication.authentication-providers');
-    this.config.entityTitle = (entity) => entity ? this.translate.instant(credentialsTypeTranslationMap.get(entity.type)) : '';
+    this.config.entityTitle = (entity) => entity ? this.translate.instant(mqttAuthProviderTypeTranslationMap.get(entity.type)) : '';
     this.config.onEntityAction = action => this.onAction(action, this.config);
     this.config.addEnabled = false;
     this.config.selectionEnabled = false;
     this.config.searchEnabled = false;
     this.config.entitiesDeleteEnabled = false;
     this.config.displayPagination = false;
-    this.config.rowPointer = true;
 
     this.config.cellActionDescriptors = this.configureCellActions();
     this.config.columns.push(
       new EntityTableColumn<ShortMqttAuthProvider>('type', 'authentication.type', '150px',
-        (entity) => this.translate.instant(credentialsTypeTranslationMap.get(entity.type)), undefined, false),
+        (entity) => this.translate.instant(mqttAuthProviderTypeTranslationMap.get(entity.type)), undefined, false),
       new EntityTableColumn<ShortMqttAuthProvider>('description', 'authentication.description', '200px', undefined, undefined, false),
       new EntityTableColumn<ShortMqttAuthProvider>('status', 'authentication.status', '100px',
         entity => this.providerStatus(entity),
@@ -79,9 +75,9 @@ export class MqttAuthProviderTableConfigResolver {
         onAction: ($event) => this.router.navigate(['/settings/security'])
       }
     );
-    this.config.loadEntity = id => of(mockProviders.find(entity => entity.id === id)); //this.mqttAuthProviderService.getAuthProviderById(id);
+    this.config.loadEntity = id => this.mqttAuthProviderService.getAuthProviderById(id);
     this.config.saveEntity = entity => this.mqttAuthProviderService.saveAuthProvider(entity as MqttAuthProvider);
-    this.config.entitiesFetchFunction = pageLink => of(mockProvidersPageData); // this.mqttAuthProviderService.getAuthProviders(pageLink);
+    this.config.entitiesFetchFunction = pageLink => this.mqttAuthProviderService.getAuthProviders(pageLink);
   }
 
   resolve(): Observable<EntityTableConfig<ShortMqttAuthProvider>> {
@@ -96,7 +92,7 @@ export class MqttAuthProviderTableConfigResolver {
         nameFunction: (entity) => entity.enabled ? this.translate.instant('authentication.disable') : this.translate.instant('authentication.enable'),
         iconFunction: (entity) => entity.enabled ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off-outline',
         isEnabled: () => true,
-        onAction: ($event, entity) => this.toggleProvider($event, entity)
+        onAction: ($event, entity) => this.switchStatus($event, entity)
       },
     );
     return actions;
@@ -119,13 +115,12 @@ export class MqttAuthProviderTableConfigResolver {
     this.router.navigateByUrl(url);
   }
 
-  toggleProvider($event: Event, provider: MqttAuthProvider) {
+  switchStatus($event: Event, provider: MqttAuthProvider) {
     if ($event) {
       $event.stopPropagation();
     }
-    const providerValue: MqttAuthProvider = JSON.parse(JSON.stringify(provider));
-    providerValue.enabled = !providerValue.enabled;
-    this.mqttAuthProviderService.saveAuthProvider(providerValue).subscribe(() => this.config.getTable().updateData());
+    this.mqttAuthProviderService.switchAuthProvider(provider.id, provider.enabled)
+      .subscribe(() => this.config.getTable().updateData());
   }
 
   private providerStatus(provider: ShortMqttAuthProvider): string {

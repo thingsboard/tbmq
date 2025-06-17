@@ -24,8 +24,8 @@ import {
   UntypedFormBuilder,
   UntypedFormGroup,
   ValidationErrors,
-  Validators,
-  Validator
+  Validator,
+  Validators
 } from '@angular/forms';
 import { isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
@@ -40,26 +40,34 @@ import {
 import {
   MqttAuthenticationProviderForm
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
-import { MatSlideToggle } from "@angular/material/slide-toggle";
-import { MatFormField, MatLabel, MatSuffix } from "@angular/material/form-field";
-import { MatOption } from "@angular/material/core";
-import { MatSelect } from "@angular/material/select";
-import { ClientType, clientTypeTranslationMap } from "@shared/models/client.model";
-import { KeyValMapComponent } from "@shared/components/key-val-map.component";
-import { ToggleOption } from "@shared/components/toggle-header.component";
-import { ToggleSelectComponent } from "@shared/components/toggle-select.component";
-import { NgTemplateOutlet } from "@angular/common";
-import { IntegrationCredentialType } from "@shared/models/integration.models";
-import { MatInput } from "@angular/material/input";
-import { FileInputComponent } from "@shared/components/file-input.component";
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
+import { MatOption } from '@angular/material/core';
+import { MatSelect } from '@angular/material/select';
+import { ClientType, clientTypeTranslationMap } from '@shared/models/client.model';
+import { KeyValMapComponent } from '@shared/components/key-val-map.component';
+import { ToggleOption } from '@shared/components/toggle-header.component';
+import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
+import { JsonPipe, NgTemplateOutlet } from '@angular/common';
+import { IntegrationCredentialType } from '@shared/models/integration.models';
+import { MatInput } from '@angular/material/input';
+import { FileInputComponent } from '@shared/components/file-input.component';
 import {
   IntegrationCredentialsComponent
-} from "@home/components/integration/integration-credentials/integration-credentials.component";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
-import { TogglePasswordComponent } from "@shared/components/button/toggle-password.component";
-import { CredentialsType } from "@shared/models/credentials.model";
-import { HintTooltipIconComponent } from "@shared/components/hint-tooltip-icon.component";
+} from '@home/components/integration/integration-credentials/integration-credentials.component';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
+import { TogglePasswordComponent } from '@shared/components/button/toggle-password.component';
+import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
+import {
+  MatChipEditedEvent,
+  MatChipGrid,
+  MatChipInput,
+  MatChipInputEvent,
+  MatChipRemove,
+  MatChipRow
+} from '@angular/material/chips';
+import { ANY_CHARACTERS, AuthRulePatternsType } from '@shared/models/credentials.model';
+import { ENTER, TAB } from '@angular/cdk/keycodes';
 
 @Component({
   selector: 'tb-jwt-provider-config-form',
@@ -80,12 +88,15 @@ import { HintTooltipIconComponent } from "@shared/components/hint-tooltip-icon.c
     MatInput,
     FileInputComponent,
     IntegrationCredentialsComponent,
-    MatSlideToggle,
     MatIcon,
     MatSuffix,
     MatTooltip,
     TogglePasswordComponent,
     HintTooltipIconComponent,
+    MatChipGrid,
+    MatChipInput,
+    MatChipRemove,
+    MatChipRow,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -113,8 +124,11 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   JwtAlgorithmType = JwtAlgorithmType;
   jwtAlgorithmTypes = Object.values(JwtAlgorithmType);
   jwtAlgorithmTypeTranslation = JwtAlgorithmTypeTranslation;
-
   IntegrationCredentialType = IntegrationCredentialType;
+  pubRulesSet = new Set<string>();
+  subRulesSet = new Set<string>();
+  separatorKeysCodes = [ENTER, TAB];
+  authRulePatternsType = AuthRulePatternsType;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -125,36 +139,51 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   ngOnInit() {
     this.jwtConfigForm = this.fb.group({
-      configuration: this.fb.group({
-        clientType: [null, []],
-        claims: [null, []],
-        clientTypeClaims: [null, []],
-        jwtVerifierType: [null, []],
-        algorithmType: [null, []],
-        secret: [null, []],
-        publicKey: [null, []],
-        endpoint: [null, []],
-        refreshInterval: [null, []],
-        ssl: [null, []],
-        credentials: [null, []],
-        headers: [null, []],
-      })
+      defaultClientType: [null, [Validators.required]],
+      authClaims: [null, []],
+      authRules: this.fb.group({
+        pubAuthRulePatterns: [null, []],
+        subAuthRulePatterns: [null, []]
+      }),
+      clientTypeClaims: [null, []],
+      jwtVerifierType: [null, [Validators.required]],
+      jwtVerifierConfiguration: this.fb.group({
+        jwtSignAlgorithmConfiguration: this.fb.group({
+          secret: [null, [Validators.required]],
+          publicPemKey: [null, [Validators.required]],
+        }),
+        algorithm: [null, [Validators.required]],
+        endpoint: [null, [Validators.required]],
+        refreshInterval: [null, [Validators.required]],
+        credentials: [null, [Validators.required]],
+        headers: [null, [Validators.required]],
+      }),
     });
     this.jwtConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
-    this.jwtConfigForm.get('configuration.jwtVerifierType').valueChanges
+   this.jwtConfigForm.get('jwtVerifierType').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe((type) => this.updateJwtValidators(type));
+      .subscribe((type) => this.onJwtVerifierTypeChange(type));
+    this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((type) => this.onJwtVerifierAlgorithmChange(type));
   }
 
-  writeValue(value: MqttAuthProvider) {
+  writeValue(value: JwtMqttAuthProviderConfiguration) {
     if (isDefinedAndNotNull(value)) {
-      this.jwtConfigForm.reset(value, {emitEvent: false});
-      if (value.type === CredentialsType.JWT) {
-        const jwtConfig = value.configuration as JwtMqttAuthProviderConfiguration;
-        this.updateJwtValidators(jwtConfig.jwtVerifierType);
+      // TODO refactor authRules as separate component
+      this.clearRuleSets();
+      if (value.authRules) {
+        for (const rule of Object.keys(value.authRules)) {
+          if (value.authRules[rule]?.length) {
+            value.authRules[rule].map(el => this.addValueToAuthRulesSet(rule, el));
+          }
+        }
       }
+      this.jwtConfigForm.reset(value, {emitEvent: false});
+      this.onJwtVerifierTypeChange(value.jwtVerifierType);
+      this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.algorithm);
     } else {
       this.propagateChangePending = true;
     }
@@ -191,36 +220,137 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     };
   }
 
-  updateJwtValidators(type: JwtVerifierType) {
-    if (type === JwtVerifierType.JWKS) {
-      this.jwtConfigForm.get('configuration.algorithmType').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.secret').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.publicKey').disable({emitEvent: false});
+  onJwtVerifierTypeChange(type: JwtVerifierType) {
+    if (type === JwtVerifierType.ALGORITHM_BASED) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').enable();
 
-      this.jwtConfigForm.get('configuration.endpoint').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.endpoint').setValidators([Validators.required]);
+      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').disable({emitEvent: false});
+    } else if (type === JwtVerifierType.JWKS) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').setValidators([Validators.required]);
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').patchValue(300);
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').patchValue({type: IntegrationCredentialType.Anonymous});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.headers').enable({emitEvent: false});
 
-      this.jwtConfigForm.get('configuration.refreshInterval').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.ssl').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.credentials').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.headers').enable({emitEvent: false});
-    } else {
-      this.jwtConfigForm.get('configuration.algorithmType').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.publicKey').enable({emitEvent: false});
-
-      this.jwtConfigForm.get('configuration.secret').enable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.secret').setValidators([Validators.required]);
-
-      this.jwtConfigForm.get('configuration.endpoint').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.refreshInterval').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.ssl').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.credentials').disable({emitEvent: false});
-      this.jwtConfigForm.get('configuration.headers').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
     }
-    this.jwtConfigForm.updateValueAndValidity();
+    this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
 
-  displayEnableSsl() {
-    return this.jwtConfigForm.get('configuration.credentials').value?.type !== 'cert.PEM';
+  onJwtVerifierAlgorithmChange(type: JwtAlgorithmType) {
+    if (type === JwtAlgorithmType.HMAC_BASED) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
+    }  else if (type === JwtAlgorithmType.PEM_KEY) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
+    } else {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').patchValue(JwtAlgorithmType.HMAC_BASED);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
+
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
+    }
+    this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
+  }
+
+  addTopicRule(event: MatChipInputEvent, type: AuthRulePatternsType) {
+    const input = event.input;
+    const value = event.value;
+    if ((value || '').trim()) {
+      switch (type) {
+        case AuthRulePatternsType.PUBLISH:
+          this.pubRulesSet.add(value);
+          this.setAuthRulePatternsControl(this.pubRulesSet, type);
+          break;
+        case AuthRulePatternsType.SUBSCRIBE:
+          this.subRulesSet.add(value);
+          this.setAuthRulePatternsControl(this.subRulesSet, type);
+          break;
+      }
+    }
+    if (input) {
+      input.value = '';
+    }
+  }
+
+  removeTopicRule(rule: string, type: AuthRulePatternsType) {
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.pubRulesSet.delete(rule);
+        this.setAuthRulePatternsControl(this.pubRulesSet, type);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.subRulesSet.delete(rule);
+        this.setAuthRulePatternsControl(this.subRulesSet, type);
+        break;
+    }
+  }
+
+  editTopicRule(event: MatChipEditedEvent, type: AuthRulePatternsType): void {
+    let index: number;
+    let array: string[];
+    const oldRule = event.chip.value;
+    const newRule = event.value;
+    switch (type) {
+      case AuthRulePatternsType.SUBSCRIBE:
+        array = Array.from(this.subRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.subRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.subRulesSet, type);
+        break;
+      case AuthRulePatternsType.PUBLISH:
+        array = Array.from(this.pubRulesSet);
+        index = array.indexOf(oldRule);
+        if (index !== -1) {
+          array[index] = newRule;
+        }
+        this.pubRulesSet = new Set(array);
+        this.setAuthRulePatternsControl(this.pubRulesSet, type);
+        break;
+    }
+  }
+
+  private setAuthRulePatternsControl(set: Set<string>, type: AuthRulePatternsType) {
+    const rulesArray = [Array.from(set).join(',')];
+    switch (type) {
+      case AuthRulePatternsType.PUBLISH:
+        this.jwtConfigForm.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        break;
+      case AuthRulePatternsType.SUBSCRIBE:
+        this.jwtConfigForm.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        break;
+    }
+  }
+
+  private clearRuleSets() {
+    this.pubRulesSet.clear();
+    this.subRulesSet.clear();
+  }
+
+  private addValueToAuthRulesSet(type: string, value: string = ANY_CHARACTERS) {
+    switch (type) {
+      case 'subAuthRulePatterns':
+        this.subRulesSet.add(value);
+        break;
+      case 'pubAuthRulePatterns':
+        this.pubRulesSet.add(value);
+        break;
+    }
   }
 }
