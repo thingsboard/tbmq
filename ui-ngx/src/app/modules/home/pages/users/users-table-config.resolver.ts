@@ -34,15 +34,18 @@ import { EntityAction } from '@home/models/entity/entity-component.models';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
+import { AuthService } from '@core/http/auth.service';
 
 @Injectable()
 export class UsersTableConfigResolver {
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
+  private readonly currentUserId = () => getCurrentAuthUser(this.store).userId;
 
   constructor(private store: Store<AppState>,
               private adminService: UserService,
+              private authService: AuthService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private router: Router) {
@@ -52,8 +55,8 @@ export class UsersTableConfigResolver {
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
     this.config.tableTitle = this.translate.instant('user.users');
-    this.config.entitySelectionEnabled = (user) => user.id !== getCurrentAuthUser(this.store).userId;
-    this.config.deleteEnabled = (user) => user ? user.id !== getCurrentAuthUser(this.store).userId : true;
+    this.config.entitySelectionEnabled = (user) => user.id !== this.currentUserId();
+    this.config.deleteEnabled = (user) => user ? user.id !== this.currentUserId() : true;
     this.config.entityTitle = (user) => user ? user.email : '';
     this.config.addDialogStyle = {height: '600px'};
     this.config.onEntityAction = action => this.onAction(action, this.config);
@@ -78,6 +81,15 @@ export class UsersTableConfigResolver {
         onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
+
+    this.config.cellActionDescriptors.push(
+      {
+        name: this.translate.instant('login.login'),
+        icon: 'mdi:login',
+        isEnabled: (entity) => entity.id !== this.currentUserId(),
+        onAction: ($event, entity) => this.loginAsUser($event, entity)
+      }
+    )
 
     this.config.deleteEntityTitle = user => this.translate.instant('user.delete-user-title',
       {userEmail: user.email});
@@ -110,5 +122,12 @@ export class UsersTableConfigResolver {
     }
     const url = this.router.createUrlTree([user.id], {relativeTo: config.getActivatedRoute()});
     this.router.navigateByUrl(url);
+  }
+
+  private loginAsUser($event: Event, user: User) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.authService.loginAsUser(user.id).subscribe();
   }
 }

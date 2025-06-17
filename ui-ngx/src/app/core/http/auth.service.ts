@@ -156,7 +156,7 @@ export class AuthService {
   }
 
   public loginAsUser(userId: string) {
-    return this.http.get<LoginResponse>(`/api/user/${userId}/token`, defaultHttpOptions()).pipe(
+    return this.http.get<LoginResponse>(`/api/admin/user/${userId}/token`, defaultHttpOptions()).pipe(
       tap((loginResponse: LoginResponse) => {
           this.setUserFromJwtToken(loginResponse.token, loginResponse.refreshToken, true);
         }
@@ -320,7 +320,7 @@ export class AuthService {
 
   private loadIsUserTokenAccessEnabled(authUser: AuthUser): Observable<boolean> {
     if (authUser.authority === Authority.SYS_ADMIN) {
-      return this.http.get<boolean>('/api/user/tokenAccessEnabled', defaultHttpOptions());
+      return this.http.get<boolean>('/api/admin/user/tokenAccessEnabled', defaultHttpOptions());
     } else {
       return of(false);
     }
