@@ -53,6 +53,7 @@ import { MatIcon } from '@angular/material/icon';
 import { AsyncPipe } from '@angular/common';
 import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatDivider } from '@angular/material/divider';
+import { DEFAULT_PASSWORD } from '@core/auth/auth.models';
 
 @Component({
     selector: 'tb-add-entity-dialog',
@@ -185,7 +186,7 @@ export class AddEntityDialogComponent extends DialogComponent<AddEntityDialogCom
   private showDefaultPassWarning() {
     this.store.dispatch(new ActionNotificationShow(
       {
-        message: this.translate.instant('profile.default-password-warn'),
+        message: this.translate.instant('profile.default-password-warn', {defaultPassword: DEFAULT_PASSWORD}),
         type: 'success',
         duration: 4000,
         verticalPosition: 'top',

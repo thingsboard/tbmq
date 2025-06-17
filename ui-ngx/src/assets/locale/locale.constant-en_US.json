@@ -478,7 +478,7 @@
     "change-password": "Change password",
     "change-default-password": "Change default password",
     "current-password": "Current password",
-    "default-password-warn": "The default password for a new user is 'sysadmin'"
+    "default-password-warn": "The default password for a new user is '{{defaultPassword}}'"
   },
   "user": {
     "admins": "Admins",
@@ -486,9 +486,7 @@
     "user": "User",
     "users": "Users",
     "customer-users": "Customer Users",
-    "tenant-admins": "Tenant Admins",
     "sys-admin": "System administrator",
-    "tenant-admin": "Tenant administrator",
     "customer": "Customer",
     "anonymous": "Anonymous",
     "add": "Add User",
@@ -522,8 +520,6 @@
     "copy-activation-link": "Copy activation link",
     "activation-link-copied-message": "User activation link has been copied to clipboard",
     "details": "Details",
-    "login-as-tenant-admin": "Login as Tenant Admin",
-    "login-as-customer-user": "Login as Customer User",
     "search": "Search by Email",
     "selected-users": "{ count, plural, =1 {1 User} other {# Users} } selected",
     "disable-account": "Disable User Account",
@@ -762,7 +758,6 @@
     "destination-shared-secret": "Destination shared secret",
     "destination-shared-secret-required": "Destination shared secret required",
     "customer-id": "Customer id",
-    "grip-tenant-id": "GRIP tenant id",
     "api-id": "API id",
     "azure-ca-cert": "CA certificate file",
     "ca-cert": "CA certificate file",

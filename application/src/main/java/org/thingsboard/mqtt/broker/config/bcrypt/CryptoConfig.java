@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.install;
+package org.thingsboard.mqtt.broker.config.bcrypt;
 
-import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-public interface SystemDataLoaderService {
+@Configuration
+public class CryptoConfig {
 
-    void createAdmin() throws Exception;
-
-    void createAdminSettings() throws Exception;
-
-    void createWebSocketMqttClientCredentials();
-
-    void createDefaultWebSocketConnection() throws ThingsboardException;
-
-    void createMqttAuthProviders();
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
 }

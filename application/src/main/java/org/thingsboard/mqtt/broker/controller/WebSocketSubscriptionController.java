@@ -18,12 +18,13 @@ package org.thingsboard.mqtt.broker.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.ws.WebSocketSubscription;
@@ -39,48 +40,31 @@ public class WebSocketSubscriptionController extends BaseController {
 
     private final WebSocketSubscriptionService webSocketSubscriptionService;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping
     public WebSocketSubscription saveWebSocketSubscription(@RequestBody WebSocketSubscription subscription) throws ThingsboardException {
-        checkNotNull(subscription);
-        try {
-            return checkNotNull(webSocketSubscriptionService.saveWebSocketSubscription(subscription));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(webSocketSubscriptionService.saveWebSocketSubscription(subscription));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"webSocketConnectionId"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"webSocketConnectionId"})
     public List<WebSocketSubscription> getWebSocketSubscriptions(@RequestParam String webSocketConnectionId) throws ThingsboardException {
         checkParameter("webSocketConnectionId", webSocketConnectionId);
-        try {
-            return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptions(toUUID(webSocketConnectionId)));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptions(toUUID(webSocketConnectionId)));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/{id}")
     public WebSocketSubscription getWebSocketSubscriptionById(@PathVariable String id) throws ThingsboardException {
-        try {
-            return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptionById(toUUID(id)));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("id", id);
+        return checkNotNull(webSocketSubscriptionService.getWebSocketSubscriptionById(toUUID(id)));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/{id}")
     public void deleteWebSocketSubscription(@PathVariable String id) throws ThingsboardException {
-        try {
-            webSocketSubscriptionService.deleteWebSocketSubscription(toUUID(id));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("id", id);
+        webSocketSubscriptionService.deleteWebSocketSubscription(toUUID(id));
     }
 
 }

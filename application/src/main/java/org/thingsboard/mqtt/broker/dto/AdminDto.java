@@ -28,11 +28,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AdminDto {
+
     private UUID id;
+    private long createdTime;
     private String email;
     private String password;
     private String firstName;
     private String lastName;
     private JsonNode additionalInfo;
-    private long createdTime;
+
+    public static AdminDto fromEmail(String email) {
+        return AdminDto.builder().email(email).build();
+    }
 }

@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.config.JwtSettings;
 import org.thingsboard.mqtt.broker.service.security.exception.JwtExpiredTokenException;
+import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -156,5 +157,11 @@ public class JwtTokenFactory {
                 .issuer(settings.getTokenIssuer())
                 .issuedAt(Date.from(currentTime.toInstant()))
                 .signWith(new SecretKeySpec(Base64.getDecoder().decode(settings.getTokenSigningKey()), "HmacSHA512"), Jwts.SIG.HS512);
+    }
+
+    public JwtTokenPair createTokenPair(SecurityUser securityUser) {
+        JwtToken accessToken = createAccessJwtToken(securityUser);
+        JwtToken refreshToken = createRefreshToken(securityUser);
+        return new JwtTokenPair(accessToken.getToken(), refreshToken.getToken());
     }
 }

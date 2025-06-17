@@ -23,9 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
@@ -46,9 +45,8 @@ public class SystemInfoController extends BaseController {
         log.info("System build info: {}", info);
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/system/info", method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/system/info")
     public JsonNode getSystemVersionInfo() {
         return buildInfoObject();
     }

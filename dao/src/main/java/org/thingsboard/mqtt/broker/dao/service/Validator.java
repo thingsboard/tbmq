@@ -15,13 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import org.apache.commons.lang3.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.common.util.RegexUtils;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class Validator {
+
+    private static final Pattern PROPERTY_PATTERN = Pattern.compile("^[\\p{L}0-9_-]+$"); // Unicode letters, numbers, '_' and '-' allowed
 
     /**
      * This method validate <code>String</code> string. If string is invalid than throw
@@ -90,5 +95,9 @@ public class Validator {
         } else if (pageLink.getPage() < 0) {
             throw new IncorrectParameterException("Incorrect page link page '"+pageLink.getPage()+"'. Page must be positive integer.");
         }
+    }
+
+    public static boolean isValidProperty(String key) {
+        return StringUtils.isEmpty(key) || RegexUtils.matches(key, PROPERTY_PATTERN);
     }
 }

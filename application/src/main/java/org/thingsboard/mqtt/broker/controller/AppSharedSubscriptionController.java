@@ -19,12 +19,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -48,23 +49,17 @@ public class AppSharedSubscriptionController extends BaseController {
     @Value("${queue.kafka.enable-topic-deletion:true}")
     private boolean enableTopicDeletion;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping
     public ApplicationSharedSubscription saveSharedSubscription(@RequestBody ApplicationSharedSubscription sharedSubscription) throws ThingsboardException {
-        checkNotNull(sharedSubscription);
-        try {
-            topicValidationService.validateTopicFilter(sharedSubscription.getTopicFilter());
+        topicValidationService.validateTopicFilter(sharedSubscription.getTopicFilter());
 
-            ApplicationSharedSubscription applicationSharedSubscription =
-                    checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
-            if (sharedSubscription.getId() == null) {
-                createKafkaTopic(applicationSharedSubscription);
-            }
-            return applicationSharedSubscription;
-        } catch (Exception e) {
-            throw handleException(e);
+        ApplicationSharedSubscription applicationSharedSubscription =
+                checkNotNull(applicationSharedSubscriptionService.saveSharedSubscription(sharedSubscription));
+        if (sharedSubscription.getId() == null) {
+            createKafkaTopic(applicationSharedSubscription);
         }
+        return applicationSharedSubscription;
     }
 
     private void createKafkaTopic(ApplicationSharedSubscription subscription) throws ThingsboardException {
@@ -77,56 +72,38 @@ public class AppSharedSubscriptionController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"pageSize", "page"})
     public PageData<ApplicationSharedSubscription> getSharedSubscriptions(@RequestParam int pageSize,
                                                                           @RequestParam int page,
                                                                           @RequestParam(required = false) String textSearch,
                                                                           @RequestParam(required = false) String sortProperty,
                                                                           @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(applicationSharedSubscriptionService.getSharedSubscriptions(pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(applicationSharedSubscriptionService.getSharedSubscriptions(pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/{id}")
     public ApplicationSharedSubscription getSharedSubscriptionById(@PathVariable String id) throws ThingsboardException {
-        try {
-            return checkNotNull(applicationSharedSubscriptionService.getSharedSubscriptionById(toUUID(id)).orElse(null));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("id", id);
+        return checkNotNull(applicationSharedSubscriptionService.getSharedSubscriptionById(toUUID(id)).orElse(null));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"topic"}, method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"topic"})
     public ApplicationSharedSubscription getSharedSubscriptionByTopic(@RequestParam String topic) throws ThingsboardException {
-        try {
-            return checkNotNull(applicationSharedSubscriptionService.findSharedSubscriptionByTopic(topic));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("topic", topic);
+        return checkNotNull(applicationSharedSubscriptionService.findSharedSubscriptionByTopic(topic));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/{id}")
     public void deleteSharedSubscription(@PathVariable String id) throws ThingsboardException {
-        try {
-            ApplicationSharedSubscription sharedSubscription = getSharedSubscriptionById(id);
-            if (sharedSubscription == null) {
-                return;
-            }
-            boolean removed = applicationSharedSubscriptionService.deleteSharedSubscription(sharedSubscription.getId());
-            if (removed && enableTopicDeletion) {
-                applicationTopicService.deleteSharedTopic(sharedSubscription);
-            }
-        } catch (Exception e) {
-            throw handleException(e);
+        ApplicationSharedSubscription sharedSubscription = getSharedSubscriptionById(id);
+        boolean removed = applicationSharedSubscriptionService.deleteSharedSubscription(sharedSubscription.getId());
+        if (removed && enableTopicDeletion) {
+            applicationTopicService.deleteSharedTopic(sharedSubscription);
         }
     }
 }

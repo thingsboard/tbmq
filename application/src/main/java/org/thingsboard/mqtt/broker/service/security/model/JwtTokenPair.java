@@ -17,7 +17,6 @@ package org.thingsboard.mqtt.broker.service.security.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.thingsboard.mqtt.broker.common.data.security.Authority;
 
 @Data
 @NoArgsConstructor
@@ -25,8 +24,6 @@ public class JwtTokenPair {
 
     private String token;
     private String refreshToken;
-
-    private Authority scope;
 
     public JwtTokenPair(String token, String refreshToken) {
         this.token = token;
