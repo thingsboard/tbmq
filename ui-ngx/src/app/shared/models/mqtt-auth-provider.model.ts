@@ -62,17 +62,18 @@ export interface JwtMqttAuthProviderConfiguration {
   authRules?: AuthRules;
   authClaims?: {[key: string]: string} | null;
   clientTypeClaims?: {[key: string]: string} | null;
-  jwtVerifierConfiguration: JwksVerifierConfiguration
+  jwtVerifierConfiguration: JwksVerifierConfiguration;
 }
 
 export interface JwksVerifierConfiguration {
+  jwtVerifierType?: JwtVerifierType;
+  jwtSignAlgorithmConfiguration?: JwtSignAlgorithmConfiguration;
+  algorithm?: JwtAlgorithmType;
   endpoint?: string;
   refreshInterval?: number;
   ssl?: boolean;
   credentials?: Credentials | BasicCredentials | CertPemCredentials;
   headers?: {[key: string]: string} | null;
-  secret?: string
-  publicKey?: string;
 }
 
 export enum JwtVerifierType {
@@ -82,12 +83,18 @@ export enum JwtVerifierType {
 
 export enum JwtAlgorithmType {
   HMAC_BASED = 'HMAC_BASED',
-  PUBLIC_KEY = 'PUBLIC_KEY'
+  PEM_KEY = 'PEM_KEY'
 }
 
 export const JwtAlgorithmTypeTranslation = new Map<JwtAlgorithmType, string>(
   [
     [JwtAlgorithmType.HMAC_BASED, 'authentication.hmac'],
-    [JwtAlgorithmType.PUBLIC_KEY, 'authentication.public-key']
+    [JwtAlgorithmType.PEM_KEY, 'authentication.public-key']
   ]
 );
+
+export interface JwtSignAlgorithmConfiguration {
+  algorithm?: JwtAlgorithmType;
+  secret?: string;
+  publicPemKey?: string;
+}

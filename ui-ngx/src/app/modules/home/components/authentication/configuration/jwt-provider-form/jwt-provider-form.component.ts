@@ -151,9 +151,9 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       jwtVerifierConfiguration: this.fb.group({
         jwtSignAlgorithmConfiguration: this.fb.group({
           secret: [null, [Validators.required]],
+          publicPemKey: [null, [Validators.required]],
         }),
         algorithm: [null, [Validators.required]],
-        publicKey: [null, [Validators.required]],
         endpoint: [null, [Validators.required]],
         refreshInterval: [null, [Validators.required]],
         credentials: [null, [Validators.required]],
@@ -163,9 +163,12 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     this.jwtConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
-    this.jwtConfigForm.get('jwtVerifierType').valueChanges
+   this.jwtConfigForm.get('jwtVerifierType').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe((type) => this.onJwtVerifierTypeChange(type));
+    this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((type) => this.onJwtVerifierAlgorithmChange(type));
   }
 
   writeValue(value: JwtMqttAuthProviderConfiguration) {
@@ -180,8 +183,8 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         }
       }
       this.jwtConfigForm.reset(value, {emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierType').valueChanges.subscribe((value) => this.onJwtVerifierTypeChange(value));
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').valueChanges.subscribe((value) => this.onJwtVerifierAlgorithmChange(value));
+      this.onJwtVerifierTypeChange(value.jwtVerifierType);
+      this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.algorithm);
     } else {
       this.propagateChangePending = true;
     }
@@ -237,7 +240,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
       this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').disable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
     }
     this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
@@ -247,10 +250,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
 
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
-    }  else if (type === JwtAlgorithmType.PUBLIC_KEY) {
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').setValidators([Validators.required]);
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
+    }  else if (type === JwtAlgorithmType.PEM_KEY) {
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').enable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').setValidators([Validators.required]);
 
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
     } else {
@@ -259,7 +262,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
 
-      this.jwtConfigForm.get('jwtVerifierConfiguration.publicKey').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
     }
     this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }

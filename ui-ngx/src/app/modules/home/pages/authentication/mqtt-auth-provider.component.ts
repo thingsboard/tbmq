@@ -15,7 +15,7 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
@@ -24,6 +24,7 @@ import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
 import {
+  JwtMqttAuthProviderConfiguration,
   MqttAuthProvider,
   MqttAuthProviderType,
   mqttAuthProviderTypeTranslationMap
@@ -71,12 +72,9 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
   }
 
   prepareFormValue(formValue: MqttAuthProvider): MqttAuthProvider {
-    // @ts-ignore
-    formValue.configuration.type = formValue.type;
-    // @ts-ignore
-    formValue.configuration.jwtVerifierConfiguration.jwtVerifierType = formValue.configuration.jwtVerifierType;
-    // @ts-ignore
-    formValue.configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = formValue.configuration.jwtVerifierConfiguration.algorithm;
+    if (formValue.type === MqttAuthProviderType.JWT) {
+      formValue = this.prepareJwtForm(formValue);
+    }
     return super.prepareFormValue(formValue);
   }
 
@@ -86,5 +84,14 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
       enabled: isDefined(entity.enabled) ? entity.enabled : true,
       configuration: entity.configuration,
     });
+  }
+
+  private prepareJwtForm(formValue: MqttAuthProvider): MqttAuthProvider {
+    const configuration = formValue.configuration as JwtMqttAuthProviderConfiguration;
+    configuration.type = formValue.type;
+    configuration.jwtVerifierConfiguration.jwtVerifierType = configuration.jwtVerifierType;
+    configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = configuration.jwtVerifierConfiguration.algorithm;
+    formValue.configuration = configuration;
+    return formValue;
   }
 }

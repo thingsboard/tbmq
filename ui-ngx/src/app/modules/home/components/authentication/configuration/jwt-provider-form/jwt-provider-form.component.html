@@ -162,15 +162,17 @@
             </mat-form-field>
           </section>
         }
-        @case (JwtAlgorithmType.PUBLIC_KEY) {
-          <tb-file-input [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.publicKey')?.value"
-                         formControlName="publicKey"
-                         [required]="true"
-                         dropLabel="{{ 'integration.drop-file-or' | translate }}"
-                         [label]="'authentication.public-key' | translate"
-                         (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.publicKey').patchValue($event)"
-                         inputId="public-key">
-          </tb-file-input>
+        @case (JwtAlgorithmType.PEM_KEY) {
+          <section formGroupName="jwtSignAlgorithmConfiguration">
+            <tb-file-input [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey')?.value"
+                           formControlName="publicPemKey"
+                           [required]="true"
+                           dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                           [label]="'authentication.public-key' | translate"
+                           (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').patchValue($event)"
+                           inputId="public-key">
+            </tb-file-input>
+          </section>
         }
       }
       </section>
