@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.Arrays;
 
 public class JacksonUtil {
@@ -138,6 +139,15 @@ public class JacksonUtil {
             return OBJECT_MAPPER.readTree(bytes);
         } catch (IOException e) {
             throw new IllegalArgumentException("The given byte[] value cannot be transformed to Json object: " + Arrays.toString(bytes), e);
+        }
+    }
+
+    public static <T> void writeValue(Writer writer, T value) {
+        try {
+            OBJECT_MAPPER.writeValue(writer, value);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("The given writer value: "
+                    + writer + "cannot be wrote", e);
         }
     }
 }

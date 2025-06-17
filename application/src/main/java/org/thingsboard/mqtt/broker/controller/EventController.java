@@ -18,12 +18,12 @@ package org.thingsboard.mqtt.broker.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.event.EventFilter;
@@ -46,9 +46,8 @@ public class EventController extends BaseController {
 
     private final EventService eventService;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{eventType}", method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/{eventType}")
     public PageData<EventInfo> getEvents(
             @PathVariable(ENTITY_ID) String strEntityId,
             @PathVariable("eventType") String eventType,
@@ -65,9 +64,8 @@ public class EventController extends BaseController {
         return checkNotNull(eventService.findEvents(entityId, resolveEventType(eventType), pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping
     public PageData<EventInfo> getEvents(
             @PathVariable(ENTITY_ID) String strEntityId,
             @RequestParam int pageSize,
@@ -84,8 +82,8 @@ public class EventController extends BaseController {
         return checkNotNull(eventService.findEventsByFilter(entityId, eventFilter, pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/clear", method = RequestMethod.POST)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping(value = "/clear")
     @ResponseStatus(HttpStatus.OK)
     public void clearEvents(@PathVariable(ENTITY_ID) String strEntityId,
                             @RequestParam(required = false) Long startTime,
@@ -97,7 +95,7 @@ public class EventController extends BaseController {
         eventService.removeEvents(entityId, eventFilter, startTime, endTime);
     }
 
-    private static EventType resolveEventType(String eventType) throws ThingsboardException {
+    private EventType resolveEventType(String eventType) throws ThingsboardException {
         for (var et : EventType.values()) {
             if (et.name().equalsIgnoreCase(eventType) || et.getName().equalsIgnoreCase(eventType)) {
                 return et;

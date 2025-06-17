@@ -16,14 +16,14 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -37,73 +37,50 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/ws/connection")
-@Slf4j
 public class WebSocketConnectionController extends BaseController {
 
     private final WebSocketConnectionService webSocketConnectionService;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping
     public WebSocketConnection saveWebSocketConnection(@RequestBody WebSocketConnection connection) throws ThingsboardException {
-        checkNotNull(connection);
-        try {
-            return checkNotNull(webSocketConnectionService.saveWebSocketConnection(connection));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(webSocketConnectionService.saveWebSocketConnection(connection));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"pageSize", "page"})
     public PageData<WebSocketConnectionDto> getWebSocketConnections(@RequestParam int pageSize,
                                                                     @RequestParam int page,
                                                                     @RequestParam(required = false) String textSearch,
                                                                     @RequestParam(required = false) String sortProperty,
                                                                     @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            UUID userId = getCurrentUser().getId();
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(webSocketConnectionService.getWebSocketConnections(userId, pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        UUID userId = getCurrentUser().getId();
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(webSocketConnectionService.getWebSocketConnections(userId, pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/{id}")
     public WebSocketConnection getWebSocketConnectionById(@PathVariable String id) throws ThingsboardException {
-        try {
-            return checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("id", id);
+        return checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"name"}, method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"name"})
     public WebSocketConnection getWebSocketConnectionByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
-        try {
-            UUID userId = getCurrentUser().getId();
-            return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(userId, name));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        UUID userId = getCurrentUser().getId();
+        return checkNotNull(webSocketConnectionService.findWebSocketConnectionByName(userId, name));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/{id}")
     public void deleteWebSocketConnection(@PathVariable String id) throws ThingsboardException {
-        try {
-            WebSocketConnection webSocketConnection = checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
-            clientSessionCleanUpService.disconnectClientSession(webSocketConnection.getConfiguration().getClientId());
+        WebSocketConnection webSocketConnection = checkNotNull(webSocketConnectionService.getWebSocketConnectionById(toUUID(id)).orElse(null));
+        clientSessionCleanUpService.disconnectClientSession(webSocketConnection.getConfiguration().getClientId());
 
-            webSocketConnectionService.deleteWebSocketConnection(toUUID(id));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        webSocketConnectionService.deleteWebSocketConnection(toUUID(id));
     }
 
 }

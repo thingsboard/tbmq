@@ -17,6 +17,8 @@ package org.thingsboard.mqtt.broker.controller;
 
 public class ControllerConstants {
 
-    public static final String WEBSOCKET_CONNECTION_ID = "wsConnectionId";
+    public static final String USER_ID = "userId";
     public static final String ENTITY_ID = "entityId";
+    public static final String INTEGRATION_ID = "integrationId";
+
 }

@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -46,17 +45,15 @@ public class BlockedClientController extends BaseController {
 
     private final BlockedClientPageService blockedClientPageService;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @PostMapping(value = "")
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping
     public BlockedClientDto saveBlockedClient(@RequestBody BlockedClient blockedClient) throws ThingsboardException {
         checkNotNull(blockedClient);
         return blockedClientService.addBlockedClientAndPersist(blockedClient);
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "", params = {"value", "type"})
-    @ResponseBody
     public void deleteBlockedClient(@RequestParam BlockedClientType type,
                                     @RequestParam String value,
                                     @RequestParam(required = false) RegexMatchTarget regexMatchTarget) throws ThingsboardException {
@@ -65,16 +62,14 @@ public class BlockedClientController extends BaseController {
         blockedClientService.removeBlockedClientAndPersist(blockedClient);
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/ttl")
-    @ResponseBody
     public int getBlockedClientsTimeToLive() {
         return blockedClientService.getBlockedClientCleanupTtl();
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "", params = {"pageSize", "page"})
-    @ResponseBody
     public PageData<BlockedClientDto> getBlockedClients(@RequestParam int pageSize,
                                                         @RequestParam int page,
                                                         @RequestParam(required = false) String textSearch,
@@ -84,9 +79,8 @@ public class BlockedClientController extends BaseController {
         return checkNotNull(blockedClientPageService.getBlockedClients(pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/v2", params = {"pageSize", "page"})
-    @ResponseBody
     public PageData<BlockedClientDto> getBlockedClientsV2(@RequestParam int pageSize,
                                                           @RequestParam int page,
                                                           @RequestParam(required = false) String textSearch,
