@@ -318,7 +318,7 @@ export class AuthService {
     return loadUserSubject;
   }
 
-  private loadIsUserTokenAccessEnabled(authUser: AuthUser): Observable<boolean> {
+  public loadIsUserTokenAccessEnabled(authUser: AuthUser): Observable<boolean> {
     if (authUser.authority === Authority.SYS_ADMIN) {
       return this.http.get<boolean>('/api/admin/user/tokenAccessEnabled', defaultHttpOptions());
     } else {

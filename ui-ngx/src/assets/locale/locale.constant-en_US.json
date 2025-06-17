@@ -397,6 +397,7 @@
   },
   "login": {
     "login": "Login",
+    "login-as-user": "Login as admin",
     "request-password-reset": "Request Password Reset",
     "reset-password": "Reset Password",
     "create-password": "Create Password",

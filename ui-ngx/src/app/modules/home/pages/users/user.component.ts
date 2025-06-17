@@ -30,6 +30,7 @@ import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field'
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
+import { AuthService } from '@core/http/auth.service';
 
 @Component({
     selector: 'tb-user',
@@ -39,12 +40,16 @@ import { MatTooltip } from '@angular/material/tooltip';
 })
 export class UserComponent extends EntityComponent<User> {
 
+  currentUser = getCurrentAuthUser(this.store);
+  loginAsUserEnabled$ = this.authService.loadIsUserTokenAccessEnabled(this.currentUser);
+
   private currentUserId = getCurrentAuthUser(this.store).userId;
 
   constructor(protected store: Store<AppState>,
               @Inject('entity') protected entityValue: User,
               @Inject('entitiesTableConfig') protected entitiesTableConfigValue: EntityTableConfig<User>,
               public fb: UntypedFormBuilder,
+              public authService: AuthService,
               protected cd: ChangeDetectorRef) {
     super(store, fb, entityValue, entitiesTableConfigValue, cd);
   }

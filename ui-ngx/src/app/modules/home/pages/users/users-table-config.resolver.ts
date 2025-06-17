@@ -33,7 +33,7 @@ import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { mergeMap, Observable, of } from 'rxjs';
 import { AuthService } from '@core/http/auth.service';
 
 @Injectable()
@@ -82,15 +82,6 @@ export class UsersTableConfigResolver {
       }
     );
 
-    this.config.cellActionDescriptors.push(
-      {
-        name: this.translate.instant('login.login'),
-        icon: 'mdi:login',
-        isEnabled: (entity) => entity.id !== this.currentUserId(),
-        onAction: ($event, entity) => this.loginAsUser($event, entity)
-      }
-    )
-
     this.config.deleteEntityTitle = user => this.translate.instant('user.delete-user-title',
       {userEmail: user.email});
     this.config.deleteEntityContent = () => this.translate.instant('user.delete-user-text');
@@ -104,13 +95,31 @@ export class UsersTableConfigResolver {
   }
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<User>> {
-    return of(this.config);
+    return this.authService.loadIsUserTokenAccessEnabled(getCurrentAuthUser(this.store)).pipe(
+      mergeMap(isTokenAccessEnabled => {
+        if (isTokenAccessEnabled) {
+          this.config.cellActionDescriptors = [];
+          this.config.cellActionDescriptors.push(
+            {
+              name: this.translate.instant('login.login-as-user'),
+              icon: 'mdi:login',
+              isEnabled: (entity) => entity.id !== this.currentUserId(),
+              onAction: ($event, entity) => this.loginAsUser($event, entity)
+            }
+          );
+        }
+        return of(this.config);
+      })
+    )
   }
 
   onAction(action: EntityAction<User>, config: EntityTableConfig<User>): boolean {
     switch (action.action) {
       case 'open':
         this.openUser(action.event, action.entity, config);
+        return true;
+      case 'loginAsUser':
+        this.loginAsUser(action.event, action.entity);
         return true;
     }
     return false;
