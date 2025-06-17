@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.client.unauthorized.UnauthorizedClientQuery;
@@ -28,9 +28,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -38,56 +36,39 @@ import java.util.List;
 @RequestMapping("/api/unauthorized/client")
 public class UnauthorizedClientController extends BaseController {
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"pageSize", "page"})
     public PageData<UnauthorizedClient> getUnauthorizedClients(@RequestParam int pageSize,
                                                                @RequestParam int page,
                                                                @RequestParam(required = false) String textSearch,
                                                                @RequestParam(required = false) String sortProperty,
                                                                @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(unauthorizedClientService.findUnauthorizedClients(pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(unauthorizedClientService.findUnauthorizedClients(pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.GET)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "", params = {"clientId"})
     public UnauthorizedClient getUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
-        try {
-            return checkNotNull(unauthorizedClientService.findUnauthorizedClient(clientId).orElse(null));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("clientId", clientId);
+        return checkNotNull(unauthorizedClientService.findUnauthorizedClient(clientId).orElse(null));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", params = {"clientId"}, method = RequestMethod.DELETE)
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "", params = {"clientId"})
     public void deleteUnauthorizedClient(@RequestParam String clientId) throws ThingsboardException {
-        try {
-            UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
-            unauthorizedClientService.deleteUnauthorizedClient(unauthorizedClient.getClientId());
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        UnauthorizedClient unauthorizedClient = checkUnauthorizedClient(clientId);
+        unauthorizedClientService.deleteUnauthorizedClient(unauthorizedClient.getClientId());
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "", method = RequestMethod.DELETE)
-    public void deleteAllUnauthorizedClients() throws ThingsboardException {
-        try {
-            unauthorizedClientService.deleteAllUnauthorizedClients();
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "")
+    public void deleteAllUnauthorizedClients() {
+        unauthorizedClientService.deleteAllUnauthorizedClients();
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/v2", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/v2", params = {"pageSize", "page"})
     public PageData<UnauthorizedClient> getCredentialsV2(@RequestParam int pageSize,
                                                          @RequestParam int page,
                                                          @RequestParam(required = false) String textSearch,
@@ -101,33 +82,14 @@ public class UnauthorizedClientController extends BaseController {
                                                          @RequestParam(required = false) String reason,
                                                          @RequestParam(required = false) String[] passwordProvidedList,
                                                          @RequestParam(required = false) String[] tlsUsedList) throws ThingsboardException {
-        try {
-            List<Boolean> passwordProvidedValues = new ArrayList<>();
-            if (passwordProvidedList != null) {
-                for (String strPasswordProvided : passwordProvidedList) {
-                    if (!StringUtils.isEmpty(strPasswordProvided)) {
-                        passwordProvidedValues.add(Boolean.valueOf(strPasswordProvided));
-                    }
-                }
-            }
+        List<Boolean> passwordProvidedValues = collectBooleanQueryParams(passwordProvidedList);
+        List<Boolean> tlsUsedValues = collectBooleanQueryParams(tlsUsedList);
 
-            List<Boolean> tlsUsedValues = new ArrayList<>();
-            if (tlsUsedList != null) {
-                for (String strTlsUsed : tlsUsedList) {
-                    if (!StringUtils.isEmpty(strTlsUsed)) {
-                        tlsUsedValues.add(Boolean.valueOf(strTlsUsed));
-                    }
-                }
-            }
+        TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
 
-            TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
-
-            return checkNotNull(unauthorizedClientService.findUnauthorizedClients(
-                    new UnauthorizedClientQuery(pageLink, clientId, ipAddress, username, reason, passwordProvidedValues, tlsUsedValues)
-            ));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(unauthorizedClientService.findUnauthorizedClients(
+                new UnauthorizedClientQuery(pageLink, clientId, ipAddress, username, reason, passwordProvidedValues, tlsUsedValues)
+        ));
     }
 
 }

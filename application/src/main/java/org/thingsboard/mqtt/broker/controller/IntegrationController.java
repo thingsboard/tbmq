@@ -16,15 +16,15 @@
 package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -40,20 +40,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.thingsboard.mqtt.broker.controller.ControllerConstants.INTEGRATION_ID;
+
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Slf4j
 public class IntegrationController extends BaseController {
-
-    private static final String INTEGRATION_ID = "integrationId";
 
     private final IntegrationManagerService integrationManagerService;
     private final PlatformIntegrationService platformIntegrationService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integration/{integrationId}", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/integration/{integrationId}")
     public Integration getIntegrationById(@PathVariable(INTEGRATION_ID) String strIntegrationId) throws Exception {
         checkParameter(INTEGRATION_ID, strIntegrationId);
         UUID integrationId = toUUID(strIntegrationId);
@@ -61,8 +59,7 @@ public class IntegrationController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integration", method = RequestMethod.POST)
-    @ResponseBody
+    @PostMapping(value = "/integration")
     public Integration saveIntegration(@RequestBody Integration integration) throws Exception {
         try {
             integrationManagerService.validateIntegrationConfiguration(integration).get(30, TimeUnit.SECONDS);
@@ -80,8 +77,7 @@ public class IntegrationController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integrations", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/integrations", params = {"pageSize", "page"})
     public PageData<Integration> getIntegrations(
             @RequestParam int pageSize,
             @RequestParam int page,
@@ -93,8 +89,7 @@ public class IntegrationController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integration/check", method = RequestMethod.POST)
-    @ResponseBody
+    @PostMapping(value = "/integration/check")
     public void checkIntegrationConnection(@RequestBody Integration integration) throws Exception {
         try {
             checkNotNull(integration);
@@ -110,7 +105,7 @@ public class IntegrationController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integration/{integrationId}", method = RequestMethod.POST)
+    @PostMapping(value = "/integration/{integrationId}")
     @ResponseStatus(HttpStatus.OK)
     public void restartIntegration(@PathVariable(INTEGRATION_ID) String strIntegrationId) throws Exception {
         checkParameter(INTEGRATION_ID, strIntegrationId);
@@ -119,7 +114,7 @@ public class IntegrationController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/integration/{integrationId}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/integration/{integrationId}")
     @ResponseStatus(value = HttpStatus.OK)
     public void deleteIntegration(@PathVariable(INTEGRATION_ID) String strIntegrationId) throws Exception {
         checkParameter(INTEGRATION_ID, strIntegrationId);

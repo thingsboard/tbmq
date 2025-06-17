@@ -20,10 +20,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
@@ -52,95 +52,61 @@ public class AppController extends BaseController {
     private final SystemInfoService systemInfoService;
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/remove-topics", method = RequestMethod.DELETE)
-    @ResponseBody
-    public void removeApplicationTopics() throws ThingsboardException {
-        try {
-            applicationRemovedEventProcessor.processEvents();
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+    @DeleteMapping(value = "/remove-topics")
+    public void removeApplicationTopics() {
+        applicationRemovedEventProcessor.processEvents();
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/cluster-info", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/cluster-info")
     public PageData<KafkaBroker> getKafkaClusterInfo() throws ThingsboardException {
-        try {
-            return checkNotNull(tbQueueAdmin.getClusterInfo());
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(tbQueueAdmin.getClusterInfo());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/kafka-topics", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/kafka-topics", params = {"pageSize", "page"})
     public PageData<KafkaTopic> getKafkaTopics(@RequestParam int pageSize,
                                                @RequestParam int page,
                                                @RequestParam(required = false) String textSearch,
                                                @RequestParam(required = false) String sortProperty,
                                                @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(tbQueueAdmin.getTopics(pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(tbQueueAdmin.getTopics(pageLink));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/consumer-groups", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/consumer-groups", params = {"pageSize", "page"})
     public PageData<KafkaConsumerGroup> getKafkaConsumerGroups(@RequestParam int pageSize,
                                                                @RequestParam int page,
                                                                @RequestParam(required = false) String textSearch,
                                                                @RequestParam(required = false) String sortProperty,
                                                                @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(tbQueueAdmin.getConsumerGroups(pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(tbQueueAdmin.getConsumerGroups(pageLink));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/consumer-group", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "/consumer-group")
     @ApiOperation(value = "Delete Kafka Consumer Group", hidden = true)
-    public void deleteKafkaConsumerGroup(@RequestParam String groupId) throws ThingsboardException {
-        try {
-            tbQueueAdmin.deleteConsumerGroup(groupId);
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+    public void deleteKafkaConsumerGroup(@RequestParam String groupId) throws Exception {
+        checkParameter("groupId", groupId);
+        tbQueueAdmin.deleteConsumerGroup(groupId);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/config", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/config")
     public HomePageConfigDto getBrokerConfig() throws ThingsboardException {
-        try {
-            return checkNotNull(brokerHomePageConfig.getConfig());
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(brokerHomePageConfig.getConfig());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/brokers", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/brokers")
     public List<String> getBrokerServiceIds() throws ThingsboardException {
-        try {
-            return checkNotNull(systemInfoService.getTbmqServiceIds());
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(systemInfoService.getTbmqServiceIds());
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/service/info", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping(value = "/service/info")
     public DeferredResult<ResponseEntity> getServiceInfos() throws ThingsboardException {
         DeferredResult<ResponseEntity> result = new DeferredResult<>();
 
@@ -152,9 +118,9 @@ public class AppController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/service/info", method = RequestMethod.DELETE)
-    @ResponseBody
+    @DeleteMapping(value = "/service/info")
     public void removeServiceInfo(@RequestParam String serviceId) throws ThingsboardException {
+        checkParameter("serviceId", serviceId);
         systemInfoService.removeServiceInfo(serviceId);
     }
 }

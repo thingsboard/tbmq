@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.passay.CharacterRule;
 import org.passay.EnglishCharacterData;
 import org.passay.LengthRule;
@@ -27,7 +28,6 @@ import org.passay.PasswordValidator;
 import org.passay.Rule;
 import org.passay.RuleResult;
 import org.passay.WhitespaceRule;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
@@ -53,17 +53,12 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Service
+@RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
 
     private final UserService userService;
     private final BCryptPasswordEncoder encoder;
     private final AdminSettingsService adminSettingsService;
-
-    public DefaultSystemSecurityService(UserService userService, @Lazy BCryptPasswordEncoder encoder, AdminSettingsService adminSettingsService) {
-        this.userService = userService;
-        this.encoder = encoder;
-        this.adminSettingsService = adminSettingsService;
-    }
 
     @Override
     public SecuritySettings getSecuritySettings() {

@@ -27,6 +27,4 @@ public interface SystemDataLoaderService {
 
     void createDefaultWebSocketConnection() throws ThingsboardException;
 
-    void createDefaultWebSocketConnections() throws ThingsboardException;
-
 }

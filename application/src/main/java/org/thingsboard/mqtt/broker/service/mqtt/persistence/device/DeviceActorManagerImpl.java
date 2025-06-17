@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.mqtt.persistence.device;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -44,15 +45,11 @@ import java.util.Set;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DeviceActorManagerImpl implements DeviceActorManager {
 
-    private final ActorSystemContext actorSystemContext;
+    private final @Lazy ActorSystemContext actorSystemContext;
     private final TbActorSystem actorSystem;
-
-    public DeviceActorManagerImpl(@Lazy ActorSystemContext actorSystemContext, TbActorSystem actorSystem) {
-        this.actorSystemContext = actorSystemContext;
-        this.actorSystem = actorSystem;
-    }
 
     @Override
     public void notifyClientConnected(ClientSessionCtx clientSessionCtx) {

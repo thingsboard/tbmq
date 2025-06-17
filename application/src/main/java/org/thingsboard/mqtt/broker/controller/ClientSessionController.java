@@ -17,10 +17,10 @@ package org.thingsboard.mqtt.broker.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
@@ -32,7 +32,6 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dto.ClientSessionAdvancedDto;
 import org.thingsboard.mqtt.broker.dto.ClientSessionStatsInfoDto;
 import org.thingsboard.mqtt.broker.dto.DetailedClientSessionInfoDto;
@@ -40,7 +39,6 @@ import org.thingsboard.mqtt.broker.dto.ShortClientSessionInfoDto;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionPageInfos;
 import org.thingsboard.mqtt.broker.service.mqtt.client.session.SessionSubscriptionService;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -54,60 +52,44 @@ public class ClientSessionController extends BaseController {
     private final ClientSessionPageInfos clientSessionPageInfos;
     private final CacheNameResolver cacheNameResolver;
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session/remove", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/client-session/remove", params = {"clientId", "sessionId"})
     public void removeClientSession(@RequestParam String clientId,
                                     @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
-        try {
-            clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("clientId", clientId);
+        checkParameter("sessionId", sessionIdStr);
+        clientSessionCleanUpService.removeClientSession(clientId, toUUID(sessionIdStr));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session/disconnect", params = {"clientId", "sessionId"}, method = RequestMethod.DELETE)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/client-session/disconnect", params = {"clientId", "sessionId"})
     public void disconnectClientSession(@RequestParam String clientId,
                                         @RequestParam("sessionId") String sessionIdStr) throws ThingsboardException {
-        try {
-            clientSessionCleanUpService.disconnectClientSession(clientId, toUUID(sessionIdStr));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("clientId", clientId);
+        checkParameter("sessionId", sessionIdStr);
+        clientSessionCleanUpService.disconnectClientSession(clientId, toUUID(sessionIdStr));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session", params = {"clientId"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session", params = {"clientId"})
     public DetailedClientSessionInfoDto getDetailedClientSessionInfo(@RequestParam String clientId) throws ThingsboardException {
-        try {
-            return checkNotNull(sessionSubscriptionService.getDetailedClientSessionInfo(clientId));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        checkParameter("clientId", clientId);
+        return checkNotNull(sessionSubscriptionService.getDetailedClientSessionInfo(clientId));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session", params = {"pageSize", "page"})
     public PageData<ShortClientSessionInfoDto> getShortClientSessionInfos(@RequestParam int pageSize,
                                                                           @RequestParam int page,
                                                                           @RequestParam(required = false) String textSearch,
                                                                           @RequestParam(required = false) String sortProperty,
                                                                           @RequestParam(required = false) String sortOrder) throws ThingsboardException {
-        try {
-            PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-            return checkNotNull(clientSessionPageInfos.getClientSessionInfos(pageLink));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
+        return checkNotNull(clientSessionPageInfos.getClientSessionInfos(pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/v2/client-session", params = {"pageSize", "page"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/v2/client-session", params = {"pageSize", "page"})
     public PageData<ShortClientSessionInfoDto> getShortClientSessionInfosV2(@RequestParam int pageSize,
                                                                             @RequestParam int page,
                                                                             @RequestParam(required = false) String textSearch,
@@ -122,62 +104,32 @@ public class ClientSessionController extends BaseController {
                                                                             @RequestParam(required = false) Integer subscriptions,
                                                                             @RequestParam(required = false) String subscriptionOperation,
                                                                             @RequestParam(required = false) String clientIpAddress) throws ThingsboardException {
-        try {
-            List<ConnectionState> connectedStatuses = new ArrayList<>();
-            if (connectedStatusList != null) {
-                for (String strStatus : connectedStatusList) {
-                    if (!StringUtils.isEmpty(strStatus)) {
-                        connectedStatuses.add(ConnectionState.valueOf(strStatus));
-                    }
-                }
-            }
-            List<ClientType> clientTypes = new ArrayList<>();
-            if (clientTypeList != null) {
-                for (String strType : clientTypeList) {
-                    if (!StringUtils.isEmpty(strType)) {
-                        clientTypes.add(ClientType.valueOf(strType));
-                    }
-                }
-            }
-            List<Boolean> cleanStarts = new ArrayList<>();
-            if (cleanStartList != null) {
-                for (String strCleanStart : cleanStartList) {
-                    if (!StringUtils.isEmpty(strCleanStart)) {
-                        cleanStarts.add(Boolean.valueOf(strCleanStart));
-                    }
-                }
-            }
+        List<ConnectionState> connectedStatuses = parseEnumList(ConnectionState.class, connectedStatusList);
+        List<ClientType> clientTypes = parseEnumList(ClientType.class, clientTypeList);
+        List<Boolean> cleanStarts = collectBooleanQueryParams(cleanStartList);
 
-            Set<String> brokerNodeIdSet = nodeIdList != null ? Set.of(nodeIdList) : Collections.emptySet();
+        Set<String> brokerNodeIdSet = nodeIdList != null ? Set.of(nodeIdList) : Collections.emptySet();
 
-            SubscriptionOperation operation = subscriptionOperation == null ? SubscriptionOperation.EQUAL : SubscriptionOperation.valueOf(subscriptionOperation);
+        SubscriptionOperation operation = subscriptionOperation == null ? SubscriptionOperation.EQUAL : SubscriptionOperation.valueOf(subscriptionOperation);
 
-            TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
+        TimePageLink pageLink = createTimePageLink(pageSize, page, textSearch, sortProperty, sortOrder, startTime, endTime);
 
-            return checkNotNull(clientSessionPageInfos.getClientSessionInfos(
-                    new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts,
-                            brokerNodeIdSet, subscriptions, operation, clientIpAddress)
-            ));
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(clientSessionPageInfos.getClientSessionInfos(
+                new ClientSessionQuery(pageLink, connectedStatuses, clientTypes, cleanStarts,
+                        brokerNodeIdSet, subscriptions, operation, clientIpAddress)
+        ));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session/info", method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session/info")
     public ClientSessionStatsInfoDto getClientSessionsStatsInfo() throws ThingsboardException {
-        try {
-            return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
-        } catch (Exception e) {
-            throw handleException(e);
-        }
+        return checkNotNull(clientSessionPageInfos.getClientSessionStatsInfo());
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
-    @RequestMapping(value = "/client-session/details", params = {"clientId"}, method = RequestMethod.GET)
-    @ResponseBody
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/client-session/details", params = {"clientId"})
     public ClientSessionAdvancedDto getClientSessionDetails(@RequestParam String clientId) throws ThingsboardException {
+        checkParameter("clientId", clientId);
         String credentialsName = getValueFromCache(CacheConstants.CLIENT_SESSION_CREDENTIALS_CACHE, clientId);
         String mqttVersion = getValueFromCache(CacheConstants.CLIENT_MQTT_VERSION_CACHE, clientId);
         return new ClientSessionAdvancedDto(credentialsName, mqttVersion);
