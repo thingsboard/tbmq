@@ -53,7 +53,8 @@ CREATE TABLE IF NOT EXISTS mqtt_auth_provider (
     created_time bigint NOT NULL,
     enabled boolean,
     type varchar(255) UNIQUE,
-    configuration jsonb
+    configuration jsonb,
+    additional_info varchar
 );
 
 CREATE TABLE IF NOT EXISTS mqtt_client_credentials (

@@ -38,5 +38,6 @@ public class ShortMqttAuthProvider implements HasId {
     private boolean enabled;
     private MqttAuthProviderType type;
     private long createdTime;
+    private String description;
 
 }

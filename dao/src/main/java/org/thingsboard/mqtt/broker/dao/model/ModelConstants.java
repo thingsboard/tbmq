@@ -71,6 +71,7 @@ public class ModelConstants {
     public static final String MQTT_AUTH_PROVIDER_ENABLED_PROPERTY = "enabled";
     public static final String MQTT_AUTH_PROVIDER_TYPE_PROPERTY = "type";
     public static final String MQTT_AUTH_PROVIDER_CONFIGURATION_PROPERTY = "configuration";
+    public static final String MQTT_AUTH_PROVIDER_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
 
     /**
      * mqtt_client_credentials constants.

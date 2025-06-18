@@ -33,6 +33,8 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
+import static org.thingsboard.mqtt.broker.dao.model.ModelConstants.MQTT_AUTH_PROVIDER_ADDITIONAL_INFO_PROPERTY;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
@@ -51,6 +53,10 @@ public class MqttAuthProviderEntity extends BaseSqlEntity<MqttAuthProvider> impl
     @Column(name = ModelConstants.MQTT_AUTH_PROVIDER_CONFIGURATION_PROPERTY, columnDefinition = "jsonb")
     private JsonNode configuration;
 
+    @Convert(converter = JsonConverter.class)
+    @Column(name = MQTT_AUTH_PROVIDER_ADDITIONAL_INFO_PROPERTY)
+    private JsonNode additionalInfo;
+
     public MqttAuthProviderEntity() {
     }
 
@@ -63,6 +69,7 @@ public class MqttAuthProviderEntity extends BaseSqlEntity<MqttAuthProvider> impl
         this.type = mqttAuthProvider.getType();
         this.configuration = JacksonUtil.convertValue(
                 mqttAuthProvider.getConfiguration(), ObjectNode.class);
+        this.additionalInfo = mqttAuthProvider.getAdditionalInfo();
     }
 
     @Override
@@ -74,6 +81,7 @@ public class MqttAuthProviderEntity extends BaseSqlEntity<MqttAuthProvider> impl
         mqttAuthProvider.setType(type);
         mqttAuthProvider.setConfiguration(
                 JacksonUtil.convertValue(configuration, MqttAuthProviderConfiguration.class));
+        mqttAuthProvider.setAdditionalInfo(additionalInfo);
         return mqttAuthProvider;
     }
 
