@@ -92,15 +92,6 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
           const background = connectionStateColor.get(entity.connectionState).background;
           return cellStatus(content, color, background);
         }),
-      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
-        (entity) => {
-        const clientType = entity.clientType;
-        const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
-        const icon = clientTypeIcon.get(clientType);
-        const color = clientTypeColor.get(clientType);
-        const iconColor = clientTypeValueColor.get(clientType);
-        return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
-      }),
       new EntityTableColumn<DetailedClientSessionInfo>('clientId', 'mqtt-client.client-id', '50%',
         undefined, () => undefined, true, () => ({}), () => undefined, false,
         copyContentActionCell('clientId', this.translate)
@@ -108,6 +99,15 @@ export class SessionsTableConfig extends EntityTableConfig<DetailedClientSession
       new EntityTableColumn<DetailedClientSessionInfo>('clientIpAdr', 'mqtt-client-session.client-ip', '10%',
         undefined, () => undefined, true, () => ({}), () => undefined, false,
         copyContentActionCell('clientIpAdr', this.translate)),
+      new EntityTableColumn<DetailedClientSessionInfo>('clientType', 'mqtt-client.client-type', '100px',
+        (entity) => {
+          const clientType = entity.clientType;
+          const clientTypeTranslation = this.translate.instant(clientTypeTranslationMap.get(clientType));
+          const icon = clientTypeIcon.get(clientType);
+          const color = clientTypeColor.get(clientType);
+          const iconColor = clientTypeValueColor.get(clientType);
+          return cellWithIcon(clientTypeTranslation, icon, color, iconColor, iconColor);
+        }),
       new EntityTableColumn<DetailedClientSessionInfo>('subscriptionsCount', 'mqtt-client-session.subscriptions-count', '100px',
         (entity) => entity.subscriptionsCount.toString()),
       new EntityTableColumn<DetailedClientSessionInfo>('nodeId', 'mqtt-client-session.node-id', '100px'),
