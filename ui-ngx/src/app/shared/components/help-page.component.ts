@@ -40,8 +40,9 @@ export class HelpPageComponent {
   navigate() {
     if (this.page().startsWith('http')) {
       window.open(this.page(), '_blank');
+    } else {
+      this.router.navigate([this.page()]);
     }
-    this.router.navigate([this.page()]);
   }
 }
 
