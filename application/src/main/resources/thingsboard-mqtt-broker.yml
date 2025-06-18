@@ -816,6 +816,8 @@ spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATE
 
 # Security parameters
 security:
+  # Since version 2.2.0, values under the 'mqtt' prefix are persisted in the database during installation or upgrade.
+  # These settings are now deprecated in this file and will be removed in the next release
   mqtt:
     # BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
     # and then by 'ssl' provider if 'basic' is not successful;

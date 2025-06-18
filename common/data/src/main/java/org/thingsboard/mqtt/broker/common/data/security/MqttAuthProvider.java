@@ -18,7 +18,6 @@ package org.thingsboard.mqtt.broker.common.data.security;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.BaseDataWithAdditionalInfo;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
@@ -30,7 +29,6 @@ import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import java.io.Serial;
 
 @Data
-@ToString
 @EqualsAndHashCode(callSuper = true)
 public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
 
@@ -83,12 +81,11 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
     private static String getDescription(MqttAuthProviderType type) {
         return switch (type) {
             case MQTT_BASIC ->
-                    "Authenticates clients using a clientId/username and password sent in the CONNECT packet.";
+                    "Authenticates clients using a clientId, username, and password sent in the CONNECT packet.";
             case X_509 -> "Uses the client’s X.509 certificate chain during TLS handshake for authentication.";
-            case JWT ->
-                    "Verifies a signed JWT token (e.g., passed in the username or password) to authenticate the client.";
+            case JWT -> "Verifies a signed JWT token passed in the password to authenticate the client.";
             case SCRAM ->
-                    "Performs a secure challenge-response (e.g., SCRAM-SHA-256) to authenticate without sending the actual password.";
+                    "Performs a secure challenge-response using hashed credentials to authenticate without sending the actual password.";
         };
     }
 

@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -27,7 +28,11 @@ public class MqttAuthProviderUtil {
                 .enabled(mqttAuthProvider.isEnabled())
                 .type(mqttAuthProvider.getType())
                 .createdTime(mqttAuthProvider.getCreatedTime())
-                .description(mqttAuthProvider.getAdditionalInfo().get(BrokerConstants.DESCRIPTION).asText())
+                .description(getDescription(mqttAuthProvider))
                 .build();
+    }
+
+    private static String getDescription(MqttAuthProvider mqttAuthProvider) {
+        return mqttAuthProvider.getAdditionalInfoField(BrokerConstants.DESCRIPTION, JsonNode::asText, null);
     }
 }

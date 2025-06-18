@@ -51,13 +51,13 @@ VALUES (
            '{"useListenerBasedProviderOnly":false,"priorities":["MQTT_BASIC","X_509","JWT"]}'
        );
 
-INSERT INTO mqtt_auth_provider (id, created_time, enabled, type, configuration)
+INSERT INTO mqtt_auth_provider (id, created_time, enabled, type, configuration, additional_info)
 VALUES
 -- MQTT_BASIC
-('bc0a90bf-de56-4953-92ca-7ef7b159c2fd', 1748975222000, false, 'MQTT_BASIC', '{"type": "MQTT_BASIC"}'::jsonb),
+('bc0a90bf-de56-4953-92ca-7ef7b159c2fd', 1748975222000, false, 'MQTT_BASIC', '{"type": "MQTT_BASIC"}'::jsonb, '{}'),
 
 -- X_509
-('e5b71665-0a22-4398-8f93-5c7c3c145a7d', 1748975222000, false, 'X_509', '{"type": "X_509", "skipValidityCheckForClientCert": false}'::jsonb),
+('e5b71665-0a22-4398-8f93-5c7c3c145a7d', 1748975222000, false, 'X_509', '{"type": "X_509", "skipValidityCheckForClientCert": false}'::jsonb, '{}'),
 
 -- JWT
 ('5590d101-628f-414c-9960-5966a9c42c31', 1748975222000, false, 'JWT', '{
@@ -75,7 +75,7 @@ VALUES
       "algorithm": "HMAC_BASED"
     }
   }
-}'::jsonb),
+}'::jsonb, '{}'),
 
 -- SCRAM
-('3a7ffd44-eb9c-4334-951d-a8bb3cb4804f', 1748975222000, false, 'SCRAM', '{"type": "SCRAM"}'::jsonb);
+('3a7ffd44-eb9c-4334-951d-a8bb3cb4804f', 1748975222000, false, 'SCRAM', '{"type": "SCRAM"}'::jsonb, '{}');
