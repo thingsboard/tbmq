@@ -66,7 +66,7 @@ export enum ConfigParams {
   existsScramCredentials = 'existsScramCredentials',
 }
 
-export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
+export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
   [
     [ConfigParams.tcpPort, 'config.port-mqtt'],
     [ConfigParams.tcpListenerEnabled, 'config.tcp-listener'],
@@ -94,12 +94,20 @@ export interface SystemVersionInfo {
   newestVersion: string;
 }
 
-export const ConfigParamAuthProviderMap = new Map<ConfigParams, MqttAuthProviderType>(
+export const ConfigParamAuthProviderTypeMap = new Map<ConfigParams, MqttAuthProviderType>(
   [
     [ConfigParams.basicAuthEnabled, MqttAuthProviderType.MQTT_BASIC],
     [ConfigParams.x509AuthEnabled, MqttAuthProviderType.X_509],
     [ConfigParams.jwtAuthEnabled, MqttAuthProviderType.JWT],
     [ConfigParams.scramAuthEnabled, MqttAuthProviderType.SCRAM],
+  ]
+);
+
+export const ConfigParamAuthProviderTranslationMap = new Map<ConfigParams, string>(
+  [
+    [ConfigParams.basicAuthEnabled, 'mqtt-client-credentials.type-basic'],
+    [ConfigParams.x509AuthEnabled, 'mqtt-client-credentials.type-ssl'],
+    [ConfigParams.scramAuthEnabled, 'mqtt-client-credentials.type-scram'],
   ]
 );
 

@@ -17,10 +17,11 @@
 import { Component } from '@angular/core';
 import {
   BrokerConfigTable,
+  BrokerConfig,
   ConfigParams,
-  ConfigParamAuthProviderMap,
-  ConfigParamsTranslationMap,
-  BrokerConfig
+  ConfigParamAuthProviderTypeMap,
+  ConfigParamTranslationMap,
+  ConfigParamAuthProviderTranslationMap,
 } from '@shared/models/config.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -53,8 +54,9 @@ import { of } from 'rxjs';
 export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
-  configParamsTranslationMap = ConfigParamsTranslationMap;
-  configParamAuthProviderMap = ConfigParamAuthProviderMap;
+  configParamTranslationMap = ConfigParamTranslationMap;
+  configParamAuthProviderTranslationMap = ConfigParamAuthProviderTranslationMap;
+  configParamAuthProviderTypeMap = ConfigParamAuthProviderTypeMap;
   authProviders: ShortMqttAuthProvider[];
 
   fetchEntities$ = () => this.configService.fetchBrokerConfig().pipe(
@@ -71,7 +73,10 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     })
   );
 
-  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
+  tooltipContent = (key: ConfigParams): string => {
+    const type = this.translate.instant(this.configParamAuthProviderTranslationMap.get(key));
+    return `${this.translate.instant('config.warning', {type})}`;
+  }
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -120,11 +125,11 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   }
 
   isAuthProviderParam(entity: BrokerConfigTable) {
-    return this.configParamAuthProviderMap.has(entity.key);
+    return this.configParamAuthProviderTypeMap.has(entity.key);
   }
 
   switchParam(entity: BrokerConfigTable) {
-    const providerType = this.configParamAuthProviderMap.get(entity.key);
+    const providerType = this.configParamAuthProviderTypeMap.get(entity.key);
     const initValue = !entity.value;
     if (!this.authProviders) {
       const pageLink = new PageLink(10);

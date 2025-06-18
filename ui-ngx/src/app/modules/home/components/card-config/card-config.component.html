@@ -26,7 +26,7 @@
           </mat-header-cell>
           <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
             @if (column.key === 'key') {
-              <span translate>{{configParamsTranslationMap.get(entity.key)}}</span>
+              <span translate>{{configParamTranslationMap.get(entity.key)}}</span>
             }
             @if (column.key === 'value') {
               <span>
@@ -44,7 +44,7 @@
                 @if (showWarningIcon(entity)) {
                   <section class="tb-warning-icon">
                     <mat-icon (click)="gotoDocs('security/#authentication')"
-                      [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))">
+                      [matTooltip]="tooltipContent(entity.key)">
                       warning
                     </mat-icon>
                   </section>
