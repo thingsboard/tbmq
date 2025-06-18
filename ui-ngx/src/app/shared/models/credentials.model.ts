@@ -53,8 +53,9 @@ export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
 
 export const credentialsWarningTranslations = new Map<CredentialsType, string>(
   [
-    [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-auth'],
-    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl-auth']
+    [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-disabled'],
+    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl-disabled'],
+    [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram-disabled'],
   ]
 );
 

@@ -26,6 +26,8 @@ export interface BrokerConfig {
   tlsListenerEnabled: boolean;
   basicAuthEnabled: boolean;
   x509AuthEnabled: boolean;
+  scramAuthEnabled: boolean;
+  jwtAuthEnabled: boolean;
   wsPort: number;
   wssPort: number;
   wsListenerEnabled: boolean;
@@ -34,8 +36,7 @@ export interface BrokerConfig {
   wssMaxPayloadSize: number;
   existsBasicCredentials: boolean;
   existsX509Credentials: boolean;
-  jwtAuthEnabled: boolean;
-  scramAuthEnabled: boolean;
+  existsScramCredentials: boolean;
 }
 
 export interface BrokerConfigTable extends BaseData {
@@ -52,6 +53,8 @@ export enum ConfigParams {
   tlsPort = 'tlsPort',
   basicAuthEnabled = 'basicAuthEnabled',
   x509AuthEnabled = 'x509AuthEnabled',
+  scramAuthEnabled = 'scramAuthEnabled',
+  jwtAuthEnabled = 'jwtAuthEnabled',
   wsPort = 'wsPort',
   wssPort = 'wssPort',
   wsListenerEnabled = 'wsListenerEnabled',
@@ -60,8 +63,7 @@ export enum ConfigParams {
   wssMaxPayloadSize = 'wssMaxPayloadSize',
   existsBasicCredentials = 'existsBasicCredentials',
   existsX509Credentials = 'existsX509Credentials',
-  jwtAuthEnabled = 'jwtAuthEnabled',
-  scramAuthEnabled = 'scramAuthEnabled',
+  existsScramCredentials = 'existsScramCredentials',
 }
 
 export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
@@ -74,6 +76,7 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.tlsPort, 'config.tls-tcp-port'],
     [ConfigParams.basicAuthEnabled, 'config.basic-auth'],
     [ConfigParams.x509AuthEnabled, 'config.ssl-auth'],
+    [ConfigParams.scramAuthEnabled, 'config.scram-auth'],
     [ConfigParams.wsPort, 'config.ws-port'],
     [ConfigParams.wssPort, 'config.wss-port'],
     [ConfigParams.wsListenerEnabled, 'config.ws-listener'],
@@ -81,7 +84,6 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.wsMaxPayloadSize, 'config.ws-listener-max-payload-size'],
     [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size'],
     [ConfigParams.jwtAuthEnabled, 'config.jwt-auth'],
-    [ConfigParams.scramAuthEnabled, 'config.scram-auth'],
   ]
 );
 

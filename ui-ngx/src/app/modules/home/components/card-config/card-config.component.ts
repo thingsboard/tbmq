@@ -19,7 +19,8 @@ import {
   BrokerConfigTable,
   ConfigParams,
   ConfigParamAuthProviderMap,
-  ConfigParamsTranslationMap
+  ConfigParamsTranslationMap,
+  BrokerConfig
 } from '@shared/models/config.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -28,7 +29,7 @@ import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
-import { map } from 'rxjs/operators';
+import { mergeMap } from 'rxjs/operators';
 import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
@@ -41,6 +42,7 @@ import { FormsModule } from '@angular/forms';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
 import { PageLink } from '@shared/models/page/page-link';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'tb-card-config',
@@ -52,21 +54,24 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
 
   cardType = HomePageTitleType.CONFIG;
   configParamsTranslationMap = ConfigParamsTranslationMap;
-  configParams = ConfigParams;
   configParamAuthProviderMap = ConfigParamAuthProviderMap;
   authProviders: ShortMqttAuthProvider[];
 
-  fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
-    map(data => {
-      data.data = data.data.filter(
-        el => el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials
+  fetchEntities$ = () => this.configService.fetchBrokerConfig().pipe(
+    mergeMap(() => {
+      return this.configService.getBrokerConfigPageData().pipe(
+        mergeMap(data => {
+          data.data = data.data.filter(el =>
+            el.key !== ConfigParams.existsBasicCredentials &&
+            el.key !== ConfigParams.existsX509Credentials &&
+            el.key !== ConfigParams.existsScramCredentials);
+          return of(data);
+        })
       );
-      return data;
     })
   );
-  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
-  private config = this.configService.brokerConfig;
+  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
@@ -101,15 +106,17 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     return entity.value;
   }
 
-  showCopyButton(entity: BrokerConfigTable, configParams: any): boolean {
-    return entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
-           entity.key === configParams.wsPort || entity.key === configParams.wssPort;
+  showCopyButton(entity: BrokerConfigTable): boolean {
+    return entity.key === ConfigParams.tlsPort || entity.key === ConfigParams.tcpPort ||
+           entity.key === ConfigParams.wsPort || entity.key === ConfigParams.wssPort;
   }
 
-  showWarningIcon(entity: BrokerConfigTable, configParams: any): boolean {
-    return !entity.value &&
-           ((entity.key === configParams.x509AuthEnabled && this.config.existsX509Credentials) ||
-            (entity.key === configParams.basicAuthEnabled && this.config.existsBasicCredentials));
+  showWarningIcon(entity: BrokerConfigTable): boolean {
+    const brokerConfig: BrokerConfig = this.configService.brokerConfig;
+    return entity.value === false &&
+           ((entity.key === ConfigParams.x509AuthEnabled && brokerConfig.existsX509Credentials) ||
+            (entity.key === ConfigParams.basicAuthEnabled && brokerConfig.existsBasicCredentials) ||
+            (entity.key === ConfigParams.scramAuthEnabled && brokerConfig.existsScramCredentials));
   }
 
   isAuthProviderParam(entity: BrokerConfigTable) {
@@ -134,7 +141,6 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
 
   private switchAuthProvider(providerType: MqttAuthProviderType, value: boolean) {
     const providerId = this.authProviders.find(e => e.type === providerType).id;
-    this.mqttAuthProviderService.switchAuthProvider(providerId, value)
-      .subscribe(() => this.configService.fetchBrokerConfig().subscribe());
+    this.mqttAuthProviderService.switchAuthProvider(providerId, value).subscribe(() => this.configService.fetchBrokerConfig());
   }
 }

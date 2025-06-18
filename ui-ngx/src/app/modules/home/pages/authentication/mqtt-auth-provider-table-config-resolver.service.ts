@@ -32,6 +32,7 @@ import {
 } from '@shared/models/mqtt-auth-provider.model';
 import { MqttAuthProviderComponent } from '@home/pages/authentication/mqtt-auth-provider.component';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { ConfigService } from '@core/http/config.service';
 
 @Injectable()
 export class MqttAuthProviderTableConfigResolver {
@@ -39,6 +40,7 @@ export class MqttAuthProviderTableConfigResolver {
   private readonly config: EntityTableConfig<ShortMqttAuthProvider> = new EntityTableConfig<ShortMqttAuthProvider>();
 
   constructor(private mqttAuthProviderService: MqttAuthProviderService,
+              private condfigService: ConfigService,
               private translate: TranslateService,
               private router: Router) {
 
@@ -120,7 +122,10 @@ export class MqttAuthProviderTableConfigResolver {
       $event.stopPropagation();
     }
     this.mqttAuthProviderService.switchAuthProvider(provider.id, provider.enabled)
-      .subscribe(() => this.config.getTable().updateData());
+      .subscribe(() => {
+        this.condfigService.fetchBrokerConfig().subscribe();
+        this.config.getTable().updateData();
+      });
   }
 
   private providerStatus(provider: ShortMqttAuthProvider): string {
