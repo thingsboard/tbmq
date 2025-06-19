@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.BasicCallback;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
+import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.integration.PublishIntegrationMsgProto;
 import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
@@ -39,7 +40,7 @@ public class HttpIntegration extends AbstractHttpIntegration {
         try {
             HttpIntegrationConfig httpIntegrationConfig = getClientConfiguration(clientConfiguration, HttpIntegrationConfig.class);
             HttpConfigValidator.validate(httpIntegrationConfig);
-            TbHttpClient.buildEncodedUri(httpIntegrationConfig.getRestEndpointUrl());
+            UrlUtils.buildEncodedUri(httpIntegrationConfig.getRestEndpointUrl());
         } catch (Exception e) {
             throw new ThingsboardException(e.getMessage(), ThingsboardErrorCode.GENERAL);
         }

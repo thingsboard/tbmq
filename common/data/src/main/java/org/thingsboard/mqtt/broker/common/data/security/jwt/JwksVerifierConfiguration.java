@@ -20,6 +20,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.credentials.AnonymousCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.util.Map;
@@ -45,7 +46,7 @@ public class JwksVerifierConfiguration implements JwtVerifierConfiguration {
 
     @Override
     public void validate() {
-        // TODO: add validation
+        UrlUtils.validateUrl(endpoint);
     }
 
     public String getEndpoint() {

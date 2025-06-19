@@ -32,14 +32,14 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClient.RequestBodySpec;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.thingsboard.mqtt.broker.common.data.BasicCallback;
-import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
-import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
-import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.CredentialsType;
+import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
+import org.thingsboard.mqtt.broker.integration.api.IntegrationContext;
+import org.thingsboard.mqtt.broker.integration.api.data.UplinkMetaData;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -86,7 +86,7 @@ public class TbHttpClient {
             if (config.getMaxParallelRequestsCount() > 0) {
                 semaphore = new Semaphore(config.getMaxParallelRequestsCount());
             }
-            uri = buildEncodedUri(config.getRestEndpointUrl());
+            uri = UrlUtils.buildEncodedUri(config.getRestEndpointUrl());
 
             ConnectionProvider connectionProvider = ConnectionProvider
                     .builder("ie-http-client")
@@ -174,28 +174,6 @@ public class TbHttpClient {
             log.warn("[{}][{}] Interrupted while trying to acquire the lock", getId(), getName(), e);
             callback.onFailure(e);
         }
-    }
-
-    public static URI buildEncodedUri(String endpointUrl) {
-        if (endpointUrl == null) {
-            throw new RuntimeException("Url string cannot be null!");
-        }
-        if (endpointUrl.isEmpty()) {
-            throw new RuntimeException("Url string cannot be empty!");
-        }
-
-        URI uri = UriComponentsBuilder.fromUriString(endpointUrl).build().encode().toUri();
-        if (uri.getScheme() == null || uri.getScheme().isEmpty()) {
-            throw new RuntimeException("Transport scheme(protocol) must be provided!");
-        }
-
-        boolean authorityNotValid = uri.getAuthority() == null || uri.getAuthority().isEmpty();
-        boolean hostNotValid = uri.getHost() == null || uri.getHost().isEmpty();
-        if (authorityNotValid || hostNotValid) {
-            throw new RuntimeException("Url string is invalid!");
-        }
-
-        return uri;
     }
 
     private void processResponse(ResponseEntity<String> response) {

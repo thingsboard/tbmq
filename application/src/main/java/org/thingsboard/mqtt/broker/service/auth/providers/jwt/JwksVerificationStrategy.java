@@ -27,12 +27,12 @@ import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
-import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
+import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 
@@ -96,7 +96,7 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
     // DOCS: https://connect2id.com/products/nimbus-jose-jwt/examples/enhanced-jwk-retrieval
     private JWKSource<SecurityContext> initializeJWKSource(JwksVerifierConfiguration configuration) {
         try {
-            URL jwksURL = new URL(configuration.getEndpoint());
+            URL jwksURL = UrlUtils.buildEncodedUrl(configuration.getEndpoint());
             long ttlMillis = TimeUnit.SECONDS.toMillis(configuration.getRefreshInterval());
             return JWKSourceBuilder.create(jwksURL, createResourceRetriever(configuration))
                     .cache(ttlMillis, JWK_SET_CACHE_REFRESH_TIMEOUT)

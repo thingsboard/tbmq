@@ -21,6 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.thingsboard.mqtt.broker.common.data.util.UrlUtils;
 
 import java.net.URI;
 
@@ -65,27 +66,27 @@ public class TbHttpClientTest {
     @Test
     public void testBuildSimpleUri() {
         String url = "http://localhost:8080/";
-        URI uri = TbHttpClient.buildEncodedUri(url);
+        URI uri = UrlUtils.buildEncodedUri(url);
         Assertions.assertEquals(url, uri.toString());
     }
 
     @Test
     public void testBuildUriWithoutProtocol() {
         String url = "localhost:8080/";
-        assertThatThrownBy(() -> TbHttpClient.buildEncodedUri(url));
+        assertThatThrownBy(() -> UrlUtils.buildEncodedUri(url));
     }
 
     @Test
     public void testBuildInvalidUri() {
         String url = "aaa";
-        assertThatThrownBy(() -> TbHttpClient.buildEncodedUri(url));
+        assertThatThrownBy(() -> UrlUtils.buildEncodedUri(url));
     }
 
     @Test
     public void testBuildUriWithSpecialSymbols() {
         String url = "http://192.168.1.1/data?d={\"a\": 12}";
         String expected = "http://192.168.1.1/data?d=%7B%22a%22:%2012%7D";
-        URI uri = TbHttpClient.buildEncodedUri(url);
+        URI uri = UrlUtils.buildEncodedUri(url);
         Assertions.assertEquals(expected, uri.toString());
     }
 
