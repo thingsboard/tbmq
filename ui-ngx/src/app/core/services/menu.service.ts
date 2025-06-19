@@ -108,22 +108,22 @@ export class MenuService {
             type: 'link',
             path: '/authentication/providers',
             icon: 'settings'
-          }
+          },
+          {
+            id: MenuId.blocked_clients,
+            name: 'blocked-client.blocked-clients',
+            type: 'link',
+            path: '/authentication/blocked-clients',
+            icon: 'person_off'
+          },
+          {
+            id: MenuId.unauthorized_clients,
+            name: 'unauthorized-client.unauthorized-clients',
+            type: 'link',
+            path: '/authentication/unauthorized-clients',
+            icon: 'no_accounts'
+          },
         ]
-      },
-      {
-        id: MenuId.unauthorized_clients,
-        name: 'unauthorized-client.unauthorized-clients',
-        type: 'link',
-        path: '/unauthorized-clients',
-        icon: 'no_accounts'
-      },
-      {
-        id: MenuId.blocked_clients,
-        name: 'blocked-client.blocked-clients',
-        type: 'link',
-        path: '/blocked-clients',
-        icon: 'person_off'
       },
       {
         id: MenuId.web_socket_client,

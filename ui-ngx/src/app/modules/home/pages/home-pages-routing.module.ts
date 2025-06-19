@@ -15,11 +15,10 @@
 ///
 
 import { NgModule } from '@angular/core';
-import { ClientCredentialsRoutingModule } from '@home/pages/client-credentials/client-credentials-routing.module';
+import { AuthenticationRoutingModule } from '@home/pages/authentication/authentication-routing.module';
 import { UsersRoutingModule } from '@home/pages/users/users-routing.module';
 import { SessionsRoutingModule } from '@home/pages/sessions/sessions-routing.module';
 import { SubscriptionsRoutingModule } from '@home/pages/subscriptions/subscriptions-routing.module';
-import { UnauthorizedClientRoutingModule } from '@home/pages/unauthorized-client/unauthorized-client-routing.module';
 import { RetainedMessagesRoutingModule } from '@home/pages/retained-messages/retained-messages-routing.module';
 import { SharedSubscriptionsRoutingModule } from '@home/pages/shared-subscription-applications/shared-subscriptions-routing.module';
 import { WsClientRoutingModule } from '@home/pages/ws-client/ws-client-routing.module';
@@ -30,18 +29,16 @@ import { GettingStartedRoutingModule } from '@home/pages/getting-started/getting
 import { KafkaManagementRoutingModule } from '@home/pages/kafka-management/kafka-management-routing.module';
 import { MonitoringRoutingModule } from '@home/pages/monitoring/monitoring-routing.module';
 import { IntegrationRoutingModule } from '@home/pages/integration/integration-routing.module';
-import { BlockedClientsRoutingModule } from '@home/pages/blocked-clients/blocked-clients-routing.module';
 
 @NgModule({
   exports: [
     HomeOverviewRoutingModule,
     SettingsRoutingModule,
     KafkaManagementRoutingModule,
-    ClientCredentialsRoutingModule,
+    AuthenticationRoutingModule,
     UsersRoutingModule,
     SessionsRoutingModule,
     SubscriptionsRoutingModule,
-    UnauthorizedClientRoutingModule,
     RetainedMessagesRoutingModule,
     SharedSubscriptionsRoutingModule,
     WsClientRoutingModule,
@@ -49,7 +46,6 @@ import { BlockedClientsRoutingModule } from '@home/pages/blocked-clients/blocked
     GettingStartedRoutingModule,
     MonitoringRoutingModule,
     IntegrationRoutingModule,
-    BlockedClientsRoutingModule,
   ]
 })
 export class HomePagesRoutingModule {

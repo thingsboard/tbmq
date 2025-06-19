@@ -30,7 +30,7 @@ import {
   mqttAuthProviderTypeTranslationMap,
   ShortMqttAuthProvider
 } from '@shared/models/mqtt-auth-provider.model';
-import { MqttAuthProviderComponent } from '@home/pages/authentication/mqtt-auth-provider.component';
+import { MqttAuthProviderComponent } from '@home/pages/mqtt-auth-provider/mqtt-auth-provider.component';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { ConfigService } from '@core/http/config.service';
 
