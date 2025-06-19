@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import {BaseData} from '@shared/models/base-data';
+import { BaseData } from '@shared/models/base-data';
 
 export interface KafkaBroker extends BaseData {
   brokerId: string;
