@@ -84,6 +84,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres
       TB_KAFKA_SERVERS: kafka:9092
       REDIS_HOST: redis
+      SECURITY_MQTT_BASIC_ENABLED: "true"
       #JAVA_OPTS: "-Xmx2048M -Xms2048M -Xss384k -XX:+AlwaysPreTouch"
     volumes:
       - tbmq-logs:/var/log/thingsboard-mqtt-broker

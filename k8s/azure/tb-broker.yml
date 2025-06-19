@@ -82,6 +82,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+            - name: SECURITY_MQTT_BASIC_ENABLED
+              value: "true"
+            - name: SECURITY_MQTT_SSL_ENABLED
+              value: "true"
             - name: TB_KAFKA_SERVERS
               value: "kafka:9092"
           #            Uncomment the following lines to enable two-way MQTTS
