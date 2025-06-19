@@ -123,6 +123,10 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     );
   }
 
+  gotoAccountSecurity() {
+    this.router.navigate(['account', 'security']);
+  }
+
   private getSettings() {
     this.getMqttAuthSettings();
     this.getSecuritySettings();

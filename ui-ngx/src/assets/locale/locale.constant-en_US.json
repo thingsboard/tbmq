@@ -1750,6 +1750,8 @@
     "username": "Username",
     "username-required": "Username is required",
     "ca-cert": "CA certificate",
+    "goto-security-settings": "Go to Security settings",
+    "goto-account-security": "Go to Account security",
     "2fa": {
         "2fa": "Two-factor authentication",
         "2fa-description": "Two-factor authentication protects your account from unauthorized access. All you have to do is enter a security code when you log in.",

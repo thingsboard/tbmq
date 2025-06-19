@@ -23,12 +23,12 @@
     <span class="flex flex-1"></span>
     <div>
       <button mat-icon-button
-        type="button"
-        (click)="goToProviders()"
-        matTooltip="{{'authentication.authentication-providers-go-to' | translate}}"
-        matTooltipPosition="above">
-      <mat-icon svgIcon="mdi:shield-lock"></mat-icon>
-    </button>
+              type="button"
+              (click)="goToProviders()"
+              matTooltip="{{'authentication.authentication-providers-go-to' | translate}}"
+              matTooltipPosition="above">
+        <mat-icon svgIcon="mdi:shield-lock"></mat-icon>
+      </button>
     </div>
     <div tb-help="mqttAuthSettings"></div>
   </mat-card-header>
@@ -111,6 +111,13 @@
       <span class="mat-headline-5" translate>admin.password-policy</span>
     </mat-card-title>
     <span class="flex flex-1"></span>
+    <button mat-icon-button
+            type="button"
+            (click)="gotoAccountSecurity()"
+            matTooltip="{{'security.goto-account-security' | translate}}"
+            matTooltipPosition="above">
+      <mat-icon>lock</mat-icon>
+    </button>
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="securitySettingsForm" (ngSubmit)="saveSecuritySettings()" autocomplete="off">
