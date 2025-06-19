@@ -23,6 +23,14 @@
       [class.!hidden]="!(!isEdit && !isDetailsPage)">
       {{'common.open-details-page' | translate }}
     </button>
+    @if ((loginAsUserEnabled$ | async) && currentUser?.userId !== entity?.id) {
+      <button mat-raised-button color="primary"
+              [disabled]="(isLoading$ | async)"
+              (click)="onEntityAction($event, 'loginAsUser')"
+              [class.!hidden]="isEdit">
+        {{ "login.login-as-user" | translate }}
+      </button>
+    }
     <button mat-raised-button color="primary"
       [disabled]="(isLoading$ | async)"
       (click)="onEntityAction($event, 'delete')"

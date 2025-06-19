@@ -20,7 +20,9 @@ import {
   EntityColumn,
   EntityTableColumn,
   EntityTableConfig,
-  HeaderActionDescriptor
+  HeaderActionDescriptor,
+  cellStatus,
+  STATUS_COLOR
 } from '@home/models/entity/entities-table-config.models';
 import {
   getIntegrationHelpLink,
@@ -101,9 +103,7 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
       new DateEntityTableColumn<IntegrationInfo>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<IntegrationInfo>('name', 'integration.name', '15%'),
       new EntityTableColumn<IntegrationInfo>('type', 'integration.type', '15%', (integration) => this.translate.instant(integrationTypeInfoMap.get(integration.type).name)),
-      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '35%',
-        integration => this.integrationStatus(integration),
-        integration => this.integrationStatusStyle(integration), false),
+      new EntityTableColumn<IntegrationInfo>('status', 'integration.status.status', '35%', (integration) => this.statusCell(integration), undefined, false),
     );
     return columns;
   }
@@ -205,37 +205,27 @@ export class IntegrationsTableConfig extends EntityTableConfig<Integration, Page
     }).afterClosed();
   }
 
-  private integrationStatus(integration: IntegrationInfo): string {
-    let translateKey = 'integration.status.active';
-    let backgroundColor = 'rgba(25, 128, 56, 0.08)';
+  private statusCell(integration: IntegrationInfo): string {
+    let content: string;
+    let color: string;
+    let background: string;
     if (!integration.enabled) {
-      translateKey = 'integration.status.disabled';
-      backgroundColor = 'rgba(0, 0, 0, 0.08)';
+      content = 'integration.status.disabled';
+      color = STATUS_COLOR.DISABLED.content;
+      background = STATUS_COLOR.DISABLED.background;
     } else if (!integration.status) {
-      translateKey = 'integration.status.pending';
-      backgroundColor = 'rgba(212, 125, 24, 0.08)';
-    } else if (!integration.status.success) {
-      translateKey = 'integration.status.failed';
-      backgroundColor = 'rgba(209, 39, 48, 0.08)';
+      content = 'integration.status.pending';
+      color = STATUS_COLOR.PENDING.content;
+      background = STATUS_COLOR.PENDING.background;
+    } else if (integration.status.success) {
+      content = 'integration.status.active';
+      color = STATUS_COLOR.ACTIVE.content;
+      background = STATUS_COLOR.ACTIVE.background;
+    } else {
+      content = 'integration.status.failed';
+      color = STATUS_COLOR.INACTIVE.content;
+      background = STATUS_COLOR.INACTIVE.background;
     }
-    return `<div class="status" style="border-radius: 16px; height: 32px; line-height: 32px; padding: 0 12px; width: fit-content; background-color: ${backgroundColor}">
-                ${this.translate.instant(translateKey)}
-            </div>`;
-  }
-
-  private integrationStatusStyle(integration: IntegrationInfo): object {
-    const styleObj = {
-      fontSize: '14px',
-      color: '#198038',
-      cursor: 'pointer'
-    };
-    if (!integration.enabled) {
-      styleObj.color = 'rgba(0, 0, 0, 0.54)';
-    } else if (!integration.status) {
-      styleObj.color = '#D47D18';
-    } else if (!integration.status.success) {
-      styleObj.color = '#d12730';
-    }
-    return styleObj;
+    return cellStatus(this.translate.instant(content), color, background);
   }
 }

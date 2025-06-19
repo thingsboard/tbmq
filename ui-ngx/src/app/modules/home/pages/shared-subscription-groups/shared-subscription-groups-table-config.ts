@@ -15,7 +15,7 @@
 ///
 
 import {
-  CellActionDescriptorType,
+  copyContentActionCell,
   ChipsTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -65,41 +65,11 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
 
     this.columns.push(
       new EntityTableColumn<SharedSubscriptionGroup>('shareName', 'shared-subscription.share-name', '25%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.shareName,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.shareName?.length,
-          onAction: ($event, entity) => entity.shareName,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('shareName', this.translate)),
       new EntityTableColumn<SharedSubscriptionGroup>('topicFilter', 'shared-subscription.topic-filter', '25%',
-        undefined, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          nameFunction: (entity) => this.translate.instant('action.copy') + ' ' + entity.topicFilter,
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.topicFilter?.length,
-          onAction: ($event, entity) => entity.topicFilter,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        undefined, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('topicFilter', this.translate)),
       new ChipsTableColumn<SharedSubscriptionGroup>('clients', 'shared-subscription.client-ids', '40%',
         entity => entity?.clients?.map(e => e.clientId)?.join(','),
         (entity, value) => this.showSessionDetails(value),
@@ -121,7 +91,7 @@ export class SharedSubscriptionGroupsTableConfig extends EntityTableConfig<Share
               const connectionState = session.connected ? ConnectionState.CONNECTED : ConnectionState.DISCONNECTED;
               return {
                 fontSize: '32px',
-                color: connectionStateColor.get(connectionState)
+                color: connectionStateColor.get(connectionState).content
               };
             }
           }

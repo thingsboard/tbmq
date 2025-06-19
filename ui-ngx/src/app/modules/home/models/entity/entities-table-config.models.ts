@@ -31,6 +31,7 @@ import { EntityTabsComponent } from '../../components/entity/entity-tabs.compone
 import { IEntitiesTableComponent } from './entity-table-component.models';
 import { DAY, historyInterval } from '@shared/models/time/time.models';
 import { IEntityDetailsPageComponent } from '@home/models/entity/entity-details-page-component.models';
+import { TranslateService } from '@ngx-translate/core';
 
 export type EntityBooleanFunction<T extends BaseData> = (entity: T) => boolean;
 export type EntityStringFunction<T extends BaseData> = (entity: T) => string;
@@ -275,23 +276,19 @@ const createHtmlElement = (tag: string, styles: any, content: any, classes = '')
 export const checkBoxCell = (value: boolean): string =>
   createHtmlElement('mat-icon',{}, value ? 'check_box' : 'check_box_outline_blank', 'material-icons mat-icon');
 
-export const cellWithIcon = (value: string, icon: string, backgroundColor: string,
-                             iconColor: string = 'rgba(0,0,0,0.54)', valueColor: string = 'inherit'): string =>
-  createHtmlElement('section', {background: backgroundColor, 'border-radius': '16px', padding: '4px 8px', 'white-space': 'nowrap', width: 'fit-content'},
+export const cellWithIcon = (value: string, icon: string, background: string,
+                             color: string = 'rgba(0,0,0,0.54)', valueColor: string = 'inherit'): string =>
+  createHtmlElement('section', {background, 'border-radius': '16px', padding: '4px 8px', 'white-space': 'nowrap', width: 'fit-content'},
     `<span style="display: inline-flex; align-items: center; gap: 4px;">
         <span style="color: ${valueColor};">${value}</span>
-        ${createHtmlElement('mat-icon', {color: iconColor, height: '20px', width: '20px', 'font-size': '20px'}, icon, 'material-icons mat-icon')}
+        ${createHtmlElement('mat-icon', {color, height: '20px', width: '20px', 'font-size': '20px'}, icon, 'material-icons mat-icon')}
     </span>`);
 
-export const cellWithBackground = (value: string | number, backgroundColor: string = 'rgba(111, 116, 242, 0.07)'): string =>
-  createHtmlElement('span', {background: backgroundColor, 'border-radius': '16px', padding: '4px 8px'}, value);
+export const cellWithBackground = (value: string | number, background: string = 'rgba(111, 116, 242, 0.07)'): string =>
+  createHtmlElement('span', {background, 'border-radius': '16px', padding: '4px 8px'}, value);
 
-export const connectedStateCell = (connectionState: string, color: string): string =>
-  `${createHtmlElement('span', {'vertical-align': 'bottom', 'font-size': '32px', color: color}, '&#8226;')}
-   ${createHtmlElement('span', {color: color, background: 'rgba(111, 116, 242, 0)', 'border-radius': '16px', padding: '4px 8px'}, connectionState)}`;
-
-export const colorIcon = (icon: string, iconColor: string = 'rgba(0,0,0,0.54)'): string =>
-  createHtmlElement('mat-icon', {color: iconColor, height: '20px', width: '20px', 'font-size': '20px'}, icon, 'material-icons mat-icon');
+export const cellStatus = (content: string, color: string, background: string): string =>
+  `${createHtmlElement('span', {color, background, 'border-radius': '16px', padding: '8px', 'font-size': '13px'}, content)}`;
 
 export function formatBytes(bytes, decimals = 1) {
   if (!+bytes) {
@@ -314,3 +311,47 @@ const arrowDown = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24"
 const arrowUp = (color) => `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
   <path d="M12 22C10.6868 22 9.38642 21.7413 8.17317 21.2388C6.95991 20.7362 5.85752 19.9997 4.92893 19.0711C3.05357 17.1957 2 14.6522 2 12C2 9.34784 3.05357 6.8043 4.92893 4.92893C6.8043 3.05357 9.34784 2 12 2C13.3132 2 14.6136 2.25866 15.8268 2.7612C17.0401 3.26375 18.1425 4.00035 19.0711 4.92893C19.9997 5.85752 20.7362 6.95991 21.2388 8.17317C21.7413 9.38642 22 10.6868 22 12C22 14.6522 20.9464 17.1957 19.0711 19.0711C17.1957 20.9464 14.6522 22 12 22ZM12 7L7 12H10V16H14V12H17L12 7Z" fill="${color}"/>
 </svg>`;
+
+export interface StatusColor {
+  content: string;
+  background: string;
+}
+
+export type StatusKey = 'ACTIVE' | 'INACTIVE' | 'PENDING' | 'DISABLED';
+
+export const STATUS_COLOR: Record<StatusKey, StatusColor> = {
+  ACTIVE: {
+    content: '#198038',
+    background: 'rgba(25, 128, 56, 0.08)',
+  },
+  INACTIVE: {
+    content: '#d12730',
+    background: 'rgba(209, 39, 48, 0.08)',
+  },
+  PENDING: {
+    content: '#D47D18',
+    background: 'rgba(212, 125, 24, 0.08)',
+  },
+  DISABLED: {
+    content: 'rgba(0, 0, 0, 0.54)',
+    background: 'rgba(0, 0, 0, 0.08)',
+  }
+};
+
+export const copyContentActionCell = (prop: string, translate: TranslateService): CellActionDescriptor<any> => {
+  return {
+    name: translate.instant('action.copy'),
+    nameFunction: (entity) => translate.instant('action.copy') + ' ' + entity[prop],
+    icon: 'content_copy',
+    style: {
+      padding: '0px',
+      'font-size': '16px',
+      'line-height': '16px',
+      height: '16px',
+      color: 'rgba(0,0,0,.87)'
+    },
+    isEnabled: (entity) => !!entity[prop]?.length,
+    onAction: ($event, entity) => entity[prop],
+    type: CellActionDescriptorType.COPY_BUTTON
+  }
+}

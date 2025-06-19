@@ -15,7 +15,7 @@
 ///
 
 import {
-  CellActionDescriptorType,
+  copyContentActionCell,
   DateEntityTableColumn,
   EntityTableColumn,
   EntityTableConfig
@@ -33,16 +33,19 @@ import { getCurrentAuthUser } from '@core/auth/auth.selectors';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+import { mergeMap, Observable, of } from 'rxjs';
+import { AuthService } from '@core/http/auth.service';
 
 @Injectable()
 export class UsersTableConfigResolver {
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
+  private readonly currentUserId = () => getCurrentAuthUser(this.store).userId;
 
   constructor(private store: Store<AppState>,
               private adminService: UserService,
+              private authService: AuthService,
               private translate: TranslateService,
               private datePipe: DatePipe,
               private router: Router) {
@@ -52,8 +55,8 @@ export class UsersTableConfigResolver {
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.USER);
     this.config.entityResources = entityTypeResources.get(EntityType.USER);
     this.config.tableTitle = this.translate.instant('user.users');
-    this.config.entitySelectionEnabled = (user) => user.id !== getCurrentAuthUser(this.store).userId;
-    this.config.deleteEnabled = (user) => user ? user.id !== getCurrentAuthUser(this.store).userId : true;
+    this.config.entitySelectionEnabled = (user) => user.id !== this.currentUserId();
+    this.config.deleteEnabled = (user) => user ? user.id !== this.currentUserId() : true;
     this.config.entityTitle = (user) => user ? user.email : '';
     this.config.addDialogStyle = {height: '600px'};
     this.config.onEntityAction = action => this.onAction(action, this.config);
@@ -61,22 +64,8 @@ export class UsersTableConfigResolver {
     this.config.columns.push(
       new DateEntityTableColumn<User>('createdTime', 'common.created-time', this.datePipe, '150px'),
       new EntityTableColumn<User>('email', 'user.email', '40%',
-        entity => entity.email, () => undefined,
-        true, () => ({}), () => undefined, false,
-        {
-          name: this.translate.instant('action.copy'),
-          icon: 'content_copy',
-          style: {
-            padding: '0px',
-            'font-size': '16px',
-            'line-height': '16px',
-            height: '16px',
-            color: 'rgba(0,0,0,.87)'
-          },
-          isEnabled: (entity) => !!entity.email?.length,
-          onAction: ($event, entity) => entity.email,
-          type: CellActionDescriptorType.COPY_BUTTON
-        }),
+        entity => entity.email, () => undefined, true, () => ({}), () => undefined, false,
+        copyContentActionCell('email', this.translate)),
       new EntityTableColumn<User>('authority', 'user.role', '100px',
         entity => this.translate.instant(this.authorityTranslationMap.get(entity.authority)),
         undefined, false),
@@ -106,13 +95,31 @@ export class UsersTableConfigResolver {
   }
 
   resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<EntityTableConfig<User>> {
-    return of(this.config);
+    return this.authService.loadIsUserTokenAccessEnabled(getCurrentAuthUser(this.store)).pipe(
+      mergeMap(isTokenAccessEnabled => {
+        if (isTokenAccessEnabled) {
+          this.config.cellActionDescriptors = [];
+          this.config.cellActionDescriptors.push(
+            {
+              name: this.translate.instant('login.login-as-user'),
+              icon: 'mdi:login',
+              isEnabled: (entity) => entity.id !== this.currentUserId(),
+              onAction: ($event, entity) => this.loginAsUser($event, entity)
+            }
+          );
+        }
+        return of(this.config);
+      })
+    )
   }
 
   onAction(action: EntityAction<User>, config: EntityTableConfig<User>): boolean {
     switch (action.action) {
       case 'open':
         this.openUser(action.event, action.entity, config);
+        return true;
+      case 'loginAsUser':
+        this.loginAsUser(action.event, action.entity);
         return true;
     }
     return false;
@@ -124,5 +131,12 @@ export class UsersTableConfigResolver {
     }
     const url = this.router.createUrlTree([user.id], {relativeTo: config.getActivatedRoute()});
     this.router.navigateByUrl(url);
+  }
+
+  private loginAsUser($event: Event, user: User) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.authService.loginAsUser(user.id).subscribe();
   }
 }
