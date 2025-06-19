@@ -110,11 +110,15 @@ public class JacksonUtil {
         return OBJECT_MAPPER.valueToTree(value);
     }
 
+    public static <T> byte[] toBytes(T value) {
+        return value == null ? null : writeValueAsBytes(value);
+    }
+
     public static <T> byte[] writeValueAsBytes(T value) {
         try {
             return OBJECT_MAPPER.writeValueAsBytes(value);
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("The given Json object value cannot be transformed to a String: " + value, e);
+            throw new IllegalArgumentException("The given Json object value cannot be transformed to bytes: " + value, e);
         }
     }
 

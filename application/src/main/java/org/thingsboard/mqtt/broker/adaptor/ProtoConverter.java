@@ -652,7 +652,7 @@ public class ProtoConverter {
                         .build()).build();
     }
 
-    public static List<MqttAuthProviderTypeProto> toMqttAuthPriorities(List<MqttAuthProviderType> priorities) {
+    private static List<MqttAuthProviderTypeProto> toMqttAuthPriorities(List<MqttAuthProviderType> priorities) {
         if (priorities == null) {
             return Collections.emptyList();
         }

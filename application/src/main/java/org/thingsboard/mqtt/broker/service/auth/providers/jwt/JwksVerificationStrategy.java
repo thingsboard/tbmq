@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.service.auth.providers.jwt;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -42,28 +44,30 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
 public class JwksVerificationStrategy implements JwtVerificationStrategy {
 
-    private final static long JWK_SET_CACHE_REFRESH_TIMEOUT = TimeUnit.MINUTES.toMillis(1); // How long a verification thread is willing to block while fetching / refreshing
+    private static final long JWK_SET_CACHE_REFRESH_TIMEOUT = TimeUnit.MINUTES.toMillis(1); // How long a verification thread is willing to block while fetching / refreshing
     private static final int MIN_REFRESH_AHEAD_CACHE_TIME = 30000; // 10 % from JWK_SET_CACHE_REFRESH_TIMEOUT in millis. Time before TTL cleanup within which Nimbus will fetch a fresh JWKS in the background.
-    private final static long OUTAGE_TTL = TimeUnit.HOURS.toMillis(24); // Enables outage tolerance by serving a non-expiring cached JWK set in case of outage.
+    private static final long OUTAGE_TTL = TimeUnit.HOURS.toMillis(24); // Enables outage tolerance by serving a non-expiring cached JWK set in case of outage.
+    private static final int JWS_SELECTORS_MAXIMUM_SIZE = 100; // Should be greater than the number of JWSAlgorithm options
 
     private final JWKSource<SecurityContext> jwkSource;
     private final JwtClaimsValidator claimsValidator;
     private final DefaultJWSVerifierFactory defaultJWSVerifierFactory;
-    private final ConcurrentMap<JWSAlgorithm, JWSKeySelector<SecurityContext>> selectorCache;
+    private final Cache<JWSAlgorithm, JWSKeySelector<SecurityContext>> selectorCache;
 
     public JwksVerificationStrategy(JwksVerifierConfiguration configuration, JwtClaimsValidator jwtClaimsValidator) {
         this.jwkSource = initializeJWKSource(configuration);
         this.claimsValidator = jwtClaimsValidator;
         this.defaultJWSVerifierFactory = new DefaultJWSVerifierFactory();
-        this.selectorCache = new ConcurrentHashMap<>();
+        this.selectorCache = CacheBuilder.newBuilder()
+                .maximumSize(JWS_SELECTORS_MAXIMUM_SIZE)
+                .expireAfterAccess(configuration.getRefreshInterval(), TimeUnit.SECONDS)
+                .build();
     }
 
     @Override
@@ -72,21 +76,21 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
         JWSHeader header = signedJWT.getHeader();
         JWSAlgorithm alg = header.getAlgorithm();
 
-        JWSKeySelector<SecurityContext> selector = selectorCache
-                .computeIfAbsent(alg, a -> new JWSVerificationKeySelector<>(alg, jwkSource));
+        JWSKeySelector<SecurityContext> selector = selectorCache.get(alg, () -> new JWSVerificationKeySelector<>(alg, jwkSource));
         List<? extends Key> keys = selector.selectJWSKeys(header, null);
 
         if (keys.isEmpty()) {
             return AuthResponse.failure("No matching key found in JWKS for JWT verification.");
         }
 
-        JWSVerifier verifier = defaultJWSVerifierFactory.createJWSVerifier(header, keys.get(0));
-        if (!signedJWT.verify(verifier)) {
-            return AuthResponse.failure("JWT signature validation failed.");
+        for (Key key : keys) {
+            JWSVerifier verifier = defaultJWSVerifierFactory.createJWSVerifier(header, key);
+            if (signedJWT.verify(verifier)) {
+                return claimsValidator.validateAll(authContext, signedJWT.getJWTClaimsSet());
+            }
         }
 
-        JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-        return claimsValidator.validateAll(authContext, claims);
+        return AuthResponse.failure("JWT signature validation failed.");
     }
 
     // DOCS: https://connect2id.com/products/nimbus-jose-jwt/examples/enhanced-jwk-retrieval

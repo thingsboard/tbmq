@@ -70,7 +70,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     }
 
     public ClientType getDefaultClientType() {
-        return Objects.requireNonNullElse(defaultClientType, ClientType.APPLICATION);
+        return Objects.requireNonNullElse(defaultClientType, ClientType.DEVICE);
     }
 
     public Map<String, String> getAuthClaims() {
@@ -84,7 +84,7 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     public static JwtMqttAuthProviderConfiguration defaultConfiguration() {
         var jwtConfig = new JwtMqttAuthProviderConfiguration();
         jwtConfig.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(".*")));
-        jwtConfig.setDefaultClientType(ClientType.APPLICATION);
+        jwtConfig.setDefaultClientType(ClientType.DEVICE);
         jwtConfig.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());
         return jwtConfig;

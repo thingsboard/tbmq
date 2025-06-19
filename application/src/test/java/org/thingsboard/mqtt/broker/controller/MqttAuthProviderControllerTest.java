@@ -78,10 +78,10 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
         assertThat(mqttAuthProvider.isEnabled()).isFalse();
         assertThat(mqttAuthProvider.getConfiguration()).isInstanceOf(JwtMqttAuthProviderConfiguration.class);
         JwtMqttAuthProviderConfiguration configuration = (JwtMqttAuthProviderConfiguration) mqttAuthProvider.getConfiguration();
-        assertThat(configuration.getDefaultClientType()).isEqualTo(ClientType.APPLICATION);
+        assertThat(configuration.getDefaultClientType()).isEqualTo(ClientType.DEVICE);
 
-        // enable + change default clientType to DEVICE.
-        configuration.setDefaultClientType(ClientType.DEVICE);
+        // enable + change default clientType to APPLICATION.
+        configuration.setDefaultClientType(ClientType.APPLICATION);
         mqttAuthProvider.setEnabled(true);
         mqttAuthProvider.setConfiguration(configuration);
 
@@ -94,7 +94,7 @@ public class MqttAuthProviderControllerTest extends AbstractControllerTest {
         assertThat(savedMqttAuthProvider.isEnabled()).isTrue();
 
         JwtMqttAuthProviderConfiguration savedConfiguration = (JwtMqttAuthProviderConfiguration) savedMqttAuthProvider.getConfiguration();
-        assertThat(savedConfiguration.getDefaultClientType()).isEqualTo(ClientType.DEVICE);
+        assertThat(savedConfiguration.getDefaultClientType()).isEqualTo(ClientType.APPLICATION);
 
         MqttAuthProvider foundMqttAuthProvider = doGet("/api/mqtt/auth/provider/" + savedMqttAuthProvider.getId().toString(), MqttAuthProvider.class);
         assertThat(foundMqttAuthProvider).isNotNull().isEqualTo(savedMqttAuthProvider);

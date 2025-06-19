@@ -121,9 +121,8 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
     private AuthResponse getFinalFailureAuthResponse(AuthContext authContext, List<String> failureReasons) {
         String fullReason = String.join(" | ", failureReasons);
-        var re = new RuntimeException(fullReason);
-        log.warn("[{}] Failed to authenticate client", authContext.getClientId(), re);
-        return AuthResponse.failure(String.join(" | ", failureReasons));
+        log.warn("[{}] Failed to authenticate client {}", authContext.getClientId(), fullReason);
+        return AuthResponse.failure(fullReason);
     }
 
     private List<MqttAuthProviderType> getPriorities(List<MqttAuthProviderType> mqttAuthPriorities) {

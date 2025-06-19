@@ -30,18 +30,27 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.RetainHandling;
 import org.thingsboard.mqtt.broker.gen.queue.RetainedMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.SessionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
@@ -59,6 +68,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -562,4 +572,112 @@ public class ProtoConverterTest {
         BlockedClient converted = ProtoConverter.convertProtoToBlockedClient(proto);
         assertNull(converted.getDescription());
     }
+
+    @Test
+    public void givenMqttAuthSettings_whenConvertToProtoAndBack_thenPrioritiesPreserved() {
+        List<MqttAuthProviderType> originalPriorities = List.of(
+                MqttAuthProviderType.MQTT_BASIC,
+                MqttAuthProviderType.JWT,
+                MqttAuthProviderType.X_509
+        );
+
+        MqttAuthSettings settings = new MqttAuthSettings();
+        settings.setUseListenerBasedProviderOnly(true);
+        settings.setPriorities(originalPriorities);
+
+        InternodeNotificationProto proto = ProtoConverter.toMqttAuthSettingUpdateProto(settings);
+
+        assertTrue(proto.hasMqttAuthSettingsProto());
+
+        // Extract back the priorities from proto
+        List<MqttAuthProviderTypeProto> protoList = proto.getMqttAuthSettingsProto().getPrioritiesList();
+        List<MqttAuthProviderType> result = ProtoConverter.fromMqttAuthPriorities(protoList);
+
+        // Validate
+        assertEquals(originalPriorities, result);
+    }
+
+    @Test
+    public void givenMqttAuthSettingsWithNullPriorities_whenConvertToProto_thenValidateNullHandledProperly() {
+        MqttAuthSettings settings = new MqttAuthSettings();
+        settings.setUseListenerBasedProviderOnly(true);
+        settings.setPriorities(null);
+
+        InternodeNotificationProto proto = ProtoConverter.toMqttAuthSettingUpdateProto(settings);
+
+        assertTrue(proto.hasMqttAuthSettingsProto());
+
+        // Validate
+        MqttAuthSettingsProto mqttAuthSettingsProto = proto.getMqttAuthSettingsProto();
+        assertTrue(mqttAuthSettingsProto.getPrioritiesList().isEmpty());
+        assertTrue(mqttAuthSettingsProto.getUseListenerBasedProviderOnly());
+    }
+
+    @Test
+    public void givenNullProtoPrioritiesList_whenConvertBack_thenValidateNullHandledProperly() {
+        List<MqttAuthProviderType> mqttAuthProviderTypes = ProtoConverter.fromMqttAuthPriorities(null);
+
+        assertNotNull(mqttAuthProviderTypes);
+        assertTrue(mqttAuthProviderTypes.isEmpty());
+    }
+
+    @Test
+    public void givenClientId_whenConvertToClientSessionStatsCleanupProto_thenClientIdIsPreserved() {
+        String clientId = "device-001";
+
+        InternodeNotificationProto proto = ProtoConverter.toClientSessionStatsCleanupProto(clientId);
+
+        assertTrue(proto.hasClientSessionStatsCleanupProto());
+        assertEquals(clientId, proto.getClientSessionStatsCleanupProto().getClientId());
+    }
+
+    @Test
+    public void givenMqttAuthProvider_whenConvertToUpdatedEvent_thenFieldsAreCorrect() {
+        MqttAuthProvider provider = MqttAuthProvider.defaultJwtAuthProvider(true);
+
+        InternodeNotificationProto proto = ProtoConverter.toMqttAuthProviderUpdatedEvent(provider);
+
+        assertTrue(proto.hasMqttAuthProviderProto());
+
+        var authProto = proto.getMqttAuthProviderProto();
+        assertEquals(MqttAuthProviderEventProto.PROVIDER_UPDATED, authProto.getEventType());
+        assertEquals(MqttAuthProviderType.JWT.getProtoNumber(), authProto.getProviderType().getNumber());
+        assertTrue(authProto.getEnabled());
+
+        String configuration = authProto.getConfiguration();
+        JwtMqttAuthProviderConfiguration jwtMqttAuthProviderConfiguration =
+                assertDoesNotThrow(() -> JacksonUtil.fromString(configuration, JwtMqttAuthProviderConfiguration.class));
+        assertEquals(provider.getConfiguration(), jwtMqttAuthProviderConfiguration);
+    }
+
+    @Test
+    public void givenAuthProviderType_whenConvertToEnabledEvent_thenEventFieldsAreCorrect() {
+        MqttAuthProviderType type = MqttAuthProviderType.JWT;
+
+        InternodeNotificationProto proto = ProtoConverter.toMqttAuthProviderEnabledEvent(type);
+
+        assertTrue(proto.hasMqttAuthProviderProto());
+
+        var providerProto = proto.getMqttAuthProviderProto();
+        assertEquals(MqttAuthProviderEventProto.PROVIDER_ENABLED, providerProto.getEventType());
+        assertEquals(type.getProtoNumber(), providerProto.getProviderType().getNumber());
+        assertFalse(providerProto.hasEnabled());
+        assertFalse(providerProto.hasConfiguration());
+    }
+
+    @Test
+    public void givenAuthProviderType_whenConvertToDisableEvent_thenEventFieldsAreCorrect() {
+        MqttAuthProviderType type = MqttAuthProviderType.SCRAM;
+
+        InternodeNotificationProto proto = ProtoConverter.toMqttAuthProviderDisabledEvent(type);
+
+        assertTrue(proto.hasMqttAuthProviderProto());
+
+        var providerProto = proto.getMqttAuthProviderProto();
+        assertEquals(MqttAuthProviderEventProto.PROVIDER_DISABLED, providerProto.getEventType());
+        assertEquals(type.getProtoNumber(), providerProto.getProviderType().getNumber());
+        assertFalse(providerProto.hasEnabled());
+        assertFalse(providerProto.hasConfiguration());
+    }
+
 }

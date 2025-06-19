@@ -66,7 +66,7 @@ VALUES
   "jwtVerifierType": "ALGORITHM_BASED",
   "clientTypeClaims": {},
   "authRules": {},
-  "defaultClientType": "APPLICATION",
+  "defaultClientType": "DEVICE",
   "jwtVerifierConfiguration": {
     "algorithm": "HMAC_BASED",
     "jwtVerifierType": "ALGORITHM_BASED",
