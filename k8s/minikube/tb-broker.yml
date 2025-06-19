@@ -65,8 +65,6 @@ spec:
               value: "1883"
             - name: LISTENER_SSL_BIND_PORT
               value: "8883"
-            - name: SECURITY_MQTT_BASIC_ENABLED
-              value: "true"
             - name: STATS_ENABLED
               value: "true"
             - name: STATS_PRINT_INTERVAL_MS
