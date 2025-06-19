@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { BaseData } from '@shared/models/base-data';
+import {BaseData} from '@shared/models/base-data';
 
 export interface KafkaBroker extends BaseData {
   brokerId: string;
@@ -58,7 +58,7 @@ export const KafkaTopicsTooltipMap = {
   'tbmq.ie.uplink': 'Messages sent from Integration Executor to TBMQ, including lifecycle, error, and statistics events',
   'tbmq.msg.ie.': 'Integration message processing topic. Contains MQTT messages to be forwarded by the Integration Executor to the external system configured for the specific integration',
   'tbmq.client.blocked': 'All configured blocked clients',
-  'tbmq.sys.internode.notifications': 'System-level notifications sent between broker nodes to synchronize authentication provider settings, admin configurations, and to trigger local client session cache cleanup',
+  'tbmq.sys.internode.notifications': 'System-level notifications sent between broker nodes to synchronize authentication provider settings, authentication admin settings, and to trigger local client session cache cleanup',
 };
 
 export enum KafkaTable {
