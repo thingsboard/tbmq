@@ -16,8 +16,8 @@
 
 -->
 <form [formGroup]="entityForm" class="mat-padding">
-  <fieldset [disabled]="(isLoading$ | async) || !isEdit">
-    <mat-form-field class="mat-block">
+  <fieldset [disabled]="(isLoading$ | async) || !isEdit" class="flex flex-col gap-4">
+    <mat-form-field class="mat-block" subscriptSizing="dynamic">
       <mat-label translate>authentication.type</mat-label>
       <mat-select formControlName="type">
         @for (provider of authProviderTypes; track provider) {
@@ -27,7 +27,7 @@
         }
       </mat-select>
     </mat-form-field>
-    <div class="row !mb-6 flex flex-col gap-2">
+    <div class="row flex flex-col gap-2">
       <mat-slide-toggle formControlName="enabled">
         {{ 'authentication.enabled' | translate }}
       </mat-slide-toggle>
@@ -38,5 +38,12 @@
       [providerType]="entityForm.get('type').value"
       [isEdit]="isEdit"
     ></tb-mqtt-authentication-provider-configuration>
+    <div formGroupName="additionalInfo" class="flex flex-col">
+      <mat-form-field class="mat-block" appearance="outline">
+        <mat-label translate>integration.description</mat-label>
+        <textarea matInput formControlName="description" cdkTextareaAutosize
+                  cdkAutosizeMinRows="1" rows="1"></textarea>
+      </mat-form-field>
+    </div>
   </fieldset>
 </form>

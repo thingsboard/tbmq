@@ -66,7 +66,7 @@ import {
 export class MqttAuthenticationProviderConfigurationComponent implements ControlValueAccessor, Validator, OnDestroy {
 
   providerForm: UntypedFormGroup;
-  mqttAuthProviderType = MqttAuthProviderType;
+  MqttAuthProviderType = MqttAuthProviderType;
 
   readonly providerType = input<MqttAuthProviderType>();
   readonly provider = input<MqttAuthProvider>();

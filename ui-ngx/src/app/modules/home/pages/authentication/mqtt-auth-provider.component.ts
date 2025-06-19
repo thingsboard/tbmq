@@ -36,12 +36,14 @@ import {
 import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { isDefined } from '@core/utils';
+import { CdkTextareaAutosize } from '@angular/cdk/text-field';
+import { MatInput } from '@angular/material/input';
 
 @Component({
     selector: 'tb-mqtt-auth-provider',
     templateUrl: './mqtt-auth-provider.component.html',
     styleUrls: ['./mqtt-auth-provider.component.scss'],
-    imports: [TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, AsyncPipe, MatSlideToggle, MqttAuthenticationProviderConfigurationComponent, MatOption, MatSelect]
+    imports: [TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, AsyncPipe, MatSlideToggle, MqttAuthenticationProviderConfigurationComponent, MatOption, MatSelect, CdkTextareaAutosize, MatInput]
 })
 export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider> {
 
@@ -62,6 +64,11 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
         enabled: [entity ? entity.enabled : null],
         type: [entity ? entity.type : null],
         configuration: this.fb.control([entity ? entity.configuration : null]),
+        additionalInfo: this.fb.group(
+          {
+            description: [entity && entity.additionalInfo ? entity.additionalInfo.description : '']
+          }
+        )
       }
     );
   }
@@ -69,6 +76,7 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
   updateFormState() {
     super.updateFormState();
     this.entityForm.get('type').disable({ emitEvent: false });
+    this.entityForm.get('additionalInfo.description').disable({ emitEvent: false });
   }
 
   prepareFormValue(formValue: MqttAuthProvider): MqttAuthProvider {
@@ -83,6 +91,7 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
       type: entity.type,
       enabled: isDefined(entity.enabled) ? entity.enabled : true,
       configuration: entity.configuration,
+      additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}
     });
   }
 

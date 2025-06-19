@@ -35,7 +35,8 @@ import {
   JwtAlgorithmTypeTranslation,
   JwtMqttAuthProviderConfiguration,
   JwtVerifierType,
-  MqttAuthProvider
+  MqttAuthProvider,
+  MqttAuthProviderType
 } from '@shared/models/mqtt-auth-provider.model';
 import {
   MqttAuthenticationProviderForm
@@ -47,7 +48,7 @@ import { ClientType, clientTypeTranslationMap } from '@shared/models/client.mode
 import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 import { ToggleOption } from '@shared/components/toggle-header.component';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
-import { JsonPipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { IntegrationCredentialType } from '@shared/models/integration.models';
 import { MatInput } from '@angular/material/input';
 import { FileInputComponent } from '@shared/components/file-input.component';
@@ -171,7 +172,8 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   }
 
   writeValue(value: JwtMqttAuthProviderConfiguration) {
-    if (isDefinedAndNotNull(value)) {
+    // TODO fix type check
+    if (isDefinedAndNotNull(value) && value.type === MqttAuthProviderType.JWT) {
       // TODO refactor authRules as separate component
       this.clearRuleSets();
       if (value.authRules) {

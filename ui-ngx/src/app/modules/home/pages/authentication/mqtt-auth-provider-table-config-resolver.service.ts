@@ -62,7 +62,8 @@ export class MqttAuthProviderTableConfigResolver {
     this.config.columns.push(
       new EntityTableColumn<ShortMqttAuthProvider>('type', 'authentication.type', '150px',
         (entity) => this.translate.instant(mqttAuthProviderTypeTranslationMap.get(entity.type)), undefined, false),
-      new EntityTableColumn<ShortMqttAuthProvider>('description', 'authentication.description', '200px', undefined, undefined, false),
+      new EntityTableColumn<ShortMqttAuthProvider>('description', 'authentication.description', '200px',
+        undefined, () => { return { textWrap: 'wrap' }}, false),
       new EntityTableColumn<ShortMqttAuthProvider>('status', 'authentication.status', '100px',
         entity => this.providerStatus(entity),
         entity => this.providerStatusStyle(entity),
