@@ -149,7 +149,7 @@ message MqttAuthProviderProto {
   MqttAuthProviderEventProto eventType = 1;
   optional MqttAuthProviderTypeProto providerType = 2;
   optional bool enabled = 3;
-  optional bytes configuration = 4;
+  optional string configuration = 4;
 }
 
 message ClientSessionStatsCleanupProto {

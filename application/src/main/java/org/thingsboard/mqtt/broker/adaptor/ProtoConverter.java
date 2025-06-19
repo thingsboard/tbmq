@@ -682,7 +682,8 @@ public class ProtoConverter {
                 .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
                 .setProviderType(MqttAuthProviderTypeProto.forNumber(provider.getType().getProtoNumber()))
                 .setEnabled(provider.isEnabled())
-                .setConfiguration(JacksonUtil.toByteString(provider.getConfiguration()))
+                // TODO: Why convert to string instead of bytes?
+                .setConfiguration(JacksonUtil.toString(provider.getConfiguration()))
                 .build());
     }
 

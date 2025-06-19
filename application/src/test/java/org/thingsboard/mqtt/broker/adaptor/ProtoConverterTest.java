@@ -644,9 +644,9 @@ public class ProtoConverterTest {
         assertEquals(MqttAuthProviderType.JWT.getProtoNumber(), authProto.getProviderType().getNumber());
         assertTrue(authProto.getEnabled());
 
-        ByteString configuration = authProto.getConfiguration();
+        String configuration = authProto.getConfiguration();
         JwtMqttAuthProviderConfiguration jwtMqttAuthProviderConfiguration =
-                assertDoesNotThrow(() -> JacksonUtil.fromByteString(configuration, JwtMqttAuthProviderConfiguration.class));
+                assertDoesNotThrow(() -> JacksonUtil.fromString(configuration, JwtMqttAuthProviderConfiguration.class));
         assertEquals(provider.getConfiguration(), jwtMqttAuthProviderConfiguration);
     }
 

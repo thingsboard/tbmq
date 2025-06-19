@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.protobuf.ByteString;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -111,8 +110,8 @@ public class JacksonUtil {
         return OBJECT_MAPPER.valueToTree(value);
     }
 
-    public static <T> ByteString toByteString(T value) {
-        return value == null ? null : ByteString.copyFrom(writeValueAsBytes(value));
+    public static <T> byte[] toBytes(T value) {
+        return value == null ? null : writeValueAsBytes(value);
     }
 
     public static <T> byte[] writeValueAsBytes(T value) {
@@ -121,10 +120,6 @@ public class JacksonUtil {
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("The given Json object value cannot be transformed to bytes: " + value, e);
         }
-    }
-
-    public static <T> T fromByteString(ByteString byteString, Class<T> clazz) {
-        return byteString == null ? null : fromBytes(byteString.toByteArray(), clazz);
     }
 
     public static <T> T fromBytes(byte[] bytes, Class<T> clazz) {
