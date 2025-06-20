@@ -151,6 +151,10 @@
               <input matInput formControlName="secret"
                      autocomplete="new-password" name="new-password"
                      type="password">
+              <tb-copy-button matSuffix
+                              [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value?.length"
+                              [copyText]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value">
+              </tb-copy-button>
               <mat-icon matSuffix
                         matTooltipClass="tb-error-tooltip"
                         matTooltip="{{ 'authentication.secret-required' | translate }}"
@@ -164,12 +168,12 @@
         }
         @case (JwtAlgorithmType.PEM_KEY) {
           <section formGroupName="jwtSignAlgorithmConfiguration">
-            <tb-file-input [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey')?.value"
-                           formControlName="publicPemKey"
+            <tb-file-input formControlName="publicPemKey"
+                           [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName')?.value"
+                           (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName').patchValue($event)"
                            [required]="true"
                            dropLabel="{{ 'integration.drop-file-or' | translate }}"
                            [label]="'authentication.public-key' | translate"
-                           (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').patchValue($event)"
                            inputId="public-key">
             </tb-file-input>
           </section>
