@@ -462,7 +462,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
 
     private MqttClientCredentials newSslMqttClientCredentials(SslMqttCredentials sslMqttCredentials, String name, ClientType clientType) {
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
-        mqttClientCredentials.setCredentialsType(ClientCredentialsType.SSL);
+        mqttClientCredentials.setCredentialsType(ClientCredentialsType.X_509);
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(sslMqttCredentials));
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setName(name);

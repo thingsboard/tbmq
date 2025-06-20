@@ -240,7 +240,7 @@ public class BrokerHomePageConfig {
     }
 
     private boolean existsX509Credentials() {
-        return existsByCredentialsType(ClientCredentialsType.SSL);
+        return existsByCredentialsType(ClientCredentialsType.X_509);
     }
 
     private boolean existsScramCredentials() {
