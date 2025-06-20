@@ -69,6 +69,7 @@ import {
 } from '@angular/material/chips';
 import { ANY_CHARACTERS, AuthRulePatternsType } from '@shared/models/credentials.model';
 import { ENTER, TAB } from '@angular/cdk/keycodes';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-jwt-provider-config-form',
@@ -98,6 +99,7 @@ import { ENTER, TAB } from '@angular/cdk/keycodes';
     MatChipInput,
     MatChipRemove,
     MatChipRow,
+    CopyButtonComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -152,6 +154,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         jwtSignAlgorithmConfiguration: this.fb.group({
           secret: [null, [Validators.required]],
           publicPemKey: [null, [Validators.required]],
+          publicPemKeyFileName: [null, []],
         }),
         algorithm: [null, [Validators.required]],
         endpoint: [null, [Validators.required]],
