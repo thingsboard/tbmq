@@ -19,6 +19,7 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -31,6 +32,13 @@ public class AuthRulesUtil {
         }
         compileAuthRules(authRules.getPubAuthRulePatterns(), "Publish auth rule patterns should be a valid regexes!");
         compileAuthRules(authRules.getSubAuthRulePatterns(), "Subscribe auth rule patterns should be a valid regexes!");
+    }
+
+    public static List<Pattern> fromStringList(List<String> authRules) {
+        if (CollectionUtils.isEmpty(authRules)) {
+            return Collections.emptyList();
+        }
+        return authRules.stream().map(Pattern::compile).toList();
     }
 
     private static void compileAuthRules(List<String> authRules, String message) {

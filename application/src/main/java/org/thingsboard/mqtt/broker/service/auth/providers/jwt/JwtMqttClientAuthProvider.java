@@ -61,25 +61,25 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
     }
 
     private JwtVerificationStrategy createStrategy() throws JOSEException {
-        return switch (configuration.getJwtVerifierType()) {
-            case ALGORITHM_BASED -> {
-                var conf = (AlgorithmBasedVerifierConfiguration) configuration.getJwtVerifierConfiguration();
-                yield switch (conf.getAlgorithm()) {
-                    case HMAC_BASED -> {
-                        String rawSecret = ((HmacBasedAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getSecret();
-                        yield new HmacJwtVerificationStrategy(rawSecret, new JwtClaimsValidator(configuration, authRulePatterns));
-                    }
-                    case PEM_KEY -> {
-                        String publicPemKey = ((PemKeyAlgorithmConfiguration) conf.getJwtSignAlgorithmConfiguration()).getPublicPemKey();
-                        yield new PemKeyJwtVerificationStrategy(publicPemKey, new JwtClaimsValidator(configuration, authRulePatterns));
-                    }
-                };
+        var jwtVerifierConfig = configuration.getJwtVerifierConfiguration();
+        var validator = new JwtClaimsValidator(configuration, authRulePatterns);
+
+        if (jwtVerifierConfig instanceof AlgorithmBasedVerifierConfiguration algConfiguration) {
+            var algoConfig = algConfiguration.getJwtSignAlgorithmConfiguration();
+            if (algoConfig instanceof HmacBasedAlgorithmConfiguration hmacConfig) {
+                return new HmacJwtVerificationStrategy(hmacConfig.getSecret(), validator);
             }
-            case JWKS -> {
-                var conf = (JwksVerifierConfiguration) configuration.getJwtVerifierConfiguration();
-                yield new JwksVerificationStrategy(conf, new JwtClaimsValidator(configuration, authRulePatterns));
+            if (algoConfig instanceof PemKeyAlgorithmConfiguration pemConfig) {
+                return new PemKeyJwtVerificationStrategy(pemConfig.getPublicPemKey(), validator);
             }
-        };
+            throw new IllegalArgumentException("Unsupported AlgorithmBasedVerifierConfiguration: " + algoConfig.getClass().getSimpleName());
+        }
+
+        if (jwtVerifierConfig instanceof JwksVerifierConfiguration jwksConfig) {
+            return new JwksVerificationStrategy(jwksConfig, validator);
+        }
+
+        throw new IllegalArgumentException("Unsupported JwtVerifierConfiguration: " + jwtVerifierConfig.getClass().getSimpleName());
     }
 
     @Override

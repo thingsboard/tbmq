@@ -34,8 +34,6 @@ import java.util.Objects;
 public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration, SinglePubSubAuthRulesAware {
 
     @NoXss
-    private JwtVerifierType jwtVerifierType;
-    @NoXss
     private ClientType defaultClientType;
 
     private JwtVerifierConfiguration jwtVerifierConfiguration;
@@ -45,6 +43,10 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     private Map<String, String> clientTypeClaims;
 
     private PubSubAuthorizationRules authRules;
+    @NoXss
+    private String pubAuthRuleClaim;
+    @NoXss
+    private String subAuthRuleClaim;
 
     // omit for initial implementation
     // private boolean disconnectAfterExpiration;
@@ -60,9 +62,6 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
             throw new DataValidationException("INTEGRATION client type is not supported!");
         }
         AuthRulesUtil.validateAndCompileAuthRules(authRules);
-        if (jwtVerifierType == null) {
-            throw new DataValidationException("Jwt verifier type should be specified!");
-        }
         if (jwtVerifierConfiguration == null) {
             throw new DataValidationException("Jwt verifier configuration should be specified!");
         }
@@ -85,7 +84,6 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
         var jwtConfig = new JwtMqttAuthProviderConfiguration();
         jwtConfig.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(".*")));
         jwtConfig.setDefaultClientType(ClientType.DEVICE);
-        jwtConfig.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         jwtConfig.setJwtVerifierConfiguration(AlgorithmBasedVerifierConfiguration.defaultConfiguration());
         return jwtConfig;
     }
