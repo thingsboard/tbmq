@@ -24,6 +24,8 @@ public class HomePageConfigDto {
 
     private boolean basicAuthEnabled;
     private boolean x509AuthEnabled;
+    private boolean scramAuthEnabled;
+    private boolean jwtAuthEnabled;
     private int tcpPort;
     private int tlsPort;
     private int wsPort;
@@ -38,5 +40,6 @@ public class HomePageConfigDto {
     private int wssMaxPayloadSize;
     private boolean existsBasicCredentials;
     private boolean existsX509Credentials;
+    private boolean existsScramCredentials;
 
 }

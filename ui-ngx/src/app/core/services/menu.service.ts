@@ -89,25 +89,41 @@ export class MenuService {
         icon: 'input'
       },
       {
-        id: MenuId.client_credentials,
-        name: 'mqtt-client-credentials.credentials',
+        id: MenuId.authentication,
+        name: 'authentication.authentication',
         type: 'link',
-        path: '/client-credentials',
-        icon: 'mdi:shield-lock'
-      },
-      {
-        id: MenuId.unauthorized_clients,
-        name: 'unauthorized-client.unauthorized-clients',
-        type: 'link',
-        path: '/unauthorized-clients',
-        icon: 'no_accounts'
-      },
-      {
-        id: MenuId.blocked_clients,
-        name: 'blocked-client.blocked-clients',
-        type: 'link',
-        path: '/blocked-clients',
-        icon: 'person_off'
+        path: '/authentication',
+        icon: 'mdi:shield-lock',
+        pages: [
+          {
+            id: MenuId.client_credentials,
+            name: 'mqtt-client-credentials.credentials',
+            type: 'link',
+            path: '/authentication/client-credentials',
+            icon: 'mdi:account-lock-outline'
+          },
+          {
+            id: MenuId.mqtt_auth_provider,
+            name: 'authentication.providers',
+            type: 'link',
+            path: '/authentication/providers',
+            icon: 'settings'
+          },
+          {
+            id: MenuId.blocked_clients,
+            name: 'blocked-client.blocked-clients',
+            type: 'link',
+            path: '/authentication/blocked-clients',
+            icon: 'person_off'
+          },
+          {
+            id: MenuId.unauthorized_clients,
+            name: 'unauthorized-client.unauthorized-clients',
+            type: 'link',
+            path: '/authentication/unauthorized-clients',
+            icon: 'no_accounts'
+          },
+        ]
       },
       {
         id: MenuId.web_socket_client,
@@ -221,19 +237,19 @@ export class MenuService {
             icon: 'settings'
           },
           {
+            id: MenuId.system_settings_security,
+            name: 'home.security',
+            type: 'link',
+            path: '/settings/security',
+            icon: 'security'
+          },
+          {
             id: MenuId.mail_server,
             name: 'admin.outgoing-mail',
             type: 'link',
             path: '/settings/outgoing-mail',
             icon: 'mdi:email'
           },
-          {
-            id: MenuId.system_settings_security,
-            name: 'home.security',
-            type: 'link',
-            path: '/settings/security',
-            icon: 'security'
-          }
         ]
       }
     );

@@ -178,7 +178,6 @@ public class BrokerConstants {
     public static final String BLOCKED_CLIENT_CG_PREFIX = "blocked-client-consumer-group-";
 
     public static final String SYSTEMS_TOPIC_PREFIX = "$SYS/tbmq/";
-    public static final String CLEANUP_CLIENT_SESSION_STATS_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "cs/stats/cleanup";
     public static final String LATEST_VERSION_AVAILABLE_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "latest/version/available";
 
     public static final String UNKNOWN = "unknown";
@@ -206,6 +205,6 @@ public class BrokerConstants {
     public static final String WS_CONNECTIVITY = "ws";
     public static final String WSS_CONNECTIVITY = "wss";
 
-    public static final String CONNECTIVITY_KEY = "connectivity";
-    public static final String WEBSOCKET_KEY = "websocket";
+    public static final String DESCRIPTION = "description";
+
 }

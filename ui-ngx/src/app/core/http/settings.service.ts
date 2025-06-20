@@ -42,12 +42,11 @@ export class SettingsService {
               private configService: ConfigService) {
   }
 
-  public getGeneralSettings<T>(key: string): Observable<AdminSettings<T>> {
+  public getAdminSettings<T>(key: string): Observable<AdminSettings<T>> {
     return this.http.get<AdminSettings<T>>(`/api/admin/settings/${key}`, defaultHttpOptionsFromConfig({ignoreErrors: true}));
   }
 
-  public saveAdminSettings<T>(adminSettings: AdminSettings<T>,
-                              config?: RequestConfig): Observable<AdminSettings<T>> {
+  public saveAdminSettings<T>(adminSettings: AdminSettings<T>, config?: RequestConfig): Observable<AdminSettings<T>> {
     return this.http.post<AdminSettings<T>>('/api/admin/settings', adminSettings, defaultHttpOptionsFromConfig(config));
   }
 
@@ -55,20 +54,18 @@ export class SettingsService {
     return this.http.get<SecuritySettings>(`/api/admin/securitySettings`, defaultHttpOptionsFromConfig(config));
   }
 
-  public saveSecuritySettings(securitySettings: SecuritySettings,
-                              config?: RequestConfig): Observable<SecuritySettings> {
-    return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings,
-      defaultHttpOptionsFromConfig(config));
+  public saveSecuritySettings(securitySettings: SecuritySettings, config?: RequestConfig): Observable<SecuritySettings> {
+    return this.http.post<SecuritySettings>('/api/admin/securitySettings', securitySettings, defaultHttpOptionsFromConfig(config));
   }
 
   public getWebSocketSettings(): Observable<any> {
-    return this.getGeneralSettings<WebSocketSettings>(webSocketSettingsKey);
+    return this.getAdminSettings<WebSocketSettings>(webSocketSettingsKey);
   }
 
   public getConnectivitySettings(): Observable<ConnectivitySettings> {
     return this.configService.fetchBrokerConfig().pipe(
       mergeMap((brokerConfig) => {
-        return this.getGeneralSettings(connectivitySettingsKey).pipe(
+        return this.getAdminSettings(connectivitySettingsKey).pipe(
           mergeMap(connectivitySettings => {
             this.connectivitySettings = this.buildConnectivitySettings(connectivitySettings.jsonValue as ConnectivitySettings, brokerConfig);
             // @ts-ignore

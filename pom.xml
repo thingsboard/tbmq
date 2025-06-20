@@ -62,6 +62,7 @@
         <postgresql.driver.version>42.7.3</postgresql.driver.version>
         <kafka.version>3.7.1</kafka.version>
         <testcontainers.version>1.20.4</testcontainers.version>
+        <testcontainers.wiremock.version>1.0-alpha-13</testcontainers.wiremock.version>
         <winsw.version>2.0.1</winsw.version>
         <surefire.version>3.2.5</surefire.version>
         <jar-plugin.version>3.4.0</jar-plugin.version>
@@ -78,6 +79,8 @@
         <awaitility.version>4.2.1</awaitility.version>
         <jaxb.version>4.0.2</jaxb.version>
         <jjwt.version>0.12.5</jjwt.version>
+        <nimbus-jose-jwt.version>10.3</nimbus-jose-jwt.version>
+        <google-crypto-tink.version>1.11.0</google-crypto-tink.version>
         <bouncycastle.version>1.78.1</bouncycastle.version>
         <bucket4j.version>8.13.0</bucket4j.version>
         <passay.version>1.6.4</passay.version>
@@ -923,6 +926,16 @@
                 <version>${jjwt.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus-jose-jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.crypto.tink</groupId>
+                <artifactId>tink</artifactId>
+                <version>${google-crypto-tink.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${freemarker.version}</version>
@@ -960,6 +973,12 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>jdbc</artifactId>
                 <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wiremock.integrations.testcontainers</groupId>
+                <artifactId>wiremock-testcontainers-module</artifactId>
+                <version>1.0-alpha-13</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

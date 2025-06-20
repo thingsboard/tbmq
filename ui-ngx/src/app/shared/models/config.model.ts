@@ -15,6 +15,7 @@
 ///
 
 import { BaseData } from '@shared/models/base-data';
+import { MqttAuthProviderType } from '@shared/models/mqtt-auth-provider.model';
 
 export interface BrokerConfig {
   tcpPort: number;
@@ -25,6 +26,8 @@ export interface BrokerConfig {
   tlsListenerEnabled: boolean;
   basicAuthEnabled: boolean;
   x509AuthEnabled: boolean;
+  scramAuthEnabled: boolean;
+  jwtAuthEnabled: boolean;
   wsPort: number;
   wssPort: number;
   wsListenerEnabled: boolean;
@@ -33,6 +36,7 @@ export interface BrokerConfig {
   wssMaxPayloadSize: number;
   existsBasicCredentials: boolean;
   existsX509Credentials: boolean;
+  existsScramCredentials: boolean;
 }
 
 export interface BrokerConfigTable extends BaseData {
@@ -49,6 +53,8 @@ export enum ConfigParams {
   tlsPort = 'tlsPort',
   basicAuthEnabled = 'basicAuthEnabled',
   x509AuthEnabled = 'x509AuthEnabled',
+  scramAuthEnabled = 'scramAuthEnabled',
+  jwtAuthEnabled = 'jwtAuthEnabled',
   wsPort = 'wsPort',
   wssPort = 'wssPort',
   wsListenerEnabled = 'wsListenerEnabled',
@@ -56,10 +62,11 @@ export enum ConfigParams {
   wsMaxPayloadSize = 'wsMaxPayloadSize',
   wssMaxPayloadSize = 'wssMaxPayloadSize',
   existsBasicCredentials = 'existsBasicCredentials',
-  existsX509Credentials = 'existsX509Credentials'
+  existsX509Credentials = 'existsX509Credentials',
+  existsScramCredentials = 'existsScramCredentials',
 }
 
-export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
+export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
   [
     [ConfigParams.tcpPort, 'config.port-mqtt'],
     [ConfigParams.tcpListenerEnabled, 'config.tcp-listener'],
@@ -69,12 +76,14 @@ export const ConfigParamsTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.tlsPort, 'config.tls-tcp-port'],
     [ConfigParams.basicAuthEnabled, 'config.basic-auth'],
     [ConfigParams.x509AuthEnabled, 'config.ssl-auth'],
+    [ConfigParams.scramAuthEnabled, 'config.scram-auth'],
     [ConfigParams.wsPort, 'config.ws-port'],
     [ConfigParams.wssPort, 'config.wss-port'],
     [ConfigParams.wsListenerEnabled, 'config.ws-listener'],
     [ConfigParams.wssListenerEnabled, 'config.wss-listener'],
     [ConfigParams.wsMaxPayloadSize, 'config.ws-listener-max-payload-size'],
-    [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size']
+    [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size'],
+    [ConfigParams.jwtAuthEnabled, 'config.jwt-auth'],
   ]
 );
 
@@ -84,6 +93,23 @@ export interface SystemVersionInfo {
   name: string;
   newestVersion: string;
 }
+
+export const ConfigParamAuthProviderTypeMap = new Map<ConfigParams, MqttAuthProviderType>(
+  [
+    [ConfigParams.basicAuthEnabled, MqttAuthProviderType.MQTT_BASIC],
+    [ConfigParams.x509AuthEnabled, MqttAuthProviderType.X_509],
+    [ConfigParams.jwtAuthEnabled, MqttAuthProviderType.JWT],
+    [ConfigParams.scramAuthEnabled, MqttAuthProviderType.SCRAM],
+  ]
+);
+
+export const ConfigParamAuthProviderTranslationMap = new Map<ConfigParams, string>(
+  [
+    [ConfigParams.basicAuthEnabled, 'mqtt-client-credentials.type-basic'],
+    [ConfigParams.x509AuthEnabled, 'mqtt-client-credentials.type-ssl'],
+    [ConfigParams.scramAuthEnabled, 'mqtt-client-credentials.type-scram'],
+  ]
+);
 
 export const settingsConfigPortMap = new Map<string, string>(
   [

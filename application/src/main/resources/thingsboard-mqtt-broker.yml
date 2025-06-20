@@ -336,6 +336,9 @@ queue:
   integration-uplink-notifications:
     # Interval in milliseconds to poll messages from 'tbmq.ie.uplink.notifications' topics
     poll-interval: "${TB_IE_UPLINK_NOTIFICATIONS_POLL_INTERVAL:100}"
+  internode-notifications:
+    # Interval in milliseconds to poll messages from 'tbmq.sys.internode.notifications' topics
+    poll-interval: "${TB_NODE_NOTIFICATION_POLL_INTERVAL:100}"
   blocked-client:
     # Interval in milliseconds to poll messages from 'tbmq.client.blocked' topic
     poll-interval: "${TB_BLOCKED_CLIENT_POLL_INTERVAL:100}"
@@ -569,6 +572,15 @@ queue:
       additional-consumer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:50}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.ie` topics
       additional-producer-config: "${TB_KAFKA_IE_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
+    internode-notifications:
+      # Prefix for topics for sending system notifications to Broker nodes
+      topic-prefix: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PREFIX:tbmq.sys.internode.notifications}"
+      # Kafka topic properties separated by semicolon for `tbmq.sys.internode.notifications` topics
+      topic-properties: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;partitions:1;replication.factor:1}"
+      # Additional Kafka consumer configs separated by semicolon for `tbmq.sys.internode.notifications` topics
+      additional-consumer-config: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_ADDITIONAL_CONSUMER_CONFIG:}"
+      # Additional Kafka producer configs separated by semicolon for `tbmq.sys.internode.notifications` topics
+      additional-producer-config: "${TB_KAFKA_INTERNODE_NOTIFICATIONS_ADDITIONAL_PRODUCER_CONFIG:}"
     blocked-client:
       # Topic for blocked clients
       topic: "${TB_KAFKA_BLOCKED_CLIENT_TOPIC:tbmq.client.blocked}"
@@ -804,6 +816,8 @@ spring.mvc.pathmatch.matching-strategy: "${SPRING_MVC_PATH_MATCH_MATCHING_STRATE
 
 # Security parameters
 security:
+  # Since version 2.2.0, values under the 'mqtt' prefix are persisted in the database during installation or upgrade.
+  # These settings are now deprecated in this file and will be removed in the next release
   mqtt:
     # BOTH or SINGLE - the former means the first attempt of client authentication will be by 'basic' provider
     # and then by 'ssl' provider if 'basic' is not successful;

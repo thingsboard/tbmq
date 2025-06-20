@@ -17,6 +17,19 @@
 -->
 <div class="profile-container flex flex-col gap-2">
   <mat-card appearance="outlined" class="profile-card flex flex-col">
+    <mat-card-header>
+      <mat-card-title>
+        <span class="mat-headline-5" translate>security.security</span>
+      </mat-card-title>
+      <span class="flex flex-1"></span>
+      <button mat-icon-button
+              type="button"
+              (click)="gotoSecuritySettings()"
+              matTooltip="{{'security.goto-security-settings' | translate}}"
+              matTooltipPosition="above">
+        <mat-icon>settings</mat-icon>
+      </button>
+    </mat-card-header>
     <div class="change-password" tb-toast toastTarget="changePassword">
       <form #changePasswordForm="ngForm" [formGroup]="changePassword" (ngSubmit)="onChangePassword(changePasswordForm)">
         <div class="flex flex-1 flex-row gap-[25px] xs:flex-col xs:gap-0">

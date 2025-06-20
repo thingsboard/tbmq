@@ -16,6 +16,7 @@
 package org.thingsboard.mqtt.broker.service.testing.integration.persistentsession;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootContextLoader;
@@ -33,11 +34,16 @@ import org.thingsboard.mqtt.broker.service.testing.integration.AbstractQoSVerifi
         "mqtt.retransmission.enabled=true",
         "mqtt.retransmission.initial-delay=1",
         "mqtt.retransmission.period=1",
-        "security.mqtt.basic.enabled=true"
 })
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppQoSVerificationIntegrationTestCase extends AbstractQoSVerificationIntegrationTestCase {
+
+    @Before
+    public void beforeTest() throws Exception {
+        super.beforeTest();
+        enableBasicProvider();
+    }
 
     @Test
     public void qoS1PersistentDeliveryValidationTest() throws Throwable {

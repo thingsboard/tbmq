@@ -46,6 +46,7 @@ import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.queue.DeviceM
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgConsumer;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
+import org.thingsboard.mqtt.broker.service.notification.InternodeNotificationsConsumer;
 import org.thingsboard.mqtt.broker.service.processing.PublishMsgConsumerService;
 import org.thingsboard.mqtt.broker.service.processing.downlink.basic.BasicDownLinkConsumer;
 import org.thingsboard.mqtt.broker.service.processing.downlink.persistent.PersistentDownLinkConsumer;
@@ -103,6 +104,8 @@ public class BrokerInitializerTest {
     BasicDownLinkConsumer basicDownLinkConsumer;
     @MockBean
     PersistentDownLinkConsumer persistentDownLinkConsumer;
+    @MockBean
+    InternodeNotificationsConsumer internodeNotificationsConsumer;
 
     @SpyBean
     BrokerInitializer brokerInitializer;
@@ -242,6 +245,7 @@ public class BrokerInitializerTest {
         verify(deviceMsgQueueConsumer).startConsuming();
         verify(basicDownLinkConsumer).startConsuming();
         verify(persistentDownLinkConsumer).startConsuming();
+        verify(internodeNotificationsConsumer).startConsuming();
     }
 
 }

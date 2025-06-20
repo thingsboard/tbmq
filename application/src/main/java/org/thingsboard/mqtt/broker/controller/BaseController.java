@@ -41,9 +41,11 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
 import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
 import org.thingsboard.mqtt.broker.dao.exception.IncorrectParameterException;
 import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
@@ -54,10 +56,12 @@ import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.client.cleanup.ClientSessionCleanUpService;
+import org.thingsboard.mqtt.broker.service.mqtt.client.session.ClientSessionStatsService;
 import org.thingsboard.mqtt.broker.service.mqtt.retain.RetainedMsgListenerService;
 import org.thingsboard.mqtt.broker.service.security.model.ChangePasswordRequest;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
@@ -91,6 +95,12 @@ public abstract class BaseController {
     protected UserService userService;
     @Autowired
     protected MqttClientCredentialsService mqttClientCredentialsService;
+    @Autowired
+    protected MqttAuthProviderManagerService mqttAuthProviderManagerService;
+    @Autowired
+    protected MqttAuthProviderService mqttAuthProviderService;
+    @Autowired
+    protected ClientSessionStatsService clientSessionStatsService;
     @Autowired
     protected RetainedMsgListenerService retainedMsgListenerService;
     @Autowired
@@ -263,6 +273,12 @@ public abstract class BaseController {
         validateId(clientCredentialsId, "Incorrect clientCredentialsId " + clientCredentialsId);
         Optional<MqttClientCredentials> credentials = mqttClientCredentialsService.getCredentialsById(clientCredentialsId);
         return checkNotNull(credentials);
+    }
+
+    MqttAuthProvider checkAuthProviderId(UUID authProviderId) throws ThingsboardException {
+        validateId(authProviderId, "Incorrect authProviderId " + authProviderId);
+        Optional<MqttAuthProvider> authProvider = mqttAuthProviderService.getAuthProviderById(authProviderId);
+        return checkNotNull(authProvider);
     }
 
     UnauthorizedClient checkUnauthorizedClient(String clientId) throws ThingsboardException {

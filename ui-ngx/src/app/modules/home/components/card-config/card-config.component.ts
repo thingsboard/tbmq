@@ -17,8 +17,11 @@
 import { Component } from '@angular/core';
 import {
   BrokerConfigTable,
+  BrokerConfig,
   ConfigParams,
-  ConfigParamsTranslationMap,
+  ConfigParamAuthProviderTypeMap,
+  ConfigParamTranslationMap,
+  ConfigParamAuthProviderTranslationMap,
 } from '@shared/models/config.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -27,7 +30,7 @@ import { ConfigService } from '@core/http/config.service';
 import { HomePageTitleType } from '@shared/models/home-page.model';
 import { EntityColumn, EntityTableColumn, formatBytes } from '@home/models/entity/entities-table-config.models';
 import { DomSanitizer } from '@angular/platform-browser';
-import { map } from 'rxjs/operators';
+import { mergeMap } from 'rxjs/operators';
 import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
@@ -35,34 +38,50 @@ import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { FormsModule } from '@angular/forms';
+import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
+import { MqttAuthProviderType, ShortMqttAuthProvider } from '@shared/models/mqtt-auth-provider.model';
+import { PageLink } from '@shared/models/page/page-link';
+import { of } from 'rxjs';
 
 @Component({
     selector: 'tb-card-config',
     templateUrl: './card-config.component.html',
     styleUrls: ['./card-config.component.scss'],
-    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow]
+    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatSlideToggle, FormsModule]
 })
 export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
 
   cardType = HomePageTitleType.CONFIG;
-  configParamsTranslationMap = ConfigParamsTranslationMap;
-  configParams = ConfigParams;
+  configParamTranslationMap = ConfigParamTranslationMap;
+  configParamAuthProviderTranslationMap = ConfigParamAuthProviderTranslationMap;
+  configParamAuthProviderTypeMap = ConfigParamAuthProviderTypeMap;
+  authProviders: ShortMqttAuthProvider[];
 
-  fetchEntities$ = () => this.configService.getBrokerConfigPageData().pipe(
-    map(data => {
-      data.data = data.data.filter(
-        el => el.key !== ConfigParams.existsBasicCredentials && el.key !== ConfigParams.existsX509Credentials
+  fetchEntities$ = () => this.configService.fetchBrokerConfig().pipe(
+    mergeMap(() => {
+      return this.configService.getBrokerConfigPageData().pipe(
+        mergeMap(data => {
+          data.data = data.data.filter(el =>
+            el.key !== ConfigParams.existsBasicCredentials &&
+            el.key !== ConfigParams.existsX509Credentials &&
+            el.key !== ConfigParams.existsScramCredentials);
+          return of(data);
+        })
       );
-      return data;
     })
   );
-  tooltipContent = (type) => `${this.translate.instant('config.warning', {type: this.translate.instant(type)})}`;
 
-  private config = this.configService.brokerConfig;
+  tooltipContent = (key: ConfigParams): string => {
+    const type = this.translate.instant(this.configParamAuthProviderTranslationMap.get(key));
+    return `${this.translate.instant('config.warning', {type})}`;
+  }
 
   constructor(protected store: Store<AppState>,
               private translate: TranslateService,
               private configService: ConfigService,
+              private mqttAuthProviderService: MqttAuthProviderService,
               protected domSanitizer: DomSanitizer) {
     super(domSanitizer);
   }
@@ -92,14 +111,41 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     return entity.value;
   }
 
-  showCopyButton(entity: BrokerConfigTable, configParams: any): boolean {
-    return entity.key === configParams.tlsPort || entity.key === configParams.tcpPort ||
-           entity.key === configParams.wsPort || entity.key === configParams.wssPort;
+  showCopyButton(entity: BrokerConfigTable): boolean {
+    return entity.key === ConfigParams.tlsPort || entity.key === ConfigParams.tcpPort ||
+           entity.key === ConfigParams.wsPort || entity.key === ConfigParams.wssPort;
   }
 
-  showWarningIcon(entity: BrokerConfigTable, configParams: any): boolean {
-    return !entity.value &&
-           ((entity.key === configParams.x509AuthEnabled && this.config.existsX509Credentials) ||
-            (entity.key === configParams.basicAuthEnabled && this.config.existsBasicCredentials));
+  showWarningIcon(entity: BrokerConfigTable): boolean {
+    const brokerConfig: BrokerConfig = this.configService.brokerConfig;
+    return entity.value === false &&
+           ((entity.key === ConfigParams.x509AuthEnabled && brokerConfig.existsX509Credentials) ||
+            (entity.key === ConfigParams.basicAuthEnabled && brokerConfig.existsBasicCredentials) ||
+            (entity.key === ConfigParams.scramAuthEnabled && brokerConfig.existsScramCredentials));
+  }
+
+  isAuthProviderParam(entity: BrokerConfigTable) {
+    return this.configParamAuthProviderTypeMap.has(entity.key);
+  }
+
+  switchParam(entity: BrokerConfigTable) {
+    const providerType = this.configParamAuthProviderTypeMap.get(entity.key);
+    const initValue = !entity.value;
+    if (!this.authProviders) {
+      const pageLink = new PageLink(10);
+      this.mqttAuthProviderService.getAuthProviders(pageLink).subscribe(
+        providersPageData => {
+          this.authProviders = providersPageData.data;
+          this.switchAuthProvider(providerType, initValue);
+        }
+      );
+    } else {
+      this.switchAuthProvider(providerType, initValue);
+    }
+  }
+
+  private switchAuthProvider(providerType: MqttAuthProviderType, value: boolean) {
+    const providerId = this.authProviders.find(e => e.type === providerType).id;
+    this.mqttAuthProviderService.switchAuthProvider(providerId, value).subscribe(() => this.configService.fetchBrokerConfig());
   }
 }

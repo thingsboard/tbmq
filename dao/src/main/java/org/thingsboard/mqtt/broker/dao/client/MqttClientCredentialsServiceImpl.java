@@ -28,7 +28,6 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientCredentialsQuery;
-import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.ScramMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ClientCredentialsInfoDto;
@@ -38,6 +37,7 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -247,7 +247,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         } else {
             mqttClientCredentials.setCredentialsId(ProtocolUtil.mixedCredentialsId(mqttCredentials.getUserName(), mqttCredentials.getClientId()));
         }
-        validateAndCompileAuthRules(mqttCredentials.getAuthRules());
+        AuthRulesUtil.validateAndCompileAuthRules(mqttCredentials.getAuthRules());
     }
 
     private void preprocessSslMqttCredentials(MqttClientCredentials mqttClientCredentials) {
@@ -272,7 +272,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
-            validateAndCompileAuthRules(authRules);
+            AuthRulesUtil.validateAndCompileAuthRules(authRules);
         });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
@@ -286,25 +286,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
         mqttClientCredentials.setCredentialsId(ProtocolUtil.scramCredentialsId(mqttCredentials.getUserName()));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
-        validateAndCompileAuthRules(mqttCredentials.getAuthRules());
-    }
-
-    private void validateAndCompileAuthRules(PubSubAuthorizationRules authRules) {
-        if (authRules == null) {
-            throw new DataValidationException("AuthRules are null!");
-        }
-        compileAuthRules(authRules.getPubAuthRulePatterns(), "Publish auth rule patterns should be a valid regexes!");
-        compileAuthRules(authRules.getSubAuthRulePatterns(), "Subscribe auth rule patterns should be a valid regexes!");
-    }
-
-    private void compileAuthRules(List<String> authRules, String message) {
-        if (!CollectionUtils.isEmpty(authRules)) {
-            try {
-                authRules.forEach(Pattern::compile);
-            } catch (PatternSyntaxException e) {
-                throw new DataValidationException(message);
-            }
-        }
+        AuthRulesUtil.validateAndCompileAuthRules(mqttCredentials.getAuthRules());
     }
 
     private <T> T getMqttCredentials(MqttClientCredentials mqttClientCredentials, Class<T> credentialsClassType) {

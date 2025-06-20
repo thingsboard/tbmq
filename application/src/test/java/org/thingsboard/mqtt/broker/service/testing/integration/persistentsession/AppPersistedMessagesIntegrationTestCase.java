@@ -28,7 +28,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
@@ -42,9 +41,6 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ContextConfiguration(classes = AppPersistedMessagesIntegrationTestCase.class, loader = SpringBootContextLoader.class)
-@TestPropertySource(properties = {
-        "security.mqtt.basic.enabled=true"
-})
 @DaoSqlTest
 @RunWith(SpringRunner.class)
 public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubIntegrationTest {
@@ -62,13 +58,14 @@ public class AppPersistedMessagesIntegrationTestCase extends AbstractPubSubInteg
     private MqttClient persistedClient;
 
     @Before
-    public void init() {
+    public void beforeTest() throws Exception {
         applicationCredentials = credentialsService.saveCredentials(
                 TestUtils.createApplicationClientCredentials(TEST_APPLICATION_CLIENT, APP_USERNAME)
         );
         deviceCredentials = credentialsService.saveCredentials(
                 TestUtils.createDeviceClientCredentials(PUBLISHING_CLIENT, DEV_USERNAME)
         );
+        enableBasicProvider();
     }
 
     @After

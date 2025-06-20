@@ -14,13 +14,18 @@
 /// limitations under the License.
 ///
 
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, Renderer2 } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { PageComponent } from '@shared/components/page.component';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup, ValidationErrors, ValidatorFn, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { SecuritySettings } from '@shared/models/settings.models';
+import {
+  AdminSettings,
+  mqttAuthorizationSettingsKey,
+  MqttAuthSettings,
+  SecuritySettings
+} from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
@@ -29,36 +34,111 @@ import { MatFormField, MatLabel, MatHint, MatSuffix } from '@angular/material/fo
 import { MatInput } from '@angular/material/input';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { takeUntil } from 'rxjs/operators';
+import { HelpComponent } from '@shared/components/help.component';
+import { MatChipGrid, MatChipInput, MatChipRow } from '@angular/material/chips';
+import {
+  DndDraggableDirective,
+  DndDragImageRefDirective,
+  DndDropEvent,
+  DndDropzoneDirective,
+  DndHandleDirective, DndPlaceholderRefDirective
+} from 'ngx-drag-drop';
+import { guid, isUndefined } from '@core/utils';
+import { moveItemInArray } from '@angular/cdk/drag-drop';
+import { Router } from '@angular/router';
+import { MqttAuthProviderType, mqttAuthProviderTypeTranslationMap } from '@shared/models/mqtt-auth-provider.model';
 
 @Component({
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
   securitySettingsForm: UntypedFormGroup;
+  mqttAuthSettingsForm: UntypedFormGroup;
+
+  authStrategyLabel: string;
+  authStrategyTooltip: string;
+  dndId = guid();
+  dragIndex: number;
+  dragDisabled = false;
+  mqttAuthProviderTypeMap = mqttAuthProviderTypeTranslationMap;
+  priorities: MqttAuthProviderType[];
 
   private securitySettings: SecuritySettings;
+  private mqttAuthSettings: AdminSettings<MqttAuthSettings>;
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
               private settingsService: SettingsService,
+              private renderer: Renderer2,
+              private router: Router,
               public fb: UntypedFormBuilder) {
     super(store);
     this.buildSecuritySettingsForm();
-    this.settingsService.getSecuritySettings().subscribe(
-      securitySettings => this.processSecuritySettings(securitySettings));
+    this.buildMqttAuthSettingsForm();
+    this.getSettings();
   }
 
   ngOnDestroy() {
     this.destroy$.complete();
     super.ngOnDestroy();
+  }
+
+  saveSecuritySettings() {
+    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
+    this.settingsService.saveSecuritySettings(this.securitySettings).subscribe(
+      securitySettings => this.processSecuritySettings(securitySettings)
+    );
+  }
+
+  discardSecuritySettings(): void {
+    this.securitySettingsForm.reset(this.securitySettings);
+  }
+
+  discardMqttAuthSettings(): void {
+    this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
+  }
+
+  confirmForm(): UntypedFormGroup {
+    if (this.mqttAuthSettingsForm.dirty) {
+      return this.mqttAuthSettingsForm;
+    }
+    return this.securitySettingsForm;
+  }
+
+  saveMqttAuthSettings() {
+    const mqttAuthSettings: AdminSettings<MqttAuthSettings> = JSON.parse(JSON.stringify(this.mqttAuthSettings));
+    mqttAuthSettings.jsonValue = {...mqttAuthSettings.jsonValue, ...this.mqttAuthSettingsForm.value};
+    this.settingsService.saveAdminSettings(mqttAuthSettings).subscribe(
+      settings => this.processMqttAuthSettings(settings)
+    );
+  }
+
+  gotoAccountSecurity() {
+    this.router.navigate(['account', 'security']);
+  }
+
+  private getSettings() {
+    this.getMqttAuthSettings();
+    this.getSecuritySettings();
+  }
+
+  private getMqttAuthSettings() {
+    this.settingsService.getAdminSettings<MqttAuthSettings>(mqttAuthorizationSettingsKey)
+      .subscribe(settings => this.processMqttAuthSettings(settings));
+  }
+
+  private getSecuritySettings() {
+    this.settingsService.getSecuritySettings().subscribe(settings => this.processSecuritySettings(settings));
   }
 
   private buildSecuritySettingsForm() {
@@ -80,15 +160,17 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     });
   }
 
-  saveSecuritySettings() {
-    this.securitySettings = {...this.securitySettings, ...this.securitySettingsForm.value};
-    this.settingsService.saveSecuritySettings(this.securitySettings).subscribe(
-      securitySettings => this.processSecuritySettings(securitySettings)
-    );
-  }
-
-  discardSettings(): void {
-    this.securitySettingsForm.reset(this.securitySettings);
+  private buildMqttAuthSettingsForm() {
+    this.mqttAuthSettingsForm = this.fb.group({
+      useListenerBasedProviderOnly: [null, []],
+      priorities: [null, []]
+    });
+    this.mqttAuthSettingsForm.get('useListenerBasedProviderOnly').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.authStrategyLabel = value ? 'admin.auth-strategy-single' : 'admin.auth-strategy-both';
+        this.authStrategyTooltip = value ? 'admin.auth-strategy-single-hint' : 'admin.auth-strategy-both-hint';
+      })
   }
 
   private processSecuritySettings(settings: SecuritySettings): void {
@@ -108,8 +190,35 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
     };
   }
 
-  confirmForm(): UntypedFormGroup {
-    return this.securitySettingsForm;
+  private processMqttAuthSettings(settings: AdminSettings<MqttAuthSettings>): void {
+    this.mqttAuthSettings = settings;
+    this.priorities = settings.jsonValue.priorities;
+    this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 
+  // TODO move as separate component
+  chipDragStart(index: number, chipRow: MatChipRow, placeholderChipRow: Element) {
+    this.renderer.setStyle(placeholderChipRow, 'width', chipRow._elementRef.nativeElement.offsetWidth + 'px');
+    this.dragIndex = index;
+  }
+
+  chipDragEnd() {
+    this.dragIndex = -1;
+  }
+
+  onChipDrop(event: DndDropEvent) {
+    let index = event.index;
+    const prioritiesCopy = [...this.priorities];
+    if (isUndefined(index)) {
+      index = this.priorities.length;
+    }
+    moveItemInArray(prioritiesCopy, this.dragIndex, index);
+    this.mqttAuthSettingsForm.get('priorities').setValue(prioritiesCopy);
+    this.priorities = prioritiesCopy;
+    this.dragIndex = -1;
+  }
+
+  goToProviders() {
+    this.router.navigate(['authentication', 'providers']);
+  }
 }

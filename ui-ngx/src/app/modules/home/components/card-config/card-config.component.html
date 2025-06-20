@@ -26,22 +26,25 @@
           </mat-header-cell>
           <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
             @if (column.key === 'key') {
-              <span translate>{{configParamsTranslationMap.get(entity.key)}}</span>
+              <span translate>{{configParamTranslationMap.get(entity.key)}}</span>
             }
             @if (column.key === 'value') {
               <span>
+                @if (isAuthProviderParam(entity)) {
+                  <mat-slide-toggle class="small-toggle" [(ngModel)]="entity.value" (ngModelChange)="switchParam(entity)"></mat-slide-toggle>
+                }
                 {{ formatBytesToValue(entity) }}
-                <tb-copy-button [class.!hidden]="!showCopyButton(entity, configParams)"
+                <tb-copy-button [class.!hidden]="!showCopyButton(entity)"
                   [containerStyle]="{padding: 0}"
                   [copyText]="entity.value"
                   [buttonClass]="{'tb-mat-12': true}"
                   [style]="{display: 'inline'}"
                   class="tb-config-icon">
                 </tb-copy-button>
-                @if (showWarningIcon(entity, configParams)) {
+                @if (showWarningIcon(entity)) {
                   <section class="tb-warning-icon">
                     <mat-icon (click)="gotoDocs('security/#authentication')"
-                      [matTooltip]="tooltipContent(configParamsTranslationMap.get(entity.key))">
+                      [matTooltip]="tooltipContent(entity.key)">
                       warning
                     </mat-icon>
                   </section>

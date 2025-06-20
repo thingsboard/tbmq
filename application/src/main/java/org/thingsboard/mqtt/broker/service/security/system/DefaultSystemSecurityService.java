@@ -34,6 +34,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
@@ -52,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.thingsboard.mqtt.broker.common.data.SysAdminSettingType.GENERAL;
+
 @Service
 @RequiredArgsConstructor
 public class DefaultSystemSecurityService implements SystemSecurityService {
@@ -63,7 +66,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
     @Override
     public SecuritySettings getSecuritySettings() {
         SecuritySettings securitySettings;
-        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey("securitySettings");
+        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.SECURITY_SETTINGS.getKey());
         if (adminSettings != null) {
             try {
                 securitySettings = JacksonUtil.convertValue(adminSettings.getJsonValue(), SecuritySettings.class);
@@ -81,10 +84,10 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
 
     @Override
     public SecuritySettings saveSecuritySettings(SecuritySettings securitySettings) {
-        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey("securitySettings");
+        AdminSettings adminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.SECURITY_SETTINGS.getKey());
         if (adminSettings == null) {
             adminSettings = new AdminSettings();
-            adminSettings.setKey("securitySettings");
+            adminSettings.setKey(SysAdminSettingType.SECURITY_SETTINGS.getKey());
         }
         adminSettings.setJsonValue(JacksonUtil.valueToTree(securitySettings));
         AdminSettings savedAdminSettings = adminSettingsService.saveAdminSettings(adminSettings);
@@ -110,8 +113,8 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
         SecuritySettings securitySettings = getSecuritySettings();
         if (isPositiveInteger(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays())) {
             if ((userCredentials.getCreatedTime()
-                    + TimeUnit.DAYS.toMillis(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays()))
-                    < System.currentTimeMillis()) {
+                 + TimeUnit.DAYS.toMillis(securitySettings.getPasswordPolicy().getPasswordExpirationPeriodDays()))
+                < System.currentTimeMillis()) {
                 userCredentials = userService.requestExpiredPasswordReset(userCredentials.getId());
                 throw new UserPasswordExpiredException("User password expired!", userCredentials.getResetToken());
             }
@@ -178,7 +181,7 @@ public class DefaultSystemSecurityService implements SystemSecurityService {
     @Override
     public String getBaseUrl(HttpServletRequest httpServletRequest) {
         String baseUrl = null;
-        AdminSettings generalSettings = adminSettingsService.findAdminSettingsByKey("general");
+        AdminSettings generalSettings = adminSettingsService.findAdminSettingsByKey(GENERAL.getKey());
 
         JsonNode prohibitDifferentUrl = generalSettings.getJsonValue().get("prohibitDifferentUrl");
 

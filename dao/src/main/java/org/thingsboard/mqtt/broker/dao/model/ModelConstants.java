@@ -65,6 +65,15 @@ public class ModelConstants {
     public static final String USER_CREDENTIALS_RESET_TOKEN_PROPERTY = "reset_token";
 
     /**
+     * mqtt_auth_provider constants.
+     */
+    public static final String MQTT_AUTH_PROVIDER_COLUMN_FAMILY_NAME = "mqtt_auth_provider";
+    public static final String MQTT_AUTH_PROVIDER_ENABLED_PROPERTY = "enabled";
+    public static final String MQTT_AUTH_PROVIDER_TYPE_PROPERTY = "type";
+    public static final String MQTT_AUTH_PROVIDER_CONFIGURATION_PROPERTY = "configuration";
+    public static final String MQTT_AUTH_PROVIDER_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
+
+    /**
      * mqtt_client_credentials constants.
      */
     public static final String MQTT_CLIENT_CREDENTIALS_COLUMN_FAMILY_NAME = "mqtt_client_credentials";

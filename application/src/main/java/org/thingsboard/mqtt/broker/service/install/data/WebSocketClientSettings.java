@@ -17,14 +17,14 @@ package org.thingsboard.mqtt.broker.service.install.data;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 public class WebSocketClientSettings {
 
     public static AdminSettings createWsClientSettings() {
         AdminSettings wsClientSettings = new AdminSettings();
-        wsClientSettings.setKey(BrokerConstants.WEBSOCKET_KEY);
+        wsClientSettings.setKey(SysAdminSettingType.WEBSOCKET.getKey());
         wsClientSettings.setJsonValue(createWsClientJsonValue());
         return wsClientSettings;
     }

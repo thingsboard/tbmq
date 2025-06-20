@@ -15,21 +15,23 @@
  */
 package org.thingsboard.mqtt.broker.service.install;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
 import org.thingsboard.mqtt.broker.service.install.data.ConnectivitySettings;
+import org.thingsboard.mqtt.broker.service.install.data.GeneralSettings;
+import org.thingsboard.mqtt.broker.service.install.data.MailSettings;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.install.data.WebSocketClientSettings;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
@@ -39,11 +41,10 @@ import org.thingsboard.mqtt.broker.service.user.AdminService;
 @RequiredArgsConstructor
 public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
-
     private final AdminService adminService;
     private final AdminSettingsService adminSettingsService;
     private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
     private final WebSocketConnectionService webSocketConnectionService;
 
     private User sysadmin;
@@ -57,33 +58,11 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
 
     @Override
     public void createAdminSettings() {
-        AdminSettings generalSettings = new AdminSettings();
-        generalSettings.setKey("general");
-        ObjectNode node = objectMapper.createObjectNode();
-        node.put("baseUrl", "http://localhost:8083");
-        node.put("prohibitDifferentUrl", false);
-        generalSettings.setJsonValue(node);
-        adminSettingsService.saveAdminSettings(generalSettings);
-
-        AdminSettings mailSettings = new AdminSettings();
-        mailSettings.setKey("mail");
-        node = objectMapper.createObjectNode();
-        node.put("mailFrom", "ThingsBoard <sysadmin@localhost.localdomain>");
-        node.put("smtpProtocol", "smtp");
-        node.put("smtpHost", "localhost");
-        node.put("smtpPort", "25");
-        node.put("timeout", "10000");
-        node.put("enableTls", false);
-        node.put("username", "");
-        node.put("password", ""); //NOSONAR, key used to identify password field (not password value itself)
-        node.put("tlsVersion", "TLSv1.2");
-        node.put("enableProxy", false);
-        node.put("showChangePassword", false);
-        mailSettings.setJsonValue(node);
-        adminSettingsService.saveAdminSettings(mailSettings);
-
+        adminSettingsService.saveAdminSettings(GeneralSettings.createDefaults());
+        adminSettingsService.saveAdminSettings(MailSettings.createDefaults());
         adminSettingsService.saveAdminSettings(ConnectivitySettings.createConnectivitySettings());
         adminSettingsService.saveAdminSettings(WebSocketClientSettings.createWsClientSettings());
+        adminSettingsService.saveAdminSettings(MqttAuthSettings.createDefaults());
     }
 
     @Override
@@ -94,6 +73,14 @@ public class DefaultSystemDataLoaderService implements SystemDataLoaderService {
     @Override
     public void createDefaultWebSocketConnection() throws ThingsboardException {
         webSocketConnectionService.saveDefaultWebSocketConnection(sysadmin.getId(), systemWebSocketCredentials.getId());
+    }
+
+    @Override
+    public void createMqttAuthProviders() {
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultBasicAuthProvider(true));
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultSslAuthProvider(false));
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultJwtAuthProvider(false));
+        mqttAuthProviderService.saveAuthProvider(MqttAuthProvider.defaultScramAuthProvider(false));
     }
 
 }

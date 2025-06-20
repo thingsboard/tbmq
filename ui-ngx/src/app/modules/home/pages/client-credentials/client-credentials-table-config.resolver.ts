@@ -19,9 +19,7 @@ import {
   cellWithIcon,
   DateEntityTableColumn,
   EntityTableColumn,
-  EntityTableConfig,
-  cellStatus,
-  STATUS_COLOR
+  EntityTableConfig
 } from '@home/models/entity/entities-table-config.models';
 import { TranslateService } from '@ngx-translate/core';
 import { DatePipe } from '@angular/common';
@@ -38,7 +36,7 @@ import {
   wsSystemCredentialsName
 } from '@shared/models/credentials.model';
 import { TimePageLink } from '@shared/models/page/page-link';
-import { Observable, of } from 'rxjs';
+import { mergeMap, Observable, of } from 'rxjs';
 import { PageData } from '@shared/models/page/page-data';
 import { deepClone } from '@core/utils';
 import { ClientCredentialsTableHeaderComponent } from '@home/pages/client-credentials/client-credentials-table-header.component';
@@ -111,6 +109,14 @@ export class ClientCredentialsTableConfigResolver {
         onAction: ($event) => this.config.getTable().addEntity($event)
       }
     );
+    this.config.headerActionDescriptors.push(
+      {
+        name: this.translate.instant('mqtt-client-credentials.connectivity-settings'),
+        icon: 'settings',
+        isEnabled: () => true,
+        onAction: ($event) => this.router.navigate(['/settings/general'])
+      }
+    )
 
     this.config.deleteEntityTitle = mqttClient => this.translate.instant('mqtt-client-credentials.delete-client-credential-title',
       { clientCredentialsName: mqttClient.name });
@@ -123,17 +129,18 @@ export class ClientCredentialsTableConfigResolver {
     this.config.deleteEntity = id => this.clientCredentialsService.deleteClientCredentials(id);
     this.config.entitiesFetchFunction = pageLink => this.fetchClientCredentials(pageLink as TimePageLink);
 
-    const brokerConfig = this.configService.brokerConfig;
     if (!this.config.columns.find(el => el.key === 'warning')) {
       this.config.columns.push(
         new EntityTableColumn<ClientCredentials>('warning', null, '300px',
           (entity) => {
-            if ((entity.credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
-              (entity.credentialsType === CredentialsType.SSL && !brokerConfig.x509AuthEnabled)) {
-              const content = this.translate.instant(credentialsWarningTranslations.get(entity.credentialsType));
-              const color = STATUS_COLOR.INACTIVE.content;
-              const background = STATUS_COLOR.INACTIVE.background;
-              return cellStatus(content, color, background);
+            const credentialsType = entity.credentialsType;
+            if (this.showCredentialsWarning(credentialsType)) {
+              const value = this.translate.instant(credentialsWarningTranslations.get(credentialsType));
+              const icon = 'warning';
+              const backgroundColor = 'rgba(255,236,128,0)';
+              const iconColor = '#ff9a00';
+              const valueColor = 'inherit';
+              return cellWithIcon(value,  icon, backgroundColor, iconColor, valueColor);
             }
             return '';
           }, () => null, false
@@ -150,7 +157,7 @@ export class ClientCredentialsTableConfigResolver {
         this.config.componentsData.clientCredentialsFilterConfig[key] = route.queryParams[key];
       }
     }
-    return of(this.config);
+    return this.configService.fetchBrokerConfig({ignoreLoading: true}).pipe(mergeMap(() => of(this.config)));
   }
 
   private fetchClientCredentials(pageLink: TimePageLink): Observable<PageData<ClientCredentials>> {
@@ -286,5 +293,12 @@ export class ClientCredentialsTableConfigResolver {
         this.config.updateData(false);
       }
     });
+  }
+
+  private showCredentialsWarning(credentialsType: CredentialsType): boolean {
+    const brokerConfig = this.configService.brokerConfig;
+    return (credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
+           (credentialsType === CredentialsType.SSL && !brokerConfig.x509AuthEnabled) ||
+           (credentialsType === CredentialsType.SCRAM && !brokerConfig.scramAuthEnabled);
   }
 }

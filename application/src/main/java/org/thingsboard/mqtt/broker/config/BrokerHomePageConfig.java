@@ -21,16 +21,23 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
+import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
 
+import java.util.List;
 import java.util.Map;
 
+// TODO: replace redundant logic for getting env variables with System.getenv(...)
 @Component
 @RequiredArgsConstructor
 public class BrokerHomePageConfig {
@@ -47,10 +54,6 @@ public class BrokerHomePageConfig {
     private int tcpMaxPayloadSize;
     @Value("${listener.ssl.netty.max_payload_size}")
     private int tlsMaxPayloadSize;
-    @Value("${security.mqtt.basic.enabled}")
-    private boolean basicAuthEnabled;
-    @Value("${security.mqtt.ssl.enabled}")
-    private boolean x509AuthEnabled;
 
     @Value("${listener.ws.bind_port}")
     private int wsPort;
@@ -65,19 +68,23 @@ public class BrokerHomePageConfig {
     @Value("${listener.wss.netty.max_payload_size}")
     private int wssMaxPayloadSize;
 
-    public final MqttClientCredentialsService mqttClientCredentialsService;
-    public final AdminSettingsService adminSettingsService;
+    private final MqttClientCredentialsService mqttClientCredentialsService;
+    private final AdminSettingsService adminSettingsService;
+    private final MqttAuthProviderService mqttAuthProviderService;
 
     public HomePageConfigDto getConfig() {
-        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(BrokerConstants.CONNECTIVITY_KEY);
+        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
         Map<String, ConnectivityInfo> connectivityInfoMap = null;
         if (connectivityAdminSettings != null) {
             connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
             });
         }
+        List<MqttAuthProviderType> enabledTypes = getEnabledProviderTypes();
         return HomePageConfigDto.builder()
-                .basicAuthEnabled(isBasicAuthEnabled())
-                .x509AuthEnabled(isX509AuthEnabled())
+                .basicAuthEnabled(enabledTypes.contains(MqttAuthProviderType.MQTT_BASIC))
+                .x509AuthEnabled(enabledTypes.contains(MqttAuthProviderType.X_509))
+                .scramAuthEnabled(enabledTypes.contains(MqttAuthProviderType.SCRAM))
+                .jwtAuthEnabled(enabledTypes.contains(MqttAuthProviderType.JWT))
                 .tcpPort(getTcpPort(connectivityInfoMap))
                 .tlsPort(getTlsPort(connectivityInfoMap))
                 .wsPort(getWsPort(connectivityInfoMap))
@@ -92,7 +99,16 @@ public class BrokerHomePageConfig {
                 .wssMaxPayloadSize(getWssMaxPayloadSize())
                 .existsBasicCredentials(existsBasicCredentials())
                 .existsX509Credentials(existsX509Credentials())
+                .existsScramCredentials(existsScramCredentials())
                 .build();
+    }
+
+    private List<MqttAuthProviderType> getEnabledProviderTypes() {
+        return mqttAuthProviderService.getShortAuthProviders(new PageLink(100))
+                .getData().stream()
+                .filter(ShortMqttAuthProvider::isEnabled)
+                .map(ShortMqttAuthProvider::getType)
+                .toList();
     }
 
     private int getTcpPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
@@ -154,24 +170,6 @@ public class BrokerHomePageConfig {
             return Integer.parseInt(tlsMaxPayloadSizeStr);
         } else {
             return tlsMaxPayloadSize;
-        }
-    }
-
-    private boolean isBasicAuthEnabled() {
-        String basicAuthEnabledStr = System.getenv("SECURITY_MQTT_BASIC_ENABLED");
-        if (basicAuthEnabledStr != null) {
-            return Boolean.parseBoolean(basicAuthEnabledStr);
-        } else {
-            return basicAuthEnabled;
-        }
-    }
-
-    private boolean isX509AuthEnabled() {
-        String x509AuthEnabledStr = System.getenv("SECURITY_MQTT_SSL_ENABLED");
-        if (x509AuthEnabledStr != null) {
-            return Boolean.parseBoolean(x509AuthEnabledStr);
-        } else {
-            return x509AuthEnabled;
         }
     }
 
@@ -238,11 +236,19 @@ public class BrokerHomePageConfig {
     }
 
     private boolean existsBasicCredentials() {
-        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.MQTT_BASIC);
+        return existsByCredentialsType(ClientCredentialsType.MQTT_BASIC);
     }
 
     private boolean existsX509Credentials() {
-        return mqttClientCredentialsService.existsByCredentialsType(ClientCredentialsType.SSL);
+        return existsByCredentialsType(ClientCredentialsType.SSL);
+    }
+
+    private boolean existsScramCredentials() {
+        return existsByCredentialsType(ClientCredentialsType.SCRAM);
+    }
+
+    private boolean existsByCredentialsType(ClientCredentialsType type) {
+        return mqttClientCredentialsService.existsByCredentialsType(type);
     }
 
     private int getPortFromConnectivitySettings(Map<String, ConnectivityInfo> connectivityInfoMap, String key) {

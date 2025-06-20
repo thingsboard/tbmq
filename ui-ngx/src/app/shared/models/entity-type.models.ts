@@ -32,6 +32,7 @@ export enum EntityType {
   UNAUTHORIZED_CLIENT = 'UNAUTHORIZED_CLIENT',
   INTEGRATION = 'INTEGRATION',
   RESOURCE_USAGE = 'RESOURCE_USAGE',
+  MQTT_AUTH_PROVIDER = 'MQTT_AUTH_PROVIDER',
   BLOCKED_CLIENT = 'BLOCKED_CLIENT',
 }
 
@@ -254,6 +255,12 @@ export const entityTypeTranslations = new Map<EntityType, EntityTypeTranslation>
       }
     ],
     [
+      EntityType.MQTT_AUTH_PROVIDER,
+      {
+        details: 'authentication.details',
+      }
+    ],
+    [
       EntityType.BLOCKED_CLIENT,
       {
         typePlural: 'blocked-client.blocked-clients',
@@ -322,6 +329,12 @@ export const entityTypeResources = new Map<EntityType, EntityTypeResource<BaseDa
       EntityType.INTEGRATION,
       {
         helpLinkId: 'integrations'
+      }
+    ],
+    [
+      EntityType.MQTT_AUTH_PROVIDER,
+      {
+        helpLinkId: 'mqttAuthProviders'
       }
     ],
     [

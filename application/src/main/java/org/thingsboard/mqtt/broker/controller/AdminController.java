@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
+import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.dto.WebSocketConnectionDto;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
@@ -36,13 +37,16 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.model.SecuritySettings;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dao.ws.WebSocketConnectionService;
 import org.thingsboard.mqtt.broker.dto.AdminDto;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mail.MailService;
 import org.thingsboard.mqtt.broker.service.security.model.JwtTokenPair;
 import org.thingsboard.mqtt.broker.service.security.model.SecurityUser;
 import org.thingsboard.mqtt.broker.service.security.model.UserPrincipal;
+import org.thingsboard.mqtt.broker.service.system.SystemSettingsNotificationService;
 import org.thingsboard.mqtt.broker.service.user.AdminService;
 
 import java.util.ArrayList;
@@ -61,6 +65,7 @@ public class AdminController extends BaseController {
     private final AdminSettingsService adminSettingsService;
     private final MailService mailService;
     private final WebSocketConnectionService webSocketConnectionService;
+    private final SystemSettingsNotificationService systemSettingsNotificationService;
 
     @Value("${security.user_token_access_enabled:true}")
     private boolean userTokenAccessEnabled;
@@ -76,7 +81,7 @@ public class AdminController extends BaseController {
     public AdminSettings getAdminSettings(@PathVariable("key") String key) throws ThingsboardException {
         checkParameter("key", key);
         AdminSettings adminSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey(key), "No Administration settings found for key: " + key);
-        if (adminSettings.getKey().equals("mail")) {
+        if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
             ((ObjectNode) adminSettings.getJsonValue()).remove("password");
         }
         return adminSettings;
@@ -85,20 +90,29 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/settings")
     public AdminSettings saveAdminSettings(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
-        adminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
-        if (adminSettings.getKey().equals("mail")) {
-            mailService.updateMailConfiguration();
-            ((ObjectNode) adminSettings.getJsonValue()).remove("password");
-        }
-        return adminSettings;
+        AdminSettings savedAdminSettings = checkNotNull(adminSettingsService.saveAdminSettings(adminSettings));
+        SysAdminSettingType.parse(savedAdminSettings.getKey()).ifPresent(type -> {
+            switch (type) {
+                case MAIL -> {
+                    mailService.updateMailConfiguration();
+                    ((ObjectNode) savedAdminSettings.getJsonValue()).remove("password");
+                }
+                case MQTT_AUTHORIZATION -> {
+                    var mqttAuthSettings = JacksonUtil.convertValue(savedAdminSettings.getJsonValue(), MqttAuthSettings.class);
+                    systemSettingsNotificationService.onMqttAuthSettingUpdate(mqttAuthSettings);
+                }
+            }
+        });
+        return savedAdminSettings;
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/settings/testMail")
     public void sendTestMail(@RequestBody AdminSettings adminSettings) throws ThingsboardException {
-        if (adminSettings.getKey().equals("mail")) {
+        if (adminSettings.getKey().equals(SysAdminSettingType.MAIL.getKey())) {
             if (!adminSettings.getJsonValue().has("password")) {
-                AdminSettings mailSettings = checkNotNull(adminSettingsService.findAdminSettingsByKey("mail"));
+                AdminSettings mailSettings =
+                        checkNotNull(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MAIL.getKey()));
                 ((ObjectNode) adminSettings.getJsonValue()).put("password", mailSettings.getJsonValue().get("password").asText());
             }
             String email = getCurrentUser().getEmail();

@@ -29,20 +29,29 @@ import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 import org.thingsboard.mqtt.broker.common.data.PersistedPacketType;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.IntegrationTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.SubscriptionOptions;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientProto.Builder;
 import org.thingsboard.mqtt.broker.gen.queue.BlockedClientTypeProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionEventResponseProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSessionInfoProto;
+import org.thingsboard.mqtt.broker.gen.queue.ClientSessionStatsCleanupProto;
 import org.thingsboard.mqtt.broker.gen.queue.ClientSubscriptionsProto;
 import org.thingsboard.mqtt.broker.gen.queue.ConnectionInfoProto;
 import org.thingsboard.mqtt.broker.gen.queue.DevicePublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.DisconnectClientCommandProto;
+import org.thingsboard.mqtt.broker.gen.queue.InternodeNotificationProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderEventProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthProviderTypeProto;
+import org.thingsboard.mqtt.broker.gen.queue.MqttAuthSettingsProto;
 import org.thingsboard.mqtt.broker.gen.queue.MqttPropertiesProto;
 import org.thingsboard.mqtt.broker.gen.queue.PublishMsgProto;
 import org.thingsboard.mqtt.broker.gen.queue.RegexMatchTargetProto;
@@ -55,6 +64,7 @@ import org.thingsboard.mqtt.broker.gen.queue.SubscriptionsSourceProto;
 import org.thingsboard.mqtt.broker.gen.queue.TopicSubscriptionProto;
 import org.thingsboard.mqtt.broker.gen.queue.UserPropertyProto;
 import org.thingsboard.mqtt.broker.queue.TbQueueMsgHeaders;
+import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsg;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.ClientIdBlockedClient;
@@ -77,6 +87,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class ProtoConverter {
@@ -627,6 +638,72 @@ public class ProtoConverter {
         if (mqttPropertiesProto.getSubscriptionIdsCount() > 0) {
             mqttPropertiesProto.getSubscriptionIdsList().forEach(subId -> MqttPropertiesUtil.addSubscriptionIdToProps(properties, subId));
         }
+    }
+
+    /**
+     * Internode notifications
+     */
+
+    public static InternodeNotificationProto toMqttAuthSettingUpdateProto(MqttAuthSettings mqttAuthSettings) {
+        return InternodeNotificationProto.newBuilder()
+                .setMqttAuthSettingsProto(MqttAuthSettingsProto.newBuilder()
+                        .addAllPriorities(toMqttAuthPriorities(mqttAuthSettings.getPriorities()))
+                        .setUseListenerBasedProviderOnly(mqttAuthSettings.isUseListenerBasedProviderOnly())
+                        .build()).build();
+    }
+
+    private static List<MqttAuthProviderTypeProto> toMqttAuthPriorities(List<MqttAuthProviderType> priorities) {
+        if (priorities == null) {
+            return Collections.emptyList();
+        }
+        return priorities.stream()
+                .map(type -> MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .collect(Collectors.toList());
+    }
+
+    public static List<MqttAuthProviderType> fromMqttAuthPriorities(List<MqttAuthProviderTypeProto> prioritiesList) {
+        if (prioritiesList == null) {
+            return Collections.emptyList();
+        }
+        return prioritiesList.stream()
+                .map(type -> MqttAuthProviderType.fromProtoNumber(type.getNumber()))
+                .collect(Collectors.toList());
+    }
+
+
+    public static InternodeNotificationProto toClientSessionStatsCleanupProto(String clientId) {
+        return InternodeNotificationProto.newBuilder()
+                .setClientSessionStatsCleanupProto(ClientSessionStatsCleanupProto.newBuilder().setClientId(clientId).build())
+                .build();
+    }
+
+    public static InternodeNotificationProto toMqttAuthProviderUpdatedEvent(MqttAuthProvider provider) {
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_UPDATED)
+                .setProviderType(MqttAuthProviderTypeProto.forNumber(provider.getType().getProtoNumber()))
+                .setEnabled(provider.isEnabled())
+                .setConfiguration(JacksonUtil.toString(provider.getConfiguration()))
+                .build());
+    }
+
+    public static InternodeNotificationProto toMqttAuthProviderEnabledEvent(MqttAuthProviderType type) {
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_ENABLED)
+                .setProviderType(MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .build());
+    }
+
+    public static InternodeNotificationProto toMqttAuthProviderDisabledEvent(MqttAuthProviderType type) {
+        return wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto.newBuilder()
+                .setEventType(MqttAuthProviderEventProto.PROVIDER_DISABLED)
+                .setProviderType(MqttAuthProviderTypeProto.forNumber(type.getProtoNumber()))
+                .build());
+    }
+
+    private static InternodeNotificationProto wrapMqttAuthProviderProtoToInterNodeNotification(MqttAuthProviderProto mqttAuthProviderProto) {
+        return InternodeNotificationProto.newBuilder()
+                .setMqttAuthProviderProto(mqttAuthProviderProto)
+                .build();
     }
 
     /**

@@ -32,21 +32,17 @@ public class AuthContext {
     private final byte[] passwordBytes;
     private final SslHandler sslHandler;
 
-    public boolean isTlsEnabled() {
+    public boolean isSecurePortUsed() {
         return sslHandler != null;
-    }
-
-    public boolean isTlsDisabled() {
-        return !isTlsEnabled();
     }
 
     @Override
     public String toString() {
         return "AuthContext{" +
-                "clientId='" + clientId + '\'' +
-                ", username='" + username + '\'' +
-                ", password=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
-                ", sslHandler=" + sslHandler +
-                '}';
+               "clientId='" + clientId + '\'' +
+               ", username='" + username + '\'' +
+               ", password=" + (passwordBytes == null ? "null" : new String(passwordBytes, StandardCharsets.UTF_8)) +
+               ", sslHandler=" + sslHandler +
+               '}';
     }
 }

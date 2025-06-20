@@ -42,7 +42,6 @@ import {
 import {
   IntegrationCredentialsComponent
 } from '@home/components/integration/integration-credentials/integration-credentials.component';
-import { HeaderFilterMapComponent } from '@shared/components/header-filter-map.component';
 import {
   MatExpansionPanel,
   MatExpansionPanelContent,
@@ -56,6 +55,7 @@ import { ContentType, contentTypesMap } from '@shared/models/constants';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.component';
+import { KeyValMapComponent } from '@shared/components/key-val-map.component';
 
 @Component({
   selector: 'tb-http-integration-form',
@@ -70,7 +70,6 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     IntegrationTopicFiltersComponent,
     IntegrationCredentialsComponent,
     TranslateModule,
-    HeaderFilterMapComponent,
     MatExpansionPanel,
     MatExpansionPanelDescription,
     MatExpansionPanelContent,
@@ -82,7 +81,8 @@ import { HintTooltipIconComponent } from '@shared/components/hint-tooltip-icon.c
     MatIcon,
     MatTooltip,
     MatSuffix,
-    HintTooltipIconComponent
+    HintTooltipIconComponent,
+    KeyValMapComponent
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
