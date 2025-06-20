@@ -43,6 +43,10 @@ public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     private Map<String, String> clientTypeClaims;
 
     private PubSubAuthorizationRules authRules;
+    @NoXss
+    private String pubAuthRuleClaim;
+    @NoXss
+    private String subAuthRuleClaim;
 
     // omit for initial implementation
     // private boolean disconnectAfterExpiration;

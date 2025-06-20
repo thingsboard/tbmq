@@ -33,4 +33,9 @@ public class AuthRulePatterns {
     public static AuthRulePatterns newInstance(List<Pattern> patterns) {
         return new AuthRulePatterns(patterns, patterns);
     }
+
+    public static AuthRulePatterns of(List<Pattern> pubPatterns, List<Pattern> subPatterns) {
+        return new AuthRulePatterns(pubPatterns, subPatterns);
+    }
+
 }

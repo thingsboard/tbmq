@@ -21,14 +21,21 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierConfiguration;
+import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -158,6 +165,172 @@ public class JwtClaimsValidatorTest {
         assertThat(response.isSuccess()).isTrue();
         assertThat(response.getClientType()).isEqualTo(ClientType.APPLICATION);
         assertThat(response.getAuthRulePatterns()).containsExactly(authRulePatterns);
+    }
+
+    @Test
+    public void shouldUsePublishPatternsFromClaim() throws Exception {
+        // given
+        String defaultPattern = "default/pubsub";
+
+        var config = new JwtMqttAuthProviderConfiguration();
+        config.setPubAuthRuleClaim("pub_rules");
+        config.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(defaultPattern)));
+        config.setDefaultClientType(ClientType.DEVICE);
+        config.setJwtVerifierConfiguration(mock(JwtVerifierConfiguration.class));
+        config.setAuthClaims(Map.of());
+        config.setClientTypeClaims(Map.of());
+
+        List<Pattern> defaultCompiledAuthRulePatterns = List.of(Pattern.compile(defaultPattern));
+        AuthRulePatterns defaultPatterns = AuthRulePatterns.newInstance(defaultCompiledAuthRulePatterns);
+        JwtClaimsValidator validator = new JwtClaimsValidator(config, defaultPatterns);
+
+        List<String> pubClaimStrPatterns = List.of("mqtt/+/telemetry", "mqtt/+/attributes");
+
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .claim("pub_rules", pubClaimStrPatterns)
+                .expirationTime(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)))
+                .notBeforeTime(new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                .build();
+
+        // when
+        AuthResponse response = validator.validateAll(authContext, claims);
+
+        // then
+        assertThat(response.isSuccess()).isTrue();
+
+        List<AuthRulePatterns> resolvedAuthPatterns = response.getAuthRulePatterns();
+        assertThat(resolvedAuthPatterns).hasSize(1);
+
+        AuthRulePatterns resolvedPubAuthRulePatterns = resolvedAuthPatterns.get(0);
+        assertThat(resolvedPubAuthRulePatterns.getPubPatterns())
+                .usingElementComparator(Comparator.comparing(Pattern::pattern))
+                .containsExactlyElementsOf(AuthRulesUtil.fromStringList(pubClaimStrPatterns));
+
+        assertThat(resolvedPubAuthRulePatterns.getSubPatterns())
+                .isEqualTo(defaultCompiledAuthRulePatterns);
+    }
+
+    @Test
+    public void shouldUseSubscribePatternsFromClaim() throws Exception {
+        // given
+        String defaultPattern = "default/pubsub";
+
+        var config = new JwtMqttAuthProviderConfiguration();
+        config.setSubAuthRuleClaim("sub_rules");
+        config.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(defaultPattern)));
+        config.setDefaultClientType(ClientType.DEVICE);
+        config.setJwtVerifierConfiguration(mock(JwtVerifierConfiguration.class));
+        config.setAuthClaims(Map.of());
+        config.setClientTypeClaims(Map.of());
+
+        List<Pattern> defaultCompiledAuthRulePatterns = List.of(Pattern.compile(defaultPattern));
+        AuthRulePatterns defaultPatterns = AuthRulePatterns.newInstance(defaultCompiledAuthRulePatterns);
+        JwtClaimsValidator validator = new JwtClaimsValidator(config, defaultPatterns);
+
+        List<String> subClaimStrPatterns = List.of("mqtt/+/telemetry", "mqtt/+/attributes");
+
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .claim("sub_rules", subClaimStrPatterns)
+                .expirationTime(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)))
+                .notBeforeTime(new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                .build();
+
+        // when
+        AuthResponse response = validator.validateAll(authContext, claims);
+
+        // then
+        assertThat(response.isSuccess()).isTrue();
+
+        List<AuthRulePatterns> resolvedAuthPatterns = response.getAuthRulePatterns();
+        assertThat(resolvedAuthPatterns).hasSize(1);
+
+        AuthRulePatterns resolvedPubAuthRulePatterns = resolvedAuthPatterns.get(0);
+        assertThat(resolvedPubAuthRulePatterns.getSubPatterns())
+                .usingElementComparator(Comparator.comparing(Pattern::pattern))
+                .containsExactlyElementsOf(AuthRulesUtil.fromStringList(subClaimStrPatterns));
+
+        assertThat(resolvedPubAuthRulePatterns.getPubPatterns())
+                .isEqualTo(defaultCompiledAuthRulePatterns);
+    }
+
+    @Test
+    public void shouldUseDefaultPatternsWhenNoClaimsConfigured() throws Exception {
+        // given
+        String defaultPattern = "default/pubsub";
+        PubSubAuthorizationRules authRules = PubSubAuthorizationRules.newInstance(List.of(defaultPattern));
+
+
+        var config = new JwtMqttAuthProviderConfiguration();
+        config.setAuthRules(authRules);
+        config.setDefaultClientType(ClientType.DEVICE);
+        config.setJwtVerifierConfiguration(mock(JwtVerifierConfiguration.class));
+        config.setAuthClaims(Map.of());
+        config.setClientTypeClaims(Map.of());
+
+        List<Pattern> defaultCompiledPatterns = List.of(Pattern.compile(defaultPattern));
+        AuthRulePatterns defaultPatterns = AuthRulePatterns.newInstance(defaultCompiledPatterns);
+
+        JwtClaimsValidator validator = new JwtClaimsValidator(config, defaultPatterns);
+
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .expirationTime(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)))
+                .notBeforeTime(new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                .build();
+
+        // when
+        AuthResponse response = validator.validateAll(authContext, claims);
+
+        // then
+        assertThat(response.isSuccess()).isTrue();
+
+        List<AuthRulePatterns> resolvedAuthPatterns = response.getAuthRulePatterns();
+        assertThat(resolvedAuthPatterns).hasSize(1);
+
+        AuthRulePatterns resolvedPubAuthRulePatterns = resolvedAuthPatterns.get(0);
+        assertThat(resolvedPubAuthRulePatterns.getPubPatterns())
+                .isEqualTo(defaultCompiledPatterns);
+        assertThat(resolvedPubAuthRulePatterns.getSubPatterns())
+                .isEqualTo(defaultCompiledPatterns);
+    }
+
+    @Test
+    public void shouldFallbackToDefaultPatternsWhenClaimParsingFails() throws Exception {
+        // given
+        String defaultPattern = "fallback/allowed";
+        JwtMqttAuthProviderConfiguration config = new JwtMqttAuthProviderConfiguration();
+        config.setPubAuthRuleClaim("pub_rules");
+        config.setSubAuthRuleClaim(null); // only test pub_rules
+        config.setAuthRules(PubSubAuthorizationRules.newInstance(List.of(defaultPattern)));
+        config.setDefaultClientType(ClientType.DEVICE);
+        config.setJwtVerifierConfiguration(mock(JwtVerifierConfiguration.class));
+        config.setAuthClaims(Map.of());
+        config.setClientTypeClaims(Map.of());
+
+        List<Pattern> defaultCompiledPatterns = List.of(Pattern.compile(defaultPattern));
+        AuthRulePatterns defaultPatterns = AuthRulePatterns.newInstance(defaultCompiledPatterns);
+        JwtClaimsValidator validator = new JwtClaimsValidator(config, defaultPatterns);
+
+        // Simulate claim value that causes an exception — for example, map instead of list
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .claim("pub_rules", Map.of("invalid", "structure"))
+                .expirationTime(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)))
+                .notBeforeTime(new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1)))
+                .build();
+
+        // when
+        AuthResponse response = validator.validateAll(authContext, claims);
+
+        // then
+        assertThat(response.isSuccess()).isTrue();
+
+        List<AuthRulePatterns> resolvedAuthPatterns = response.getAuthRulePatterns();
+        assertThat(resolvedAuthPatterns).hasSize(1);
+
+        AuthRulePatterns resolvedPubAuthRulePatterns = resolvedAuthPatterns.get(0);
+        assertThat(resolvedPubAuthRulePatterns.getPubPatterns())
+                .isEqualTo(defaultCompiledPatterns);
+        assertThat(resolvedPubAuthRulePatterns.getSubPatterns())
+                .isEqualTo(defaultCompiledPatterns);;
     }
 
 }
