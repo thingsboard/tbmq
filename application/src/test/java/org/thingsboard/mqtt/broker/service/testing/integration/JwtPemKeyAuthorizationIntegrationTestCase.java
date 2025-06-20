@@ -81,6 +81,7 @@ public class JwtPemKeyAuthorizationIntegrationTestCase extends AbstractPubSubInt
         String publicPemKeyStr = TestUtils.toPemString(publicKey);
 
         var pemKeyAlgorithmConfiguration = new PemKeyAlgorithmConfiguration();
+        pemKeyAlgorithmConfiguration.setPublicPemKeyFileName("public-key-file-name");
         pemKeyAlgorithmConfiguration.setPublicPemKey(publicPemKeyStr);
 
         var algorithmBasedVerifierConfiguration = new AlgorithmBasedVerifierConfiguration();
