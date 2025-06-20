@@ -283,7 +283,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         PageLink pageLink = new PageLink(10);
         PageData<ShortMqttClientCredentials> pageData;
         do {
-            pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?credentialsTypeList=SSL&",
+            pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?credentialsTypeList=X_509&",
                     new TypeReference<>() {
                     }, pageLink);
 
@@ -386,13 +386,13 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         Assert.assertTrue(pageData.getData().isEmpty());
 
         pageLink = new PageLink(10);
-        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=APPLICATION&credentialsTypeList=SSL&",
+        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=APPLICATION&credentialsTypeList=X_509&",
                 new TypeReference<>() {
                 }, pageLink);
         Assert.assertEquals(1, pageData.getData().size());
 
         pageLink = new PageLink(10);
-        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=DEVICE&credentialsTypeList=SSL&",
+        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?clientTypeList=DEVICE&credentialsTypeList=X_509&",
                 new TypeReference<>() {
                 }, pageLink);
         Assert.assertEquals(3, pageData.getData().size());
@@ -404,7 +404,7 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
         Assert.assertEquals(3, pageData.getData().size());
 
         pageLink = new PageLink(10);
-        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?credentialsTypeList=SSL&",
+        pageData = doGetTypedWithPageLink("/api/v2/mqtt/client/credentials?credentialsTypeList=X_509&",
                 new TypeReference<>() {
                 }, pageLink);
         Assert.assertEquals(4, pageData.getData().size());
