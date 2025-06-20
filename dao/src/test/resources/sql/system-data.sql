@@ -63,12 +63,10 @@ VALUES
 ('5590d101-628f-414c-9960-5966a9c42c31', 1748975222000, false, 'JWT', '{
   "type": "JWT",
   "authClaims": {},
-  "jwtVerifierType": "ALGORITHM_BASED",
   "clientTypeClaims": {},
   "authRules": {},
   "defaultClientType": "DEVICE",
   "jwtVerifierConfiguration": {
-    "algorithm": "HMAC_BASED",
     "jwtVerifierType": "ALGORITHM_BASED",
     "jwtSignAlgorithmConfiguration": {
       "secret": "please-change-this-32-char-jwt-secret",

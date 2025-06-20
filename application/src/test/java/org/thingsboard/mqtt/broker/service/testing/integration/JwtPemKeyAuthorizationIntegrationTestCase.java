@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,8 +39,6 @@ import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.AlgorithmBasedVerifierConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtSignAlgorithm;
-import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtVerifierType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.PemKeyAlgorithmConfiguration;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.service.test.util.TestUtils;
@@ -87,12 +84,10 @@ public class JwtPemKeyAuthorizationIntegrationTestCase extends AbstractPubSubInt
         pemKeyAlgorithmConfiguration.setPublicPemKey(publicPemKeyStr);
 
         var algorithmBasedVerifierConfiguration = new AlgorithmBasedVerifierConfiguration();
-        algorithmBasedVerifierConfiguration.setAlgorithm(JwtSignAlgorithm.PEM_KEY);
         algorithmBasedVerifierConfiguration.setJwtSignAlgorithmConfiguration(pemKeyAlgorithmConfiguration);
 
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
-        configuration.setJwtVerifierType(JwtVerifierType.ALGORITHM_BASED);
         configuration.setJwtVerifierConfiguration(algorithmBasedVerifierConfiguration);
         PubSubAuthorizationRules pubSubAuthorizationRules = new PubSubAuthorizationRules(
                 List.of("test/.*"),

@@ -86,12 +86,10 @@ public class JwtMqttClientAuthProviderTest {
         when(hmacConfig.getSecret()).thenReturn(TestUtils.generateHmac32Secret());
 
         AlgorithmBasedVerifierConfiguration algConfig = mock(AlgorithmBasedVerifierConfiguration.class);
-        when(algConfig.getAlgorithm()).thenReturn(JwtSignAlgorithm.HMAC_BASED);
         when(algConfig.getJwtSignAlgorithmConfiguration()).thenReturn(hmacConfig);
 
 
         JwtMqttAuthProviderConfiguration config = mock(JwtMqttAuthProviderConfiguration.class);
-        when(config.getJwtVerifierType()).thenReturn(JwtVerifierType.ALGORITHM_BASED);
         when(config.getJwtVerifierConfiguration()).thenReturn(algConfig);
 
         MqttAuthProvider authProvider = mock(MqttAuthProvider.class);
@@ -121,11 +119,9 @@ public class JwtMqttClientAuthProviderTest {
         when(pemBasedConfig.getPublicPemKey()).thenReturn(TestUtils.toPemString(publicKey));
 
         AlgorithmBasedVerifierConfiguration algConfig = mock(AlgorithmBasedVerifierConfiguration.class);
-        when(algConfig.getAlgorithm()).thenReturn(JwtSignAlgorithm.PEM_KEY);
         when(algConfig.getJwtSignAlgorithmConfiguration()).thenReturn(pemBasedConfig);
 
         JwtMqttAuthProviderConfiguration config = mock(JwtMqttAuthProviderConfiguration.class);
-        when(config.getJwtVerifierType()).thenReturn(JwtVerifierType.ALGORITHM_BASED);
         when(config.getJwtVerifierConfiguration()).thenReturn(algConfig);
 
         MqttAuthProvider authProvider = mock(MqttAuthProvider.class);
@@ -169,11 +165,9 @@ public class JwtMqttClientAuthProviderTest {
         when(hmacConfig.getSecret()).thenReturn(TestUtils.generateHmac32Secret());
 
         AlgorithmBasedVerifierConfiguration algConfig = mock(AlgorithmBasedVerifierConfiguration.class);
-        when(algConfig.getAlgorithm()).thenReturn(JwtSignAlgorithm.HMAC_BASED);
         when(algConfig.getJwtSignAlgorithmConfiguration()).thenReturn(hmacConfig);
 
         JwtMqttAuthProviderConfiguration config = mock(JwtMqttAuthProviderConfiguration.class);
-        when(config.getJwtVerifierType()).thenReturn(JwtVerifierType.ALGORITHM_BASED);
         when(config.getJwtVerifierConfiguration()).thenReturn(algConfig);
 
         MqttAuthProvider authProvider = mock(MqttAuthProvider.class);
@@ -269,11 +263,9 @@ public class JwtMqttClientAuthProviderTest {
         when(hmacConfig.getSecret()).thenReturn(TestUtils.generateHmac32Secret());
 
         AlgorithmBasedVerifierConfiguration algConfig = mock(AlgorithmBasedVerifierConfiguration.class);
-        when(algConfig.getAlgorithm()).thenReturn(JwtSignAlgorithm.HMAC_BASED);
         when(algConfig.getJwtSignAlgorithmConfiguration()).thenReturn(hmacConfig);
 
         JwtMqttAuthProviderConfiguration config = mock(JwtMqttAuthProviderConfiguration.class);
-        when(config.getJwtVerifierType()).thenReturn(JwtVerifierType.ALGORITHM_BASED);
         when(config.getJwtVerifierConfiguration()).thenReturn(algConfig);
 
         when(authorizationRuleService.parseAuthorizationRule(config)).thenReturn(authRulePatterns);
