@@ -30,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.util.function.ThrowingFunction;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.async.AsyncRequestTimeoutException;
@@ -38,6 +39,7 @@ import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
+import org.thingsboard.mqtt.broker.common.data.id.HasId;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
@@ -306,6 +308,16 @@ public abstract class BaseController {
         validateString(key, "Incorrect key " + key);
         BlockedClient blockedClient = blockedClientService.getBlockedClient(type, key);
         return checkNotNull(blockedClient);
+    }
+
+    protected <E extends HasId, I extends UUID> E checkEntityId(I entityId, ThrowingFunction<I, E> findingFunction) throws ThingsboardException {
+        try {
+            validateId(entityId, "Invalid entity id");
+            E entity = findingFunction.apply(entityId);
+            return checkNotNull(entity, "entity with id [" + entityId + "] is not found");
+        } catch (Exception e) {
+            throw handleException(e, false);
+        }
     }
 
     protected SecurityUser getCurrentUser() throws ThingsboardException {
