@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 import static org.assertj.core.api.Assertions.assertThatCode;

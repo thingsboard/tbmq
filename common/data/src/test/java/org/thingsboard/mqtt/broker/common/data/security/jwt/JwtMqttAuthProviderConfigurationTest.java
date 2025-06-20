@@ -15,7 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
