@@ -115,6 +115,7 @@
                             <verbose>true</verbose>
                             <googleContainerRegistryEnabled>false</googleContainerRegistryEnabled>
                             <contextDirectory>${project.build.directory}/docker</contextDirectory>
+                            <pullNewerImage>${dockerfile.pullNewerImage}</pullNewerImage>
                             <noCache>true</noCache>
                         </configuration>
                     </execution>
