@@ -57,6 +57,10 @@ public class PageData<T> {
                 pageLink.getPage() < totalPages - 1);
     }
 
+    public PageData<T> copyWithNewData(List<T> updatedData) {
+        return new PageData<>(updatedData, getTotalPages(), getTotalElements(), hasNext());
+    }
+
     @JsonProperty("hasNext")
     public boolean hasNext() {
         return hasNext;

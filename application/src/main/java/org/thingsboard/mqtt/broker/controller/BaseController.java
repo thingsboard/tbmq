@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
@@ -56,6 +58,7 @@ import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.dao.service.ConstraintValidator;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
@@ -495,6 +498,16 @@ public abstract class BaseController {
         return ResponseEntity.status(HttpStatus.SEE_OTHER)
                 .location(uri)
                 .build();
+    }
+
+    protected User filterSensitiveUserData(User user) {
+        if (user.getAdditionalInfo() instanceof ObjectNode additionalInfo) {
+            JsonNode passwordHistory = additionalInfo.remove(UserServiceImpl.USER_PASSWORD_HISTORY);
+
+            boolean isPasswordChanged = passwordHistory != null && passwordHistory.size() > 1;
+            additionalInfo.put(UserServiceImpl.USER_PASSWORD_CHANGED, isPasswordChanged);
+        }
+        return user;
     }
 
 }

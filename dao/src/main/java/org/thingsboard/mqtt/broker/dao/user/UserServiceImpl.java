@@ -50,6 +50,7 @@ import static org.thingsboard.mqtt.broker.dao.service.Validator.validateString;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    public static final String USER_PASSWORD_CHANGED = "isPasswordChanged";
     public static final String USER_PASSWORD_HISTORY = "userPasswordHistory";
     private static final String LAST_LOGIN_TS = "lastLoginTs";
 
