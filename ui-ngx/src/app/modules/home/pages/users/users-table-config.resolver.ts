@@ -41,7 +41,7 @@ export class UsersTableConfigResolver {
 
   private readonly authorityTranslationMap = AuthorityTranslationMap;
   private readonly config: EntityTableConfig<User> = new EntityTableConfig<User>();
-  private readonly currentUserId = () => getCurrentAuthUser(this.store).userId;
+  private readonly currentUserId = () => getCurrentAuthUser(this.store)?.userId;
 
   constructor(private store: Store<AppState>,
               private adminService: UserService,
