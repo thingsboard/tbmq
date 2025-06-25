@@ -62,7 +62,7 @@ public class MqttClientCredentialsController extends BaseController {
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
 
-        return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
+        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -73,13 +73,13 @@ public class MqttClientCredentialsController extends BaseController {
                                                                @RequestParam(required = false) String sortProperty,
                                                                @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-        return checkNotNull(mqttClientCredentialsService.getCredentials(pageLink));
+        return mqttClientCredentialsService.getCredentials(pageLink);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/mqtt/client/credentials/{credentialsId}")
     public MqttClientCredentials getCredentialsById(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
-        return checkNotNull(mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null));
+        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -111,7 +111,7 @@ public class MqttClientCredentialsController extends BaseController {
         basicMqttCredentials.setPassword(encodePasswordIfNotEmpty(changePasswordRequest.getNewPassword()));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
 
-        return checkNotNull(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
+        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.saveCredentials(mqttClientCredentials));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -139,14 +139,14 @@ public class MqttClientCredentialsController extends BaseController {
 
         ClientCredentialsQuery query = new ClientCredentialsQuery(pageLink, clientTypes, credentialsTypes,
                 username, clientId, certificateCn);
-        return checkNotNull(mqttClientCredentialsService.getCredentialsV2(query));
+        return mqttClientCredentialsService.getCredentialsV2(query);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/mqtt/client/credentials", params = {"name"})
     public MqttClientCredentials getClientCredentialsByName(@RequestParam String name) throws ThingsboardException {
         checkParameter("name", name);
-        return checkNotNull(mqttClientCredentialsService.findCredentialsByName(name));
+        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.findCredentialsByName(name));
     }
 
     private String encodePasswordIfNotEmpty(String password) {

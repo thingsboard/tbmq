@@ -18,7 +18,7 @@ package org.thingsboard.mqtt.broker.common.data.security;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.BaseDataWithAdditionalInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
@@ -28,7 +28,7 @@ import java.util.UUID;
 @Data
 @ToString
 @EqualsAndHashCode(callSuper = true)
-public class MqttClientCredentials extends BaseData {
+public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
 
     @Serial
     private static final long serialVersionUID = -8551302106113554112L;

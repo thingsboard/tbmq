@@ -27,6 +27,8 @@ import java.util.List;
 @AllArgsConstructor
 public class BasicMqttCredentials implements SinglePubSubAuthRulesAware {
 
+    public static final String MQTT_BASIC_PASSWORD_IS_SET = "mqttBasicPasswordIsSet";
+
     @NoXss
     private String clientId;
     @NoXss

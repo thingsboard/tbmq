@@ -50,6 +50,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
@@ -508,6 +509,11 @@ public abstract class BaseController {
             additionalInfo.put(UserServiceImpl.USER_PASSWORD_CHANGED, isPasswordChanged);
         }
         return user;
+    }
+
+    protected MqttClientCredentials sanitizeSensitiveMqttCredsData(MqttClientCredentials credentials) throws ThingsboardException {
+        checkNotNull(credentials);
+        return MqttClientCredentialsUtil.sanitizeSensitiveMqttCredsData(credentials);
     }
 
 }

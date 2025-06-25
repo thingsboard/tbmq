@@ -15,7 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.dao.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -25,6 +27,7 @@ import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
+import org.thingsboard.mqtt.broker.dao.util.mapping.JsonConverter;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -39,7 +42,7 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = ModelConstants.MQTT_CLIENT_TYPE_PROPERTY)
+    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_CLIENT_TYPE_PROPERTY)
     private ClientType clientType;
 
     @Enumerated(EnumType.STRING)
@@ -48,6 +51,10 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
 
     @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY)
     private String credentialsValue;
+
+    @Convert(converter = JsonConverter.class)
+    @Column(name = ModelConstants.MQTT_CLIENT_CREDENTIALS_ADDITIONAL_INFO_PROPERTY)
+    private JsonNode additionalInfo;
 
     public MqttClientCredentialsEntity() {
     }
@@ -62,6 +69,7 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         this.credentialsId = mqttClientCredentials.getCredentialsId();
         this.credentialsType = mqttClientCredentials.getCredentialsType();
         this.credentialsValue = mqttClientCredentials.getCredentialsValue();
+        this.additionalInfo = mqttClientCredentials.getAdditionalInfo();
     }
 
     @Override
@@ -74,6 +82,7 @@ public class MqttClientCredentialsEntity extends BaseSqlEntity<MqttClientCredent
         mqttClientCredentials.setCredentialsId(credentialsId);
         mqttClientCredentials.setCredentialsType(credentialsType);
         mqttClientCredentials.setCredentialsValue(credentialsValue);
+        mqttClientCredentials.setAdditionalInfo(additionalInfo);
         return mqttClientCredentials;
     }
 

@@ -36,8 +36,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -106,6 +106,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(BasicMqttCredentials.newInstance(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME)));
         preprocessBasicMqttCredentials(mqttClientCredentials);
+        mqttClientCredentials.setAdditionalInfo(JacksonUtil.newObjectNode());
         return mqttClientCredentialsDao.save(mqttClientCredentials);
     }
 
