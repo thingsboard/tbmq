@@ -259,6 +259,10 @@
     "status": "Status",
     "status-active": "Active",
     "status-disabled": "Disabled",
+    "sub-auth-rule-claim": "Subscribe authorization rule",
+    "sub-auth-rule-claim-hint": "JWT claim name that contains a list of topic filters for subscribe authorization. If set, the system extracts subscribe rules from this claim. Falls back to static Authorization rules if the claim is missing or malformed.",
+    "pub-auth-rule-claim": "Publish authorization rule",
+    "pub-auth-rule-claim-hint": "JWT claim name that contains a list of topic filters for publish authorization. If set, the system extracts publish rules from this claim. If the claim is missing or invalid, static Authorization rules will be used instead.",
     "providers": "Providers",
     "public-key": "Public key"
   },

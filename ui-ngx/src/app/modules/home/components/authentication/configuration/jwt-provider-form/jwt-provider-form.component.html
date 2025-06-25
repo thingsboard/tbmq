@@ -18,7 +18,7 @@
 <section [formGroup]="jwtConfigForm">
   <section class="flex flex-col gap-4">
     <section class="security-setting mat-padding">
-      <section class="mb-4 flex flex-row items-center justify-between">
+      <section class="mb-4 flex flex-row items-center justify-between" formGroupName="jwtVerifierConfiguration">
         <p [tb-hint-tooltip-icon]="'authentication.jwt-verifier-hint' | translate" translate>
           authentication.jwt-verifier
         </p>
@@ -28,7 +28,7 @@
         </tb-toggle-select>
       </section>
       <section class="flex flex-col gap-4">
-        @switch (jwtConfigForm.get('jwtVerifierType')?.value) {
+        @switch (jwtConfigForm.get('jwtVerifierConfiguration.jwtVerifierType')?.value) {
           @case (JwtVerifierType.ALGORITHM_BASED) {
             <ng-container *ngTemplateOutlet="algorithm"></ng-container>
           }
@@ -101,8 +101,8 @@
         </mat-form-field>
       </div>
     </section>
-    <section class="security-setting mat-padding">
-      <p class="mb-3" [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
+    <section class="security-setting mat-padding flex flex-col gap-4">
+      <p [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
       <tb-key-val-map
         formControlName="authClaims"
         class="security-setting-content"
@@ -110,6 +110,20 @@
         addText="authentication.claims-add"
         keyLabel="authentication.claim">
       </tb-key-val-map>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
+        <input matInput formControlName="subAuthRuleClaim">
+        <mat-icon matSuffix matTooltip="{{ 'authentication.sub-auth-rule-claim-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
+      <mat-form-field class="mat-block" subscriptSizing="dynamic">
+        <mat-label translate>authentication.pub-auth-rule-claim</mat-label>
+        <input matInput formControlName="pubAuthRuleClaim">
+        <mat-icon matSuffix matTooltip="{{ 'authentication.pub-auth-rule-claim-hint' | translate }}">
+          help
+        </mat-icon>
+      </mat-form-field>
     </section>
     <section class="security-setting mat-padding">
       <section class="mb-4 flex flex-row items-center justify-between">
@@ -132,53 +146,55 @@
 
     <ng-template #algorithm>
       <section formGroupName="jwtVerifierConfiguration">
-        <mat-form-field class="flex flex-1">
-          <mat-label translate>authentication.algorithm-type</mat-label>
-          <mat-select formControlName="algorithm">
-            @for (type of jwtAlgorithmTypes; track type) {
-              <mat-option [value]="type">
-                {{ jwtAlgorithmTypeTranslation.get(type) | translate }}
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+        <section formGroupName="jwtSignAlgorithmConfiguration">
+          <mat-form-field class="flex flex-1">
+            <mat-label translate>authentication.algorithm-type</mat-label>
+            <mat-select formControlName="algorithm">
+              @for (type of jwtAlgorithmTypes; track type) {
+                <mat-option [value]="type">
+                  {{ jwtAlgorithmTypeTranslation.get(type) | translate }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </section>
 
-      @switch (jwtConfigForm.get('jwtVerifierConfiguration.algorithm').value) {
-        @case (JwtAlgorithmType.HMAC_BASED) {
-          <section formGroupName="jwtSignAlgorithmConfiguration">
-            <mat-form-field class="flex flex-1">
-              <mat-label translate>authentication.secret</mat-label>
-              <input matInput formControlName="secret"
-                     autocomplete="new-password" name="new-password"
-                     type="password">
-              <tb-copy-button matSuffix
-                              [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value?.length"
-                              [copyText]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value">
-              </tb-copy-button>
-              <mat-icon matSuffix
-                        matTooltipClass="tb-error-tooltip"
-                        matTooltip="{{ 'authentication.secret-required' | translate }}"
-                        [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').touched)"
-                        class="tb-error">
-                warning
-              </mat-icon>
-              <tb-toggle-password matSuffix></tb-toggle-password>
-            </mat-form-field>
-          </section>
+        @switch (jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').value) {
+          @case (JwtAlgorithmType.HMAC_BASED) {
+            <section formGroupName="jwtSignAlgorithmConfiguration">
+              <mat-form-field class="flex flex-1">
+                <mat-label translate>authentication.secret</mat-label>
+                <input matInput formControlName="secret"
+                       autocomplete="new-password" name="new-password"
+                       type="password">
+                <tb-copy-button matSuffix
+                                [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value?.length"
+                                [copyText]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value">
+                </tb-copy-button>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'authentication.secret-required' | translate }}"
+                          [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').hasError('required') && jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').touched)"
+                          class="tb-error">
+                  warning
+                </mat-icon>
+                <tb-toggle-password matSuffix></tb-toggle-password>
+              </mat-form-field>
+            </section>
+          }
+          @case (JwtAlgorithmType.PEM_KEY) {
+            <section formGroupName="jwtSignAlgorithmConfiguration">
+              <tb-file-input formControlName="publicPemKey"
+                             [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName')?.value"
+                             (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName').patchValue($event)"
+                             [required]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm')?.value === JwtAlgorithmType.PEM_KEY"
+                             dropLabel="{{ 'integration.drop-file-or' | translate }}"
+                             [label]="'authentication.public-key' | translate"
+                             inputId="public-key">
+              </tb-file-input>
+            </section>
+          }
         }
-        @case (JwtAlgorithmType.PEM_KEY) {
-          <section formGroupName="jwtSignAlgorithmConfiguration">
-            <tb-file-input formControlName="publicPemKey"
-                           [existingFileName]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName')?.value"
-                           (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName').patchValue($event)"
-                           [required]="true"
-                           dropLabel="{{ 'integration.drop-file-or' | translate }}"
-                           [label]="'authentication.public-key' | translate"
-                           inputId="public-key">
-            </tb-file-input>
-          </section>
-        }
-      }
       </section>
     </ng-template>
 
@@ -225,7 +241,7 @@
             noDataText="integration.no-headers-filter"
             addText="key-val.add-header"
             keyLabel="integration.header"
-            [singleMode]="true"
+            [addOnInit]="true"
             singlePredefinedKey="Content-Type"
             singlePredefinedValue="application/json">
           </tb-key-val-map>
@@ -233,5 +249,4 @@
       </section>
     </ng-template>
   </section>
-<!--  {{jwtConfigForm.getRawValue() | json}}-->
 </section>
