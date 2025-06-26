@@ -79,7 +79,7 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/mqtt/client/credentials/{credentialsId}")
     public MqttClientCredentials getCredentialsById(@PathVariable("credentialsId") String strCredentialsId) throws ThingsboardException {
-        return sanitizeSensitiveMqttCredsData(mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null));
+        return sanitizeSensitiveMqttCredsData(getMqttClientCredentialsById(strCredentialsId));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -99,7 +99,7 @@ public class MqttClientCredentialsController extends BaseController {
                                                                     @RequestBody ChangePasswordRequest changePasswordRequest) throws ThingsboardException {
         checkParameter("credentialsId", strCredentialsId);
         checkNotNull(changePasswordRequest);
-        MqttClientCredentials mqttClientCredentials = getCredentialsById(strCredentialsId);
+        MqttClientCredentials mqttClientCredentials = checkNotNull(getMqttClientCredentialsById(strCredentialsId));
         if (mqttClientCredentials.getCredentialsType() != ClientCredentialsType.MQTT_BASIC) {
             throw new ThingsboardException("MQTT credentials should be of 'MQTT_BASIC' type!", ThingsboardErrorCode.BAD_REQUEST_PARAMS);
         }
@@ -151,5 +151,9 @@ public class MqttClientCredentialsController extends BaseController {
 
     private String encodePasswordIfNotEmpty(String password) {
         return StringUtils.isEmpty(password) ? null : passwordEncoder.encode(password);
+    }
+
+    private MqttClientCredentials getMqttClientCredentialsById(String strCredentialsId) throws ThingsboardException {
+        return mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null);
     }
 }
