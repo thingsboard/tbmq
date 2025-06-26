@@ -30,6 +30,8 @@ import java.security.interfaces.RSAPublicKey;
 public class PemKeyAlgorithmConfiguration implements JwtSignAlgorithmConfiguration {
 
     @NoXss
+    private String publicPemKeyFileName;
+    @NoXss
     private String publicPemKey;
 
     @Override
@@ -39,8 +41,11 @@ public class PemKeyAlgorithmConfiguration implements JwtSignAlgorithmConfigurati
 
     @Override
     public void validate() {
+        if (StringUtils.isBlank(publicPemKeyFileName)) {
+            throw new DataValidationException("Public PEM key file name should be specified!");
+        }
         if (StringUtils.isBlank(publicPemKey)) {
-            throw new DataValidationException("Public PEM key should be specified for PEM based algorithm!");
+            throw new DataValidationException("Public PEM key should be specified!");
         }
         try {
             PublicKey pk = SslUtil.readPublicKey(publicPemKey);

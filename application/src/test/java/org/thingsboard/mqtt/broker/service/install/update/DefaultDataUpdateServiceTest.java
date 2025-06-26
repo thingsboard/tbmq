@@ -44,7 +44,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willCallRealMethod;
-import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -66,81 +65,6 @@ public class DefaultDataUpdateServiceTest {
         ReflectionTestUtils.setField(service, "basicAuthEnabled", false);
         ReflectionTestUtils.setField(service, "x509AuthEnabled", false);
         ReflectionTestUtils.setField(service, "skipValidityCheckForClientCert", false);
-        ReflectionTestUtils.setField(service, "authStrategy", "BOTH");
-    }
-
-    @Test
-    public void whenMqttSettingNotExist_andYmlIsSingle_thenCreateSettingWithListenerOnlyTrue() throws Exception {
-        // given
-        ReflectionTestUtils.setField(service, "authStrategy", "SINGLE");
-        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
-                .willReturn(null);
-        willCallRealMethod().given(service).isUseListenerBasedProviderOnly();
-
-        // when
-        service.updateData();
-
-        // then
-        ArgumentCaptor<AdminSettings> adminSettingsArgumentCaptor = ArgumentCaptor.forClass(AdminSettings.class);
-        then(adminSettingsService).should().saveAdminSettings(adminSettingsArgumentCaptor.capture());
-
-        AdminSettings saved = adminSettingsArgumentCaptor.getValue();
-        assertThat(saved.getKey()).isEqualTo(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        assertThat(saved.getJsonValue()).isNotNull();
-        MqttAuthSettings settings = MqttAuthSettings.fromJsonValue(saved.getJsonValue());
-
-        assertThat(settings).isNotNull();
-        assertThat(settings.isUseListenerBasedProviderOnly()).isTrue();
-        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
-    }
-
-    @Test
-    public void whenMqttSettingNotExist_andYmlIsBoth_thenCreateSettingWithListenerOnlyFalse() throws Exception {
-        // given
-        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
-                .willReturn(null);
-        willCallRealMethod().given(service).isUseListenerBasedProviderOnly();
-
-        // when
-        service.updateData();
-
-        // then
-        ArgumentCaptor<AdminSettings> captor = ArgumentCaptor.forClass(AdminSettings.class);
-        then(adminSettingsService).should().saveAdminSettings(captor.capture());
-
-        AdminSettings saved = captor.getValue();
-        assertThat(saved.getKey()).isEqualTo(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        assertThat(saved.getJsonValue()).isNotNull();
-        MqttAuthSettings settings = MqttAuthSettings.fromJsonValue(saved.getJsonValue());
-
-        assertThat(settings).isNotNull();
-        assertThat(settings.isUseListenerBasedProviderOnly()).isFalse();
-        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
-    }
-
-    @Test
-    public void whenMqttSettingNotExist_andYmlIsInvalid_thenCreateSettingWithListenerOnlyFalse() throws Exception {
-        // given
-        ReflectionTestUtils.setField(service, "authStrategy", "foobar");
-        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
-                .willReturn(null);
-        willCallRealMethod().given(service).isUseListenerBasedProviderOnly();
-
-        // when
-        service.updateData();
-
-        // then
-        ArgumentCaptor<AdminSettings> captor = ArgumentCaptor.forClass(AdminSettings.class);
-        then(adminSettingsService).should().saveAdminSettings(captor.capture());
-
-        AdminSettings saved = captor.getValue();
-        assertThat(saved.getKey()).isEqualTo(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        assertThat(saved.getJsonValue()).isNotNull();
-        MqttAuthSettings settings = MqttAuthSettings.fromJsonValue(saved.getJsonValue());
-
-        assertThat(settings).isNotNull();
-        assertThat(settings.isUseListenerBasedProviderOnly()).isFalse();
-        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
     }
 
     @Test
@@ -157,12 +81,10 @@ public class DefaultDataUpdateServiceTest {
     }
 
     @Test
-    public void whenMqttSettingNotExist_andEnvMockedToTrue_thenCreateSettingWithListenerOnlyTrue() throws Exception {
+    public void whenMqttSettingNotExist_thenCreateSetting() throws Exception {
         // given
         given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
                 .willReturn(null);
-
-        willReturn(true).given(service).isUseListenerBasedProviderOnly();
 
         // when
         service.updateData();
@@ -174,30 +96,7 @@ public class DefaultDataUpdateServiceTest {
         MqttAuthSettings settings = MqttAuthSettings.fromJsonValue(captor.getValue().getJsonValue());
 
         assertThat(settings).isNotNull();
-        assertThat(settings.isUseListenerBasedProviderOnly()).isTrue();
-        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
-    }
-
-    @Test
-    public void whenMqttSettingNotExist_andEnvMockedToFalse_thenCreateSettingWithListenerOnlyFalse() throws Exception {
-        // given
-        given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey()))
-                .willReturn(null);
-
-        willReturn(false).given(service).isUseListenerBasedProviderOnly();
-
-        // when
-        service.updateData();
-
-        // then
-        ArgumentCaptor<AdminSettings> captor = ArgumentCaptor.forClass(AdminSettings.class);
-        then(adminSettingsService).should().saveAdminSettings(captor.capture());
-
-        MqttAuthSettings settings = MqttAuthSettings.fromJsonValue(captor.getValue().getJsonValue());
-
-        assertThat(settings).isNotNull();
-        assertThat(settings.isUseListenerBasedProviderOnly()).isFalse();
-        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
+        assertThat(settings.getPriorities()).isEqualTo(MqttAuthProviderType.defaultPriorityList);
     }
 
     @Test

@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS ts_kv_dictionary;
 DROP TABLE IF EXISTS websocket_connection;
 DROP TABLE IF EXISTS websocket_subscription;
 DROP TABLE IF EXISTS unauthorized_client;
+DROP TABLE IF EXISTS mqtt_auth_provider;
 
 DROP TABLE IF EXISTS integration;
 DROP TABLE IF EXISTS stats_event;

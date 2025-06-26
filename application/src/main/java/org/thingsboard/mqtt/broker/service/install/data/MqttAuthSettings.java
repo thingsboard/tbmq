@@ -32,13 +32,11 @@ public class MqttAuthSettings implements Serializable {
     @Serial
     private static final long serialVersionUID = -8045245463193283033L;
 
-    private boolean useListenerBasedProviderOnly;
     private List<MqttAuthProviderType> priorities;
 
     public static AdminSettings createDefaults() {
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setUseListenerBasedProviderOnly(false);
-        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
+        mqttAuthSettings.setPriorities(MqttAuthProviderType.defaultPriorityList);
         return toAdminSettings(mqttAuthSettings);
     }
 

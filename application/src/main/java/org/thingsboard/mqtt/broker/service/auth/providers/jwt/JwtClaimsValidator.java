@@ -16,8 +16,12 @@
 package org.thingsboard.mqtt.broker.service.auth.providers.jwt;
 
 import com.nimbusds.jwt.JWTClaimsSet;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
@@ -26,8 +30,24 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
-public record JwtClaimsValidator(JwtMqttAuthProviderConfiguration configuration, AuthRulePatterns authRulePatterns) {
+@Data
+@Slf4j
+public class JwtClaimsValidator {
+
+    private final JwtMqttAuthProviderConfiguration configuration;
+    private final AuthRulePatterns defaultAuthRulePatterns;
+
+    private final boolean hasPubAuthRulesClaim;
+    private final boolean hasSubAuthRulesClaim;
+
+    public JwtClaimsValidator(JwtMqttAuthProviderConfiguration configuration, AuthRulePatterns defaultAuthRulePatterns) {
+        this.configuration = configuration;
+        this.defaultAuthRulePatterns = defaultAuthRulePatterns;
+        this.hasPubAuthRulesClaim = StringUtils.isNotBlank(configuration.getPubAuthRuleClaim());
+        this.hasSubAuthRulesClaim = StringUtils.isNotBlank(configuration.getSubAuthRuleClaim());
+    }
 
     public AuthResponse validateAll(AuthContext authContext, JWTClaimsSet claims) throws ParseException {
         Date now = new Date();
@@ -44,7 +64,8 @@ public record JwtClaimsValidator(JwtMqttAuthProviderConfiguration configuration,
             return AuthResponse.failure("Failed to validate JWT auth claims.");
         }
         ClientType clientType = resolveClientType(claims);
-        return AuthResponse.success(clientType, List.of(authRulePatterns));
+        AuthRulePatterns rulePatterns = resolveAuthRulePatterns(claims);
+        return AuthResponse.success(clientType, List.of(rulePatterns));
     }
 
     private ClientType resolveClientType(JWTClaimsSet claims) throws ParseException {
@@ -80,4 +101,32 @@ public record JwtClaimsValidator(JwtMqttAuthProviderConfiguration configuration,
         }
         return true;
     }
+
+    private AuthRulePatterns resolveAuthRulePatterns(JWTClaimsSet claims) {
+        if (!hasPubAuthRulesClaim && !hasSubAuthRulesClaim) {
+            return defaultAuthRulePatterns;
+        }
+        return AuthRulePatterns.of(
+                resolvePatterns(hasPubAuthRulesClaim, claims, configuration.getPubAuthRuleClaim(), defaultAuthRulePatterns.getPubPatterns()),
+                resolvePatterns(hasSubAuthRulesClaim, claims, configuration.getSubAuthRuleClaim(), defaultAuthRulePatterns.getSubPatterns())
+        );
+    }
+
+    private List<Pattern> resolvePatterns(boolean enabled, JWTClaimsSet claims, String claimName, List<Pattern> fallback) {
+        if (!enabled) {
+            return fallback;
+        }
+        try {
+            List<String> raw = claims.getStringListClaim(claimName);
+            return raw == null ? fallback : AuthRulesUtil.fromStringList(raw);
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug("[{}] Failed to parse auth rules claim, claims {}", claimName, claims.toString(), e);
+            } else {
+                log.warn("[{}] Failed to parse auth rules claim", claimName, e);
+            }
+            return fallback;
+        }
+    }
+
 }

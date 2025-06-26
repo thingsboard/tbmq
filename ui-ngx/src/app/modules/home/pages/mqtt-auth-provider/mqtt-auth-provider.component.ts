@@ -83,6 +83,7 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
     if (formValue.type === MqttAuthProviderType.JWT) {
       formValue = this.prepareJwtForm(formValue);
     }
+    formValue.configuration.type = formValue.type;
     return super.prepareFormValue(formValue);
   }
 
@@ -97,9 +98,8 @@ export class MqttAuthProviderComponent extends EntityComponent<MqttAuthProvider>
 
   private prepareJwtForm(formValue: MqttAuthProvider): MqttAuthProvider {
     const configuration = formValue.configuration as JwtMqttAuthProviderConfiguration;
-    configuration.type = formValue.type;
-    configuration.jwtVerifierConfiguration.jwtVerifierType = configuration.jwtVerifierType;
-    configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = configuration.jwtVerifierConfiguration.algorithm;
+    // configuration.jwtVerifierConfiguration.jwtVerifierType = configuration.jwtVerifierType;
+    // configuration.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm = configuration.jwtVerifierConfiguration.algorithm;
     formValue.configuration = configuration;
     return formValue;
   }

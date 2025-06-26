@@ -59,6 +59,7 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
   readonly valuePlaceholderText = input<string>();
   readonly noDataText = input<string>();
   readonly singleMode = input<boolean>(false);
+  readonly addOnInit = input<boolean>(false);
   readonly singlePredefinedKey = input<string>();
   readonly singlePredefinedValue = input<string>();
   readonly addText = input<string>('action.add');
@@ -124,7 +125,7 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
       }
     }
     this.kvListFormGroup.setControl('keyVals', this.fb.array(keyValsControls), {emitEvent: false});
-    if (this.isSingleMode && this.isSinglePredefinedKey && !keyValsControls.length) {
+    if (this.isAddOnInit && this.isSinglePredefinedKey && !keyValsControls.length) {
       setTimeout(() => this.addKeyVal(), 0);
     }
     if (this.disabled) {
@@ -157,6 +158,10 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
     return this.singleMode();
   }
 
+  get isAddOnInit(): boolean {
+    return this.addOnInit();
+  }
+
   get isSinglePredefinedKey(): boolean {
     return isDefinedAndNotNull(this.singlePredefinedKey());
   }
@@ -171,6 +176,10 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
     kvList.forEach((entry) => {
       keyValMap[entry.key] = entry.value;
     });
-    this.propagateChange(keyValMap);
+    if (!Object.keys(keyValMap).length) {
+      this.propagateChange(null);
+    } else {
+      this.propagateChange(keyValMap);
+    }
   }
 }

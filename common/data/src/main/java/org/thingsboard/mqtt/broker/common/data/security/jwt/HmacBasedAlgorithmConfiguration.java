@@ -38,7 +38,7 @@ public class HmacBasedAlgorithmConfiguration implements JwtSignAlgorithmConfigur
     @Override
     public void validate() {
         if (StringUtils.isBlank(secret)) {
-            throw new DataValidationException("Secret should be specified for HMAC based algorithm!");
+            throw new DataValidationException("Secret should be specified!");
         }
         byte[] secretBytes = secret.getBytes(StandardCharsets.UTF_8);
         int minLength = 32;
