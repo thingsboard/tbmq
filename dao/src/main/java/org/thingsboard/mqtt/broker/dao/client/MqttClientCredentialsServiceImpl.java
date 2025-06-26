@@ -222,6 +222,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
+        mqttClientCredentials.removeAdditionalInfoField(BasicMqttCredentials.MQTT_BASIC_PASSWORD_IS_SET);
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }

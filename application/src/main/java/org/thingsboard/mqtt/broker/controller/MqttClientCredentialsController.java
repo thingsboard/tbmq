@@ -56,9 +56,16 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/client/credentials")
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
-        if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType() && mqttClientCredentials.getId() == null) {
+        if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType()) {
             BasicMqttCredentials mqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
-            mqttCredentials.setPassword(encodePasswordIfNotEmpty(mqttCredentials.getPassword()));
+            if (mqttClientCredentials.getId() == null) {
+                mqttCredentials.setPassword(encodePasswordIfNotEmpty(mqttCredentials.getPassword()));
+            } else {
+                MqttClientCredentials currentMqttClientCredentials = getMqttClientCredentialsById(mqttClientCredentials.getId());
+                if (currentMqttClientCredentials != null) {
+                    mqttCredentials.setPassword(getCurrentPassword(currentMqttClientCredentials));
+                }
+            }
             mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(mqttCredentials));
         }
 
@@ -154,6 +161,14 @@ public class MqttClientCredentialsController extends BaseController {
     }
 
     private MqttClientCredentials getMqttClientCredentialsById(String strCredentialsId) throws ThingsboardException {
-        return mqttClientCredentialsService.getCredentialsById(toUUID(strCredentialsId)).orElse(null);
+        return getMqttClientCredentialsById(toUUID(strCredentialsId));
+    }
+
+    private MqttClientCredentials getMqttClientCredentialsById(UUID credentialsId) {
+        return mqttClientCredentialsService.getCredentialsById(credentialsId).orElse(null);
+    }
+
+    private String getCurrentPassword(MqttClientCredentials currentCredentials) {
+        return MqttClientCredentialsUtil.getMqttCredentials(currentCredentials, BasicMqttCredentials.class).getPassword();
     }
 }
