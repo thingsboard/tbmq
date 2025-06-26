@@ -23,7 +23,6 @@ import { ClientCredentials, CredentialsType } from '@shared/models/credentials.m
 import { EntityType, entityTypeResources, entityTypeTranslations } from '@shared/models/entity-type.models';
 import { ClientCredentialsComponent } from '@home/pages/client-credentials/client-credentials.component';
 import { AddEntityDialogData } from '@home/models/entity/entity-component.models';
-import { ClientCredentialsService } from '@core/http/client-credentials.service';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { HomePageTitleType } from '@shared/models/home-page.model';
@@ -68,7 +67,6 @@ export class GettingStartedHomeComponent implements OnInit {
 
   constructor(private instructionsService: InstructionsService,
               private dialog: MatDialog,
-              private clientCredentialsService: ClientCredentialsService,
               private translate: TranslateService,
               private store: Store<AppState>,
               private configService: ConfigService,
@@ -141,16 +139,14 @@ export class GettingStartedHomeComponent implements OnInit {
     $entity.subscribe(
       (entity) => {
         if (entity) {
-          this.clientCredentialsService.saveClientCredentials(entity).subscribe(() => {
-            this.store.dispatch(new ActionNotificationShow(
-              {
-                message: this.translate.instant('getting-started.credentials-added'),
-                type: 'success',
-                duration: 1500,
-                verticalPosition: 'top',
-                horizontalPosition: 'left'
-              }));
-          });
+          this.store.dispatch(new ActionNotificationShow(
+            {
+              message: this.translate.instant('getting-started.credentials-added'),
+              type: 'success',
+              duration: 1500,
+              verticalPosition: 'top',
+              horizontalPosition: 'left'
+            }));
         }
       }
     );
