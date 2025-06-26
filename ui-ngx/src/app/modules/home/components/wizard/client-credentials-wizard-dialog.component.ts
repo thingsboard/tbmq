@@ -160,6 +160,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
           const credentialsValue = JSON.parse(this.authenticationFormGroup.get('credentialsValue').value);
           const password = credentialsValue.password;
           if (this.clientCredentialsWizardFormGroup.get('credentialsType').value === CredentialsType.MQTT_BASIC) {
+            entity.credentialsValue = JSON.stringify(credentialsValue);
             return this.dialogRef.close({...entity, ...{password}})
           }
           return this.dialogRef.close(entity);
