@@ -72,6 +72,7 @@ export interface ClientCredentials extends BaseData {
   credentialsType: CredentialsType;
   credentialsValue: string;
   password?: string;
+  additionalInfo?: CredentialsAdditionalInfo;
 }
 
 export interface SslMqttCredentials extends SslAuthRulesMapping {
@@ -110,6 +111,10 @@ export interface AuthRules {
 
 export interface AuthRulesMapping extends AuthRules {
   certificateMatcherRegex?: string;
+}
+
+interface CredentialsAdditionalInfo {
+  mqttBasicPasswordIsSet?: boolean;
 }
 
 export enum AuthRulePatternsType {

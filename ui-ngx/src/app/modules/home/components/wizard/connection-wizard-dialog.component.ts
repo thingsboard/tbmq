@@ -203,7 +203,7 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
             username: credentialsValue.userName,
             password: null
           });
-          if (isDefinedAndNotNull(credentialsValue.password)) {
+          if (credentials?.additionalInfo?.mqttBasicPasswordIsSet === true) {
             this.passwordRequired = true;
             this.connectionFormGroup.get('password').setValidators([Validators.required]);
           } else {
