@@ -114,6 +114,7 @@ export interface AuthRulesMapping extends AuthRules {
 }
 
 interface CredentialsAdditionalInfo {
+  description?: string;
   mqttBasicPasswordIsSet?: boolean;
 }
 

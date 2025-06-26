@@ -93,6 +93,11 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
         name: [null, [Validators.required]],
         clientType: [ClientType.DEVICE, [Validators.required]],
         credentialsType: [CredentialsType.MQTT_BASIC, [Validators.required]],
+        additionalInfo: this.fb.group(
+          {
+            description: [null, []]
+          }
+        )
       }
     );
 
@@ -168,6 +173,7 @@ export class ClientCredentialsWizardDialogComponent extends DialogComponent<Clie
       name: this.clientCredentialsWizardFormGroup.get('name').value,
       clientType: this.clientCredentialsWizardFormGroup.get('clientType').value,
       credentialsType: this.clientCredentialsWizardFormGroup.get('credentialsType').value,
+      additionalInfo: this.clientCredentialsWizardFormGroup.get('additionalInfo').value,
       credentialsValue: this.authenticationFormGroup.get('credentialsValue').value
     };
     return this.clientCredentialsService.saveClientCredentials(deepTrim(clientCredentials)).pipe(
