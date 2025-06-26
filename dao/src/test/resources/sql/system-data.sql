@@ -48,7 +48,7 @@ VALUES (
            '7ca448f2-780e-4b38-ac15-c064a8f20bb5',
            1748975222000,
            'mqttAuthorization',
-           '{"useListenerBasedProviderOnly":false,"priorities":["MQTT_BASIC","X_509","JWT"]}'
+           '{"priorities":["MQTT_BASIC","X_509","JWT"]}'
        );
 
 INSERT INTO mqtt_auth_provider (id, created_time, enabled, type, configuration, additional_info)

@@ -41,15 +41,14 @@ public class MqttAuthSettingsTest {
 
         JsonNode jsonValue = adminSettings.getJsonValue();
         assertThat(jsonValue).isNotNull();
-        assertThat(jsonValue.has("useListenerBasedProviderOnly")).isTrue();
-        assertThat(jsonValue.get("useListenerBasedProviderOnly").asBoolean()).isFalse();
         assertThat(jsonValue.has("priorities")).isTrue();
         JsonNode prioritiesNode = jsonValue.get("priorities");
         assertThat(prioritiesNode.isArray()).isTrue();
 
         // Verify priority list matches default enum order
-        List<MqttAuthProviderType> expectedPriorities = MqttAuthProviderType.getDefaultPriorityList();
-        List<MqttAuthProviderType> actualPriorities = JacksonUtil.convertValue(prioritiesNode, new TypeReference<>() {});
+        List<MqttAuthProviderType> expectedPriorities = MqttAuthProviderType.defaultPriorityList;
+        List<MqttAuthProviderType> actualPriorities = JacksonUtil.convertValue(prioritiesNode, new TypeReference<>() {
+        });
         assertThat(actualPriorities).containsExactlyElementsOf(expectedPriorities);
 
     }

@@ -85,7 +85,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         if (!enabled) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.X_509);
         }
-        if (authContext.getSslHandler() == null) {
+        if (!authContext.isSecurePortUsed()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
             log.error(logErrorMsg, authContext);
