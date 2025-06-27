@@ -71,7 +71,6 @@ export interface ClientCredentials extends BaseData {
   clientType: ClientType;
   credentialsType: CredentialsType;
   credentialsValue: string;
-  password?: string;
   additionalInfo?: CredentialsAdditionalInfo;
 }
 

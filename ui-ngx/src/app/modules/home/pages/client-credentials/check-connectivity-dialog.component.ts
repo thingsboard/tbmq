@@ -262,8 +262,9 @@ export class CheckConnectivityDialogComponent extends
   }
 
   private setPassword(credentials: ClientCredentials): string {
-    if (this.data.credentials?.password) {
-      return this.data.credentials?.password;
+    const credentialsValue = JSON.parse(credentials.credentialsValue);
+    if (credentialsValue?.password?.length) {
+      return credentialsValue.password;
     }
     if (credentials?.additionalInfo?.mqttBasicPasswordIsSet === true) {
       return '$YOUR_PASSWORD';

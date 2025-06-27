@@ -146,7 +146,8 @@ export class GettingStartedHomeComponent implements OnInit {
               duration: 1500,
               verticalPosition: 'top',
               horizontalPosition: 'left'
-            }));
+            }
+          ));
         }
       }
     );
