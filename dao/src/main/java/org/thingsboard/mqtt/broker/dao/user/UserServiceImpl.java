@@ -39,6 +39,7 @@ import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static org.thingsboard.mqtt.broker.common.data.util.StringUtils.generateSafeToken;
 import static org.thingsboard.mqtt.broker.dao.service.Validator.validateId;
@@ -84,6 +85,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User saveUser(User user) {
         log.trace("Executing saveUser [{}]", user);
+        correctUserAdditionalInfo(user);
         userValidator.validate(user);
         if (!userLoginCaseSensitive) {
             user.setEmail(user.getEmail().toLowerCase());
@@ -225,6 +227,20 @@ public class UserServiceImpl implements UserService {
         }
         user.setAdditionalInfo(additionalInfo);
         saveUser(user);
+    }
+
+    private void correctUserAdditionalInfo(User user) {
+        if (user.getId() != null) {
+            user.removeAdditionalInfoField(USER_PASSWORD_CHANGED);
+            User userFromDb = findUserById(user.getId());
+            if (userFromDb != null) {
+                user.setAdditionalInfoField(USER_PASSWORD_HISTORY, getCurrentUserPasswordHistory(userFromDb));
+            }
+        }
+    }
+
+    private JsonNode getCurrentUserPasswordHistory(User userFromDb) {
+        return userFromDb.getAdditionalInfoField(USER_PASSWORD_HISTORY, Function.identity(), JacksonUtil.newObjectNode());
     }
 
     private final DataValidator<User> userValidator = new DataValidator<>() {

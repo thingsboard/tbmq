@@ -76,11 +76,10 @@ public abstract class BaseDataWithAdditionalInfo extends BaseData implements Has
 
     public void removeAdditionalInfoField(String field) {
         JsonNode additionalInfo = getAdditionalInfo();
-        if (!(additionalInfo instanceof ObjectNode)) {
-            additionalInfo = mapper.createObjectNode();
+        if (additionalInfo instanceof ObjectNode info && info.has(field)) {
+            info.remove(field);
+            setAdditionalInfo(info);
         }
-        ((ObjectNode) additionalInfo).remove(field);
-        setAdditionalInfo(additionalInfo);
     }
 
     public <T> T getAdditionalInfoField(String field, Function<JsonNode, T> mapper, T defaultValue) {
