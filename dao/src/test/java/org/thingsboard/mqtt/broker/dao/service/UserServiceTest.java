@@ -15,14 +15,18 @@
  */
 package org.thingsboard.mqtt.broker.dao.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 @DaoSqlTest
@@ -83,6 +87,31 @@ public class UserServiceTest extends AbstractServiceTest {
         Assert.assertEquals("Downs", savedUser.getLastName());
 
         userService.deleteUser(savedUser.getId());
+    }
+
+    @Test
+    public void testCorrectUserAdditionalInfoOnSave() {
+        User user = new User();
+        user.setAuthority(Authority.SYS_ADMIN);
+        user.setEmail("admin3@thingsboard.org");
+        User savedUser = userService.saveUser(user);
+
+        // fake password change:
+        ObjectNode additionalInfo = JacksonUtil.newObjectNode();
+        additionalInfo.put(UserServiceImpl.USER_PASSWORD_CHANGED, true);
+        savedUser.setAdditionalInfo(additionalInfo);
+
+        User updatedUser = userService.saveUser(savedUser);
+
+        JsonNode updatedAdditionalInfo = updatedUser.getAdditionalInfo();
+        Assert.assertNotNull(updatedAdditionalInfo);
+        Assert.assertFalse(updatedAdditionalInfo.has(UserServiceImpl.USER_PASSWORD_CHANGED));
+
+        Assert.assertTrue(updatedAdditionalInfo.has(UserServiceImpl.USER_PASSWORD_HISTORY));
+        // empty since there was no actual password change happen
+        Assert.assertEquals(updatedAdditionalInfo.get(UserServiceImpl.USER_PASSWORD_HISTORY), JacksonUtil.newObjectNode());
+
+        userService.deleteUser(updatedUser.getId());
     }
 
     @Test(expected = DataValidationException.class)
