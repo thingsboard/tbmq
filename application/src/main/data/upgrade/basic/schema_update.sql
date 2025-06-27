@@ -16,6 +16,6 @@
 
 -- UPGRADE FROM VERSION 2.1.0 TO 2.2.0 START
 
-ALTER TABLE mqtt_client_credentials ADD COLUMN additional_info varchar;
+ALTER TABLE mqtt_client_credentials ADD COLUMN IF NOT EXISTS additional_info varchar;
 
 -- UPGRADE FROM VERSION 2.1.0 TO 2.2.0 END

@@ -56,7 +56,7 @@ public class AuthController extends BaseController {
     @GetMapping(value = "/auth/user")
     public User getUser() throws ThingsboardException {
         SecurityUser securityUser = getCurrentUser();
-        return filterSensitiveUserData(userService.findUserById(securityUser.getId()));
+        return filterSensitiveUserData(checkNotNull(userService.findUserById(securityUser.getId())));
     }
 
     @PreAuthorize("isAuthenticated()")
