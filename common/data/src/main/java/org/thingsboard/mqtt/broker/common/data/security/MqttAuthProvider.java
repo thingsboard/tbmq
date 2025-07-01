@@ -81,11 +81,11 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
     private static String getDescription(MqttAuthProviderType type) {
         return switch (type) {
             case MQTT_BASIC ->
-                    "Authenticates clients using a clientId, username, and password sent in the CONNECT packet.";
-            case X_509 -> "Uses the client’s X.509 certificate chain during TLS handshake for authentication.";
-            case JWT -> "Verifies a signed JWT token passed in the password to authenticate the client.";
+                    "Authenticates clients using a clientId, username, and password sent in the CONNECT packet";
+            case X_509 -> "Uses the client’s X.509 certificate chain during TLS handshake for authentication";
+            case JWT -> "Authenticates clients using a signed JWT passed in the password field of the CONNECT packet";
             case SCRAM ->
-                    "Performs a secure challenge-response using hashed credentials to authenticate without sending the actual password.";
+                    "Performs a secure challenge-response using hashed credentials to authenticate without sending the actual password (MQTT 5.0 only)";
         };
     }
 
