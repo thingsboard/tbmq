@@ -42,8 +42,11 @@
       <p class="mb-3" translate>authentication.authorization</p>
       <section class="security-setting mat-padding">
         <div class="flex flex-1 flex-col" formGroupName="authRules">
-          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.54);"
-             [tb-hint-tooltip-icon]="'mqtt-client-credentials.authorization-hint' | translate" translate>authentication.authorization-static</p>
+          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.87);" translate>authentication.authorization-default</p>
+          <section class="mb-2">
+            <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-authorization-basic' | translate"></div>
+            <div class="tb-hint" [innerHtml]="'mqtt-client-credentials.hint-regex-patterns' | translate"></div>
+          </section>
           <mat-form-field class="mat-block">
             <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
             <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
@@ -106,27 +109,22 @@
       </section>
       <section class="security-setting mat-padding">
         <div class="flex flex-1 flex-col">
-          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.54);"
-             [tb-hint-tooltip-icon]="'authentication.authorization-dynamic-hint' | translate" translate>authentication.authorization-dynamic</p>
+          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.87);" translate>authentication.authorization-dynamic</p>
+          <div class="tb-hint mb-4" [innerHtml]="'authentication.authorization-dynamic-hint' | translate"></div>
           <mat-form-field class="mat-block">
             <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
             <input matInput formControlName="subAuthRuleClaim">
-            <mat-icon matSuffix matTooltip="{{ 'authentication.sub-auth-rule-claim-hint' | translate }}">
-              help
-            </mat-icon>
           </mat-form-field>
           <mat-form-field class="mat-block" subscriptSizing="dynamic">
             <mat-label translate>authentication.pub-auth-rule-claim</mat-label>
             <input matInput formControlName="pubAuthRuleClaim">
-            <mat-icon matSuffix matTooltip="{{ 'authentication.pub-auth-rule-claim-hint' | translate }}">
-              help
-            </mat-icon>
           </mat-form-field>
         </div>
       </section>
     </section>
     <section class="security-setting mat-padding flex flex-col gap-4">
-      <p [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
+      <p translate>authentication.claims</p>
+      <div class="tb-hint" [innerHtml]="'authentication.claims-hint' | translate"></div>
       <tb-key-val-map
         formControlName="authClaims"
         class="security-setting-content"
@@ -137,12 +135,13 @@
     </section>
     <section class="security-setting mat-padding">
       <section class="mb-4 flex flex-row items-center justify-between">
-        <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>authentication.client-type-configuration</p>
+        <p translate>authentication.client-type-configuration</p>
         <tb-toggle-select formControlName="defaultClientType">
           <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
           <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
         </tb-toggle-select>
       </section>
+      <div class="tb-hint" [innerHtml]="'authentication.client-type-hint' | translate"></div>
       <section class="mt-2 flex flex-col gap-4">
         <tb-key-val-map
           formControlName="clientTypeClaims"
@@ -202,10 +201,9 @@
                              (fileNameChanged)="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKeyFileName').patchValue($event)"
                              [required]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm')?.value === JwtAlgorithmType.PEM_KEY"
                              dropLabel="{{ 'integration.drop-file-or' | translate }}"
-                             [label]="'authentication.public-key' | translate"
+                             [label]="'authentication.public-key-hint' | translate"
                              inputId="public-key">
               </tb-file-input>
-              <div class="tb-hint p-0" [innerHTML]="'authentication.public-key-hint' | translate"></div>
             </section>
           }
         }

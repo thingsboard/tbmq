@@ -28,6 +28,7 @@
     <div class="tb-file-select-container">
       <div class="tb-file-clear-container">
         <button mat-icon-button color="primary"
+                [disabled]="disabled()"
                 type="button"
                 (click)="clearFile()"
                 class="tb-file-clear-btn"
