@@ -79,6 +79,5 @@ export interface SecuritySettings {
 }
 
 export interface MqttAuthSettings {
-  useListenerBasedProviderOnly: boolean;
   priorities: MqttAuthProviderType[];
 }

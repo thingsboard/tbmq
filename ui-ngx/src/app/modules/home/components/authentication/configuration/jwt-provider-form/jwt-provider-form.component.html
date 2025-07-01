@@ -39,67 +39,91 @@
       </section>
     </section>
     <section class="security-setting mat-padding">
-      <div class="mt-2 flex flex-1 flex-col" formGroupName="authRules">
-        <p class="mb-3" [tb-hint-tooltip-icon]="'mqtt-client-credentials.authorization-hint' | translate" translate>mqtt-client-credentials.authorization</p>
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
-          <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
-            @for (rule of pubRulesSet; track rule) {
-              <mat-chip-row
-                [value]="rule"
-                [editable]="isEdit()"
-                (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
-                [removable]="isEdit()"
-                (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
-                {{ rule }}
-                @if (isEdit()) {
-                  <button matChipRemove aria-label="'remove' + rule">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                }
-              </mat-chip-row>
-            }
-            <input matInput type="text"
-                   placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                   matChipInputAddOnBlur
-                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                   [matChipInputFor]="chipListPub"
-                   (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
-          </mat-chip-grid>
-          <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
-            warning
-          </mat-icon>
-        </mat-form-field>
-        <mat-form-field class="mat-block">
-          <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
-          <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
-            @for (rule of subRulesSet; track rule) {
-              <mat-chip-row
-                [value]="rule"
-                [editable]="isEdit()"
-                (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
-                [removable]="isEdit()"
-                (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
-                {{ rule }}
-                @if (isEdit()) {
-                  <button matChipRemove aria-label="'remove' + rule">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                }
-              </mat-chip-row>
-            }
-            <input matInput type="text"
-                   placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
-                   matChipInputAddOnBlur
-                   [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
-                   [matChipInputFor]="chipListSub"
-                   (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
-          </mat-chip-grid>
-          <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
-            warning
-          </mat-icon>
-        </mat-form-field>
-      </div>
+      <p class="mb-3" translate>authentication.authorization</p>
+      <section class="security-setting mat-padding">
+        <div class="flex flex-1 flex-col" formGroupName="authRules">
+          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.54);"
+             [tb-hint-tooltip-icon]="'mqtt-client-credentials.authorization-hint' | translate" translate>authentication.authorization-static</p>
+          <mat-form-field class="mat-block">
+            <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-pub</mat-label>
+            <mat-chip-grid #chipListPub formControlName="pubAuthRulePatterns">
+              @for (rule of pubRulesSet; track rule) {
+                <mat-chip-row
+                  [value]="rule"
+                  [editable]="isEdit()"
+                  (edited)="editTopicRule($event, authRulePatternsType.PUBLISH)"
+                  [removable]="isEdit()"
+                  (removed)="removeTopicRule(rule, authRulePatternsType.PUBLISH)">
+                  {{ rule }}
+                  @if (isEdit()) {
+                    <button matChipRemove aria-label="'remove' + rule">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </mat-chip-row>
+              }
+              <input matInput type="text"
+                     placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                     matChipInputAddOnBlur
+                     [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                     [matChipInputFor]="chipListPub"
+                     (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.PUBLISH)">
+            </mat-chip-grid>
+            <mat-icon [class.!hidden]="pubRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-pub' | translate">
+              warning
+            </mat-icon>
+          </mat-form-field>
+          <mat-form-field class="mat-block" subscriptSizing="dynamic">
+            <mat-label translate>mqtt-client-credentials.authorization-rule-patterns-sub</mat-label>
+            <mat-chip-grid #chipListSub formControlName="subAuthRulePatterns">
+              @for (rule of subRulesSet; track rule) {
+                <mat-chip-row
+                  [value]="rule"
+                  [editable]="isEdit()"
+                  (edited)="editTopicRule($event, authRulePatternsType.SUBSCRIBE)"
+                  [removable]="isEdit()"
+                  (removed)="removeTopicRule(rule, authRulePatternsType.SUBSCRIBE)">
+                  {{ rule }}
+                  @if (isEdit()) {
+                    <button matChipRemove aria-label="'remove' + rule">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </mat-chip-row>
+              }
+              <input matInput type="text"
+                     placeholder="{{ 'mqtt-client-credentials.add-topic-rule' | translate }}"
+                     matChipInputAddOnBlur
+                     [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                     [matChipInputFor]="chipListSub"
+                     (matChipInputTokenEnd)="addTopicRule($event, authRulePatternsType.SUBSCRIBE)">
+            </mat-chip-grid>
+            <mat-icon [class.!hidden]="subRulesSet.size" matSuffix style="color: #ff9a00" [matTooltip]="'mqtt-client-credentials.warning-sub' | translate">
+              warning
+            </mat-icon>
+          </mat-form-field>
+        </div>
+      </section>
+      <section class="security-setting mat-padding">
+        <div class="flex flex-1 flex-col">
+          <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.54);"
+             [tb-hint-tooltip-icon]="'authentication.authorization-dynamic-hint' | translate" translate>authentication.authorization-dynamic</p>
+          <mat-form-field class="mat-block">
+            <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
+            <input matInput formControlName="subAuthRuleClaim">
+            <mat-icon matSuffix matTooltip="{{ 'authentication.sub-auth-rule-claim-hint' | translate }}">
+              help
+            </mat-icon>
+          </mat-form-field>
+          <mat-form-field class="mat-block" subscriptSizing="dynamic">
+            <mat-label translate>authentication.pub-auth-rule-claim</mat-label>
+            <input matInput formControlName="pubAuthRuleClaim">
+            <mat-icon matSuffix matTooltip="{{ 'authentication.pub-auth-rule-claim-hint' | translate }}">
+              help
+            </mat-icon>
+          </mat-form-field>
+        </div>
+      </section>
     </section>
     <section class="security-setting mat-padding flex flex-col gap-4">
       <p [tb-hint-tooltip-icon]="'authentication.claims-hint' | translate" translate>authentication.claims</p>
@@ -110,24 +134,10 @@
         addText="authentication.claims-add"
         keyLabel="authentication.claim">
       </tb-key-val-map>
-      <mat-form-field class="mat-block" subscriptSizing="dynamic">
-        <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
-        <input matInput formControlName="subAuthRuleClaim">
-        <mat-icon matSuffix matTooltip="{{ 'authentication.sub-auth-rule-claim-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
-      <mat-form-field class="mat-block" subscriptSizing="dynamic">
-        <mat-label translate>authentication.pub-auth-rule-claim</mat-label>
-        <input matInput formControlName="pubAuthRuleClaim">
-        <mat-icon matSuffix matTooltip="{{ 'authentication.pub-auth-rule-claim-hint' | translate }}">
-          help
-        </mat-icon>
-      </mat-form-field>
     </section>
     <section class="security-setting mat-padding">
       <section class="mb-4 flex flex-row items-center justify-between">
-        <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>mqtt-client.client-type</p>
+        <p [tb-hint-tooltip-icon]="'authentication.client-type-hint' | translate" translate>authentication.client-type-configuration</p>
         <tb-toggle-select formControlName="defaultClientType">
           <tb-toggle-option [value]="ClientType.DEVICE">{{ clientTypeTranslationMap.get(ClientType.DEVICE) | translate }}</tb-toggle-option>
           <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
@@ -179,6 +189,9 @@
                   warning
                 </mat-icon>
                 <tb-toggle-password matSuffix></tb-toggle-password>
+                <mat-icon matSuffix matTooltip="{{ 'authentication.secret-hint' | translate }}">
+                  help
+                </mat-icon>
               </mat-form-field>
             </section>
           }
@@ -192,6 +205,7 @@
                              [label]="'authentication.public-key' | translate"
                              inputId="public-key">
               </tb-file-input>
+              <div class="tb-hint p-0" [innerHTML]="'authentication.public-key-hint' | translate"></div>
             </section>
           }
         }
@@ -241,7 +255,9 @@
             noDataText="integration.no-headers-filter"
             addText="key-val.add-header"
             keyLabel="integration.header"
-            [addOnInit]="true"
+            addOnInit="true"
+            isValueRequired="true"
+            valueRequiredText="integration.headers-required"
             singlePredefinedKey="Content-Type"
             singlePredefinedValue="application/json">
           </tb-key-val-map>

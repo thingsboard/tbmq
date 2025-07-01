@@ -78,18 +78,6 @@
             </mat-chip-grid>
             <mat-hint translate>authentication.authentication-providers-hint</mat-hint>
           </mat-form-field>
-          <section tb-hint-tooltip-icon="{{ authStrategyTooltip | translate }}">
-            <mat-slide-toggle formControlName="useListenerBasedProviderOnly">
-              <span>{{ authStrategyLabel | translate }}</span>
-            </mat-slide-toggle>
-            <mat-icon matSuffix
-                      matTooltip="{{ 'admin.auth-strategy-both-warning' | translate }}"
-                      [class.!hidden]="mqttAuthSettingsForm.get('useListenerBasedProviderOnly').value"
-                      style="color: #ff9a00"
-                      class="tb-mat-18">
-              warning
-            </mat-icon>
-          </section>
         </section>
         <div class="layout-wrap flex flex-row items-center justify-end gap-2 xs:flex-col" style="margin-top: 16px">
           <button mat-button color="primary"

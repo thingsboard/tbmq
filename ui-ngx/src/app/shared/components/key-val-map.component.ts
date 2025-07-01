@@ -21,7 +21,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { SubscriptSizing, MatFormField } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField, MatError } from '@angular/material/form-field';
 import { isDefinedAndNotNull, isEqual } from '@core/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
@@ -47,13 +47,14 @@ import { MatDivider } from '@angular/material/divider';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatDivider]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatDivider, MatError]
 })
 export class KeyValMapComponent extends PageComponent implements ControlValueAccessor, OnInit, OnDestroy, Validator {
 
   @Input() disabled: boolean;
 
-  readonly isValueRequired = input(true);
+  readonly isValueRequired = input(false);
+  readonly valueRequiredText = input('value.required');
   readonly titleText = input<string>();
   readonly keyPlaceholderText = input<string>();
   readonly valuePlaceholderText = input<string>();
