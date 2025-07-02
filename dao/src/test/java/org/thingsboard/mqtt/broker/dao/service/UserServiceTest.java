@@ -23,11 +23,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.thingsboard.mqtt.broker.common.data.User;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
 import org.thingsboard.mqtt.broker.common.data.security.UserCredentials;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
 import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
+
+import java.util.function.Function;
 
 @DaoSqlTest
 public class UserServiceTest extends AbstractServiceTest {
@@ -159,5 +162,49 @@ public class UserServiceTest extends AbstractServiceTest {
         foundUser = userService.findUserById(foundUser.getId());
         Assert.assertNull(foundUser);
         Assert.assertNull(userCredentials);
+    }
+
+    @Test
+    public void testReplaceUserCredentials_shouldUpdatePasswordHistory() {
+        User user = new User();
+        user.setAuthority(Authority.SYS_ADMIN);
+        user.setEmail("newsysadmin@thingsboard.org");
+        user.setAdditionalInfo(JacksonUtil.newObjectNode());
+        User savedUser = userService.saveUser(user);
+
+        Assert.assertNotNull(savedUser);
+        Assert.assertNotNull(savedUser.getId());
+        Assert.assertNotNull(savedUser.getAdditionalInfo());
+
+        JsonNode currentUserPasswordHistory = savedUser.getAdditionalInfoField(UserServiceImpl.USER_PASSWORD_HISTORY, Function.identity(), null);
+        Assert.assertNull(currentUserPasswordHistory);
+
+        UserCredentials initialCredentials = userService.findUserCredentialsByUserId(savedUser.getId());
+        Assert.assertNotNull(initialCredentials);
+
+        String newPassword = StringUtils.randomAlphanumeric(10);
+
+        UserCredentials newCredentials = new UserCredentials();
+        newCredentials.setId(initialCredentials.getId());
+        newCredentials.setUserId(savedUser.getId());
+        newCredentials.setEnabled(true);
+        newCredentials.setPassword(newPassword);
+
+        UserCredentials replacedCredentials = userService.replaceUserCredentials(newCredentials);
+        Assert.assertNotNull(replacedCredentials);
+        Assert.assertNotNull(replacedCredentials.getId());
+        Assert.assertEquals(savedUser.getId(), replacedCredentials.getUserId());
+        Assert.assertEquals(newPassword, replacedCredentials.getPassword());
+
+        User updatedUser = userService.findUserById(savedUser.getId());
+        Assert.assertNotNull(updatedUser);
+        Assert.assertNotNull(updatedUser.getAdditionalInfo());
+
+        currentUserPasswordHistory = updatedUser.getAdditionalInfoField(UserServiceImpl.USER_PASSWORD_HISTORY, Function.identity(), null);
+
+        Assert.assertNotNull(currentUserPasswordHistory);
+        Assert.assertEquals(1, currentUserPasswordHistory.size());
+
+        userService.deleteUser(savedUser.getId());
     }
 }

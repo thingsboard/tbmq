@@ -84,8 +84,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User saveUser(User user) {
+        return doSaveUser(user, true);
+    }
+
+    private User doSaveUser(User user, boolean correctUserAdditionalInfo) {
         log.trace("Executing saveUser [{}]", user);
-        correctUserAdditionalInfo(user);
+        if (correctUserAdditionalInfo) {
+            correctUserAdditionalInfo(user);
+        }
         userValidator.validate(user);
         if (!userLoginCaseSensitive) {
             user.setEmail(user.getEmail().toLowerCase());
@@ -226,7 +232,7 @@ public class UserServiceImpl implements UserService {
             ((ObjectNode) additionalInfo).set(USER_PASSWORD_HISTORY, userPasswordHistoryJson);
         }
         user.setAdditionalInfo(additionalInfo);
-        saveUser(user);
+        doSaveUser(user, false);
     }
 
     private void correctUserAdditionalInfo(User user) {
