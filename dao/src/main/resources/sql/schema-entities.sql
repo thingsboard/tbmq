@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS mqtt_client_credentials (
     credentials_id varchar,
     credentials_type varchar(255),
     credentials_value varchar,
+    additional_info varchar,
     CONSTRAINT mqtt_client_credentials_id_unq_key UNIQUE (credentials_id)
 );
 

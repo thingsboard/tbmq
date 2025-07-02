@@ -15,6 +15,8 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
@@ -48,6 +50,7 @@ import org.thingsboard.mqtt.broker.common.data.page.TimePageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.client.unauthorized.UnauthorizedClientService;
@@ -56,6 +59,7 @@ import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.dao.service.ConstraintValidator;
 import org.thingsboard.mqtt.broker.dao.service.Validator;
 import org.thingsboard.mqtt.broker.dao.user.UserService;
+import org.thingsboard.mqtt.broker.dao.user.UserServiceImpl;
 import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
@@ -495,6 +499,21 @@ public abstract class BaseController {
         return ResponseEntity.status(HttpStatus.SEE_OTHER)
                 .location(uri)
                 .build();
+    }
+
+    protected User filterSensitiveUserData(User user) {
+        if (user.getAdditionalInfo() instanceof ObjectNode additionalInfo) {
+            JsonNode passwordHistory = additionalInfo.remove(UserServiceImpl.USER_PASSWORD_HISTORY);
+
+            boolean isPasswordChanged = passwordHistory != null && passwordHistory.size() > 1;
+            additionalInfo.put(UserServiceImpl.USER_PASSWORD_CHANGED, isPasswordChanged);
+        }
+        return user;
+    }
+
+    protected MqttClientCredentials sanitizeSensitiveMqttCredsData(MqttClientCredentials credentials) throws ThingsboardException {
+        checkNotNull(credentials);
+        return MqttClientCredentialsUtil.sanitizeSensitiveMqttCredsData(credentials);
     }
 
 }

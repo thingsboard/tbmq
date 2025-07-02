@@ -81,7 +81,8 @@ public class ModelConstants {
     public static final String MQTT_CLIENT_CREDENTIALS_ID_PROPERTY = "credentials_id";
     public static final String MQTT_CLIENT_CREDENTIALS_VALUE_PROPERTY = "credentials_value";
     public static final String MQTT_CLIENT_CREDENTIALS_NAME_PROPERTY = "name";
-    public static final String MQTT_CLIENT_TYPE_PROPERTY = "client_type";
+    public static final String MQTT_CLIENT_CREDENTIALS_CLIENT_TYPE_PROPERTY = "client_type";
+    public static final String MQTT_CLIENT_CREDENTIALS_ADDITIONAL_INFO_PROPERTY = ADDITIONAL_INFO_PROPERTY;
 
     /**
      * application_shared_subscription constants.

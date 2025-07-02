@@ -88,7 +88,12 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
         name: [entity ? entity.name : null, [Validators.required]],
         clientType: [entity ? entity.clientType : null, [Validators.required]],
         credentialsType: [entity ? entity.credentialsType : null, [Validators.required]],
-        credentialsValue: [entity ? entity.credentialsValue : null, []]
+        credentialsValue: [entity ? entity.credentialsValue : null, []],
+        additionalInfo: this.fb.group(
+          {
+            description: [entity && entity.additionalInfo ? entity.additionalInfo.description : '']
+          }
+        )
       }
     );
     form.patchValue({
@@ -113,6 +118,7 @@ export class ClientCredentialsComponent extends EntityComponent<ClientCredential
     this.entityForm.patchValue({credentialsType: entity.credentialsType});
     this.entityForm.patchValue({credentialsValue: entity.credentialsValue});
     this.entityForm.patchValue({clientType: entity.clientType});
+    this.entityForm.patchValue({additionalInfo: {description: entity.additionalInfo ? entity.additionalInfo.description : ''}});
   }
 
   showConnectivityDialog() {

@@ -287,16 +287,15 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
       (entity) => {
         if (entity) {
           this.writeValue(entity.id);
-          this.clientCredentialsService.saveClientCredentials(entity).subscribe(() => {
-            this.store.dispatch(new ActionNotificationShow(
-              {
-                message: this.translate.instant('getting-started.credentials-added'),
-                type: 'success',
-                duration: 1500,
-                verticalPosition: 'top',
-                horizontalPosition: 'left'
-              }));
-          });
+          this.store.dispatch(new ActionNotificationShow(
+            {
+              message: this.translate.instant('getting-started.credentials-added'),
+              type: 'success',
+              duration: 1500,
+              verticalPosition: 'top',
+              horizontalPosition: 'left'
+            }
+          ));
         }
       }
     );

@@ -73,7 +73,7 @@ public class AdminController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
     public User saveAdmin(@RequestBody AdminDto adminDto) throws ThingsboardException {
-        return adminService.createAdmin(adminDto, true);
+        return filterSensitiveUserData(adminService.createAdmin(adminDto, true));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -152,7 +152,9 @@ public class AdminController extends BaseController {
                                     @RequestParam(required = false) String sortProperty,
                                     @RequestParam(required = false) String sortOrder) throws ThingsboardException {
         PageLink pageLink = createPageLink(pageSize, page, textSearch, sortProperty, sortOrder);
-        return checkNotNull(userService.findUsers(pageLink));
+        PageData<User> userPageData = userService.findUsers(pageLink);
+        List<User> sensitivePageData = userPageData.getData().stream().map(this::filterSensitiveUserData).toList();
+        return userPageData.copyWithNewData(sensitivePageData);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
@@ -160,14 +162,14 @@ public class AdminController extends BaseController {
     public User getAdminById(@PathVariable(USER_ID) String strUserId) throws ThingsboardException {
         checkParameter(USER_ID, strUserId);
         UUID userId = toUUID(strUserId);
-        return checkUserId(userId);
+        return filterSensitiveUserData(checkUserId(userId));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/user")
     @Deprecated(since = "2.2.0", forRemoval = true)
     public User saveAdminUser(@RequestBody User user) throws ThingsboardException {
-        return checkNotNull(userService.saveUser(user));
+        return filterSensitiveUserData(checkNotNull(userService.saveUser(user)));
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
