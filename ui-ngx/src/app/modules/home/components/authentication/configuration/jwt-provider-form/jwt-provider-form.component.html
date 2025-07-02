@@ -110,7 +110,7 @@
       <section class="security-setting mat-padding">
         <div class="flex flex-1 flex-col">
           <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.87);" translate>authentication.authorization-dynamic</p>
-          <div class="tb-hint mb-4" [innerHtml]="'authentication.authorization-dynamic-hint' | translate"></div>
+          <div class="tb-hint" [innerHtml]="'authentication.authorization-dynamic-hint' | translate"></div>
           <mat-form-field class="mat-block">
             <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
             <input matInput formControlName="subAuthRuleClaim">
@@ -141,7 +141,7 @@
           <tb-toggle-option [value]="ClientType.APPLICATION">{{ clientTypeTranslationMap.get(ClientType.APPLICATION) | translate }}</tb-toggle-option>
         </tb-toggle-select>
       </section>
-      <div class="tb-hint" [innerHtml]="'authentication.client-type-hint' | translate"></div>
+      <div class="tb-hint" [innerHtml]="defaultClientTypeHint"></div>
       <section class="mt-2 flex flex-col gap-4">
         <tb-key-val-map
           formControlName="clientTypeClaims"

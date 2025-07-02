@@ -29,7 +29,7 @@ import {
 } from '@angular/forms';
 import { isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   JwtAlgorithmType,
   JwtAlgorithmTypeTranslation,
@@ -133,10 +133,18 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   separatorKeysCodes = [ENTER, TAB];
   authRulePatternsType = AuthRulePatternsType;
 
+  get defaultClientTypeHint() {
+    return this.translate.instant('authentication.client-type-hint', {
+      type: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value)),
+      oppositeType: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value === ClientType.DEVICE ? ClientType.APPLICATION : ClientType.DEVICE))
+    });
+  }
+
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
 
-  constructor(private fb: UntypedFormBuilder) {
+  constructor(private fb: UntypedFormBuilder,
+              private translate: TranslateService) {
     super();
   }
 
