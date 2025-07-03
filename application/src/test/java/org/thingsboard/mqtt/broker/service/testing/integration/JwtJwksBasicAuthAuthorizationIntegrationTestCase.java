@@ -41,6 +41,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
@@ -50,6 +51,7 @@ import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -59,22 +61,25 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = JwtJwksAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = JwtJwksBasicAuthAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final String CLIENT_USERNAME = "test-jwks-with-anonymous-creds-username";
-    private static final String CLIENT_ID = "jwksAuthClientId";
+    private static final String CLIENT_USERNAME = "test-jwks-with-basic-creds-username";
+    private static final String CLIENT_ID = "jwksBasicAuthClientId";
     private static final String MY_TOPIC = "my/topic";
     private static final String TEST_TOPIC = "test/topic";
+
+    private static final String JWKS_USERNAME = "test-user";
+    private static final String JWKS_PASSWORD = "test-pass";
 
     @ClassRule
     public static final WireMockContainer wireMockServer;
 
     private static final RSAKey rsaJwk;
     private static final String jwksBodyEscapedStr;
-    private static final String jwksPath = "/.well-known/jwks.json";
+    private static final String jwksPath = "/secure-with-basic-jwks";
     private static final int wireMockPort = 8081;
 
     static {
@@ -88,26 +93,53 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
             String jwksJsonStr = JacksonUtil.toString(new JWKSet(rsaJwk.toPublicJWK()).toJSONObject());
             jwksBodyEscapedStr = JacksonUtil.toString(jwksJsonStr);
 
-            String mappingJson = """
-                    {
-                      "request": {
-                        "method": "GET",
-                        "url": "%s"
-                      },
-                      "response": {
-                        "status": 200,
-                        "headers": {
-                          "Content-Type": "application/json"
-                        },
-                        "body": %s
+            String correctAuthHeader = Base64.getEncoder().encodeToString((JWKS_USERNAME + ":" + JWKS_PASSWORD).getBytes(StandardCharsets.UTF_8));
+
+            // Mapping for correct credentials → 200 OK
+            String successMappingJson = """
+                {
+                  "request": {
+                    "method": "GET",
+                    "url": "%s",
+                    "headers": {
+                      "Authorization": {
+                        "equalTo": "Basic %s"
                       }
                     }
-                    """.formatted(jwksPath, jwksBodyEscapedStr);
+                  },
+                  "response": {
+                    "status": 200,
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": %s
+                  }
+                }
+                """.formatted(jwksPath, correctAuthHeader, jwksBodyEscapedStr);
+
+            // Fallback mapping → 401 Unauthorized for all other requests to the same path
+            String unauthorizedMappingJson = """
+                {
+                  "request": {
+                    "method": "GET",
+                    "url": "%s"
+                  },
+                  "response": {
+                    "status": 401,
+                    "headers": {
+                      "Content-Type": "text/plain"
+                    },
+                    "body": "Unauthorized"
+                  }
+                }
+                """.formatted(jwksPath);
+
             wireMockServer = new WireMockContainer("wiremock/wiremock:2.35.0")
                     .withExposedPorts(wireMockPort)
-                    .withMappingFromJSON(mappingJson);
+                    .withMappingFromJSON(successMappingJson)
+                    .withMappingFromJSON(unauthorizedMappingJson);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize the JWKS server: ", e);
+            throw new RuntimeException("Failed to initialize the JWKS server with Basic Auth: ", e);
         }
     }
 
@@ -117,6 +149,11 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
 
         JwksVerifierConfiguration config = new JwksVerifierConfiguration();
         config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
+
+        var creds = new BasicCredentials();
+        creds.setUsername(JWKS_USERNAME);
+        creds.setPassword(JWKS_PASSWORD);
+        config.setCredentials(creds);
 
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
@@ -193,6 +230,34 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
         client.close();
     }
 
+    @Test
+    public void givenInvalidJwksBasicCredentials_whenConnect_thenConnectionRefusedNotAuthorized() throws Throwable {
+        System.setProperty("org.eclipse.paho.client.mqttv3.logging", "on");
+        // Reconfigure the auth provider with invalid JWKS credentials
+        JwksVerifierConfiguration config = new JwksVerifierConfiguration();
+        config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
+
+        var invalidCreds = new BasicCredentials();
+        invalidCreds.setUsername("wrong-user");
+        invalidCreds.setPassword("wrong-pass");
+        config.setCredentials(invalidCreds);
+
+        MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
+        var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
+        configuration.setJwtVerifierConfiguration(config);
+        provider.setConfiguration(configuration);
+        mqttAuthProviderManagerService.saveAuthProvider(provider);
+
+        // Attempt to connect with valid JWT (but invalid JWKS config behind the scenes)
+        String jwt = generateSignedJwt();
+        MqttClient client = getMqttClient();
+        Throwable thrown = catchThrowable(() -> client.connect(getMqttConnectOptions(jwt)));
+        assertThat(thrown).isInstanceOf(MqttException.class);
+        MqttException me = (MqttException) thrown;
+        assertThat(me.getReasonCode()).isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED.byteValue());
+        client.close();
+    }
+
     private String generateSignedJwt() throws JOSEException {
         JWSSigner signer = new RSASSASigner(rsaJwk.toPrivateKey());
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
@@ -214,6 +279,7 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
 
     private MqttConnectOptions getMqttConnectOptions(String jwt) {
         var options = new MqttConnectOptions();
+        options.setAutomaticReconnect(false);
         options.setUserName(CLIENT_USERNAME);
         options.setPassword(jwt.toCharArray());
         return options;
