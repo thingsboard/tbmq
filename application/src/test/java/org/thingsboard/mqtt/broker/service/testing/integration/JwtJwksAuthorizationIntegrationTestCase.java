@@ -39,6 +39,7 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -103,7 +104,8 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
                       }
                     }
                     """.formatted(jwksPath, jwksBodyEscapedStr);
-            wireMockServer = new WireMockContainer("wiremock/wiremock:2.35.0")
+            wireMockServer = new WireMockContainer("wiremock/wiremock:3.13.1")
+                    .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
                     .withExposedPorts(wireMockPort)
                     .withMappingFromJSON(mappingJson);
         } catch (Exception e) {

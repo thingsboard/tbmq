@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -28,6 +31,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -39,10 +43,10 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.utility.MountableFile;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
-import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
+import org.thingsboard.mqtt.broker.common.data.credentials.CertPemCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
@@ -50,11 +54,34 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
+import sun.security.x509.AlgorithmId;
+import sun.security.x509.CertificateAlgorithmId;
+import sun.security.x509.CertificateExtensions;
+import sun.security.x509.CertificateSerialNumber;
+import sun.security.x509.CertificateValidity;
+import sun.security.x509.CertificateVersion;
+import sun.security.x509.CertificateX509Key;
+import sun.security.x509.DNSName;
+import sun.security.x509.GeneralName;
+import sun.security.x509.GeneralNames;
+import sun.security.x509.SubjectAlternativeNameExtension;
+import sun.security.x509.X500Name;
+import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.StringWriter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -62,26 +89,26 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = JwtJwksBasicAuthAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = JwtJwksMtlsAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final String CLIENT_USERNAME = "test-jwks-with-basic-creds-username";
-    private static final String CLIENT_ID = "jwksBasicAuthClientId";
+    private static final String CLIENT_USERNAME = "test-jwks-with-mtls-creds-username";
+    private static final String CLIENT_ID = "jwksMtlsAuthClientId";
     private static final String MY_TOPIC = "my/topic";
     private static final String TEST_TOPIC = "test/topic";
-
-    private static final String JWKS_USERNAME = "test-user";
-    private static final String JWKS_PASSWORD = "test-pass";
 
     @ClassRule
     public static final WireMockContainer wireMockServer;
 
     private static final RSAKey rsaJwk;
     private static final String jwksBodyEscapedStr;
-    private static final String jwksPath = "/secure-with-basic-jwks";
-    private static final int wireMockPort = 8081;
+    private static final String jwksPath = "/secure-with-mtls-jwks";
+
+    private static final String clientCertPem;
+    private static final String clientPrivateKeyPem;
+    private static final String serverCertPem;
 
     static {
         try {
@@ -94,67 +121,74 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
             String jwksJsonStr = JacksonUtil.toString(new JWKSet(rsaJwk.toPublicJWK()).toJSONObject());
             jwksBodyEscapedStr = JacksonUtil.toString(jwksJsonStr);
 
-            String correctAuthHeader = Base64.getEncoder().encodeToString((JWKS_USERNAME + ":" + JWKS_PASSWORD).getBytes(StandardCharsets.UTF_8));
+            KeyPair clientKeyPair = generateKeyPair();
+            X509Certificate clientCert = generateSelfSignedCert(clientKeyPair, "CN=TBMQ-Test-Client");
+            clientCertPem = toPem(clientCert);
+            clientPrivateKeyPem = toPem(clientKeyPair.getPrivate());
 
-            // Mapping for correct credentials → 200 OK
-            String successMappingJson = """
-                {
-                  "request": {
-                    "method": "GET",
-                    "url": "%s",
-                    "headers": {
-                      "Authorization": {
-                        "equalTo": "Basic %s"
-                      }
-                    }
-                  },
-                  "response": {
-                    "status": 200,
-                    "headers": {
-                      "Content-Type": "application/json"
-                    },
-                    "body": %s
-                  }
-                }
-                """.formatted(jwksPath, correctAuthHeader, jwksBodyEscapedStr);
+            KeyPair serverKeyPair = generateKeyPair();
+            X509Certificate serverCert = generateSelfSignedCert(serverKeyPair, "CN=TBMQ-WireMock-Server");
+            serverCertPem = toPem(serverCert);
 
-            // Fallback mapping → 401 Unauthorized for all other requests to the same path
-            String unauthorizedMappingJson = """
-                {
-                  "request": {
-                    "method": "GET",
-                    "url": "%s"
-                  },
-                  "response": {
-                    "status": 401,
-                    "headers": {
-                      "Content-Type": "text/plain"
-                    },
-                    "body": "Unauthorized"
-                  }
-                }
-                """.formatted(jwksPath);
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(null, null);
+            keyStore.setKeyEntry("wiremock", serverKeyPair.getPrivate(), "password".toCharArray(), new Certificate[]{serverCert});
+
+            File jksFile = File.createTempFile("wiremock", ".jks");
+            try (FileOutputStream fos = new FileOutputStream(jksFile)) {
+                keyStore.store(fos, "password".toCharArray());
+            }
+
+            MountableFile mountableFile = MountableFile.forHostPath(jksFile.getAbsolutePath());
+            log.warn("WireMock server keystore: {}", jksFile.getAbsolutePath());
 
             wireMockServer = new WireMockContainer("wiremock/wiremock:3.13.1")
-                    .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
-                    .withExposedPorts(wireMockPort)
-                    .withMappingFromJSON(successMappingJson)
-                    .withMappingFromJSON(unauthorizedMappingJson);
+                    .withCopyFileToContainer(mountableFile, "/home/wiremock.jks")
+                    .withCreateContainerCmdModifier(cmd -> {
+                        cmd.withEntrypoint("/docker-entrypoint.sh");
+                        cmd.withCmd("--https-port", "8443",
+                                "--https-keystore", "/home/wiremock.jks",
+                                "--keystore-password", "password");
+                               // "--verbose"); useful for debugging, but not necessary for the test.
+                        cmd.withExposedPorts(ExposedPort.tcp(8080), ExposedPort.tcp(8443));
+                        Objects.requireNonNull(cmd.getHostConfig()).withPortBindings(
+                                new PortBinding(Ports.Binding.empty(), new ExposedPort(8080)),
+                                new PortBinding(Ports.Binding.bindPort(443), new ExposedPort(8443))
+                        );
+                    })
+                    .withMappingFromJSON("""
+                    {
+                      "request": {
+                        "method": "GET",
+                        "url": "%s"
+                      },
+                      "response": {
+                        "status": 200,
+                        "headers": {
+                          "Content-Type": "application/json"
+                        },
+                        "body": %s
+                      }
+                    }
+                    """.formatted(jwksPath, jwksBodyEscapedStr))
+                    .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize the JWKS server with Basic Auth: ", e);
+            throw new RuntimeException("Failed to initialize JWKS server with mTLS", e);
         }
     }
+
 
     @Before
     public void beforeTest() throws Exception {
         super.beforeTest();
 
         JwksVerifierConfiguration config = new JwksVerifierConfiguration();
-        config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
+        config.setEndpoint("https://localhost" + jwksPath);
 
-        var creds = new BasicCredentials();
-        creds.setUsername(JWKS_USERNAME);
-        creds.setPassword(JWKS_PASSWORD);
+        CertPemCredentials creds = new CertPemCredentials();
+        creds.setCert(clientCertPem);
+        creds.setPrivateKey(clientPrivateKeyPem);
+        creds.setCaCert(serverCertPem);
         config.setCredentials(creds);
 
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
@@ -232,34 +266,6 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
         client.close();
     }
 
-    @Test
-    public void givenInvalidJwksBasicCredentials_whenConnect_thenConnectionRefusedNotAuthorized() throws Throwable {
-        System.setProperty("org.eclipse.paho.client.mqttv3.logging", "on");
-        // Reconfigure the auth provider with invalid JWKS credentials
-        JwksVerifierConfiguration config = new JwksVerifierConfiguration();
-        config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
-
-        var invalidCreds = new BasicCredentials();
-        invalidCreds.setUsername("wrong-user");
-        invalidCreds.setPassword("wrong-pass");
-        config.setCredentials(invalidCreds);
-
-        MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
-        var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
-        configuration.setJwtVerifierConfiguration(config);
-        provider.setConfiguration(configuration);
-        mqttAuthProviderManagerService.saveAuthProvider(provider);
-
-        // Attempt to connect with valid JWT (but invalid JWKS config behind the scenes)
-        String jwt = generateSignedJwt();
-        MqttClient client = getMqttClient();
-        Throwable thrown = catchThrowable(() -> client.connect(getMqttConnectOptions(jwt)));
-        assertThat(thrown).isInstanceOf(MqttException.class);
-        MqttException me = (MqttException) thrown;
-        assertThat(me.getReasonCode()).isEqualTo(MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED.byteValue());
-        client.close();
-    }
-
     private String generateSignedJwt() throws JOSEException {
         JWSSigner signer = new RSASSASigner(rsaJwk.toPrivateKey());
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
@@ -286,4 +292,45 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
         return options;
     }
 
+    private static KeyPair generateKeyPair() throws Exception {
+        var keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        return keyGen.generateKeyPair();
+    }
+
+    private static X509Certificate generateSelfSignedCert(KeyPair keyPair, String dn) throws Exception {
+        var now = System.currentTimeMillis();
+        var notBefore = new Date(now);
+        var notAfter = new Date(now + TimeUnit.DAYS.toMillis(365));
+        var serial = new BigInteger(Long.toString(now));
+
+        var certInfo = new X509CertInfo();
+        certInfo.set(X509CertInfo.VERSION, new CertificateVersion(2));
+        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(serial));
+        certInfo.set(X509CertInfo.SUBJECT, new X500Name(dn));
+        certInfo.set(X509CertInfo.ISSUER, new X500Name(dn));
+        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(notBefore, notAfter));
+        certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic()));
+        certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(
+                AlgorithmId.get("SHA256withRSA")));
+
+        // Add Subject Alternative Name with "localhost"
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new DNSName("localhost")));
+        certInfo.set(X509CertInfo.EXTENSIONS, new CertificateExtensions() {{
+            set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, gns));
+        }});
+
+        var certBuilder = new X509CertImpl(certInfo);
+        certBuilder.sign(keyPair.getPrivate(), "SHA256withRSA");
+        return certBuilder;
+    }
+
+    private static String toPem(Object obj) throws Exception {
+        try (StringWriter sw = new StringWriter(); JcaPEMWriter writer = new JcaPEMWriter(sw)) {
+            writer.writeObject(obj);
+            writer.flush();
+            return sw.toString();
+        }
+    }
 }

@@ -303,6 +303,9 @@
                     <systemPropertyVariables>
                         <spring.config.name>thingsboard-mqtt-broker</spring.config.name>
                     </systemPropertyVariables>
+                    <argLine>
+                        --add-exports java.base/sun.security.x509=ALL-UNNAMED
+                    </argLine>
                     <excludes>
                         <exclude>**/sql/*Test.java</exclude>
                     </excludes>
