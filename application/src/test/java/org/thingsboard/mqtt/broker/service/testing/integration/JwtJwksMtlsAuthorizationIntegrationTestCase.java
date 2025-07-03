@@ -31,7 +31,16 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -43,6 +52,7 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.shaded.org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.testcontainers.utility.MountableFile;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
@@ -54,21 +64,8 @@ import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderC
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.CertificateAlgorithmId;
-import sun.security.x509.CertificateExtensions;
-import sun.security.x509.CertificateSerialNumber;
-import sun.security.x509.CertificateValidity;
-import sun.security.x509.CertificateVersion;
-import sun.security.x509.CertificateX509Key;
-import sun.security.x509.DNSName;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.SubjectAlternativeNameExtension;
-import sun.security.x509.X500Name;
-import sun.security.x509.X509CertImpl;
-import sun.security.x509.X509CertInfo;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.StringWriter;
@@ -299,31 +296,33 @@ public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubI
     }
 
     private static X509Certificate generateSelfSignedCert(KeyPair keyPair, String dn) throws Exception {
-        var now = System.currentTimeMillis();
-        var notBefore = new Date(now);
-        var notAfter = new Date(now + TimeUnit.DAYS.toMillis(365));
-        var serial = new BigInteger(Long.toString(now));
+        long now = System.currentTimeMillis();
+        Date notBefore = new Date(now);
+        Date notAfter = new Date(now + TimeUnit.DAYS.toMillis(365));
 
-        var certInfo = new X509CertInfo();
-        certInfo.set(X509CertInfo.VERSION, new CertificateVersion(2));
-        certInfo.set(X509CertInfo.SERIAL_NUMBER, new CertificateSerialNumber(serial));
-        certInfo.set(X509CertInfo.SUBJECT, new X500Name(dn));
-        certInfo.set(X509CertInfo.ISSUER, new X500Name(dn));
-        certInfo.set(X509CertInfo.VALIDITY, new CertificateValidity(notBefore, notAfter));
-        certInfo.set(X509CertInfo.KEY, new CertificateX509Key(keyPair.getPublic()));
-        certInfo.set(X509CertInfo.ALGORITHM_ID, new CertificateAlgorithmId(
-                AlgorithmId.get("SHA256withRSA")));
+        X500Principal subject = new X500Principal(dn);
+        BigInteger serial = BigInteger.valueOf(now);
 
-        // Add Subject Alternative Name with "localhost"
-        GeneralNames gns = new GeneralNames();
-        gns.add(new GeneralName(new DNSName("localhost")));
-        certInfo.set(X509CertInfo.EXTENSIONS, new CertificateExtensions() {{
-            set(SubjectAlternativeNameExtension.NAME, new SubjectAlternativeNameExtension(false, gns));
-        }});
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+                .build(keyPair.getPrivate());
 
-        var certBuilder = new X509CertImpl(certInfo);
-        certBuilder.sign(keyPair.getPrivate(), "SHA256withRSA");
-        return certBuilder;
+        X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                subject,
+                serial,
+                notBefore,
+                notAfter,
+                subject,
+                keyPair.getPublic()
+        );
+
+        // Add SAN: DNS:localhost
+        GeneralName san = new GeneralName(GeneralName.dNSName, "localhost");
+        certBuilder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(san));
+
+        X509CertificateHolder certHolder = certBuilder.build(signer);
+        return new JcaX509CertificateConverter()
+                .setProvider(new BouncyCastleProvider())
+                .getCertificate(certHolder);
     }
 
     private static String toPem(Object obj) throws Exception {
