@@ -59,8 +59,8 @@ public interface MqttClientCredentialsRepository extends JpaRepository<MqttClien
             // Search within MQTT_BASIC using clientId
             "    OR (:clientId <> '' AND :certificateCn = '' AND :username = '' AND c.credentialsType = 'MQTT_BASIC' " +
             "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"clientId\":\"%', :clientId, '%'))) " +
-            // Search within SSL using certificateCn
-            "    OR (:certificateCn <> '' AND :username = '' AND :clientId = '' AND c.credentialsType = 'SSL' " +
+            // Search within X_509 using certificateCn
+            "    OR (:certificateCn <> '' AND :username = '' AND :clientId = '' AND c.credentialsType = 'X_509' " +
             "        AND LOWER(c.credentialsValue) LIKE LOWER(CONCAT('%\"certCnPattern\":\"%', :certificateCn, '%'))) " +
             // Return nothing if certificateCn and username are both provided
             "    OR (:certificateCn <> '' AND :username <> '' AND 1 = 0) " +

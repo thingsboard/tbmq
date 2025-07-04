@@ -38,15 +38,23 @@ export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, 
 );
 
 export interface MqttAuthProvider extends ShortMqttAuthProvider {
-  configuration: BasicMqttAuthProviderConfiguration | ScramMqttAuthProviderConfiguration | SslMqttAuthProviderConfiguration | JwtMqttAuthProviderConfiguration;
+  configuration: (BasicMqttAuthProviderConfiguration |
+                 ScramMqttAuthProviderConfiguration |
+                 SslMqttAuthProviderConfiguration |
+                 JwtMqttAuthProviderConfiguration) &
+                 SharedMqttAuthProviderConfiguration;
   additionalInfo: any;
 }
 
-export interface ShortMqttAuthProvider extends BaseData {
-  type: MqttAuthProviderType;
+export interface ShortMqttAuthProvider extends BaseData, SharedMqttAuthProviderConfiguration {
   enabled: boolean;
   description?: string;
 }
+
+export interface SharedMqttAuthProviderConfiguration {
+  type: MqttAuthProviderType;
+}
+
 
 export interface BasicMqttAuthProviderConfiguration {}
 

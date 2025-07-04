@@ -163,6 +163,7 @@ export class CheckConnectivityDialogComponent extends
 
   private loadCommands(data: ConnectivitySettings) {
     const config = this.setConfig(this.data.credentials);
+    const mqttv5 = '-V mqttv5';
     if (data.mqtt.enabled) {
       config.hostname = data.mqtt.host.toString();
       config.mqttPort = data.mqtt.port.toString();
@@ -177,7 +178,8 @@ export class CheckConnectivityDialogComponent extends
       `-p ${config.mqttPort}`,
       `-t "${config.subTopic}"`,
       commonCommands,
-      '-v'
+      '-v',
+      mqttv5
     );
 
     const pubCommands: string[] = [];
@@ -188,7 +190,8 @@ export class CheckConnectivityDialogComponent extends
       `-p ${config.mqttPort}`,
       `-t "${config.pubTopic}"`,
       commonCommands,
-      config.message
+      config.message,
+      mqttv5
     );
 
     const dockerSubCommands: string[] = [];
@@ -200,7 +203,8 @@ export class CheckConnectivityDialogComponent extends
       `-p ${config.mqttPort}`,
       `-t "${config.subTopic}"`,
       commonCommands,
-      '-v'
+      '-v',
+      mqttv5
     );
 
     const dockerPubCommands: string[] = [];
@@ -212,7 +216,8 @@ export class CheckConnectivityDialogComponent extends
       `-p ${config.mqttPort}`,
       `-t "${config.pubTopic}"`,
       commonCommands,
-      config.message
+      config.message,
+      mqttv5
     );
 
     this.commands = {

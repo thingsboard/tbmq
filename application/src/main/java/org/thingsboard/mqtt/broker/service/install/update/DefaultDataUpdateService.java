@@ -37,8 +37,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class DefaultDataUpdateService implements DataUpdateService {
 
-    @Value("${security.mqtt.auth_strategy:BOTH}")
-    private String authStrategy;
     @Value("${security.mqtt.basic.enabled:false}")
     private boolean basicAuthEnabled;
     @Value("${security.mqtt.ssl.enabled:false}")
@@ -66,8 +64,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
             return;
         }
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setUseListenerBasedProviderOnly(isUseListenerBasedProviderOnly());
-        mqttAuthSettings.setPriorities(MqttAuthProviderType.getDefaultPriorityList());
+        mqttAuthSettings.setPriorities(MqttAuthProviderType.defaultPriorityList);
         AdminSettings adminSettings = MqttAuthSettings.toAdminSettings(mqttAuthSettings);
         adminSettingsService.saveAdminSettings(adminSettings);
         log.info("Finished MQTT auth setting creation!");
@@ -98,11 +95,6 @@ public class DefaultDataUpdateService implements DataUpdateService {
             log.info("Created {} auth provider!", type.getDisplayName());
         }
         log.info("Finished MQTT auth providers creation!");
-    }
-
-    boolean isUseListenerBasedProviderOnly() {
-        return Optional.ofNullable(System.getenv("SECURITY_MQTT_AUTH_STRATEGY"))
-                .map(String::trim).map("SINGLE"::equalsIgnoreCase).orElse("SINGLE".equalsIgnoreCase(authStrategy));
     }
 
     boolean isBasicAuthEnabled() {

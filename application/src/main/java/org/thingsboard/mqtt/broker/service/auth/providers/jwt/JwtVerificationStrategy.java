@@ -22,4 +22,6 @@ public interface JwtVerificationStrategy {
 
     AuthResponse authenticateJwt(AuthContext authContext, String jwt) throws Exception;
 
+    default void destroy() {}
+
 }

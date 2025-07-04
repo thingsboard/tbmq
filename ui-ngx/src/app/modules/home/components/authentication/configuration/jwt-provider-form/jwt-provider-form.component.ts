@@ -29,7 +29,7 @@ import {
 } from '@angular/forms';
 import { isDefinedAndNotNull } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
   JwtAlgorithmType,
   JwtAlgorithmTypeTranslation,
@@ -69,6 +69,7 @@ import {
 } from '@angular/material/chips';
 import { ANY_CHARACTERS, AuthRulePatternsType } from '@shared/models/credentials.model';
 import { ENTER, TAB } from '@angular/cdk/keycodes';
+import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 
 @Component({
   selector: 'tb-jwt-provider-config-form',
@@ -98,6 +99,7 @@ import { ENTER, TAB } from '@angular/cdk/keycodes';
     MatChipInput,
     MatChipRemove,
     MatChipRow,
+    CopyButtonComponent,
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -131,10 +133,18 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   separatorKeysCodes = [ENTER, TAB];
   authRulePatternsType = AuthRulePatternsType;
 
+  get defaultClientTypeHint() {
+    return this.translate.instant('authentication.client-type-hint', {
+      type: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value)),
+      oppositeType: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value === ClientType.DEVICE ? ClientType.APPLICATION : ClientType.DEVICE))
+    });
+  }
+
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
 
-  constructor(private fb: UntypedFormBuilder) {
+  constructor(private fb: UntypedFormBuilder,
+              private translate: TranslateService) {
     super();
   }
 
@@ -147,26 +157,29 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         subAuthRulePatterns: [null, []]
       }),
       clientTypeClaims: [null, []],
-      jwtVerifierType: [null, [Validators.required]],
       jwtVerifierConfiguration: this.fb.group({
+        jwtVerifierType: [null, [Validators.required]],
         jwtSignAlgorithmConfiguration: this.fb.group({
+          algorithm: [null, [Validators.required]],
           secret: [null, [Validators.required]],
           publicPemKey: [null, [Validators.required]],
+          publicPemKeyFileName: [null, []],
         }),
-        algorithm: [null, [Validators.required]],
         endpoint: [null, [Validators.required]],
         refreshInterval: [null, [Validators.required]],
         credentials: [null, [Validators.required]],
         headers: [null, [Validators.required]],
       }),
+      pubAuthRuleClaim: [null, []],
+      subAuthRuleClaim: [null, []],
     });
     this.jwtConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
-   this.jwtConfigForm.get('jwtVerifierType').valueChanges
+   this.jwtConfigForm.get('jwtVerifierConfiguration.jwtVerifierType').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe((type) => this.onJwtVerifierTypeChange(type));
-    this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').valueChanges
+    this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe((type) => this.onJwtVerifierAlgorithmChange(type));
   }
@@ -184,8 +197,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         }
       }
       this.jwtConfigForm.reset(value, {emitEvent: false});
-      this.onJwtVerifierTypeChange(value.jwtVerifierType);
-      this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.algorithm);
+      this.onJwtVerifierTypeChange(value.jwtVerifierConfiguration.jwtVerifierType);
+      if (value.jwtVerifierConfiguration.jwtVerifierType === JwtVerifierType.ALGORITHM_BASED) {
+        this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm);
+      }
     } else {
       this.propagateChangePending = true;
     }
@@ -224,7 +239,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   onJwtVerifierTypeChange(type: JwtVerifierType) {
     if (type === JwtVerifierType.ALGORITHM_BASED) {
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').enable();
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').enable({emitEvent: false});
+      if (!this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm')?.value) {
+        this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').patchValue(JwtAlgorithmType.HMAC_BASED);
+      }
 
       this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').disable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').disable({emitEvent: false});
@@ -232,16 +250,17 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       this.jwtConfigForm.get('jwtVerifierConfiguration.headers').disable({emitEvent: false});
     } else if (type === JwtVerifierType.JWKS) {
       this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.endpoint').setValidators([Validators.required]);
       this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').patchValue(300);
+      if (!this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval')?.value) {
+        this.jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').patchValue(300);
+      }
       this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').patchValue({type: IntegrationCredentialType.Anonymous});
+      if (!this.jwtConfigForm.get('jwtVerifierConfiguration.credentials')?.value) {
+        this.jwtConfigForm.get('jwtVerifierConfiguration.credentials').patchValue({type: IntegrationCredentialType.Anonymous});
+      }
       this.jwtConfigForm.get('jwtVerifierConfiguration.headers').enable({emitEvent: false});
 
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').disable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
+      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration').disable({emitEvent: false});
     }
     this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
@@ -249,21 +268,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   onJwtVerifierAlgorithmChange(type: JwtAlgorithmType) {
     if (type === JwtAlgorithmType.HMAC_BASED) {
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
-
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
     }  else if (type === JwtAlgorithmType.PEM_KEY) {
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').setValidators([Validators.required]);
-
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').disable({emitEvent: false});
-    } else {
-      this.jwtConfigForm.get('jwtVerifierConfiguration.algorithm').patchValue(JwtAlgorithmType.HMAC_BASED);
-
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').setValidators([Validators.required]);
-
-      this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});
     }
     this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
@@ -332,10 +340,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     const rulesArray = [Array.from(set).join(',')];
     switch (type) {
       case AuthRulePatternsType.PUBLISH:
-        this.jwtConfigForm.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray);
+        this.jwtConfigForm.get('authRules').get('pubAuthRulePatterns').setValue(rulesArray, {emitEvent: false});
         break;
       case AuthRulePatternsType.SUBSCRIBE:
-        this.jwtConfigForm.get('authRules').get('subAuthRulePatterns').setValue(rulesArray);
+        this.jwtConfigForm.get('authRules').get('subAuthRulePatterns').setValue(rulesArray, {emitEvent: false});
         break;
     }
   }

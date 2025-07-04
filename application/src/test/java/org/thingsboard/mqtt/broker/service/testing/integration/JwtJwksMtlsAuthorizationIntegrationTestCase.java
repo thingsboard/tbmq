@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -28,6 +31,16 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -40,8 +53,11 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.testcontainers.shaded.org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.testcontainers.utility.MountableFile;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
+import org.thingsboard.mqtt.broker.common.data.credentials.CertPemCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
@@ -50,9 +66,20 @@ import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.wiremock.integrations.testcontainers.WireMockContainer;
 
+import javax.security.auth.x500.X500Principal;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.StringWriter;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,13 +87,13 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 @Slf4j
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-@ContextConfiguration(classes = JwtJwksAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
+@ContextConfiguration(classes = JwtJwksMtlsAuthorizationIntegrationTestCase.class, loader = SpringBootContextLoader.class)
 @DaoSqlTest
 @RunWith(SpringRunner.class)
-public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
+public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubIntegrationTest {
 
-    private static final String CLIENT_USERNAME = "test-jwks-with-anonymous-creds-username";
-    private static final String CLIENT_ID = "jwksAuthClientId";
+    private static final String CLIENT_USERNAME = "test-jwks-with-mtls-creds-username";
+    private static final String CLIENT_ID = "jwksMtlsAuthClientId";
     private static final String MY_TOPIC = "my/topic";
     private static final String TEST_TOPIC = "test/topic";
 
@@ -75,8 +102,11 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
 
     private static final RSAKey rsaJwk;
     private static final String jwksBodyEscapedStr;
-    private static final String jwksPath = "/.well-known/jwks.json";
-    private static final int wireMockPort = 8081;
+    private static final String jwksPath = "/secure-with-mtls-jwks";
+
+    private static final String clientCertPem;
+    private static final String clientPrivateKeyPem;
+    private static final String serverCertPem;
 
     static {
         try {
@@ -89,7 +119,42 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
             String jwksJsonStr = JacksonUtil.toString(new JWKSet(rsaJwk.toPublicJWK()).toJSONObject());
             jwksBodyEscapedStr = JacksonUtil.toString(jwksJsonStr);
 
-            String mappingJson = """
+            KeyPair clientKeyPair = generateKeyPair();
+            X509Certificate clientCert = generateSelfSignedCert(clientKeyPair, "CN=TBMQ-Test-Client");
+            clientCertPem = toPem(clientCert);
+            clientPrivateKeyPem = toPem(clientKeyPair.getPrivate());
+
+            KeyPair serverKeyPair = generateKeyPair();
+            X509Certificate serverCert = generateSelfSignedCert(serverKeyPair, "CN=TBMQ-WireMock-Server");
+            serverCertPem = toPem(serverCert);
+
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+            keyStore.load(null, null);
+            keyStore.setKeyEntry("wiremock", serverKeyPair.getPrivate(), "password".toCharArray(), new Certificate[]{serverCert});
+
+            File jksFile = File.createTempFile("wiremock", ".jks");
+            try (FileOutputStream fos = new FileOutputStream(jksFile)) {
+                keyStore.store(fos, "password".toCharArray());
+            }
+
+            MountableFile mountableFile = MountableFile.forHostPath(jksFile.getAbsolutePath());
+            log.warn("WireMock server keystore: {}", jksFile.getAbsolutePath());
+
+            wireMockServer = new WireMockContainer("wiremock/wiremock:3.13.1")
+                    .withCopyFileToContainer(mountableFile, "/home/wiremock.jks")
+                    .withCreateContainerCmdModifier(cmd -> {
+                        cmd.withEntrypoint("/docker-entrypoint.sh");
+                        cmd.withCmd("--https-port", "8443",
+                                "--https-keystore", "/home/wiremock.jks",
+                                "--keystore-password", "password");
+                               // "--verbose"); useful for debugging, but not necessary for the test.
+                        cmd.withExposedPorts(ExposedPort.tcp(8080), ExposedPort.tcp(8443));
+                        Objects.requireNonNull(cmd.getHostConfig()).withPortBindings(
+                                new PortBinding(Ports.Binding.empty(), new ExposedPort(8080)),
+                                new PortBinding(Ports.Binding.bindPort(443), new ExposedPort(8443))
+                        );
+                    })
+                    .withMappingFromJSON("""
                     {
                       "request": {
                         "method": "GET",
@@ -103,13 +168,10 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
                         "body": %s
                       }
                     }
-                    """.formatted(jwksPath, jwksBodyEscapedStr);
-            wireMockServer = new WireMockContainer("wiremock/wiremock:3.13.1")
-                    .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
-                    .withExposedPorts(wireMockPort)
-                    .withMappingFromJSON(mappingJson);
+                    """.formatted(jwksPath, jwksBodyEscapedStr))
+                    .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to initialize the JWKS server: ", e);
+            throw new RuntimeException("Failed to initialize JWKS server with mTLS", e);
         }
     }
 
@@ -120,7 +182,13 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
         super.beforeTest();
 
         JwksVerifierConfiguration config = new JwksVerifierConfiguration();
-        config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
+        config.setEndpoint("https://localhost" + jwksPath);
+
+        CertPemCredentials creds = new CertPemCredentials();
+        creds.setCert(clientCertPem);
+        creds.setPrivateKey(clientPrivateKeyPem);
+        creds.setCaCert(serverCertPem);
+        config.setCredentials(creds);
 
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
         var configuration = (JwtMqttAuthProviderConfiguration) provider.getConfiguration();
@@ -228,4 +296,47 @@ public class JwtJwksAuthorizationIntegrationTestCase extends AbstractPubSubInteg
         return options;
     }
 
+    private static KeyPair generateKeyPair() throws Exception {
+        var keyGen = KeyPairGenerator.getInstance("RSA");
+        keyGen.initialize(2048);
+        return keyGen.generateKeyPair();
+    }
+
+    private static X509Certificate generateSelfSignedCert(KeyPair keyPair, String dn) throws Exception {
+        long now = System.currentTimeMillis();
+        Date notBefore = new Date(now);
+        Date notAfter = new Date(now + TimeUnit.DAYS.toMillis(365));
+
+        X500Principal subject = new X500Principal(dn);
+        BigInteger serial = BigInteger.valueOf(now);
+
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+                .build(keyPair.getPrivate());
+
+        X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
+                subject,
+                serial,
+                notBefore,
+                notAfter,
+                subject,
+                keyPair.getPublic()
+        );
+
+        // Add SAN: DNS:localhost
+        GeneralName san = new GeneralName(GeneralName.dNSName, "localhost");
+        certBuilder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(san));
+
+        X509CertificateHolder certHolder = certBuilder.build(signer);
+        return new JcaX509CertificateConverter()
+                .setProvider(new BouncyCastleProvider())
+                .getCertificate(certHolder);
+    }
+
+    private static String toPem(Object obj) throws Exception {
+        try (StringWriter sw = new StringWriter(); JcaPEMWriter writer = new JcaPEMWriter(sw)) {
+            writer.writeObject(obj);
+            writer.flush();
+            return sw.toString();
+        }
+    }
 }

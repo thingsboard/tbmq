@@ -29,6 +29,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.credentials.BasicCredentials;
 import org.thingsboard.mqtt.broker.common.data.credentials.ClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwksVerifierConfiguration;
@@ -48,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
+@Slf4j
 public class JwksVerificationStrategy implements JwtVerificationStrategy {
 
     private static final long JWK_SET_CACHE_REFRESH_TIMEOUT = TimeUnit.MINUTES.toMillis(1); // How long a verification thread is willing to block while fetching / refreshing
@@ -91,6 +93,17 @@ public class JwksVerificationStrategy implements JwtVerificationStrategy {
         }
 
         return AuthResponse.failure("JWT signature validation failed.");
+    }
+
+    @Override
+    public void destroy() {
+        if (this.jwkSource instanceof AutoCloseable closableJwksSource) {
+            try {
+                closableJwksSource.close();
+            } catch (Exception e) {
+                log.warn("Failed to close JWKS source: ", e);
+            }
+        }
     }
 
     // DOCS: https://connect2id.com/products/nimbus-jose-jwt/examples/enhanced-jwk-retrieval

@@ -582,7 +582,6 @@ public class ProtoConverterTest {
         );
 
         MqttAuthSettings settings = new MqttAuthSettings();
-        settings.setUseListenerBasedProviderOnly(true);
         settings.setPriorities(originalPriorities);
 
         InternodeNotificationProto proto = ProtoConverter.toMqttAuthSettingUpdateProto(settings);
@@ -600,7 +599,6 @@ public class ProtoConverterTest {
     @Test
     public void givenMqttAuthSettingsWithNullPriorities_whenConvertToProto_thenValidateNullHandledProperly() {
         MqttAuthSettings settings = new MqttAuthSettings();
-        settings.setUseListenerBasedProviderOnly(true);
         settings.setPriorities(null);
 
         InternodeNotificationProto proto = ProtoConverter.toMqttAuthSettingUpdateProto(settings);
@@ -610,7 +608,6 @@ public class ProtoConverterTest {
         // Validate
         MqttAuthSettingsProto mqttAuthSettingsProto = proto.getMqttAuthSettingsProto();
         assertTrue(mqttAuthSettingsProto.getPrioritiesList().isEmpty());
-        assertTrue(mqttAuthSettingsProto.getUseListenerBasedProviderOnly());
     }
 
     @Test
