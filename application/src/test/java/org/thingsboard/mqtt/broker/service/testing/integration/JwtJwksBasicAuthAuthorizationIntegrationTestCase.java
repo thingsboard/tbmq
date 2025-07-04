@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -144,6 +145,8 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
         }
     }
 
+    private MqttAuthProvider jwtProvider;
+
     @Before
     public void beforeTest() throws Exception {
         super.beforeTest();
@@ -166,7 +169,12 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
         provider.setEnabled(true);
         configuration.setAuthRules(pubSubAuthorizationRules);
         provider.setConfiguration(configuration);
-        mqttAuthProviderManagerService.saveAuthProvider(provider);
+        jwtProvider = mqttAuthProviderManagerService.saveAuthProvider(provider);
+    }
+
+    @After
+    public void afterTest() {
+        mqttAuthProviderManagerService.disableAuthProvider(jwtProvider.getId());
     }
 
     @Test

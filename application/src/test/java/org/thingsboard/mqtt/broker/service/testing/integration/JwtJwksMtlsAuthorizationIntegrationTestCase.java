@@ -44,6 +44,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -174,6 +175,7 @@ public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubI
         }
     }
 
+    private MqttAuthProvider jwtProvider;
 
     @Before
     public void beforeTest() throws Exception {
@@ -198,7 +200,12 @@ public class JwtJwksMtlsAuthorizationIntegrationTestCase extends AbstractPubSubI
         provider.setEnabled(true);
         configuration.setAuthRules(pubSubAuthorizationRules);
         provider.setConfiguration(configuration);
-        mqttAuthProviderManagerService.saveAuthProvider(provider);
+        jwtProvider = mqttAuthProviderManagerService.saveAuthProvider(provider);
+    }
+
+    @After
+    public void afterTest() {
+        mqttAuthProviderManagerService.disableAuthProvider(jwtProvider.getId());
     }
 
     @Test

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.auth.providers.jwt;
 
 import com.nimbusds.jose.JOSEException;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +59,11 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
         this.configuration = (JwtMqttAuthProviderConfiguration) jwtAuthProvider.getConfiguration();
         this.authRulePatterns = authorizationRuleService.parseAuthorizationRule(this.configuration);
         this.verificationStrategy = jwtAuthProvider.isEnabled() ? createStrategy() : null;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        disable();
     }
 
     private JwtVerificationStrategy createStrategy() throws JOSEException {
@@ -105,6 +111,9 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
     @SneakyThrows
     @Override
     public void onProviderUpdate(boolean enabled, JwtMqttAuthProviderConfiguration configuration) {
+        if (this.verificationStrategy != null) {
+            this.verificationStrategy.destroy();
+        }
         this.configuration = configuration;
         this.authRulePatterns = authorizationRuleService.parseAuthorizationRule(configuration);
         this.verificationStrategy = enabled ? createStrategy() : null;
@@ -124,7 +133,10 @@ public class JwtMqttClientAuthProvider implements MqttClientAuthProvider<JwtMqtt
 
     @Override
     public void disable() {
-        this.verificationStrategy = null;
+        if (this.verificationStrategy != null) {
+            this.verificationStrategy.destroy();
+            this.verificationStrategy = null;
+        }
     }
 
     @Override
