@@ -69,8 +69,13 @@ export const HelpLinks = {
     integrationHttp: helpBaseUrl + '/docs/mqtt-broker/integrations/http',
     integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/integrations/mqtt',
     integrationKafka: helpBaseUrl + '/docs/mqtt-broker/integrations/kafka',
-    mqttAuthSettings: helpBaseUrl + '/docs/mqtt-broker/security/authentication',
     blockedClient: helpBaseUrl + '/docs/mqtt-broker/other/blocked-client',
+    securitySettings: helpBaseUrl + '/docs/mqtt-broker/security/overview/#settings',
+    providerBasic: helpBaseUrl + '/docs/mqtt-broker/security/authentication/basic',
+    providerX509: helpBaseUrl + '/docs/mqtt-broker/security/authentication/x509',
+    providerJwt: helpBaseUrl + '/docs/mqtt-broker/security/authentication/jwt',
+    providerScram: helpBaseUrl + '/docs/mqtt-broker/security/authentication/scram',
+    providerHttp: helpBaseUrl + '/docs/mqtt-broker/security/authentication/http',
   }
 };
 

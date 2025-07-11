@@ -26,6 +26,7 @@ import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
 import {
+  getProviderHelpLink,
   MqttAuthProvider,
   mqttAuthProviderTypeTranslationMap,
   ShortMqttAuthProvider
@@ -46,7 +47,12 @@ export class MqttAuthProviderTableConfigResolver {
 
     this.config.entityType = EntityType.MQTT_AUTH_PROVIDER;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_AUTH_PROVIDER);
-    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_AUTH_PROVIDER);
+    this.config.entityResources = {
+      helpLinkId: null,
+      helpLinkIdForEntity(entity: ShortMqttAuthProvider): string {
+        return getProviderHelpLink(entity);
+      }
+    };
     this.config.entityComponent = MqttAuthProviderComponent;
 
     this.config.tableTitle = this.translate.instant('authentication.authentication-providers');

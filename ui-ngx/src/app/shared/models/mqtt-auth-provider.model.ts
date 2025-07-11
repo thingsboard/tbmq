@@ -107,3 +107,22 @@ export interface JwtSignAlgorithmConfiguration {
   secret?: string;
   publicPemKey?: string;
 }
+
+export const mqttAuthProviderTypeHelpLinkMap = new Map<MqttAuthProviderType, string>(
+  [
+    [MqttAuthProviderType.MQTT_BASIC, 'providerBasic'],
+    [MqttAuthProviderType.X_509, 'providerX509'],
+    [MqttAuthProviderType.SCRAM, 'providerScram'],
+    [MqttAuthProviderType.JWT, 'providerJwt'],
+    [MqttAuthProviderType.HTTP_SERVICE, 'providerHttp'],
+  ]
+);
+
+export function getProviderHelpLink(entity: ShortMqttAuthProvider): string {
+  if (entity && entity.type) {
+    if (mqttAuthProviderTypeTranslationMap.has(entity.type)) {
+      return mqttAuthProviderTypeHelpLinkMap.get(entity.type);
+    }
+  }
+  return 'securitySettings';
+}
