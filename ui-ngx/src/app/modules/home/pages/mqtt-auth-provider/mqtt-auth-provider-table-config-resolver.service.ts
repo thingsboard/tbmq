@@ -34,6 +34,7 @@ import {
 import { MqttAuthProviderComponent } from '@home/pages/mqtt-auth-provider/mqtt-auth-provider.component';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { ConfigService } from '@core/http/config.service';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable()
 export class MqttAuthProviderTableConfigResolver {
@@ -63,6 +64,7 @@ export class MqttAuthProviderTableConfigResolver {
     this.config.searchEnabled = false;
     this.config.entitiesDeleteEnabled = false;
     this.config.displayPagination = false;
+    this.config.defaultSortOrder = {property: 'createdTime', direction: Direction.ASC};
 
     this.config.cellActionDescriptors = this.configureCellActions();
     this.config.columns.push(

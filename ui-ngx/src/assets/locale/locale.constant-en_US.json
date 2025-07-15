@@ -185,7 +185,7 @@
       "mqtts": "MQTTs",
       "mqtt-mqtts": "MQTT(s)",
       "ws": "WS",
-      "wss": "WSS",
+      "wss": "WSs",
       "ws-wss": "WS(s)",
       "ws-client-settings": "WebSocket client settings",
       "host": "Host",
@@ -193,7 +193,8 @@
       "port": "Port",
       "port-pattern": "Port must be a positive integer.",
       "port-range": "Port should be in a range from 1 to 65535.",
-      "port-required": "Port is required."
+      "port-required": "Port is required.",
+      "set-port": "Set the listener port as defined in the YAML configuration: {{port}}"
     }
   },
   "aggregation": {

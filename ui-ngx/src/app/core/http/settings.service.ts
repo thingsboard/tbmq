@@ -21,6 +21,7 @@ import { mergeMap, Observable, of } from 'rxjs';
 import { defaultHttpOptionsFromConfig, RequestConfig } from '../http/http-utils';
 import {
   AdminSettings,
+  ConnectivityProtocol,
   ConnectivitySettings,
   connectivitySettingsKey,
   DEFAULT_HOST,
@@ -60,6 +61,10 @@ export class SettingsService {
 
   public getWebSocketSettings(): Observable<any> {
     return this.getAdminSettings<WebSocketSettings>(webSocketSettingsKey);
+  }
+
+  public getListenerPort(listenerName: ConnectivityProtocol, config?: RequestConfig): Observable<number> {
+    return this.http.get<number>(`/api/app/listener/port?listenerName=${listenerName}`, defaultHttpOptionsFromConfig(config));
   }
 
   public getConnectivitySettings(): Observable<ConnectivitySettings> {
