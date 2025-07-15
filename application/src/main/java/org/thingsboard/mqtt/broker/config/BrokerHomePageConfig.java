@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
+import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 
 import java.util.List;
 import java.util.Map;
@@ -101,6 +102,15 @@ public class BrokerHomePageConfig {
                 .existsX509Credentials(existsX509Credentials())
                 .existsScramCredentials(existsScramCredentials())
                 .build();
+    }
+
+    public int getListenerPort(MqttListenerName mqttListenerName) {
+        return switch (mqttListenerName) {
+            case MQTT -> tcpPort;
+            case MQTTS -> tlsPort;
+            case WS -> wsPort;
+            case WSS -> wssPort;
+        };
     }
 
     private List<MqttAuthProviderType> getEnabledProviderTypes() {
