@@ -15,46 +15,44 @@
     limitations under the License.
 
 -->
-<div class="tb-home-card-container tb-home-padding">
-  <section class="metrics flex flex-1 flex-col lt-lg:flex-auto">
-    <div class="flex flex-row items-center justify-between">
-      <span>{{'mqtt-client-session.metrics-title' | translate}}</span>
-      <section class="flex flex-row items-center gap-2">
-        <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
-          style="color: rgba(0,0,0,0.54)"
-          matTooltip="{{'action.clear' | translate}}"
-          matTooltipPosition="above">
-          <mat-icon class="material-icons">delete_forever</mat-icon>
-        </button>
-        <button mat-icon-button type="button" (click)="updateData()"
-          style="color: rgba(0,0,0,0.54)"
-          matTooltip="{{'action.refresh' | translate}}"
-          matTooltipPosition="above">
-          <mat-icon class="material-icons">refresh</mat-icon>
-        </button>
-      </section>
-    </div>
-    <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
-      @for (column of columns; track column) {
-        <ng-container [matColumnDef]="column.key">
-          <mat-header-cell mat-sort-header *matHeaderCellDef>
-            {{ column.title | translate }}
-          </mat-header-cell>
-          <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
-            @if (column.key === 'key') {
-              <span translate>{{sessionMetricsTranslationMap.get(entity.key)}}</span>
-            }
-            @if (column.key === 'value') {
-              <span>{{entity.value}}</span>
-            }
-            @if (column.key === 'ts') {
-              <span>{{entity.ts | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
-            }
-          </mat-cell>
-        </ng-container>
-      }
-      <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-    </table>
-  </section>
-</div>
+<section class="metrics">
+  <div class="flex flex-row items-center justify-between">
+    <span>{{'mqtt-client-session.metrics-title' | translate}}</span>
+    <section class="flex flex-row items-center gap-2">
+      <button mat-icon-button type="button" (click)="deleteSessionMetrics()"
+        style="color: rgba(0,0,0,0.54)"
+        matTooltip="{{'action.clear' | translate}}"
+        matTooltipPosition="above">
+        <mat-icon class="material-icons">delete_forever</mat-icon>
+      </button>
+      <button mat-icon-button type="button" (click)="updateData()"
+        style="color: rgba(0,0,0,0.54)"
+        matTooltip="{{'action.refresh' | translate}}"
+        matTooltipPosition="above">
+        <mat-icon class="material-icons">refresh</mat-icon>
+      </button>
+    </section>
+  </div>
+  <table mat-table matSort [dataSource]="dataSource" matSortDisableClear style="min-height: 500px;">
+    @for (column of columns; track column) {
+      <ng-container [matColumnDef]="column.key">
+        <mat-header-cell mat-sort-header *matHeaderCellDef>
+          {{ column.title | translate }}
+        </mat-header-cell>
+        <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">
+          @if (column.key === 'key') {
+            <span translate>{{sessionMetricsTranslationMap.get(entity.key)}}</span>
+          }
+          @if (column.key === 'value') {
+            <span>{{entity.value}}</span>
+          }
+          @if (column.key === 'ts') {
+            <span>{{entity.ts | date: 'yyyy-MM-dd HH:mm:ss'}}</span>
+          }
+        </mat-cell>
+      </ng-container>
+    }
+    <mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+  </table>
+</section>
