@@ -43,15 +43,11 @@ public class DeviceMsgProcessorImpl implements DeviceMsgProcessor {
     public void deliverClientDeviceMessages(String clientId, DevicePublishMsgListAndPrevPacketId devicePubMsgsAndPrevId) {
         var clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Client session is not found for persisted messages.", clientId);
-            }
+            log.debug("[{}] Client session is not found for persisted messages", clientId);
             return;
         }
         if (!clientSessionInfo.isConnected()) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Client session is disconnected.", clientId);
-            }
+            log.trace("[{}] Client session is disconnected", clientId);
             return;
         }
         String targetServiceId = clientSessionInfo.getServiceId();

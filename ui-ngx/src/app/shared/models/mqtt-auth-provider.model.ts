@@ -38,15 +38,23 @@ export const mqttAuthProviderTypeTranslationMap = new Map<MqttAuthProviderType, 
 );
 
 export interface MqttAuthProvider extends ShortMqttAuthProvider {
-  configuration: BasicMqttAuthProviderConfiguration | ScramMqttAuthProviderConfiguration | SslMqttAuthProviderConfiguration | JwtMqttAuthProviderConfiguration;
+  configuration: (BasicMqttAuthProviderConfiguration |
+                 ScramMqttAuthProviderConfiguration |
+                 SslMqttAuthProviderConfiguration |
+                 JwtMqttAuthProviderConfiguration) &
+                 SharedMqttAuthProviderConfiguration;
   additionalInfo: any;
 }
 
-export interface ShortMqttAuthProvider extends BaseData {
-  type: MqttAuthProviderType;
+export interface ShortMqttAuthProvider extends BaseData, SharedMqttAuthProviderConfiguration {
   enabled: boolean;
   description?: string;
 }
+
+export interface SharedMqttAuthProviderConfiguration {
+  type: MqttAuthProviderType;
+}
+
 
 export interface BasicMqttAuthProviderConfiguration {}
 
@@ -98,4 +106,23 @@ export interface JwtSignAlgorithmConfiguration {
   algorithm?: JwtAlgorithmType;
   secret?: string;
   publicPemKey?: string;
+}
+
+export const mqttAuthProviderTypeHelpLinkMap = new Map<MqttAuthProviderType, string>(
+  [
+    [MqttAuthProviderType.MQTT_BASIC, 'providerBasic'],
+    [MqttAuthProviderType.X_509, 'providerX509'],
+    [MqttAuthProviderType.SCRAM, 'providerScram'],
+    [MqttAuthProviderType.JWT, 'providerJwt'],
+    [MqttAuthProviderType.HTTP_SERVICE, 'providerHttp'],
+  ]
+);
+
+export function getProviderHelpLink(entity: ShortMqttAuthProvider): string {
+  if (entity && entity.type) {
+    if (mqttAuthProviderTypeTranslationMap.has(entity.type)) {
+      return mqttAuthProviderTypeHelpLinkMap.get(entity.type);
+    }
+  }
+  return 'securitySettings';
 }

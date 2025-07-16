@@ -13,6 +13,7 @@
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="DEBUG"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="TRACE"/>
     <logger name="org.thingsboard.mqtt.broker.service.auth.providers.basic.BasicMqttClientAuthProvider" level="TRACE"/>
+    <logger name="org.thingsboard.mqtt.broker.service.auth.providers.jwt.JwtMqttClientAuthProvider" level="TRACE"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.state.PublishedInFlightCtxImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessorImpl"
             level="INFO"/>

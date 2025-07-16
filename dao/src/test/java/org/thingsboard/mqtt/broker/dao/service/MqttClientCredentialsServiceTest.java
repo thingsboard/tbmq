@@ -381,15 +381,15 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
         findByQueryAndVerifyResult(List.of(ClientType.APPLICATION), List.of(ClientCredentialsType.MQTT_BASIC), 4);
 
-        findByQueryAndVerifyResult(List.of(ClientType.APPLICATION), List.of(ClientCredentialsType.SSL), 2);
+        findByQueryAndVerifyResult(List.of(ClientType.APPLICATION), List.of(ClientCredentialsType.X_509), 2);
 
-        findByQueryAndVerifyResult(List.of(ClientType.DEVICE), List.of(ClientCredentialsType.SSL), 3);
+        findByQueryAndVerifyResult(List.of(ClientType.DEVICE), List.of(ClientCredentialsType.X_509), 3);
 
         findByQueryAndVerifyResult(List.of(ClientType.DEVICE), List.of(), 8);
 
         findByQueryAndVerifyResult(null, List.of(ClientCredentialsType.MQTT_BASIC), 9);
 
-        findByQueryAndVerifyResult(null, List.of(ClientCredentialsType.SSL), 5);
+        findByQueryAndVerifyResult(null, List.of(ClientCredentialsType.X_509), 5);
 
         findByQueryAndVerifyResult(List.of(ClientType.APPLICATION), List.of(), 6);
     }
@@ -599,7 +599,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenSaveBasicCredentials_thenCacheDataPresent() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
         sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
 
@@ -609,7 +609,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenSaveSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
         sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
 
@@ -620,7 +620,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenDeleteBasicCredentials_thenCacheDataPresent() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
         sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
 
@@ -631,7 +631,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenDeleteSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
         sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
 
@@ -642,7 +642,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenDeleteDifferentSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
 
         MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
@@ -655,7 +655,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenUpdateDifferentSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
 
         MqttClientCredentials sslCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.APPLICATION));
@@ -669,7 +669,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
 
     @Test
     public void givenCachedSslRegexCredentials_whenUpdateSslCredentials_thenCacheDataRemoved() throws JsonProcessingException {
-        ClientCredentialsType cacheKey = ClientCredentialsType.SSL;
+        ClientCredentialsType cacheKey = ClientCredentialsType.X_509;
         MqttClientCredentials savedCredentials = mqttClientCredentialsService.saveCredentials(validMqttSslClientCredentials(ClientType.DEVICE));
 
         sslRegexBasedCredentialsCache.put(cacheKey, savedCredentials);
@@ -733,7 +733,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     private MqttClientCredentials validMqttSslClientCredentials(ClientType clientType) throws JsonProcessingException {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName(RandomStringUtils.randomAlphabetic(5));
-        clientCredentials.setCredentialsType(ClientCredentialsType.SSL);
+        clientCredentials.setCredentialsType(ClientCredentialsType.X_509);
         clientCredentials.setClientType(clientType);
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance(
                 RandomStringUtils.randomAlphabetic(5),
@@ -746,7 +746,7 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     private MqttClientCredentials validMqttSslClientCredentials(String certificateCn) throws JsonProcessingException {
         MqttClientCredentials clientCredentials = new MqttClientCredentials();
         clientCredentials.setName(RandomStringUtils.randomAlphabetic(5));
-        clientCredentials.setCredentialsType(ClientCredentialsType.SSL);
+        clientCredentials.setCredentialsType(ClientCredentialsType.X_509);
         clientCredentials.setClientType(ClientType.DEVICE);
         SslMqttCredentials sslMqttCredentials = SslMqttCredentials.newInstance(
                 certificateCn,

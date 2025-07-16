@@ -122,6 +122,12 @@
               <mat-form-field class="flex flex-1" hideRequiredMarker>
                 <mat-label translate>admin.settings.port</mat-label>
                 <input matInput type="number" min="0" max="65535" formControlName="port"/>
+                <mat-icon (click)="syncYamlPort(protocol)"
+                          class="tb-pointer"
+                          [class.hidden]="hideSyncYamlPort(protocol)"
+                          matSuffix [matTooltip]="'admin.settings.set-port' | translate:({port: listenerPortMap.get(protocol)})">
+                  sync
+                </mat-icon>
                 <mat-icon matSuffix
                           matTooltipClass="tb-error-tooltip"
                           matTooltip="{{ 'admin.settings.port-required' | translate }}"

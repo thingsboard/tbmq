@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.common.data.security;
+package org.thingsboard.mqtt.broker.dto;
 
-public enum ClientCredentialsType {
-    MQTT_BASIC,
-    X_509,
-    SCRAM
+public enum MqttListenerName {
+
+    MQTT, MQTTS, WS, WSS
+
 }

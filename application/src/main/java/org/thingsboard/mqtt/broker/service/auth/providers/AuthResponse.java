@@ -16,14 +16,14 @@
 package org.thingsboard.mqtt.broker.service.auth.providers;
 
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
 import java.util.List;
 
-@Getter
+@Data
 @Builder(toBuilder = true)
 public class AuthResponse {
 

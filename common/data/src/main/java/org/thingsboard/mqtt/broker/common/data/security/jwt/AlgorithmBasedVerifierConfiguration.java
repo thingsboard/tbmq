@@ -16,14 +16,11 @@
 package org.thingsboard.mqtt.broker.common.data.security.jwt;
 
 import lombok.Data;
-import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 
 @Data
 public class AlgorithmBasedVerifierConfiguration implements JwtVerifierConfiguration {
 
-    @NoXss
-    private JwtSignAlgorithm algorithm;
     private JwtSignAlgorithmConfiguration jwtSignAlgorithmConfiguration;
 
     @Override
@@ -33,9 +30,6 @@ public class AlgorithmBasedVerifierConfiguration implements JwtVerifierConfigura
 
     @Override
     public void validate() {
-        if (algorithm == null) {
-            throw new DataValidationException("JWT signing algorithm should be specified!");
-        }
         if (jwtSignAlgorithmConfiguration == null) {
             throw new DataValidationException("JWT signing algorithm configuration should be specified!");
         }
@@ -44,7 +38,6 @@ public class AlgorithmBasedVerifierConfiguration implements JwtVerifierConfigura
 
     public static AlgorithmBasedVerifierConfiguration defaultConfiguration() {
         var config = new AlgorithmBasedVerifierConfiguration();
-        config.setAlgorithm(JwtSignAlgorithm.HMAC_BASED);
         config.setJwtSignAlgorithmConfiguration(HmacBasedAlgorithmConfiguration.defaultConfiguration());
         return config;
     }

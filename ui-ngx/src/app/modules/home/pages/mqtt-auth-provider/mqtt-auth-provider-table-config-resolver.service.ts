@@ -26,6 +26,7 @@ import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
 import {
+  getProviderHelpLink,
   MqttAuthProvider,
   mqttAuthProviderTypeTranslationMap,
   ShortMqttAuthProvider
@@ -33,6 +34,7 @@ import {
 import { MqttAuthProviderComponent } from '@home/pages/mqtt-auth-provider/mqtt-auth-provider.component';
 import { MqttAuthProviderService } from '@core/http/mqtt-auth-provider.service';
 import { ConfigService } from '@core/http/config.service';
+import { Direction } from '@shared/models/page/sort-order';
 
 @Injectable()
 export class MqttAuthProviderTableConfigResolver {
@@ -46,7 +48,12 @@ export class MqttAuthProviderTableConfigResolver {
 
     this.config.entityType = EntityType.MQTT_AUTH_PROVIDER;
     this.config.entityTranslations = entityTypeTranslations.get(EntityType.MQTT_AUTH_PROVIDER);
-    this.config.entityResources = entityTypeResources.get(EntityType.MQTT_AUTH_PROVIDER);
+    this.config.entityResources = {
+      helpLinkId: null,
+      helpLinkIdForEntity(entity: ShortMqttAuthProvider): string {
+        return getProviderHelpLink(entity);
+      }
+    };
     this.config.entityComponent = MqttAuthProviderComponent;
 
     this.config.tableTitle = this.translate.instant('authentication.authentication-providers');
@@ -57,6 +64,7 @@ export class MqttAuthProviderTableConfigResolver {
     this.config.searchEnabled = false;
     this.config.entitiesDeleteEnabled = false;
     this.config.displayPagination = false;
+    this.config.defaultSortOrder = {property: 'createdTime', direction: Direction.ASC};
 
     this.config.cellActionDescriptors = this.configureCellActions();
     this.config.columns.push(

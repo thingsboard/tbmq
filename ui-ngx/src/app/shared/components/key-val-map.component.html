@@ -56,6 +56,9 @@
           class="no-data-found flex items-center justify-center" translate>
       {{ noDataText() ? noDataText() : 'key-val.no-data' }}
     </span>
+    <mat-error class="text-xs mat-padding" [class.hidden]="!(isValueRequired() && !keyValsFormArray().length)">
+      {{ valueRequiredText() | translate }}
+    </mat-error>
   </section>
   <div style="margin-top: 8px;">
     @if (isStrokedButton()) {

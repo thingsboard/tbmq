@@ -33,11 +33,12 @@ import org.thingsboard.mqtt.broker.dao.client.connectivity.ConnectivityInfo;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
+import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-// TODO: replace redundant logic for getting env variables with System.getenv(...)
 @Component
 @RequiredArgsConstructor
 public class BrokerHomePageConfig {
@@ -73,12 +74,7 @@ public class BrokerHomePageConfig {
     private final MqttAuthProviderService mqttAuthProviderService;
 
     public HomePageConfigDto getConfig() {
-        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
-        Map<String, ConnectivityInfo> connectivityInfoMap = null;
-        if (connectivityAdminSettings != null) {
-            connectivityInfoMap = JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
-            });
-        }
+        Map<String, ConnectivityInfo> connectivityInfoMap = getConnectivityInfoMap();
         List<MqttAuthProviderType> enabledTypes = getEnabledProviderTypes();
         return HomePageConfigDto.builder()
                 .basicAuthEnabled(enabledTypes.contains(MqttAuthProviderType.MQTT_BASIC))
@@ -89,22 +85,37 @@ public class BrokerHomePageConfig {
                 .tlsPort(getTlsPort(connectivityInfoMap))
                 .wsPort(getWsPort(connectivityInfoMap))
                 .wssPort(getWssPort(connectivityInfoMap))
-                .tcpListenerEnabled(isTcpListenerEnabled())
-                .tlsListenerEnabled(isTlsListenerEnabled())
-                .wsListenerEnabled(isWsListenerEnabled())
-                .wssListenerEnabled(isWssListenerEnabled())
-                .tcpMaxPayloadSize(getTcpMaxPayloadSize())
-                .tlsMaxPayloadSize(getTlsMaxPayloadSize())
-                .wsMaxPayloadSize(getWsMaxPayloadSize())
-                .wssMaxPayloadSize(getWssMaxPayloadSize())
+                .tcpListenerEnabled(tcpListenerEnabled)
+                .tlsListenerEnabled(tlsListenerEnabled)
+                .wsListenerEnabled(wsListenerEnabled)
+                .wssListenerEnabled(wssListenerEnabled)
+                .tcpMaxPayloadSize(tcpMaxPayloadSize)
+                .tlsMaxPayloadSize(tlsMaxPayloadSize)
+                .wsMaxPayloadSize(wsMaxPayloadSize)
+                .wssMaxPayloadSize(wssMaxPayloadSize)
                 .existsBasicCredentials(existsBasicCredentials())
                 .existsX509Credentials(existsX509Credentials())
                 .existsScramCredentials(existsScramCredentials())
                 .build();
     }
 
+    public int getListenerPort(MqttListenerName mqttListenerName) {
+        return switch (mqttListenerName) {
+            case MQTT -> tcpPort;
+            case MQTTS -> tlsPort;
+            case WS -> wsPort;
+            case WSS -> wssPort;
+        };
+    }
+
+    private Map<String, ConnectivityInfo> getConnectivityInfoMap() {
+        AdminSettings connectivityAdminSettings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.CONNECTIVITY.getKey());
+        return connectivityAdminSettings == null ? Collections.emptyMap() : JacksonUtil.convertValue(connectivityAdminSettings.getJsonValue(), new TypeReference<>() {
+        });
+    }
+
     private List<MqttAuthProviderType> getEnabledProviderTypes() {
-        return mqttAuthProviderService.getShortAuthProviders(new PageLink(100))
+        return mqttAuthProviderService.getShortAuthProviders(new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE))
                 .getData().stream()
                 .filter(ShortMqttAuthProvider::isEnabled)
                 .map(ShortMqttAuthProvider::getType)
@@ -112,127 +123,24 @@ public class BrokerHomePageConfig {
     }
 
     private int getTcpPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
-        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.MQTT_CONNECTIVITY);
-        if (port != -1) {
-            return port;
-        }
-        String tcpPortStr = System.getenv("LISTENER_TCP_BIND_PORT");
-        if (tcpPortStr != null) {
-            return Integer.parseInt(tcpPortStr);
-        } else {
-            return tcpPort;
-        }
+        return getPort(connectivityInfoMap, BrokerConstants.MQTT_CONNECTIVITY, tcpPort);
     }
 
     private int getTlsPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
-        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.MQTTS_CONNECTIVITY);
-        if (port != -1) {
-            return port;
-        }
-        String tlsPortStr = System.getenv("LISTENER_SSL_BIND_PORT");
-        if (tlsPortStr != null) {
-            return Integer.parseInt(tlsPortStr);
-        } else {
-            return tlsPort;
-        }
-    }
-
-    private boolean isTcpListenerEnabled() {
-        String tcpListenerEnabledStr = System.getenv("LISTENER_TCP_ENABLED");
-        if (tcpListenerEnabledStr != null) {
-            return Boolean.parseBoolean(tcpListenerEnabledStr);
-        } else {
-            return tcpListenerEnabled;
-        }
-    }
-
-    private boolean isTlsListenerEnabled() {
-        String tlsListenerEnabledStr = System.getenv("LISTENER_SSL_ENABLED");
-        if (tlsListenerEnabledStr != null) {
-            return Boolean.parseBoolean(tlsListenerEnabledStr);
-        } else {
-            return tlsListenerEnabled;
-        }
-    }
-
-    private int getTcpMaxPayloadSize() {
-        String tcpMaxPayloadSizeStr = System.getenv("TCP_NETTY_MAX_PAYLOAD_SIZE");
-        if (tcpMaxPayloadSizeStr != null) {
-            return Integer.parseInt(tcpMaxPayloadSizeStr);
-        } else {
-            return tcpMaxPayloadSize;
-        }
-    }
-
-    private int getTlsMaxPayloadSize() {
-        String tlsMaxPayloadSizeStr = System.getenv("SSL_NETTY_MAX_PAYLOAD_SIZE");
-        if (tlsMaxPayloadSizeStr != null) {
-            return Integer.parseInt(tlsMaxPayloadSizeStr);
-        } else {
-            return tlsMaxPayloadSize;
-        }
+        return getPort(connectivityInfoMap, BrokerConstants.MQTTS_CONNECTIVITY, tlsPort);
     }
 
     private int getWsPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
-        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.WS_CONNECTIVITY);
-        if (port != -1) {
-            return port;
-        }
-        String wsPortStr = System.getenv("LISTENER_WS_BIND_PORT");
-        if (wsPortStr != null) {
-            return Integer.parseInt(wsPortStr);
-        } else {
-            return wsPort;
-        }
+        return getPort(connectivityInfoMap, BrokerConstants.WS_CONNECTIVITY, wsPort);
     }
 
     private int getWssPort(Map<String, ConnectivityInfo> connectivityInfoMap) {
-        int port = getPortFromConnectivitySettings(connectivityInfoMap, BrokerConstants.WSS_CONNECTIVITY);
-        if (port != -1) {
-            return port;
-        }
-        String wssPortStr = System.getenv("LISTENER_WSS_BIND_PORT");
-        if (wssPortStr != null) {
-            return Integer.parseInt(wssPortStr);
-        } else {
-            return wssPort;
-        }
+        return getPort(connectivityInfoMap, BrokerConstants.WSS_CONNECTIVITY, wssPort);
     }
 
-    private boolean isWsListenerEnabled() {
-        String wsListenerEnabledStr = System.getenv("LISTENER_WS_ENABLED");
-        if (wsListenerEnabledStr != null) {
-            return Boolean.parseBoolean(wsListenerEnabledStr);
-        } else {
-            return wsListenerEnabled;
-        }
-    }
-
-    private boolean isWssListenerEnabled() {
-        String wssListenerEnabledStr = System.getenv("LISTENER_WSS_ENABLED");
-        if (wssListenerEnabledStr != null) {
-            return Boolean.parseBoolean(wssListenerEnabledStr);
-        } else {
-            return wssListenerEnabled;
-        }
-    }
-
-    private int getWsMaxPayloadSize() {
-        String wsMaxPayloadSizeStr = System.getenv("WS_NETTY_MAX_PAYLOAD_SIZE");
-        if (wsMaxPayloadSizeStr != null) {
-            return Integer.parseInt(wsMaxPayloadSizeStr);
-        } else {
-            return wsMaxPayloadSize;
-        }
-    }
-
-    private int getWssMaxPayloadSize() {
-        String wssMaxPayloadSizeStr = System.getenv("WSS_NETTY_MAX_PAYLOAD_SIZE");
-        if (wssMaxPayloadSizeStr != null) {
-            return Integer.parseInt(wssMaxPayloadSizeStr);
-        } else {
-            return wssMaxPayloadSize;
-        }
+    private int getPort(Map<String, ConnectivityInfo> connectivityInfoMap, String key, int defaultPort) {
+        int port = getPortFromConnectivitySettings(connectivityInfoMap, key);
+        return port != -1 ? port : defaultPort;
     }
 
     private boolean existsBasicCredentials() {
@@ -240,7 +148,7 @@ public class BrokerHomePageConfig {
     }
 
     private boolean existsX509Credentials() {
-        return existsByCredentialsType(ClientCredentialsType.SSL);
+        return existsByCredentialsType(ClientCredentialsType.X_509);
     }
 
     private boolean existsScramCredentials() {
@@ -252,11 +160,9 @@ public class BrokerHomePageConfig {
     }
 
     private int getPortFromConnectivitySettings(Map<String, ConnectivityInfo> connectivityInfoMap, String key) {
-        if (connectivityInfoMap != null) {
-            ConnectivityInfo connectivityInfo = connectivityInfoMap.get(key);
-            if (connectivityInfo != null && connectivityInfo.isEnabled() && StringUtils.isNotEmpty(connectivityInfo.getPort())) {
-                return Integer.parseInt(connectivityInfo.getPort());
-            }
+        ConnectivityInfo connectivityInfo = connectivityInfoMap.get(key);
+        if (connectivityInfo != null && connectivityInfo.isEnabled() && StringUtils.isNotEmpty(connectivityInfo.getPort())) {
+            return Integer.parseInt(connectivityInfo.getPort());
         }
         return -1;
     }

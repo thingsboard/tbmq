@@ -65,8 +65,6 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   securitySettingsForm: UntypedFormGroup;
   mqttAuthSettingsForm: UntypedFormGroup;
 
-  authStrategyLabel: string;
-  authStrategyTooltip: string;
   dndId = guid();
   dragIndex: number;
   dragDisabled = false;
@@ -162,15 +160,8 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
 
   private buildMqttAuthSettingsForm() {
     this.mqttAuthSettingsForm = this.fb.group({
-      useListenerBasedProviderOnly: [null, []],
       priorities: [null, []]
     });
-    this.mqttAuthSettingsForm.get('useListenerBasedProviderOnly').valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(value => {
-        this.authStrategyLabel = value ? 'admin.auth-strategy-single' : 'admin.auth-strategy-both';
-        this.authStrategyTooltip = value ? 'admin.auth-strategy-single-hint' : 'admin.auth-strategy-both-hint';
-      })
   }
 
   private processSecuritySettings(settings: SecuritySettings): void {

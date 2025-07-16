@@ -70,7 +70,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         }
         switch (mqttClientCredentials.getCredentialsType()) {
             case MQTT_BASIC -> preprocessBasicMqttCredentials(mqttClientCredentials);
-            case SSL -> preprocessSslMqttCredentials(mqttClientCredentials);
+            case X_509 -> preprocessSslMqttCredentials(mqttClientCredentials);
             case SCRAM -> preprocessScramMqttCredentials(mqttClientCredentials);
             default -> throw new DataValidationException("Unknown credentials type!");
         }
@@ -307,7 +307,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void invalidateSslRegexBasedCredentialsCache(MqttClientCredentials newCredentials, MqttClientCredentials currentCredentials) {
         if (isSslType(newCredentials) || (currentCredentials != null && isSslType(currentCredentials))) {
-            getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE).evictIfPresent(ClientCredentialsType.SSL);
+            getCache(CacheConstants.SSL_REGEX_BASED_CREDENTIALS_CACHE).evictIfPresent(ClientCredentialsType.X_509);
         }
     }
 
@@ -359,6 +359,6 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             };
 
     private boolean isSslType(MqttClientCredentials clientCredentials) {
-        return ClientCredentialsType.SSL == clientCredentials.getCredentialsType();
+        return ClientCredentialsType.X_509 == clientCredentials.getCredentialsType();
     }
 }

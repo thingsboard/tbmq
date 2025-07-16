@@ -142,7 +142,6 @@ enum MqttAuthProviderTypeProto {
 
 message MqttAuthSettingsProto {
   repeated MqttAuthProviderTypeProto priorities = 1;
-  bool useListenerBasedProviderOnly = 2;
 }
 
 message MqttAuthProviderProto {
