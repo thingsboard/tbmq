@@ -210,10 +210,7 @@ export class ConnectionControllerComponent implements OnInit, OnDestroy {
       this.clientCredentialsService.getClientCredentials(clientCredentialsId, {ignoreErrors: true})
         .pipe(takeUntil(this.destroy$))
         .subscribe(credentials => {
-          if (credentials?.credentialsValue) {
-            const credentialsValue = JSON.parse(credentials.credentialsValue);
-            this.isPasswordRequired = isDefinedAndNotNull(credentialsValue.password);
-          }
+          this.isPasswordRequired = credentials?.additionalInfo?.mqttBasicPasswordIsSet === true;
         });
     }
   }

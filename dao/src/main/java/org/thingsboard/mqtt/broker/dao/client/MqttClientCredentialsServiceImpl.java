@@ -36,8 +36,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 import org.thingsboard.mqtt.broker.common.util.MqttClientCredentialsUtil;
 import org.thingsboard.mqtt.broker.dao.service.DataValidator;
@@ -77,9 +77,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         if (mqttClientCredentials.getClientType() == null) {
             mqttClientCredentials.setClientType(ClientType.DEVICE);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
-        }
+        log.trace("Executing saveCredentials [{}]", mqttClientCredentials);
         credentialsValidator.validate(mqttClientCredentials);
         try {
             MqttClientCredentials currentCredentials = getCurrentCredentialsById(mqttClientCredentials.getId());
@@ -106,14 +104,13 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(BasicMqttCredentials.newInstance(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_USERNAME)));
         preprocessBasicMqttCredentials(mqttClientCredentials);
+        mqttClientCredentials.setAdditionalInfo(JacksonUtil.newObjectNode());
         return mqttClientCredentialsDao.save(mqttClientCredentials);
     }
 
     @Override
     public void deleteCredentials(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing deleteCredentials [{}]", id);
-        }
+        log.trace("Executing deleteCredentials [{}]", id);
         MqttClientCredentials clientCredentials = mqttClientCredentialsDao.findById(id);
         if (clientCredentials == null) {
             return;
@@ -124,17 +121,13 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public MqttClientCredentials findSystemWebSocketCredentials() {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findSystemWebSocketCredentials");
-        }
+        log.trace("Executing findSystemWebSocketCredentials");
         return mqttClientCredentialsDao.findSystemWebSocketCredentials();
     }
 
     @Override
     public MqttClientCredentials findCredentialsByName(String name) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing findCredentialsByName");
-        }
+        log.trace("Executing findCredentialsByName [{}]", name);
         return mqttClientCredentialsDao.findCredentialsByName(name);
     }
 
@@ -165,18 +158,14 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getCredentials, pageLink [{}]", pageLink);
-        }
+        log.trace("Executing getCredentials, pageLink [{}]", pageLink);
         validatePageLink(pageLink);
         return toShortMqttClientCredentialsPageData(mqttClientCredentialsDao.findAll(pageLink));
     }
 
     @Override
     public PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getCredentialsV2, query [{}]", query);
-        }
+        log.trace("Executing getCredentialsV2, query [{}]", query);
         validatePageLink(query.getPageLink());
         return toShortMqttClientCredentialsPageData(mqttClientCredentialsDao.findAllV2(query));
     }
@@ -190,9 +179,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public Optional<MqttClientCredentials> getCredentialsById(UUID id) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing getCredentialsById [{}]", id);
-        }
+        log.trace("Executing getCredentialsById [{}]", id);
         return Optional.ofNullable(mqttClientCredentialsDao.findById(id));
     }
 
@@ -223,9 +210,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     @Override
     public boolean existsByCredentialsType(ClientCredentialsType credentialsType) {
-        if (log.isTraceEnabled()) {
-            log.trace("Executing existsByCredentialsType [{}]", credentialsType);
-        }
+        log.trace("Executing existsByCredentialsType [{}]", credentialsType);
         return mqttClientCredentialsDao.existsByCredentialsType(credentialsType);
     }
 
@@ -237,6 +222,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
 
     private void preprocessBasicMqttCredentials(MqttClientCredentials mqttClientCredentials) {
         BasicMqttCredentials mqttCredentials = getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
+        mqttClientCredentials.removeAdditionalInfoField(BasicMqttCredentials.MQTT_BASIC_PASSWORD_IS_SET);
         if (StringUtils.isEmpty(mqttCredentials.getClientId()) && StringUtils.isEmpty(mqttCredentials.getUserName())) {
             throw new DataValidationException("Both mqtt client id and user name are empty!");
         }

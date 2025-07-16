@@ -15,9 +15,11 @@
  */
 package org.thingsboard.mqtt.broker.common.data.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.id.HasId;
@@ -30,6 +32,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = "additionalInfo")
 public class ShortMqttClientCredentials implements HasId {
 
     @Serial
@@ -40,5 +43,6 @@ public class ShortMqttClientCredentials implements HasId {
     private ClientType clientType;
     private ClientCredentialsType credentialsType;
     private long createdTime;
+    private JsonNode additionalInfo;
 
 }

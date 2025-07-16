@@ -244,7 +244,7 @@ export class CheckConnectivityDialogComponent extends
     return {
       clientId: this.setClientId(credentialsValue, clientType),
       userName: credentialsValue.userName,
-      password: this.setPassword(credentialsValue),
+      password: this.setPassword(credentials),
       subTopic: this.setTopic(credentialsValue.authRules.subAuthRulePatterns, 'tbmq/demo/+'),
       pubTopic: this.setTopic(credentialsValue.authRules.pubAuthRulePatterns, 'tbmq/demo/topic'),
       hostname: this.connectivitySettings.mqtt.host,
@@ -266,11 +266,12 @@ export class CheckConnectivityDialogComponent extends
     return null;
   }
 
-  private setPassword(credentialsValue: BasicCredentials): string {
-    if (this.data.credentials?.password) {
-      return this.data.credentials?.password;
+  private setPassword(credentials: ClientCredentials): string {
+    const credentialsValue = JSON.parse(credentials.credentialsValue);
+    if (credentialsValue?.password?.length) {
+      return credentialsValue.password;
     }
-    if (credentialsValue.password) {
+    if (credentials?.additionalInfo?.mqttBasicPasswordIsSet === true) {
       return '$YOUR_PASSWORD';
     }
     return null;

@@ -139,7 +139,7 @@ export class AppComponent {
   }
 
   private userHasDefaultPassword(authState: AuthState): boolean {
-    return authState?.userDetails?.additionalInfo?.userPasswordHistory && Object.keys(authState.userDetails.additionalInfo?.userPasswordHistory).length <= 1;
+    return authState?.userDetails?.additionalInfo?.isPasswordChanged === false;
   }
 
 }
