@@ -648,7 +648,6 @@ public class ProtoConverter {
         return InternodeNotificationProto.newBuilder()
                 .setMqttAuthSettingsProto(MqttAuthSettingsProto.newBuilder()
                         .addAllPriorities(toMqttAuthPriorities(mqttAuthSettings.getPriorities()))
-                        .setUseListenerBasedProviderOnly(mqttAuthSettings.isUseListenerBasedProviderOnly())
                         .build()).build();
     }
 

@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.common.util.DonAsynchron;
 import org.thingsboard.mqtt.broker.config.BrokerHomePageConfig;
 import org.thingsboard.mqtt.broker.config.annotations.ApiOperation;
 import org.thingsboard.mqtt.broker.dto.HomePageConfigDto;
+import org.thingsboard.mqtt.broker.dto.MqttListenerName;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationRemovedEventProcessor;
 import org.thingsboard.mqtt.broker.service.system.SystemInfoService;
 
@@ -97,6 +98,14 @@ public class AppController extends BaseController {
     @GetMapping(value = "/config")
     public HomePageConfigDto getBrokerConfig() throws ThingsboardException {
         return checkNotNull(brokerHomePageConfig.getConfig());
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/listener/port")
+    public int getListenerPort(@RequestParam String listenerName) throws ThingsboardException {
+        checkParameter("listenerName", listenerName);
+        MqttListenerName mqttListenerName = MqttListenerName.valueOf(listenerName.toUpperCase());
+        return brokerHomePageConfig.getListenerPort(mqttListenerName);
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")

@@ -43,10 +43,8 @@ public enum MqttAuthProviderType {
         return LOOKUP_MAP.get(protoNumber);
     }
 
-    public static List<MqttAuthProviderType> getDefaultPriorityList() {
-        return Arrays.stream(MqttAuthProviderType.values())
-                .filter(type -> type != MqttAuthProviderType.SCRAM)
-                .collect(Collectors.toList());
-    }
+    public static final List<MqttAuthProviderType> defaultPriorityList = Arrays.stream(MqttAuthProviderType.values())
+            .filter(type -> type != MqttAuthProviderType.SCRAM)
+            .toList();
 
 }

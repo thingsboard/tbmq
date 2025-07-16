@@ -85,7 +85,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         if (!enabled) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.X_509);
         }
-        if (authContext.getSslHandler() == null) {
+        if (!authContext.isSecurePortUsed()) {
             String errorMsg = SSL_HANDLER_NOT_CONSTRUCTED.getErrorMsg();
             String logErrorMsg = "[{}] " + errorMsg;
             log.error(logErrorMsg, authContext);
@@ -194,9 +194,9 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         SslCredentialsCacheValue sslCredentialsCacheValue = getFromSslRegexCache();
         if (sslCredentialsCacheValue == null) {
             log.debug("sslRegexBasedCredentials cache is empty");
-            List<MqttClientCredentials> sslCredentials = clientCredentialsService.findByCredentialsType(ClientCredentialsType.SSL);
+            List<MqttClientCredentials> sslCredentials = clientCredentialsService.findByCredentialsType(ClientCredentialsType.X_509);
             if (sslCredentials.isEmpty()) {
-                log.debug("SSL credentials are not found in DB");
+                log.debug("X_509 credentials are not found in DB");
                 return null;
             } else {
                 sslCredentialsCacheValue = prepareSslRegexCredentialsWithValuesFromDb(sslCredentials);
@@ -205,7 +205,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             }
         } else {
             if (sslCredentialsCacheValue.getCredentials().isEmpty()) {
-                log.debug("Got empty SSL regex based credentials list from cache");
+                log.debug("Got empty X_509 regex based credentials list from cache");
             }
             return sslCredentialsCacheValue;
         }
@@ -249,12 +249,12 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
 
     private SslCredentialsCacheValue getFromSslRegexCache() {
         Cache cache = getSslRegexCredentialsCache();
-        return JacksonUtil.fromString(cache.get(ClientCredentialsType.SSL, String.class), SslCredentialsCacheValue.class);
+        return JacksonUtil.fromString(cache.get(ClientCredentialsType.X_509, String.class), SslCredentialsCacheValue.class);
     }
 
     private void putInSslRegexCache(SslCredentialsCacheValue sslCredentialsCacheValue) {
         Cache cache = getSslRegexCredentialsCache();
-        cache.put(ClientCredentialsType.SSL, JacksonUtil.toString(sslCredentialsCacheValue));
+        cache.put(ClientCredentialsType.X_509, JacksonUtil.toString(sslCredentialsCacheValue));
     }
 
     private Cache getSslRegexCredentialsCache() {

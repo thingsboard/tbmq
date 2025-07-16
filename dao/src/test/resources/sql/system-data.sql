@@ -48,7 +48,7 @@ VALUES (
            '7ca448f2-780e-4b38-ac15-c064a8f20bb5',
            1748975222000,
            'mqttAuthorization',
-           '{"useListenerBasedProviderOnly":false,"priorities":["MQTT_BASIC","X_509","JWT"]}'
+           '{"priorities":["MQTT_BASIC","X_509","JWT"]}'
        );
 
 INSERT INTO mqtt_auth_provider (id, created_time, enabled, type, configuration, additional_info)
@@ -63,12 +63,10 @@ VALUES
 ('5590d101-628f-414c-9960-5966a9c42c31', 1748975222000, false, 'JWT', '{
   "type": "JWT",
   "authClaims": {},
-  "jwtVerifierType": "ALGORITHM_BASED",
   "clientTypeClaims": {},
   "authRules": {},
   "defaultClientType": "DEVICE",
   "jwtVerifierConfiguration": {
-    "algorithm": "HMAC_BASED",
     "jwtVerifierType": "ALGORITHM_BASED",
     "jwtSignAlgorithmConfiguration": {
       "secret": "please-change-this-32-char-jwt-secret",

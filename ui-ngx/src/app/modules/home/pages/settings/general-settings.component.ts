@@ -22,6 +22,7 @@ import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, Reactive
 import { Subject } from 'rxjs';
 import {
   AdminSettings,
+  ConnectivityProtocol,
   ConnectivitySettings,
   connectivitySettingsKey,
   WebSocketSettings,
@@ -55,6 +56,7 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   generalSettingsForm: UntypedFormGroup;
   connectivitySettingsForm: UntypedFormGroup;
   protocol = 'mqtt';
+  listenerPortMap = new Map<ConnectivityProtocol, number>();
 
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
   private generalSettings: AdminSettings<WebSocketSettings>;
@@ -77,14 +79,14 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   private buildConnectivitySettingsForm() {
     this.connectivitySettingsForm = this.fb.group({
-      ws: this.buildConnectivityInfoForm(),
-      wss: this.buildConnectivityInfoForm(),
-      mqtt: this.buildConnectivityInfoForm(),
-      mqtts: this.buildConnectivityInfoForm(),
+      ws: this.buildConnectivityInfoForm('ws'),
+      wss: this.buildConnectivityInfoForm('wss'),
+      mqtt: this.buildConnectivityInfoForm('mqtt'),
+      mqtts: this.buildConnectivityInfoForm('mqtts'),
     });
   }
 
-  private buildConnectivityInfoForm(): UntypedFormGroup {
+  private buildConnectivityInfoForm(protocol: ConnectivityProtocol): UntypedFormGroup {
     const formGroup = this.fb.group({
       enabled: [false, []],
       host: [{value: '', disabled: true}, [Validators.required]],
@@ -96,9 +98,11 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
       if (value) {
         formGroup.get('host').enable({emitEvent: false});
         formGroup.get('port').enable({emitEvent: false});
+        this.settingsService.getListenerPort(protocol).subscribe(value => this.listenerPortMap.set(protocol, value));
       } else {
         formGroup.get('host').disable({emitEvent: false});
         formGroup.get('port').disable({emitEvent: false});
+        this.listenerPortMap.delete(protocol);
       }
     });
     return formGroup;
@@ -154,6 +158,25 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
 
   discardConnectivitySettings(): void {
     this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
+  }
+
+  hideSyncYamlPort(protocol: ConnectivityProtocol): boolean {
+    const listenerPort = this.listenerPortMap.get(protocol);
+    if (listenerPort) {
+      const listenerEnabled = this.connectivitySettingsForm.get(`${protocol}.enabled`).value;
+      const formPort = this.connectivitySettingsForm.get(`${protocol}.port`).value;
+      const isFormPortDifferent = formPort != listenerPort;
+      return !(listenerEnabled && isFormPortDifferent);
+    }
+    return true;
+  }
+
+  syncYamlPort(protocol: ConnectivityProtocol) {
+    const listenerPort = this.listenerPortMap.get(protocol);
+    if (listenerPort) {
+      this.connectivitySettingsForm.get(`${protocol}.port`).patchValue(listenerPort);
+      this.connectivitySettingsForm.get(`${protocol}.port`).markAsDirty();
+    }
   }
 
   private processConnectivitySettings(settings: AdminSettings<ConnectivitySettings>): void {

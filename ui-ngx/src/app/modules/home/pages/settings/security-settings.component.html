@@ -30,14 +30,14 @@
         <mat-icon svgIcon="mdi:shield-lock"></mat-icon>
       </button>
     </div>
-    <div tb-help="mqttAuthSettings"></div>
+    <div tb-help="securitySettings"></div>
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="mqttAuthSettingsForm" (ngSubmit)="saveMqttAuthSettings()" autocomplete="off">
       <fieldset [disabled]="isLoading$ | async">
         <section class="flex flex-col gap-4">
           <mat-form-field class="mat-block tb-keys-field" appearance="outline" subscriptSizing="dynamic">
-            <mat-label translate>authentication.authentication-providers</mat-label>
+            <mat-label translate>authentication.authentication-execution-order</mat-label>
             <mat-chip-grid #chipList formControlName="priorities" class="pl-1">
               <div class="tb-datakeys-container"
                    [dndDropzone]="[dndId]"
@@ -78,18 +78,6 @@
             </mat-chip-grid>
             <mat-hint translate>authentication.authentication-providers-hint</mat-hint>
           </mat-form-field>
-          <section tb-hint-tooltip-icon="{{ authStrategyTooltip | translate }}">
-            <mat-slide-toggle formControlName="useListenerBasedProviderOnly">
-              <span>{{ authStrategyLabel | translate }}</span>
-            </mat-slide-toggle>
-            <mat-icon matSuffix
-                      matTooltip="{{ 'admin.auth-strategy-both-warning' | translate }}"
-                      [class.!hidden]="mqttAuthSettingsForm.get('useListenerBasedProviderOnly').value"
-                      style="color: #ff9a00"
-                      class="tb-mat-18">
-              warning
-            </mat-icon>
-          </section>
         </section>
         <div class="layout-wrap flex flex-row items-center justify-end gap-2 xs:flex-col" style="margin-top: 16px">
           <button mat-button color="primary"

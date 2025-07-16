@@ -64,7 +64,7 @@ public class DefaultAuthorizationRoutingServiceTest {
     private DefaultAuthorizationRoutingService service;
 
     @Test
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    @SuppressWarnings("unchecked")
     public void shouldApplyDefaultSettings_WhenNoAdminSettingsFound() {
         // given
         given(adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey())).willReturn(null);
@@ -75,18 +75,14 @@ public class DefaultAuthorizationRoutingServiceTest {
         // then
         List<MqttAuthProviderType> priorities =
                 (List<MqttAuthProviderType>) ReflectionTestUtils.getField(service, "priorities");
-        boolean useListenerBasedProviderOnly = (boolean) ReflectionTestUtils.getField(service, "useListenerBasedProviderOnly");
-
-        assertThat(priorities).isEqualTo(MqttAuthProviderType.getDefaultPriorityList());
-        assertThat(useListenerBasedProviderOnly).isFalse();
+        assertThat(priorities).isEqualTo(MqttAuthProviderType.defaultPriorityList);
     }
 
     @Test
-    @SuppressWarnings({"unchecked", "ConstantConditions"})
+    @SuppressWarnings("unchecked")
     public void shouldLoadAdminSettings_WhenPresent() {
         // given
         MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setUseListenerBasedProviderOnly(true);
         mqttAuthSettings.setPriorities(List.of(MqttAuthProviderType.JWT, MqttAuthProviderType.MQTT_BASIC));
 
         AdminSettings mockSettings = new AdminSettings();
@@ -101,11 +97,7 @@ public class DefaultAuthorizationRoutingServiceTest {
         // then
         List<MqttAuthProviderType> priorities =
                 (List<MqttAuthProviderType>) ReflectionTestUtils.getField(service, "priorities");
-        boolean useListenerBasedProviderOnly =
-                (boolean) ReflectionTestUtils.getField(service, "useListenerBasedProviderOnly");
-
         assertThat(priorities).containsExactly(MqttAuthProviderType.JWT, MqttAuthProviderType.MQTT_BASIC);
-        assertThat(useListenerBasedProviderOnly).isTrue();
     }
 
     @Test
@@ -113,7 +105,6 @@ public class DefaultAuthorizationRoutingServiceTest {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
                 .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
-                .setUseListenerBasedProviderOnly(false)
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
@@ -136,7 +127,6 @@ public class DefaultAuthorizationRoutingServiceTest {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
                 .addPriorities(MqttAuthProviderTypeProto.X_509)
-                .setUseListenerBasedProviderOnly(false)
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
@@ -159,7 +149,6 @@ public class DefaultAuthorizationRoutingServiceTest {
         // given
         MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
                 .addPriorities(MqttAuthProviderTypeProto.JWT)
-                .setUseListenerBasedProviderOnly(false)
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 
@@ -178,53 +167,17 @@ public class DefaultAuthorizationRoutingServiceTest {
     }
 
     @Test
-    public void shouldRespectListenerBasedFiltering_SecurePort_RemovesBasic() {
+    public void shouldReturnDefaultResponseWhenAllProvidersDisabled() {
         // given
-        MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
-                .addPriorities(MqttAuthProviderTypeProto.X_509)
-                .setUseListenerBasedProviderOnly(true)
-                .build();
-        service.onMqttAuthSettingsUpdate(settings);
-
-        given(sslMqttClientAuthProvider.isEnabled()).willReturn(true);
-        given(authContext.isSecurePortUsed()).willReturn(true);
-        given(sslMqttClientAuthProvider.authenticate(authContext))
-                .willReturn(AuthResponse.defaultAuthResponse());
+        given(basicMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(sslMqttClientAuthProvider.isEnabled()).willReturn(false);
+        given(jwtMqttClientAuthProvider.isEnabled()).willReturn(false);
 
         // when
         AuthResponse result = service.executeAuthFlow(authContext);
 
         // then
-        assertThat(result.isSuccess()).isTrue();
-        then(sslMqttClientAuthProvider).should().authenticate(authContext);
-        assertThat(then(basicMqttClientAuthProvider).should().isEnabled()).isFalse();
-        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
-    }
-
-    @Test
-    public void shouldRespectListenerBasedFiltering_NonSecurePort_RemovesSsl() {
-        // given
-        MqttAuthSettingsProto settings = MqttAuthSettingsProto.newBuilder()
-                .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
-                .addPriorities(MqttAuthProviderTypeProto.X_509)
-                .setUseListenerBasedProviderOnly(true)
-                .build();
-        service.onMqttAuthSettingsUpdate(settings);
-
-        given(basicMqttClientAuthProvider.isEnabled()).willReturn(true);
-        given(authContext.isSecurePortUsed()).willReturn(false);
-        given(basicMqttClientAuthProvider.authenticate(authContext))
-                .willReturn(AuthResponse.defaultAuthResponse());
-
-        // when
-        AuthResponse result = service.executeAuthFlow(authContext);
-
-        // then
-        assertThat(result.isSuccess()).isTrue();
-        then(basicMqttClientAuthProvider).should().authenticate(authContext);
-        then(sslMqttClientAuthProvider).shouldHaveNoInteractions();
-        then(jwtMqttClientAuthProvider).shouldHaveNoInteractions();
+        assertThat(result).isEqualTo(AuthResponse.defaultAuthResponse());
     }
 
     @Test
@@ -234,7 +187,6 @@ public class DefaultAuthorizationRoutingServiceTest {
                 .addPriorities(MqttAuthProviderTypeProto.MQTT_BASIC)
                 .addPriorities(MqttAuthProviderTypeProto.X_509)
                 .addPriorities(MqttAuthProviderTypeProto.JWT)
-                .setUseListenerBasedProviderOnly(false)
                 .build();
         service.onMqttAuthSettingsUpdate(settings);
 

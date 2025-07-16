@@ -47,26 +47,22 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
     private final AdminSettingsService adminSettingsService;
 
     private volatile List<MqttAuthProviderType> priorities;
-    private volatile boolean useListenerBasedProviderOnly;
 
     @PostConstruct
     public void init() {
         AdminSettings mqttAuthorization = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
         if (mqttAuthorization == null) {
-            priorities = MqttAuthProviderType.getDefaultPriorityList();
-            log.warn("Failed to find MQTT authorization settings. Going to apply default settings. " +
-                     "Auth Priorities {}, Use listener based provider only: {}", priorities, useListenerBasedProviderOnly);
+            priorities = MqttAuthProviderType.defaultPriorityList;
+            log.warn("Failed to find MQTT authorization settings. Going to use default authentication execution order {}", priorities);
             return;
         }
         MqttAuthSettings mqttAuthSettings = MqttAuthSettings.fromJsonValue(mqttAuthorization.getJsonValue());
-        useListenerBasedProviderOnly = mqttAuthSettings.isUseListenerBasedProviderOnly();
         priorities = getPriorities(mqttAuthSettings.getPriorities());
     }
 
     @Override
     public void onMqttAuthSettingsUpdate(MqttAuthSettingsProto mqttAuthSettingsProto) {
         priorities = getPriorities(ProtoConverter.fromMqttAuthPriorities(mqttAuthSettingsProto.getPrioritiesList()));
-        useListenerBasedProviderOnly = mqttAuthSettingsProto.getUseListenerBasedProviderOnly();
     }
 
     @Override
@@ -79,10 +75,9 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
             return AuthResponse.defaultAuthResponse();
         }
 
-        List<MqttAuthProviderType> prioritiesForCurrentAuthContext = getPrioritiesForCurrentAuthContext(authContext);
-        List<String> failureReasons = new ArrayList<>(prioritiesForCurrentAuthContext.size());
+        List<String> failureReasons = new ArrayList<>(priorities.size());
 
-        for (MqttAuthProviderType providerType : prioritiesForCurrentAuthContext) {
+        for (MqttAuthProviderType providerType : priorities) {
             AuthResponse response = switch (providerType) {
                 case JWT -> jwtMqttClientAuthProvider.authenticate(authContext);
                 case MQTT_BASIC -> basicMqttClientAuthProvider.authenticate(authContext);
@@ -101,14 +96,6 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
         return basicMqttClientAuthProvider.isEnabled() ||
                sslMqttClientAuthProvider.isEnabled() ||
                jwtMqttClientAuthProvider.isEnabled();
-    }
-
-    private List<MqttAuthProviderType> getPrioritiesForCurrentAuthContext(AuthContext authContext) {
-        List<MqttAuthProviderType> effectivePriorities = new ArrayList<>(priorities);
-        if (useListenerBasedProviderOnly) {
-            effectivePriorities.remove(authContext.isSecurePortUsed() ? MqttAuthProviderType.MQTT_BASIC : MqttAuthProviderType.X_509);
-        }
-        return effectivePriorities;
     }
 
     private void addFailureReason(AuthContext authContext, AuthResponse response, String authType, List<String> failureReasons) {
