@@ -414,7 +414,7 @@ queue:
       # Kafka topic properties separated by semicolon for `tbmq.msg.app` topics
       topic-properties: "${TB_KAFKA_APP_PERSISTED_MSG_TOPIC_PROPERTIES:retention.ms:604800000;segment.bytes:26214400;retention.bytes:1048576000;replication.factor:1}"
       # Additional Kafka consumer configs separated by semicolon for `tbmq.msg.app` topics
-      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:500}"
+      additional-consumer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_CONSUMER_CONFIG:max.poll.records:200}"
       # Additional Kafka producer configs separated by semicolon for `tbmq.msg.app` topics
       additional-producer-config: "${TB_KAFKA_APP_PERSISTED_MSG_ADDITIONAL_PRODUCER_CONFIG:}"
       shared-topic:

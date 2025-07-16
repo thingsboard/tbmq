@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
 import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
+import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.stats.StatsManager;
@@ -51,17 +52,18 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
     @Override
     public void onChannelWritable(ClientActorState state) {
         log.trace("[{}] onChannelWritable", state.getClientId());
+        if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
+            log.warn("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
+            return;
+        }
         nonWritableClientsCount.updateAndGet(current -> current == 0 ? 0 : current - 1);
         if (state.getCurrentSessionCtx().isCleanSession()) {
             return;
         }
-        if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
-            log.warn("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
-        }
         state.updateSessionState(SessionState.CONNECTED);
-        if (APPLICATION.equals(state.getCurrentSessionCtx().getClientType())) {
+        if (APPLICATION.equals(getClientType(state))) {
             applicationPersistenceProcessor.processChannelWritable(state);
-        } else if (DEVICE.equals(state.getCurrentSessionCtx().getClientType())) {
+        } else if (DEVICE.equals(getClientType(state))) {
             devicePersistenceProcessor.processChannelWritable(state.getClientId());
         }
     }
@@ -69,18 +71,23 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
     @Override
     public void onChannelNonWritable(ClientActorState state) {
         log.trace("[{}] onChannelNonWritable", state.getClientId());
+        if (!SessionState.CONNECTED.equals(state.getCurrentSessionState())) {
+            log.warn("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
+            return;
+        }
         nonWritableClientsCount.incrementAndGet();
         if (state.getCurrentSessionCtx().isCleanSession()) {
             return;
         }
-        if (!SessionState.CONNECTED.equals(state.getCurrentSessionState())) {
-            log.warn("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
-        }
         state.updateSessionState(SessionState.CHANNEL_NON_WRITABLE);
-        if (APPLICATION.equals(state.getCurrentSessionCtx().getClientType())) {
+        if (APPLICATION.equals(getClientType(state))) {
             applicationPersistenceProcessor.processChannelNonWritable(state.getClientId());
-        } else if (DEVICE.equals(state.getCurrentSessionCtx().getClientType())) {
+        } else if (DEVICE.equals(getClientType(state))) {
             devicePersistenceProcessor.processChannelNonWritable(state.getClientId());
         }
+    }
+
+    private ClientType getClientType(ClientActorState state) {
+        return state.getCurrentSessionCtx().getClientType();
     }
 }

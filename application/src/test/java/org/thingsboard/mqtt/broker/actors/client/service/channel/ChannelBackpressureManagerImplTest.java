@@ -24,6 +24,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.thingsboard.mqtt.broker.actors.client.state.SessionState;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.device.DevicePersistenceProcessor;
@@ -77,6 +78,7 @@ public class ChannelBackpressureManagerImplTest {
     @Test
     public void givenAppClientState_whenOnChannelWritable_thenVerifyAppProcessorExecutions() {
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
 
         channelBackpressureManager.onChannelWritable(state);
 
@@ -87,6 +89,7 @@ public class ChannelBackpressureManagerImplTest {
     @Test
     public void givenDevClientState_whenOnChannelWritable_thenVerifyDevProcessorExecutions() {
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
 
         channelBackpressureManager.onChannelWritable(state);
 
@@ -95,8 +98,31 @@ public class ChannelBackpressureManagerImplTest {
     }
 
     @Test
+    public void givenAppClientWithWritableState_whenOnChannelWritable_thenVerifyAppProcessorExecutions() {
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+
+        channelBackpressureManager.onChannelWritable(state);
+
+        verify(applicationPersistenceProcessor, never()).processChannelWritable(eq(state));
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenDevClientWithWritableState_whenOnChannelWritable_thenVerifyDevProcessorExecutions() {
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
+
+        channelBackpressureManager.onChannelWritable(state);
+
+        verify(devicePersistenceProcessor, never()).processChannelWritable(eq(clientId));
+        assertThatCounterIs(0);
+    }
+
+    @Test
     public void givenAppClientState_whenOnChannelNonWritable_thenVerifyAppProcessorExecutions() {
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
 
         channelBackpressureManager.onChannelNonWritable(state);
 
@@ -107,6 +133,7 @@ public class ChannelBackpressureManagerImplTest {
     @Test
     public void givenDevClientState_whenOnChannelNonWritable_thenVerifyDevProcessorExecutions() {
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
 
         channelBackpressureManager.onChannelNonWritable(state);
 
@@ -118,6 +145,7 @@ public class ChannelBackpressureManagerImplTest {
     public void givenNonPersistentAppClientState_whenOnChannelWritable_thenVerifyAppProcessorExecutions() {
         setCleanSession();
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
 
         channelBackpressureManager.onChannelWritable(state);
 
@@ -129,6 +157,7 @@ public class ChannelBackpressureManagerImplTest {
     public void givenNonPersistentDevClientState_whenOnChannelWritable_thenVerifyDevProcessorExecutions() {
         setCleanSession();
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
 
         channelBackpressureManager.onChannelWritable(state);
 
@@ -140,6 +169,7 @@ public class ChannelBackpressureManagerImplTest {
     public void givenNonPersistentAppClientState_whenOnChannelNonWritable_thenVerifyAppProcessorExecutions() {
         setCleanSession();
         when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
 
         channelBackpressureManager.onChannelNonWritable(state);
 
@@ -150,13 +180,37 @@ public class ChannelBackpressureManagerImplTest {
     @Test
     public void givenNonPersistentDevClientState_whenOnChannelNonWritable_thenVerifyDevProcessorExecutions() {
         setCleanSession();
-
         when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CONNECTED);
 
         channelBackpressureManager.onChannelNonWritable(state);
 
         verify(devicePersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
         assertThatCounterIs(1);
+    }
+
+    @Test
+    public void givenNonPersistentAppClientWithNonWritableState_whenOnChannelNonWritable_thenVerifyAppProcessorExecutions() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+
+        verify(applicationPersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(0);
+    }
+
+    @Test
+    public void givenNonPersistentDevClientWithNonWritableState_whenOnChannelNonWritable_thenVerifyDevProcessorExecutions() {
+        setCleanSession();
+        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(state.getCurrentSessionState()).thenReturn(SessionState.CHANNEL_NON_WRITABLE);
+
+        channelBackpressureManager.onChannelNonWritable(state);
+
+        verify(devicePersistenceProcessor, never()).processChannelNonWritable(eq(clientId));
+        assertThatCounterIs(0);
     }
 
     private void assertThatCounterIs(int expected) {
