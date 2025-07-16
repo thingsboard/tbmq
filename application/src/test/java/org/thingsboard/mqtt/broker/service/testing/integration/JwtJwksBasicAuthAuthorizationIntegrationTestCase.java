@@ -15,6 +15,9 @@
  */
 package org.thingsboard.mqtt.broker.service.testing.integration;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -55,6 +58,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,13 +79,15 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
     private static final String JWKS_USERNAME = "test-user";
     private static final String JWKS_PASSWORD = "test-pass";
 
+    public static final String JWKS_WRONG_USERNAME = "wrong-user";
+    public static final String JWKS_WRONG_PASSWORD = "wrong-pass";
+
     @ClassRule
     public static final WireMockContainer wireMockServer;
 
     private static final RSAKey rsaJwk;
     private static final String jwksBodyEscapedStr;
     private static final String jwksPath = "/secure-with-basic-jwks";
-    private static final int wireMockPort = 8081;
 
     static {
         try {
@@ -95,6 +101,7 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
             jwksBodyEscapedStr = JacksonUtil.toString(jwksJsonStr);
 
             String correctAuthHeader = Base64.getEncoder().encodeToString((JWKS_USERNAME + ":" + JWKS_PASSWORD).getBytes(StandardCharsets.UTF_8));
+            String invalidAuthHeader = Base64.getEncoder().encodeToString((JWKS_WRONG_USERNAME + ":" + JWKS_WRONG_PASSWORD).getBytes(StandardCharsets.UTF_8));
 
             // Mapping for correct credentials → 200 OK
             String successMappingJson = """
@@ -123,7 +130,12 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
                 {
                   "request": {
                     "method": "GET",
-                    "url": "%s"
+                    "url": "%s",
+                    "headers": {
+                      "Authorization": {
+                        "equalTo": "Basic %s"
+                      }
+                    }
                   },
                   "response": {
                     "status": 401,
@@ -133,11 +145,16 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
                     "body": "Unauthorized"
                   }
                 }
-                """.formatted(jwksPath);
+                """.formatted(jwksPath, invalidAuthHeader);
 
             wireMockServer = new WireMockContainer("wiremock/wiremock:3.13.1")
+                    .withCreateContainerCmdModifier(cmd -> {
+                        cmd.withEntrypoint("/docker-entrypoint.sh");
+                        // cmd.withCmd("--verbose"); useful for debugging, but not necessary for the test.
+                        cmd.withExposedPorts(ExposedPort.tcp(8080));
+                        Objects.requireNonNull(cmd.getHostConfig()).withPortBindings(new PortBinding(Ports.Binding.empty(), new ExposedPort(8080)));
+                    })
                     .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
-                    .withExposedPorts(wireMockPort)
                     .withMappingFromJSON(successMappingJson)
                     .withMappingFromJSON(unauthorizedMappingJson);
         } catch (Exception e) {
@@ -241,14 +258,13 @@ public class JwtJwksBasicAuthAuthorizationIntegrationTestCase extends AbstractPu
 
     @Test
     public void givenInvalidJwksBasicCredentials_whenConnect_thenConnectionRefusedNotAuthorized() throws Throwable {
-        System.setProperty("org.eclipse.paho.client.mqttv3.logging", "on");
         // Reconfigure the auth provider with invalid JWKS credentials
         JwksVerifierConfiguration config = new JwksVerifierConfiguration();
         config.setEndpoint(wireMockServer.getBaseUrl() + jwksPath);
 
         var invalidCreds = new BasicCredentials();
-        invalidCreds.setUsername("wrong-user");
-        invalidCreds.setPassword("wrong-pass");
+        invalidCreds.setUsername(JWKS_WRONG_USERNAME);
+        invalidCreds.setPassword(JWKS_WRONG_PASSWORD);
         config.setCredentials(invalidCreds);
 
         MqttAuthProvider provider = getMqttAuthProvider(MqttAuthProviderType.JWT);
