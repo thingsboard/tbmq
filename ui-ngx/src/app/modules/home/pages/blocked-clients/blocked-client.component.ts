@@ -24,7 +24,7 @@ import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import {
   BlockedClient,
@@ -43,7 +43,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
     selector: 'tb-blocked-client',
     templateUrl: './blocked-client.component.html',
     styleUrls: ['./blocked-client.component.scss'],
-  imports: [MatIcon, TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, AsyncPipe, MatSuffix, MatTooltip, MatOption, MatSelect, MatDatetimepickerModule, MatPrefix, MatNativeDatetimeModule, JsonPipe, MatSlideToggle]
+    imports: [MatIcon, TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, AsyncPipe, MatSuffix, MatTooltip, MatOption, MatSelect, MatDatetimepickerModule, MatPrefix, MatNativeDatetimeModule, MatSlideToggle]
 })
 export class BlockedClientComponent extends EntityComponent<BlockedClient> {
 

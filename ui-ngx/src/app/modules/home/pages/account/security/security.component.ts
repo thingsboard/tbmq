@@ -40,13 +40,12 @@ import { TbIconComponent } from '@shared/components/icon.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatTooltip } from '@angular/material/tooltip';
-import { HelpComponent } from '@shared/components/help.component';
 
 @Component({
     selector: 'tb-security',
     templateUrl: './security.component.html',
     styleUrls: ['./security.component.scss'],
-    imports: [MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe, MatTooltip, HelpComponent, MatCardHeader, MatCardTitle, MatIconButton]
+    imports: [MatCard, ToastDirective, FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatLabel, MatInput, TogglePasswordComponent, MatSuffix, MatHint, NgTemplateOutlet, MatDivider, TbIconComponent, MatIcon, MatButton, AsyncPipe, MatTooltip, MatCardHeader, MatCardTitle, MatIconButton]
 })
 export class SecurityComponent extends PageComponent implements OnInit, OnDestroy {
 

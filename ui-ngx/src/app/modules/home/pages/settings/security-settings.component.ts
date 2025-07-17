@@ -38,8 +38,6 @@ import { MatButton, MatIconButton } from '@angular/material/button';
 import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
-import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { takeUntil } from 'rxjs/operators';
 import { HelpComponent } from '@shared/components/help.component';
 import { MatChipGrid, MatChipInput, MatChipRow } from '@angular/material/chips';
 import {
@@ -58,7 +56,7 @@ import { MqttAuthProviderType, mqttAuthProviderTypeTranslationMap } from '@share
     selector: 'tb-security-settings',
     templateUrl: './security-settings.component.html',
     styleUrls: ['./security-settings.component.scss'],
-    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, MatSlideToggle, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
+    imports: [MatCard, MatCardHeader, MatCardTitle, TranslateModule, MatCardContent, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, MatHint, MatCheckbox, HintTooltipIconComponent, MatButton, AsyncPipe, MatIcon, MatSuffix, MatTooltip, HelpComponent, DndDropzoneDirective, DndDraggableDirective, MatChipGrid, MatChipRow, DndDragImageRefDirective, DndHandleDirective, DndPlaceholderRefDirective, MatChipInput, MatIconButton]
 })
 export class SecuritySettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
