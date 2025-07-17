@@ -136,7 +136,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
   get defaultClientTypeHint() {
     return this.translate.instant('authentication.client-type-hint', {
       type: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value)),
-      oppositeType: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value === ClientType.DEVICE ? ClientType.APPLICATION : ClientType.DEVICE))
+      targetType: this.translate.instant(this.clientTypeTranslationMap.get(this.jwtConfigForm.get('defaultClientType')?.value === ClientType.DEVICE ? ClientType.APPLICATION : ClientType.DEVICE))
     });
   }
 

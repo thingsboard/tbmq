@@ -64,7 +64,7 @@ export const homePageTitleConfig = new Map<HomePageTitleType, HomePageTitle>(
       {
         label: 'mqtt-client-credentials.credentials',
         tooltip: 'mqtt-client-credentials.credentials',
-        link: 'client-credentials',
+        link: 'authentication/client-credentials',
         docsLink: 'user-guide/ui/mqtt-client-credentials'
       }
     ],
