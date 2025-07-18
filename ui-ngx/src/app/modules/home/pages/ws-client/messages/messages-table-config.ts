@@ -82,10 +82,10 @@ export class MessagesTableConfig extends EntityTableConfig<WsTableMessage> {
         const messageReceived = entity.type === 'received';
         return this.translate.instant(WsClientMessageTypeTranslationMap.get(messageReceived));
       }),
-      new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '150px'),
+      new DateEntityTableColumn<WsTableMessage>('createdTime', 'common.time', this.datePipe, '120px'),
       new EntityTableColumn<WsTableMessage>('topic', 'retained-message.topic', '100%', entity => entity.topic,
         undefined, undefined, undefined, (entity) => entity.topic),
-      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '50px', entity => entity.qos.toString(),
+      new EntityTableColumn<WsTableMessage>('qos', 'retained-message.qos', '30px', entity => entity.qos.toString(),
         undefined, undefined, undefined, (entity) => this.translate.instant(QosTranslation.get(entity.qos))),
       new EntityTableColumn<WsTableMessage>('retain', 'ws-client.messages.retained', '50px',
         entity => entity.retain ? cellWithBackground('True', 'rgba(0, 0, 0, 0.08)') : ''

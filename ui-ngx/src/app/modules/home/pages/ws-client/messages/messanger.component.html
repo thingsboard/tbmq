@@ -46,7 +46,7 @@
   <section class="flex flex-row flex-nowrap items-center gap-4 lt-xl:flex-wrap"
     [class.wrap]="isLtLg | async">
     <mat-form-field class="flex flex-1" [class.topic-mat-form-field]="isLtLg | async"
-                    style="min-width: 250px !important; width: 100%" hideRequiredMarker>
+                    style="min-width: 200px !important; width: 100%" hideRequiredMarker>
       <mat-label translate>mqtt-client-session.topic</mat-label>
       <input matInput formControlName="topic" [matAutocomplete]="auto">
       <mat-autocomplete #auto="matAutocomplete">
@@ -67,9 +67,9 @@
       <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
       </tb-color-input>
     </mat-form-field>
-    <tb-qos-select formControlName="qos" class="flex max-w-20% lt-xl:max-w-25%">
+    <tb-qos-select formControlName="qos" class="flex max-w-20% lt-xl:max-w-20%">
     </tb-qos-select>
-    <mat-form-field class="flex max-w-20% lt-xl:max-w-25%">
+    <mat-form-field class="flex max-w-20% lt-xl:max-w-[100px]">
       <mat-label translate>value.format</mat-label>
       <mat-select formControlName="payloadFormat">
         @for (valueType of payloadFormats; track valueType) {
