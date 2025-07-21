@@ -26,32 +26,30 @@
       </div>
       <mat-divider style="width: 100%" class="pb-4"></mat-divider>
     }
-    <div class="flex w-full flex-col gap-3 pb-3">
-      @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
-        <div class="flex flex-row items-center justify-start gap-3 px-4" formArrayName="keyVals">
-          <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
-                          subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
-            <input [formControl]="keyValControl.get('key')" matInput required
-                   placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'action.set') | translate }}"/>
-          </mat-form-field>
-          <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
-                          subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
-            <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
-                   placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'action.set') | translate }}"/>
-          </mat-form-field>
-          <button mat-icon-button
-                  style="top: 4px; align-self: baseline"
-                  [class.!hidden]="disabled"
-                  type="button"
-                  (click)="removeKeyVal($index)"
-                  [disabled]="isLoading$ | async"
-                  matTooltip="{{ 'key-val.remove-entry' | translate }}"
-                  matTooltipPosition="above">
-            <mat-icon style="color: rgba(0,0,0,0.54)" svgIcon="mdi:trash-can-outline"></mat-icon>
-          </button>
-        </div>
-      }
-    </div>
+    @for (keyValControl of keyValsFormArray().controls; track keyValControl) {
+      <div class="flex flex-row items-center justify-start gap-3 px-4 pb-4" formArrayName="keyVals">
+        <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
+                        subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+          <input [formControl]="keyValControl.get('key')" matInput required
+                 placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'action.set') | translate }}"/>
+        </mat-form-field>
+        <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
+                        subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
+          <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
+                 placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'action.set') | translate }}"/>
+        </mat-form-field>
+        <button mat-icon-button
+                style="top: 4px; align-self: baseline"
+                [class.!hidden]="disabled"
+                type="button"
+                (click)="removeKeyVal($index)"
+                [disabled]="isLoading$ | async"
+                matTooltip="{{ 'key-val.remove-entry' | translate }}"
+                matTooltipPosition="above">
+          <mat-icon style="color: rgba(0,0,0,0.54)" svgIcon="mdi:trash-can-outline"></mat-icon>
+        </button>
+      </div>
+    }
     <span [class]="{ 'disabled': disabled, '!hidden': keyValsFormArray().length}"
           class="no-data-found flex items-center justify-center" translate>
       {{ noDataText() ? noDataText() : 'key-val.no-data' }}
