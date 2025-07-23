@@ -38,7 +38,7 @@ public abstract class ContextAwareActor extends AbstractTbActor {
     }
 
     @Override
-    public boolean process(TbActorMsg msg) {
+    public void process(TbActorMsg msg) {
         stopWatch.start();
         try {
             if (!doProcess(msg)) {
@@ -49,16 +49,13 @@ public abstract class ContextAwareActor extends AbstractTbActor {
             actorProcessingMetricService.logMsgProcessingTime(msg.getMsgType(), stopWatch.getTime());
             stopWatch.reset();
         }
-        return false;
     }
 
     protected abstract boolean doProcess(TbActorMsg msg);
 
     @Override
     public ProcessFailureStrategy onProcessFailure(Throwable t) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Processing failure: ", getActorId(), t);
-        }
+        log.debug("[{}] Processing failure: ", getActorId(), t);
         return doProcessFailure(t);
     }
 

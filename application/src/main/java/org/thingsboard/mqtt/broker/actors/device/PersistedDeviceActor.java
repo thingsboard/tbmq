@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.actors.device;
 
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.device.messages.DeliverPersistedMessagesEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
@@ -40,7 +41,7 @@ public class PersistedDeviceActor extends ContextAwareActor {
         super(systemContext);
         this.clientId = clientId;
         this.processor = new PersistedDeviceActorMessageProcessor(systemContext, clientId);
-        this.clientLogger = systemContext.getClientLogger();
+        this.clientLogger = systemContext.getClientActorContext().getClientLogger();
     }
 
     @Override
@@ -51,16 +52,16 @@ public class PersistedDeviceActor extends ContextAwareActor {
         clientLogger.logEvent(clientId, this.getClass(), "Received msg - " + msg.getMsgType());
         switch (msg.getMsgType()) {
             case DEVICE_CONNECTED_EVENT_MSG:
-                processor.processDeviceConnect((DeviceConnectedEventMsg) msg);
+                processor.processDeviceConnect(ctx, (DeviceConnectedEventMsg) msg);
                 break;
             case DEVICE_DISCONNECTED_EVENT_MSG:
                 processor.processDeviceDisconnect(ctx);
                 break;
             case SHARED_SUBSCRIPTION_EVENT_MSG:
-                processor.processingSharedSubscriptions((SharedSubscriptionEventMsg) msg);
+                processor.processSharedSubscriptions(ctx, (SharedSubscriptionEventMsg) msg);
                 break;
             case INCOMING_PUBLISH_MSG:
-                processor.process((IncomingPublishMsg) msg);
+                processor.processIncomingMsg((IncomingPublishMsg) msg);
                 break;
             case PACKET_ACKNOWLEDGED_EVENT_MSG:
                 processor.processPacketAcknowledge((PacketAcknowledgedEventMsg) msg);
@@ -81,10 +82,13 @@ public class PersistedDeviceActor extends ContextAwareActor {
                 processor.processRemovePersistedMessages();
                 break;
             case DEVICE_WRITABLE_CHANNEL_MSG:
-                processor.processChannelWritable();
+                processor.processChannelWritable(ctx);
                 break;
             case DEVICE_NON_WRITABLE_CHANNEL_MSG:
                 processor.processChannelNonWritable();
+                break;
+            case DEVICE_DELIVER_PERSISTED_MESSAGES_MSG:
+                processor.processDeliverPersistedMessages((DeliverPersistedMessagesEventMsg) msg);
                 break;
             default:
                 return false;

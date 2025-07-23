@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.service.analysis;
+package org.thingsboard.mqtt.broker.actors.device.retry;
 
-public interface ClientLogger {
+public interface RetryPolicy {
 
-    void logEvent(String clientId, Class<?> eventLocation, String eventDescription);
+    boolean canRetry();
+
+    void reset();
+
+    long nextDelay();
 
 }

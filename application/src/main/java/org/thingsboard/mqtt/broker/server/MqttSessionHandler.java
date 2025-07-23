@@ -292,10 +292,10 @@ public class MqttSessionHandler extends ChannelInboundHandlerAdapter implements 
     @Override
     public void channelWritabilityChanged(ChannelHandlerContext ctx) throws Exception {
         if (ctx.channel().isWritable()) {
-            log.info("[{}][{}] Channel is writable addr:[{}]", sessionId, clientId, address);
+            log.debug("[{}][{}] Channel is writable addr:[{}]", sessionId, clientId, address);
             clientMqttActorManager.notifyChannelWritable(clientId, WritableChannelMsg.DEFAULT);
         } else {
-            log.warn("[{}][{}] Channel became non-writable addr:[{}]", sessionId, clientId, address);
+            log.debug("[{}][{}] Channel became non-writable addr:[{}]", sessionId, clientId, address);
             clientMqttActorManager.notifyChannelNonWritable(clientId, NonWritableChannelMsg.DEFAULT);
         }
         super.channelWritabilityChanged(ctx);

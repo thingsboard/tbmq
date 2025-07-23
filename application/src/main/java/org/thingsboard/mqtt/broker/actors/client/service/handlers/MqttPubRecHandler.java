@@ -50,6 +50,10 @@ public class MqttPubRecHandler {
         if (ctx.getSessionInfo().isPersistent()) {
             msgPersistenceManager.processPubRec(ctx, messageId);
         } else {
+            if (!ctx.isWritable()) {
+                log.debug("[{}] Channel is not writable. Skip send PubRel {}", ctx.getClientId(), messageId);
+                return;
+            }
             publishMsgDeliveryService.sendPubRelMsgToClient(ctx, messageId);
         }
     }

@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.actors.device.DeviceActorConfiguration;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
 import org.thingsboard.mqtt.broker.actors.service.ActorProcessingMetricService;
 import org.thingsboard.mqtt.broker.dao.messages.DeviceMsgService;
-import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.mqtt.PublishMsgDeliveryService;
 import org.thingsboard.mqtt.broker.service.subscription.shared.SharedSubscriptionCacheService;
 import org.thingsboard.mqtt.broker.session.ClientMqttActorManager;
@@ -43,7 +42,6 @@ public class ActorSystemContext {
     private final PublishMsgDeliveryService publishMsgDeliveryService;
     private final ClientMqttActorManager clientMqttActorManager;
     private final ActorProcessingMetricService actorProcessingMetricService;
-    private final ClientLogger clientLogger;
     private final SharedSubscriptionCacheService sharedSubscriptionCacheService;
     private final ChannelBackpressureManager channelBackpressureManager;
 
@@ -53,13 +51,21 @@ public class ActorSystemContext {
     private final ClientActorConfiguration clientActorConfiguration;
 
     public void scheduleMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInMs) {
-        if (log.isDebugEnabled()) {
-            log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
-        }
+        log.debug("Scheduling msg {} with delay {} ms", msg, delayInMs);
         if (delayInMs > 0) {
             actorSystem.getScheduler().schedule(() -> ctx.tell(msg), delayInMs, TimeUnit.MILLISECONDS);
         } else {
             ctx.tell(msg);
         }
     }
+
+    public void scheduleHighPriorityMsgWithDelay(TbActorCtx ctx, TbActorMsg msg, long delayInSec) {
+        log.debug("Scheduling high priority msg {} with delay {}s", msg, delayInSec);
+        if (delayInSec > 0) {
+            actorSystem.getScheduler().schedule(() -> ctx.tellWithHighPriority(msg), delayInSec, TimeUnit.SECONDS);
+        } else {
+            ctx.tellWithHighPriority(msg);
+        }
+    }
+
 }

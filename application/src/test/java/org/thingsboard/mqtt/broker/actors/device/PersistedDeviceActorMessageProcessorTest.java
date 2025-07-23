@@ -22,7 +22,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.ActorSystemContext;
+import org.thingsboard.mqtt.broker.actors.ClientActorContext;
 import org.thingsboard.mqtt.broker.actors.TbActorCtx;
+import org.thingsboard.mqtt.broker.actors.device.messages.DeliverPersistedMessagesEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.DeviceConnectedEventMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.IncomingPublishMsg;
 import org.thingsboard.mqtt.broker.actors.device.messages.PacketAcknowledgedEventMsg;
@@ -90,11 +92,12 @@ public class PersistedDeviceActorMessageProcessorTest {
         clientLogger = mock(ClientLogger.class);
         deviceActorConfig = mock(DeviceActorConfiguration.class);
         sharedSubscriptionCacheService = mock(SharedSubscriptionCacheService.class);
+        ClientActorContext clientActorContext = mock(ClientActorContext.class);
 
         when(actorSystemContext.getDeviceMsgService()).thenReturn(deviceMsgService);
         when(actorSystemContext.getPublishMsgDeliveryService()).thenReturn(publishMsgDeliveryService);
-        when(actorSystemContext.getClientMqttActorManager()).thenReturn(clientMqttActorManager);
-        when(actorSystemContext.getClientLogger()).thenReturn(clientLogger);
+        when(actorSystemContext.getClientActorContext()).thenReturn(clientActorContext);
+        when(clientActorContext.getClientLogger()).thenReturn(clientLogger);
         when(actorSystemContext.getDeviceActorConfiguration()).thenReturn(deviceActorConfig);
         when(actorSystemContext.getSharedSubscriptionCacheService()).thenReturn(sharedSubscriptionCacheService);
 
@@ -108,10 +111,11 @@ public class PersistedDeviceActorMessageProcessorTest {
     @Test
     public void givenDeviceConnectedEventMsg_whenProcessDeviceConnect_thenSuccess() {
         ClientSessionCtx ctx = mock(ClientSessionCtx.class);
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
         var devicePublishMsgList = CompletableFuture.completedStage(List.of(DevicePublishMsg.builder().build()));
         when(deviceMsgService.findPersistedMessages(anyString())).thenReturn(devicePublishMsgList);
 
-        persistedDeviceActorMessageProcessor.processDeviceConnect(new DeviceConnectedEventMsg(ctx));
+        persistedDeviceActorMessageProcessor.processDeviceConnect(actorCtx, new DeviceConnectedEventMsg(ctx));
 
         verify(deviceMsgService).findPersistedMessages(eq(CLIENT_ID));
         assertEquals(persistedDeviceActorMessageProcessor.getSessionCtx(), ctx);
@@ -119,6 +123,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenSharedSubscriptionEventMsgAndAlreadyConnectedClient_whenProcessingSharedSubscriptions_thenDoNothing() {
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
         TopicSharedSubscription sharedSubscription = new TopicSharedSubscription("tf", "g1", 2);
         SharedSubscriptionEventMsg msg = new SharedSubscriptionEventMsg(
                 Set.of(
@@ -130,7 +135,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         when(deviceMsgService.saveLastPacketId(eq(CLIENT_ID), anyInt())).thenReturn(CompletableFuture.completedStage("OK"));
         when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(true);
 
-        persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
+        persistedDeviceActorMessageProcessor.processSharedSubscriptions(actorCtx, msg);
 
         verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
         verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
@@ -139,6 +144,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenSharedSubscriptionEventMsgAndQosZero_whenProcessingSharedSubscriptions_thenDoNothing() {
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
         TopicSharedSubscription sharedSubscription = new TopicSharedSubscription("tf", "g1");
         SharedSubscriptionEventMsg msg = new SharedSubscriptionEventMsg(
                 Set.of(
@@ -150,7 +156,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         when(deviceMsgService.saveLastPacketId(eq(CLIENT_ID), anyInt())).thenReturn(CompletableFuture.completedStage("OK"));
         when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(false);
 
-        persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
+        persistedDeviceActorMessageProcessor.processSharedSubscriptions(actorCtx, msg);
 
         verify(deviceMsgService).getLastPacketId(CLIENT_ID);
         verify(deviceMsgService).saveLastPacketId(CLIENT_ID, expectedPacketId);
@@ -159,6 +165,7 @@ public class PersistedDeviceActorMessageProcessorTest {
 
     @Test
     public void givenSharedSubscriptionEventMsg_whenProcessingSharedSubscriptions_thenVerifiedMethodExecution() {
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
         DevicePublishMsg devicePublishMsg = DevicePublishMsg
                 .builder()
                 .packetId(1)
@@ -182,7 +189,7 @@ public class PersistedDeviceActorMessageProcessorTest {
         );
         when(sharedSubscriptionCacheService.isAnyOtherDeviceClientConnected(eq(CLIENT_ID), eq(sharedSubscription))).thenReturn(false);
 
-        persistedDeviceActorMessageProcessor.processingSharedSubscriptions(msg);
+        persistedDeviceActorMessageProcessor.processSharedSubscriptions(actorCtx, msg);
 
         verify(deviceMsgService).getLastPacketId(eq(CLIENT_ID));
         verify(deviceMsgService).findPersistedMessages(eq("ss_g1_tf"));
@@ -306,7 +313,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .properties(properties)
                 .build();
 
-        persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
+        persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
@@ -323,7 +330,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .properties(properties)
                 .build();
 
-        persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
+        persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
         verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
@@ -343,7 +350,7 @@ public class PersistedDeviceActorMessageProcessorTest {
                 .qos(1)
                 .build();
 
-        persistedDeviceActorMessageProcessor.process(new IncomingPublishMsg(devicePublishMsg));
+        persistedDeviceActorMessageProcessor.processIncomingMsg(new IncomingPublishMsg(devicePublishMsg));
 
         verify(publishMsgDeliveryService).sendPublishMsgToClient(any(), any(), anyBoolean());
 
@@ -515,14 +522,23 @@ public class PersistedDeviceActorMessageProcessorTest {
     }
 
     @Test
-    public void givenNotWritableClient_whenProcessChannelWritable_thenChangeState() {
+    public void givenNotWritableClient_whenProcessChannelWritable_thenFindPersistedMessages() {
+        TbActorCtx actorCtx = mock(TbActorCtx.class);
         when(deviceMsgService.findPersistedMessages(eq(CLIENT_ID))).thenReturn(new CompletableFuture<>());
         persistedDeviceActorMessageProcessor.setChannelWritable(false);
 
-        persistedDeviceActorMessageProcessor.processChannelWritable();
+        persistedDeviceActorMessageProcessor.processChannelWritable(actorCtx);
 
-        assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
         verify(deviceMsgService).findPersistedMessages(eq(CLIENT_ID));
+    }
+
+    @Test
+    public void givenNotWritableClient_whenProcessDeliverPersistedMessages_thenChangeState() {
+        persistedDeviceActorMessageProcessor.setChannelWritable(false);
+
+        persistedDeviceActorMessageProcessor.processDeliverPersistedMessages(new DeliverPersistedMessagesEventMsg(List.of()));
+        assertTrue(persistedDeviceActorMessageProcessor.isChannelWritable());
+        verify(publishMsgDeliveryService, never()).sendPublishMsgToClient(any(), any(), anyBoolean());
     }
 
 }
