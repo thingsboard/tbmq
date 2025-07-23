@@ -20,7 +20,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(ClasspathSuite.class)
 @ClasspathSuite.ClassnameFilters({
-        "org.thingsboard.mqtt.broker.service.testing.integration.*TestCasesssss",
+        "org.thingsboard.mqtt.broker.service.testing.integration.*TestCase",
 })
 public class IntegrationTestSuite {
 
