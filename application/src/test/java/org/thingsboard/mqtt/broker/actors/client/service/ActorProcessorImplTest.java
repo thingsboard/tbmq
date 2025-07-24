@@ -408,7 +408,7 @@ public class ActorProcessorImplTest {
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID), mqttDisconnectMsgCaptor.capture());
         var mqttDisconnectMsg = mqttDisconnectMsgCaptor.getValue();
         assertThat(mqttDisconnectMsg.getSessionId()).isEqualTo(sessionId);
-        assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
+        assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_NOT_AUTHORIZED);
         verify(sessionCtxMock).getSessionId();
         verifyNoMoreInteractions(sessionCtxMock);
     }
@@ -595,7 +595,7 @@ public class ActorProcessorImplTest {
         verify(clientMqttActorManager).disconnect(eq(CLIENT_ID), mqttDisconnectMsgCaptor.capture());
         var mqttDisconnectMsg = mqttDisconnectMsgCaptor.getValue();
         assertThat(mqttDisconnectMsg.getSessionId()).isEqualTo(sessionId);
-        assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.NOT_AUTHORIZED);
+        assertThat(mqttDisconnectMsg.getReason().getType()).isEqualTo(DisconnectReasonType.ON_NOT_AUTHORIZED);
         assertThat(mqttDisconnectMsg.getReason().getMessage()).isEqualTo(CLIENT_RE_AUTH_MESSAGE_EVALUATION_ERROR.getReasonLog());
         verifyNoMoreInteractions(clientMqttActorManager);
     }

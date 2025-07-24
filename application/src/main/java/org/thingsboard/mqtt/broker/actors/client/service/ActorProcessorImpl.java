@@ -210,7 +210,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         EnhancedAuthContinueResponse authResponse = enhancedAuthenticationService.onReAuth(sessionCtx, authContext);
         if (!authResponse.success()) {
             clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED, authResponse.enhancedAuthFailure().getReasonLog())));
+                    new DisconnectReason(DisconnectReasonType.ON_NOT_AUTHORIZED, authResponse.enhancedAuthFailure().getReasonLog())));
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
             return;
         }
@@ -243,7 +243,7 @@ public class ActorProcessorImpl implements ActorProcessor {
         EnhancedAuthFinalResponse authResponse = enhancedAuthenticationService.onReAuthContinue(sessionCtx, authContext);
         if (!authResponse.success()) {
             clientMqttActorManager.disconnect(state.getClientId(), new MqttDisconnectMsg(sessionCtx.getSessionId(),
-                    new DisconnectReason(DisconnectReasonType.NOT_AUTHORIZED)));
+                    new DisconnectReason(DisconnectReasonType.ON_NOT_AUTHORIZED)));
             unauthorizedClientManager.persistClientUnauthorized(state, sessionCtx, authResponse);
             return;
         }
