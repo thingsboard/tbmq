@@ -25,6 +25,7 @@
         </encoder>
     </appender>
 
+    <logger name="org.thingsboard.mqtt.broker.actors.device.PersistedDeviceActorMessageProcessor" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.connect.ConnectServiceImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.actors.client.service.disconnect.DisconnectServiceImpl" level="INFO"/>
     <logger name="org.thingsboard.mqtt.broker.server.MqttSessionHandler" level="INFO"/>

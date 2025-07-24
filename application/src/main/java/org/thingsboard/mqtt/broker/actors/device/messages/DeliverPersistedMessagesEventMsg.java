@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.actors;
+package org.thingsboard.mqtt.broker.actors.device.messages;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.actors.msg.MsgType;
 import org.thingsboard.mqtt.broker.actors.msg.TbActorMsg;
+import org.thingsboard.mqtt.broker.common.data.DevicePublishMsg;
 
-public interface TbActor {
+import java.util.List;
 
-    void process(TbActorMsg msg);
+@Slf4j
+@Getter
+@RequiredArgsConstructor
+public class DeliverPersistedMessagesEventMsg implements TbActorMsg {
 
-    TbActorRef getActorRef();
+    private final List<DevicePublishMsg> persistedMessages;
 
-    default void init(TbActorCtx ctx) throws TbActorException {
+    @Override
+    public MsgType getMsgType() {
+        return MsgType.DEVICE_DELIVER_PERSISTED_MESSAGES_MSG;
     }
 
-    default void destroy() throws TbActorException {
-    }
-
-    default InitFailureStrategy onInitFailure(int attempt, Throwable t) {
-        return InitFailureStrategy.retryWithDelay(5000L * attempt);
-    }
-
-    default ProcessFailureStrategy onProcessFailure(Throwable t) {
-        if (t instanceof Error) {
-            return ProcessFailureStrategy.stop();
-        } else {
-            return ProcessFailureStrategy.resume();
-        }
-    }
 }

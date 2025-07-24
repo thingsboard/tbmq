@@ -219,7 +219,8 @@ public class ClientSubscriptionServiceImpl implements ClientSubscriptionService 
 
     @Override
     public Set<TopicSubscription> getClientSubscriptions(String clientId) {
-        return new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
+        return clientSubscriptionsMap == null ? Collections.emptySet() :
+                new HashSet<>(clientSubscriptionsMap.getOrDefault(clientId, Collections.emptySet()));
     }
 
     @Override

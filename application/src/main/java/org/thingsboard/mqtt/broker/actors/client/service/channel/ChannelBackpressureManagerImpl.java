@@ -51,10 +51,11 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @Override
     public void onChannelWritable(ClientActorState state) {
-        log.trace("[{}] onChannelWritable", state.getClientId());
         if (!SessionState.CHANNEL_NON_WRITABLE.equals(state.getCurrentSessionState())) {
-            log.warn("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
+            log.debug("[{}] Received channel writable event when current state is not CHANNEL_NON_WRITABLE", state.getClientId());
             return;
+        } else {
+            log.info("[{}] Channel is writable", state.getClientId());
         }
         nonWritableClientsCount.updateAndGet(current -> current == 0 ? 0 : current - 1);
         if (state.getCurrentSessionCtx().isCleanSession()) {
@@ -70,10 +71,11 @@ public class ChannelBackpressureManagerImpl implements ChannelBackpressureManage
 
     @Override
     public void onChannelNonWritable(ClientActorState state) {
-        log.trace("[{}] onChannelNonWritable", state.getClientId());
         if (!SessionState.CONNECTED.equals(state.getCurrentSessionState())) {
-            log.warn("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
+            log.debug("[{}] Received CHANNEL_NON_WRITABLE when current state is not CONNECTED", state.getClientId());
             return;
+        } else {
+            log.warn("[{}] Channel became non-writable", state.getClientId());
         }
         nonWritableClientsCount.incrementAndGet();
         if (state.getCurrentSessionCtx().isCleanSession()) {

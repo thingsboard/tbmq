@@ -64,6 +64,7 @@ public class MqttPubRecHandlerTest {
     @Test
     public void testProcessNonPersistent() {
         when(ctx.getSessionInfo()).thenReturn(getSessionInfo(true, 0));
+        when(ctx.isWritable()).thenReturn(true);
 
         mqttPubRecHandler.process(ctx, newMqttPubRecMsg(MqttReasonCodes.PubRec.SUCCESS));
         verify(publishMsgDeliveryService).sendPubRelMsgToClient(eq(ctx), eq(1));
