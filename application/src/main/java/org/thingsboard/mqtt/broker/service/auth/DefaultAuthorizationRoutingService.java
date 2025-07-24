@@ -108,7 +108,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
     private AuthResponse getFinalFailureAuthResponse(AuthContext authContext, List<String> failureReasons) {
         String fullReason = String.join(" | ", failureReasons);
-        log.warn("[{}] Failed to authenticate client {}", authContext.getClientId(), fullReason);
+        log.warn("[{}] Failed to authenticate client: {}", authContext.getClientId(), fullReason);
         return AuthResponse.failure(fullReason);
     }
 

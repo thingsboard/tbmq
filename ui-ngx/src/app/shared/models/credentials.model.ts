@@ -28,7 +28,7 @@ import { TimePageLink } from '@shared/models/page/page-link';
 
 export enum CredentialsType {
   MQTT_BASIC = 'MQTT_BASIC',
-  SSL = 'SSL',
+  X_509 = 'X_509',
   SCRAM = 'SCRAM',
 }
 
@@ -40,7 +40,7 @@ export const wsSystemCredentialsName = 'TBMQ WebSockets MQTT Credentials';
 export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic'],
-    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl'],
+    [CredentialsType.X_509, 'mqtt-client-credentials.type-ssl'],
     [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram'],
   ]
 );
@@ -48,7 +48,7 @@ export const credentialsTypeTranslationMap = new Map<CredentialsType, string>(
 export const credentialsWarningTranslations = new Map<CredentialsType, string>(
   [
     [CredentialsType.MQTT_BASIC, 'mqtt-client-credentials.type-basic-disabled'],
-    [CredentialsType.SSL, 'mqtt-client-credentials.type-ssl-disabled'],
+    [CredentialsType.X_509, 'mqtt-client-credentials.type-ssl-disabled'],
     [CredentialsType.SCRAM, 'mqtt-client-credentials.type-scram-disabled'],
   ]
 );

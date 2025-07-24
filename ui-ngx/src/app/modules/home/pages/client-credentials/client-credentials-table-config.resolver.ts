@@ -298,7 +298,7 @@ export class ClientCredentialsTableConfigResolver {
   private showCredentialsWarning(credentialsType: CredentialsType): boolean {
     const brokerConfig = this.configService.brokerConfig;
     return (credentialsType === CredentialsType.MQTT_BASIC && !brokerConfig.basicAuthEnabled) ||
-           (credentialsType === CredentialsType.SSL && !brokerConfig.x509AuthEnabled) ||
+           (credentialsType === CredentialsType.X_509 && !brokerConfig.x509AuthEnabled) ||
            (credentialsType === CredentialsType.SCRAM && !brokerConfig.scramAuthEnabled);
   }
 }
