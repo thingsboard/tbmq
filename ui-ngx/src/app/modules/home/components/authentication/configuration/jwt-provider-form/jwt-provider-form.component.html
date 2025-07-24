@@ -142,12 +142,12 @@
           <p class="mb-3" style="font-weight: 400; color: rgba(0, 0, 0, 0.87);" translate>authentication.authorization-dynamic</p>
           <div class="tb-hint" [innerHtml]="'authentication.authorization-dynamic-hint' | translate"></div>
           <mat-form-field class="mat-block">
-            <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
-            <input matInput formControlName="subAuthRuleClaim">
-          </mat-form-field>
-          <mat-form-field class="mat-block" subscriptSizing="dynamic">
             <mat-label translate>authentication.pub-auth-rule-claim</mat-label>
             <input matInput formControlName="pubAuthRuleClaim">
+          </mat-form-field>
+          <mat-form-field class="mat-block" subscriptSizing="dynamic">
+            <mat-label translate>authentication.sub-auth-rule-claim</mat-label>
+            <input matInput formControlName="subAuthRuleClaim">
           </mat-form-field>
         </div>
       </section>
