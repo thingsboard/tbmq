@@ -35,9 +35,12 @@ import org.thingsboard.mqtt.broker.queue.provider.DownLinkBasicPublishMsgQueueFa
 import org.thingsboard.mqtt.broker.queue.provider.DownLinkPersistentPublishMsgQueueFactory;
 import org.thingsboard.mqtt.broker.queue.publish.TbPublishServiceImpl;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
+import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.util.MqttPropertiesUtil;
 
 import java.util.concurrent.ExecutorService;
+
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.DROPPED_MSGS;
 
 @Slf4j
 @Service
@@ -49,6 +52,7 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
     private final DownLinkPersistentPublishMsgQueueFactory downLinkPersistentPublishMsgQueueFactory;
     private final DownLinkPublisherHelper downLinkPublisherHelper;
     private final ClientLogger clientLogger;
+    private final TbMessageStatsReportClient tbMessageStatsReportClient;
 
     private final boolean isTraceEnabled = log.isTraceEnabled();
 
@@ -62,26 +66,23 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
 
     @PostConstruct
     public void init() {
-        this.callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "downlink-msg-callback-processor");
-        this.basicPublisher = TbPublishServiceImpl.<ClientPublishMsgProto>builder()
+        callbackProcessor = ThingsBoardExecutors.initExecutorService(threadsCount, "downlink-msg-callback-processor");
+        basicPublisher = TbPublishServiceImpl.<ClientPublishMsgProto>builder()
                 .queueName("basicDownlink")
                 .producer(downLinkBasicPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .build();
-        this.basicPublisher.init();
-        this.persistentPublisher = TbPublishServiceImpl.<DevicePublishMsgProto>builder()
+        basicPublisher.init();
+        persistentPublisher = TbPublishServiceImpl.<DevicePublishMsgProto>builder()
                 .queueName("persistentDownlink")
                 .producer(downLinkPersistentPublishMsgQueueFactory.createProducer(serviceInfoProvider.getServiceId()))
                 .build();
-        this.persistentPublisher.init();
+        persistentPublisher.init();
     }
 
     @Override
     public void publishBasicMsg(String targetServiceId, String clientId, PublishMsgProto msg) {
         String topic = downLinkPublisherHelper.getBasicDownLinkServiceTopic(targetServiceId);
-        ClientPublishMsgProto clientPublishMsgProto = ClientPublishMsgProto.newBuilder()
-                .setClientId(clientId)
-                .setPublishMsg(msg)
-                .build();
+        ClientPublishMsgProto clientPublishMsgProto = toClientPublishMsgProto(clientId, msg);
         clientLogger.logEvent(clientId, this.getClass(), "Putting msg to basic down-link queue");
         basicPublisher.send(new TbProtoQueueMsg<>(msg.getTopicName(), clientPublishMsgProto),
                 new TbQueueCallback() {
@@ -97,8 +98,10 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
 
                     @Override
                     public void onFailure(Throwable t) {
-                        callbackProcessor.submit(() ->
-                                log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t));
+                        callbackProcessor.submit(() -> {
+                            log.warn("[{}] Failed to publish BASIC msg to {} service.", clientId, targetServiceId, t);
+                            tbMessageStatsReportClient.reportStats(DROPPED_MSGS);
+                        });
                     }
                 },
                 topic
@@ -130,6 +133,13 @@ class DownLinkQueuePublisherImpl implements DownLinkQueuePublisher {
                 },
                 topic
         );
+    }
+
+    private ClientPublishMsgProto toClientPublishMsgProto(String clientId, PublishMsgProto msg) {
+        return ClientPublishMsgProto.newBuilder()
+                .setClientId(clientId)
+                .setPublishMsg(msg)
+                .build();
     }
 
     @PreDestroy
