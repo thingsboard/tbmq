@@ -34,7 +34,15 @@ import { MatSlideToggle } from "@angular/material/slide-toggle";
 import {
   MqttAuthenticationProviderForm
 } from '@home/components/authentication/configuration/mqtt-authentication-provider-form';
-import { MqttAuthProvider, SslMqttAuthProviderConfiguration } from '@shared/models/mqtt-auth-provider.model';
+import {
+  ClientAuthType,
+  ClientAuthTypeTranslationMap,
+  MqttAuthProvider,
+  SslMqttAuthProviderConfiguration
+} from '@shared/models/mqtt-auth-provider.model';
+import { MatSelect } from '@angular/material/select';
+import { MatFormField, MatHint, MatLabel } from '@angular/material/form-field';
+import { MatOption } from '@angular/material/core';
 
 @Component({
   selector: 'tb-ssl-provider-config-form',
@@ -44,6 +52,11 @@ import { MqttAuthProvider, SslMqttAuthProviderConfiguration } from '@shared/mode
     ReactiveFormsModule,
     TranslateModule,
     MatSlideToggle,
+    MatSelect,
+    MatLabel,
+    MatOption,
+    MatFormField,
+    MatHint
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -60,7 +73,11 @@ export class SslProviderFormComponent extends MqttAuthenticationProviderForm imp
 
   provider = input<MqttAuthProvider>();
   isEdit = input<boolean>();
+
   sslProviderConfigForm: UntypedFormGroup;
+  ClientAuthType = ClientAuthType;
+  clientAuthTypes = Object.values(ClientAuthType);
+  clientAuthTypeTranslationMap = ClientAuthTypeTranslationMap;
 
   private propagateChangePending = false;
   private propagateChange = (v: any) => { };
@@ -74,6 +91,7 @@ export class SslProviderFormComponent extends MqttAuthenticationProviderForm imp
   ngOnInit() {
     this.sslProviderConfigForm = this.fb.group({
       skipValidityCheckForClientCert: [null, []],
+      clientAuthType: [null, []],
     });
     this.sslProviderConfigForm.valueChanges
       .pipe(takeUntil(this.destroy$))

@@ -118,6 +118,18 @@ export const mqttAuthProviderTypeHelpLinkMap = new Map<MqttAuthProviderType, str
   ]
 );
 
+export enum ClientAuthType {
+  CLIENT_AUTH_REQUIRED = 'CLIENT_AUTH_REQUIRED',
+  CLIENT_AUTH_REQUESTED = 'CLIENT_AUTH_REQUESTED',
+}
+
+export const ClientAuthTypeTranslationMap = new Map<ClientAuthType, string>(
+  [
+    [ClientAuthType.CLIENT_AUTH_REQUIRED, 'authentication.client-auth-type-required'],
+    [ClientAuthType.CLIENT_AUTH_REQUESTED, 'authentication.client-auth-type-requested'],
+  ]
+);
+
 export function getProviderHelpLink(entity: ShortMqttAuthProvider): string {
   if (entity && entity.type) {
     if (mqttAuthProviderTypeTranslationMap.has(entity.type)) {

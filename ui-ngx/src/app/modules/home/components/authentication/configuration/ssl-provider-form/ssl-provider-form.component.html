@@ -15,8 +15,23 @@
     limitations under the License.
 
 -->
-<section [formGroup]="sslProviderConfigForm" class="mb-2">
+<section [formGroup]="sslProviderConfigForm" class="flex flex-col gap-5">
   <mat-slide-toggle formControlName="skipValidityCheckForClientCert">
     {{ 'authentication.skip-cert-validity-check' | translate }}
   </mat-slide-toggle>
+  <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+    <mat-label translate>authentication.client-auth-type</mat-label>
+    <mat-select required formControlName="clientAuthType">
+      @for (type of clientAuthTypes; track type) {
+        <mat-option [value]="type">
+          {{ clientAuthTypeTranslationMap.get(type) | translate }}
+        </mat-option>
+      }
+    </mat-select>
+    @if (sslProviderConfigForm.get('clientAuthType')?.value === ClientAuthType.CLIENT_AUTH_REQUESTED) {
+      <mat-hint>{{ 'authentication.client-auth-type-requested-hint' | translate }}</mat-hint>
+    } @else {
+      <mat-hint>{{ 'authentication.client-auth-type-required-hint' | translate }}</mat-hint>
+    }
+  </mat-form-field>
 </section>
