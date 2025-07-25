@@ -40,7 +40,7 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     @Value("${listener.proxy_enabled:false}")
     private boolean proxyProtocolEnabled;
 
-    private final MqttHandlerFactory handlerFactory;
+    protected final MqttHandlerFactory handlerFactory;
 
     public AbstractMqttChannelInitializer(MqttHandlerFactory handlerFactory) {
         this.handlerFactory = handlerFactory;

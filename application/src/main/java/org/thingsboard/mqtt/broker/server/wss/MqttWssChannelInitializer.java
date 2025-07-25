@@ -61,6 +61,6 @@ public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer 
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getWssHandlerProvider().getSslHandler(enabledCipherSuites);
+        return context.getWssHandlerProvider().getSslHandler(enabledCipherSuites, handlerFactory.getClientAuthType());
     }
 }

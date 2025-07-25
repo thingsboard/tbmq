@@ -15,19 +15,30 @@
  */
 package org.thingsboard.mqtt.broker.common.data.security.ssl;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class SslMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration {
 
     private boolean skipValidityCheckForClientCert;
+    private MqttClientAuthType clientAuthType;
 
     @Override
     public MqttAuthProviderType getType() {
         return MqttAuthProviderType.X_509;
     }
 
+    public static SslMqttAuthProviderConfiguration defaultConfiguration() {
+        var x509Config = new SslMqttAuthProviderConfiguration();
+        x509Config.setSkipValidityCheckForClientCert(false);
+        x509Config.setClientAuthType(MqttClientAuthType.CLIENT_AUTH_REQUESTED);
+        return x509Config;
+    }
 
 }

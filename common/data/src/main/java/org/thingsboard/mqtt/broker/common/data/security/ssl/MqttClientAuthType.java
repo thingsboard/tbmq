@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.common.data.security.ssl;
 
-import io.netty.handler.ssl.SslHandler;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
-import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
+public enum MqttClientAuthType {
 
-public interface MqttHandlerFactory {
+    CLIENT_AUTH_NONE,           // turn off client authentication
+    CLIENT_AUTH_REQUESTED,      // need to request client authentication
+    CLIENT_AUTH_REQUIRED        // require client authentication
 
-    MqttSessionHandler create(SslHandler sslHandler, String initializerName);
-
-    TbMessageStatsReportClient getTbMessageStatsReportClient();
-
-    MqttClientAuthType getClientAuthType();
 }

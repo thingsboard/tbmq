@@ -36,6 +36,7 @@ import org.thingsboard.mqtt.broker.dao.client.credentials.SslCredentialsCacheVal
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.util.protocol.ProtocolUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
+import org.thingsboard.mqtt.broker.server.MqttHandlerCtx;
 import org.thingsboard.mqtt.broker.service.auth.AuthorizationRuleService;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthContext;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -68,6 +69,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     private final AuthorizationRuleService authorizationRuleService;
     private final CacheNameResolver cacheNameResolver;
     private final MqttAuthProviderService mqttAuthProviderService;
+    private final MqttHandlerCtx mqttHandlerCtx;
 
     private volatile boolean enabled;
     private volatile SslMqttAuthProviderConfiguration configuration;
@@ -78,6 +80,11 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                 .orElseThrow(() -> new IllegalStateException("Failed to initialize X_509 Certificate chain authentication provider! Provider is missing in the DB!"));
         this.enabled = sslAuthProvider.isEnabled();
         this.configuration = (SslMqttAuthProviderConfiguration) sslAuthProvider.getConfiguration();
+        setClientAuthType();
+    }
+
+    private void setClientAuthType() {
+        this.mqttHandlerCtx.setClientAuthType(configuration.getClientAuthType());
     }
 
     @Override
@@ -119,6 +126,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     public void onProviderUpdate(boolean enabled, SslMqttAuthProviderConfiguration configuration) {
         this.enabled = enabled;
         this.configuration = configuration;
+        setClientAuthType();
     }
 
     @Override

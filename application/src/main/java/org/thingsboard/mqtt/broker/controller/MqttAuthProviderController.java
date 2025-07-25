@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
+import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
 
 import java.util.UUID;
 
@@ -76,6 +77,12 @@ public class MqttAuthProviderController extends BaseController {
     @GetMapping(value = "/mqtt/auth/provider/{authProviderId}")
     public MqttAuthProvider getAuthProviderById(@PathVariable("authProviderId") String strAuthProviderId) throws ThingsboardException {
         return checkNotNull(mqttAuthProviderService.getAuthProviderById(toUUID(strAuthProviderId)).orElse(null));
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @GetMapping(value = "/mqtt/auth/provider/type/{authProviderType}")
+    public MqttAuthProvider getAuthProviderByType(@PathVariable("authProviderType") String authProviderType) throws ThingsboardException {
+        return checkNotNull(mqttAuthProviderService.getAuthProviderByType(MqttAuthProviderType.valueOf(authProviderType)));
     }
 
 }

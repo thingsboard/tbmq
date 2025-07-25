@@ -24,6 +24,7 @@ import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
@@ -87,6 +88,7 @@ public class DefaultDataUpdateService implements DataUpdateService {
                     MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider(isX509AuthEnabled());
                     var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
                     configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
+                    configuration.setClientAuthType(MqttClientAuthType.CLIENT_AUTH_REQUESTED);
                     x509AuthProvider.setConfiguration(configuration);
                     yield x509AuthProvider;
                 }
