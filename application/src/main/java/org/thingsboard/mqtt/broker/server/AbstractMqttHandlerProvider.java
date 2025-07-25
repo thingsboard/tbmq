@@ -128,7 +128,14 @@ public abstract class AbstractMqttHandlerProvider {
         public void checkClientTrusted(X509Certificate[] chain,
                                        String authType) throws CertificateException {
             // think if better to add credentials validation here
-            trustManager.checkClientTrusted(chain, authType);
+            try {
+                trustManager.checkClientTrusted(chain, authType);
+            } catch (CertificateException e) {
+                X509Certificate leaf = chain.length > 0 ? chain[0] : null;
+                String subject = leaf == null ? "none" : leaf.getSubjectX500Principal().getName();
+                log.warn("Rejecting client with leaf cert [{}], chain size - [{}]", subject, chain.length);
+                throw e;
+            }
         }
     }
 
