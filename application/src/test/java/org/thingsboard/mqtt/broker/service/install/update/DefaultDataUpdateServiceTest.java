@@ -176,7 +176,7 @@ public class DefaultDataUpdateServiceTest {
         MqttAuthProvider x509 = savedProviders.get(1);
         assertThat(x509.getType()).isEqualTo(MqttAuthProviderType.X_509);
         assertThat(x509.isEnabled()).isFalse();
-        assertThat(x509.getConfiguration()).isEqualTo(new SslMqttAuthProviderConfiguration());
+        assertThat(x509.getConfiguration()).isEqualTo(SslMqttAuthProviderConfiguration.defaultConfiguration());
 
         MqttAuthProvider jwt = savedProviders.get(2);
         assertThat(jwt.getType()).isEqualTo(MqttAuthProviderType.JWT);
