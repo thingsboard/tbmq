@@ -35,10 +35,10 @@ public class SslMqttAuthProviderConfiguration implements MqttAuthProviderConfigu
     }
 
     public static SslMqttAuthProviderConfiguration defaultConfiguration() {
-        var jwtConfig = new SslMqttAuthProviderConfiguration();
-        jwtConfig.setSkipValidityCheckForClientCert(false);
-        jwtConfig.setClientAuthType(MqttClientAuthType.CLIENT_AUTH_REQUESTED);
-        return jwtConfig;
+        var x509Config = new SslMqttAuthProviderConfiguration();
+        x509Config.setSkipValidityCheckForClientCert(false);
+        x509Config.setClientAuthType(MqttClientAuthType.CLIENT_AUTH_REQUESTED);
+        return x509Config;
     }
 
 }

@@ -43,7 +43,7 @@ public class MqttHandlerCtx {
     @Value("${mqtt.retransmission.enabled:false}")
     private boolean retransmissionEnabled;
 
-    private volatile MqttClientAuthType clientAuthType;
+    private volatile MqttClientAuthType clientAuthType = MqttClientAuthType.CLIENT_AUTH_REQUESTED;
 
     @Autowired
     public MqttHandlerCtx(ClientMqttActorManager actorManager,

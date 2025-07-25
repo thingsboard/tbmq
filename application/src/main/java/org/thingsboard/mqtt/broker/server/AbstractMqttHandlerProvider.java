@@ -42,18 +42,18 @@ public abstract class AbstractMqttHandlerProvider {
         }
         SSLEngine sslEngine = sslContext.createSSLEngine();
         sslEngine.setUseClientMode(false);
-
-        switch (clientAuthType) {
-            case CLIENT_AUTH_REQUIRED -> sslEngine.setNeedClientAuth(true);
-            case CLIENT_AUTH_REQUESTED -> sslEngine.setWantClientAuth(true);
-        }
-
-//        sslEngine.setWantClientAuth(true);
-//        sslEngine.setNeedClientAuth(true);
+        setClientAuthType(clientAuthType, sslEngine);
         sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
         sslEngine.setEnabledCipherSuites(getEnabledCipherSuites(enabledCipherSuites, sslEngine));
         sslEngine.setEnableSessionCreation(true);
         return new SslHandler(sslEngine);
+    }
+
+    private void setClientAuthType(MqttClientAuthType clientAuthType, SSLEngine sslEngine) {
+        switch (clientAuthType) {
+            case CLIENT_AUTH_REQUIRED -> sslEngine.setNeedClientAuth(true);
+            case CLIENT_AUTH_REQUESTED -> sslEngine.setWantClientAuth(true);
+        }
     }
 
     private SSLContext createSslContext() {

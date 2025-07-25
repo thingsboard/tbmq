@@ -80,6 +80,11 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                 .orElseThrow(() -> new IllegalStateException("Failed to initialize X_509 Certificate chain authentication provider! Provider is missing in the DB!"));
         this.enabled = sslAuthProvider.isEnabled();
         this.configuration = (SslMqttAuthProviderConfiguration) sslAuthProvider.getConfiguration();
+        setClientAuthType();
+    }
+
+    private void setClientAuthType() {
+        this.mqttHandlerCtx.setClientAuthType(configuration.getClientAuthType());
     }
 
     @Override
@@ -121,7 +126,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
     public void onProviderUpdate(boolean enabled, SslMqttAuthProviderConfiguration configuration) {
         this.enabled = enabled;
         this.configuration = configuration;
-        this.mqttHandlerCtx.setClientAuthType(configuration.getClientAuthType());
+        setClientAuthType();
     }
 
     @Override
