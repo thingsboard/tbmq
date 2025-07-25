@@ -19,6 +19,7 @@ import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.service.analysis.ClientLogger;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitBatchProcessor;
@@ -41,6 +42,8 @@ public class MqttHandlerCtx {
     private int maxInFlightMsgs;
     @Value("${mqtt.retransmission.enabled:false}")
     private boolean retransmissionEnabled;
+
+    private volatile MqttClientAuthType clientAuthType;
 
     @Autowired
     public MqttHandlerCtx(ClientMqttActorManager actorManager,

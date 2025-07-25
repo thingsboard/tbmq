@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.server;
 import io.netty.handler.ssl.SslHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.service.historical.stats.TbMessageStatsReportClient;
 
 @Service
@@ -34,5 +35,10 @@ public class MqttHandlerFactoryImpl implements MqttHandlerFactory {
     @Override
     public TbMessageStatsReportClient getTbMessageStatsReportClient() {
         return mqttHandlerCtx.getTbMessageStatsReportClient();
+    }
+
+    @Override
+    public MqttClientAuthType getClientAuthType() {
+        return mqttHandlerCtx.getClientAuthType();
     }
 }

@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 
@@ -35,14 +36,20 @@ public abstract class AbstractMqttHandlerProvider {
 
     private SSLContext sslContext;
 
-    public SslHandler getSslHandler(String[] enabledCipherSuites) {
+    public SslHandler getSslHandler(String[] enabledCipherSuites, MqttClientAuthType clientAuthType) {
         if (sslContext == null) {
             sslContext = createSslContext();
         }
         SSLEngine sslEngine = sslContext.createSSLEngine();
         sslEngine.setUseClientMode(false);
-        sslEngine.setNeedClientAuth(false);
-        sslEngine.setWantClientAuth(true);
+
+        switch (clientAuthType) {
+            case CLIENT_AUTH_REQUIRED -> sslEngine.setNeedClientAuth(true);
+            case CLIENT_AUTH_REQUESTED -> sslEngine.setWantClientAuth(true);
+        }
+
+//        sslEngine.setWantClientAuth(true);
+//        sslEngine.setNeedClientAuth(true);
         sslEngine.setEnabledProtocols(sslEngine.getSupportedProtocols());
         sslEngine.setEnabledCipherSuites(getEnabledCipherSuites(enabledCipherSuites, sslEngine));
         sslEngine.setEnableSessionCreation(true);
@@ -121,6 +128,7 @@ public abstract class AbstractMqttHandlerProvider {
         public void checkClientTrusted(X509Certificate[] chain,
                                        String authType) throws CertificateException {
             // think if better to add credentials validation here
+            trustManager.checkClientTrusted(chain, authType);
         }
     }
 

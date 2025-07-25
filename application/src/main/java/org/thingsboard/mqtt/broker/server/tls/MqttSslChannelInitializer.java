@@ -59,7 +59,7 @@ public class MqttSslChannelInitializer extends AbstractMqttChannelInitializer {
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getSslHandlerProvider().getSslHandler(enabledCipherSuites);
+        return context.getSslHandlerProvider().getSslHandler(enabledCipherSuites, handlerFactory.getClientAuthType());
     }
 
 }

@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentMap;
 @Getter
 public class ClientSessionCtx implements SessionContext {
 
-    private final MqttHandlerCtx mqttHandlerCtx;
     private final UUID sessionId;
     private final SslHandler sslHandler;
     private final String initializerName;
@@ -84,7 +83,6 @@ public class ClientSessionCtx implements SessionContext {
     }
 
     public ClientSessionCtx(MqttHandlerCtx mqttHandlerCtx, UUID sessionId, SslHandler sslHandler, String initializerName) {
-        this.mqttHandlerCtx = mqttHandlerCtx;
         this.sessionId = sessionId;
         this.sslHandler = sslHandler;
         this.initializerName = initializerName;
