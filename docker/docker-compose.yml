@@ -67,6 +67,7 @@ services:
     volumes:
       - tbmq-config:/config
       - tbmq1-logs:/var/log/thingsboard-mqtt-broker
+    #      - PATH_TO_CERTS:/config/certificates
     depends_on:
       - postgres
       - kafka
@@ -91,6 +92,7 @@ services:
     volumes:
       - tbmq-config:/config
       - tbmq2-logs:/var/log/thingsboard-mqtt-broker
+    #      - PATH_TO_CERTS:/config/certificates
     depends_on:
       - postgres
       - kafka
@@ -149,6 +151,8 @@ services:
       - "443:443"
       - "1883:1883"
       - "8084:8084"
+      - "8883:8883"
+      - "8085:8085"
     cap_add:
       - NET_ADMIN
     environment:
@@ -156,6 +160,8 @@ services:
       HTTPS_PORT: 443
       MQTT_PORT: 1883
       MQTT_WS_PORT: 8084
+      MQTTS_PORT: 8883
+      MQTT_WSS_PORT: 8085
       FORCE_HTTPS_REDIRECT: "false"
     links:
       - tbmq1
