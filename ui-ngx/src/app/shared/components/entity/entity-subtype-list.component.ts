@@ -129,16 +129,6 @@ export class EntitySubTypeListComponent implements ControlValueAccessor, OnInit 
   }
 
   ngOnInit() {
-    switch (this.entityType()) {
-      case EntityType.MQTT_SESSION:
-        this.placeholder = this.required ? this.translate.instant('asset.enter-asset-type')
-          : this.translate.instant('asset.any-asset');
-        this.secondaryPlaceholder = '+' + this.translate.instant('asset.asset-type');
-        this.noSubtypesMathingText = 'asset.no-asset-types-matching';
-        this.subtypeListEmptyText = 'asset.asset-type-list-empty';
-        break;
-    }
-
     const emptyInputPlaceholder = this.emptyInputPlaceholder();
     if (emptyInputPlaceholder) {
       this.placeholder = emptyInputPlaceholder;
