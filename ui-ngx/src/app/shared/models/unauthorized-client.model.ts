@@ -71,10 +71,10 @@ export class UnauthorizedClientQuery {
       query += `&ipAddress=${this.ipAddress}`;
     }
     if (this.username?.length) {
-      query += `&username=${this.username}`;
+      query += `&username=${encodeURIComponent(this.username)}`;
     }
     if (this.reason?.length) {
-      query += `&reason=${this.reason}`;
+      query += `&reason=${encodeURIComponent(this.reason)}`;
     }
     if (this.passwordProvidedList?.length) {
       query += `&passwordProvidedList=${this.passwordProvidedList.join(',')}`;

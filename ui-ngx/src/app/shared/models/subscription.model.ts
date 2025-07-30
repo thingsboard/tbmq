@@ -73,10 +73,10 @@ export class ClientSubscriptionsQuery {
   public toQuery(): string {
     let query = this.pageLink.toQuery();
     if (this.clientId?.length) {
-      query += `&clientId=${this.clientId}`;
+      query += `&clientId=${encodeURIComponent(this.clientId)}`;
     }
     if (this.topicFilter?.length) {
-      query += `&topicFilter=${this.topicFilter}`;
+      query += `&topicFilter=${encodeURIComponent(this.topicFilter)}`;
     }
     if (this.subscriptionId) {
       query += `&subscriptionId=${this.subscriptionId}`;

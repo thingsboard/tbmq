@@ -60,7 +60,7 @@ export class RetainedMessagesQuery {
   public toQuery(): string {
     let query = this.pageLink.toQuery();
     if (this.payload?.length) {
-      query += `&payload=${this.payload}`;
+      query += `&payload=${encodeURIComponent(this.payload)}`;
     }
     if (this.qosList?.length) {
       query += `&qosList=${this.qosList.join(',')}`;

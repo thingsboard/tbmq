@@ -34,7 +34,7 @@ import {
 } from '@shared/models/ws-client.model';
 import { MediaBreakpoints, ValueType } from '@shared/models/constants';
 import { IClientPublishOptions } from 'mqtt';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { TranslateModule } from '@ngx-translate/core';
 import { ToggleSelectComponent } from '@shared/components/toggle-select.component';
@@ -148,7 +148,6 @@ export class MessangerComponent implements OnInit, OnDestroy {
 
     this.filteredTopics = this.messangerFormGroup.get('topic').valueChanges.pipe(
       takeUntil(this.destroy$),
-      startWith(''),
       map(value => filterTopics(value || ''))
     );
   }

@@ -14,7 +14,7 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, Input, OnDestroy, signal } from '@angular/core';
+import { Component, forwardRef, input, Input, OnChanges, OnDestroy, signal, SimpleChanges } from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -38,7 +38,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
-import { filterTopics, getLocalStorageTopics, isDefinedAndNotNull } from '@core/utils';
+import { filterTopics } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
@@ -74,7 +74,7 @@ import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/mat
     multi: true,
   }]
 })
-export class IntegrationTopicFiltersComponent implements ControlValueAccessor, Validator, OnDestroy {
+export class IntegrationTopicFiltersComponent implements ControlValueAccessor, Validator, OnDestroy, OnChanges {
 
   integrationTopicFiltersForm: UntypedFormGroup;
 
@@ -111,6 +111,17 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     this.destroy$.complete();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName of Object.keys(changes)) {
+      const change = changes[propName];
+      if (!change.firstChange && change.currentValue !== change.previousValue) {
+        if (propName === 'integration' && change.currentValue) {
+          this.updateActiveSubscriptions();
+        }
+      }
+    }
+  }
+
   writeValue(value: IntegrationTopicFilter[]) {
     this.subscriptionsLoaded = false;
     if (this.integrationFiltersFromArray.length === value?.length) {
@@ -135,9 +146,6 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         this.integrationTopicFiltersForm.enable({emitEvent: false});
       }
       this.integrationTopicFiltersForm.updateValueAndValidity();
-    }
-    if (isDefinedAndNotNull(value)) {
-      this.updateActiveSubscriptions();
     }
     this.topicFiltersSubscribeValueChanges();
   }
@@ -180,7 +188,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   clearFilteredOptions() {
     setTimeout(() => {
-      this.filteredTopics = getLocalStorageTopics();
+      this.filteredTopics = null;
     }, 100);
   }
 

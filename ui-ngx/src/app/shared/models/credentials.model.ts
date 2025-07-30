@@ -198,13 +198,13 @@ export class ClientCredentialsQuery {
       query += `&clientTypeList=${this.clientTypeList.join(',')}`;
     }
     if (this.clientId?.length) {
-      query += `&clientId=${this.clientId}`;
+      query += `&clientId=${encodeURIComponent(this.clientId)}`;
     }
     if (this.username?.length) {
-      query += `&username=${this.username}`;
+      query += `&username=${encodeURIComponent(this.username)}`;
     }
     if (this.certificateCn?.length) {
-      query += `&certificateCn=${this.certificateCn}`;
+      query += `&certificateCn=${encodeURIComponent(this.certificateCn)}`;
     }
     return query;
   }

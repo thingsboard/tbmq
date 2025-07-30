@@ -85,7 +85,7 @@ export class SharedSubscriptionQuery {
       query += `&shareNameSearch=${this.shareNameSearch}`;
     }
     if (this.clientIdSearch?.length) {
-      query += `&clientIdSearch=${this.clientIdSearch}`;
+      query += `&clientIdSearch=${encodeURIComponent(this.clientIdSearch)}`;
     }
     return query;
   }

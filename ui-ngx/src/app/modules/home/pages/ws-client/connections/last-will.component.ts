@@ -35,7 +35,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { DEFAULT_QOS } from '@shared/models/session.model';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { filterTopics, isDefinedAndNotNull } from '@core/utils';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
@@ -83,7 +83,6 @@ export class LastWillComponent implements OnInit, ControlValueAccessor, Validato
       .subscribe(value => this.updateModel(value));
     this.filteredTopics = this.formGroup.get('topic').valueChanges.pipe(
       takeUntil(this.destroy$),
-      startWith(''),
       map(value => filterTopics(value || ''))
     );
   }
