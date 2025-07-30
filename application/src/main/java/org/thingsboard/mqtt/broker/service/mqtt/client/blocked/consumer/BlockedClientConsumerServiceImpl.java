@@ -169,8 +169,8 @@ public class BlockedClientConsumerServiceImpl implements BlockedClientConsumerSe
     }
 
     private String persistDummyBlockedClient() throws QueuePersistenceException {
-        String dummyBlockedClientKey = UUIDUtil.randomUuid();
-        BlockedClient blockedClient = new ClientIdBlockedClient(dummyBlockedClientKey);
+        BlockedClient blockedClient = new ClientIdBlockedClient(UUIDUtil.randomUuid());
+        String dummyBlockedClientKey = blockedClient.getKey();
         producerService.persistDummyBlockedClient(dummyBlockedClientKey, ProtoConverter.convertToBlockedClientProto(blockedClient));
         return dummyBlockedClientKey;
     }
