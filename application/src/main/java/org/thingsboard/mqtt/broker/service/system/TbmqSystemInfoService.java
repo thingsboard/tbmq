@@ -85,7 +85,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
         scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("tbmq-system-info-scheduler"));
         scheduler.scheduleAtFixedRate(this::saveCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
 
-        updateServiceRegistry(serviceInfoProvider.getServiceInfo());
+        scheduler.scheduleAtFixedRate(() -> updateServiceRegistry(serviceInfoProvider.getServiceInfo()), 0, 5, TimeUnit.MINUTES);
     }
 
     @PreDestroy
@@ -211,6 +211,7 @@ public class TbmqSystemInfoService implements SystemInfoService {
     }
 
     private void updateServiceRegistry(ServiceInfo serviceInfo) {
+        log.debug("Updating service registry: {}", serviceInfo);
         redisTemplate.opsForHash().put(SERVICE_REGISTRY_KEY, serviceInfo.getServiceId(), serviceInfo.getServiceType());
     }
 }
