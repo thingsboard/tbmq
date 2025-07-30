@@ -43,7 +43,7 @@ import { MatIcon } from '@angular/material/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
-import { filterTopics, getLocalStorageTopics, isString } from '@core/utils';
+import { filterTopics, isString } from '@core/utils';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
 @Component({
@@ -158,7 +158,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
 
   clearFilteredOptions() {
     setTimeout(() => {
-      this.filteredTopics = getLocalStorageTopics();
+      this.filteredTopics = null;
     }, 100);
   }
 

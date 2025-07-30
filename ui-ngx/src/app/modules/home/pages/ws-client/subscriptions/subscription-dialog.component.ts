@@ -40,7 +40,7 @@ import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 import { MatAccordion, MatExpansionPanel, MatExpansionPanelHeader, MatExpansionPanelTitle, MatExpansionPanelContent } from '@angular/material/expansion';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { saveTopicsToLocalStorage, filterTopics } from '@core/utils';
@@ -96,7 +96,6 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
       .subscribe(topicFilter => this.topicFilterDuplicate = connectionTopicFilterList.includes(topicFilter));
     this.filteredTopics = this.formGroup.get('topicFilter').valueChanges.pipe(
       takeUntil(this.destroy$),
-      startWith(''),
       map(value => filterTopics(value || ''))
     );
   }

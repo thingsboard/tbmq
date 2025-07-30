@@ -38,7 +38,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
-import { filterTopics, getLocalStorageTopics, isDefinedAndNotNull } from '@core/utils';
+import { filterTopics } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
@@ -188,7 +188,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   clearFilteredOptions() {
     setTimeout(() => {
-      this.filteredTopics = getLocalStorageTopics();
+      this.filteredTopics = null;
     }, 100);
   }
 

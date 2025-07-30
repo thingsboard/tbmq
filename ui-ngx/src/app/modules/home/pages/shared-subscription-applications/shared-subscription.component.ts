@@ -31,7 +31,7 @@ import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 import { Observable, Subject } from 'rxjs';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { filterTopics } from '@core/utils';
 import { MatTooltip } from '@angular/material/tooltip';
 
@@ -60,7 +60,6 @@ export class SharedSubscriptionComponent extends EntityComponent<SharedSubscript
     super.ngOnInit();
     this.filteredTopics = this.entityForm.get('topicFilter').valueChanges.pipe(
       takeUntil(this.destroy$),
-      startWith(''),
       map(value => filterTopics(value || ''))
     );
   }

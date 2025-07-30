@@ -26,7 +26,7 @@ import {
   Validators, ReactiveFormsModule
 } from '@angular/forms';
 import { filterTopics, isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
-import { map, startWith, takeUntil } from 'rxjs/operators';
+import { map, takeUntil } from 'rxjs/operators';
 import { IntegrationForm } from '@home/components/integration/configuration/integration-form';
 import {
   Integration,
@@ -262,7 +262,6 @@ export class MqttIntegrationFormComponent extends IntegrationForm implements Con
 
     this.filteredTopics = this.clientConfigurationFormGroup.get('topicName').valueChanges.pipe(
       takeUntil(this.destroy$),
-      startWith(''),
       map(value => filterTopics(value || ''))
     );
   }
