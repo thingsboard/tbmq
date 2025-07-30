@@ -78,6 +78,7 @@ public class TbmqSystemInfoServiceTest {
         autoCloseable = MockitoAnnotations.openMocks(this);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
         systemInfoService = new TbmqSystemInfoService(serviceInfoProvider, timeseriesService, redisTemplate);
+        systemInfoService.setServiceRegistryKey(SERVICE_REGISTRY_KEY);
     }
 
     @AfterEach
