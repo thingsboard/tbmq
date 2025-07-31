@@ -203,6 +203,32 @@ public class RateLimitServiceImplTest {
     }
 
     @Test
+    public void givenNoApplicationClientsLimit_whenCheckIntegrationsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(0);
+
+        boolean result = rateLimitService.checkIntegrationsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitReached_whenCheckIntegrationsLimit_thenFailure() {
+        rateLimitService.setApplicationClientsLimit(1);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        boolean result = rateLimitService.checkIntegrationsLimit();
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void givenApplicationClientsLimitNotReached_whenCheckIntegrationsLimit_thenSuccess() {
+        rateLimitService.setApplicationClientsLimit(5);
+        when(rateLimitCacheService.incrementApplicationClientsCount()).thenReturn(2L);
+
+        boolean result = rateLimitService.checkIntegrationsLimit();
+        Assert.assertTrue(result);
+    }
+
+    @Test
     public void givenNoApplicationClientsLimit_whenCheckApplicationClientsLimit_thenSuccess() {
         rateLimitService.setApplicationClientsLimit(0);
 

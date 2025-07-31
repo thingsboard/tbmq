@@ -23,6 +23,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -30,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.subscription.ClientTopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
+import org.thingsboard.mqtt.broker.dao.integration.IntegrationService;
 import org.thingsboard.mqtt.broker.exception.QueuePersistenceException;
 import org.thingsboard.mqtt.broker.queue.cluster.ServiceInfoProvider;
 import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
@@ -68,6 +70,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = BrokerInitializer.class)
+@TestPropertySource(properties = {
+        "mqtt.application-clients-limit=10"
+})
 public class BrokerInitializerTest {
 
     @MockBean
@@ -92,6 +97,8 @@ public class BrokerInitializerTest {
     ServiceInfoProvider serviceInfoProvider;
     @MockBean
     RateLimitCacheService rateLimitCacheService;
+    @MockBean
+    IntegrationService integrationService;
     @MockBean
     ClientSessionEventConsumer clientSessionEventConsumer;
     @MockBean
@@ -132,6 +139,7 @@ public class BrokerInitializerTest {
         Assert.assertFalse(clientSessionInfo.isConnected());
         verify(rateLimitCacheService).initSessionCount(preparedSessions.size());
         verify(clientSessionEventService).requestClientSessionCleanup(any());
+        verify(integrationService).findAllIntegrations();
     }
 
     private ClientSessionInfo getSessionForServiceId(Map<String, ClientSessionInfo> allClientSessions) {

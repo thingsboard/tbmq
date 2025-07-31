@@ -139,6 +139,23 @@ public class RateLimitServiceImpl implements RateLimitService {
     }
 
     @Override
+    public boolean checkIntegrationsLimit() {
+        if (applicationClientsLimit <= 0) {
+            return true;
+        }
+
+        long newAppClientsCount = rateLimitCacheService.incrementApplicationClientsCount();
+
+        if (newAppClientsCount > applicationClientsLimit) {
+            log.trace("Integrations count limit detected! Allowed: {} Integrations", applicationClientsLimit);
+            rateLimitCacheService.decrementApplicationClientsCount();
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
     public boolean checkApplicationClientsLimit(SessionInfo sessionInfo) {
         if (applicationClientsLimit <= 0) {
             return true;

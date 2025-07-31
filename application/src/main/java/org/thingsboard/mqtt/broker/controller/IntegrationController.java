@@ -31,6 +31,7 @@ import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
+import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
@@ -69,9 +70,12 @@ public class IntegrationController extends BaseController {
             throw new ThingsboardRuntimeException("Timeout to validate the configuration!", ThingsboardErrorCode.GENERAL);
         }
 
-        Integration result = checkNotNull(integrationService.saveIntegration(integration));
-
         boolean created = integration.getId() == null;
+        if (created && !rateLimitService.checkIntegrationsLimit()) {
+            throw new TbRateLimitsException("Integrations limit exceeded");
+        }
+
+        Integration result = checkNotNull(integrationService.saveIntegration(integration));
         platformIntegrationService.processIntegrationUpdate(result, created);
         return result;
     }
@@ -120,6 +124,9 @@ public class IntegrationController extends BaseController {
         checkParameter(INTEGRATION_ID, strIntegrationId);
         Integration integration = checkIntegrationId(toUUID(strIntegrationId));
         boolean removed = integrationService.deleteIntegration(integration);
+        if (removed) {
+            rateLimitCacheService.decrementApplicationClientsCount();
+        }
         platformIntegrationService.processIntegrationDelete(integration, removed);
     }
 

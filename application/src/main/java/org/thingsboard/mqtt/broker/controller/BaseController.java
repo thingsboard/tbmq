@@ -64,6 +64,8 @@ import org.thingsboard.mqtt.broker.dto.RetainedMsgDto;
 import org.thingsboard.mqtt.broker.exception.DataValidationException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
 import org.thingsboard.mqtt.broker.queue.TbQueueAdmin;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitCacheService;
+import org.thingsboard.mqtt.broker.service.limits.RateLimitService;
 import org.thingsboard.mqtt.broker.service.mqtt.auth.MqttAuthProviderManagerService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.BlockedClientService;
 import org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data.BlockedClient;
@@ -127,6 +129,10 @@ public abstract class BaseController {
     protected BlockedClientService blockedClientService;
     @Autowired
     protected JwtTokenFactory tokenFactory;
+    @Autowired
+    protected RateLimitService rateLimitService;
+    @Autowired
+    protected RateLimitCacheService rateLimitCacheService;
 
     @Value("${server.log_controller_error_stack_trace}")
     @Getter
