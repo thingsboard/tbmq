@@ -57,7 +57,7 @@ public class IntegrationExecutorSystemInfoServiceImpl implements IntegrationExec
         scheduler = Executors.newSingleThreadScheduledExecutor(ThingsBoardThreadFactory.forName("ie-system-info-scheduler"));
         scheduler.scheduleAtFixedRate(this::sendCurrentServiceInfo, systemInfoPersistFrequencySec, systemInfoPersistFrequencySec, TimeUnit.SECONDS);
         // sending service info without system info to update service registry
-        apiService.sendServiceInfo(serviceInfoProvider.getServiceInfo());
+        scheduler.scheduleAtFixedRate(() -> apiService.sendServiceInfo(serviceInfoProvider.getServiceInfo()), 0, 5, TimeUnit.MINUTES);
     }
 
     @PreDestroy
