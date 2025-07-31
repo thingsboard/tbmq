@@ -28,10 +28,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
+import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.integration.Integration;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.exception.TbRateLimitsException;
 import org.thingsboard.mqtt.broker.exception.ThingsboardRuntimeException;
 import org.thingsboard.mqtt.broker.service.IntegrationManagerService;
 import org.thingsboard.mqtt.broker.service.integration.PlatformIntegrationService;
@@ -72,7 +72,7 @@ public class IntegrationController extends BaseController {
 
         boolean created = integration.getId() == null;
         if (created && !rateLimitService.checkIntegrationsLimit()) {
-            throw new TbRateLimitsException("Integrations limit exceeded");
+            throw new ThingsboardException("Integrations limit exceeded", ThingsboardErrorCode.GENERAL);
         }
 
         Integration result = checkNotNull(integrationService.saveIntegration(integration));
