@@ -48,10 +48,12 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SpringDocConfigProperties;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -78,9 +80,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
 @Configuration
+@ConditionalOnExpression("'${springdoc.api-docs.enabled:true}'=='true'")
+@Profile("!test")
 public class SwaggerConfiguration {
 
     public static final String LOGIN_ENDPOINT = "/api/auth/login";
+    public static final String REFRESH_TOKEN_ENDPOINT = "/api/auth/token";
 
     private static final ApiResponses loginResponses = loginResponses();
     private static final ApiResponses defaultErrorResponses = defaultErrorResponses(false);
@@ -110,6 +115,8 @@ public class SwaggerConfiguration {
     private String version;
     @Value("${app.version:unknown}")
     private String appVersion;
+    @Value("${swagger.group_name:TBMQ}")
+    private String groupName;
 
     @Bean
     public OpenAPI thingsboardApi() {
@@ -145,6 +152,7 @@ public class SwaggerConfiguration {
                 .info(info);
         addDefaultSchemas(openApi);
         addLoginOperation(openApi);
+        addRefreshTokenOperation(openApi);
         return openApi;
     }
 
@@ -189,9 +197,9 @@ public class SwaggerConfiguration {
         operation.summary("Login method to get user JWT token data");
         operation.description("""
                 Login method used to authenticate user and get JWT token data.
-
+                
                 Value of the response **token** field can be used as **X-Authorization** header value:
-
+                
                 `X-Authorization: Bearer $JWT_TOKEN_VALUE`.""");
         var requestBody = new RequestBody().description("Login request")
                 .content(new Content().addMediaType(APPLICATION_JSON_VALUE,
@@ -205,10 +213,33 @@ public class SwaggerConfiguration {
         openAPI.path(LOGIN_ENDPOINT, pathItem);
     }
 
+    private void addRefreshTokenOperation(OpenAPI openAPI) {
+        var operation = new Operation();
+        operation.summary("Refresh user JWT token data");
+        operation.description("""
+                Method to refresh JWT token. Provide a valid refresh token to get a new JWT token.
+                
+                The response contains a new token that can be used for authorization.
+                
+                `X-Authorization: Bearer $JWT_TOKEN_VALUE`""");
+
+        var requestBody = new RequestBody().description("Refresh token request")
+                .content(new Content().addMediaType(APPLICATION_JSON_VALUE,
+                        new MediaType().schema(new Schema<JsonNode>().addProperty("refreshToken", new Schema<>().type("string")))));
+
+        operation.requestBody(requestBody);
+
+        operation.responses(loginResponses);
+
+        operation.addTagsItem("login-endpoint");
+        var pathItem = new PathItem().post(operation);
+        openAPI.path(REFRESH_TOKEN_ENDPOINT, pathItem);
+    }
+
     @Bean
     public GroupedOpenApi groupedApi(SpringDocParameterNameDiscoverer localSpringDocParameterNameDiscoverer) {
         return GroupedOpenApi.builder()
-                .group("TBMQ")
+                .group(groupName)
                 .pathsToMatch(apiPath)
                 .addRouterOperationCustomizer(routerOperationCustomizer(localSpringDocParameterNameDiscoverer))
                 .addOperationCustomizer(operationCustomizer())
