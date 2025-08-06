@@ -459,6 +459,7 @@
     "topic-filters-has-duplicates": "Topic filters has duplicates",
     "topic-filters-hint": "Topic filters define MQTT-based subscriptions and act as triggers. When a broker receives a message matching a topic filter, the integration processes and forwards it to the configured external system.",
     "remove-topic-filter": "Remove topic filter",
+    "remove-topic-filter-group": "Remove all topic filters in group",
     "add-topic-filter": "Add topic filter",
     "add-topic-filter-prompt": "Please add topic filter",
     "topic": "Topic",

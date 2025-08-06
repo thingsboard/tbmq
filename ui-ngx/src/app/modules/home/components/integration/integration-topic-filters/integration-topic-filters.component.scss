@@ -28,5 +28,38 @@
     margin-top: 8px;
     width: 100%;
   }
+
+  .topic-filters-header {
+    &.tb-expanded {
+      .tb-topic-filter-groups-expand-button {
+        .mat-icon {
+          transform: rotate(180deg);
+        }
+      }
+    }
+  }
+
+  .mat-expansion-panel-header {
+    padding: 0 12px;
+  }
+
+  .mat-expansion-panel-header-title {
+    font-weight: 400;
+    font-size: 16px;
+  }
+
+  .mat-expansion-panel-header.mat-expanded {
+    height: 48px;
+  }
+
+  .mat-accordion>.mat-expansion-panel-spacing:last-child {
+    margin-bottom: 16px;
+  }
+
+  &::ng-deep {
+    .mat-expansion-panel-body {
+      padding: 0;
+    }
+  }
 }
 
