@@ -1072,6 +1072,11 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.hivemq</groupId>
                 <artifactId>hivemq-mqtt-client</artifactId>
                 <version>${hivemq-mqtt-client}</version>
