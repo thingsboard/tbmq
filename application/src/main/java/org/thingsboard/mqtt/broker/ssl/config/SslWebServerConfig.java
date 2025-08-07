@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.ssl.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.ssl.SslBundle;
 import org.springframework.boot.ssl.SslBundles;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @Configuration
+@ConditionalOnProperty(prefix = "server.ssl", name = "enabled", havingValue = "true")
 public class SslWebServerConfig {
 
     public static final String DEFAULT_BUNDLE_NAME = "default";
