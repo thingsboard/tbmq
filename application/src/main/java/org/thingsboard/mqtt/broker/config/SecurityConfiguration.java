@@ -24,9 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
-import org.springframework.security.config.annotation.ObjectPostProcessor;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -90,15 +88,12 @@ public class SecurityConfiguration {
     private AuthenticationManager authenticationManager;
 
     @Bean
-    public AuthenticationManager authenticationManager(ObjectPostProcessor<Object> objectPostProcessor) throws Exception {
-        DefaultAuthenticationEventPublisher eventPublisher = objectPostProcessor
-                .postProcess(new DefaultAuthenticationEventPublisher());
-        var auth = new AuthenticationManagerBuilder(objectPostProcessor);
-        auth.authenticationEventPublisher(eventPublisher);
-        auth.authenticationProvider(restAuthenticationProvider);
-        auth.authenticationProvider(jwtAuthenticationProvider);
-        auth.authenticationProvider(refreshTokenAuthenticationProvider);
-        return auth.build();
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(List.of(
+                restAuthenticationProvider,
+                jwtAuthenticationProvider,
+                refreshTokenAuthenticationProvider
+        ));
     }
 
     @Bean
