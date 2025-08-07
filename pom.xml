@@ -41,6 +41,8 @@
         <spring-boot.version>3.4.8</spring-boot.version>
         <mockito.version>5.18.0</mockito.version>
         <guava.version>33.1.0-jre</guava.version>
+        <commons-lang3.version>3.18.0
+        </commons-lang3.version> <!-- to fix CVE-2025-48924. TODO: remove when fixed in spring-boot-dependencies -->
         <protobuf.version>3.25.5</protobuf.version>
         <grpc.version>1.68.1</grpc.version>
         <lombok.version>1.18.38</lombok.version>
