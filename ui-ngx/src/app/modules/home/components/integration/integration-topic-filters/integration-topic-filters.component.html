@@ -27,6 +27,7 @@
       @if (displayHeaderAction) {
         <button color="primary" mat-button
                 class="tb-topic-filter-groups-expand-button"
+                [disabled]="expandDisabled"
                 (click)="onExpandChange(expanded)">
           {{ (expanded ? 'Collapse all' : 'Expand all') | translate }}
           <mat-icon class="tb-mat-20" iconPositionEnd>expand_more</mat-icon>

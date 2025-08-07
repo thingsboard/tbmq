@@ -128,6 +128,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
   activeSubscriptions: string[] = [];
   subscriptionsLoaded = false;
   expanded = false;
+  expandDisabled: boolean;
   filteredTopics = [];
 
   @ViewChildren(MatExpansionPanel)
@@ -258,6 +259,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         this.addTopicFilterGroup(formGroup);
       }
     });
+    this.expandDisabled = ![...this.topicFilterGroups.values()].some(group => group.length > 1);
   }
 
   addTopicFilter() {
