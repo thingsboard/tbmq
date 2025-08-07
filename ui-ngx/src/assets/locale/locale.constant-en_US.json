@@ -33,6 +33,8 @@
     "undo": "Undo",
     "copy": "Copy",
     "copy-code": "Click to copy",
+    "collapse-all": "Collapse all",
+    "expand-all": "Expand all",
     "discard-changes": "Discard Changes",
     "read-more": "Read more",
     "hide": "Hide",
