@@ -44,7 +44,6 @@ import {
 import { IntegrationTopicFilter, Integration } from '@shared/models/integration.models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
 import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -217,10 +216,6 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     }
   }
 
-  topicFiltersSubscribeValueChanges() {
-    this.integrationFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
-  }
-
   clearFilteredOptions() {
     setTimeout(() => {
       this.filteredTopics = null;
@@ -243,23 +238,6 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   isTopicFilterGroup(group: KeyValue<string, AbstractControl[]>): boolean {
     return group.value.length > 1;
-  }
-
-  updateTopicFilterGroups() {
-    this.topicFilterGroups.clear();
-    this.integrationFiltersFromArray.controls.forEach(formGroup => {
-      const filterValue = this.topicFilterValue(formGroup);
-      if (filterValue) {
-        const firstLevel = filterValue.split('/')[0];
-        if (!this.topicFilterGroups.has(firstLevel)) {
-          this.topicFilterGroups.set(firstLevel, []);
-        }
-        this.topicFilterGroups.get(firstLevel).push(formGroup);
-      } else if (filterValue === '') {
-        this.addTopicFilterGroup(formGroup);
-      }
-    });
-    this.expandDisabled = ![...this.topicFilterGroups.values()].some(group => group.length > 1);
   }
 
   addTopicFilter() {
@@ -299,8 +277,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     });
   }
 
-  // Sort groups by size: multiple items first (length > 1), single items last
-  groupBySize = (a: KeyValue<string, AbstractControl[]>, b: KeyValue<string, AbstractControl[]>): number => {
+  sortGroupsMultiFirst = (a: KeyValue<string, AbstractControl[]>, b: KeyValue<string, AbstractControl[]>): number => {
     const aLen = a.value.length;
     const bLen = b.value.length;
     const aGroup = aLen > 1 ? 0 : 1;
@@ -310,6 +287,27 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     }
     return 0;
   };
+
+  private topicFiltersSubscribeValueChanges() {
+    this.integrationFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
+  }
+
+  private updateTopicFilterGroups() {
+    this.topicFilterGroups.clear();
+    this.integrationFiltersFromArray.controls.forEach(formGroup => {
+      const filterValue = this.topicFilterValue(formGroup);
+      if (filterValue) {
+        const firstLevel = filterValue.split('/')[0];
+        if (!this.topicFilterGroups.has(firstLevel)) {
+          this.topicFilterGroups.set(firstLevel, []);
+        }
+        this.topicFilterGroups.get(firstLevel).push(formGroup);
+      } else if (filterValue === '') {
+        this.addTopicFilterGroup(formGroup);
+      }
+    });
+    this.expandDisabled = ![...this.topicFilterGroups.values()].some(group => group.length > 1);
+  }
 
   private updateModel(value: IntegrationTopicFilter[]) {
     const transformedValue = value.map(el => el.filter);

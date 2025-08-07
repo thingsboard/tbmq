@@ -39,7 +39,7 @@
 
 <ng-template #body>
   <div class="container">
-    @for (group of (topicFilterGroups | keyvalue: groupBySize); track group.key) {
+    @for (group of (topicFilterGroups | keyvalue: sortGroupsMultiFirst); track group.key) {
       @if (isTopicFilterGroup(group)) {
         <div class="flex flex-1 flex-row items-center justify-start">
           <mat-accordion class="w-full" multi="true">
