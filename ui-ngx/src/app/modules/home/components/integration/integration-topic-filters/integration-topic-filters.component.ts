@@ -14,7 +14,18 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, Input, OnChanges, OnDestroy, signal, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  forwardRef,
+  input,
+  Input,
+  OnChanges,
+  OnDestroy,
+  QueryList,
+  signal,
+  SimpleChanges,
+  ViewChildren
+} from '@angular/core';
 import {
   AbstractControl,
   ControlValueAccessor,
@@ -25,12 +36,14 @@ import {
   NG_VALUE_ACCESSOR,
   ValidationErrors,
   Validator,
-  Validators, ReactiveFormsModule, ValidatorFn, FormControl
+  Validators,
+  ReactiveFormsModule,
+  ValidatorFn,
+  FormControl
 } from '@angular/forms';
 import { IntegrationTopicFilter, Integration } from '@shared/models/integration.models';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-
 import { MatError, MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -41,6 +54,16 @@ import { IntegrationService } from '@core/http/integration.service';
 import { filterTopics } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
+import {
+  MatAccordion,
+  MatExpansionPanel,
+  MatExpansionPanelContent,
+  MatExpansionPanelHeader,
+  MatExpansionPanelTitle
+} from '@angular/material/expansion';
+import { KeyValue, KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import { UtilsService } from '@core/services/utils.service';
+import { coerceBoolean } from '@shared/decorators/coercion';
 
 @Component({
   selector: 'tb-integration-topic-filters',
@@ -61,7 +84,14 @@ import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/mat
     CopyButtonComponent,
     MatAutocomplete,
     MatOption,
-    MatAutocompleteTrigger
+    MatAutocompleteTrigger,
+    MatAccordion,
+    MatExpansionPanel,
+    MatExpansionPanelContent,
+    MatExpansionPanelHeader,
+    MatExpansionPanelTitle,
+    KeyValuePipe,
+    NgTemplateOutlet
   ],
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -81,17 +111,37 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
   @Input()
   disabled: boolean;
 
+  @Input()
+  @coerceBoolean()
+  displayHeader = true;
+
+  @Input()
+  @coerceBoolean()
+  displayHeaderAction = false;
+
   topicFiltersHasDuplicates = signal<boolean>(false);
   integration = input<Integration>();
   isEdit = input<boolean>();
+
+  topicFilterGroups = new Map<string, AbstractControl[]>();
   activeSubscriptions: string[] = [];
   subscriptionsLoaded = false;
+  expanded = false;
+  expandDisabled: boolean;
   filteredTopics = [];
+
+  @ViewChildren(MatExpansionPanel)
+  expansionPanels: QueryList<MatExpansionPanel>;
 
   private destroy$ = new Subject<void>();
   private propagateChange = (v: any) => { };
 
+  get integrationFiltersFromArray(): UntypedFormArray {
+    return this.integrationTopicFiltersForm.get('filters') as UntypedFormArray;
+  }
+
   constructor(private fb: UntypedFormBuilder,
+              private utils: UtilsService,
               private integrationService: IntegrationService) {
     this.integrationTopicFiltersForm = this.fb.group({
       filters: this.fb.array([], [Validators.required, this.isUnique])
@@ -148,6 +198,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
       this.integrationTopicFiltersForm.updateValueAndValidity();
     }
     this.topicFiltersSubscribeValueChanges();
+    this.updateTopicFilterGroups();
   }
 
   registerOnChange(fn: any) {
@@ -165,37 +216,10 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     }
   }
 
-  get integrationFiltersFromArray(): UntypedFormArray {
-    return this.integrationTopicFiltersForm.get('filters') as UntypedFormArray;
-  }
-
-  addTopicFilter() {
-    const formGroup = this.fb.group({
-      filter: ['', [Validators.required]]
-    });
-    this.subscribeTopicValueChanges(formGroup);
-    this.integrationFiltersFromArray.push(formGroup);
-  }
-
-  private updateModel(value: IntegrationTopicFilter[]) {
-    const transformedValue = value.map(el => el.filter);
-    this.propagateChange(transformedValue);
-  }
-
-  topicFiltersSubscribeValueChanges() {
-    this.integrationFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
-  }
-
   clearFilteredOptions() {
     setTimeout(() => {
       this.filteredTopics = null;
     }, 100);
-  }
-
-  private subscribeTopicValueChanges(control) {
-    control.get('filter').valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(value => this.filteredTopics = filterTopics(value));
   }
 
   validate(): ValidationErrors | null {
@@ -210,6 +234,90 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   topicFilterValue(control: AbstractControl): string {
     return control.value.filter;
+  }
+
+  isTopicFilterGroup(group: KeyValue<string, AbstractControl[]>): boolean {
+    return group.value.length > 1;
+  }
+
+  addTopicFilter() {
+    const formGroup = this.fb.group({
+      filter: ['', [Validators.required]]
+    });
+    this.subscribeTopicValueChanges(formGroup);
+    this.integrationFiltersFromArray.push(formGroup);
+    this.addTopicFilterGroup(formGroup);
+  }
+
+  removeTopicFilter(topicFilter) {
+    this.integrationFiltersFromArray.removeAt(this.integrationFiltersFromArray.controls.indexOf(topicFilter));
+    this.updateTopicFilterGroups();
+  }
+
+  removeTopicFilterGroup(group: any) {
+    const controlsToRemove = group.value;
+    for (const control of controlsToRemove) {
+      const index = this.integrationFiltersFromArray.controls.indexOf(control);
+      if (index !== -1) {
+        this.integrationFiltersFromArray.removeAt(index);
+      }
+    }
+    this.topicFilterGroups.delete(group.key);
+    this.updateTopicFilterGroups();
+  }
+
+  onExpandChange(expanded: boolean) {
+    this.expanded = !expanded;
+    setTimeout(() => {
+      if (this.expansionPanels) {
+        this.expansionPanels.forEach(panel => {
+          panel.expanded = this.expanded;
+        });
+      }
+    });
+  }
+
+  sortGroupsMultiFirst = (a: KeyValue<string, AbstractControl[]>, b: KeyValue<string, AbstractControl[]>): number => {
+    const aLen = a.value.length;
+    const bLen = b.value.length;
+    const aGroup = aLen > 1 ? 0 : 1;
+    const bGroup = bLen > 1 ? 0 : 1;
+    if (aGroup !== bGroup) {
+      return aGroup - bGroup;
+    }
+    return 0;
+  };
+
+  private topicFiltersSubscribeValueChanges() {
+    this.integrationFiltersFromArray.controls.forEach(control => this.subscribeTopicValueChanges(control));
+  }
+
+  private updateTopicFilterGroups() {
+    this.topicFilterGroups.clear();
+    this.integrationFiltersFromArray.controls.forEach(formGroup => {
+      const filterValue = this.topicFilterValue(formGroup);
+      if (filterValue) {
+        const firstLevel = filterValue.split('/')[0];
+        if (!this.topicFilterGroups.has(firstLevel)) {
+          this.topicFilterGroups.set(firstLevel, []);
+        }
+        this.topicFilterGroups.get(firstLevel).push(formGroup);
+      } else if (filterValue === '') {
+        this.addTopicFilterGroup(formGroup);
+      }
+    });
+    this.expandDisabled = ![...this.topicFilterGroups.values()].some(group => group.length > 1);
+  }
+
+  private updateModel(value: IntegrationTopicFilter[]) {
+    const transformedValue = value.map(el => el.filter);
+    this.propagateChange(transformedValue);
+  }
+
+  private subscribeTopicValueChanges(control) {
+    control.get('filter').valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => this.filteredTopics = filterTopics(value));
   }
 
   private updateActiveSubscriptions() {
@@ -235,6 +343,14 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         return null;
       }
     };
+  }
+
+  private addTopicFilterGroup(control: AbstractControl<any, any>) {
+    const newGroupId = this.utils.guid();
+    if (!this.topicFilterGroups.has(newGroupId)) {
+      this.topicFilterGroups.set(newGroupId, []);
+    }
+    this.topicFilterGroups.get(newGroupId).push(control);
   }
 
 }

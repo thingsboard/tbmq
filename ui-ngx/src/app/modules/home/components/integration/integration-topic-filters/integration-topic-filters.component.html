@@ -15,60 +15,124 @@
     limitations under the License.
 
 -->
-<div class="container">
-  @for (topicFilter of integrationFiltersFromArray.controls; track topicFilter; let i = $index) {
-    <div class="flex flex-1 flex-row items-center justify-start"
-      [formGroup]="topicFilter">
-      <mat-form-field hideRequiredMarker class="mat-block flex-1" appearance="outline">
-        @if (i === 0) {
-          <mat-label>{{ i !== 0 ? "" : "integration.topic" | translate }}</mat-label>
-        }
-        <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef
-               [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
-        <mat-autocomplete #auto="matAutocomplete">
-          @for (option of filteredTopics; track option) {
-            <mat-option [value]="option">{{option}}</mat-option>
-          }
-        </mat-autocomplete>
-        <tb-copy-button matSuffix
-                        [class.!hidden]="!topicFilterValue(topicFilter)?.length"
-                        [copyText]="topicFilterValue(topicFilter)">
-        </tb-copy-button>
-        @if (integration() && !subscriptionActive(topicFilter) && inputRef.value?.length && !isEdit() && subscriptionsLoaded) {
-          <mat-icon matSuffix style="color: #e33737" [matTooltip]="'integration.inactive-subscription' | translate">
-            sync_problem
-          </mat-icon>
-        }
-      </mat-form-field>
-      <button mat-icon-button color="primary" [disabled]="integrationFiltersFromArray.length === 1 || (!isEdit() && integration())"
-        type="button" style="top: 4px; align-self: baseline"
-        (click)="integrationFiltersFromArray.removeAt(i)"
-        [matTooltip]="'integration.remove-topic-filter' | translate" matTooltipPosition="above">
-        <mat-icon class="material-icons">close</mat-icon>
-      </button>
+
+<ng-container *ngTemplateOutlet="header"></ng-container>
+<ng-container *ngTemplateOutlet="body"></ng-container>
+<ng-container *ngTemplateOutlet="footer"></ng-container>
+
+<ng-template #header>
+  @if (displayHeader) {
+    <div class="topic-filters-header flex flex-row items-center justify-between" [class.tb-expanded]="expanded">
+      <p translate>integration.topic-filters</p>
+      @if (displayHeaderAction) {
+        <button color="primary" mat-button
+                class="tb-topic-filter-groups-expand-button"
+                [disabled]="expandDisabled"
+                (click)="onExpandChange(expanded)">
+          {{ (expanded ? 'action.collapse-all' : 'action.expand-all') | translate }}
+          <mat-icon class="tb-mat-20" iconPositionEnd>expand_more</mat-icon>
+        </button>
+      }
     </div>
   }
-  @if (topicFiltersHasDuplicates()) {
-    <mat-error style="font-size: 12px">{{ 'integration.topic-filters-has-duplicates' | translate }}</mat-error>
+</ng-template>
+
+<ng-template #body>
+  <div class="container">
+    @for (group of (topicFilterGroups | keyvalue: sortGroupsMultiFirst); track group.key) {
+      @if (isTopicFilterGroup(group)) {
+        <div class="flex flex-1 flex-row items-center justify-start">
+          <mat-accordion class="w-full" multi="true">
+            <mat-expansion-panel class="mat-elevation-z0 security-setting">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  {{ group.key }} ({{group.value.length}})
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+              <ng-template matExpansionPanelContent>
+                @for (topicFilter of group.value; let index = $index; track topicFilter) {
+                  <div class="pl-4">
+                    <ng-container
+                      *ngTemplateOutlet="topicFilterRow;context:{index, topicFilter}">
+                    </ng-container>
+                  </div>
+                }
+              </ng-template>
+            </mat-expansion-panel>
+          </mat-accordion>
+          <button mat-icon-button color="primary" [disabled]="!isEdit()"
+                  type="button" style="top: 4px; align-self: baseline"
+                  (click)="removeTopicFilterGroup(group)"
+                  [matTooltip]="'integration.remove-topic-filter-group' | translate" matTooltipPosition="above">
+            <mat-icon class="material-icons">close</mat-icon>
+          </button>
+        </div>
+      } @else {
+        @for (topicFilter of group.value; let index = $index; track topicFilter) {
+            <ng-container
+              *ngTemplateOutlet="topicFilterRow;context:{index, topicFilter}">
+            </ng-container>
+        }
+      }
+    }
+    @if (topicFiltersHasDuplicates()) {
+      <mat-error style="font-size: 12px">{{ 'integration.topic-filters-has-duplicates' | translate }}</mat-error>
+    }
+  </div>
+</ng-template>
+
+<ng-template #footer>
+  @if (!integrationFiltersFromArray.disabled) {
+    <section style="margin-top: 8px">
+      <div class="tb-hint mb-2" innerHTML="{{ 'integration.topic-filters-hint' | translate }}"></div>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.support-level-wildcards' | translate }}"></div>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.single-level-wildcards-hint' | translate }}"></div>
+      <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.multi-level-wildcards-hint' | translate }}"></div>
+    </section>
   }
-</div>
-@if (!integrationFiltersFromArray.disabled) {
-  <section style="margin-top: 8px">
-    <div class="tb-hint mb-2" innerHTML="{{ 'integration.topic-filters-hint' | translate }}"></div>
-    <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.support-level-wildcards' | translate }}"></div>
-    <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.single-level-wildcards-hint' | translate }}"></div>
-    <div class="tb-hint" innerHTML="{{ 'mqtt-client-session.multi-level-wildcards-hint' | translate }}"></div>
-  </section>
-}
-@if (!integrationFiltersFromArray.length) {
-  <span class="no-data-found flex items-center justify-center" translate>integration.add-topic-filter-prompt</span>
-}
-@if (!integrationFiltersFromArray.disabled) {
-  <button mat-stroked-button color="primary"
-    type="button"
-    class="add-button"
-    (click)="addTopicFilter()"
-    [matTooltip]="'integration.add-topic-filter' | translate" matTooltipPosition="above">
-    <span translate>integration.add-topic-filter</span>
-  </button>
-}
+  @if (!integrationFiltersFromArray.length) {
+    <span class="no-data-found flex items-center justify-center" translate>integration.add-topic-filter-prompt</span>
+  }
+  @if (!integrationFiltersFromArray.disabled) {
+    <button mat-stroked-button color="primary"
+            type="button"
+            class="add-button"
+            (click)="addTopicFilter()"
+            [matTooltip]="'integration.add-topic-filter' | translate" matTooltipPosition="above">
+      <span translate>integration.add-topic-filter</span>
+    </button>
+  }
+</ng-template>
+
+<ng-template #topicFilterRow let-index="index" let-topicFilter="topicFilter">
+  <div class="mb-4 flex flex-1 flex-row items-center justify-start" [formGroup]="topicFilter">
+    <mat-form-field hideRequiredMarker class="mat-block flex-1" subscriptSizing="dynamic">
+      @if (index === 0) {
+        <mat-label>{{ "integration.topic" | translate }}</mat-label>
+      }
+      <input matInput required name="topicFilterTopic" formControlName="filter" #inputRef
+             [matAutocomplete]="auto" (focusout)="clearFilteredOptions()">
+      <mat-autocomplete #auto="matAutocomplete">
+        @for (option of filteredTopics; track option) {
+          <mat-option [value]="option">{{option}}</mat-option>
+        }
+      </mat-autocomplete>
+      <tb-copy-button matSuffix
+                      [class.!hidden]="!topicFilterValue(topicFilter)?.length"
+                      [copyText]="topicFilterValue(topicFilter)">
+      </tb-copy-button>
+      @if (integration() && !subscriptionActive(topicFilter) && inputRef.value?.length && !isEdit() && subscriptionsLoaded) {
+        <mat-icon matSuffix style="color: #e33737" [matTooltip]="'integration.inactive-subscription' | translate">
+          sync_problem
+        </mat-icon>
+      }
+    </mat-form-field>
+    <button mat-icon-button color="primary" [disabled]="integrationFiltersFromArray.length === 1 || (!isEdit() && integration())"
+            type="button" style="top: 4px; align-self: baseline"
+            (click)="removeTopicFilter(topicFilter)"
+            [matTooltip]="'integration.remove-topic-filter' | translate" matTooltipPosition="above">
+      <mat-icon class="material-icons">close</mat-icon>
+    </button>
+  </div>
+</ng-template>
+
