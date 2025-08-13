@@ -69,6 +69,7 @@ public class AuthController extends BaseController {
         systemSecurityService.validatePassword(changePasswordRequest.getNewPassword(), userCredentials);
 
         userCredentials.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userCredentials.activateUserCredentials();
         userService.replaceUserCredentials(userCredentials);
 
         return tokenFactory.createTokenPair(securityUser);

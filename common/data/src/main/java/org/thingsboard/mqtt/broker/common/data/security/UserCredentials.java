@@ -36,7 +36,7 @@ public class UserCredentials extends BaseData {
     private String password;
     private String activateToken;
     private String resetToken;
-    
+
     public UserCredentials() {
         super();
     }
@@ -71,6 +71,14 @@ public class UserCredentials extends BaseData {
                 ", id=" +
                 id +
                 "]";
+    }
+
+    public UserCredentials activateUserCredentials() {
+        if (!enabled) {
+            enabled = true;
+            activateToken = null;
+        }
+        return this;
     }
 
 }

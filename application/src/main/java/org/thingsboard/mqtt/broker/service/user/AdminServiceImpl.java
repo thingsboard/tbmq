@@ -73,10 +73,12 @@ public class AdminServiceImpl implements AdminService {
     }
 
     private void updateUserCredentials(UserCredentials userCredentials, String password) {
-        // Do not remove this ternary operator, even though it seems we do not need to check for null
-        userCredentials.setPassword(password != null ? passwordEncoder.encode(password) : null);
-        userCredentials.setEnabled(true);
-        userCredentials.setActivateToken(null);
+        // Do not remove this if statement, even though it seems we do not need to check for null
+        if (StringUtils.isEmpty(password)) {
+            return;
+        }
+        userCredentials.setPassword(passwordEncoder.encode(password));
+        userCredentials.activateUserCredentials();
         userService.saveUserCredentials(userCredentials);
     }
 }
