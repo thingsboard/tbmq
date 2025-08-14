@@ -104,9 +104,8 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             List<TsKvEntry> tsKvEntries = clientStatsMap
                     .entrySet()
                     .stream()
-                    .filter(entry -> entry.getValue().isValueChangedSinceLastUpdate())
-                    .peek(entry -> entry.getValue().setValueChangedSinceLastUpdate(false))
-                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCounter().get())))
+                    .filter(entry -> entry.getValue().getAndResetValueChanged())
+                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCount())))
                     .collect(Collectors.toList());
 
             if (!tsKvEntries.isEmpty()) {
@@ -209,13 +208,11 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
         var clientStatsMap = clientSessionsStats.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
 
-        ClientSessionMetricState metricState = clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState());
-        metricState.getCounter().incrementAndGet();
-        metricState.setValueChangedSinceLastUpdate(true);
+        clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState())
+                .incrementAndSetValueChanged();
 
-        ClientSessionMetricState qosMetricState = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState());
-        qosMetricState.getCounter().incrementAndGet();
-        qosMetricState.setValueChangedSinceLastUpdate(true);
+        clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState())
+                .incrementAndSetValueChanged();
     }
 
     private ClientSessionMetricState newClientSessionMetricState() {
