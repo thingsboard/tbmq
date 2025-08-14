@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
 
 @Data
@@ -119,10 +120,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     }
 
     void reportAndPersistStats(long ts) {
-        List<ToUsageStatsMsgProto> report = new ArrayList<>();
+        List<ToUsageStatsMsgProto> report = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
-            long value = stats.get(key).get();
+            long value = stats.get(key).getAndSet(0);
 
             UsageStatsKVProto.Builder statsItem = UsageStatsKVProto.newBuilder()
                     .setKey(key)
@@ -132,10 +133,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             statsMsg.setTs(ts);
             statsMsg.setUsageStats(statsItem.build());
             report.add(statsMsg.build());
-            stats.get(key).set(0);
         }
 
-        List<ListenableFuture<Void>> futures = new ArrayList<>();
+        List<ListenableFuture<Void>> futures = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
         report.forEach(statsMsg -> {
                     futures.add(timeseriesService.save(statsMsg.getServiceId(), new BasicTsKvEntry(
                             statsMsg.getTs(), new LongDataEntry(statsMsg.getUsageStats().getKey(), statsMsg.getUsageStats().getValue()))));
@@ -154,12 +154,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                 }
         );
 
-        if (!report.isEmpty()) {
-            log.debug("Reporting data usage statistics {}", report.size());
-            DonAsynchron.withCallback(Futures.allAsList(futures),
-                    unused -> log.trace("[{}] Successfully saved timeseries for stats report client", serviceId),
-                    throwable -> log.error("[{}] Failed to save timeseries", serviceId, throwable));
-        }
+        log.debug("Reporting data usage statistics {}", report);
+        DonAsynchron.withCallback(Futures.allAsList(futures),
+                unused -> log.trace("[{}] Successfully saved time series for stats report client", serviceId),
+                throwable -> log.error("[{}] Failed to save time series", serviceId, throwable));
     }
 
     @Override
@@ -215,9 +213,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     void validateIntervalAndThrowExceptionOnInvalid() {
         if (interval < 1 || interval > 60) {
-            String message = String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval);
-            log.error(message);
-            throw new RuntimeException(message);
+            throw new RuntimeException(String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval));
         }
     }
 

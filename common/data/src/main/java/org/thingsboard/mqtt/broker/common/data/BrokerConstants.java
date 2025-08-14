@@ -39,6 +39,7 @@ public class BrokerConstants {
     public static final String PROCESSED_BYTES = "processedBytes";
 
     public static final List<String> MSG_RELATED_HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, PROCESSED_BYTES);
+    public static final int MSG_RELATED_HISTORICAL_KEYS_COUNT = MSG_RELATED_HISTORICAL_KEYS.size();
 
     public static final List<String> HISTORICAL_KEYS = List.of(INCOMING_MSGS, OUTGOING_MSGS, DROPPED_MSGS, SESSIONS, SUBSCRIPTIONS, PROCESSED_BYTES);
 
