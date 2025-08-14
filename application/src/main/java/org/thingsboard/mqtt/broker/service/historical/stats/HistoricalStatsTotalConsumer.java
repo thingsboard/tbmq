@@ -122,9 +122,7 @@ public class HistoricalStatsTotalConsumer {
                     try {
                         Thread.sleep(pollDuration);
                     } catch (InterruptedException e2) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("Failed to wait until the server has capacity to handle new requests", e2);
-                        }
+                        log.trace("Failed to wait until the server has capacity to handle new requests", e2);
                     }
                 }
             }
@@ -143,11 +141,9 @@ public class HistoricalStatsTotalConsumer {
                 new LongDataEntry(SUBSCRIPTIONS, clientSubscriptionCount)));
 
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, entries);
-        DonAsynchron.withCallback(savedTsFuture, unused -> {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Successfully saved timeseries entries {}", ENTITY_ID_TOTAL, entries);
-            }
-        }, throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
+        DonAsynchron.withCallback(savedTsFuture,
+                unused -> log.trace("[{}] Successfully saved timeseries entries {}", ENTITY_ID_TOTAL, entries),
+                throwable -> log.error("[{}] Failed to save timeseries entries {}", ENTITY_ID_TOTAL, entries, throwable));
     }
 
     private void processSaveHistoricalStatsTotal(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
@@ -156,11 +152,9 @@ public class HistoricalStatsTotalConsumer {
         TsKvEntry tsKvEntry = new BasicTsKvEntry(pair.getTs(), new LongDataEntry(key, pair.getTotalMsgCounter()));
 
         ListenableFuture<Void> savedTsFuture = timeseriesService.save(ENTITY_ID_TOTAL, tsKvEntry);
-        DonAsynchron.withCallback(savedTsFuture, unused -> {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Successfully saved timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue());
-            }
-        }, throwable -> log.error("[{}] Failed to save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue(), throwable));
+        DonAsynchron.withCallback(savedTsFuture,
+                unused -> log.trace("[{}] Successfully saved timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue()),
+                throwable -> log.error("[{}] Failed to save timeseries for key {} with value {}", ENTITY_ID_TOTAL, tsKvEntry.getKey(), tsKvEntry.getValue(), throwable));
     }
 
     protected TsMsgTotalPair calculatePairUsingProvidedMsg(TbProtoQueueMsg<ToUsageStatsMsgProto> msg) {
