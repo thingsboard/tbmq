@@ -123,7 +123,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         List<ToUsageStatsMsgProto> report = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
-            long value = stats.get(key).getAndSet(0);
+            long value = stats.get(key).getAndSet(0L);
 
             UsageStatsKVProto.Builder statsItem = UsageStatsKVProto.newBuilder()
                     .setKey(key)
@@ -154,7 +154,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                 }
         );
 
-        log.debug("Reporting data usage statistics {}", report);
+        log.trace("Reporting data usage statistics {}", report);
         DonAsynchron.withCallback(Futures.allAsList(futures),
                 unused -> log.trace("[{}] Successfully saved time series for stats report client", serviceId),
                 throwable -> log.error("[{}] Failed to save time series", serviceId, throwable));
