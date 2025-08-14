@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,7 +62,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Value("${historical-data-report.enabled:true}")
     private boolean enabled;
-
     @Value("${historical-data-report.interval:5}")
     private long interval;
 
@@ -86,6 +86,13 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         clientSessionsStats = new ConcurrentHashMap<>();
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
             stats.put(key, new AtomicLong(0));
+        }
+    }
+
+    @PreDestroy
+    private void destroy() {
+        if (historicalStatsProducer != null) {
+            historicalStatsProducer.stop();
         }
     }
 

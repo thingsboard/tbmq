@@ -75,10 +75,8 @@ public class HistoricalStatsTotalConsumer {
 
     @Value("${historical-data-report.enabled:true}")
     private boolean enabled;
-
     @Value("${historical-data-report.interval}")
     private int intervalMinutes;
-
     @Value("${queue.historical-data-total.poll-interval}")
     private long pollDuration;
 
