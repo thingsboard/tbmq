@@ -143,9 +143,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                     historicalStatsProducer.send(helper.getTopic(), null, new TbProtoQueueMsg<>(statsMsg), new TbQueueCallback() {
                         @Override
                         public void onSuccess(TbQueueMsgMetadata metadata) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);
-                            }
+                            log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);
                         }
 
                         @Override
@@ -157,14 +155,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         );
 
         if (!report.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Reporting data usage statistics {}", report.size());
-            }
-            DonAsynchron.withCallback(Futures.allAsList(futures), unused -> {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Successfully saved timeseries for stats report client", serviceId);
-                }
-            }, throwable -> log.error("[{}] Failed to save timeseries", serviceId, throwable));
+            log.debug("Reporting data usage statistics {}", report.size());
+            DonAsynchron.withCallback(Futures.allAsList(futures),
+                    unused -> log.trace("[{}] Successfully saved timeseries for stats report client", serviceId),
+                    throwable -> log.error("[{}] Failed to save timeseries", serviceId, throwable));
         }
     }
 
