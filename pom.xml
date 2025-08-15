@@ -932,6 +932,12 @@
                 <groupId>org.thingsboard</groupId>
                 <artifactId>netty-mqtt</artifactId>
                 <version>${thingsboard.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okio</groupId>
+                        <artifactId>okio</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.paho</groupId>
