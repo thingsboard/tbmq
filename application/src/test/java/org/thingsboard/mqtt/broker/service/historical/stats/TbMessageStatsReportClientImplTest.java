@@ -246,7 +246,7 @@ public class TbMessageStatsReportClientImplTest {
         when(helper.getTopic()).thenReturn("topic");
 
         // When
-        tbMessageStatsReportClient.reportAndPersistStats(timestamp);
+        tbMessageStatsReportClient.reportAndPersistStats(timestamp, null);
 
         // Then
         verify(timeseriesService, times(4)).save(anyString(), any(BasicTsKvEntry.class));

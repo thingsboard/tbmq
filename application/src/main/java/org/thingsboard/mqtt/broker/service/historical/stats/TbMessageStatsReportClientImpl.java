@@ -46,6 +46,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -53,6 +55,7 @@ import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
 
 @Data
 @Component
@@ -91,6 +94,18 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @PreDestroy
     private void destroy() {
+        if (enabled) {
+            CountDownLatch latch = new CountDownLatch(MSG_RELATED_HISTORICAL_KEYS_COUNT);
+            reportAndPersistStats(getStartOfNextInterval(), latch); // sync; block to persist in Kafka
+            try {
+                if (!latch.await(5, TimeUnit.SECONDS)) {
+                    log.warn("[{}] Timeout waiting for historical messages to be sent on shutdown", serviceId);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("[{}] Interrupted while flushing stats on shutdown", serviceId, e);
+            }
+        }
         if (historicalStatsProducer != null) {
             historicalStatsProducer.stop();
         }
@@ -100,7 +115,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void process() {
         if (enabled) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
-            reportAndPersistStats(startOfCurrentMinute);
+            reportAndPersistStats(startOfCurrentMinute, null); // async; don't block
             reportClientSessionsStats(startOfCurrentMinute);
         }
     }
@@ -126,7 +141,7 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                 throwable -> log.warn("Failed to persist client sessions latest", throwable));
     }
 
-    void reportAndPersistStats(long ts) {
+    void reportAndPersistStats(long ts, CountDownLatch latch) {
         List<ToUsageStatsMsgProto> report = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
@@ -151,11 +166,17 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                         @Override
                         public void onSuccess(TbQueueMsgMetadata metadata) {
                             log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);
+                            if (latch != null) {
+                                latch.countDown();
+                            }
                         }
 
                         @Override
                         public void onFailure(Throwable t) {
                             log.warn("[{}] Failed to send message for historical data {}.", statsMsg.getServiceId(), statsMsg, t);
+                            if (latch != null) {
+                                latch.countDown();
+                            }
                         }
                     });
                 }
@@ -226,6 +247,10 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     private long getStartOfCurrentMinute() {
         return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
+    }
+
+    private long getStartOfNextInterval() {
+        return getStartOfCurrentMinute() + interval * ONE_MINUTE_MS;
     }
 
 }

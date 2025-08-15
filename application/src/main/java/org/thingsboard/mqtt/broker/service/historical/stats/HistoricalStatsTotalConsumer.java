@@ -62,7 +62,7 @@ import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SUBSCRIPTI
 @RequiredArgsConstructor
 public class HistoricalStatsTotalConsumer {
 
-    private static final long ONE_MINUTE_MS = 60000L;
+    public static final long ONE_MINUTE_MS = 60000L;
 
     private final HistoricalDataQueueFactory historicalDataQueueFactory;
     private final HistoricalStatsTotalHelper helper;
