@@ -19,6 +19,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Data
@@ -27,9 +28,23 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ClientSessionMetricState {
 
     private AtomicLong counter;
-    private boolean valueChangedSinceLastUpdate;
+    private AtomicBoolean valueChangedSinceLastUpdate;
 
     public static ClientSessionMetricState newClientSessionMetricState() {
-        return new ClientSessionMetricState(new AtomicLong(0), true);
+        return new ClientSessionMetricState(new AtomicLong(0), new AtomicBoolean(true));
     }
+
+    void incrementAndSetValueChanged() {
+        counter.incrementAndGet();
+        valueChangedSinceLastUpdate.set(true);
+    }
+
+    boolean getAndResetValueChanged() {
+        return valueChangedSinceLastUpdate.getAndSet(false);
+    }
+
+    long getCount() {
+        return counter.get();
+    }
+
 }

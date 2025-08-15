@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -190,7 +191,7 @@ public class TbMessageStatsReportClientImplTest {
         AtomicLong counter = new AtomicLong(10);
 
         // Setting up a client session with changed stats
-        ClientSessionMetricState metricState = new ClientSessionMetricState(counter, true);
+        ClientSessionMetricState metricState = new ClientSessionMetricState(counter, new AtomicBoolean(true));
         ConcurrentMap<String, ClientSessionMetricState> clientStatsMap = new ConcurrentHashMap<>();
         clientStatsMap.put(key, metricState);
         tbMessageStatsReportClient.getClientSessionsStats().put(clientId, clientStatsMap);
@@ -204,7 +205,7 @@ public class TbMessageStatsReportClientImplTest {
 
         // Then
         verify(timeseriesService, times(1)).saveLatest(eq(clientId), anyList());
-        assertFalse(metricState.isValueChangedSinceLastUpdate(), "Metric valueChangedSinceLastUpdate should be reset to false.");
+        assertFalse(metricState.getValueChangedSinceLastUpdate().get(), "Metric valueChangedSinceLastUpdate should be reset to false.");
     }
 
     @Test
@@ -218,7 +219,7 @@ public class TbMessageStatsReportClientImplTest {
         AtomicLong counter = new AtomicLong(20);
 
         // Setting up a client session without changed stats
-        ClientSessionMetricState metricState = new ClientSessionMetricState(counter, false);
+        ClientSessionMetricState metricState = new ClientSessionMetricState(counter, new AtomicBoolean(false));
         ConcurrentMap<String, ClientSessionMetricState> clientStatsMap = new ConcurrentHashMap<>();
         clientStatsMap.put(key, metricState);
         tbMessageStatsReportClient.getClientSessionsStats().put(clientId, clientStatsMap);
@@ -245,7 +246,7 @@ public class TbMessageStatsReportClientImplTest {
         when(helper.getTopic()).thenReturn("topic");
 
         // When
-        tbMessageStatsReportClient.reportAndPersistStats(timestamp);
+        tbMessageStatsReportClient.reportAndPersistStats(timestamp, null);
 
         // Then
         verify(timeseriesService, times(4)).save(anyString(), any(BasicTsKvEntry.class));
