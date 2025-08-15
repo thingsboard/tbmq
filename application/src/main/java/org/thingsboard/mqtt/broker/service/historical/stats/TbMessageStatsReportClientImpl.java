@@ -44,6 +44,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -55,6 +56,8 @@ import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
 import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
 
 @Data
@@ -139,6 +142,26 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         DonAsynchron.withCallback(Futures.allAsList(futures),
                 lists -> log.debug("Successfully persisted client sessions latest"),
                 throwable -> log.warn("Failed to persist client sessions latest", throwable));
+
+        if (log.isDebugEnabled()) {
+            log.debug("Top publisher MQTT clients:");
+            logTopMqttClients(SENT_PUBLISH_MSGS, "[PUB][clientId={}] {}={}");
+
+            log.debug("Top subscriber MQTT clients:");
+            logTopMqttClients(RECEIVED_PUBLISH_MSGS, "[SUB][clientId={}] {}={}");
+        }
+    }
+
+    private void logTopMqttClients(String metric, String msg) {
+        clientSessionsStats.entrySet().stream()
+                .map(entry -> {
+                    var metricState = entry.getValue().get(metric);
+                    long cnt = (metricState != null) ? metricState.getCount() : 0L;
+                    return Map.entry(entry.getKey(), cnt);
+                })
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(5)
+                .forEach(entry -> TbMessageStatsReportClientImpl.log.debug(msg, entry.getKey(), metric, entry.getValue()));
     }
 
     void reportAndPersistStats(long ts, CountDownLatch latch) {
@@ -207,14 +230,14 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     @Override
     public void reportClientSendStats(String clientId, int qos) {
         if (enabled) {
-            reportClientStats(clientId, BrokerConstants.SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
+            reportClientStats(clientId, SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
         }
     }
 
     @Override
     public void reportClientReceiveStats(String clientId, int qos) {
         if (enabled) {
-            reportClientStats(clientId, BrokerConstants.RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
+            reportClientStats(clientId, RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
         }
     }
 
