@@ -18,7 +18,7 @@ services:
   # Redis cluster
   redis-node-0:
     container_name: "${REDIS_NODE_0_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-0:/bitnami/redis/data
     environment:
@@ -28,7 +28,7 @@ services:
 
   redis-node-1:
     container_name: "${REDIS_NODE_1_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-1:/bitnami/redis/data
     depends_on:
@@ -40,7 +40,7 @@ services:
 
   redis-node-2:
     container_name: "${REDIS_NODE_2_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-2:/bitnami/redis/data
     depends_on:
@@ -52,7 +52,7 @@ services:
 
   redis-node-3:
     container_name: "${REDIS_NODE_3_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-3:/bitnami/redis/data
     depends_on:
@@ -64,7 +64,7 @@ services:
 
   redis-node-4:
     container_name: "${REDIS_NODE_4_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-4:/bitnami/redis/data
     depends_on:
@@ -76,7 +76,7 @@ services:
 
   redis-node-5:
     container_name: "${REDIS_NODE_5_NAME}"
-    image: bitnami/redis-cluster:7.2.5
+    image: bitnamilegacy/redis-cluster:7.2.5
     volumes:
       - redis-cluster-data-5:/bitnami/redis/data
     depends_on:
