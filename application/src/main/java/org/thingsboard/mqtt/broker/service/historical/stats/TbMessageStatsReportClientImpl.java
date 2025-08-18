@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.historical.stats;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,14 +44,21 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.time.ZoneOffset.UTC;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.MSG_RELATED_HISTORICAL_KEYS_COUNT;
 import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.PROCESSED_BYTES;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.RECEIVED_PUBLISH_MSGS;
+import static org.thingsboard.mqtt.broker.common.data.BrokerConstants.SENT_PUBLISH_MSGS;
+import static org.thingsboard.mqtt.broker.service.historical.stats.HistoricalStatsTotalConsumer.ONE_MINUTE_MS;
 
 @Data
 @Component
@@ -60,7 +68,6 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     @Value("${historical-data-report.enabled:true}")
     private boolean enabled;
-
     @Value("${historical-data-report.interval:5}")
     private long interval;
 
@@ -88,11 +95,30 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         }
     }
 
+    @PreDestroy
+    private void destroy() {
+        if (enabled) {
+            CountDownLatch latch = new CountDownLatch(MSG_RELATED_HISTORICAL_KEYS_COUNT);
+            reportAndPersistStats(getStartOfNextInterval(), latch); // sync; block to persist in Kafka
+            try {
+                if (!latch.await(5, TimeUnit.SECONDS)) {
+                    log.warn("[{}] Timeout waiting for historical messages to be sent on shutdown", serviceId);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("[{}] Interrupted while flushing stats on shutdown", serviceId, e);
+            }
+        }
+        if (historicalStatsProducer != null) {
+            historicalStatsProducer.stop();
+        }
+    }
+
     @Scheduled(cron = "0 0/${historical-data-report.interval} * * * *", zone = "${historical-data-report.zone}")
     private void process() {
         if (enabled) {
             long startOfCurrentMinute = getStartOfCurrentMinute();
-            reportAndPersistStats(startOfCurrentMinute);
+            reportAndPersistStats(startOfCurrentMinute, null); // async; don't block
             reportClientSessionsStats(startOfCurrentMinute);
         }
     }
@@ -104,9 +130,8 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             List<TsKvEntry> tsKvEntries = clientStatsMap
                     .entrySet()
                     .stream()
-                    .filter(entry -> entry.getValue().isValueChangedSinceLastUpdate())
-                    .peek(entry -> entry.getValue().setValueChangedSinceLastUpdate(false))
-                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCounter().get())))
+                    .filter(entry -> entry.getValue().getAndResetValueChanged())
+                    .map(entry -> new BasicTsKvEntry(ts, new LongDataEntry(entry.getKey(), entry.getValue().getCount())))
                     .collect(Collectors.toList());
 
             if (!tsKvEntries.isEmpty()) {
@@ -117,13 +142,33 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
         DonAsynchron.withCallback(Futures.allAsList(futures),
                 lists -> log.debug("Successfully persisted client sessions latest"),
                 throwable -> log.warn("Failed to persist client sessions latest", throwable));
+
+        if (log.isDebugEnabled()) {
+            log.debug("Top publisher MQTT clients:");
+            logTopMqttClients(SENT_PUBLISH_MSGS, "[PUB][clientId={}] {}={}");
+
+            log.debug("Top subscriber MQTT clients:");
+            logTopMqttClients(RECEIVED_PUBLISH_MSGS, "[SUB][clientId={}] {}={}");
+        }
     }
 
-    void reportAndPersistStats(long ts) {
-        List<ToUsageStatsMsgProto> report = new ArrayList<>();
+    private void logTopMqttClients(String metric, String msg) {
+        clientSessionsStats.entrySet().stream()
+                .map(entry -> {
+                    var metricState = entry.getValue().get(metric);
+                    long cnt = (metricState != null) ? metricState.getCount() : 0L;
+                    return Map.entry(entry.getKey(), cnt);
+                })
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(5)
+                .forEach(entry -> TbMessageStatsReportClientImpl.log.debug(msg, entry.getKey(), metric, entry.getValue()));
+    }
+
+    void reportAndPersistStats(long ts, CountDownLatch latch) {
+        List<ToUsageStatsMsgProto> report = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
 
         for (String key : MSG_RELATED_HISTORICAL_KEYS) {
-            long value = stats.get(key).get();
+            long value = stats.get(key).getAndSet(0L);
 
             UsageStatsKVProto.Builder statsItem = UsageStatsKVProto.newBuilder()
                     .setKey(key)
@@ -133,10 +178,9 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
             statsMsg.setTs(ts);
             statsMsg.setUsageStats(statsItem.build());
             report.add(statsMsg.build());
-            stats.get(key).set(0);
         }
 
-        List<ListenableFuture<Void>> futures = new ArrayList<>();
+        List<ListenableFuture<Void>> futures = new ArrayList<>(MSG_RELATED_HISTORICAL_KEYS_COUNT);
         report.forEach(statsMsg -> {
                     futures.add(timeseriesService.save(statsMsg.getServiceId(), new BasicTsKvEntry(
                             statsMsg.getTs(), new LongDataEntry(statsMsg.getUsageStats().getKey(), statsMsg.getUsageStats().getValue()))));
@@ -144,29 +188,27 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
                     historicalStatsProducer.send(helper.getTopic(), null, new TbProtoQueueMsg<>(statsMsg), new TbQueueCallback() {
                         @Override
                         public void onSuccess(TbQueueMsgMetadata metadata) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);
+                            log.trace("[{}] Historical data {} sent successfully.", statsMsg.getServiceId(), statsMsg);
+                            if (latch != null) {
+                                latch.countDown();
                             }
                         }
 
                         @Override
                         public void onFailure(Throwable t) {
                             log.warn("[{}] Failed to send message for historical data {}.", statsMsg.getServiceId(), statsMsg, t);
+                            if (latch != null) {
+                                latch.countDown();
+                            }
                         }
                     });
                 }
         );
 
-        if (!report.isEmpty()) {
-            if (log.isDebugEnabled()) {
-                log.debug("Reporting data usage statistics {}", report.size());
-            }
-            DonAsynchron.withCallback(Futures.allAsList(futures), unused -> {
-                if (log.isTraceEnabled()) {
-                    log.trace("[{}] Successfully saved timeseries for stats report client", serviceId);
-                }
-            }, throwable -> log.error("[{}] Failed to save timeseries", serviceId, throwable));
-        }
+        log.trace("Reporting data usage statistics {}", report);
+        DonAsynchron.withCallback(Futures.allAsList(futures),
+                unused -> log.trace("[{}] Successfully saved time series for stats report client", serviceId),
+                throwable -> log.error("[{}] Failed to save time series", serviceId, throwable));
     }
 
     @Override
@@ -188,14 +230,14 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     @Override
     public void reportClientSendStats(String clientId, int qos) {
         if (enabled) {
-            reportClientStats(clientId, BrokerConstants.SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
+            reportClientStats(clientId, SENT_PUBLISH_MSGS, BrokerConstants.getQosSentStatsKey(qos));
         }
     }
 
     @Override
     public void reportClientReceiveStats(String clientId, int qos) {
         if (enabled) {
-            reportClientStats(clientId, BrokerConstants.RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
+            reportClientStats(clientId, RECEIVED_PUBLISH_MSGS, BrokerConstants.getQosReceivedStatsKey(qos));
         }
     }
 
@@ -209,13 +251,11 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
     private void reportClientStats(String clientId, String clientStatsKey, String clientQosStatsKey) {
         var clientStatsMap = clientSessionsStats.computeIfAbsent(clientId, s -> new ConcurrentHashMap<>());
 
-        ClientSessionMetricState metricState = clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState());
-        metricState.getCounter().incrementAndGet();
-        metricState.setValueChangedSinceLastUpdate(true);
+        clientStatsMap.computeIfAbsent(clientStatsKey, s -> newClientSessionMetricState())
+                .incrementAndSetValueChanged();
 
-        ClientSessionMetricState qosMetricState = clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState());
-        qosMetricState.getCounter().incrementAndGet();
-        qosMetricState.setValueChangedSinceLastUpdate(true);
+        clientStatsMap.computeIfAbsent(clientQosStatsKey, s -> newClientSessionMetricState())
+                .incrementAndSetValueChanged();
     }
 
     private ClientSessionMetricState newClientSessionMetricState() {
@@ -224,14 +264,16 @@ public class TbMessageStatsReportClientImpl implements TbMessageStatsReportClien
 
     void validateIntervalAndThrowExceptionOnInvalid() {
         if (interval < 1 || interval > 60) {
-            String message = String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval);
-            log.error(message);
-            throw new RuntimeException(message);
+            throw new RuntimeException(String.format("The interval value provided is not within the correct range of 1 to 60 minutes, current value %d", interval));
         }
     }
 
     private long getStartOfCurrentMinute() {
         return LocalDateTime.now(UTC).atZone(UTC).truncatedTo(ChronoUnit.MINUTES).toInstant().toEpochMilli();
+    }
+
+    private long getStartOfNextInterval() {
+        return getStartOfCurrentMinute() + interval * ONE_MINUTE_MS;
     }
 
 }
