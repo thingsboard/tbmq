@@ -91,7 +91,7 @@ diagnosticMode:
 ##
 image:
   registry: docker.io
-  repository: bitnami/redis-cluster
+  repository: bitnamilegacy/redis-cluster
   tag: 7.2.5-debian-12-r0
   digest: ""
   ## Specify a imagePullPolicy
@@ -441,7 +441,7 @@ volumePermissions:
   ##
   image:
     registry: docker.io
-    repository: bitnami/os-shell
+    repository: bitnamilegacy/os-shell
     tag: 12-debian-12-r22
     digest: ""
     pullPolicy: IfNotPresent
@@ -936,7 +936,7 @@ metrics:
   ##
   image:
     registry: docker.io
-    repository: bitnami/redis-exporter
+    repository: bitnamilegacy/redis-exporter
     tag: 1.61.0-debian-12-r0
     digest: ""
     pullPolicy: IfNotPresent
@@ -1142,7 +1142,7 @@ sysctlImage:
   ## @param sysctlImage.pullSecrets Specify docker-registry secret names as an array
   ##
   registry: docker.io
-  repository: bitnami/os-shell
+  repository: bitnamilegacy/os-shell
   tag: 12-debian-12-r22
   digest: ""
   pullPolicy: IfNotPresent
