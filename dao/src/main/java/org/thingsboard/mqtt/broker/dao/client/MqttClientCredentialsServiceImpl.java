@@ -164,6 +164,13 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
+    public PageData<MqttClientCredentials> getFullCredentials(PageLink pageLink) {
+        log.trace("Executing getFullCredentials, pageLink [{}]", pageLink);
+        validatePageLink(pageLink);
+        return mqttClientCredentialsDao.findAll(pageLink);
+    }
+
+    @Override
     public PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query) {
         log.trace("Executing getCredentialsV2, query [{}]", query);
         validatePageLink(query.getPageLink());
@@ -325,6 +332,9 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     if (BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME.equals(mqttClientCredentials.getName())) {
                         throw new DataValidationException("It is forbidden to save credentials with System WebSocket MQTT client credentials name!");
                     }
+                    if (mqttClientCredentialsDao.findCredentialsByName(mqttClientCredentials.getName()) != null) {
+                        throw new DataValidationException("MQTT Client credentials with such name are already created!");
+                    }
                 }
 
                 @Override
@@ -341,6 +351,10 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
                     MqttClientCredentials existingCredentials = mqttClientCredentialsDao.findByCredentialsId(mqttClientCredentials.getCredentialsId());
                     if (existingCredentials != null && !existingCredentials.getId().equals(mqttClientCredentials.getId())) {
                         throw new DataValidationException("New MQTT Client credentials are already created!");
+                    }
+                    MqttClientCredentials credentialsByName = mqttClientCredentialsDao.findCredentialsByName(mqttClientCredentials.getName());
+                    if (credentialsByName != null && !mqttClientCredentials.getId().equals(credentialsByName.getId())) {
+                        throw new DataValidationException("MQTT Client credentials with such name are already created!");
                     }
                 }
 
