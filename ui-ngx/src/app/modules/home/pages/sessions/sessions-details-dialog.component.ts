@@ -163,6 +163,10 @@ export class SessionsDetailsDialogComponent extends DialogComponent<SessionsDeta
     );
   }
 
+  onTabChange(): void {
+    this.entityForm.get('subscriptions').updateValueAndValidity();
+  }
+
   private onSave(): void {
     this.clientSessionService.updateShortClientSessionInfo(this.entity)
       .subscribe((session) => {

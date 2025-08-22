@@ -15,14 +15,14 @@
 ///
 
 import { ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { EntityComponent } from '@home/components/entity/entity.component';
 import { EntityTableConfig } from '@home/models/entity/entities-table-config.models';
 import { MatIcon } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatFormField, MatLabel, MatPrefix, MatSuffix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix, MatError } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -38,12 +38,15 @@ import { MatOption } from '@angular/material/core';
 import { MatSelect } from '@angular/material/select';
 import { MatDatetimepickerModule, MatNativeDatetimeModule } from '@mat-datetimepicker/core';
 import { MatSlideToggle } from '@angular/material/slide-toggle';
+import { MatTimepicker, MatTimepickerInput, MatTimepickerToggle } from '@angular/material/timepicker';
+import { MatDatepicker, MatDatepickerInput, MatDatepickerToggle } from '@angular/material/datepicker';
+import { isOnlyWhitespace } from '@core/utils';
 
 @Component({
     selector: 'tb-blocked-client',
     templateUrl: './blocked-client.component.html',
     styleUrls: ['./blocked-client.component.scss'],
-    imports: [MatIcon, TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, AsyncPipe, MatSuffix, MatTooltip, MatOption, MatSelect, MatDatetimepickerModule, MatPrefix, MatNativeDatetimeModule, MatSlideToggle]
+    imports: [MatIcon, TranslateModule, FormsModule, ReactiveFormsModule, MatFormField, MatLabel, MatInput, AsyncPipe, MatSuffix, MatTooltip, MatOption, MatSelect, MatDatetimepickerModule, MatNativeDatetimeModule, MatSlideToggle, MatTimepickerInput, MatTimepickerToggle, MatTimepicker, MatDatepicker, MatDatepickerToggle, MatDatepickerInput, MatError]
 })
 export class BlockedClientComponent extends EntityComponent<BlockedClient> {
 
@@ -54,7 +57,6 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
   regexMatchTargetTranslationMap = regexMatchTargetTranslationMap;
   blockedClientTypeValuePropertyMap = blockedClientTypeValuePropertyMap;
 
-  expirationDate = this.defaultExpirationDate();
   neverExpires = true;
   neverExpiresLabel: string;
 
@@ -78,7 +80,7 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
         value: [null, [Validators.required]],
         regexMatchTarget: [RegexMatchTarget.BY_CLIENT_ID, []],
         description: [null],
-        expirationTime: [null],
+        expirationTime: [this.defaultExpirationDate(), []],
       }
     );
     form.get('type').valueChanges.subscribe(() => this.updateValidators());
@@ -87,10 +89,19 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
 
   prepareFormValue(formValue: BlockedClient): any {
     const valueProperty = this.blockedClientTypeValuePropertyMap.get(formValue.type);
-    formValue[valueProperty] = formValue.value;
+    let value = formValue.value;
+    if (!isOnlyWhitespace(value) && value !== value.trim()) {
+      value = value.trim();
+      this.entityForm.get('value').patchValue(value, {emitEvent: false});
+    }
+    formValue[valueProperty] = value;
     delete formValue.value;
 
-    formValue.expirationTime = this.neverExpires ? 0 : this.expirationDate.getTime();
+    if (this.neverExpires) {
+      formValue.expirationTime = 0;
+    } else {
+      formValue.expirationTime = (formValue.expirationTime as unknown as Date).getTime();
+    }
     return formValue;
   }
 
@@ -107,16 +118,34 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
     }
   }
 
-  onExpirationDateChange() {
-    if (this.expirationDate) {
-      if (this.expirationDate.getTime() <= Date.now()) {
-        this.expirationDate = this.defaultExpirationDate();
-      }
+  onDateChange(event: MatDatepickerInput<Date>) {
+    const date: Date | null = event?.value ?? null;
+    if (!date) {
+      return;
     }
+    const control = this.entityForm.get('expirationTime');
+    const current: Date | number | null = control.value;
+    const base = current ? new Date(current) : new Date();
+    const merged = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+      base.getHours(),
+      base.getMinutes(),
+      base.getSeconds(),
+      base.getMilliseconds()
+    );
+    control.setValue(merged, { emitEvent: true });
   }
 
   onNeverExpiresChange() {
     this.neverExpiresLabel = this.neverExpires ? 'blocked-client.expires-never' : 'blocked-client.expires';
+    if (this.neverExpires) {
+      this.entityForm.get('expirationTime').clearValidators();
+    } else {
+      this.entityForm.get('expirationTime').setValue(this.defaultExpirationDate(), {emitEvent: false});
+      this.entityForm.get('expirationTime').setValidators([this.expirationTimeValidator]);
+    }
   }
 
   private updateValidators() {
@@ -134,14 +163,19 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
 
   private defaultExpirationDate(): Date {
     const date = new Date();
-    return  new Date(
-      date.getFullYear(),
-      date.getMonth()  + 1,
-      date.getDate() - 1,
-      date.getHours(),
-      date.getMinutes(),
-      date.getSeconds(),
-      date.getMilliseconds()
-    );
+    date.setMonth(date.getMonth() + 1);
+    return date;
+  }
+
+  private expirationTimeValidator(control: AbstractControl): ValidationErrors | null {
+    const val = control.value;
+    const time = val instanceof Date ? val.getTime() : new Date(val).getTime();
+    if (time === 0 || isNaN(time)) {
+      return { invalidFormat: true };
+    }
+    if (time < Date.now()) {
+      return { expiresInPast: true };
+    }
+    return null;
   }
 }

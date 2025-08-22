@@ -21,7 +21,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { SubscriptSizing, MatFormField, MatError } from '@angular/material/form-field';
+import { SubscriptSizing, MatFormField, MatError, MatSuffix } from '@angular/material/form-field';
 import { isDefinedAndNotNull, isEqual } from '@core/utils';
 import { TranslateModule } from '@ngx-translate/core';
 import { AsyncPipe } from '@angular/common';
@@ -47,7 +47,7 @@ import { MatDivider } from '@angular/material/divider';
             multi: true,
         }
     ],
-    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatDivider, MatError]
+    imports: [FormsModule, ReactiveFormsModule, TranslateModule, MatFormField, MatInput, MatIconButton, MatTooltip, MatIcon, MatButton, AsyncPipe, MatDivider, MatError, MatSuffix]
 })
 export class KeyValMapComponent extends PageComponent implements ControlValueAccessor, OnInit, OnDestroy, Validator {
 
@@ -55,6 +55,8 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
 
   readonly isValueRequired = input(false);
   readonly valueRequiredText = input('value.required');
+  readonly isKeyRequired = input(true);
+  readonly keyRequiredText = input('value.key-required');
   readonly titleText = input<string>();
   readonly keyPlaceholderText = input<string>();
   readonly valuePlaceholderText = input<string>();
@@ -145,7 +147,7 @@ export class KeyValMapComponent extends PageComponent implements ControlValueAcc
     const isFirstKey = keyValsFormArray.length === 0;
     keyValsFormArray.push(this.fb.group({
       key: [this.isSinglePredefinedKey && isFirstKey ? this.singlePredefinedKey() : null,
-        this.isValueRequired() ? [Validators.required] : []],
+        this.isKeyRequired() ? [Validators.required] : []],
       value: [this.isSinglePredefinedValue && isFirstKey ? this.singlePredefinedValue() : null,
         this.isValueRequired() ? [Validators.required] : []]
     }));

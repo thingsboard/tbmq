@@ -176,6 +176,7 @@
                 <input matInput formControlName="secret"
                        autocomplete="new-password" name="new-password"
                        type="password">
+                <tb-toggle-password [disabled]="disabled" matSuffix></tb-toggle-password>
                 <tb-copy-button matSuffix
                                 [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value?.length"
                                 [copyText]="jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret')?.value">
@@ -187,7 +188,6 @@
                           class="tb-error">
                   warning
                 </mat-icon>
-                <tb-toggle-password matSuffix></tb-toggle-password>
                 <mat-icon matSuffix matTooltip="{{ 'authentication.secret-hint' | translate }}">
                   help
                 </mat-icon>

@@ -111,9 +111,12 @@ export class UserPropertiesComponent implements ControlValueAccessor, Validator,
     for (const propName of Object.keys(changes)) {
       const change = changes[propName];
       if (!change.firstChange && change.currentValue !== change.previousValue) {
-        if (propName === 'reset' && change.currentValue) {
+        if (propName === 'reset') {
           this.userPropertiesFormArray.clear();
-          this.userPropertiesFormArray.push({k: null, v: null});
+          this.userPropertiesFormArray.push(this.fb.group({
+            k: [null, []],
+            v: [null, []]
+          }));
         }
       }
     }

@@ -209,6 +209,8 @@
     "expiration-time-never": "Never",
     "expiration-time": "Expiration Time",
     "expiration-date": "Date",
+    "expiration-date-start-date-invalid": "The expiration time cannot be in the past.",
+    "expiration-date-format-invalid": "Enter valid expiration time.",
     "no-blocked-clients-text": "No blocked clients found",
     "type": "Block by",
     "type-client-id": "Client ID",
@@ -747,6 +749,8 @@
     "topic": "Topic",
     "topic-filter": "Topic Filter",
     "topic-filter-required": "Topic Filter is required.",
+    "topic-filter-multi-level-error": "Multi-level wildcard must be the last character in the topic filter.",
+    "topic-filter-single-level-error": "Single-level wildcard cannot have any character after it except '/'.",
     "topic-name-required": "Topic name is required.",
     "topic-name-invalid": "Topic name is invalid.",
     "type-session": "Session",
@@ -1041,7 +1045,8 @@
     "json-value": "JSON value",
     "json-value-invalid": "JSON value has an invalid format",
     "json-value-required": "JSON value is required.",
-    "required": "Value is required."
+    "required": "Value is required.",
+    "key-required": "Key is required."
   },
   "ws-client": {
     "ws-client": "WebSocket Client",

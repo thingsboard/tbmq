@@ -18,10 +18,10 @@
 <div class="tb-home-card-container tb-home-padding flex !flex-1">
   <tb-card-title-button [cardType]="cardType" [disabled]="true"></tb-card-title-button>
   <section class="tb-config-table">
-    <table mat-table matSort [dataSource]="dataSource" matSortDisableClear>
+    <table mat-table [dataSource]="dataSource">
       @for (column of columns; track column) {
         <ng-container [matColumnDef]="column.key">
-          <mat-header-cell mat-sort-header *matHeaderCellDef>
+          <mat-header-cell *matHeaderCellDef>
             {{ column.title | translate }}
           </mat-header-cell>
           <mat-cell *matCellDef="let entity; let row = index" [style]="cellStyle(entity, column, row)">

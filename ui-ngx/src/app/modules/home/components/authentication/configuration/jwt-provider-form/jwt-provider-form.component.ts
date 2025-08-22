@@ -178,7 +178,10 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
       .subscribe(() => this.updateModels(this.jwtConfigForm.getRawValue()));
    this.jwtConfigForm.get('jwtVerifierConfiguration.jwtVerifierType').valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe((type) => this.onJwtVerifierTypeChange(type));
+      .subscribe((type) => {
+        this.onJwtVerifierTypeChange(type);
+        this.onJwtVerifierAlgorithmChange(this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm')?.value);
+      });
     this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe((type) => this.onJwtVerifierAlgorithmChange(type));
@@ -197,9 +200,11 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         }
       }
       this.jwtConfigForm.reset(value, {emitEvent: false});
-      this.onJwtVerifierTypeChange(value.jwtVerifierConfiguration.jwtVerifierType);
-      if (value.jwtVerifierConfiguration.jwtVerifierType === JwtVerifierType.ALGORITHM_BASED) {
-        this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm);
+      if (!this.disabled) {
+        this.onJwtVerifierTypeChange(value.jwtVerifierConfiguration.jwtVerifierType);
+        if (value.jwtVerifierConfiguration.jwtVerifierType === JwtVerifierType.ALGORITHM_BASED) {
+          this.onJwtVerifierAlgorithmChange(value.jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm);
+        }
       }
     } else {
       this.propagateChangePending = true;
@@ -237,7 +242,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     };
   }
 
-  onJwtVerifierTypeChange(type: JwtVerifierType) {
+  private onJwtVerifierTypeChange(type: JwtVerifierType) {
     if (type === JwtVerifierType.ALGORITHM_BASED) {
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm').enable({emitEvent: false});
       if (!this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.algorithm')?.value) {
@@ -265,7 +270,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
     this.jwtConfigForm.updateValueAndValidity({emitEvent: false});
   }
 
-  onJwtVerifierAlgorithmChange(type: JwtAlgorithmType) {
+  private onJwtVerifierAlgorithmChange(type: JwtAlgorithmType) {
     if (type === JwtAlgorithmType.HMAC_BASED) {
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').enable({emitEvent: false});
       this.jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.publicPemKey').disable({emitEvent: false});

@@ -707,3 +707,7 @@ export function notOnlyWhitespaceValidator(control: AbstractControl): Validation
   const isOnlyWhitespace = typeof control.value === 'string' && control.value?.length && control.value.trim().length === 0;
   return isOnlyWhitespace ? { onlyWhitespace: true } : null;
 }
+
+export function isOnlyWhitespace(value: string): boolean {
+  return typeof value === 'string' && /^\s+$/.test(value);
+}

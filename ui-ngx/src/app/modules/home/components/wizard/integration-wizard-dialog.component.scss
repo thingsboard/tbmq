@@ -118,7 +118,7 @@
       display: flex;
       flex-direction: column;
       height: 100%;
-      overflow: hidden;
+      overflow: auto;
       @media #{$mat-lt-sm} {
         .mat-step-label {
           white-space: normal;
@@ -129,7 +129,7 @@
         }
       }
       .mat-horizontal-content-container {
-        height: 580px;
+        min-height: 380px;
         max-height: 100%;
         width: 100%;;
         padding-top: 12px;

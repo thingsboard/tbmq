@@ -35,7 +35,7 @@
   @if (!(isLoading$ | async)) {
     <div style="height: 4px;"></div>
   }
-  <mat-tab-group [selectedIndex]="selectedTab">
+  <mat-tab-group [selectedIndex]="selectedTab" (selectedTabChange)="onTabChange()">
     <mat-tab [label]="'details.details' | translate">
       <div class="flex flex-row items-center gap-2">
         <button mat-raised-button color="primary"
@@ -171,6 +171,7 @@
                 <input matInput formControlName="credentials">
                 <tb-edit-client-credentials-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"
                   [disabled]="isLoading$ | async"
+                  [class.hidden]="entityForm.get('credentials').value === 'Unknown'"
                   [name]="entityForm.get('credentials').value">
                 </tb-edit-client-credentials-button>
                 <tb-copy-button matSuffix [style]="{color: 'rgba(0,0,0,0.38)'}"

@@ -390,6 +390,14 @@ export class ConnectionWizardDialogComponent extends DialogComponent<ConnectionW
   }
 
   private saveWebSocketConnection(): Observable<WebSocketConnection> {
+    const nameControl = this.connectionFormGroup.get('name');
+    const rawName = nameControl?.value;
+    if (typeof rawName === 'string') {
+      const trimmedName = rawName.trim();
+      if (trimmedName !== rawName) {
+        nameControl.setValue(trimmedName, { emitEvent: false });
+      }
+    }
     const connectionFormGroupValue = {
       ...this.connectionFormGroup.getRawValue(),
       ...this.connectionAdvancedFormGroup.getRawValue(),

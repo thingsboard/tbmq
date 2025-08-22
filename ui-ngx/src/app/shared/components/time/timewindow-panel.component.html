@@ -179,49 +179,49 @@
               <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideAggInterval"
               (ngModelChange)="onHideAggIntervalChanged()"></mat-checkbox>
             </section>
+          </section>
+        }
+    </div>
+    }
+    @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
+      timewindow.selectedTab === timewindowTypes.REALTIME) {
+      <div formGroupName="realtime"
+        class="mat-content mat-padding flex flex-col">
+        <tb-timeinterval
+          formControlName="interval"
+          [isEdit]="isEdit"
+          [(hideFlag)]="timewindow.hideAggInterval"
+          (hideFlagChange)="onHideAggIntervalChanged()"
+          [min]="minRealtimeAggInterval()" [max]="maxRealtimeAggInterval()"
+          useCalendarIntervals
+          predefinedName="aggregation.group-interval">
+        </tb-timeinterval>
+      </div>
+    }
+    @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
+      timewindow.selectedTab === timewindowTypes.HISTORY) {
+      <div formGroupName="history"
+        class="mat-content mat-padding flex flex-col">
+        <tb-timeinterval
+          formControlName="interval"
+          [isEdit]="isEdit"
+          [(hideFlag)]="timewindow.hideAggInterval"
+          (hideFlagChange)="onHideAggIntervalChanged()"
+          [min]="minHistoryAggInterval()" [max]="maxHistoryAggInterval()"
+          predefinedName="aggregation.group-interval">
+        </tb-timeinterval>
+      </div>
+    }
+    @if (timezone) {
+      <div class="mat-content mat-padding flex">
+        <section class="flex flex-col items-center justify-start" [class.!hidden]="!isEdit">
+          <label class="tb-small hide-label" translate>timewindow.hide</label>
+          <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideTimezone"
+          (ngModelChange)="onHideTimezoneChanged()"></mat-checkbox>
         </section>
-      }
-    </div>
-  }
-  @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
-    timewindow.selectedTab === timewindowTypes.REALTIME) {
-    <div formGroupName="realtime"
-      class="mat-content mat-padding flex flex-col">
-      <tb-timeinterval
-        formControlName="interval"
-        [isEdit]="isEdit"
-        [(hideFlag)]="timewindow.hideAggInterval"
-        (hideFlagChange)="onHideAggIntervalChanged()"
-        [min]="minRealtimeAggInterval()" [max]="maxRealtimeAggInterval()"
-        useCalendarIntervals
-        predefinedName="aggregation.group-interval">
-      </tb-timeinterval>
-    </div>
-  }
-  @if (aggregation && timewindowForm.get('aggregation.type').value !== aggregationTypes.NONE &&
-    timewindow.selectedTab === timewindowTypes.HISTORY) {
-    <div formGroupName="history"
-      class="mat-content mat-padding flex flex-col">
-      <tb-timeinterval
-        formControlName="interval"
-        [isEdit]="isEdit"
-        [(hideFlag)]="timewindow.hideAggInterval"
-        (hideFlagChange)="onHideAggIntervalChanged()"
-        [min]="minHistoryAggInterval()" [max]="maxHistoryAggInterval()"
-        predefinedName="aggregation.group-interval">
-      </tb-timeinterval>
-    </div>
-  }
-  @if (timezone) {
-    <div class="mat-content mat-padding flex">
-      <section class="flex flex-col items-center justify-start" [class.!hidden]="!isEdit">
-        <label class="tb-small hide-label" translate>timewindow.hide</label>
-        <mat-checkbox [ngModelOptions]="{standalone: true}" [(ngModel)]="timewindow.hideTimezone"
-        (ngModelChange)="onHideTimezoneChanged()"></mat-checkbox>
-      </section>
-    </div>
-  }
-</ng-template>
+      </div>
+    }
+  </ng-template>
 </form>
 <div class="tb-panel-actions flex flex-row items-center justify-end">
   <button type="button"

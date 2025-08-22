@@ -164,7 +164,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName of Object.keys(changes)) {
       const change = changes[propName];
-      if (!change.firstChange && change.currentValue !== change.previousValue) {
+      if (change.currentValue !== change.previousValue) {
         if (propName === 'integration' && change.currentValue) {
           this.updateActiveSubscriptions();
         }
@@ -184,7 +184,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
       if (value) {
         value.forEach((filter) => {
           filtersControls.push(this.fb.group({
-            filter: [filter, [Validators.required]]
+            filter: [filter, [Validators.required, this.topicFilterValidator()]]
           }));
         });
       }
@@ -242,7 +242,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   addTopicFilter() {
     const formGroup = this.fb.group({
-      filter: ['', [Validators.required]]
+      filter: ['', [Validators.required, this.topicFilterValidator()]]
     });
     this.subscribeTopicValueChanges(formGroup);
     this.integrationFiltersFromArray.push(formGroup);
@@ -266,7 +266,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     this.updateTopicFilterGroups();
   }
 
-  onExpandChange(expanded: boolean) {
+  onExpandAllChange(expanded: boolean) {
     this.expanded = !expanded;
     setTimeout(() => {
       if (this.expansionPanels) {
@@ -275,6 +275,15 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         });
       }
     });
+  }
+
+  onExpandGroup() {
+    if (!this.expansionPanels || this.expansionPanels.length === 0) {
+      this.expanded = false;
+      return;
+    }
+    const allExpanded = this.expansionPanels.toArray().every(panel => panel.expanded);
+    this.expanded = allExpanded;
   }
 
   sortGroupsMultiFirst = (a: KeyValue<string, AbstractControl[]>, b: KeyValue<string, AbstractControl[]>): number => {
@@ -342,6 +351,30 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         this.topicFiltersHasDuplicates.set(false);
         return null;
       }
+    };
+  }
+
+  private topicFilterValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const raw = control?.value as string;
+      if (raw == null || raw === '') {
+        return null;
+      }
+      const value = String(raw);
+      const hashIndex = value.indexOf('#');
+      if (hashIndex !== -1 && hashIndex !== value.length - 1) {
+        return { hashNotLast: true };
+      }
+      for (let i = 0; i < value.length; i++) {
+        if (value[i] === '+') {
+          const prev = value[i - 1];
+          const next = value[i + 1];
+          if ((i > 0 && prev !== '/') || (next !== undefined && next !== '/')) {
+            return { plusNotFollowedBySlash: true };
+          }
+        }
+      }
+      return null;
     };
   }
 

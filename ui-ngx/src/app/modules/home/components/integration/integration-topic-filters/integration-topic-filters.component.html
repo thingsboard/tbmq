@@ -28,7 +28,7 @@
         <button color="primary" mat-button
                 class="tb-topic-filter-groups-expand-button"
                 [disabled]="expandDisabled"
-                (click)="onExpandChange(expanded)">
+                (click)="onExpandAllChange(expanded)">
           {{ (expanded ? 'action.collapse-all' : 'action.expand-all') | translate }}
           <mat-icon class="tb-mat-20" iconPositionEnd>expand_more</mat-icon>
         </button>
@@ -43,7 +43,7 @@
       @if (isTopicFilterGroup(group)) {
         <div class="flex flex-1 flex-row items-center justify-start">
           <mat-accordion class="w-full" multi="true">
-            <mat-expansion-panel class="mat-elevation-z0 security-setting">
+            <mat-expansion-panel class="mat-elevation-z0 security-setting" (click)="onExpandGroup()">
               <mat-expansion-panel-header>
                 <mat-panel-title>
                   {{ group.key }} ({{group.value.length}})
@@ -60,7 +60,8 @@
               </ng-template>
             </mat-expansion-panel>
           </mat-accordion>
-          <button mat-icon-button color="primary" [disabled]="!isEdit()"
+          <button mat-icon-button color="primary"
+                  [disabled]="!isEdit() || topicFilterGroups.size === 1"
                   type="button" style="top: 4px; align-self: baseline"
                   (click)="removeTopicFilterGroup(group)"
                   [matTooltip]="'integration.remove-topic-filter-group' | translate" matTooltipPosition="above">
@@ -126,6 +127,27 @@
           sync_problem
         </mat-icon>
       }
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'mqtt-client-session.topic-filter-required' | translate }}"
+                [class.!hidden]="!topicFilter.get('filter')?.hasError('required')"
+                class="tb-error">
+        warning
+      </mat-icon>
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'mqtt-client-session.topic-filter-multi-level-error' | translate }}"
+                [class.!hidden]="!topicFilter.get('filter')?.hasError('hashNotLast')"
+                class="tb-error">
+        warning
+      </mat-icon>
+      <mat-icon matSuffix
+                matTooltipClass="tb-error-tooltip"
+                matTooltip="{{ 'mqtt-client-session.topic-filter-single-level-error' | translate }}"
+                [class.!hidden]="!topicFilter.get('filter')?.hasError('plusNotFollowedBySlash')"
+                class="tb-error">
+        warning
+      </mat-icon>
     </mat-form-field>
     <button mat-icon-button color="primary" [disabled]="integrationFiltersFromArray.length === 1 || (!isEdit() && integration())"
             type="button" style="top: 4px; align-self: baseline"

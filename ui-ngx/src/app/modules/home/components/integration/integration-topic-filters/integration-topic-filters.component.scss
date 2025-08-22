@@ -15,7 +15,8 @@
  */
 :host {
   .container {
-    margin-top: 16px;
+    padding-top: 8px;
+    overflow-y: scroll;
   }
   .tb-hint {
     padding: 0;

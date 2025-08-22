@@ -267,9 +267,7 @@ export class BlockedClientsTableConfigResolver {
       return;
     }
     const timeLeftToLiveMs = this.timeToLive * MINUTE;
-    const timeFromNow = entity.expirationTime < Date.now()
-      ? Date.now() + timeLeftToLiveMs
-      : entity.expirationTime + timeLeftToLiveMs;
+    const timeFromNow = entity.expirationTime + timeLeftToLiveMs;
     return `${this.translate.instant('blocked-client.will-be-deleted')} ${moment(timeFromNow).fromNow()}`;
   }
 

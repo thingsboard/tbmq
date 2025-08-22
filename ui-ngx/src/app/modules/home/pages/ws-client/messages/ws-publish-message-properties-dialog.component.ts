@@ -134,7 +134,7 @@ export class WsPublishMessagePropertiesDialogComponent extends DialogComponent<W
       responseTopic: null,
       userProperties: null
     });
-    this.resetForm = true;
+    this.resetForm = !this.resetForm;
   }
 
   calcMax(unitControl: string) {

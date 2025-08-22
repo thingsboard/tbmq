@@ -101,6 +101,7 @@ export class SecuritySettingsComponent extends PageComponent implements OnDestro
   }
 
   discardMqttAuthSettings(): void {
+    this.priorities = this.mqttAuthSettings.jsonValue.priorities;
     this.mqttAuthSettingsForm.reset(this.mqttAuthSettings.jsonValue);
   }
 

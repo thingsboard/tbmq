@@ -30,13 +30,27 @@
       <div class="flex flex-row items-center justify-start gap-3 px-4 pb-4" formArrayName="keyVals">
         <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
                         subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
-          <input [formControl]="keyValControl.get('key')" matInput required
+          <input [formControl]="keyValControl.get('key')" matInput [required]="isKeyRequired()"
                  placeholder="{{ (keyPlaceholderText() ? keyPlaceholderText() : 'action.set') | translate }}"/>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    [matTooltip]="keyRequiredText() | translate"
+                    [class.!hidden]="!keyValControl.get('key').hasError('required')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <mat-form-field floatLabel="always" hideRequiredMarker class="mat-block flex-1"
                         subscriptSizing="{{ subscriptSizing() }}" appearance="outline">
           <input [formControl]="keyValControl.get('value')" matInput [required]="isValueRequired()"
                  placeholder="{{ (valuePlaceholderText() ? valuePlaceholderText() : 'action.set') | translate }}"/>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    [matTooltip]="valueRequiredText() | translate"
+                    [class.!hidden]="!keyValControl.get('value').hasError('required')"
+                    class="tb-error">
+            warning
+          </mat-icon>
         </mat-form-field>
         <button mat-icon-button
                 style="top: 4px; align-self: baseline"

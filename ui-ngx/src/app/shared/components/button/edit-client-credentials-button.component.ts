@@ -50,13 +50,15 @@ export class EditClientCredentialsButtonComponent {
     }
     this.clientCredentialsService.getClientCredentialsByName(this.name(), {ignoreErrors: true}).subscribe(
       credentials => {
+        console.log('credentials', credentials)
         if (credentials) {
           this.router.navigate(['authentication', 'client-credentials', credentials.id]);
         } else {
           this.clientNotFound();
         }
       },
-      () => {
+      (error) => {
+        console.log('err', error)
         this.clientNotFound();
       }
     );
