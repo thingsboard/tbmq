@@ -230,11 +230,11 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingMixed() throws JsonProcessingException {
         MqttClientCredentials client1Credentials, client2Credentials, client3Credentials;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", "client1", "test1", "password1"));
+                validMqttClientCredentials("test1", "client1", "test1", "password1"));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", "client2", "test1", null));
+                validMqttClientCredentials("test2", "client2", "test1", null));
         client3Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", "client1", "test2", null));
+                validMqttClientCredentials("test3", "client1", "test2", null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),
@@ -251,9 +251,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingByUserName() throws JsonProcessingException {
         MqttClientCredentials client1Credentials, client2Credentials;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", null, "user1", null));
+                validMqttClientCredentials("test1", null, "user1", null));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", null, "user2", null));
+                validMqttClientCredentials("test2", null, "user2", null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),
@@ -269,9 +269,9 @@ public class MqttClientCredentialsServiceTest extends AbstractServiceTest {
     public void testFindMatchingByClientId() throws JsonProcessingException {
         MqttClientCredentials client1Credentials, client2Credentials;
         client1Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", "client1", null, null));
+                validMqttClientCredentials("test1", "client1", null, null));
         client2Credentials = mqttClientCredentialsService.saveCredentials(
-                validMqttClientCredentials("test", "client2", null, null));
+                validMqttClientCredentials("test2", "client2", null, null));
 
         Assert.assertEquals(
                 Collections.singletonList(client1Credentials),

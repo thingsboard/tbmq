@@ -365,18 +365,18 @@ public class MqttClientCredentialsControllerTest extends AbstractControllerTest 
                     "userName" + i,
                     "pass" + i,
                     null);
-            MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials, "name" + i);
+            MqttClientCredentials mqttClientCredentials = newBasicMqttClientCredentials(ClientCredentialsType.MQTT_BASIC, basicMqttCredentials, "basic_name" + i);
             doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
         }
         for (int i = 0; i < 3; i++) {
             SslMqttCredentials sslMqttCredentials = newSslMqttCredentials(
                     "commonName" + i);
-            MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials, "name" + i);
+            MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials, "ssl_dev_name" + i);
             doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
         }
         SslMqttCredentials sslMqttCredentials = newSslMqttCredentials(
                 "commonName" + 3);
-        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials, "name" + 3, ClientType.APPLICATION);
+        MqttClientCredentials mqttClientCredentials = newSslMqttClientCredentials(sslMqttCredentials, "ssl_app_name" + 3, ClientType.APPLICATION);
         doPost("/api/mqtt/client/credentials", mqttClientCredentials, MqttClientCredentials.class);
 
         PageLink pageLink = new PageLink(10);
