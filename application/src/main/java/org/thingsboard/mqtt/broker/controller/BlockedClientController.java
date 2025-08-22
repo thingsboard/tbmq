@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -47,7 +48,7 @@ public class BlockedClientController extends BaseController {
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping
-    public BlockedClientDto saveBlockedClient(@RequestBody BlockedClient blockedClient) throws ThingsboardException {
+    public BlockedClientDto saveBlockedClient(@Valid @RequestBody BlockedClient blockedClient) throws ThingsboardException {
         checkNotNull(blockedClient);
         return blockedClientService.addBlockedClientAndPersist(blockedClient);
     }

@@ -24,7 +24,6 @@ import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProvi
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
 
@@ -37,7 +36,6 @@ public class MqttAuthProvider extends BaseDataWithAdditionalInfo {
 
     private boolean enabled;
 
-    @NoXss
     private MqttAuthProviderType type;
     private MqttAuthProviderConfiguration configuration;
 

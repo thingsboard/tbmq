@@ -33,7 +33,6 @@ import java.util.Objects;
 @Data
 public class JwtMqttAuthProviderConfiguration implements MqttAuthProviderConfiguration, SinglePubSubAuthRulesAware {
 
-    @NoXss
     private ClientType defaultClientType;
 
     private JwtVerifierConfiguration jwtVerifierConfiguration;

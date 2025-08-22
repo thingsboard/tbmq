@@ -54,21 +54,21 @@ public class RetainedMsgController extends BaseController {
         }
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "", params = {"topicName"})
     public RetainedMsgDto getRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         checkParameter("topicName", topicName);
         return checkNotNull(retainedMsgListenerService.getRetainedMsgForTopic(topicName));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @DeleteMapping(value = "", params = {"topicName"})
     public void deleteRetainedMessage(@RequestParam String topicName) throws ThingsboardException {
         checkRetainedMsg(topicName);
         retainedMsgListenerService.clearRetainedMsgAndPersist(topicName);
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "", params = {"pageSize", "page"})
     public PageData<RetainedMsgDto> getRetainedMessages(@RequestParam int pageSize,
                                                         @RequestParam int page,
@@ -79,7 +79,7 @@ public class RetainedMsgController extends BaseController {
         return checkNotNull(retainedMsgPageService.getRetainedMessages(pageLink));
     }
 
-    @PreAuthorize("hasAnyAuthority('SYS_ADMIN')")
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @GetMapping(value = "/v2", params = {"pageSize", "page"})
     public PageData<RetainedMsgDto> getRetainedMessagesV2(@RequestParam int pageSize,
                                                           @RequestParam int page,

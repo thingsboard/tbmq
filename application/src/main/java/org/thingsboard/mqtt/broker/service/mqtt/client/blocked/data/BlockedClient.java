@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.service.mqtt.client.blocked.data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -37,8 +38,10 @@ public interface BlockedClient {
     @JsonIgnore
     boolean isExpired();
 
+    @NoXss
     String getDescription();
 
+    @NoXss
     @JsonIgnore
     String getValue();
 

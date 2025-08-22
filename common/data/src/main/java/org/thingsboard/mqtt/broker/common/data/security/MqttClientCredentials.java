@@ -37,9 +37,7 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
     private String credentialsId;
     @NoXss
     private String name;
-    @NoXss
     private ClientType clientType;
-    @NoXss
     private ClientCredentialsType credentialsType;
     @NoXss
     private String credentialsValue;
