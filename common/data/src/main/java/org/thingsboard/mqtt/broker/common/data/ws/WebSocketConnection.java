@@ -22,6 +22,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.ByteArrayInputStream;
@@ -38,6 +39,7 @@ public class WebSocketConnection extends BaseData {
     private static final long serialVersionUID = -2995421139460181824L;
 
     @NoXss
+    @Length
     private String name;
     private UUID userId;
     @Valid

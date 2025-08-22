@@ -19,6 +19,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.thingsboard.mqtt.broker.common.data.security.Authority;
+import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -35,8 +36,10 @@ public class User extends BaseDataWithAdditionalInfo {
     private String email;
     private Authority authority;
     @NoXss
+    @Length
     private String firstName;
     @NoXss
+    @Length
     private String lastName;
 
     public User() {

@@ -18,6 +18,7 @@ package org.thingsboard.mqtt.broker.common.data;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -32,6 +33,7 @@ public class ApplicationSharedSubscription extends BaseData {
     private static final long serialVersionUID = -3332462179399001894L;
 
     @NoXss
+    @Length
     private String name;
     @NoXss
     private String topicFilter;

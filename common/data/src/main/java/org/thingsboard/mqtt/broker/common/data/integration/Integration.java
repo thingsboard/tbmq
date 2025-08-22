@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.thingsboard.mqtt.broker.common.data.BaseData;
+import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -34,6 +35,7 @@ public class Integration extends BaseData {
     private static final long serialVersionUID = 1934983577296873728L;
 
     @NoXss
+    @Length
     private String name;
     private IntegrationType type;
     private boolean enabled;

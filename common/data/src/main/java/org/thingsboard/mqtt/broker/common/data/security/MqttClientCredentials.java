@@ -20,6 +20,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.thingsboard.mqtt.broker.common.data.BaseDataWithAdditionalInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
+import org.thingsboard.mqtt.broker.common.data.validation.Length;
 import org.thingsboard.mqtt.broker.common.data.validation.NoXss;
 
 import java.io.Serial;
@@ -36,6 +37,7 @@ public class MqttClientCredentials extends BaseDataWithAdditionalInfo {
     @NoXss
     private String credentialsId;
     @NoXss
+    @Length
     private String name;
     private ClientType clientType;
     private ClientCredentialsType credentialsType;
