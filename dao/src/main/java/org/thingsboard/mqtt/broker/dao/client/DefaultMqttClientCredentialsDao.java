@@ -56,17 +56,13 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
 
     @Override
     public MqttClientCredentials findByCredentialsId(String credentialsId) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find credentials by credentials id {}", credentialsId);
-        }
+        log.trace("Trying to find credentials by credentials id {}", credentialsId);
         return DaoUtil.getData(mqttClientCredentialsRepository.findByCredentialsId(credentialsId));
     }
 
     @Override
     public List<MqttClientCredentials> findAllByCredentialsIds(List<String> credentialIds) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find credentials by credentials ids {}", credentialIds);
-        }
+        log.trace("Trying to find credentials by credentials ids {}", credentialIds);
         return mqttClientCredentialsRepository.findByCredentialsIdIn(credentialIds).stream()
                 .map(DaoUtil::getData)
                 .collect(Collectors.toList());
@@ -74,25 +70,19 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
 
     @Override
     public MqttClientCredentials findSystemWebSocketCredentials() {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find system WebSocket credentials");
-        }
+        log.trace("Trying to find system WebSocket credentials");
         return DaoUtil.getData(mqttClientCredentialsRepository.findMqttClientCredentialsEntityByName(BrokerConstants.WS_SYSTEM_MQTT_CLIENT_CREDENTIALS_NAME));
     }
 
     @Override
     public MqttClientCredentials findCredentialsByName(String name) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find MQTT client credentials by name");
-        }
+        log.trace("Trying to find MQTT client credentials by name");
         return DaoUtil.getData(mqttClientCredentialsRepository.findMqttClientCredentialsEntityByName(name));
     }
 
     @Override
     public PageData<MqttClientCredentials> findAll(PageLink pageLink) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find credentials by pageLink {}", pageLink);
-        }
+        log.trace("Trying to find credentials by pageLink {}", pageLink);
         return DaoUtil.toPageData(mqttClientCredentialsRepository.findAll(
                 Objects.toString(pageLink.getTextSearch(), ""),
                 DaoUtil.toPageable(pageLink)));
@@ -100,9 +90,7 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
 
     @Override
     public PageData<MqttClientCredentials> findAllV2(ClientCredentialsQuery query) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to find credentials by query {}", query);
-        }
+        log.trace("Trying to find credentials by query {}", query);
         List<ClientType> clientTypes = CollectionUtils.isEmpty(query.getClientTypeList()) ? null : query.getClientTypeList();
         List<ClientCredentialsType> clientCredentialsTypes = CollectionUtils.isEmpty(query.getCredentialsTypeList()) ? null : query.getCredentialsTypeList();
 
@@ -118,9 +106,7 @@ public class DefaultMqttClientCredentialsDao extends AbstractDao<MqttClientCrede
 
     @Override
     public boolean existsByCredentialsType(ClientCredentialsType credentialsType) {
-        if (log.isTraceEnabled()) {
-            log.trace("Trying to check if credentials exist by type {}", credentialsType);
-        }
+        log.trace("Trying to check if credentials exist by type {}", credentialsType);
         return mqttClientCredentialsRepository.existsByCredentialsType(credentialsType);
     }
 
