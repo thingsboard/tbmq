@@ -266,7 +266,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     this.updateTopicFilterGroups();
   }
 
-  onExpandAllChange(expanded: boolean) {
+  expandAllGroups(expanded: boolean) {
     this.expanded = !expanded;
     setTimeout(() => {
       if (this.expansionPanels) {
@@ -277,7 +277,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
     });
   }
 
-  onExpandGroup() {
+  expandGroup() {
     if (!this.expansionPanels || this.expansionPanels.length === 0) {
       this.expanded = false;
       return;

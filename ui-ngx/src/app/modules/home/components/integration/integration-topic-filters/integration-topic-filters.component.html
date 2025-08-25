@@ -28,7 +28,7 @@
         <button color="primary" mat-button
                 class="tb-topic-filter-groups-expand-button"
                 [disabled]="expandDisabled"
-                (click)="onExpandAllChange(expanded)">
+                (click)="expandAllGroups(expanded)">
           {{ (expanded ? 'action.collapse-all' : 'action.expand-all') | translate }}
           <mat-icon class="tb-mat-20" iconPositionEnd>expand_more</mat-icon>
         </button>
@@ -43,7 +43,8 @@
       @if (isTopicFilterGroup(group)) {
         <div class="flex flex-1 flex-row items-center justify-start">
           <mat-accordion class="w-full" multi="true">
-            <mat-expansion-panel class="mat-elevation-z0 security-setting" (click)="onExpandGroup()">
+            <mat-expansion-panel class="mat-elevation-z0 security-setting"
+                                 (click)="expandGroup()">
               <mat-expansion-panel-header>
                 <mat-panel-title>
                   {{ group.key }} ({{group.value.length}})

@@ -52,6 +52,7 @@
                 @for (provider of priorities; track provider; let ind = $index) {
                   <mat-chip-row #chipRow
                                 class="tb-datakey-chip"
+                                [value]="provider"
                                 (dndStart)="chipDragStart(ind, chipRow, placeholderChipRow)"
                                 (dndEnd)="chipDragEnd()"
                                 [dndDraggable]="provider"
