@@ -174,7 +174,7 @@
     "jwks-endpoint-required": "JWKS-Endpunkt ist erforderlich",
     "jwks-endpoint-hint": "Schreibgeschützter HTTP(S)-Endpunkt mit öffentlichen Schlüsseln im JSON Web Key (JWK) Format zur Verifikation von JWT-Signaturen, die im Passwortfeld des MQTT-CONNECT-Pakets übertragen werden.",
     "jwks-refresh-interval": "Aktualisierungsintervall (Sekunden)",
-    "jwks-refresh-interval-min": "Mindestwert ist 300",
+    "jwks-refresh-interval-range": "Bitte einen Wert im Bereich 300 – 2,147,483,647 eingeben",
     "jwks-refresh-interval-hint": "Gibt an, wie oft öffentliche Schlüssel vom JWKS-Endpunkt neu geladen werden (z. B. bei Schlüsselrotation).",
     "type": "Typ",
     "type-jwt": "JWT",

@@ -188,6 +188,13 @@
                           class="tb-error">
                   warning
                 </mat-icon>
+                <mat-icon matSuffix
+                          matTooltipClass="tb-error-tooltip"
+                          matTooltip="{{ 'integration.white-space-only' | translate }}"
+                          [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.jwtSignAlgorithmConfiguration.secret').hasError('onlyWhitespace')"
+                          class="tb-error">
+                  warning
+                </mat-icon>
                 <mat-icon matSuffix matTooltip="{{ 'authentication.secret-hint' | translate }}">
                   help
                 </mat-icon>
@@ -228,11 +235,11 @@
         </mat-form-field>
         <mat-form-field class="flex flex-1">
           <mat-label translate>authentication.jwks-refresh-interval</mat-label>
-          <input matInput formControlName="refreshInterval" type="number" min="300">
+          <input matInput formControlName="refreshInterval" type="number" min="300" max="2147483647">
           <mat-icon matSuffix
                     matTooltipClass="tb-error-tooltip"
-                    matTooltip="{{ 'authentication.jwks-refresh-interval-min' | translate }}"
-                    [class.!hidden]="!jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('min')"
+                    matTooltip="{{ 'authentication.jwks-refresh-interval-range' | translate }}"
+                    [class.!hidden]="!(jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('min') || jwtConfigForm.get('jwtVerifierConfiguration.refreshInterval').hasError('max'))"
                     class="tb-error">
             warning
           </mat-icon>

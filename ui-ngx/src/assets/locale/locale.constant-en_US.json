@@ -174,7 +174,7 @@
     "jwks-endpoint-required": "JWKS endpoint is required",
     "jwks-endpoint-hint": "A read-only HTTP(S) URL serving public keys in JSON Web Key (JWK) format. These keys are used to verify JWT signatures from tokens passed in the password field of the MQTT CONNECT packet.",
     "jwks-refresh-interval": "Refresh interval (seconds)",
-    "jwks-refresh-interval-min": "Min value is 300",
+    "jwks-refresh-interval-range": "Value must be between 300 and 2,147,483,647.",
     "jwks-refresh-interval-hint": "How often the broker refreshes public keys from the JWKS endpoint to detect key changes like rotations.",
     "type": "Type",
     "type-jwt": "JWT",
