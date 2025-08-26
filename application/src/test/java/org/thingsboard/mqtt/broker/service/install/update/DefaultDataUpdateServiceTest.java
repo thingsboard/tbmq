@@ -26,12 +26,15 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.thingsboard.mqtt.broker.common.data.AdminSettings;
 import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
+import org.thingsboard.mqtt.broker.common.data.page.PageData;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
+import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.security.basic.BasicMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.jwt.JwtMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.scram.ScramMqttAuthProviderConfiguration;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
+import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
 import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
 import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
 import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
@@ -47,6 +50,7 @@ import static org.mockito.BDDMockito.willCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @ContextConfiguration(classes = DefaultDataUpdateService.class)
@@ -56,6 +60,8 @@ public class DefaultDataUpdateServiceTest {
     AdminSettingsService adminSettingsService;
     @MockBean
     MqttAuthProviderService mqttAuthProviderService;
+    @MockBean
+    MqttClientCredentialsService mqttClientCredentialsService;
 
     @SpyBean
     DefaultDataUpdateService service;
@@ -65,6 +71,8 @@ public class DefaultDataUpdateServiceTest {
         ReflectionTestUtils.setField(service, "basicAuthEnabled", false);
         ReflectionTestUtils.setField(service, "x509AuthEnabled", false);
         ReflectionTestUtils.setField(service, "skipValidityCheckForClientCert", false);
+
+        when(mqttClientCredentialsService.getFullCredentials(any())).thenReturn(PageData.emptyPageData());
     }
 
     @Test
@@ -202,6 +210,128 @@ public class DefaultDataUpdateServiceTest {
 
         // then
         then(mqttAuthProviderService).should(never()).saveAuthProvider(any());
+    }
+
+    @Test
+    public void deduplicate_noDuplicates_doesNotSaveAnything() {
+        // given
+        MqttClientCredentials c1 = new MqttClientCredentials();
+        c1.setName("alpha");
+        MqttClientCredentials c2 = new MqttClientCredentials();
+        c2.setName("beta");
+        @SuppressWarnings("unchecked")
+        PageData<MqttClientCredentials> page = (PageData<MqttClientCredentials>) mock(PageData.class);
+        when(page.getData()).thenReturn(List.of(c1, c2));
+        when(page.hasNext()).thenReturn(false);
+
+        when(mqttClientCredentialsService.getFullCredentials(any())).thenReturn(page);
+        when(mqttClientCredentialsService.findCredentialsByName(any())).thenReturn(null);
+
+        // when
+        service.deduplicateMqttClientCredentialNames();
+
+        // then
+        then(mqttClientCredentialsService).should(never()).saveCredentials(any());
+    }
+
+    @Test
+    public void deduplicate_singlePageDuplicates_renamesWithThreeLetterSuffix() {
+        // given
+        String dup = "client-A";
+        MqttClientCredentials c1 = new MqttClientCredentials();
+        c1.setName(dup);
+        MqttClientCredentials c2 = new MqttClientCredentials();
+        c2.setName(dup); // duplicate
+
+        @SuppressWarnings("unchecked")
+        PageData<MqttClientCredentials> page = (PageData<MqttClientCredentials>) mock(PageData.class);
+        when(page.getData()).thenReturn(List.of(c1, c2));
+        when(page.hasNext()).thenReturn(false);
+
+        when(mqttClientCredentialsService.getFullCredentials(any())).thenReturn(page);
+        // ensure the first generated candidate is available
+        when(mqttClientCredentialsService.findCredentialsByName(any())).thenReturn(null);
+
+        ArgumentCaptor<MqttClientCredentials> savedCaptor = ArgumentCaptor.forClass(MqttClientCredentials.class);
+
+        // when
+        service.deduplicateMqttClientCredentialNames();
+
+        // then
+        then(mqttClientCredentialsService).should(times(1)).saveCredentials(savedCaptor.capture());
+        MqttClientCredentials updated = savedCaptor.getValue();
+
+        assertThat(updated.getName()).isNotEqualTo(dup);
+        assertThat(updated.getName()).matches(dup + " [A-Za-z]{3}");
+        assertThat(updated.getName().length()).isEqualTo(dup.length() + 4);
+    }
+
+    @Test
+    public void deduplicate_acrossPages_usesSeenSetBetweenPages() {
+        // given
+        String dup = "reused-name";
+
+        // page 1 contains the original occurrence and a unique one
+        MqttClientCredentials p1c1 = new MqttClientCredentials();
+        p1c1.setName(dup);
+        MqttClientCredentials p1c2 = new MqttClientCredentials();
+        p1c2.setName("unique-1");
+
+        // page 2 contains a duplicate of the name from page 1; it must be renamed
+        MqttClientCredentials p2c1 = new MqttClientCredentials();
+        p2c1.setName(dup);
+        MqttClientCredentials p2c2 = new MqttClientCredentials();
+        p2c2.setName("unique-2");
+
+        @SuppressWarnings("unchecked")
+        PageData<MqttClientCredentials> page1 = (PageData<MqttClientCredentials>) mock(PageData.class);
+        when(page1.getData()).thenReturn(List.of(p1c1, p1c2));
+        when(page1.hasNext()).thenReturn(true);
+
+        @SuppressWarnings("unchecked")
+        PageData<MqttClientCredentials> page2 = (PageData<MqttClientCredentials>) mock(PageData.class);
+        when(page2.getData()).thenReturn(List.of(p2c1, p2c2));
+        when(page2.hasNext()).thenReturn(false);
+
+        when(mqttClientCredentialsService.getFullCredentials(any())).thenReturn(page1, page2);
+        when(mqttClientCredentialsService.findCredentialsByName(any())).thenReturn(null);
+
+        ArgumentCaptor<MqttClientCredentials> savedCaptor = ArgumentCaptor.forClass(MqttClientCredentials.class);
+
+        // when
+        service.deduplicateMqttClientCredentialNames();
+
+        // then
+        then(mqttClientCredentialsService).should(times(1)).saveCredentials(savedCaptor.capture());
+        MqttClientCredentials updated = savedCaptor.getValue();
+
+        // only the page-2 duplicate should be renamed
+        assertThat(updated).isSameAs(p2c1);
+        assertThat(updated.getName()).matches(dup + " [A-Za-z]{3}");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void deduplicate_overlengthName_throws() {
+        // given
+        // base length 252 will become 252 + 1(space) + 3 = 256 (>255) => must throw
+        String tooLongBase = "x".repeat(252);
+        MqttClientCredentials c1 = new MqttClientCredentials();
+        c1.setName(tooLongBase);
+        MqttClientCredentials c2 = new MqttClientCredentials();
+        c2.setName(tooLongBase); // duplicate, will attempt to append suffix and exceed limit
+
+        @SuppressWarnings("unchecked")
+        PageData<MqttClientCredentials> page = (PageData<MqttClientCredentials>) mock(PageData.class);
+        when(page.getData()).thenReturn(List.of(c1, c2));
+        when(page.hasNext()).thenReturn(false);
+
+        when(mqttClientCredentialsService.getFullCredentials(any())).thenReturn(page);
+        when(mqttClientCredentialsService.findCredentialsByName(any())).thenReturn(null);
+
+        // when
+        service.deduplicateMqttClientCredentialNames();
+
+        // then -> exception expected
     }
 
 }
