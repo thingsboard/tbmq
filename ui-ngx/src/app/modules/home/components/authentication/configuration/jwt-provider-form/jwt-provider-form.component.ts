@@ -27,7 +27,7 @@ import {
   Validator,
   Validators
 } from '@angular/forms';
-import { isDefinedAndNotNull } from '@core/utils';
+import { isDefinedAndNotNull, notOnlyWhitespaceValidator } from '@core/utils';
 import { takeUntil } from 'rxjs/operators';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import {
@@ -161,7 +161,7 @@ export class JwtProviderFormComponent extends MqttAuthenticationProviderForm imp
         jwtVerifierType: [null, [Validators.required]],
         jwtSignAlgorithmConfiguration: this.fb.group({
           algorithm: [null, [Validators.required]],
-          secret: [null, [Validators.required]],
+          secret: [null, [Validators.required, notOnlyWhitespaceValidator]],
           publicPemKey: [null, [Validators.required]],
           publicPemKeyFileName: [null, []],
         }),
