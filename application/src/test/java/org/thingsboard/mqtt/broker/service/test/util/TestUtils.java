@@ -30,6 +30,7 @@ import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.BytesUtil;
+import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
 import org.thingsboard.mqtt.broker.common.util.JacksonUtil;
 
 import java.io.IOException;
@@ -124,7 +125,7 @@ public class TestUtils {
         MqttClientCredentials mqttClientCredentials = new MqttClientCredentials();
         mqttClientCredentials.setClientType(clientType);
         mqttClientCredentials.setCredentialsType(ClientCredentialsType.MQTT_BASIC);
-        mqttClientCredentials.setName("credentials");
+        mqttClientCredentials.setName("credentials" + StringUtils.randomAlphabetic(5));
         mqttClientCredentials.setCredentialsValue(JacksonUtil.toString(basicMqttCredentials));
         return mqttClientCredentials;
     }
