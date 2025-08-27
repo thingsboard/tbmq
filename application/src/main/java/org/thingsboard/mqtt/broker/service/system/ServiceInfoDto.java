@@ -19,7 +19,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
-public class ServiceInfoDto {
+public class ServiceInfoDto implements Comparable<ServiceInfoDto> {
 
     @Schema(description = "Service Id.")
     private String serviceId;
@@ -45,4 +45,10 @@ public class ServiceInfoDto {
     public boolean isDataPresent() {
         return cpuUsage != null || cpuCount != null || memoryUsage != null || totalMemory != null || diskUsage != null || totalDiskSpace != null;
     }
+
+    @Override
+    public int compareTo(ServiceInfoDto serviceInfo) {
+        return serviceId.compareTo(serviceInfo.getServiceId());
+    }
+
 }
