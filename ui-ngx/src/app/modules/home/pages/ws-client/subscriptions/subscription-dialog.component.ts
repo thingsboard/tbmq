@@ -43,7 +43,7 @@ import { MatSlideToggle } from '@angular/material/slide-toggle';
 import { map, takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
 import { MatAutocomplete, MatAutocompleteTrigger } from '@angular/material/autocomplete';
-import { saveTopicsToLocalStorage, filterTopics } from '@core/utils';
+import { saveTopicsToLocalStorage, filterTopics, topicFilterValidator } from '@core/utils';
 
 export interface AddWsClientSubscriptionDialogData {
   mqttVersion: number;
@@ -107,7 +107,7 @@ export class SubscriptionDialogComponent extends DialogComponent<SubscriptionDia
   private buildForm(): void {
     const disabled = this.data.mqttVersion !== 5;
     this.formGroup = this.fb.group({
-      topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required]],
+      topicFilter: [this.entity ? this.entity.configuration.topicFilter : defaultSubscriptionTopicFilter, [Validators.required, topicFilterValidator]],
       qos: [this.entity ? this.entity.configuration.qos : DEFAULT_QOS, []],
       color: [this.entity ? this.entity.configuration.color : colorRandom(), []],
       options: this.fb.group({

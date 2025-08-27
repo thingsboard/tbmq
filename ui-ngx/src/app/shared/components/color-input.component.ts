@@ -184,14 +184,23 @@ export class ColorInputComponent extends PageComponent implements OnInit, Contro
       if (this.popoverService.hasPopover(trigger)) {
         this.popoverService.hidePopover(trigger);
       } else {
-        const colorPickerPopover = this.popoverService.displayPopover(trigger, this.renderer,
-          this.viewContainerRef, ColorPickerPanelComponent, 'left', true, null,
+        const colorPickerPopover = this.popoverService.displayPopover(
+          trigger,
+          this.renderer,
+          this.viewContainerRef,
+          ColorPickerPanelComponent,
+          'left',
+          true,
+          null,
           {
             color: this.colorFormGroup.get('color').value,
-            colorClearButton: this.colorClearButton
+            colorClearButton: this.colorClearButton,
+            colorCancelButton: true
           },
           {},
-          {}, {}, true);
+          { padding: '16px 0 4px 12px' },
+          {},
+          false);
         colorPickerPopover.tbComponentRef.instance.popover = colorPickerPopover;
         colorPickerPopover.tbComponentRef.instance.colorSelected.subscribe((color) => {
           colorPickerPopover.hide();

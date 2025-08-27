@@ -51,7 +51,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatButton, MatIconButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { IntegrationService } from '@core/http/integration.service';
-import { filterTopics } from '@core/utils';
+import { filterTopics, topicFilterValidator } from '@core/utils';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 import {
@@ -184,7 +184,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
       if (value) {
         value.forEach((filter) => {
           filtersControls.push(this.fb.group({
-            filter: [filter, [Validators.required, this.topicFilterValidator()]]
+            filter: [filter, [Validators.required, topicFilterValidator]]
           }));
         });
       }
@@ -242,7 +242,7 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
 
   addTopicFilter() {
     const formGroup = this.fb.group({
-      filter: ['', [Validators.required, this.topicFilterValidator()]]
+      filter: ['', [Validators.required, topicFilterValidator]]
     });
     this.subscribeTopicValueChanges(formGroup);
     this.integrationFiltersFromArray.push(formGroup);
@@ -351,30 +351,6 @@ export class IntegrationTopicFiltersComponent implements ControlValueAccessor, V
         this.topicFiltersHasDuplicates.set(false);
         return null;
       }
-    };
-  }
-
-  private topicFilterValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const raw = control?.value as string;
-      if (raw == null || raw === '') {
-        return null;
-      }
-      const value = String(raw);
-      const hashIndex = value.indexOf('#');
-      if (hashIndex !== -1 && hashIndex !== value.length - 1) {
-        return { hashNotLast: true };
-      }
-      for (let i = 0; i < value.length; i++) {
-        if (value[i] === '+') {
-          const prev = value[i - 1];
-          const next = value[i + 1];
-          if ((i > 0 && prev !== '/') || (next !== undefined && next !== '/')) {
-            return { plusNotFollowedBySlash: true };
-          }
-        }
-      }
-      return null;
     };
   }
 

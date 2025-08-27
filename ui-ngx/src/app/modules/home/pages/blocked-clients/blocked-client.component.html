@@ -57,7 +57,7 @@
           </mat-slide-toggle>
           <section class="flex flex-row items-center gap-4 xs:flex-col xs:items-stretch xs:gap-0"
                     [class.hidden]="neverExpires">
-            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+            <mat-form-field class="flex flex-1">
               <mat-label translate>blocked-client.expiration-date</mat-label>
               <input matInput formControlName="expirationTime"
                      [matDatepicker]="datepicker"
@@ -71,18 +71,14 @@
                 {{ 'blocked-client.expiration-date-format-invalid' | translate }}
               </mat-error>
             </mat-form-field>
-            <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+            <mat-form-field class="flex flex-1">
               <mat-label translate>common.time</mat-label>
-              <input matInput formControlName="expirationTime"
+              <input matInput formControlName="expirationTimeHourMinute"
                      [matTimepicker]="timepicker"
                      matTimepickerMin="00:00"
                      matTimepickerMax="23:59">
               <mat-timepicker #timepicker/>
               <mat-timepicker-toggle [for]="timepicker" matSuffix/>
-              <mat-error [class.hidden]="!(entityForm.get('expirationTime').touched &&
-                                          (entityForm.get('expirationTime').hasError('expiresInPast') ||
-                                          entityForm.get('expirationTime').hasError('invalidFormat')))">
-              </mat-error>
             </mat-form-field>
           </section>
         </section>

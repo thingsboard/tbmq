@@ -43,7 +43,7 @@ import { MatIcon } from '@angular/material/icon';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { QosSelectComponent } from '@shared/components/qos-select.component';
-import { filterTopics, isString } from '@core/utils';
+import { filterTopics, isString, topicFilterValidator } from '@core/utils';
 import { MatAutocomplete, MatAutocompleteTrigger, MatOption } from '@angular/material/autocomplete';
 
 @Component({
@@ -129,7 +129,7 @@ export class SubscriptionsComponent implements ControlValueAccessor, OnInit, OnD
 
   addTopic() {
     const group = this.fb.group({
-      topicFilter: [null, [Validators.required]],
+      topicFilter: [null, [Validators.required, topicFilterValidator]],
       qos: [DEFAULT_QOS, []],
       subscriptionId: [null, []],
       options: this.fb.group({

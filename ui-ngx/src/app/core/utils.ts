@@ -711,3 +711,25 @@ export function notOnlyWhitespaceValidator(control: AbstractControl): Validation
 export function isOnlyWhitespace(value: string): boolean {
   return typeof value === 'string' && /^\s+$/.test(value);
 }
+
+export function topicFilterValidator(control: AbstractControl): ValidationErrors | null {
+  const raw = control?.value as string;
+  if (raw == null || raw === '') {
+    return null;
+  }
+  const value = String(raw);
+  const hashIndex = value.indexOf('#');
+  if (hashIndex !== -1 && hashIndex !== value.length - 1) {
+    return { hashNotLast: true };
+  }
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] === '+') {
+      const prev = value[i - 1];
+      const next = value[i + 1];
+      if ((i > 0 && prev !== '/') || (next !== undefined && next !== '/')) {
+        return { plusNotFollowedBySlash: true };
+      }
+    }
+  }
+  return null;
+}

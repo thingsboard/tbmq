@@ -23,6 +23,7 @@ import { MatSelect } from '@angular/material/select';
 import { MatOption } from '@angular/material/core';
 
 import { HexInputComponent } from './hex-input.component';
+import { MAT_FORM_FIELD_DEFAULT_OPTIONS } from '@angular/material/form-field';
 
 export enum ColorType {
   hex = 'hex',
@@ -43,11 +44,15 @@ export const colorPresetsHex =
     templateUrl: `./color-picker.component.html`,
     styleUrls: [`./color-picker.component.scss`],
     providers: [
-        {
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => ColorPickerComponent),
-            multi: true
-        }
+      {
+          provide: NG_VALUE_ACCESSOR,
+          useExisting: forwardRef(() => ColorPickerComponent),
+          multi: true
+      },
+      {
+        provide: MAT_FORM_FIELD_DEFAULT_OPTIONS,
+        useValue: { appearance: 'fill' }
+      }
     ],
     imports: [SaturationComponent, IndicatorComponent, HueComponent, AlphaComponent, MatSelect, FormsModule, ReactiveFormsModule, MatOption, RgbaComponent, HslaComponent, HexInputComponent, ColorPresetsComponent]
 })
@@ -137,4 +142,33 @@ export class ColorPickerComponent implements ControlValueAccessor, OnDestroy {
         return color.toRgbaString();
     }
   }
+
+  toRgba(color: any): string {
+    if (!color?.hsva) {
+      return 'rgba(0,0,0,0)';
+    }
+    const { hue: h, saturation: s100, value: v100, alpha: a } = color.hsva;
+    const s = Math.max(0, Math.min(1, (typeof s100 === 'number' ? s100 : 0) / 100));
+    const v = Math.max(0, Math.min(1, (typeof v100 === 'number' ? v100 : 0) / 100));
+    const C = v * s;
+    const Hp = ((typeof h === 'number' ? h : 0) / 60) % 6;
+    const X = C * (1 - Math.abs((Hp % 2) - 1));
+    let r1 = 0, g1 = 0, b1 = 0;
+
+    if (0 <= Hp && Hp < 1) { r1 = C; g1 = X; b1 = 0; }
+    else if (1 <= Hp && Hp < 2) { r1 = X; g1 = C; b1 = 0; }
+    else if (2 <= Hp && Hp < 3) { r1 = 0; g1 = C; b1 = X; }
+    else if (3 <= Hp && Hp < 4) { r1 = 0; g1 = X; b1 = C; }
+    else if (4 <= Hp && Hp < 5) { r1 = X; g1 = 0; b1 = C; }
+    else { r1 = C; g1 = 0; b1 = X; }
+
+    const m = v - C;
+    const r = Math.round((r1 + m) * 255);
+    const g = Math.round((g1 + m) * 255);
+    const b = Math.round((b1 + m) * 255);
+    const alpha = typeof a === 'number' ? a : 1;
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
 }

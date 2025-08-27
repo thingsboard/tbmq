@@ -29,7 +29,7 @@
               <span translate>{{configParamTranslationMap.get(entity.key)}}</span>
             }
             @if (column.key === 'value') {
-              <span class="flex flex-nowrap gap-1">
+              <span class="flex w-[100px] flex-nowrap gap-1">
                 @if (isAuthProviderParam(entity)) {
                   <mat-slide-toggle class="small-toggle" [(ngModel)]="entity.value" (ngModelChange)="switchParam(entity)"></mat-slide-toggle>
                 }

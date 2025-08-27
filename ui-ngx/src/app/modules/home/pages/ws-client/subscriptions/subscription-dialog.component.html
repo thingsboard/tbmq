@@ -57,8 +57,22 @@
                   class="tb-error">
           warning
         </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'mqtt-client-session.topic-filter-multi-level-error' | translate }}"
+                  [class.!hidden]="!formGroup.get('topicFilter').hasError('hashNotLast')"
+                  class="tb-error">
+          warning
+        </mat-icon>
+        <mat-icon matSuffix
+                  matTooltipClass="tb-error-tooltip"
+                  matTooltip="{{ 'mqtt-client-session.topic-filter-single-level-error' | translate }}"
+                  [class.!hidden]="!formGroup.get('topicFilter').hasError('plusNotFollowedBySlash')"
+                  class="tb-error">
+          warning
+        </mat-icon>
       </mat-form-field>
-      <tb-color-input formControlName="color" asBoxInput colorClearButton style="padding-bottom: 20px">
+      <tb-color-input formControlName="color" asBoxInput style="padding-bottom: 20px">
       </tb-color-input>
     </section>
     <tb-qos-select formControlName="qos">

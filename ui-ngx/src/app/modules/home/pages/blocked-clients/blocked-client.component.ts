@@ -81,9 +81,11 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
         regexMatchTarget: [RegexMatchTarget.BY_CLIENT_ID, []],
         description: [null],
         expirationTime: [this.defaultExpirationDate(), []],
+        expirationTimeHourMinute: [this.defaultExpirationDate(), []],
       }
     );
     form.get('type').valueChanges.subscribe(() => this.updateValidators());
+    form.get('expirationTimeHourMinute').valueChanges.subscribe(() => this.onTimeChange());
     return form;
   }
 
@@ -123,7 +125,7 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
     if (!date) {
       return;
     }
-    const control = this.entityForm.get('expirationTime');
+    const control = this.entityForm.get('expirationTimeHourMinute');
     const current: Date | number | null = control.value;
     const base = current ? new Date(current) : new Date();
     const merged = new Date(
@@ -136,6 +138,50 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
       base.getMilliseconds()
     );
     control.setValue(merged, { emitEvent: true });
+  }
+
+  onTimeChange() {
+    const dateCtrl = this.entityForm.get('expirationTime');
+    const timeCtrl = this.entityForm.get('expirationTimeHourMinute');
+    const baseDateRaw = dateCtrl?.value;
+    const timeRaw = timeCtrl?.value;
+    const baseDate = baseDateRaw ? new Date(baseDateRaw) : new Date();
+    const extractHM = (val: any): { h: number; m: number } => {
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        return { h: val.getHours(), m: val.getMinutes() };
+      }
+      if (typeof val === 'number') {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          return { h: d.getHours(), m: d.getMinutes() };
+        }
+      }
+      if (typeof val === 'string') {
+        const match = val.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+        if (match) {
+          const h = Math.min(23, parseInt(match[1], 10));
+          const m = Math.min(59, parseInt(match[2], 10));
+          return { h, m };
+        }
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          return { h: d.getHours(), m: d.getMinutes() };
+        }
+      }
+      const now = new Date();
+      return { h: now.getHours(), m: now.getMinutes() };
+    };
+    const { h, m } = extractHM(timeRaw);
+    const merged = new Date(
+      baseDate.getFullYear(),
+      baseDate.getMonth(),
+      baseDate.getDate(),
+      h,
+      m,
+      baseDate.getSeconds(),
+      baseDate.getMilliseconds()
+    );
+    dateCtrl?.setValue(merged, { emitEvent: true });
   }
 
   onNeverExpiresChange() {

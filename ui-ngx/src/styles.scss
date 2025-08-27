@@ -1319,6 +1319,10 @@ pre.tb-highlight {
       opacity: 1;
     }
   }
+
+  .cdk-overlay-pane .presentation-select-panel {
+    min-width: min-content !important;
+  }
 }
 
 .tb-fullscreen-backdrop {
