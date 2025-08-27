@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.BasicMqttCredentials;
 import org.thingsboard.mqtt.broker.common.data.dto.ShortMqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ClientCredentialsType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 
 public class MqttClientCredentialsUtil {
@@ -45,7 +44,7 @@ public class MqttClientCredentialsUtil {
     }
 
     public static MqttClientCredentials sanitizeSensitiveMqttCredsData(MqttClientCredentials credentials) {
-        if (ClientCredentialsType.MQTT_BASIC == credentials.getCredentialsType()) {
+        if (credentials.isBasicCredentials()) {
             BasicMqttCredentials basicCreds = MqttClientCredentialsUtil.getMqttCredentials(credentials, BasicMqttCredentials.class);
             ObjectNode additionalInfo = getOrCreateAdditionalInfo(credentials);
             boolean passwordIsSet = false;

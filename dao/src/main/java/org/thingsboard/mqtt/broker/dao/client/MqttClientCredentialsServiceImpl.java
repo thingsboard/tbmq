@@ -307,7 +307,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     private void invalidateBasicCredentialsPasswordCache(MqttClientCredentials clientCredentials) {
-        if (clientCredentials != null && ClientCredentialsType.MQTT_BASIC == clientCredentials.getCredentialsType()) {
+        if (clientCredentials != null && clientCredentials.isBasicCredentials()) {
             getCache(CacheConstants.BASIC_CREDENTIALS_PASSWORD_CACHE).invalidate();
         }
     }

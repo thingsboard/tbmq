@@ -56,13 +56,13 @@ public class MqttClientCredentialsController extends BaseController {
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/mqtt/client/credentials")
     public MqttClientCredentials saveMqttClientCredentials(@RequestBody MqttClientCredentials mqttClientCredentials) throws ThingsboardException {
-        if (ClientCredentialsType.MQTT_BASIC == mqttClientCredentials.getCredentialsType()) {
+        if (mqttClientCredentials.isBasicCredentials()) {
             BasicMqttCredentials mqttCredentials = MqttClientCredentialsUtil.getMqttCredentials(mqttClientCredentials, BasicMqttCredentials.class);
             if (mqttClientCredentials.getId() == null) {
                 mqttCredentials.setPassword(encodePasswordIfNotEmpty(mqttCredentials.getPassword()));
             } else {
                 MqttClientCredentials currentMqttClientCredentials = getMqttClientCredentialsById(mqttClientCredentials.getId());
-                if (currentMqttClientCredentials != null) {
+                if (currentMqttClientCredentials != null && currentMqttClientCredentials.isBasicCredentials()) {
                     mqttCredentials.setPassword(getCurrentPassword(currentMqttClientCredentials));
                 }
             }
