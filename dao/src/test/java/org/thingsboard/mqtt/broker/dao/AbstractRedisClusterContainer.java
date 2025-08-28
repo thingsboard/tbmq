@@ -33,42 +33,42 @@ public class AbstractRedisClusterContainer {
     @ClassRule
     public static Network network = Network.newNetwork();
     @ClassRule
-    public static GenericContainer redis1 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis1 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6371")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
             .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis2 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis2 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6372")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
             .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis3 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis3 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6373")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
             .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis4 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis4 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6374")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
             .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis5 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis5 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6375")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
             .withEnv("REDIS_PASSWORD", "password")
             .withEnv("REDIS_NODES", nodes);
     @ClassRule
-    public static GenericContainer redis6 = new GenericContainer("bitnami/redis-cluster:7.2.5")
+    public static GenericContainer redis6 = new GenericContainer("bitnamilegacy/redis-cluster:7.2.5")
             .withEnv("REDIS_PORT_NUMBER", "6376")
             .withNetworkMode("host")
             .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
