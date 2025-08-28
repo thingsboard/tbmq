@@ -25,7 +25,7 @@
              [matDatepicker]="startDatePicker"
              (ngModelChange)="onStartDateChange()">
       <mat-datepicker #startDatePicker/>
-      <mat-datepicker-toggle [for]="startDatePicker" matSuffix/>
+      <mat-datepicker-toggle disableRipple="true" [for]="startDatePicker" matSuffix/>
     </mat-form-field>
     <mat-form-field>
       <mat-label translate>datetime.time-from</mat-label>
@@ -37,7 +37,7 @@
              matTimepickerMax="23:59"
              (ngModelChange)="onStartDateChange()">
       <mat-timepicker #startTimePicker/>
-      <mat-timepicker-toggle [for]="startTimePicker" matSuffix/>
+      <mat-timepicker-toggle disableRipple="true" [for]="startTimePicker" matSuffix/>
     </mat-form-field>
   </section>
   <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
@@ -49,7 +49,7 @@
              [matDatepicker]="endDatePicker"
              (ngModelChange)="onEndDateChange()">
       <mat-datepicker #endDatePicker/>
-      <mat-datepicker-toggle [for]="endDatePicker" matSuffix/>
+      <mat-datepicker-toggle disableRipple="true" [for]="endDatePicker" matSuffix/>
     </mat-form-field>
     <mat-form-field subscriptSizing="dynamic">
       <mat-label translate>datetime.time-to</mat-label>
@@ -61,7 +61,7 @@
              matTimepickerMax="23:59"
              (ngModelChange)="onEndDateChange()">
       <mat-timepicker #endTimePicker/>
-      <mat-timepicker-toggle [for]="endTimePicker" matSuffix/>
+      <mat-timepicker-toggle disableRipple="true" [for]="endTimePicker" matSuffix/>
     </mat-form-field>
   </section>
 </section>

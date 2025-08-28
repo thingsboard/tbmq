@@ -81,11 +81,9 @@ export const MonitoringChartColorMap = new Map<string, string[]>(
 );
 
 export function getColor(type: string, index: number): string {
-  try {
-    return MonitoringChartColorMap.get(type)[index];
-  } catch {
-    return MonitoringChartColorMap.get(type)[index - 5];
-  }
+  const palette = MonitoringChartColorMap.get(type);
+  const normalizedIndex = ((index % palette.length) + palette.length) % palette.length;
+  return palette[normalizedIndex];
 }
 
 //@ts-ignore

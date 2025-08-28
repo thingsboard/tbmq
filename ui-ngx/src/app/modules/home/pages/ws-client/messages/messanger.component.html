@@ -45,28 +45,29 @@
 <div [formGroup]="messangerFormGroup" class="mat-padding flex flex-col" style="background: #fff; border-radius: 4px;">
   <section class="flex flex-row flex-nowrap items-center gap-4 lt-xl:flex-wrap"
     [class.wrap]="isLtLg | async">
-    <mat-form-field class="flex flex-1" [class.topic-mat-form-field]="isLtLg | async"
-                    style="min-width: 200px !important; width: 100%" hideRequiredMarker>
-      <mat-label translate>mqtt-client-session.topic</mat-label>
-      <input matInput formControlName="topic" [matAutocomplete]="auto">
-      <mat-autocomplete #auto="matAutocomplete">
-        @for (option of filteredTopics | async; track option) {
-          <mat-option [value]="option">{{option}}</mat-option>
+    <section class="flex flex-1 items-baseline justify-center gap-4">
+      <mat-form-field [class.topic-mat-form-field]="isLtLg | async"
+                      style="min-width: 200px !important; width: 100%" hideRequiredMarker>
+        <mat-label translate>mqtt-client-session.topic</mat-label>
+        <input matInput formControlName="topic" [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredTopics | async; track option) {
+            <mat-option [value]="option">{{option}}</mat-option>
+          }
+        </mat-autocomplete>
+        @if (messangerFormGroup.get('topic').hasError('required')) {
+          <mat-error>
+            {{ 'mqtt-client-session.topic-name-required' | translate }}
+          </mat-error>
         }
-      </mat-autocomplete>
-      @if (messangerFormGroup.get('topic').hasError('required')) {
-        <mat-error>
-          {{ 'mqtt-client-session.topic-name-required' | translate }}
-        </mat-error>
-      }
-      @if (messangerFormGroup.get('topic').hasError('invalidTopic')) {
-        <mat-error>
-          {{ 'mqtt-client-session.topic-name-invalid' | translate }}
-        </mat-error>
-      }
-      <tb-color-input asBoxInput matSuffix formControlName="color" style="margin-right: 8px">
-      </tb-color-input>
-    </mat-form-field>
+        @if (messangerFormGroup.get('topic').hasError('invalidTopic')) {
+          <mat-error>
+            {{ 'mqtt-client-session.topic-name-invalid' | translate }}
+          </mat-error>
+        }
+      </mat-form-field>
+      <tb-color-input formControlName="color" asBoxInput></tb-color-input>
+    </section>
     <tb-qos-select formControlName="qos" class="flex max-w-20% lt-xl:max-w-20%">
     </tb-qos-select>
     <mat-form-field class="flex max-w-20% lt-xl:max-w-[100px]">
