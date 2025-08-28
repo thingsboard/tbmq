@@ -18,7 +18,7 @@ services:
   # Redis sentinel
   redis-master:
     container_name: "${REDIS_MASTER_NAME}"
-    image: "bitnami/redis:7.2.5"
+    image: "bitnamilegacy/redis:7.2.5"
     volumes:
       - redis-sentinel-data-master:/bitnami/redis/data
     environment:
@@ -27,7 +27,7 @@ services:
 
   redis-slave:
     container_name: "${REDIS_SLAVE_NAME}"
-    image: "bitnami/redis:7.2.5"
+    image: "bitnamilegacy/redis:7.2.5"
     volumes:
       - redis-sentinel-data-slave:/bitnami/redis/data
     environment:
@@ -40,7 +40,7 @@ services:
 
   redis-sentinel:
     container_name: "${REDIS_SENTINEL_NAME}"
-    image: "bitnami/redis-sentinel:7.2.5"
+    image: "bitnamilegacy/redis-sentinel:7.2.5"
     volumes:
       - redis-sentinel-data-sentinel:/bitnami/redis/data
     environment:
