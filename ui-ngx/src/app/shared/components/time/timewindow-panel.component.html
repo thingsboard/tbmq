@@ -126,6 +126,10 @@
                       [required]="timewindow.selectedTab === timewindowTypes.HISTORY &&
                               timewindowForm.get('history.historyType').value === historyTypes.FIXED"
                       style="padding-top: 8px;"></tb-datetime-period>
+                    <div class="tb-error-message"
+                         [class.!hidden]="!timewindowForm.get('history.fixedTimewindow').hasError('invalidTimeFormat')">
+                      {{ 'timewindow.time-invalid' | translate }}
+                    </div>
                   }
                 </section>
               </mat-radio-button>

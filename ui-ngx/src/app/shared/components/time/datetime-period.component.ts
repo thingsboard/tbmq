@@ -14,13 +14,14 @@
 /// limitations under the License.
 ///
 
-import { Component, forwardRef, input, model } from '@angular/core';
+import { Component, forwardRef, model } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 import { FixedWindow } from '@shared/models/time/time.models';
-import { MatFormField, MatLabel, MatPrefix } from '@angular/material/form-field';
+import { MatFormField, MatLabel, MatSuffix } from '@angular/material/form-field';
 import { TranslateModule } from '@ngx-translate/core';
-import { MatDatetimepickerModule } from '@mat-datetimepicker/core';
 import { MatInput } from '@angular/material/input';
+import { MatTimepicker, MatTimepickerInput, MatTimepickerToggle } from '@angular/material/timepicker';
+import { MatDatepicker, MatDatepickerInput, MatDatepickerToggle } from '@angular/material/datepicker';
 
 @Component({
     selector: 'tb-datetime-period',
@@ -33,7 +34,7 @@ import { MatInput } from '@angular/material/input';
             multi: true
         }
     ],
-    imports: [MatFormField, MatLabel, TranslateModule, MatDatetimepickerModule, MatPrefix, MatInput, FormsModule]
+    imports: [MatFormField, MatLabel, TranslateModule, MatSuffix, MatInput, FormsModule, MatTimepickerInput, MatTimepickerToggle, MatTimepicker, MatDatepicker, MatDatepickerToggle, MatDatepickerInput]
 })
 export class DatetimePeriodComponent implements ControlValueAccessor {
 

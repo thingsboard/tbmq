@@ -28,7 +28,15 @@ import {
 import { PageComponent } from '@shared/components/page.component';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
-import { UntypedFormBuilder, UntypedFormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+  FormsModule,
+  ReactiveFormsModule,
+  AbstractControl,
+  ValidationErrors
+} from '@angular/forms';
 import { TimeService } from '@core/services/time.service';
 import { isDefined } from '@core/utils';
 import { OverlayRef } from '@angular/cdk/overlay';
@@ -139,7 +147,7 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
         fixedTimewindow: [{
           value: isDefined(history?.fixedTimewindow) ? this.timewindow.history.fixedTimewindow : null,
           disabled: hideInterval
-        }],
+        }, [this.timeValidator]],
         quickInterval: [{
           value: isDefined(history?.quickInterval) ? this.timewindow.history.quickInterval : null,
           disabled: hideInterval
@@ -163,6 +171,13 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
     this.updateValidators(this.timewindowForm.get('aggregation.type').value);
     this.timewindowForm.get('aggregation.type').valueChanges.subscribe((aggregationType: AggregationType) => {
       this.updateValidators(aggregationType);
+    });
+    this.timewindowForm.get('history.historyType').valueChanges.subscribe((type: HistoryWindowType) => {
+      if (type === HistoryWindowType.FIXED) {
+        this.timewindowForm.get('history.fixedTimewindow').enable({emitEvent: false});
+      } else {
+        this.timewindowForm.get('history.fixedTimewindow').disable({emitEvent: false});
+      }
     });
   }
 
@@ -377,6 +392,19 @@ export class TimewindowPanelComponent extends PageComponent implements OnInit {
       this.timewindowForm.get('timezone').enable({emitEvent: false});
     }
     this.timewindowForm.markAsDirty();
+  }
+
+  private timeValidator(control: AbstractControl): ValidationErrors | null {
+    const val = control.value;
+    if (!val || (!val.startTimeMs && !val.endTimeMs)) {
+      return {invalidTimeFormat: true};
+    }
+    const startTime = val.startTimeMs instanceof Date ? val.startTimeMs.getTime() : new Date(val.startTimeMs).getTime();
+    const endTime = val.endTimeMs instanceof Date ? val.endTimeMs.getTime() : new Date(val.endTimeMs).getTime();
+    if (startTime === 0 || isNaN(startTime) || endTime === 0 || isNaN(endTime)) {
+      return {invalidTimeFormat: true};
+    }
+    return null;
   }
 
 }

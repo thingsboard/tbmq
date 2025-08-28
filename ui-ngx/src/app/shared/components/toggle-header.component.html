@@ -52,7 +52,10 @@
   <mat-form-field appearance="outline" class="tb-toggle-header-select"
     [class.fill-height]="fillHeight()"
     subscriptSizing="dynamic">
-    <mat-select [(ngModel)]="value" (ngModelChange)="valueChange.emit($event)" [disabled]="disabled()">
+    <mat-select panelClass="select-panel-full-width"
+                [(ngModel)]="value"
+                (ngModelChange)="valueChange.emit($event)"
+                [disabled]="disabled()">
       @for (option of options(); track option) {
         <mat-option [value]="option.value"> {{ option.name }}</mat-option>
       }

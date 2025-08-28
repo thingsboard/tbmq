@@ -19,29 +19,49 @@
   <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
     <mat-form-field>
       <mat-label translate>datetime.date-from</mat-label>
-      <mat-datetimepicker-toggle [for]="startDatePicker" matPrefix></mat-datetimepicker-toggle>
-      <mat-datetimepicker #startDatePicker type="date" openOnFocus="true"></mat-datetimepicker>
-      <input matInput [disabled]="disabled()" [(ngModel)]="startDate" [matDatetimepicker]="startDatePicker" (ngModelChange)="onStartDateChange()">
+      <input matInput
+             [disabled]="disabled()"
+             [(ngModel)]="startDate"
+             [matDatepicker]="startDatePicker"
+             (ngModelChange)="onStartDateChange()">
+      <mat-datepicker #startDatePicker/>
+      <mat-datepicker-toggle [for]="startDatePicker" matSuffix/>
     </mat-form-field>
     <mat-form-field>
       <mat-label translate>datetime.time-from</mat-label>
-      <mat-datetimepicker-toggle [for]="startTimePicker" matPrefix></mat-datetimepicker-toggle>
-      <mat-datetimepicker #startTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
-      <input matInput [disabled]="disabled()" [(ngModel)]="startDate" [matDatetimepicker]="startTimePicker" (ngModelChange)="onStartDateChange()">
+      <input matInput
+             [disabled]="disabled()"
+             [(ngModel)]="startDate"
+             [matTimepicker]="startTimePicker"
+             matTimepickerMin="00:00"
+             matTimepickerMax="23:59"
+             (ngModelChange)="onStartDateChange()">
+      <mat-timepicker #startTimePicker/>
+      <mat-timepicker-toggle [for]="startTimePicker" matSuffix/>
     </mat-form-field>
   </section>
   <section class="flex flex-row gap-4 xs:flex-col xs:items-stretch xs:gap-0">
-    <mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
       <mat-label translate>datetime.date-to</mat-label>
-      <mat-datetimepicker-toggle [for]="endDatePicker" matPrefix></mat-datetimepicker-toggle>
-      <mat-datetimepicker #endDatePicker type="date" openOnFocus="true"></mat-datetimepicker>
-      <input matInput [disabled]="disabled()" [(ngModel)]="endDate" [matDatetimepicker]="endDatePicker" (ngModelChange)="onEndDateChange()">
+      <input matInput
+             [disabled]="disabled()"
+             [(ngModel)]="endDate"
+             [matDatepicker]="endDatePicker"
+             (ngModelChange)="onEndDateChange()">
+      <mat-datepicker #endDatePicker/>
+      <mat-datepicker-toggle [for]="endDatePicker" matSuffix/>
     </mat-form-field>
-    <mat-form-field>
+    <mat-form-field subscriptSizing="dynamic">
       <mat-label translate>datetime.time-to</mat-label>
-      <mat-datetimepicker-toggle [for]="endTimePicker" matPrefix></mat-datetimepicker-toggle>
-      <mat-datetimepicker #endTimePicker type="time" openOnFocus="true"></mat-datetimepicker>
-      <input matInput [disabled]="disabled()" [(ngModel)]="endDate" [matDatetimepicker]="endTimePicker" (ngModelChange)="onEndDateChange()">
+      <input matInput
+             [disabled]="disabled()"
+             [(ngModel)]="endDate"
+             [matTimepicker]="endTimePicker"
+             matTimepickerMin="00:00"
+             matTimepickerMax="23:59"
+             (ngModelChange)="onEndDateChange()">
+      <mat-timepicker #endTimePicker/>
+      <mat-timepicker-toggle [for]="endTimePicker" matSuffix/>
     </mat-form-field>
   </section>
 </section>
