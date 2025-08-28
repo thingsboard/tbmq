@@ -32,7 +32,7 @@ public class AbstractRedisClusterContainer {
     static final String nodes = "127.0.0.1:6371,127.0.0.1:6372,127.0.0.1:6373,127.0.0.1:6374,127.0.0.1:6375,127.0.0.1:6376";
 
     private static GenericContainer<?> redis(String port) {
-        return new GenericContainer<>("bitnami/redis-cluster:7.2.5")
+        return new GenericContainer<>("bitnamilegacy/redis-cluster:7.2.5")
                 .withEnv("REDIS_PORT_NUMBER", port)
                 .withNetworkMode("host")
                 .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
