@@ -62,7 +62,6 @@ db_url="jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
 db_username="postgres"
 db_password="postgres"
 redis_url="redis"
-device_persisted_msgs_limit=1000
 
 COMPOSE_VERSION=$(compose_version) || exit $?
 echo "Docker Compose version is: $COMPOSE_VERSION"
@@ -88,6 +87,14 @@ else
   exit 1
 fi
 
+# Check if .tbmq-upgrade.env is present
+if [ -f ".tbmq-upgrade.env" ]; then
+  echo "Found .tbmq-upgrade.env. Proceeding with upgrade..."
+else
+  echo ".tbmq-upgrade.env not found in current directory. Please create it before running upgrade."
+  exit 1
+fi
+
 case $COMPOSE_VERSION in
 V2)
   docker compose stop tbmq
@@ -97,11 +104,11 @@ V2)
   composeNetworkId=$(docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
   docker run -it --network=$composeNetworkId \
+    --env-file .tbmq-upgrade.env \
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
     -e REDIS_HOST=$redis_url \
-    -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit \
     -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh
@@ -118,11 +125,11 @@ V1)
   composeNetworkId=$(docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
   docker run -it --network=$composeNetworkId \
+    --env-file .tbmq-upgrade.env \
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
     -e REDIS_HOST=$redis_url \
-    -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit \
     -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh

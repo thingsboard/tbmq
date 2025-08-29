@@ -52,7 +52,6 @@ try {
     $db_username = "postgres"
     $db_password = "postgres"
     $redis_url = "redis"
-    $device_persisted_msgs_limit=1000
 
     # Pull the new TBMQ image
     docker pull "thingsboard/tbmq:$new_version"
@@ -73,6 +72,14 @@ try {
         exit 1
     }
 
+    # Check if .tbmq-upgrade.env is present
+    if (Test-Path ".tbmq-upgrade.env") {
+        Write-Host "Found .tbmq-upgrade.env. Proceeding with upgrade..."
+    } else {
+        Write-Host ".tbmq-upgrade.env not found in current directory. Please create it before running upgrade."
+        exit 1
+    }
+
     switch ($COMPOSE_VERSION) {
         "V2" {
             docker compose stop tbmq
@@ -82,11 +89,11 @@ try {
             $composeNetworkId = (docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
             docker run -it --network=$composeNetworkId `
+            --env-file .tbmq-upgrade.env `
             -e SPRING_DATASOURCE_URL=$db_url `
             -e SPRING_DATASOURCE_USERNAME=$db_username `
             -e SPRING_DATASOURCE_PASSWORD=$db_password `
             -e REDIS_HOST=$redis_url `
-            -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit `
             -v tbmq-data:/data `
             --rm `
             "thingsboard/tbmq:$new_version" upgrade-tbmq.sh
@@ -103,11 +110,11 @@ try {
             $composeNetworkId = (docker inspect -f '{{ range .NetworkSettings.Networks }}{{ .NetworkID }}{{ end }}' $postgresContainerName)
 
             docker run -it --network=$composeNetworkId `
+            --env-file .tbmq-upgrade.env `
             -e SPRING_DATASOURCE_URL=$db_url `
             -e SPRING_DATASOURCE_USERNAME=$db_username `
             -e SPRING_DATASOURCE_PASSWORD=$db_password `
             -e REDIS_HOST=$redis_url `
-            -e MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT=$device_persisted_msgs_limit `
             -v tbmq-data:/data `
             --rm `
             "thingsboard/tbmq:$new_version" upgrade-tbmq.sh

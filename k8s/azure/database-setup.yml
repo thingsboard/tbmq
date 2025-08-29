@@ -34,8 +34,12 @@ spec:
       imagePullPolicy: Always
       image: thingsboard/tbmq-node:2.1.0
       env:
-        - name: MQTT_PERSISTENT_SESSION_DEVICE_PERSISTED_MESSAGES_LIMIT
-          value: "1000"
+        - name: SECURITY_MQTT_BASIC_ENABLED
+          value: "true"
+        - name: SECURITY_MQTT_SSL_ENABLED
+          value: "false"
+        - name: SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT
+          value: "false"
       envFrom:
         - configMapRef:
             name: tb-broker-db-config
