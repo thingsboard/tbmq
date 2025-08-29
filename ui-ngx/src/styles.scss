@@ -1313,10 +1313,11 @@ pre.tb-highlight {
   }
 
   .mat-mdc-form-field-icon-suffix {
-    opacity: 0.54;
-
-    &:hover {
-      opacity: 1;
+    > *:not(.full-opacity) {
+      opacity: 0.54;
+      &:hover {
+        opacity: 1;
+      }
     }
   }
 
