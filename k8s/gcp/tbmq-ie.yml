@@ -54,7 +54,7 @@ spec:
       containers:
         - name: server
           imagePullPolicy: Always
-          image: thingsboard/tbmq-integration-executor:2.1.0
+          image: thingsboard/tbmq-integration-executor:2.2.0
           ports:
             - containerPort: 8082
               name: http

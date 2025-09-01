@@ -32,7 +32,7 @@ spec:
   containers:
     - name: tb-db-setup
       imagePullPolicy: Always
-      image: thingsboard/tbmq-node:2.1.0
+      image: thingsboard/tbmq-node:2.2.0
       env:
         - name: SECURITY_MQTT_BASIC_ENABLED
           value: "true"
