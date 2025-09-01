@@ -164,13 +164,6 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
     }
 
     @Override
-    public PageData<MqttClientCredentials> getFullCredentials(PageLink pageLink) {
-        log.trace("Executing getFullCredentials, pageLink [{}]", pageLink);
-        validatePageLink(pageLink);
-        return mqttClientCredentialsDao.findAll(pageLink);
-    }
-
-    @Override
     public PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query) {
         log.trace("Executing getCredentialsV2, query [{}]", query);
         validatePageLink(query.getPageLink());

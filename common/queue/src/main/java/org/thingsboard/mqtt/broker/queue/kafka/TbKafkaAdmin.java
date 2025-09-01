@@ -78,8 +78,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     private boolean enableTopicDeletion;
     @Value("${queue.kafka.kafka-prefix:}")
     private String kafkaPrefix;
-    @Value("${queue.kafka.client-session-event-response.topic-prefix:tbmq.client.session.event.response}")
-    private String clientSessionEventRespTopicPrefix;
     @Value("${queue.kafka.admin.command-timeout:30}")
     private int kafkaAdminCommandTimeout;
 
@@ -294,21 +292,6 @@ public class TbKafkaAdmin implements TbQueueAdmin {
             return PageData.of(data, kafkaTopics.size(), pageLink);
         } catch (Exception e) {
             log.warn("Failed to get Kafka topic infos", e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public List<String> getBrokerServiceIds() {
-        try {
-            Set<String> topics = client.listTopics().names().get();
-            return topics
-                    .stream()
-                    .filter(topic -> topic.startsWith(kafkaPrefix + clientSessionEventRespTopicPrefix))
-                    .map(topic -> topic.replace(kafkaPrefix + clientSessionEventRespTopicPrefix + ".", ""))
-                    .collect(Collectors.toList());
-        } catch (InterruptedException | ExecutionException e) {
-            log.warn("Failed to get broker names", e);
             throw new RuntimeException(e);
         }
     }

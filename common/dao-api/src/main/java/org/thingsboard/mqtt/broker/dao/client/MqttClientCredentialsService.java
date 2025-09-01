@@ -43,9 +43,6 @@ public interface MqttClientCredentialsService {
 
     PageData<ShortMqttClientCredentials> getCredentials(PageLink pageLink);
 
-    @Deprecated(since = "2.2.0", forRemoval = true)
-    PageData<MqttClientCredentials> getFullCredentials(PageLink pageLink);
-
     PageData<ShortMqttClientCredentials> getCredentialsV2(ClientCredentialsQuery query);
 
     Optional<MqttClientCredentials> getCredentialsById(UUID id);
