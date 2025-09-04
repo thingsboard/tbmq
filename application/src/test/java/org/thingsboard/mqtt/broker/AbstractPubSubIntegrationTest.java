@@ -126,7 +126,7 @@ public abstract class AbstractPubSubIntegrationTest {
     }
 
     @ClassRule
-    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
+    public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.2"));
 
     @ClassRule
     public static GenericContainer redis = new GenericContainer("redis:7.2.5")
