@@ -28,15 +28,14 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class AbstractRedisContainer {
 
-    @ClassRule
-    public static GenericContainer<?> redis = new GenericContainer<>("redis:7.2.5")
+    @ClassRule(order = 0)
+    public static GenericContainer<?> redis = new GenericContainer<>("valkey/valkey:8.0")
             .withExposedPorts(6379)
             .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
-            .withEnv("REDIS_PASSWORD", "password")
-            .withCommand("redis-server", "--requirepass", "password")
+            .withCommand("valkey-server", "--requirepass", "password")
             .waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofSeconds(10));
 
-    @ClassRule
+    @ClassRule(order = 1)
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
