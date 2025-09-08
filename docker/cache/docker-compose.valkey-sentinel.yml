@@ -36,9 +36,24 @@ services:
     container_name: "${VALKEY_SENTINEL_NAME}"
     image: valkey/valkey:8.0
     volumes:
-      - ./sentinel/sentinel.conf:/usr/local/etc/valkey/sentinel.conf
       - valkey-sentinel-data-sentinel:/data
-    command: valkey-server /usr/local/etc/valkey/sentinel.conf --sentinel
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        cat >/data/sentinel.conf <<'EOF'
+        port 26379
+        dir /data
+        sentinel monitor myprimary valkey-primary 6379 1
+        sentinel auth-pass myprimary thingsboard
+        requirepass sentinel
+        sentinel down-after-milliseconds myprimary 5000
+        sentinel failover-timeout myprimary 60000
+        sentinel parallel-syncs myprimary 1
+        sentinel resolve-hostnames yes
+        EOF
+        exec valkey-sentinel /data/sentinel.conf
     depends_on:
       - valkey-primary
       - valkey-slave
