@@ -25,10 +25,16 @@ data:
   CACHE_STATS_ENABLED: "true"
   CACHE_STATS_INTERVAL_SEC: "60"
 
+  # Valkey standalone
+  #REDIS_CONNECTION_TYPE: "standalone"
   # Make sure that the REDIS_HOST value does not contain the port (:6379).
-  REDIS_HOST: "YOUR_REDIS_ENDPOINT_URL_WITHOUT_PORT"
+  REDIS_HOST: "YOUR_VALKEY_ENDPOINT_URL_WITHOUT_PORT"
   #REDIS_PASSWORD: "YOUR_REDIS_PASSWORD"
 
-  # Recommended to enable in Kubernetes environments in case of Redis cluster setup to handle dynamic IP changes and nodes failover
+  # Valkey cluster
+  REDIS_CONNECTION_TYPE: "cluster"
+  REDIS_NODES: "COMMA_SEPARATED_LIST_OF_NODES"
+
+  # Recommended to enable in Kubernetes environments in case of Valkey cluster setup to handle dynamic IP changes and nodes failover
   #REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"
   #REDIS_JEDIS_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"
