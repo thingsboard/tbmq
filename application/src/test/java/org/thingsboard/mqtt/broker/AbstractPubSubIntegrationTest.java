@@ -128,7 +128,7 @@ public abstract class AbstractPubSubIntegrationTest {
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.2"));
 
     @ClassRule
-    public static GenericContainer<?> redis = new GenericContainer<>("valkey/valkey:8.0")
+    public static GenericContainer<?> valkey = new GenericContainer<>("valkey/valkey:8.0")
             .withExposedPorts(6379)
             .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
             .withCommand("valkey-server", "--requirepass", "password");
@@ -137,16 +137,16 @@ public abstract class AbstractPubSubIntegrationTest {
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void before() {
-            redis.start();
+            valkey.start();
             System.setProperty("redis.connection.type", "standalone");
-            System.setProperty("redis.standalone.host", redis.getHost());
-            System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.standalone.host", valkey.getHost());
+            System.setProperty("redis.standalone.port", String.valueOf(valkey.getMappedPort(6379)));
             System.setProperty("redis.password", "password");
         }
 
         @Override
         protected void after() {
-            redis.stop();
+            valkey.stop();
             List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port", "redis.password")
                     .forEach(System.getProperties()::remove);
         }
