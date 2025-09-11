@@ -37,34 +37,6 @@ const routes: Routes = [
     },
     canActivate: [AuthGuard]
   },
-  {
-    path: 'login/resetPassword',
-    loadComponent: () => import('@modules/login/pages/login/reset-password.component').then(m => m.ResetPasswordComponent),
-    data: {
-      title: 'login.reset-password',
-      module: 'public'
-    },
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'login/resetExpiredPassword',
-    loadComponent: () => import('@modules/login/pages/login/reset-password.component').then(m => m.ResetPasswordComponent),
-    data: {
-      title: 'login.reset-password',
-      module: 'public',
-      expiredPassword: true
-    },
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'login/createPassword',
-    loadComponent: () => import('@modules/login/pages/login/create-password.component').then(m => m.CreatePasswordComponent),
-    data: {
-      title: 'login.create-password',
-      module: 'public'
-    },
-    canActivate: [AuthGuard]
-  }
 ];
 
 @NgModule({
