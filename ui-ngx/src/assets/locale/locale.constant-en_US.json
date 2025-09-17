@@ -297,6 +297,9 @@
     "clear-request-title": "Clear all events",
     "clear-request-text": "Are you sure you want to clear all events?"
   },
+  "entity": {
+    "create-new": "Create new"
+  },
   "fullscreen": {
     "exit": "Exit",
     "expand": "Expand"
