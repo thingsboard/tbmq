@@ -120,7 +120,12 @@
       "port-pattern": "Port must be a positive integer.",
       "port-range": "Port should be in a range from 1 to 65535.",
       "port-required": "Port is required.",
-      "set-port": "Set the listener port as defined in the YAML configuration: {{port}}"
+      "set-port": "Set the listener port as defined in the YAML configuration: {{port}}",
+      "base-url": "Base URL",
+      "base-url-required": "Base URL is required.",
+      "base-url-hint": "The public URL of this TBMQ instance. Used to generate links in emails and password-reset links. Should match the public domain and protocol (e.g., https://tbmq.example.com).",
+      "prohibit-different-url": "Prohibit to use hostname from the client request headers",
+      "prohibit-different-url-hint": "This setting should be enabled for production environments. May cause security issues when disabled"
     }
   },
   "aggregation": {
@@ -1060,6 +1065,7 @@
   },
   "ws-client": {
     "ws-client": "WebSocket Client",
+    "ws-client-settings": "WebSocket Client Settings",
     "show-logs": "Log MQTT client activity",
     "show-logs-hint": "If enabled, MQTT client logs for events (such as connect, reconnect, message, error, etc.) will be displayed in your browser console.",
     "settings": "Settings",

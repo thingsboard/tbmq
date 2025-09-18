@@ -20,6 +20,7 @@ export const smtpPortPattern: RegExp = /^([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3
 export const connectivitySettingsKey = 'connectivity';
 export const webSocketSettingsKey = 'websocket';
 export const mqttAuthorizationSettingsKey = 'mqttAuthorization';
+export const generalSettingsKey = 'general';
 export const DEFAULT_HOST = window.location.hostname;
 
 export interface AdminSettings<T> {
@@ -50,6 +51,11 @@ export interface MailServerSettings {
 export interface WebSocketSettings {
   isLoggingEnabled: boolean;
   maxMessages: number;
+}
+
+export interface GeneralSettings {
+  baseUrl: string;
+  prohibitDifferentUrl: boolean;
 }
 
 export type ConnectivityProtocol = 'mqtt' | 'mqtts' | 'ws' | 'wss';
