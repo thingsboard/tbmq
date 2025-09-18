@@ -325,7 +325,7 @@ queue:
 
   kafka:
     # List of kafka bootstrap servers used to establish connection
-    bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
+    bootstrap.servers: "${TB_KAFKA_SERVERS:192.168.3.99:9092}"
     # Enable/disable deletion of topics for Application MQTT Clients
     enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
@@ -739,7 +739,7 @@ spring:
     # Database driver for Spring JPA
     driverClassName: "${SPRING_DRIVER_CLASS_NAME:org.postgresql.Driver}"
     # Database connection URL
-    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/thingsboard_mqtt_broker}"
+    url: "${SPRING_DATASOURCE_URL:jdbc:postgresql://192.168.3.99:15432/thingsboard_mqtt_broker}"
     # Database username
     username: "${SPRING_DATASOURCE_USERNAME:postgres}"
     # Database user password
@@ -778,7 +778,7 @@ security:
   # JWT Token parameters
   jwt:
     # User JWT Token expiration time in seconds (2.5 hours)
-    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000}"
+    tokenExpirationTime: "${JWT_TOKEN_EXPIRATION_TIME:9000000000}"
     # User JWT Refresh Token expiration time in seconds (1 week)
     refreshTokenExpTime: "${JWT_REFRESH_TOKEN_EXPIRATION_TIME:604800}"
     # User JWT Token issuer
@@ -980,7 +980,7 @@ redis:
     type: "${REDIS_CONNECTION_TYPE:standalone}"
   standalone:
     # Redis connection host
-    host: "${REDIS_HOST:localhost}"
+    host: "${REDIS_HOST:192.168.3.25}"
     # Redis connection port
     port: "${REDIS_PORT:6379}"
     # Use the default Redis configuration file
@@ -1012,7 +1012,7 @@ redis:
   # DB index
   db: "${REDIS_DB:0}"
   # DB password
-  password: "${REDIS_PASSWORD:}"
+  password: "${REDIS_PASSWORD:elegoo}"
   # Pool config
   pool_config:
     # Maximum number of connections that can be allocated by the connection pool

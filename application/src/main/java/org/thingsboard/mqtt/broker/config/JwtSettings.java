@@ -27,7 +27,7 @@ public class JwtSettings {
     /**
      * {@link JwtToken} will expire after this time.
      */
-    private Integer tokenExpirationTime;
+    private Long tokenExpirationTime;
 
     /**
      * Token issuer.
