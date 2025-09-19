@@ -67,9 +67,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
     @Override
     public AuthResponse executeAuthFlow(AuthContext authContext) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticating client", authContext.getClientId());
-        }
+        log.trace("[{}] Authenticating client", authContext.getClientId());
 
         if (!defaultProvidersEnabled()) {
             return AuthResponse.defaultAuthResponse();
@@ -85,6 +83,7 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
                 default -> throw new IllegalStateException("Unexpected provider type: " + providerType);
             };
             if (response.isSuccess()) {
+                log.debug("[{}] Client is authenticated: {}", authContext.getClientId(), response);
                 return response;
             }
             addFailureReason(authContext, response, providerType.getDisplayName(), failureReasons);
@@ -94,15 +93,13 @@ public class DefaultAuthorizationRoutingService implements AuthorizationRoutingS
 
     private boolean defaultProvidersEnabled() {
         return basicMqttClientAuthProvider.isEnabled() ||
-               sslMqttClientAuthProvider.isEnabled() ||
-               jwtMqttClientAuthProvider.isEnabled();
+                sslMqttClientAuthProvider.isEnabled() ||
+                jwtMqttClientAuthProvider.isEnabled();
     }
 
     private void addFailureReason(AuthContext authContext, AuthResponse response, String authType, List<String> failureReasons) {
         String reason = response.getReason();
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] {} authentication failed: {}", authContext.getClientId(), authType, reason);
-        }
+        log.debug("[{}] {} authentication failed: {}", authContext.getClientId(), authType, reason);
         failureReasons.add(reason);
     }
 

@@ -258,7 +258,7 @@ public class MqttClientCredentialsServiceImpl implements MqttClientCredentialsSe
             } catch (PatternSyntaxException e) {
                 throw new DataValidationException("Certificate matcher regex [" + certificateMatcherRegex + "] must be a valid regex");
             }
-            AuthRulesUtil.validateAndCompileAuthRules(authRules);
+            AuthRulesUtil.validateAndCompileSslAuthRules(authRules);
         });
 
         String credentialsId = ProtocolUtil.sslCredentialsId(mqttCredentials.getCertCnPattern());
