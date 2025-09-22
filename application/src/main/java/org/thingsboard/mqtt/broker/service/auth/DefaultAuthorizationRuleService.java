@@ -23,6 +23,7 @@ import org.thingsboard.mqtt.broker.common.data.client.credentials.ClientTypeSslM
 import org.thingsboard.mqtt.broker.common.data.client.credentials.PubSubAuthorizationRules;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SinglePubSubAuthRulesAware;
 import org.thingsboard.mqtt.broker.common.data.client.credentials.SslMqttCredentials;
+import org.thingsboard.mqtt.broker.common.data.util.AuthRulesUtil;
 import org.thingsboard.mqtt.broker.exception.AuthenticationException;
 import org.thingsboard.mqtt.broker.service.security.authorization.AuthRulePatterns;
 
@@ -62,7 +63,7 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
                     return commonNameMatcher.find();
                 })
                 .map(Map.Entry::getValue)
-                .map(this::newAuthRulePatterns)
+                .map(pubSubAuthRules -> newAuthRulePatterns(pubSubAuthRules, clientCommonName))
                 .collect(Collectors.toList());
 
         if (authRulePatterns.isEmpty()) {
@@ -81,6 +82,21 @@ public class DefaultAuthorizationRuleService implements AuthorizationRuleService
             throw new AuthenticationException(CAN_NOT_PARSE_PUB_SUB_RULES.getErrorMsg());
         }
         return newAuthRulePatterns(credentials.getAuthRules());
+    }
+
+    private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules, String clientCommonName) {
+        return new AuthRulePatterns(
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getPubAuthRulePatterns(), clientCommonName),
+                applyPlaceholderAndCompilePatterns(pubSubAuthRules.getSubAuthRulePatterns(), clientCommonName));
+    }
+
+    private List<Pattern> applyPlaceholderAndCompilePatterns(List<String> authRulePatterns, String clientCommonName) {
+        return CollectionUtils.isEmpty(authRulePatterns) ? Collections.emptyList() :
+                authRulePatterns
+                        .stream()
+                        .map(pattern -> AuthRulesUtil.processPattern(pattern, clientCommonName))
+                        .map(Pattern::compile)
+                        .collect(Collectors.toList());
     }
 
     private AuthRulePatterns newAuthRulePatterns(PubSubAuthorizationRules pubSubAuthRules) {
