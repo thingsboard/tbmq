@@ -52,7 +52,7 @@ docker run --rm --network <network_name> \
 -v tbmq-postgres-data:/var/lib/postgresql/data \
 -v $(pwd)/backups:/backups \
 -e PGPASSWORD=postgres \
-postgres:16 \
+postgres:17 \
 sh -c 'pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump'
 ```
 
@@ -63,7 +63,7 @@ docker run --rm --network <network_name> `
 -v tbmq-postgres-data:/var/lib/postgresql/data `
 -v ${PWD}/backups:/backups `
 -e PGPASSWORD=postgres `
-postgres:16 `
+postgres:17 `
 sh -c "pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump"
 ```
 
@@ -75,7 +75,7 @@ sh -c "pg_dump -Fc -v -h postgres -U postgres -d thingsboard_mqtt_broker > /back
 - `-v tbmq-postgres-data:/var/lib/postgresql/data`: Mounts the PostgreSQL data volume.
 - `-v $(pwd)/backups:/backups`: Mounts a local directory (`./backups`) to store the backup file.
 - `-e PGPASSWORD=postgres`: Provides the PostgreSQL password as an environment variable.
-- `postgres:16`: The Docker image for PostgreSQL version 16.
+- `postgres:17`: The Docker image for PostgreSQL version 17.
 - `sh -c 'pg_dump ...'`: The shell command to run the `pg_dump` tool, which creates a compressed custom-format (`-Fc`)
   backup of the `thingsboard_mqtt_broker` database and saves it as `tbmq_backup.dump`.
 
@@ -93,7 +93,7 @@ docker run --rm --network <network_name> \
 -v tbmq-postgres-data:/var/lib/postgresql/data \
 -v $(pwd)/backups:/backups \
 -e PGPASSWORD=postgres \
-postgres:16 \
+postgres:17 \
 sh -c 'pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /backups/tbmq_backup.dump'
 ```
 
@@ -104,7 +104,7 @@ docker run --rm --network <network_name> `
 -v tbmq-postgres-data:/var/lib/postgresql/data `
 -v ${PWD}/backups:/backups `
 -e PGPASSWORD=postgres `
-postgres:16 `
+postgres:17 `
 sh -c "pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /backups/tbmq_backup.dump"
 ```
 
@@ -115,7 +115,7 @@ sh -c "pg_restore -c -h postgres -U postgres -d thingsboard_mqtt_broker -v /back
 - `-v tbmq-postgres-data:/var/lib/postgresql/data`: Mounts the PostgreSQL data volume.
 - `-v $(pwd)/backups:/backups`: Mounts the local `./backups` directory where the backup file is stored.
 - `-e PGPASSWORD=postgres`: Supplies the PostgreSQL password.
-- `postgres:16`: Uses the PostgreSQL 16 Docker image.
+- `postgres:17`: Uses the PostgreSQL 17 Docker image.
 - `sh -c 'pg_restore ...'`: The shell command runs `pg_restore` to restore the database from the `tbmq_backup.dump`
   file.
     - `-c`: Cleans (drops) existing database objects before restoring.
