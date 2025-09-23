@@ -18,7 +18,7 @@ services:
   postgres:
     restart: always
     container_name: "${POSTGRES_NAME}"
-    image: "postgres:16"
+    image: "postgres:17"
     ports:
       - "5432"
     logging:

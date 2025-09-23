@@ -32,7 +32,7 @@ metadata:
 spec:
   containers:
     - name: postgres-backup
-      image: postgres:16
+      image: postgres:17
       command:
         - /bin/bash
         - -ec
@@ -101,7 +101,7 @@ metadata:
 spec:
   containers:
     - name: postgres-restore
-      image: postgres:16
+      image: postgres:17
       command:
         - /bin/bash
         - -ec

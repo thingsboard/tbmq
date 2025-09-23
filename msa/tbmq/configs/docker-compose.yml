@@ -17,7 +17,7 @@
 services:
   postgres:
     restart: always
-    image: "postgres:16"
+    image: "postgres:17"
     logging:
       driver: "json-file"
       options:
