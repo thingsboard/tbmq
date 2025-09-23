@@ -22,7 +22,7 @@ availabilityZones: [ us-east-1a,us-east-1b,us-east-1c ]
 metadata:
   name: tbmq
   region: us-east-1
-  version: "1.30"
+  version: "1.33"
 
 managedNodeGroups:
   - name: managed

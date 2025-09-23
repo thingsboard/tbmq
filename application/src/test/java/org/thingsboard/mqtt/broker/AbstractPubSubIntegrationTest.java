@@ -44,7 +44,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.utility.DockerImageName;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
@@ -129,27 +128,26 @@ public abstract class AbstractPubSubIntegrationTest {
     public static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.9.2"));
 
     @ClassRule
-    public static GenericContainer redis = new GenericContainer("redis:7.2.5")
+    public static GenericContainer<?> valkey = new GenericContainer<>("valkey/valkey:8.0")
             .withExposedPorts(6379)
-            .withLogConsumer(x -> log.warn("{}", ((OutputFrame) x).getUtf8StringWithoutLineEnding()))
-            .withEnv("REDIS_PASSWORD", "password")
-            .withCommand("redis-server", "--requirepass", "password");
+            .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
+            .withCommand("valkey-server", "--requirepass", "password");
 
     @ClassRule
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void before() {
-            redis.start();
+            valkey.start();
             System.setProperty("redis.connection.type", "standalone");
-            System.setProperty("redis.standalone.host", redis.getHost());
-            System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.standalone.host", valkey.getHost());
+            System.setProperty("redis.standalone.port", String.valueOf(valkey.getMappedPort(6379)));
             System.setProperty("redis.password", "password");
         }
 
         @Override
         protected void after() {
-            redis.stop();
-            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port")
+            valkey.stop();
+            List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port", "redis.password")
                     .forEach(System.getProperties()::remove);
         }
     };
@@ -219,10 +217,14 @@ public abstract class AbstractPubSubIntegrationTest {
         MqttAuthProvider mqttAuthProvider = getMqttAuthProvider(type);
         mqttAuthProvider.setEnabled(false);
         switch (type) {
-            case MQTT_BASIC -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider(false).getConfiguration());
-            case X_509 -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider(false).getConfiguration());
-            case JWT -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider(false).getConfiguration());
-            case SCRAM -> mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider(false).getConfiguration());
+            case MQTT_BASIC ->
+                    mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultBasicAuthProvider(false).getConfiguration());
+            case X_509 ->
+                    mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultSslAuthProvider(false).getConfiguration());
+            case JWT ->
+                    mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultJwtAuthProvider(false).getConfiguration());
+            case SCRAM ->
+                    mqttAuthProvider.setConfiguration(MqttAuthProvider.defaultScramAuthProvider(false).getConfiguration());
         }
         mqttAuthProviderManagerService.saveAuthProvider(mqttAuthProvider);
     }
