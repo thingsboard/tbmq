@@ -35,7 +35,7 @@ spec:
       image: thingsboard/tbmq-node:2.2.0
       env:
         - name: REDIS_HOST
-          value: "tb-redis"
+          value: "tb-valkey"
         - name: SECURITY_MQTT_BASIC_ENABLED
           value: "true"
         - name: SECURITY_MQTT_SSL_ENABLED

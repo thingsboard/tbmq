@@ -1,0 +1,99 @@
+#
+# Copyright © 2016-2025 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+services:
+  # Valkey cluster
+  valkey-node-0:
+    container_name: "${VALKEY_NODE_0_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-0:/data
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  valkey-node-1:
+    container_name: "${VALKEY_NODE_1_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-1:/data
+    depends_on:
+      - valkey-node-0
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  valkey-node-2:
+    container_name: "${VALKEY_NODE_2_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-2:/data
+    depends_on:
+      - valkey-node-1
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  valkey-node-3:
+    container_name: "${VALKEY_NODE_3_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-3:/data
+    depends_on:
+      - valkey-node-2
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  valkey-node-4:
+    container_name: "${VALKEY_NODE_4_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-4:/data
+    depends_on:
+      - valkey-node-3
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  valkey-node-5:
+    container_name: "${VALKEY_NODE_5_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-cluster-data-5:/data
+    depends_on:
+      - valkey-node-0
+      - valkey-node-1
+      - valkey-node-2
+      - valkey-node-3
+      - valkey-node-4
+    command: valkey-server --port 6379 --requirepass thingsboard --masterauth thingsboard --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly no
+
+  # TBMQ setup to use valkey-cluster
+  tbmq1:
+    env_file:
+      - cache-valkey-cluster.env
+    depends_on:
+      - valkey-node-5
+  tbmq2:
+    env_file:
+      - cache-valkey-cluster.env
+    depends_on:
+      - valkey-node-5
+
+volumes:
+  valkey-cluster-data-0:
+    external: true
+  valkey-cluster-data-1:
+    external: true
+  valkey-cluster-data-2:
+    external: true
+  valkey-cluster-data-3:
+    external: true
+  valkey-cluster-data-4:
+    external: true
+  valkey-cluster-data-5:
+    external: true

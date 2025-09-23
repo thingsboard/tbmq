@@ -61,7 +61,7 @@ new_image="image: \"thingsboard/tbmq:$new_version\""
 db_url="jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
 db_username="postgres"
 db_password="postgres"
-redis_url="redis"
+valkey_url="valkey"
 
 COMPOSE_VERSION=$(compose_version) || exit $?
 echo "Docker Compose version is: $COMPOSE_VERSION"
@@ -108,7 +108,7 @@ V2)
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
-    -e REDIS_HOST=$redis_url \
+    -e REDIS_HOST=$valkey_url \
     -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh
@@ -129,7 +129,7 @@ V1)
     -e SPRING_DATASOURCE_URL=$db_url \
     -e SPRING_DATASOURCE_USERNAME=$db_username \
     -e SPRING_DATASOURCE_PASSWORD=$db_password \
-    -e REDIS_HOST=$redis_url \
+    -e REDIS_HOST=$valkey_url \
     -v tbmq-data:/data \
     --rm \
     thingsboard/tbmq:$new_version upgrade-tbmq.sh

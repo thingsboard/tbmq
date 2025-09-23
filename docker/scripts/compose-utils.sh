@@ -15,19 +15,19 @@
 # limitations under the License.
 #
 
-readonly REDIS_VOLUME="redis-data"
-readonly REDIS_CLUSTER_VOLUMES=(
-  "redis-cluster-data-0"
-  "redis-cluster-data-1"
-  "redis-cluster-data-2"
-  "redis-cluster-data-3"
-  "redis-cluster-data-4"
-  "redis-cluster-data-5"
+readonly VALKEY_VOLUME="valkey-data"
+readonly VALKEY_CLUSTER_VOLUMES=(
+  "valkey-cluster-data-0"
+  "valkey-cluster-data-1"
+  "valkey-cluster-data-2"
+  "valkey-cluster-data-3"
+  "valkey-cluster-data-4"
+  "valkey-cluster-data-5"
 )
-readonly REDIS_SENTINEL_VOLUMES=(
-  "redis-sentinel-data-master"
-  "redis-sentinel-data-slave"
-  "redis-sentinel-data-sentinel"
+readonly VALKEY_SENTINEL_VOLUMES=(
+  "valkey-sentinel-data-primary"
+  "valkey-sentinel-data-slave"
+  "valkey-sentinel-data-sentinel"
 )
 readonly MY_VOLUMES=(
   "tbmq-postgres-data"
@@ -46,19 +46,19 @@ readonly MY_VOLUMES=(
 function additionalComposeCacheArgs() {
   source .env
   CACHE_COMPOSE_ARGS=""
-  CACHE="${CACHE:-redis}"
+  CACHE="${CACHE:-valkey}"
   case $CACHE in
-  redis)
-    CACHE_COMPOSE_ARGS="-f cache/docker-compose.redis.yml"
+  valkey)
+    CACHE_COMPOSE_ARGS="-f cache/docker-compose.valkey.yml"
     ;;
-  redis-cluster)
-    CACHE_COMPOSE_ARGS="-f cache/docker-compose.redis-cluster.yml"
+  valkey-cluster)
+    CACHE_COMPOSE_ARGS="-f cache/docker-compose.valkey-cluster.yml"
     ;;
-  redis-sentinel)
-    CACHE_COMPOSE_ARGS="-f cache/docker-compose.redis-sentinel.yml"
+  valkey-sentinel)
+    CACHE_COMPOSE_ARGS="-f cache/docker-compose.valkey-sentinel.yml"
     ;;
   *)
-    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'valkey' or 'valkey-cluster' or 'valkey-sentinel'." >&2
     exit 1
     ;;
   esac
@@ -69,19 +69,19 @@ function additionalStartupServices() {
   source .env
   ADDITIONAL_STARTUP_SERVICES="postgres"
 
-  CACHE="${CACHE:-redis}"
+  CACHE="${CACHE:-valkey}"
   case $CACHE in
-  redis)
-    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES redis"
+  valkey)
+    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES valkey"
     ;;
-  redis-cluster)
-    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES redis-node-0 redis-node-1 redis-node-2 redis-node-3 redis-node-4 redis-node-5"
+  valkey-cluster)
+    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES valkey-node-0 valkey-node-1 valkey-node-2 valkey-node-3 valkey-node-4 valkey-node-5"
     ;;
-  redis-sentinel)
-    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES redis-master redis-slave redis-sentinel"
+  valkey-sentinel)
+    ADDITIONAL_STARTUP_SERVICES="$ADDITIONAL_STARTUP_SERVICES valkey-primary valkey-slave valkey-sentinel"
     ;;
   *)
-    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'valkey' or 'valkey-cluster' or 'valkey-sentinel'." >&2
     exit 1
     ;;
   esac
@@ -103,48 +103,48 @@ function checkVolumes() {
 
   if [[ "$1" == "--create" ]]; then
     case $CACHE in
-    redis)
-      if ! volume_exists $REDIS_VOLUME; then
-        docker volume create $REDIS_VOLUME
+    valkey)
+      if ! volume_exists $VALKEY_VOLUME; then
+        docker volume create $VALKEY_VOLUME
       fi
       ;;
-    redis-cluster)
-      for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+    valkey-cluster)
+      for volume in "${VALKEY_CLUSTER_VOLUMES[@]}"; do
         if ! volume_exists $volume; then
           docker volume create $volume
         fi
       done
       ;;
-    redis-sentinel)
-      for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+    valkey-sentinel)
+      for volume in "${VALKEY_SENTINEL_VOLUMES[@]}"; do
         if ! volume_exists $volume; then
           docker volume create $volume
         fi
       done
       ;;
     *)
-      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'valkey' or 'valkey-cluster' or 'valkey-sentinel'." >&2
       exit 1
       ;;
     esac
   else
     case $CACHE in
-    redis)
-      if ! volume_exists $REDIS_VOLUME; then
-        echo "Volume $REDIS_VOLUME is absent." >&2
+    valkey)
+      if ! volume_exists $VALKEY_VOLUME; then
+        echo "Volume $VALKEY_VOLUME is absent." >&2
         exit 1
       fi
       ;;
-    redis-cluster)
-      for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+    valkey-cluster)
+      for volume in "${VALKEY_CLUSTER_VOLUMES[@]}"; do
         if ! volume_exists $volume; then
           echo "Volume $volume is absent." >&2
           exit 1
         fi
       done
       ;;
-    redis-sentinel)
-      for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+    valkey-sentinel)
+      for volume in "${VALKEY_SENTINEL_VOLUMES[@]}"; do
         if ! volume_exists $volume; then
           echo "Volume $volume is absent." >&2
           exit 1
@@ -152,7 +152,7 @@ function checkVolumes() {
       done
       ;;
     *)
-      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+      echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'valkey' or 'valkey-cluster' or 'valkey-sentinel'." >&2
       exit 1
       ;;
     esac
@@ -191,21 +191,21 @@ function deleteVolumes() {
   }
 
   case $CACHE in
-  redis)
-    delete_if_exists "$REDIS_VOLUME"
+  valkey)
+    delete_if_exists "$VALKEY_VOLUME"
     ;;
-  redis-cluster)
-    for volume in "${REDIS_CLUSTER_VOLUMES[@]}"; do
+  valkey-cluster)
+    for volume in "${VALKEY_CLUSTER_VOLUMES[@]}"; do
       delete_if_exists "$volume"
     done
     ;;
-  redis-sentinel)
-    for volume in "${REDIS_SENTINEL_VOLUMES[@]}"; do
+  valkey-sentinel)
+    for volume in "${VALKEY_SENTINEL_VOLUMES[@]}"; do
       delete_if_exists "$volume"
     done
     ;;
   *)
-    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'redis' or 'redis-cluster' or 'redis-sentinel'." >&2
+    echo "Unknown CACHE value specified in the .env file: '${CACHE}'. Should be either 'valkey' or 'valkey-cluster' or 'valkey-sentinel'." >&2
     exit 1
     ;;
   esac
@@ -246,4 +246,51 @@ function composeVersion() {
   echo $COMPOSE_VERSION
 
   if $FLAG_SET; then set -e; fi
+}
+
+# Wait until valkey-node-5 replies with PONG (only when CACHE=valkey-cluster)
+function waitValkeyNodesAreRunning() {
+  [ -f .env ] && source .env
+
+  local cache="${CACHE:-valkey}"
+  [ "$cache" = "valkey-cluster" ] || return 0
+
+  [ -f cache-valkey-cluster.env ] && source cache-valkey-cluster.env
+
+  echo "Waiting for valkey-node-5 to respond with PONG"
+  for i in $(seq 1 30); do
+    if docker exec -e REDISCLI_AUTH="$REDIS_PASSWORD" valkey-node-5 sh -c "valkey-cli -h 127.0.0.1 -p 6379 ping | grep -q '^PONG$'"; then
+      echo " ... PONG"
+      return 0
+    fi
+    echo "waiting 1s"
+    sleep 1
+  done
+  echo
+  echo "ERROR: valkey-node-5 did not respond with PONG within 30s." >&2
+  return 1
+}
+
+createValkeyClusterIfNeeded() {
+  [ -f .env ] && source .env
+
+  local cache="${CACHE:-valkey}"
+  [ "$cache" = "valkey-cluster" ] || return 0
+
+  local nodes="${VALKEY_CLUSTER_NODES:-valkey-node-0:6379 valkey-node-1:6379 valkey-node-2:6379 valkey-node-3:6379 valkey-node-4:6379 valkey-node-5:6379}"
+  local replicas="${VALKEY_CLUSTER_REPLICAS:-1}"
+
+  if docker exec -e REDISCLI_AUTH="$REDIS_PASSWORD" valkey-node-5 sh -c "valkey-cli -h 127.0.0.1 -p 6379 cluster info | grep -q 'cluster_state:ok'"; then
+    echo "Valkey cluster already formed. Skipping creation."
+    return 0
+  fi
+
+  echo "Creating Valkey cluster (replicas=${replicas})..."
+  if docker exec -e REDISCLI_AUTH="$REDIS_PASSWORD" valkey-node-5 sh -c "valkey-cli --cluster create ${nodes} --cluster-replicas ${replicas} --cluster-yes"; then
+    echo "Cluster created."
+    return 0
+  else
+    echo "Cluster creation failed." >&2
+    return 1
+  fi
 }

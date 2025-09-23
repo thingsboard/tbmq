@@ -15,31 +15,28 @@
 #
 
 services:
-  # Redis standalone
-  redis:
+  # Valkey standalone
+  valkey:
     restart: always
-    container_name: "${REDIS_NAME}"
-    image: bitnamilegacy/redis:7.2.5
-    environment:
-      # ALLOW_EMPTY_PASSWORD is recommended only for development.
-      ALLOW_EMPTY_PASSWORD: "yes"
+    container_name: "${VALKEY_NAME}"
+    image: valkey/valkey:8.0
     ports:
       - "6379:6379"
     volumes:
-      - redis-data:/bitnami/redis/data
+      - valkey-data:/data
 
-  # TBMQ setup to use redis-standalone
+  # TBMQ setup to use valkey-standalone
   tbmq1:
     env_file:
-      - cache-redis.env
+      - cache-valkey.env
     depends_on:
-      - redis
+      - valkey
   tbmq2:
     env_file:
-      - cache-redis.env
+      - cache-valkey.env
     depends_on:
-      - redis
+      - valkey
 
 volumes:
-  redis-data:
+  valkey-data:
     external: true

@@ -28,31 +28,30 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class AbstractRedisContainer {
 
-    @ClassRule
-    public static GenericContainer<?> redis = new GenericContainer<>("redis:7.2.5")
+    @ClassRule(order = 0)
+    public static GenericContainer<?> valkey = new GenericContainer<>("valkey/valkey:8.0")
             .withExposedPorts(6379)
             .withLogConsumer(x -> log.warn("{}", x.getUtf8StringWithoutLineEnding()))
-            .withEnv("REDIS_PASSWORD", "password")
-            .withCommand("redis-server", "--requirepass", "password")
+            .withCommand("valkey-server", "--requirepass", "password")
             .waitingFor(Wait.forListeningPort()).withStartupTimeout(Duration.ofSeconds(10));
 
-    @ClassRule
+    @ClassRule(order = 1)
     public static ExternalResource resource = new ExternalResource() {
         @Override
         protected void before() throws Throwable {
-            redis.start();
+            valkey.start();
 
             Thread.sleep(TimeUnit.SECONDS.toMillis(5));
 
             System.setProperty("redis.connection.type", "standalone");
-            System.setProperty("redis.standalone.host", redis.getHost());
-            System.setProperty("redis.standalone.port", String.valueOf(redis.getMappedPort(6379)));
+            System.setProperty("redis.standalone.host", valkey.getHost());
+            System.setProperty("redis.standalone.port", String.valueOf(valkey.getMappedPort(6379)));
             System.setProperty("redis.password", "password");
         }
 
         @Override
         protected void after() {
-            redis.stop();
+            valkey.stop();
             List.of("redis.connection.type", "redis.standalone.host", "redis.standalone.port", "redis.password")
                     .forEach(System.getProperties()::remove);
         }

@@ -1,0 +1,79 @@
+#
+# Copyright © 2016-2025 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+services:
+  # Valkey sentinel
+  valkey-primary:
+    container_name: "${VALKEY_PRIMARY_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-sentinel-data-primary:/data
+    command: valkey-server --requirepass thingsboard
+
+  valkey-slave:
+    container_name: "${VALKEY_SLAVE_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-sentinel-data-slave:/data
+    command: valkey-server --replicaof valkey-primary 6379 --masterauth thingsboard --requirepass thingsboard
+    depends_on:
+      - valkey-primary
+
+  valkey-sentinel:
+    container_name: "${VALKEY_SENTINEL_NAME}"
+    image: valkey/valkey:8.0
+    volumes:
+      - valkey-sentinel-data-sentinel:/data
+    command:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        cat >/data/sentinel.conf <<'EOF'
+        port 26379
+        dir /data
+        sentinel monitor myprimary valkey-primary 6379 1
+        sentinel auth-pass myprimary thingsboard
+        requirepass sentinel
+        sentinel down-after-milliseconds myprimary 5000
+        sentinel failover-timeout myprimary 60000
+        sentinel parallel-syncs myprimary 1
+        sentinel resolve-hostnames yes
+        EOF
+        exec valkey-sentinel /data/sentinel.conf
+    depends_on:
+      - valkey-primary
+      - valkey-slave
+
+  # TBMQ setup to use valkey-sentinel
+  tbmq1:
+    env_file:
+      - cache-valkey-sentinel.env
+    depends_on:
+      - valkey-sentinel
+  tbmq2:
+    env_file:
+      - cache-valkey-sentinel.env
+    depends_on:
+      - valkey-sentinel
+
+volumes:
+  valkey-sentinel-data-primary:
+    external: true
+  valkey-sentinel-data-slave:
+    external: true
+  valkey-sentinel-data-sentinel:
+    external: true

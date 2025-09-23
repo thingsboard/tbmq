@@ -48,6 +48,9 @@ if [ ! -z "${ADDITIONAL_STARTUP_SERVICES// }" ]; then
     esac
 fi
 
+waitValkeyNodesAreRunning || exit 1
+createValkeyClusterIfNeeded || exit 1
+
 COMPOSE_ARGS="\
       --env-file ./.env \
       -f docker-compose.yml ${ADDITIONAL_CACHE_ARGS} \

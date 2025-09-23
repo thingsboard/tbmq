@@ -78,7 +78,7 @@ spec:
             - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
               value: "15000"
             - name: REDIS_HOST
-              value: "tb-redis"
+              value: "tb-valkey"
           envFrom:
             - configMapRef:
                 name: tb-broker-db-config

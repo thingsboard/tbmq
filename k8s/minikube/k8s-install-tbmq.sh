@@ -24,10 +24,10 @@ kubectl apply -f postgres.yml
 kubectl rollout status deployment/postgres
 
 # install Kafka
-helm upgrade --install kafka -f kafka/values-kafka.yml oci://registry-1.docker.io/bitnamicharts/kafka --version 25.3.3
+helm upgrade --install kafka -f kafka/values-kafka.yml oci://registry-1.docker.io/bitnamicharts/kafka --version 29.3.4
 
-# install Redis
-kubectl apply -f redis.yml
+# install Valkey
+kubectl apply -f valkey.yml
 
 # install TBMQ
 kubectl apply -f tb-broker-configmap.yml
