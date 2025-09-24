@@ -30,12 +30,13 @@ public class MqttWssServerContext {
     @Value("${listener.wss.netty.max_payload_size}")
     private int maxPayloadSize;
 
+    @Value("${listener.wss.proxy_enabled:}")
+    private Boolean listenerProxyProtocolEnabled;
+
     @Value("${listener.wss.netty.sub_protocols}")
     private String subprotocols;
 
     @Value("${listener.wss.config.enabled_cipher_suites}")
     private String[] enabledCipherSuites;
 
-    @Value("${listener.wss.proxy_enabled:}")
-    private Boolean listenerProxyProtocolEnabled;
 }

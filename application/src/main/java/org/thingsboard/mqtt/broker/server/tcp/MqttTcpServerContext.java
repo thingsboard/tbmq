@@ -28,4 +28,5 @@ public class MqttTcpServerContext {
 
     @Value("${listener.tcp.proxy_enabled:}")
     private Boolean listenerProxyProtocolEnabled;
+
 }

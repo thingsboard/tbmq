@@ -23,13 +23,13 @@ import org.springframework.stereotype.Component;
 @Getter
 public class MqttWsServerContext {
 
-    @Value("${listener.ws.netty.sub_protocols}")
-    private String subprotocols;
-
     @Value("${listener.ws.netty.max_payload_size}")
     private int maxPayloadSize;
 
     @Value("${listener.ws.proxy_enabled:}")
     private Boolean listenerProxyProtocolEnabled;
+
+    @Value("${listener.ws.netty.sub_protocols}")
+    private String subprotocols;
 
 }

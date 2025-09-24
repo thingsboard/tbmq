@@ -35,4 +35,5 @@ public class MqttSslServerContext {
 
     @Value("${listener.ssl.config.enabled_cipher_suites}")
     private String[] enabledCipherSuites;
+
 }
