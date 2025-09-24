@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardErrorCode;
 import org.thingsboard.mqtt.broker.common.data.exception.ThingsboardException;
 import org.thingsboard.mqtt.broker.common.data.page.PageData;
@@ -35,6 +36,8 @@ import org.thingsboard.mqtt.broker.common.data.page.PageLink;
 import org.thingsboard.mqtt.broker.dao.client.application.ApplicationSharedSubscriptionService;
 import org.thingsboard.mqtt.broker.dao.topic.TopicValidationService;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.topic.ApplicationTopicService;
+
+import java.util.function.Consumer;
 
 @RestController
 @RequiredArgsConstructor
@@ -106,4 +109,39 @@ public class AppSharedSubscriptionController extends BaseController {
             applicationTopicService.deleteSharedTopic(sharedSubscription);
         }
     }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @PostMapping(value = "/createTopics")
+    public void createKafkaTopicsForAppSharedSubscriptions() {
+        processAppSharedSubsRequest(applicationTopicService::createSharedTopic, "create");
+    }
+
+    @PreAuthorize("hasAuthority('SYS_ADMIN')")
+    @DeleteMapping(value = "/deleteTopics")
+    public void deleteKafkaTopicsForAppSharedSubscriptions() {
+        if (!enableTopicDeletion) {
+            log.debug("Cannot delete topics due to TB_KAFKA_ENABLE_TOPIC_DELETION is set to false");
+            return;
+        }
+        processAppSharedSubsRequest(applicationTopicService::deleteSharedTopic, "delete");
+    }
+
+    private void processAppSharedSubsRequest(Consumer<ApplicationSharedSubscription> consumer, String request) {
+        PageLink pageLink = new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE);
+        PageData<ApplicationSharedSubscription> pageData;
+        do {
+            pageData = applicationSharedSubscriptionService.getSharedSubscriptions(pageLink);
+            pageData.getData().forEach(sharedSubscription -> {
+                try {
+                    consumer.accept(sharedSubscription);
+                } catch (Exception e) {
+                    log.error("Failed to {} kafka topic for shared subscription {}", request, sharedSubscription, e);
+                }
+            });
+            if (pageData.hasNext()) {
+                pageLink = pageLink.nextPageLink();
+            }
+        } while (pageData.hasNext());
+    }
+
 }

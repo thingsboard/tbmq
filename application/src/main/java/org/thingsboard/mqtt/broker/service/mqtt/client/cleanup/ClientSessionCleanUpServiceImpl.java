@@ -51,9 +51,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Override
     public void removeClientSession(String clientId, UUID sessionId) throws ThingsboardException {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Removing ClientSession.", clientId);
-        }
+        log.trace("[{}] Removing ClientSession.", clientId);
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || differentSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
@@ -61,17 +59,13 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
         if (clientSessionInfo.isConnected()) {
             throw new ThingsboardException("Client is currently connected", ThingsboardErrorCode.GENERAL);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Cleaning up client session.", clientId);
-        }
+        log.debug("[{}] Cleaning up client session.", clientId);
         clientSessionEventService.requestSessionCleanup(ClientSessionInfoFactory.clientSessionInfoToSessionInfo(clientSessionInfo));
     }
 
     @Override
     public void disconnectClientSession(String clientId, UUID sessionId) throws ThingsboardException {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
-        }
+        log.trace("[{}][{}] Disconnecting ClientSession.", clientId, sessionId);
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || differentSession(sessionId, clientSessionInfo)) {
             throw new ThingsboardException("No such client session", ThingsboardErrorCode.ITEM_NOT_FOUND);
@@ -85,9 +79,7 @@ public class ClientSessionCleanUpServiceImpl implements ClientSessionCleanUpServ
 
     @Override
     public void disconnectClientSession(String clientId) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Disconnecting ClientSession", clientId);
-        }
+        log.trace("[{}] Disconnecting ClientSession", clientId);
         ClientSessionInfo clientSessionInfo = clientSessionCache.getClientSessionInfo(clientId);
         if (clientSessionInfo == null || !clientSessionInfo.isConnected()) {
             return;

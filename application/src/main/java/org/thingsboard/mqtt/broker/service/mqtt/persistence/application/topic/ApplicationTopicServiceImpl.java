@@ -46,9 +46,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
     @Override
     public String createTopic(String clientId) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Creating APPLICATION topic", clientId);
-        }
+        log.debug("[{}] Creating APPLICATION topic", clientId);
         String clientTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         queueAdmin.createTopic(clientTopic, applicationPersistenceMsgQueueFactory.getTopicConfigs());
         return clientTopic;
@@ -57,9 +55,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
     @Override
     public void createSharedTopic(ApplicationSharedSubscription subscription) {
         String topic = subscription.getTopicFilter();
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Creating shared APPLICATION topic", topic);
-        }
+        log.debug("[{}] Creating shared APPLICATION topic", topic);
 
         final var topicToCreate = appClientHelperService.getSharedAppTopic(topic, validateSharedTopicFilter);
 
@@ -70,9 +66,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
 
     @Override
     public void deleteTopic(String clientId, BasicCallback callback) {
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Deleting APPLICATION topic", clientId);
-        }
+        log.debug("[{}] Deleting APPLICATION topic", clientId);
         String clientTopic = appClientHelperService.getAppTopic(clientId, validateClientId);
         queueAdmin.deleteTopic(clientTopic, callback);
         String consumerGroup = appClientHelperService.getAppConsumerGroup(clientId);
@@ -82,9 +76,7 @@ public class ApplicationTopicServiceImpl implements ApplicationTopicService {
     @Override
     public void deleteSharedTopic(ApplicationSharedSubscription subscription) {
         String topic = subscription.getTopicFilter();
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Deleting shared APPLICATION topic", topic);
-        }
+        log.debug("[{}] Deleting shared APPLICATION topic", topic);
 
         final var topicToDelete = appClientHelperService.getSharedAppTopic(topic, validateSharedTopicFilter);
 
