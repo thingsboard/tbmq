@@ -58,7 +58,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: TB_KAFKA_SERVERS
-              value: "kafka:9092"
+              value: "tb-kafka:9092"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT

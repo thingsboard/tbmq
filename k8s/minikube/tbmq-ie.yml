@@ -68,7 +68,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: TB_KAFKA_SERVERS
-              value: "kafka:9092"
+              value: "tb-kafka:9092"
             - name: TB_SERVICE_INTEGRATIONS_SUPPORTED
               value: "ALL"
             - name: TB_SERVICE_INTEGRATIONS_EXCLUDED
