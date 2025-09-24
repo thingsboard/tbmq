@@ -29,4 +29,10 @@ public class MqttSslServerContext {
 
     @Value("${listener.ssl.netty.max_payload_size}")
     private int maxPayloadSize;
+
+    @Value("${listener.ssl.proxy_enabled:}")
+    private Boolean listenerProxyProtocolEnabled;
+
+    @Value("${listener.ssl.config.enabled_cipher_suites}")
+    private String[] enabledCipherSuites;
 }

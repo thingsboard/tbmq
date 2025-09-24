@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server.tcp;
+package org.thingsboard.mqtt.broker.server.ws;
 
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,11 +21,15 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Getter
-public class MqttTcpServerContext {
+public class MqttWsServerContext {
 
-    @Value("${listener.tcp.netty.max_payload_size}")
+    @Value("${listener.ws.netty.sub_protocols}")
+    private String subprotocols;
+
+    @Value("${listener.ws.netty.max_payload_size}")
     private int maxPayloadSize;
 
-    @Value("${listener.tcp.proxy_enabled:}")
+    @Value("${listener.ws.proxy_enabled:}")
     private Boolean listenerProxyProtocolEnabled;
+
 }

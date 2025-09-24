@@ -19,7 +19,6 @@ import io.netty.channel.socket.SocketChannel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.AbstractMqttWsChannelInitializer;
@@ -31,13 +30,11 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 @Getter
 public class MqttWsChannelInitializer extends AbstractMqttWsChannelInitializer {
 
-    @Value("${listener.ws.netty.sub_protocols}")
-    private String subprotocols;
-    @Value("${listener.ws.netty.max_payload_size}")
-    private int maxPayloadSize;
+    private final MqttWsServerContext context;
 
-    public MqttWsChannelInitializer(MqttHandlerFactory handlerFactory) {
+    public MqttWsChannelInitializer(MqttHandlerFactory handlerFactory, MqttWsServerContext context) {
         super(handlerFactory);
+        this.context = context;
     }
 
     @Override
@@ -46,7 +43,22 @@ public class MqttWsChannelInitializer extends AbstractMqttWsChannelInitializer {
     }
 
     @Override
+    public int getMaxPayloadSize() {
+        return context.getMaxPayloadSize();
+    }
+
+    @Override
     public String getChannelInitializerName() {
         return BrokerConstants.WS;
+    }
+
+    @Override
+    public Boolean isListenerProxyProtocolEnabled() {
+        return context.getListenerProxyProtocolEnabled();
+    }
+
+    @Override
+    protected String getSubprotocols() {
+        return context.getSubprotocols();
     }
 }

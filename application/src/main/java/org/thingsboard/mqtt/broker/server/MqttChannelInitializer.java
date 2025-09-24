@@ -29,4 +29,5 @@ public interface MqttChannelInitializer {
         return null;
     }
 
+    Boolean isListenerProxyProtocolEnabled();
 }
