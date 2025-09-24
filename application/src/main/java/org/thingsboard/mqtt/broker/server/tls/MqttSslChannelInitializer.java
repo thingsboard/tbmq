@@ -20,7 +20,6 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.AbstractMqttChannelInitializer;
@@ -33,9 +32,6 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 public class MqttSslChannelInitializer extends AbstractMqttChannelInitializer {
 
     private final MqttSslServerContext context;
-
-    @Value("${listener.ssl.config.enabled_cipher_suites}")
-    private String[] enabledCipherSuites;
 
     public MqttSslChannelInitializer(MqttHandlerFactory handlerFactory, MqttSslServerContext context) {
         super(handlerFactory);
@@ -59,7 +55,11 @@ public class MqttSslChannelInitializer extends AbstractMqttChannelInitializer {
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getSslHandlerProvider().getSslHandler(enabledCipherSuites, handlerFactory.getClientAuthType());
+        return context.getSslHandlerProvider().getSslHandler(context.getEnabledCipherSuites(), handlerFactory.getClientAuthType());
     }
 
+    @Override
+    public Boolean isListenerProxyProtocolEnabled() {
+        return context.getListenerProxyProtocolEnabled();
+    }
 }

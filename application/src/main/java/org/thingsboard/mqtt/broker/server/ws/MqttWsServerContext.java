@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.thingsboard.mqtt.broker.server;
+package org.thingsboard.mqtt.broker.server.ws;
 
-import io.netty.handler.ssl.SslHandler;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-public interface MqttChannelInitializer {
+@Component
+@Getter
+public class MqttWsServerContext {
 
-    int getMaxPayloadSize();
+    @Value("${listener.ws.netty.max_payload_size}")
+    private int maxPayloadSize;
 
-    int getMaxClientIdLength();
+    @Value("${listener.ws.proxy_enabled:}")
+    private Boolean listenerProxyProtocolEnabled;
 
-    String getChannelInitializerName();
+    @Value("${listener.ws.netty.sub_protocols}")
+    private String subprotocols;
 
-    default SslHandler getSslHandler() {
-        return null;
-    }
-
-    Boolean isListenerProxyProtocolEnabled();
 }
