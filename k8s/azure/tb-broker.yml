@@ -86,8 +86,15 @@ spec:
               value: "true"
             - name: SECURITY_MQTT_SSL_ENABLED
               value: "true"
-            - name: TB_KAFKA_SERVERS
-              value: "kafka:9092"
+
+          # Uncomment the following lines to connect to Apache Kafka
+          #            - name: TB_KAFKA_SERVERS
+          #              value: "tb-kafka:9092"
+
+          # Uncomment the following lines to connect to Strimzi
+          #            - name: TB_KAFKA_SERVERS
+          #              value: "tbmq-kafka-bootstrap:9092"
+
           #            Uncomment the following lines to enable two-way MQTTS
           #            - name: LISTENER_SSL_ENABLED
           #              value: "true"
