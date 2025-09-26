@@ -17,23 +17,23 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tb-broker
+  name: tbmq
   namespace: thingsboard-mqtt-broker
 spec:
-  serviceName: tb-broker
+  serviceName: tbmq
   replicas: 2
   selector:
     matchLabels:
-      app: tb-broker
+      app: tbmq
   template:
     metadata:
       labels:
-        app: tb-broker
+        app: tbmq
     spec:
       volumes:
-        - name: tb-broker-config
+        - name: tbmq-config
           configMap:
-            name: tb-broker-config
+            name: tbmq-config
             items:
               - key: conf
                 path: thingsboard-mqtt-broker.conf
@@ -58,7 +58,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: TB_KAFKA_SERVERS
-              value: "tb-kafka:9092"
+              value: "tbmq-kafka:9092"
             - name: HTTP_BIND_PORT
               value: "8083"
             - name: LISTENER_TCP_BIND_PORT
@@ -78,13 +78,13 @@ spec:
             - name: TB_APP_PERSISTED_MSG_PACK_PROCESSING_TIMEOUT
               value: "15000"
             - name: REDIS_HOST
-              value: "tb-valkey"
+              value: "tbmq-valkey"
           envFrom:
             - configMapRef:
-                name: tb-broker-db-config
+                name: tbmq-db-config
           volumeMounts:
             - mountPath: /config
-              name: tb-broker-config
+              name: tbmq-config
           readinessProbe:
             tcpSocket:
               port: 1883
@@ -106,12 +106,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-broker
+  name: tbmq
   namespace: thingsboard-mqtt-broker
 spec:
   type: NodePort
   selector:
-    app: tb-broker
+    app: tbmq
   ports:
     - port: 8083
       targetPort: 8083
