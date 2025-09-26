@@ -17,10 +17,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tb-broker-cache-config
+  name: tbmq-cache-config
   namespace: thingsboard-mqtt-broker
   labels:
-    name: tb-broker-cache-config
+    name: tbmq-cache-config
 data:
   CACHE_STATS_ENABLED: "true"
   CACHE_STATS_INTERVAL_SEC: "60"
