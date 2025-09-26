@@ -16,7 +16,7 @@
 
 set -e
 
-docker run --rm -v tbmq-config:/config -v ./tb-mqtt-broker/conf:/src-config busybox sh -c "cp /src-config/* /config"
+docker run --rm -v tbmq-config:/config -v ./tbmq/conf:/src-config busybox sh -c "cp /src-config/* /config"
 
 docker run --rm -v tbmq-haproxy-config:/config -v ./haproxy/config:/src-config busybox sh -c "cp /src-config/haproxy.cfg /config"
 

@@ -21,9 +21,9 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   volumes:
-    - name: tb-broker-config
+    - name: tbmq-config
       configMap:
-        name: tb-broker-config
+        name: tbmq-config
         items:
           - key: conf
             path: thingsboard-mqtt-broker.conf
@@ -35,7 +35,7 @@ spec:
       image: thingsboard/tbmq-node:2.2.0
       env:
         - name: REDIS_HOST
-          value: "tb-valkey"
+          value: "tbmq-valkey"
         - name: SECURITY_MQTT_BASIC_ENABLED
           value: "true"
         - name: SECURITY_MQTT_SSL_ENABLED
@@ -44,9 +44,9 @@ spec:
           value: "false"
       envFrom:
         - configMapRef:
-            name: tb-broker-db-config
+            name: tbmq-db-config
       volumeMounts:
         - mountPath: /config
-          name: tb-broker-config
+          name: tbmq-config
       command: [ 'sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;' ]
   restartPolicy: Never

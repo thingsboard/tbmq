@@ -17,18 +17,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tb-kafka
+  name: tbmq-kafka
   namespace: thingsboard-mqtt-broker
 spec:
-  serviceName: "tb-kafka"
+  serviceName: "tbmq-kafka"
   replicas: 1
   selector:
     matchLabels:
-      app: tb-kafka
+      app: tbmq-kafka
   template:
     metadata:
       labels:
-        app: tb-kafka
+        app: tbmq-kafka
     spec:
       volumes:
         - name: kafka-config
@@ -79,7 +79,7 @@ spec:
             - name: KAFKA_INTER_BROKER_LISTENER_NAME
               value: "PLAINTEXT"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: "0@tb-kafka-0.tb-kafka.thingsboard-mqtt-broker.svc.cluster.local:9093"
+              value: "0@tbmq-kafka-0.tbmq-kafka.thingsboard-mqtt-broker.svc.cluster.local:9093"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
             - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
@@ -131,12 +131,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-kafka
+  name: tbmq-kafka
   namespace: thingsboard-mqtt-broker
 spec:
   type: ClusterIP
   selector:
-    app: tb-kafka
+    app: tbmq-kafka
   ports:
     - port: 9092
       name: client

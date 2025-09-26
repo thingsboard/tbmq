@@ -28,7 +28,7 @@ spec:
         - -ec
         - |
           echo "$(date) Restore started!"
-          pg_restore -c -v -h tb-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump || true
+          pg_restore -c -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump || true
           echo "$(date) Restore completed!"
       env:
         - name: PGPASSWORD

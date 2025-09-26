@@ -17,7 +17,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-broker-mqtt-loadbalancer
+  name: tbmq-mqtt-loadbalancer
   namespace: thingsboard-mqtt-broker
   annotations:
     service.beta.kubernetes.io/aws-load-balancer-type: "external"
@@ -30,7 +30,7 @@ spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
   selector:
-    app: tb-broker
+    app: tbmq
   ports:
     - port: 1883
       targetPort: 1883

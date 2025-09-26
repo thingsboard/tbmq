@@ -17,10 +17,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tb-broker-cache-config
+  name: tbmq-cache-config
   namespace: thingsboard-mqtt-broker
   labels:
-    name: tb-broker-cache-config
+    name: tbmq-cache-config
 data:
   CACHE_STATS_ENABLED: "true"
   CACHE_STATS_INTERVAL_SEC: "60"
@@ -33,7 +33,7 @@ data:
 
   # Valkey cluster
   REDIS_CONNECTION_TYPE: "cluster"
-  REDIS_NODES: "COMMA_SEPARATED_LIST_OF_NODES"
+  REDIS_NODES: "YOUR_VALKEY_CLUSTER_ENDPOINT_URL"
 
   # Recommended to enable in Kubernetes environments in case of Valkey cluster setup to handle dynamic IP changes and nodes failover
   #REDIS_LETTUCE_CLUSTER_TOPOLOGY_REFRESH_ENABLED: "true"

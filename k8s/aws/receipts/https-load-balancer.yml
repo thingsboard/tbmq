@@ -17,7 +17,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tb-broker-https-loadbalancer
+  name: tbmq-https-loadbalancer
   namespace: thingsboard-mqtt-broker
   annotations:
     kubernetes.io/ingress.class: alb
@@ -36,6 +36,6 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: tb-broker
+                name: tbmq
                 port:
                   name: http

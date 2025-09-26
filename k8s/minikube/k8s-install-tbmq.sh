@@ -16,24 +16,24 @@
 #
 
 # configure namespace
-kubectl apply -f tb-broker-namespace.yml
+kubectl apply -f tbmq-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
 # install PostgreSQL
 kubectl apply -f postgres.yml
 
 # install Kafka
-kubectl apply -f tb-kafka.yml
+kubectl apply -f kafka.yml
 
 # install Valkey
 kubectl apply -f valkey.yml
 
 kubectl rollout status deployment/postgres
-kubectl rollout status statefulset/tb-kafka
-kubectl rollout status deployment/tb-valkey
+kubectl rollout status statefulset/tbmq-kafka
+kubectl rollout status deployment/tbmq-valkey
 
 # install TBMQ
-kubectl apply -f tb-broker-configmap.yml
+kubectl apply -f tbmq-configmap.yml
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
 kubectl exec tb-db-setup -- sh -c 'export INSTALL_TB=true; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'

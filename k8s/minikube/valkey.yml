@@ -17,16 +17,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tb-valkey
+  name: tbmq-valkey
   namespace: thingsboard-mqtt-broker
 spec:
   selector:
     matchLabels:
-      app: tb-valkey
+      app: tbmq-valkey
   template:
     metadata:
       labels:
-        app: tb-valkey
+        app: tbmq-valkey
     spec:
       containers:
         - name: server
@@ -53,12 +53,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-valkey
+  name: tbmq-valkey
   namespace: thingsboard-mqtt-broker
 spec:
   type: ClusterIP
   selector:
-    app: tb-valkey
+    app: tbmq-valkey
   ports:
-    - name: tb-valkey-port
+    - name: tbmq-valkey-port
       port: 6379

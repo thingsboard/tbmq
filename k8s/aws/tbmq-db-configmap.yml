@@ -17,12 +17,12 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tb-broker-db-config
+  name: tbmq-db-config
   namespace: thingsboard-mqtt-broker
   labels:
-    name: tb-broker-db-config
+    name: tbmq-db-config
 data:
   SPRING_DRIVER_CLASS_NAME: "org.postgresql.Driver"
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://YOUR_DB_IP_ADDRESS:5432/YOUR_DB_NAME"
-  SPRING_DATASOURCE_USERNAME: "postgres"
-  SPRING_DATASOURCE_PASSWORD: "YOUR_DB_PASSWORD"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://RDS_URL_HERE:5432/thingsboard_mqtt_broker"
+  SPRING_DATASOURCE_USERNAME: "YOUR_RDS_POSTGRES_USER"
+  SPRING_DATASOURCE_PASSWORD: "YOUR_RDS_POSTGRES_PASSWORD"

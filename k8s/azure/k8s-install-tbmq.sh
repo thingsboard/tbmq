@@ -16,13 +16,13 @@
 #
 
 # configure namespace
-kubectl apply -f tb-broker-namespace.yml
+kubectl apply -f tbmq-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
 # install TBMQ
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker-db-configmap.yml
-kubectl apply -f tb-broker-cache-configmap.yml
+kubectl apply -f tbmq-configmap.yml
+kubectl apply -f tbmq-db-configmap.yml
+kubectl apply -f tbmq-cache-configmap.yml
 
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&

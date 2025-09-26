@@ -11,7 +11,7 @@ write operations to the database during the process.
 #### Command to Scale Down TBMQ StatefulSet:
 
 ```bash
-kubectl scale statefulset tb-broker --replicas=0
+kubectl scale statefulset tbmq --replicas=0
 ```
 
 This command will stop the TBMQ StatefulSet by scaling it down to 0 replicas, ensuring no traffic hits the database
@@ -38,7 +38,7 @@ spec:
         - -ec
         - |
           echo "$(date) Backup started!"
-          pg_dump -Fc -v -h tb-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
+           pg_dump -Fc -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
           echo "$(date) Backup completed!"
       env:
         - name: PGPASSWORD
@@ -107,7 +107,7 @@ spec:
         - -ec
         - |
           echo "$(date) Restore started!"
-          pg_restore -c -v -h tb-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump || true
+           pg_restore -c -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker /backups/tbmq_backup.dump || true
           echo "$(date) Restore completed!"
       env:
         - name: PGPASSWORD
@@ -165,7 +165,7 @@ Once the restore operation is complete, start the TBMQ StatefulSet by scaling it
 #### Command to Scale Up TBMQ StatefulSet:
 
 ```bash
-kubectl scale statefulset tb-broker --replicas=2
+kubectl scale statefulset tbmq --replicas=2
 ```
 
 This will bring the TBMQ StatefulSet back online and resume normal operations.

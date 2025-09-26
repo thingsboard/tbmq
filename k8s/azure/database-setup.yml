@@ -21,9 +21,9 @@ metadata:
   namespace: thingsboard-mqtt-broker
 spec:
   volumes:
-    - name: tb-broker-config
+    - name: tbmq-config
       configMap:
-        name: tb-broker-config
+        name: tbmq-config
         items:
           - key: conf
             path: thingsboard-mqtt-broker.conf
@@ -42,11 +42,11 @@ spec:
           value: "false"
       envFrom:
         - configMapRef:
-            name: tb-broker-db-config
+            name: tbmq-db-config
         - configMapRef:
-            name: tb-broker-cache-config
+            name: tbmq-cache-config
       volumeMounts:
         - mountPath: /config
-          name: tb-broker-config
+          name: tbmq-config
       command: [ 'sh', '-c', 'while [ ! -f /tmp/install-finished ]; do sleep 2; done;' ]
   restartPolicy: Never
