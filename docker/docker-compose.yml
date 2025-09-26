@@ -65,7 +65,7 @@ services:
       TB_SERVICE_ID: tbmq1
       #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
-      - tb-mqtt-broker.env
+      - tbmq.env
     volumes:
       - tbmq-config:/config
       - tbmq1-logs:/var/log/thingsboard-mqtt-broker
@@ -90,7 +90,7 @@ services:
       TB_SERVICE_ID: tbmq2
       #JAVA_OPTS: "${JAVA_OPTS}"
     env_file:
-      - tb-mqtt-broker.env
+      - tbmq.env
     volumes:
       - tbmq-config:/config
       - tbmq2-logs:/var/log/thingsboard-mqtt-broker
