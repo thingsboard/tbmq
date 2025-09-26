@@ -82,6 +82,8 @@ fi
 
 create_volume_if_not_exists tbmq-postgres-data
 create_volume_if_not_exists tbmq-kafka-data
+create_volume_if_not_exists tbmq-kafka-secrets
+create_volume_if_not_exists tbmq-kafka-config
 create_volume_if_not_exists tbmq-valkey-data
 create_volume_if_not_exists tbmq-logs
 create_volume_if_not_exists tbmq-data

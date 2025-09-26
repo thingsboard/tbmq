@@ -32,6 +32,8 @@ readonly VALKEY_SENTINEL_VOLUMES=(
 readonly MY_VOLUMES=(
   "tbmq-postgres-data"
   "tbmq-kafka-data"
+  "tbmq-kafka-secrets"
+  "tbmq-kafka-config"
   "tbmq1-logs"
   "tbmq2-logs"
   "tbmq-config"

@@ -21,13 +21,16 @@ kubectl config set-context $(kubectl config current-context) --namespace=thingsb
 
 # install PostgreSQL
 kubectl apply -f postgres.yml
-kubectl rollout status deployment/postgres
 
 # install Kafka
-helm upgrade --install kafka -f kafka/values-kafka.yml oci://registry-1.docker.io/bitnamicharts/kafka --version 29.3.4
+kubectl apply -f tb-kafka.yml
 
 # install Valkey
 kubectl apply -f valkey.yml
+
+kubectl rollout status deployment/postgres
+kubectl rollout status statefulset/tb-kafka
+kubectl rollout status deployment/tb-valkey
 
 # install TBMQ
 kubectl apply -f tb-broker-configmap.yml

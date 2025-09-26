@@ -1,0 +1,186 @@
+#
+# Copyright © 2016-2025 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tb-kafka
+  namespace: thingsboard-mqtt-broker
+spec:
+  serviceName: "tb-kafka-headless"
+  replicas: 3
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      app: tb-kafka
+  template:
+    metadata:
+      labels:
+        app: tb-kafka
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                      - tb-kafka
+              topologyKey: "kubernetes.io/hostname"
+      volumes:
+        - name: kafka-config
+          emptyDir: { }
+        - name: kafka-secrets
+          emptyDir: { }
+      containers:
+        - name: server
+          imagePullPolicy: Always
+          image: apache/kafka:4.0.0
+          ports:
+            - containerPort: 9092
+              name: client
+            - containerPort: 9093
+              name: controller
+            - containerPort: 9999
+              name: jmx
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: "1"
+              memory: 2Gi
+          command:
+            - /bin/bash
+            - -ceu
+            - |
+              export KAFKA_NODE_ID="${POD_NAME##*-}"
+              exec /etc/kafka/docker/run
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: CLUSTER_ID
+              value: "A0SZ6TGET1mhlQYl49uBSQ"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: KAFKA_ADVERTISED_LISTENERS
+              value: "PLAINTEXT://$(POD_NAME).tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9092"
+            - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+              value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+            - name: KAFKA_INTER_BROKER_LISTENER_NAME
+              value: "PLAINTEXT"
+            - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+              value: "0@tb-kafka-0.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,1@tb-kafka-1.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,2@tb-kafka-2.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093"
+            - name: KAFKA_CONTROLLER_LISTENER_NAMES
+              value: "CONTROLLER"
+            - name: KAFKA_PROCESS_ROLES
+              value: "controller,broker"
+            - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+              value: "false"
+            - name: KAFKA_DEFAULT_REPLICATION_FACTOR
+              value: "2"
+            - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+              value: "3"
+            - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+              value: "2"
+            - name: KAFKA_LOG_RETENTION_BYTES
+              value: "1073741824"
+            - name: KAFKA_LOG_SEGMENT_BYTES
+              value: "268435456"
+            - name: KAFKA_LOG_RETENTION_MS
+              value: "300000"
+            - name: KAFKA_LOG_CLEANUP_POLICY
+              value: "delete"
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xms1G -Xmx1G -XX:+AlwaysPreTouch"
+            - name: KAFKA_LOG_DIRS
+              value: "/var/lib/kafka/data"
+            - name: JMX_PORT
+              value: "9999"
+            - name: KAFKA_JMX_OPTS
+              value: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9999 -Dcom.sun.management.jmxremote.rmi.port=9999 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1"
+          startupProbe:
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 1
+            failureThreshold: 15
+            successThreshold: 1
+            tcpSocket:
+              port: "controller"
+          livenessProbe:
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            exec:
+              command: [ "pgrep","-f","kafka" ]
+          volumeMounts:
+            - name: kafka-data
+              mountPath: /var/lib/kafka/data
+            - name: kafka-config
+              mountPath: /mnt/shared/config
+            - name: kafka-secrets
+              mountPath: /etc/kafka/secrets
+  volumeClaimTemplates:
+    - metadata:
+        name: kafka-data
+        namespace: thingsboard-mqtt-broker
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tb-kafka-headless
+  namespace: thingsboard-mqtt-broker
+  labels:
+    app: tb-kafka
+spec:
+  clusterIP: None
+  selector:
+    app: tb-kafka
+  ports:
+    - port: 9092
+      name: client
+    - port: 9093
+      name: controller
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tb-kafka
+  namespace: thingsboard-mqtt-broker
+  labels:
+    app: tb-kafka
+spec:
+  type: ClusterIP
+  selector:
+    app: tb-kafka
+  ports:
+    - port: 9092
+      name: client
+    - port: 9093
+      name: controller
