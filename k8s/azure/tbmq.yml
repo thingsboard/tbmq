@@ -17,18 +17,18 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tb-broker
+  name: tbmq
   namespace: thingsboard-mqtt-broker
 spec:
-  serviceName: tb-broker
+  serviceName: tbmq
   replicas: 2
   selector:
     matchLabels:
-      app: tb-broker
+      app: tbmq
   template:
     metadata:
       labels:
-        app: tb-broker
+        app: tbmq
     spec:
       affinity:
         podAntiAffinity:
@@ -38,18 +38,18 @@ spec:
                   - key: "app"
                     operator: In
                     values:
-                      - tb-broker
+                      - tbmq
               topologyKey: "kubernetes.io/hostname"
       volumes:
-        - name: tb-broker-config
+        - name: tbmq-config
           configMap:
-            name: tb-broker-config
+            name: tbmq-config
             items:
               - key: conf
                 path: thingsboard-mqtt-broker.conf
               - key: logback
                 path: logback.xml
-        - name: tb-broker-logs
+        - name: tbmq-logs
           emptyDir: { }
       # Uncomment the following lines to enable two-way MQTTS
       #        - name: tbmq-mqtts-config
@@ -106,14 +106,14 @@ spec:
           #              value: "/ssl-config/mqttserver_key.pem"
           envFrom:
             - configMapRef:
-                name: tb-broker-db-config
+                name: tbmq-db-config
             - configMapRef:
-                name: tb-broker-cache-config
+                name: tbmq-cache-config
           volumeMounts:
             - mountPath: /config
-              name: tb-broker-config
+              name: tbmq-config
             - mountPath: /var/log/thingsboard-mqtt-broker
-              name: tb-broker-logs
+              name: tbmq-logs
           # Uncomment the following lines to enable two-way MQTTS
           #            - mountPath: /ssl-config
           #              name: tbmq-mqtts-config
@@ -138,12 +138,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-broker
+  name: tbmq
   namespace: thingsboard-mqtt-broker
 spec:
   type: ClusterIP
   selector:
-    app: tb-broker
+    app: tbmq
   ports:
     - port: 8083
       name: http
