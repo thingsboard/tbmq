@@ -29,3 +29,4 @@ kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
 kubectl exec tb-db-setup -- sh -c 'export INSTALL_TB=true; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'
 
 kubectl delete pod tb-db-setup
+
