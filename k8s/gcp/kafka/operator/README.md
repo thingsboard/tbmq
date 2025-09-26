@@ -93,8 +93,8 @@ Update the TBMQ configuration files to use the Strimzi Kafka cluster:
 
 1. Open the following files:
 
-* `_tb-broker.yml_`
-* `_tbmq-ie.yml_`
+* `tb-broker.yml`
+* `tbmq-ie.yml`
 
 2. Locate the environment variable:
 

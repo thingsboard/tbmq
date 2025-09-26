@@ -57,8 +57,8 @@ Update the TBMQ components to use the newly deployed Kafka cluster:
 
 1. Open the following configuration files:
 
-    * `_tb-broker.yml_`
-    * `_tbmq-ie.yml_`
+* `tb-broker.yml`
+* `tbmq-ie.yml`
 
 2. Locate the environment variable:
 
