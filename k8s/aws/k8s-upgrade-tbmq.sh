@@ -15,6 +15,10 @@
 # limitations under the License.
 #
 
+kubectl apply -f tbmq-configmap.yml
+kubectl apply -f tbmq-cache-configmap.yml
+kubectl apply -f tbmq-db-configmap.yml
+
 kubectl apply -f database-setup.yml &&
 kubectl wait --for=condition=Ready pod/tb-db-setup --timeout=120s &&
 kubectl exec tb-db-setup -- sh -c 'export UPGRADE_TB=true; start-tb-mqtt-broker.sh; touch /tmp/install-finished;'

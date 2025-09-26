@@ -17,10 +17,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: tb-broker-config
+  name: tbmq-config
   namespace: thingsboard-mqtt-broker
   labels:
-    name: tb-broker-config
+    name: tbmq-config
 data:
   conf: |
     export JAVA_OPTS="$JAVA_OPTS -Dplatform=deb -Dinstall.data_dir=/usr/share/thingsboard-mqtt-broker/data"

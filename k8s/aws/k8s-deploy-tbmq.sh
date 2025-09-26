@@ -17,10 +17,11 @@
 
 set -e
 
-kubectl apply -f tb-broker-namespace.yml
+kubectl apply -f tbmq-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
-kubectl apply -f tb-broker-configmap.yml
-kubectl apply -f tb-broker.yml
+kubectl apply -f tbmq-db-configmap.yml
+kubectl apply -f tbmq-configmap.yml
+kubectl apply -f tbmq.yml
 kubectl apply -f tbmq-ie-configmap.yml
 kubectl apply -f tbmq-ie.yml
