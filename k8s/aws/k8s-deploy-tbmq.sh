@@ -21,6 +21,8 @@ kubectl apply -f tbmq-namespace.yml
 kubectl config set-context $(kubectl config current-context) --namespace=thingsboard-mqtt-broker
 
 kubectl apply -f tbmq-db-configmap.yml
+kubectl apply -f tbmq-cache-configmap.yml
+
 kubectl apply -f tbmq-configmap.yml
 kubectl apply -f tbmq.yml
 kubectl apply -f tbmq-ie-configmap.yml
