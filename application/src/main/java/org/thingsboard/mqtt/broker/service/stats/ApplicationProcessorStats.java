@@ -27,7 +27,6 @@ public interface ApplicationProcessorStats {
 
     String getClientId();
 
-    // TODO: separate log from all 'admin' operations
     void log(int totalPublishMsgsCount, int totalPubRelMsgsCount, ApplicationPackProcessingResult packProcessingResult, boolean finalIterationForPack);
 
     void logPubAckLatency(long startTime, TimeUnit unit);
@@ -42,7 +41,4 @@ public interface ApplicationProcessorStats {
 
     void reset();
 
-    boolean isActive();
-
-    void disable();
 }

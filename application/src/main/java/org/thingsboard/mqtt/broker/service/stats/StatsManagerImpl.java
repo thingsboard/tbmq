@@ -183,10 +183,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public void clearApplicationProcessorStats(String clientId) {
         log.trace("Clearing ApplicationProcessorStats, clientId - {}", clientId);
-        ApplicationProcessorStats stats = managedApplicationProcessorStats.get(clientId);
-        if (stats != null && stats.isActive()) {
-            stats.disable();
-        }
+        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(clientId));
     }
 
     @Override
@@ -197,10 +194,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             return;
         }
         for (String compoundClientId : clientIds) {
-            ApplicationProcessorStats stats = managedApplicationProcessorStats.get(compoundClientId);
-            if (stats != null && stats.isActive()) {
-                stats.disable();
-            }
+            printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
         }
     }
 
@@ -216,9 +210,13 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         }
         clientIds.remove(compoundClientId);
 
-        ApplicationProcessorStats stats = managedApplicationProcessorStats.get(compoundClientId);
-        if (stats != null && stats.isActive()) {
-            stats.disable();
+        printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+    }
+
+    private void printApplicationStatsOnClear(ApplicationProcessorStats stats) {
+        if (stats != null) {
+            log.info("[{}][{}] Stats on clear", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId());
+            printApplicationProcessorStats(stats);
         }
     }
 
@@ -423,19 +421,8 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         if (applicationProcessorStatsEnabled) {
             for (ApplicationProcessorStats stats : new ArrayList<>(managedApplicationProcessorStats.values())) {
-                String msgStatsStr = stats.getStatsCounters().stream()
-                        .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
-                        .collect(Collectors.joining(" "));
-                String latencyStatsStr = stats.getLatencyTimers().entrySet().stream()
-                        .map(entry -> entry.getKey() + " = [" + entry.getValue().getCount() + "|" + entry.getValue().getAvg() + "|" + entry.getValue().getMax() + "]")
-                        .collect(Collectors.joining(" "));
-                log.info("[{}][{}] Latency Stats: {}, Processing Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), latencyStatsStr, msgStatsStr);
-                if (!stats.isActive()) {
-                    log.trace("[{}] Clearing inactive APPLICATION stats", stats.getClientId());
-                    managedApplicationProcessorStats.computeIfPresent(stats.getClientId(), (clientId, oldStats) -> oldStats.isActive() ? oldStats : null);
-                } else {
-                    stats.reset();
-                }
+                printApplicationProcessorStats(stats);
+                stats.reset();
             }
         }
 
@@ -455,7 +442,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
         for (Gauge gauge : gauges) {
             gaugeLogBuilder.append(gauge.getName()).append(" = [").append(gauge.getValueSupplier().get().intValue()).append("] ");
         }
-        log.info("Gauges Stats: {}", gaugeLogBuilder.toString());
+        log.info("Gauges Stats: {}", gaugeLogBuilder);
 
         StringBuilder clientActorLogBuilder = new StringBuilder();
         clientActorLogBuilder.append("msgInQueueTime").append(" = [").append(clientActorStats.getMsgCount()).append(" | ")
@@ -467,7 +454,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                     .append(timer.getAvg()).append("] ");
         });
         clientActorStats.reset();
-        log.info("Client Actor Average Stats: {}", clientActorLogBuilder.toString());
+        log.info("Client Actor Average Stats: {}", clientActorLogBuilder);
 
         StringBuilder timerLogBuilder = new StringBuilder();
         for (ResettableTimer resettableTimer : timerStats.getTimers()) {
@@ -475,7 +462,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                     .append(resettableTimer.getAvg()).append("] ");
             resettableTimer.reset();
         }
-        log.info("Timer Average Stats: {}", timerLogBuilder.toString());
+        log.info("Timer Average Stats: {}", timerLogBuilder);
 
         StringBuilder queueProducerLogBuilder = new StringBuilder();
         managedQueueProducers.forEach((producerId, timer) -> {
@@ -483,7 +470,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                     .append(timer.getAvg()).append("] ");
             timer.reset();
         });
-        log.info("Queue Producer Send Time Average Stats: {}", queueProducerLogBuilder.toString());
+        log.info("Queue Producer Send Time Average Stats: {}", queueProducerLogBuilder);
 
         StringBuilder queueConsumerLogBuilder = new StringBuilder();
         managedQueueConsumers.forEach((consumerId, timer) -> {
@@ -491,7 +478,17 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
                     .append(timer.getAvg()).append("] ");
             timer.reset();
         });
-        log.info("Queue Consumer Commit Time Average Stats: {}", queueConsumerLogBuilder.toString());
+        log.info("Queue Consumer Commit Time Average Stats: {}", queueConsumerLogBuilder);
+    }
+
+    private void printApplicationProcessorStats(ApplicationProcessorStats stats) {
+        String msgStatsStr = stats.getStatsCounters().stream()
+                .map(statsCounter -> statsCounter.getName() + " = [" + statsCounter.get() + "]")
+                .collect(Collectors.joining(" "));
+        String latencyStatsStr = stats.getLatencyTimers().entrySet().stream()
+                .map(entry -> entry.getKey() + " = [" + entry.getValue().getCount() + "|" + entry.getValue().getAvg() + "|" + entry.getValue().getMax() + "]")
+                .collect(Collectors.joining(" "));
+        log.info("[{}][{}] Latency Stats: {}, Processing Stats: {}", StatsType.APP_PROCESSOR.getPrintName(), stats.getClientId(), latencyStatsStr, msgStatsStr);
     }
 
     @AllArgsConstructor

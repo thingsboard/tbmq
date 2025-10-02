@@ -38,8 +38,8 @@ import static org.thingsboard.mqtt.broker.common.stats.StatsConstantNames.TMP_TI
 
 @Slf4j
 public class DefaultApplicationProcessorStats implements ApplicationProcessorStats {
+
     private static final String PACKET_TYPE_TAG = "packetType";
-    private volatile boolean active = true;
 
     private final String clientId;
 
@@ -151,13 +151,4 @@ public class DefaultApplicationProcessorStats implements ApplicationProcessorSta
         latencyTimers.forEach((s, timer) -> timer.reset());
     }
 
-    @Override
-    public boolean isActive() {
-        return active;
-    }
-
-    @Override
-    public void disable() {
-        this.active = false;
-    }
 }
