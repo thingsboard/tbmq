@@ -98,9 +98,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             log.error(logErrorMsg, authContext);
             return AuthResponse.failure(errorMsg);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
-        }
+        log.trace("[{}] Authenticating client with SSL credentials", authContext.getClientId());
         try {
             ClientTypeSslMqttCredentials clientTypeSslMqttCredentials = authWithSSLCredentials(authContext.getClientId(), authContext.getSslHandler());
             if (clientTypeSslMqttCredentials == null) {
@@ -118,6 +116,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             List<AuthRulePatterns> authRulePatterns = authorizationRuleService.parseSslAuthorizationRule(clientTypeSslMqttCredentials, clientCommonName);
             return AuthResponse.success(clientTypeSslMqttCredentials.getType(), authRulePatterns);
         } catch (Exception e) {
+            log.debug("[{}] Authentication failed", authContext.getClientId(), e);
             return AuthResponse.failure(e.getMessage());
         }
     }
@@ -149,9 +148,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
         try {
             certificates = (X509Certificate[]) sslHandler.engine().getSession().getPeerCertificates();
         } catch (SSLPeerUnverifiedException e) {
-            if (log.isDebugEnabled()) {
-                log.debug(PEER_IDENTITY_NOT_VERIFIED.getErrorMsg(), e);
-            }
+            log.debug(PEER_IDENTITY_NOT_VERIFIED.getErrorMsg(), e);
             throw new AuthenticationException(PEER_IDENTITY_NOT_VERIFIED.getErrorMsg());
         }
         if (certificates.length == 0) {
@@ -173,9 +170,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
             } catch (CertificateEncodingException e) {
                 throw new AuthenticationException(FAILED_TO_GET_CERT_CN.getErrorMsg(), e);
             }
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
-            }
+            log.trace("[{}] Trying to authorize client with common name - {}.", clientId, commonName);
 
             if (!sslCredentialsCacheValue.getCredentials().isEmpty()) {
                 for (var creds : sslCredentialsCacheValue.getCredentials()) {
@@ -225,9 +220,7 @@ public class SslMqttClientAuthProvider implements MqttClientAuthProvider<SslMqtt
                 certificate.checkValidity();
             }
         } catch (Exception e) {
-            if (log.isTraceEnabled()) {
-                log.trace("[{}] X509 auth failure.", clientId, e);
-            }
+            log.trace("[{}] X509 auth failure.", clientId, e);
             String errorMsg = String.format(X_509_AUTH_FAILURE.getErrorMsg(), e.getMessage());
             throw new AuthenticationException(errorMsg, e);
         }
