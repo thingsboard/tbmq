@@ -50,6 +50,7 @@ import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscr
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +72,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     private final List<ClientSessionEventConsumerStats> managedClientSessionEventConsumerStats = new CopyOnWriteArrayList<>();
     private final List<DeviceProcessorStats> managedDeviceProcessorStats = new CopyOnWriteArrayList<>();
     private final Map<String, ApplicationProcessorStats> managedApplicationProcessorStats = new ConcurrentHashMap<>();
-    private final Map<String, List<String>> sharedSubscriptionCompoundClientIds = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> sharedSubscriptionCompoundClientIds = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueProducers = new ConcurrentHashMap<>();
     private final Map<String, ResettableTimer> managedQueueConsumers = new ConcurrentHashMap<>();
     private final StatsFactory statsFactory;
@@ -157,7 +158,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
             ApplicationProcessorStats stats = new DefaultApplicationProcessorStats(compoundClientId, statsFactory);
             managedApplicationProcessorStats.put(compoundClientId, stats);
 
-            List<String> clientIds = sharedSubscriptionCompoundClientIds.computeIfAbsent(clientId, s -> new ArrayList<>());
+            Set<String> clientIds = sharedSubscriptionCompoundClientIds.computeIfAbsent(clientId, s -> ConcurrentHashMap.newKeySet());
             clientIds.add(compoundClientId);
 
             return stats;
@@ -189,7 +190,7 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
     @Override
     public void clearSharedApplicationProcessorStats(String clientId) {
         log.trace("Clearing SharedApplicationProcessorStats, clientId - {}", clientId);
-        List<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
+        Set<String> clientIds = sharedSubscriptionCompoundClientIds.remove(clientId);
         if (CollectionUtils.isEmpty(clientIds)) {
             return;
         }
@@ -204,13 +205,16 @@ public class StatsManagerImpl implements StatsManager, ActorStatsManager, SqlQue
 
         var compoundClientId = getCompoundClientId(clientId, subscription);
 
-        List<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
+        Set<String> clientIds = sharedSubscriptionCompoundClientIds.get(clientId);
         if (CollectionUtils.isEmpty(clientIds)) {
             return;
         }
         clientIds.remove(compoundClientId);
 
         printApplicationStatsOnClear(managedApplicationProcessorStats.remove(compoundClientId));
+        if (clientIds.isEmpty()) {
+            sharedSubscriptionCompoundClientIds.remove(clientId);
+        }
     }
 
     private void printApplicationStatsOnClear(ApplicationProcessorStats stats) {
