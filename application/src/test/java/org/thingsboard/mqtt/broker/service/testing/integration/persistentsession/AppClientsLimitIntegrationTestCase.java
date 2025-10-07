@@ -33,7 +33,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.AbstractPubSubIntegrationTest;
 import org.thingsboard.mqtt.broker.actors.client.service.session.ClientSessionService;
 import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
 import org.thingsboard.mqtt.broker.dao.DaoSqlTest;
 import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
@@ -84,7 +83,7 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
             ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimit1");
-            return clientSessionInfo != null && ClientType.APPLICATION == clientSessionInfo.getType();
+            return clientSessionInfo != null && clientSessionInfo.isAppClient();
         });
 
         try {
@@ -103,7 +102,7 @@ public class AppClientsLimitIntegrationTestCase extends AbstractPubSubIntegratio
 
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
             ClientSessionInfo clientSessionInfo = clientSessionService.getClientSessionInfo("appClientLimitSameClient");
-            return clientSessionInfo != null && ClientType.APPLICATION == clientSessionInfo.getType();
+            return clientSessionInfo != null && clientSessionInfo.isAppClient();
         });
 
         MqttClient anotherPersistedClient = new MqttClient(SERVER_URI + mqttPort, "appClientLimitSameClient");

@@ -20,8 +20,7 @@ import io.netty.handler.codec.mqtt.MqttConnectMessage;
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 import io.netty.handler.codec.mqtt.MqttVersion;
 import io.netty.handler.ssl.SslHandler;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.state.PubResponseProcessingCtx;
@@ -43,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @Slf4j
-@Getter
+@Data
 public class ClientSessionCtx implements SessionContext {
 
     private final UUID sessionId;
@@ -54,28 +53,17 @@ public class ClientSessionCtx implements SessionContext {
     private final MsgIdSequence msgIdSeq = new MsgIdSequence();
     private final AwaitingPubRelPacketsCtx awaitingPubRelPacketsCtx = new AwaitingPubRelPacketsCtx();
 
-    @Setter
     private volatile SessionInfo sessionInfo;
-    @Setter
     private volatile List<AuthRulePatterns> authRulePatterns;
-    @Setter
     private volatile ClientType clientType;
-    @Setter
     private volatile MqttVersion mqttVersion;
-    @Setter
     private volatile InetSocketAddress address;
-    @Setter
     private volatile TopicAliasCtx topicAliasCtx;
-    @Setter
     private volatile PublishedInFlightCtx publishedInFlightCtx;
-    @Setter
     private volatile MqttConnectMessage connectMsgFromEnhancedAuth;
-    @Setter
     private volatile String authMethod;
-    @Setter
     private volatile ScramServerWithCallbackHandler scramServerWithCallbackHandler;
 
-    @Setter
     private ChannelHandlerContext channel;
 
     public ClientSessionCtx() {
@@ -136,6 +124,10 @@ public class ClientSessionCtx implements SessionContext {
 
     public boolean isCleanSession() {
         return sessionInfo.isCleanSession();
+    }
+
+    public boolean isAppClient() {
+        return ClientType.APPLICATION == clientType;
     }
 
     public void closeChannel() {

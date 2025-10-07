@@ -66,7 +66,7 @@ public class SessionInfo {
     }
 
     public boolean isAppClient() {
-        return ClientType.APPLICATION.equals(clientInfo.getType());
+        return ClientType.APPLICATION == clientInfo.getType();
     }
 
     /**

@@ -20,11 +20,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cache.Cache;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.ClientCallback;
 import org.thingsboard.mqtt.broker.actors.client.messages.ConnectionRequestInfo;
@@ -32,6 +32,7 @@ import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubs
 import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -69,30 +70,30 @@ import static org.mockito.Mockito.when;
 })
 public class SessionClusterManagerImplTest {
 
-    @MockBean
+    @MockitoBean
     ClientSessionService clientSessionService;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionService clientSubscriptionService;
-    @MockBean
+    @MockitoBean
     DisconnectClientCommandService disconnectClientCommandService;
-    @MockBean
+    @MockitoBean
     ClientSessionEventQueueFactory clientSessionEventQueueFactory;
-    @MockBean
+    @MockitoBean
     ServiceInfoProvider serviceInfoProvider;
-    @MockBean
+    @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
-    @MockBean
+    @MockitoBean
     ApplicationRemovedEventService applicationRemovedEventService;
-    @MockBean
+    @MockitoBean
     ApplicationTopicService applicationTopicService;
-    @MockBean
+    @MockitoBean
     RateLimitCacheService rateLimitCacheService;
-    @MockBean
+    @MockitoBean
     CacheNameResolver cacheNameResolver;
-    @MockBean
+    @MockitoBean
     TimeseriesService timeseriesService;
 
-    @SpyBean
+    @MockitoSpyBean
     SessionClusterManagerImpl sessionClusterManager;
 
     @Before
@@ -143,10 +144,10 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
-        verify(disconnectClientCommandService, times(1)).disconnectOnSessionConflict(any(), any(), any(), eq(true));
-        verify(clientSessionService, times(1)).clearClientSession(any(), any());
-        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
-        verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
+        verify(disconnectClientCommandService).disconnectOnSessionConflict(any(), any(), any(), eq(true));
+        verify(clientSessionService).clearClientSession(any(), any());
+        verify(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any());
+        verify(sessionClusterManager).updateClientSession(any(), any(), any());
     }
 
     @Test
@@ -156,10 +157,10 @@ public class SessionClusterManagerImplTest {
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
                 SessionInfo.withClientType(ClientType.APPLICATION));
 
-        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
+        verify(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any());
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
-        verify(applicationRemovedEventService, times(1)).sendApplicationRemovedEvent(any());
-        verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
+        verify(applicationRemovedEventService).sendApplicationRemovedEvent(any());
+        verify(clientSessionService).saveClientSession(any(), any(), any());
     }
 
     @Test
@@ -170,8 +171,8 @@ public class SessionClusterManagerImplTest {
                 SessionInfo.withClientType(ClientType.APPLICATION));
 
         verify(msgPersistenceManager, times(2)).clearPersistedMessages(any());
-        verify(applicationRemovedEventService, times(1)).sendApplicationRemovedEvent(any());
-        verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
+        verify(applicationRemovedEventService).sendApplicationRemovedEvent(any());
+        verify(clientSessionService).saveClientSession(any(), any(), any());
     }
 
     @Test
@@ -181,7 +182,7 @@ public class SessionClusterManagerImplTest {
         sessionClusterManager.updateClientSession(sessionInfoNew, getConnectionRequestInfo(),
                 SessionInfo.withClientType(ClientType.DEVICE));
 
-        verify(clientSessionService, times(1)).saveClientSession(any(), any(), any());
+        verify(clientSessionService).saveClientSession(any(), any(), any());
     }
 
     @Test
@@ -193,9 +194,9 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processConnectionRequest(sessionInfoNew, getConnectionRequestInfo());
 
-        verify(disconnectClientCommandService, times(1)).disconnectOnSessionConflict(any(), any(), any(), eq(true));
+        verify(disconnectClientCommandService).disconnectOnSessionConflict(any(), any(), any(), eq(true));
         verify(clientSessionService, times(2)).saveClientSession(any(), any(), any());
-        verify(sessionClusterManager, times(1)).updateClientSession(any(), any(), any());
+        verify(sessionClusterManager).updateClientSession(any(), any(), any());
     }
 
     @Test
@@ -210,7 +211,7 @@ public class SessionClusterManagerImplTest {
     @Test
     public void givenDeviceClientType_whenProcessRemoveApplicationTopicRequest_thenOk() {
         SessionInfo sessionInfo = getSessionInfo("clientId", ClientType.DEVICE, false);
-        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSessionInfo(sessionInfo)).when(clientSessionService).getClientSessionInfo(any());
 
         sessionClusterManager.processRemoveApplicationTopicRequest("clientId", new ClientCallback() {
             @Override
@@ -221,13 +222,13 @@ public class SessionClusterManagerImplTest {
             public void onFailure(Throwable e) {
             }
         });
-        verify(applicationTopicService, times(1)).deleteTopic(any(), any());
+        verify(applicationTopicService).deleteTopic(any(), any());
     }
 
     @Test
     public void givenApplicationClientType_whenProcessRemoveApplicationTopicRequest_thenOk() {
         SessionInfo sessionInfo = getSessionInfo("clientId", ClientType.APPLICATION, false);
-        doReturn(getClientSession(true, sessionInfo)).when(clientSessionService).getClientSession(any());
+        doReturn(getClientSessionInfo(sessionInfo)).when(clientSessionService).getClientSessionInfo(any());
 
         sessionClusterManager.processRemoveApplicationTopicRequest("clientId", new ClientCallback() {
             @Override
@@ -269,9 +270,9 @@ public class SessionClusterManagerImplTest {
 
         sessionClusterManager.processClearSession("clientId", sessionInfo.getSessionId());
 
-        verify(clientSessionService, times(1)).clearClientSession(any(), any());
-        verify(clientSubscriptionService, times(1)).clearSubscriptionsAndPersist(any(), any());
-        verify(msgPersistenceManager, times(1)).clearPersistedMessages(any());
+        verify(clientSessionService).clearClientSession(any(), any());
+        verify(clientSubscriptionService).clearSubscriptionsAndPersist(any(), any());
+        verify(msgPersistenceManager).clearPersistedMessages(any());
     }
 
     @Test
@@ -318,6 +319,10 @@ public class SessionClusterManagerImplTest {
 
     private ClientSession getClientSession(boolean connected, SessionInfo sessionInfo) {
         return new ClientSession(connected, sessionInfo);
+    }
+
+    private ClientSessionInfo getClientSessionInfo(SessionInfo sessionInfo) {
+        return ClientSessionInfoFactory.clientSessionToClientSessionInfo(getClientSession(true, sessionInfo));
     }
 
 }

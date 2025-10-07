@@ -22,9 +22,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
@@ -77,29 +77,29 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MqttSubscribeHandler.class)
 public class MqttSubscribeHandlerTest {
 
-    @MockBean
+    @MockitoBean
     MqttMessageGenerator mqttMessageGenerator;
-    @MockBean
+    @MockitoBean
     ClientSubscriptionService clientSubscriptionService;
-    @MockBean
+    @MockitoBean
     TopicValidationService topicValidationService;
-    @MockBean
+    @MockitoBean
     AuthorizationRuleService authorizationRuleService;
-    @MockBean
+    @MockitoBean
     RetainedMsgService retainedMsgService;
-    @MockBean
+    @MockitoBean
     PublishMsgDeliveryService publishMsgDeliveryService;
-    @MockBean
+    @MockitoBean
     ClientMqttActorManager clientMqttActorManager;
-    @MockBean
+    @MockitoBean
     ApplicationSharedSubscriptionService applicationSharedSubscriptionService;
-    @MockBean
+    @MockitoBean
     MsgPersistenceManager msgPersistenceManager;
-    @MockBean
+    @MockitoBean
     ApplicationPersistenceProcessor applicationPersistenceProcessor;
-    @MockBean
+    @MockitoBean
     RateLimitService rateLimitService;
-    @SpyBean
+    @MockitoSpyBean
     MqttSubscribeHandler mqttSubscribeHandler;
 
     ClientSessionCtx ctx;
@@ -243,7 +243,7 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenCurrentAndNewSubscriptions_whenFindSameSubscriptionsWithDifferentQosForApplication_thenReturnExpectedResult() {
-        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
+        when(ctx.isAppClient()).thenReturn(true);
         doNothing().when(applicationPersistenceProcessor).stopProcessingSharedSubscriptions(any(), anySet());
 
         Set<TopicSharedSubscription> newSharedSubscriptions = Set.of(
@@ -268,7 +268,7 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenCurrentAndNewSubscriptions_whenFindSameSubscriptionsWithDifferentQosForDeviceWithQosZero_thenReturnEmptyResult() {
-        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.isAppClient()).thenReturn(false);
 
         Set<TopicSharedSubscription> newSharedSubscriptions = Set.of(
                 new TopicSharedSubscription("tf1", "s1", 0),
@@ -289,7 +289,7 @@ public class MqttSubscribeHandlerTest {
 
     @Test
     public void givenCurrentAndNewSubscriptions_whenFindSameSubscriptionsWithDifferentQosForDevice_thenReturnExpectedResult() {
-        when(ctx.getClientType()).thenReturn(ClientType.DEVICE);
+        when(ctx.isAppClient()).thenReturn(false);
 
         Set<TopicSharedSubscription> newSharedSubscriptions = Set.of(
                 new TopicSharedSubscription("tf1", "s1", 2),
@@ -420,9 +420,8 @@ public class MqttSubscribeHandlerTest {
     public void givenMqttSubscribeMsgWithApplicationSharedSubscriptionAndNoEntityCreated_whenCollectMqttReasonCodes_thenReturnExpectedResult() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(authorizationRuleService.isSubAuthorized(eq("tf1"), any())).thenReturn(true);
-        SessionInfo sessionInfo = SessionInfo.builder().sessionExpiryInterval(123000).cleanStart(false).build();
+        SessionInfo sessionInfo = SessionInfo.builder().sessionExpiryInterval(123000).cleanStart(false).clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).build()).build();
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         when(applicationSharedSubscriptionService.findSharedSubscriptionByTopic("tf1")).thenReturn(null);
 
         List<TopicSubscription> topicSubscriptions = List.of(new ClientTopicSubscription("tf1", 1, "g1"));
@@ -436,9 +435,8 @@ public class MqttSubscribeHandlerTest {
     public void givenMqttSubscribeMsgWithApplicationSharedSubscriptionAndEntityCreated_whenCollectMqttReasonCodes_thenReturnExpectedResult() {
         when(ctx.getMqttVersion()).thenReturn(MqttVersion.MQTT_5);
         when(authorizationRuleService.isSubAuthorized(eq("tf1"), any())).thenReturn(true);
-        SessionInfo sessionInfo = SessionInfo.builder().sessionExpiryInterval(123000).cleanStart(false).build();
+        SessionInfo sessionInfo = SessionInfo.builder().sessionExpiryInterval(123000).cleanStart(false).clientInfo(ClientInfo.builder().type(ClientType.APPLICATION).build()).build();
         when(ctx.getSessionInfo()).thenReturn(sessionInfo);
-        when(ctx.getClientType()).thenReturn(ClientType.APPLICATION);
         when(applicationSharedSubscriptionService.findSharedSubscriptionByTopic("tf1")).thenReturn(new ApplicationSharedSubscription());
 
         List<TopicSubscription> topicSubscriptions = List.of(new ClientTopicSubscription("tf1", 1, "g1"));
