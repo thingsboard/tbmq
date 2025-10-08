@@ -15,6 +15,7 @@
  */
 package org.thingsboard.mqtt.broker.service.limits;
 
+import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
 import io.github.bucket4j.distributed.BucketProxy;
 import io.github.bucket4j.redis.jedis.cas.JedisBasedProxyManager;
@@ -23,21 +24,22 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.thingsboard.mqtt.broker.cache.CacheConstants;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(prefix = "service", value = "singleton-mode", havingValue = "false")
-public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheService implements RateLimitCacheService {
+public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final JedisBasedProxyManager<String> jedisBasedProxyManager;
     private final BucketConfiguration devicePersistedMsgsBucketConfiguration;
     private final BucketConfiguration totalMsgsBucketConfiguration;
 
+    @Value("${cache.cache-prefix:}")
+    @Setter
+    private String cachePrefix;
     @Value("${mqtt.sessions-limit:0}")
     @Setter
     private int sessionsLimit;
@@ -163,6 +165,13 @@ public class RateLimitRedisCacheServiceImpl extends AbstractRateLimitCacheServic
     @Override
     public long tryConsumeAsMuchAsPossibleTotalMsgs(long limit) {
         return tryConsumeAsMuchAsPossible(totalMsgsBucketProxy, limit);
+    }
+
+    private long tryConsumeAsMuchAsPossible(Bucket bucket, long limit) {
+        if (limit <= 0) {
+            return 0;
+        }
+        return bucket.tryConsumeAsMuchAsPossible(limit);
     }
 
     private Boolean initCacheWithCount(String key, int count) {
