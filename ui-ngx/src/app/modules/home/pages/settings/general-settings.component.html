@@ -23,44 +23,32 @@
   </mat-card-header>
   <mat-card-content>
     <form [formGroup]="generalSettingsForm" (ngSubmit)="saveGeneralSettings()" class="tb-form-panel no-border no-padding">
-      <fieldset class="fields-group">
-        <legend class="group-title" translate>ws-client.ws-client</legend>
-        <div class="container">
-          <section class="flex flex-row items-center gap-2">
-            <mat-slide-toggle formControlName="isLoggingEnabled">
-              {{ 'ws-client.show-logs' | translate }}
-            </mat-slide-toggle>
-            <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
-              [matTooltip]="'ws-client.show-logs-hint' | translate"
-              matTooltipPosition="right">
-              info
-            </mat-icon>
-          </section>
-          <section class="flex flex-row items-center gap-2">
-            <mat-form-field class="flex flex-1">
-              <mat-label translate>ws-client.messages.max-messages</mat-label>
-              <input matInput type="number" min="1" formControlName="maxMessages" placeholder="1000"/>
-              <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
-                info
-              </mat-icon>
-              <mat-icon matSuffix
-                        matTooltipClass="tb-error-tooltip"
-                        matTooltip="{{ 'ws-client.messages.max-messages-required' | translate }}"
-                        [class.!hidden]="!(generalSettingsForm.get('maxMessages').hasError('required') && generalSettingsForm.get('maxMessages').touched)"
-                        class="tb-error">
-                warning
-              </mat-icon>
-              <mat-icon matSuffix
-                        matTooltipClass="tb-error-tooltip"
-                        matTooltip="{{ 'ws-client.messages.max-messages-min' | translate }}"
-                        [class.!hidden]="!(generalSettingsForm.get('maxMessages').hasError('min') && generalSettingsForm.get('maxMessages').touched)"
-                        class="tb-error">
-                warning
-              </mat-icon>
-            </mat-form-field>
-          </section>
-        </div>
-      </fieldset>
+      <div class="container">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+          <mat-label translate>admin.settings.base-url</mat-label>
+          <input matInput formControlName="baseUrl"/>
+          <mat-icon matSuffix [matTooltip]="'admin.settings.base-url-hint' | translate">
+            info
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'admin.settings.base-url-required' | translate }}"
+                    [class.!hidden]="!(generalSettingsForm.get('baseUrl').hasError('required') && generalSettingsForm.get('baseUrl').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        </mat-form-field>
+        <section class="flex flex-row items-center gap-2">
+          <mat-slide-toggle formControlName="prohibitDifferentUrl">
+            {{ 'admin.settings.prohibit-different-url' | translate }}
+          </mat-slide-toggle>
+          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                    [matTooltip]="'admin.settings.prohibit-different-url-hint' | translate"
+                    matTooltipPosition="right">
+            info
+          </mat-icon>
+        </section>
+      </div>
       <div class="layout-wrap flex flex-row items-center justify-end gap-2">
         <button mat-button color="primary"
           [disabled]="generalSettingsForm.pristine"
@@ -74,13 +62,69 @@
     </form>
   </mat-card-content>
 </mat-card>
+
+<mat-card appearance="outlined" class="settings-card">
+  <mat-card-header>
+    <mat-card-title>
+      <span class="mat-headline-5" translate>ws-client.ws-client-settings</span>
+    </mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="webSocketSettingsForm" (ngSubmit)="saveWebSocketSettings()" class="tb-form-panel no-border no-padding">
+      <div class="container">
+        <mat-form-field class="flex flex-1" subscriptSizing="dynamic">
+          <mat-label translate>ws-client.messages.max-messages</mat-label>
+          <input matInput type="number" min="1" formControlName="maxMessages" placeholder="1000"/>
+          <mat-icon matSuffix [matTooltip]="'ws-client.messages.max-messages-hint' | translate">
+            info
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'ws-client.messages.max-messages-required' | translate }}"
+                    [class.!hidden]="!(webSocketSettingsForm.get('maxMessages').hasError('required') && webSocketSettingsForm.get('maxMessages').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
+          <mat-icon matSuffix
+                    matTooltipClass="tb-error-tooltip"
+                    matTooltip="{{ 'ws-client.messages.max-messages-min' | translate }}"
+                    [class.!hidden]="!(webSocketSettingsForm.get('maxMessages').hasError('min') && webSocketSettingsForm.get('maxMessages').touched)"
+                    class="tb-error">
+            warning
+          </mat-icon>
+        </mat-form-field>
+        <section class="flex flex-row items-center gap-2">
+          <mat-slide-toggle formControlName="isLoggingEnabled">
+            {{ 'ws-client.show-logs' | translate }}
+          </mat-slide-toggle>
+          <mat-icon class="tb-mat-20" style="color: rgba(0,0,0,0.18)"
+                    [matTooltip]="'ws-client.show-logs-hint' | translate"
+                    matTooltipPosition="right">
+            info
+          </mat-icon>
+        </section>
+      </div>
+      <div class="layout-wrap flex flex-row items-center justify-end gap-2">
+        <button mat-button color="primary"
+                [disabled]="webSocketSettingsForm.pristine"
+                (click)="discardWebSocketSettings()"
+                type="button">{{'action.undo' | translate}}
+        </button>
+        <button mat-button mat-raised-button color="primary" [disabled]="(isLoading$ | async) || webSocketSettingsForm.invalid || !webSocketSettingsForm.dirty"
+                type="submit">{{'action.save' | translate}}
+        </button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
 <mat-card appearance="outlined" class="settings-card">
   <mat-card-header>
     <mat-card-title>
       <span class="mat-headline-5" translate>admin.settings.connectivity-settings</span>
     </mat-card-title>
     <span class="flex flex-1"></span>
-    <mat-icon class="material-icons" style="color: rgba(0,0,0,0.18)"
+    <mat-icon class="material-icons" style="color: rgba(0,0,0,0.54)"
       [matTooltip]="'admin.settings.connectivity-settings-hint' | translate">info
     </mat-icon>
   </mat-card-header>

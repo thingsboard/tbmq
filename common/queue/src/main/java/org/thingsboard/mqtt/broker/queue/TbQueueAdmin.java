@@ -25,7 +25,6 @@ import org.thingsboard.mqtt.broker.common.data.queue.KafkaConsumerGroup;
 import org.thingsboard.mqtt.broker.common.data.queue.KafkaTopic;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -48,9 +47,6 @@ public interface TbQueueAdmin {
     PageData<KafkaBroker> getClusterInfo();
 
     PageData<KafkaTopic> getTopics(PageLink pageLink);
-
-    @Deprecated(since = "2.2.0", forRemoval = true)
-    List<String> getBrokerServiceIds();
 
     PageData<KafkaConsumerGroup> getConsumerGroups(PageLink pageLink);
 

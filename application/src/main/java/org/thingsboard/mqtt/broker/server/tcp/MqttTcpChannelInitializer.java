@@ -52,4 +52,8 @@ public class MqttTcpChannelInitializer extends AbstractMqttChannelInitializer {
         return BrokerConstants.TCP;
     }
 
+    @Override
+    public Boolean isListenerProxyProtocolEnabled() {
+        return context.getListenerProxyProtocolEnabled();
+    }
 }

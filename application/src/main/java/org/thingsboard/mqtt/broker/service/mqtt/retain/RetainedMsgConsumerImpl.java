@@ -104,9 +104,6 @@ public class RetainedMsgConsumerImpl implements RetainedMsgConsumer {
                 totalMessageCount += packSize;
                 for (TbProtoQueueMsg<RetainedMsgProto> msg : messages) {
                     String topic = msg.getKey();
-                    if (topic.startsWith(BrokerConstants.SYSTEMS_TOPIC_PREFIX)) {
-                        continue;
-                    }
                     if (isRetainedMsgProtoEmpty(msg.getValue())) {
                         // this means Kafka log compaction service haven't cleared empty message yet
                         log.trace("[{}] Encountered empty RetainedMsg.", topic);

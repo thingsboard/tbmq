@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class StubApplicationProcessorStats implements ApplicationProcessorStats {
+
     public static StubApplicationProcessorStats STUB_APPLICATION_PROCESSOR_STATS = new StubApplicationProcessorStats();
 
     private StubApplicationProcessorStats(){}
@@ -69,13 +70,4 @@ public class StubApplicationProcessorStats implements ApplicationProcessorStats 
 
     }
 
-    @Override
-    public boolean isActive() {
-        return false;
-    }
-
-    @Override
-    public void disable() {
-
-    }
 }

@@ -1,0 +1,199 @@
+#
+# Copyright © 2016-2025 The Thingsboard Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for strimzi-kafka-operator.
+
+# Default replicas for the cluster operator
+replicas: 1
+
+# If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
+# the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
+watchNamespaces: [ ]
+watchAnyNamespace: false
+
+defaultImageRegistry: quay.io
+defaultImageRepository: strimzi
+defaultImageTag: 0.47.0
+
+image:
+  registry: ""
+  repository: ""
+  name: operator
+  tag: ""
+  # imagePullSecrets:
+  #   - name: secretname
+logVolume: co-config-volume
+logConfigMap: strimzi-cluster-operator
+logConfiguration: ""
+logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
+fullReconciliationIntervalMs: 120000
+operationTimeoutMs: 300000
+kubernetesServiceDnsDomain: cluster.local
+featureGates: ""
+tmpDirSizeLimit: 1Mi
+
+# Example on how to configure extraEnvs
+# extraEnvs:
+#   - name: JAVA_OPTS
+#     value: "-Xms256m -Xmx256m"
+
+extraEnvs: [ ]
+
+tolerations: [ ]
+affinity: { }
+annotations: { }
+labels: { }
+nodeSelector: { }
+deploymentAnnotations: { }
+priorityClassName: ""
+
+podSecurityContext: { }
+securityContext: { }
+rbac:
+  create: yes
+serviceAccountCreate: yes
+serviceAccount: strimzi-cluster-operator
+
+leaderElection:
+  enable: true
+
+# https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+podDisruptionBudget:
+  enabled: false
+  # The PDB definition three attributes to control the availability requirements:
+  # minAvailable or maxUnavailable (mutually exclusive).
+  # unhealthyPodEvictionPolicy
+  #
+  # Field maxUnavailable tells how many pods can be down and minAvailable tells how many pods must be running in a cluster.
+
+  # The pdb template will check values according to below order
+  #
+  #  {{- if .Values.podDisruptionBudget.minAvailable }}
+  #     minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  #  {{- end  }}
+  #  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  #     maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  #  {{- end }}
+  #
+  # If both values are set, the template will use the first one and ignore the second one. currently by default minAvailable is set to 1
+  minAvailable: 1
+  maxUnavailable:
+  unhealthyPodEvictionPolicy: IfHealthyBudget
+
+# If you are using the grafana dashboard sidecar,
+# you can import some default dashboards here
+dashboards:
+  enabled: false
+  namespace: ~
+  label: grafana_dashboard # this is the default value from the grafana chart
+  labelValue: "1" # this is the default value from the grafana chart
+  annotations: { }
+  extraLabels: { }
+
+# Docker images that operator uses to provision various components of Strimzi.
+# To use your own registry or repository, define them for each component below or generally via defaultImageRegistry and defaultImageRepository above
+kafka:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
+kafkaConnect:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
+topicOperator:
+  image:
+    registry: ""
+    repository: ""
+    name: operator
+    tag: ""
+userOperator:
+  image:
+    registry:
+    repository:
+    name: operator
+    tag: ""
+kafkaInit:
+  image:
+    registry: ""
+    repository: ""
+    name: operator
+    tag: ""
+kafkaBridge:
+  image:
+    registry: ""
+    repository:
+    name: kafka-bridge
+    tag: 0.32.0
+kafkaExporter:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
+kafkaMirrorMaker2:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
+cruiseControl:
+  image:
+    registry: ""
+    repository: ""
+    name: kafka
+    tagPrefix: ""
+kanikoExecutor:
+  image:
+    registry: ""
+    repository: ""
+    name: kaniko-executor
+    tag: ""
+mavenBuilder:
+  image:
+    registry: ""
+    repository: ""
+    name: maven-builder
+    tag: ""
+resources:
+  limits:
+    memory: 384Mi
+    cpu: 1000m
+  requests:
+    memory: 384Mi
+    cpu: 200m
+livenessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+readinessProbe:
+  initialDelaySeconds: 10
+  periodSeconds: 30
+
+createGlobalResources: true
+# Create clusterroles that extend existing clusterroles to interact with strimzi crds
+# Ref: https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles
+createAggregateRoles: false
+# Override the exclude pattern for exclude some labels
+labelsExclusionPattern: ""
+# Controls whether Strimzi generates network policy resources (By default true)
+generateNetworkPolicy: true
+# Override the value for Connect build timeout
+connectBuildTimeoutMs: 300000
+# Controls whether Strimzi generates pod disruption budget resources (By default true)
+generatePodDisruptionBudget: true

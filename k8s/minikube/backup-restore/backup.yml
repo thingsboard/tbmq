@@ -22,13 +22,13 @@ metadata:
 spec:
   containers:
     - name: postgres-backup
-      image: postgres:16
+      image: postgres:17
       command:
         - /bin/bash
         - -ec
         - |
           echo "$(date) Backup started!"
-          pg_dump -Fc -v -h tb-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
+          pg_dump -Fc -v -h tbmq-database -U postgres -d thingsboard_mqtt_broker > /backups/tbmq_backup.dump
           echo "$(date) Backup completed!"
       env:
         - name: PGPASSWORD

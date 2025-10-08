@@ -166,13 +166,6 @@ public class AdminController extends BaseController {
     }
 
     @PreAuthorize("hasAuthority('SYS_ADMIN')")
-    @PostMapping(value = "/user")
-    @Deprecated(since = "2.2.0", forRemoval = true)
-    public User saveAdminUser(@RequestBody User user) throws ThingsboardException {
-        return filterSensitiveUserData(checkNotNull(userService.saveUser(user)));
-    }
-
-    @PreAuthorize("hasAuthority('SYS_ADMIN')")
     @PostMapping(value = "/securitySettings")
     public SecuritySettings saveSecuritySettings(@RequestBody SecuritySettings securitySettings) throws ThingsboardException {
         return checkNotNull(systemSecurityService.saveSecuritySettings(securitySettings));

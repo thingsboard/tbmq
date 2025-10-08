@@ -192,6 +192,7 @@ export class BlockedClientComponent extends EntityComponent<BlockedClient> {
       this.entityForm.get('expirationTime').setValue(this.defaultExpirationDate(), {emitEvent: false});
       this.entityForm.get('expirationTime').setValidators([this.expirationTimeValidator]);
     }
+    this.entityForm.get('expirationTime').updateValueAndValidity();
   }
 
   private updateValidators() {

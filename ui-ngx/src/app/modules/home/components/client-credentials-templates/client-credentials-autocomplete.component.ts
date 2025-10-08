@@ -43,7 +43,7 @@ import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
 import { MatInput } from '@angular/material/input';
 import { AsyncPipe } from '@angular/common';
-import { MatIconButton } from '@angular/material/button';
+import { MatIconButton, MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { EditClientCredentialsButtonComponent } from '@shared/components/button/edit-client-credentials-button.component';
 import { MatOption } from '@angular/material/core';
@@ -62,7 +62,7 @@ import { MatTooltip } from '@angular/material/tooltip';
       },
       TruncatePipe
     ],
-    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatHint, AsyncPipe, HighlightPipe, MatTooltip]
+    imports: [MatFormField, FormsModule, ReactiveFormsModule, MatLabel, MatInput, MatAutocompleteTrigger, MatIconButton, MatSuffix, MatIcon, EditClientCredentialsButtonComponent, MatAutocomplete, MatOption, TranslateModule, MatHint, AsyncPipe, HighlightPipe, MatButton, MatTooltip]
 })
 export class ClientCredentialsAutocompleteComponent implements ControlValueAccessor, OnInit {
 
@@ -245,7 +245,10 @@ export class ClientCredentialsAutocompleteComponent implements ControlValueAcces
   }
 
   createClientCredentials($event: Event, credentialsName: string) {
-    $event.preventDefault();
+    if ($event) {
+      $event.stopPropagation();
+      $event.preventDefault();
+    }
     const clientCredentials: ClientCredentials = {
       name: credentialsName
     } as ClientCredentials;

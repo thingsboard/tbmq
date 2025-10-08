@@ -37,6 +37,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.thingsboard.mqtt.broker.exception.ThingsboardErrorResponseHandler;
+import org.thingsboard.mqtt.broker.service.security.auth.AuthExceptionHandler;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.JwtAuthenticationProvider;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.JwtTokenAuthenticationProcessingFilter;
 import org.thingsboard.mqtt.broker.service.security.auth.jwt.RefreshTokenAuthenticationProvider;
@@ -87,6 +88,9 @@ public class SecurityConfiguration {
     @Lazy
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private AuthExceptionHandler authExceptionHandler;
+
     @Bean
     public AuthenticationManager authenticationManager() {
         return new ProviderManager(List.of(
@@ -119,7 +123,8 @@ public class SecurityConfiguration {
                 .exceptionHandling(config -> config.accessDeniedHandler(restAccessDeniedHandler))
                 .addFilterBefore(buildRestLoginProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(buildJwtTokenAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(buildRefreshTokenProcessingFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(buildRefreshTokenProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authExceptionHandler, buildRestLoginProcessingFilter().getClass());
         return http.build();
     }
 

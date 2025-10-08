@@ -64,7 +64,7 @@ if [ -f "docker-compose.yml" ]; then
   echo "docker-compose.yml is already present in the current directory. Skipping download."
 else
   echo "docker-compose.yml is absent in the current directory. Downloading the file..."
-  wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.1.0/msa/tbmq/configs/docker-compose.yml
+  wget https://raw.githubusercontent.com/thingsboard/tbmq/release-2.2.0/msa/tbmq/configs/docker-compose.yml
 fi
 
 COMPOSE_VERSION=$(compose_version) || exit $?
@@ -82,7 +82,9 @@ fi
 
 create_volume_if_not_exists tbmq-postgres-data
 create_volume_if_not_exists tbmq-kafka-data
-create_volume_if_not_exists tbmq-redis-data
+create_volume_if_not_exists tbmq-kafka-secrets
+create_volume_if_not_exists tbmq-kafka-config
+create_volume_if_not_exists tbmq-valkey-data
 create_volume_if_not_exists tbmq-logs
 create_volume_if_not_exists tbmq-data
 create_volume_if_not_exists tbmq-ie-logs

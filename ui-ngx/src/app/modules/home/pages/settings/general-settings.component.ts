@@ -25,12 +25,12 @@ import {
   ConnectivityProtocol,
   ConnectivitySettings,
   connectivitySettingsKey,
+  generalSettingsKey,
+  GeneralSettings,
   WebSocketSettings,
-  webSocketSettingsKey
 } from '@shared/models/settings.models';
 import { SettingsService } from '@core/http/settings.service';
 import { takeUntil } from 'rxjs/operators';
-import { isUndefined } from '@core/utils';
 import { MqttJsClientService } from '@core/http/mqtt-js-client.service';
 import { MatCard, MatCardHeader, MatCardTitle, MatCardContent } from '@angular/material/card';
 import { TranslateModule } from '@ngx-translate/core';
@@ -54,12 +54,16 @@ import { HasConfirmForm } from '@core/guards/confirm-on-exit.guard';
 export class GeneralSettingsComponent extends PageComponent implements OnDestroy, HasConfirmForm {
 
   generalSettingsForm: UntypedFormGroup;
+  webSocketSettingsForm: UntypedFormGroup;
   connectivitySettingsForm: UntypedFormGroup;
+
   protocol = 'mqtt';
   listenerPortMap = new Map<ConnectivityProtocol, number>();
 
+  private generalSettings: AdminSettings<GeneralSettings>;
+  private webSocketSettings: AdminSettings<WebSocketSettings>;
   private connectivitySettings: AdminSettings<ConnectivitySettings>;
-  private generalSettings: AdminSettings<WebSocketSettings>;
+
   private destroy$ = new Subject<void>();
 
   constructor(protected store: Store<AppState>,
@@ -67,14 +71,114 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
               private mqttJsClientService: MqttJsClientService,
               public fb: UntypedFormBuilder) {
     super(store);
-    this.buildConnectivitySettingsForm();
-    this.buildWebSocketSettingsForm();
+    this.buildForms();
     this.getSettings();
   }
 
   ngOnDestroy() {
     this.destroy$.complete();
     super.ngOnDestroy();
+  }
+
+  saveGeneralSettings() {
+    const generalSettings: AdminSettings<GeneralSettings> = JSON.parse(JSON.stringify(this.generalSettings));
+    generalSettings.jsonValue = {...generalSettings.jsonValue, ...this.generalSettingsForm.value};
+    this.settingsService.saveAdminSettings(generalSettings)
+      .subscribe(settings => {
+        this.processGeneralSettings(settings);
+      });
+  }
+
+  saveWebSocketSettings() {
+    const webSocketSettings: AdminSettings<WebSocketSettings> = JSON.parse(JSON.stringify(this.webSocketSettings));
+    const maxMessagesChanged = this.webSocketSettings.jsonValue.maxMessages !== this.webSocketSettingsForm.value.maxMessages;
+    webSocketSettings.jsonValue = {...webSocketSettings.jsonValue, ...this.webSocketSettingsForm.value};
+    this.settingsService.saveAdminSettings(webSocketSettings)
+      .subscribe(settings => {
+        this.processWebSocketSettings(settings);
+        if (maxMessagesChanged) {
+          this.mqttJsClientService.clearAllMessages();
+        }
+      });
+  }
+
+  saveConnectivitySettings() {
+    const settings = JSON.parse(JSON.stringify(this.connectivitySettings)) as AdminSettings<ConnectivitySettings>;
+    const form = this.connectivitySettingsForm.value;
+    for (const key of Object.keys(form)) {
+      settings.jsonValue[key].enabled = form[key].enabled;
+      if (form[key].enabled) {
+        settings.jsonValue[key].host = this.connectivitySettingsForm.value[key].host;
+        settings.jsonValue[key].port = this.connectivitySettingsForm.value[key].port.toString();
+      }
+    }
+    this.settingsService.saveAdminSettings(settings)
+      .subscribe(settings => {
+        this.processConnectivitySettings(settings);
+        this.settingsService.getConnectivitySettings().subscribe();
+      });
+  }
+
+  discardGeneralSettings(): void {
+    const generalSettings = this.generalSettings.jsonValue;
+    this.generalSettingsForm.reset(generalSettings);
+  }
+
+  discardWebSocketSettings(): void {
+    const webSocketSettings = this.webSocketSettings.jsonValue;
+    this.webSocketSettingsForm.reset(webSocketSettings);
+  }
+
+  discardConnectivitySettings(): void {
+    this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
+  }
+
+  hideSyncYamlPort(protocol: ConnectivityProtocol): boolean {
+    const listenerPort = this.listenerPortMap.get(protocol);
+    if (listenerPort) {
+      const listenerEnabled = this.connectivitySettingsForm.get(`${protocol}.enabled`).value;
+      const formPort = this.connectivitySettingsForm.get(`${protocol}.port`).value;
+      const isFormPortDifferent = formPort != listenerPort;
+      return !(listenerEnabled && isFormPortDifferent);
+    }
+    return true;
+  }
+
+  syncYamlPort(protocol: ConnectivityProtocol) {
+    const listenerPort = this.listenerPortMap.get(protocol);
+    if (listenerPort) {
+      this.connectivitySettingsForm.get(`${protocol}.port`).patchValue(listenerPort);
+      this.connectivitySettingsForm.get(`${protocol}.port`).markAsDirty();
+    }
+  }
+
+  confirmForm(): UntypedFormGroup {
+    if (this.generalSettingsForm.dirty) {
+      return this.generalSettingsForm;
+    } else if (this.webSocketSettingsForm.dirty) {
+      return this.webSocketSettingsForm;
+    }
+    return this.connectivitySettingsForm;
+  }
+
+  private buildForms() {
+    this.buildGeneralSettingsForm();
+    this.buildWebSocketSettingsForm();
+    this.buildConnectivitySettingsForm();
+  }
+
+  private buildGeneralSettingsForm() {
+    this.generalSettingsForm = this.fb.group({
+      baseUrl: [null, [Validators.required]],
+      prohibitDifferentUrl: [null, []],
+    });
+  }
+
+  private buildWebSocketSettingsForm() {
+    this.webSocketSettingsForm = this.fb.group({
+      isLoggingEnabled: [null, []],
+      maxMessages: [null, [Validators.required]],
+    });
   }
 
   private buildConnectivitySettingsForm() {
@@ -108,75 +212,14 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     return formGroup;
   }
 
-  private buildWebSocketSettingsForm() {
-    this.generalSettingsForm = this.fb.group({
-      isLoggingEnabled: [null, []],
-      maxMessages: [null, [Validators.required]]
-    });
+  private processGeneralSettings(settings: AdminSettings<GeneralSettings>): void {
+    this.generalSettings = settings;
+    this.generalSettingsForm.reset(this.generalSettings.jsonValue);
   }
 
-  saveGeneralSettings() {
-    let generalSettings: AdminSettings<WebSocketSettings> = JSON.parse(JSON.stringify(this.generalSettings));
-    const maxMessagesChanged = this.generalSettings.jsonValue.maxMessages !== this.generalSettingsForm.value.maxMessages;
-    if (isUndefined(this.generalSettings)) {
-      generalSettings = {
-        key: webSocketSettingsKey,
-        jsonValue: this.generalSettingsForm.value
-      };
-    }
-    generalSettings.jsonValue = {...generalSettings.jsonValue, ...this.generalSettingsForm.value};
-    this.settingsService.saveAdminSettings(generalSettings)
-      .subscribe(settings => {
-        this.processGeneralSettings(settings);
-        if (maxMessagesChanged) {
-          this.mqttJsClientService.clearAllMessages();
-        }
-      });
-  }
-
-  saveConnectivitySettings() {
-    const settings = JSON.parse(JSON.stringify(this.connectivitySettings)) as AdminSettings<ConnectivitySettings>;
-    const form = this.connectivitySettingsForm.value;
-    for (const key of Object.keys(form)) {
-      settings.jsonValue[key].enabled = form[key].enabled;
-      if (form[key].enabled) {
-        settings.jsonValue[key].host = this.connectivitySettingsForm.value[key].host;
-        settings.jsonValue[key].port = this.connectivitySettingsForm.value[key].port.toString();
-      }
-    }
-    this.settingsService.saveAdminSettings(settings)
-      .subscribe(settings => {
-        this.processConnectivitySettings(settings);
-        this.settingsService.getConnectivitySettings().subscribe();
-      });
-  }
-
-  discardGeneralSettings(): void {
-    const generalSettings = this.generalSettings.jsonValue;
-    this.generalSettingsForm.reset(generalSettings);
-  }
-
-  discardConnectivitySettings(): void {
-    this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
-  }
-
-  hideSyncYamlPort(protocol: ConnectivityProtocol): boolean {
-    const listenerPort = this.listenerPortMap.get(protocol);
-    if (listenerPort) {
-      const listenerEnabled = this.connectivitySettingsForm.get(`${protocol}.enabled`).value;
-      const formPort = this.connectivitySettingsForm.get(`${protocol}.port`).value;
-      const isFormPortDifferent = formPort != listenerPort;
-      return !(listenerEnabled && isFormPortDifferent);
-    }
-    return true;
-  }
-
-  syncYamlPort(protocol: ConnectivityProtocol) {
-    const listenerPort = this.listenerPortMap.get(protocol);
-    if (listenerPort) {
-      this.connectivitySettingsForm.get(`${protocol}.port`).patchValue(listenerPort);
-      this.connectivitySettingsForm.get(`${protocol}.port`).markAsDirty();
-    }
+  private processWebSocketSettings(settings: AdminSettings<WebSocketSettings>): void {
+    this.webSocketSettings = settings;
+    this.webSocketSettingsForm.reset(this.webSocketSettings.jsonValue);
   }
 
   private processConnectivitySettings(settings: AdminSettings<ConnectivitySettings>): void {
@@ -184,14 +227,10 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
     this.connectivitySettingsForm.reset(this.connectivitySettings.jsonValue);
   }
 
-  private processGeneralSettings(settings: AdminSettings<WebSocketSettings>): void {
-    this.generalSettings = settings;
-    this.generalSettingsForm.reset(this.generalSettings.jsonValue);
-  }
-
   private getSettings() {
     this.getConnectivitySettings();
     this.getWebSocketGeneralSettings();
+    this.getGeneralSettings();
   }
 
   private getConnectivitySettings() {
@@ -199,13 +238,10 @@ export class GeneralSettingsComponent extends PageComponent implements OnDestroy
   }
 
   private getWebSocketGeneralSettings() {
-    this.settingsService.getWebSocketSettings().subscribe(settings => this.processGeneralSettings(settings));
+    this.settingsService.getWebSocketSettings().subscribe(settings => this.processWebSocketSettings(settings));
   }
 
-  confirmForm(): UntypedFormGroup {
-    if (this.generalSettingsForm.dirty) {
-      return this.generalSettingsForm;
-    }
-    return this.connectivitySettingsForm;
+  private getGeneralSettings() {
+    this.settingsService.getAdminSettings<GeneralSettings>(generalSettingsKey).subscribe(settings => this.processGeneralSettings(settings));
   }
 }

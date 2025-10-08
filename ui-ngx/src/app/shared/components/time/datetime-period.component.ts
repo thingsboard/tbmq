@@ -54,6 +54,9 @@ export class DatetimePeriodComponent implements ControlValueAccessor {
 
   private propagateChange = null;
 
+  private prevStartDate: Date | null = null;
+  private prevEndDate: Date | null = null;
+
   constructor() {
   }
 
@@ -90,6 +93,8 @@ export class DatetimePeriodComponent implements ControlValueAccessor {
       this.endDate = date;
       this.updateView();
     }
+    this.prevStartDate = this.startDate ? new Date(this.startDate.getTime()) : null;
+    this.prevEndDate = this.endDate ? new Date(this.endDate.getTime()) : null;
     this.updateMinMaxDates();
   }
 
@@ -118,20 +123,56 @@ export class DatetimePeriodComponent implements ControlValueAccessor {
     if (this.startDate) {
       if (this.startDate.getTime() > this.maxStartDate.getTime()) {
         this.startDate = new Date(this.maxStartDate.getTime());
+      } else {
+        const prev = this.prevStartDate;
+        if (prev) {
+          const dateChanged = this.startDate.getFullYear() !== prev.getFullYear() ||
+            this.startDate.getMonth() !== prev.getMonth() ||
+            this.startDate.getDate() !== prev.getDate();
+          const timeResetToMidnight = this.startDate.getHours() === 0 &&
+            this.startDate.getMinutes() === 0 &&
+            this.startDate.getSeconds() === 0 &&
+            this.startDate.getMilliseconds() === 0;
+          if (dateChanged && timeResetToMidnight) {
+            this.startDate.setHours(prev.getHours(), prev.getMinutes(), prev.getSeconds(), prev.getMilliseconds());
+          }
+        }
+      }
+      if (this.maxStartDate && this.startDate.getTime() > this.maxStartDate.getTime()) {
+        this.startDate = new Date(this.maxStartDate.getTime());
       }
       this.updateMinMaxDates();
     }
     this.updateView();
+    this.prevStartDate = this.startDate ? new Date(this.startDate.getTime()) : null;
   }
 
   onEndDateChange() {
     if (this.endDate) {
       if (this.endDate.getTime() < this.minEndDate.getTime()) {
         this.endDate = new Date(this.minEndDate.getTime());
+      } else {
+        const prev = this.prevEndDate;
+        if (prev) {
+          const dateChanged = this.endDate.getFullYear() !== prev.getFullYear() ||
+            this.endDate.getMonth() !== prev.getMonth() ||
+            this.endDate.getDate() !== prev.getDate();
+          const timeResetToMidnight = this.endDate.getHours() === 0 &&
+            this.endDate.getMinutes() === 0 &&
+            this.endDate.getSeconds() === 0 &&
+            this.endDate.getMilliseconds() === 0;
+          if (dateChanged && timeResetToMidnight) {
+            this.endDate.setHours(prev.getHours(), prev.getMinutes(), prev.getSeconds(), prev.getMilliseconds());
+          }
+        }
+      }
+      if (this.minEndDate && this.endDate.getTime() < this.minEndDate.getTime()) {
+        this.endDate = new Date(this.minEndDate.getTime());
       }
       this.updateMinMaxDates();
     }
     this.updateView();
+    this.prevEndDate = this.endDate ? new Date(this.endDate.getTime()) : null;
   }
 
 }

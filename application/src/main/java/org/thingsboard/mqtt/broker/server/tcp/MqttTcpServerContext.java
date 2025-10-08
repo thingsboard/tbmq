@@ -20,9 +20,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
+@Getter
 public class MqttTcpServerContext {
 
-    @Getter
     @Value("${listener.tcp.netty.max_payload_size}")
     private int maxPayloadSize;
+
+    @Value("${listener.tcp.proxy_enabled:}")
+    private Boolean listenerProxyProtocolEnabled;
+
 }

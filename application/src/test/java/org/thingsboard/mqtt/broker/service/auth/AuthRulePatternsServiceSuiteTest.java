@@ -128,8 +128,134 @@ public class AuthRulePatternsServiceSuiteTest {
         authorizationRuleService.parseSslAuthorizationRule(credentials, "123456789");
     }
 
+    @Test
+    public void testPlaceholderInsertedAndQuoted_DotChar() throws Exception {
+        // Pattern uses ${cn}; CN contains '.' which is a regex meta
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("/devices/${cn}/data"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "dev.42";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        // Ensure the compiled pattern has \Q...\E (i.e., CN was quoted)
+        String pubPattern = compiled.get(0).getPubPatterns().get(0).pattern();
+        Assert.assertEquals("/devices/\\Qdev.42\\E/data", pubPattern);
+
+        // Positive: exact literal dot
+        boolean okExact = authorizationRuleService.isPubAuthorized("clientA", "/devices/dev.42/data", compiled);
+        Assert.assertTrue(okExact);
+
+        // Negative: '.' should NOT act as "any char"
+        boolean okAnyChar = authorizationRuleService.isPubAuthorized("clientA", "/devices/devX42/data", compiled);
+        Assert.assertFalse(okAnyChar);
+    }
+
+    @Test
+    public void testPlaceholderInsertedAndQuoted_CharClass() throws Exception {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("/devices/${cn}/events"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "dev[abc]";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        String pat = compiled.get(0).getPubPatterns().get(0).pattern();
+        Assert.assertEquals("/devices/\\Qdev[abc]\\E/events", pat);
+
+        // Only literal "[abc]" should match
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "/devices/dev[abc]/events", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/devices/deva/events", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/devices/devb/events", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/devices/devc/events", compiled));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("/devices/devc/events", compiled));
+    }
+
+    @Test
+    public void testPlaceholderInsertedAndQuoted_Alternation() throws Exception {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("/tenants/acme/${cn}/data"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "sensor|admin";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        String pat = compiled.get(0).getPubPatterns().get(0).pattern();
+        Assert.assertEquals("/tenants/acme/\\Qsensor|admin\\E/data", pat);
+
+        // Only the literal "sensor|admin" segment must match
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "/tenants/acme/sensor|admin/data", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/tenants/acme/sensor/data", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/tenants/acme/admin/data", compiled));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("/tenants/acme/admin/data", compiled));
+    }
+
+    @Test
+    public void testSubscribeChecksUseExpandedPatterns() throws Exception {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("/sub/${cn}/.*"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "dev.42";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        // SUB should only allow the literal CN section (with dot quoted)
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("/sub/dev.42/x", compiled));
+        Assert.assertFalse(authorizationRuleService.isSubAuthorized("/sub/devX42/x", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("client", "/sub/devX42/x", compiled));
+    }
+
+    @Test
+    public void testPatternsWithoutPlaceholderRemainUnchanged() throws Exception {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("all/.*"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, "any-cn");
+
+        Assert.assertEquals("all/.*", compiled.get(0).getPubPatterns().get(0).pattern());
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "all/foo", compiled));
+        Assert.assertTrue(authorizationRuleService.isSubAuthorized("all/bar", compiled));
+    }
+
+    @Test
+    public void testMultiplePlaceholdersQuotedConsistently() throws Exception {
+        PubSubAuthorizationRules rules = PubSubAuthorizationRules.newInstance(List.of("/t/${cn}/${cn}/data"));
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(".*", rules));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "a.b[c]|d";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        String p = compiled.get(0).getPubPatterns().get(0).pattern();
+        // Each ${cn} occurrence should be quoted separately
+        Assert.assertEquals("/t/\\Qa.b[c]|d\\E/\\Qa.b[c]|d\\E/data", p);
+
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "/t/a.b[c]|d/a.b[c]|d/data", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/t/abC/d/data", compiled));
+    }
+
+    @Test
+    public void testMapKeyMatchThenExpansion() throws Exception {
+        SslMqttCredentials ssl = new SslMqttCredentials("parent.com", Map.of(
+                ".*device-[0-9]+.*", PubSubAuthorizationRules.newInstance(List.of("/dev/${cn}/tx"))
+        ));
+        ClientTypeSslMqttCredentials c = newClientTypeSslMqttCredentials(ssl);
+
+        String cn = "tenantA.device-123";
+        List<AuthRulePatterns> compiled = authorizationRuleService.parseSslAuthorizationRule(c, cn);
+
+        // Ensure expansion used quoted CN
+        String pubPattern = compiled.get(0).getPubPatterns().get(0).pattern();
+        Assert.assertEquals("/dev/\\QtenantA.device-123\\E/tx", pubPattern);
+
+        // Positive/negative checks
+        Assert.assertTrue(authorizationRuleService.isPubAuthorized("c1", "/dev/tenantA.device-123/tx", compiled));
+        Assert.assertFalse(authorizationRuleService.isPubAuthorized("c1", "/dev/tenantA_device-123/tx", compiled));
+    }
+
     /**
-     * parseBasicAuthorizationRule tests
+     * parseAuthorizationRule tests
      */
 
     @Test

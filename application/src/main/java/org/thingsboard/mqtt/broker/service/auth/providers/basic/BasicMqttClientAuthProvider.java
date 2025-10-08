@@ -91,9 +91,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
         if (!enabled) {
             return AuthResponse.providerDisabled(MqttAuthProviderType.MQTT_BASIC);
         }
-        if (log.isTraceEnabled()) {
-            log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());
-        }
+        log.trace("[{}] Authenticating client with basic credentials", authContext.getClientId());
         try {
             BasicAuthResponse basicAuthResponse = authWithBasicCredentials(authContext.getClientId(), authContext.getUsername(), authContext.getPasswordBytes());
             if (basicAuthResponse.isFailure()) {
@@ -102,13 +100,12 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
             }
             MqttClientCredentials basicCredentials = basicAuthResponse.getCredentials();
             putIntoClientSessionCredsCache(authContext, basicCredentials);
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
-            }
+            log.debug("[{}] Authenticated as {} with username {}", authContext.getClientId(), basicCredentials.getClientType(), authContext.getUsername());
             BasicMqttCredentials credentials = JacksonUtil.fromString(basicCredentials.getCredentialsValue(), BasicMqttCredentials.class);
             AuthRulePatterns authRulePatterns = authorizationRuleService.parseAuthorizationRule(credentials);
             return AuthResponse.success(basicCredentials.getClientType(), Collections.singletonList(authRulePatterns));
         } catch (Exception e) {
+            log.debug("[{}] Authentication failed", authContext.getClientId(), e);
             return AuthResponse.failure(e.getMessage());
         }
     }
@@ -140,9 +137,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
         if (matchingCredentialsList.isEmpty()) {
             return BasicAuthResponse.failure(formatErrorMsg(BasicAuthFailure.NO_CREDENTIALS_FOUND, clientId, username));
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Found credentials {} for credentialIds {}", matchingCredentialsList, credentialIds);
-        }
+        log.debug("Found credentials {} for credentialIds {}", matchingCredentialsList, credentialIds);
         String password = passwordBytesToString(passwordBytes);
         if (password != null) {
             MqttClientCredentials credentialsFromCache = getBasicCredsPwCache().get(toHashString(password), MqttClientCredentials.class);
@@ -189,7 +184,7 @@ public class BasicMqttClientAuthProvider implements MqttClientAuthProvider<Basic
 
     private boolean isMatchingPassword(String password, BasicMqttCredentials basicMqttCredentials) {
         return basicMqttCredentials.getPassword() == null
-               || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
+                || (password != null && passwordEncoder.matches(password, basicMqttCredentials.getPassword()));
     }
 
     private String passwordBytesToString(byte[] passwordBytes) {

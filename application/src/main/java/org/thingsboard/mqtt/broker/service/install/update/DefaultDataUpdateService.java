@@ -17,29 +17,8 @@ package org.thingsboard.mqtt.broker.service.install.update;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
-import org.thingsboard.mqtt.broker.common.data.AdminSettings;
-import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.SysAdminSettingType;
-import org.thingsboard.mqtt.broker.common.data.page.PageData;
-import org.thingsboard.mqtt.broker.common.data.page.PageLink;
-import org.thingsboard.mqtt.broker.common.data.page.SortOrder;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProvider;
-import org.thingsboard.mqtt.broker.common.data.security.MqttAuthProviderType;
-import org.thingsboard.mqtt.broker.common.data.security.MqttClientCredentials;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
-import org.thingsboard.mqtt.broker.common.data.security.ssl.SslMqttAuthProviderConfiguration;
-import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
-import org.thingsboard.mqtt.broker.dao.client.MqttClientCredentialsService;
-import org.thingsboard.mqtt.broker.dao.client.provider.MqttAuthProviderService;
-import org.thingsboard.mqtt.broker.dao.settings.AdminSettingsService;
-import org.thingsboard.mqtt.broker.service.install.data.MqttAuthSettings;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
 
 @Service
 @Profile("install")
@@ -47,137 +26,11 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class DefaultDataUpdateService implements DataUpdateService {
 
-    @Value("${security.mqtt.basic.enabled:false}")
-    private boolean basicAuthEnabled;
-    @Value("${security.mqtt.ssl.enabled:false}")
-    private boolean x509AuthEnabled;
-    @Value("${security.mqtt.ssl.skip_validity_check_for_client_cert:false}")
-    private boolean skipValidityCheckForClientCert;
-
-    private final AdminSettingsService adminSettingsService;
-    private final MqttAuthProviderService mqttAuthProviderService;
-    private final MqttClientCredentialsService mqttClientCredentialsService;
-
     @Override
     public void updateData() throws Exception {
         log.info("Updating data ...");
         //TODO: should be cleaned after each release
-        createMqttAuthSettingsIfNotExist();
-        createMqttAuthProvidersIfNotExist();
-        deduplicateMqttClientCredentialNames();
         log.info("Data updated.");
     }
 
-    private void createMqttAuthSettingsIfNotExist() {
-        log.info("Starting MQTT auth setting creation...");
-        AdminSettings settings = adminSettingsService.findAdminSettingsByKey(SysAdminSettingType.MQTT_AUTHORIZATION.getKey());
-        if (settings != null) {
-            log.info("MQTT auth settings already exists. Skipping!");
-            return;
-        }
-        MqttAuthSettings mqttAuthSettings = new MqttAuthSettings();
-        mqttAuthSettings.setPriorities(MqttAuthProviderType.defaultPriorityList);
-        AdminSettings adminSettings = MqttAuthSettings.toAdminSettings(mqttAuthSettings);
-        adminSettingsService.saveAdminSettings(adminSettings);
-        log.info("Finished MQTT auth setting creation!");
-    }
-
-    private void createMqttAuthProvidersIfNotExist() {
-        log.info("Starting MQTT auth providers creation...");
-        for (var type : MqttAuthProviderType.values()) {
-            Optional<MqttAuthProvider> mqttAuthProviderOpt = mqttAuthProviderService.getAuthProviderByType(type);
-            if (mqttAuthProviderOpt.isPresent()) {
-                log.info("Mqtt auth provider: {} already exists. Skipping!", type);
-                continue;
-            }
-            log.info("Creating {} auth provider...", type.getDisplayName());
-            MqttAuthProvider mqttAuthProvider = switch (type) {
-                case MQTT_BASIC -> MqttAuthProvider.defaultBasicAuthProvider(isBasicAuthEnabled());
-                case SCRAM -> MqttAuthProvider.defaultScramAuthProvider(true);
-                case JWT -> MqttAuthProvider.defaultJwtAuthProvider(false);
-                case X_509 -> {
-                    MqttAuthProvider x509AuthProvider = MqttAuthProvider.defaultSslAuthProvider(isX509AuthEnabled());
-                    var configuration = (SslMqttAuthProviderConfiguration) x509AuthProvider.getConfiguration();
-                    configuration.setSkipValidityCheckForClientCert(isX509SkipValidityCheckForClientCertIsSetToTrue());
-                    configuration.setClientAuthType(MqttClientAuthType.CLIENT_AUTH_REQUESTED);
-                    x509AuthProvider.setConfiguration(configuration);
-                    yield x509AuthProvider;
-                }
-            };
-            mqttAuthProviderService.saveAuthProvider(mqttAuthProvider);
-            log.info("Created {} auth provider!", type.getDisplayName());
-        }
-        log.info("Finished MQTT auth providers creation!");
-    }
-
-    boolean isBasicAuthEnabled() {
-        return getLegacyConfig("SECURITY_MQTT_BASIC_ENABLED", basicAuthEnabled);
-    }
-
-    boolean isX509AuthEnabled() {
-        return getLegacyConfig("SECURITY_MQTT_SSL_ENABLED", x509AuthEnabled);
-    }
-
-    boolean isX509SkipValidityCheckForClientCertIsSetToTrue() {
-        return getLegacyConfig("SECURITY_MQTT_SSL_SKIP_VALIDITY_CHECK_FOR_CLIENT_CERT", skipValidityCheckForClientCert);
-    }
-
-    boolean getLegacyConfig(String env, boolean ymlProperty) {
-        return Optional.ofNullable(System.getenv(env)).map(Boolean::parseBoolean).orElse(ymlProperty);
-    }
-
-    public void deduplicateMqttClientCredentialNames() {
-        log.info("Starting to fix name duplicates for MQTT client credentials...");
-
-        int updated = 0;
-
-        PageLink pageLink = new PageLink(BrokerConstants.DEFAULT_PAGE_SIZE, 0, null, new SortOrder("createdTime"));
-        Set<String> seen = new HashSet<>();
-
-        while (true) {
-            PageData<MqttClientCredentials> page = mqttClientCredentialsService.getFullCredentials(pageLink);
-            if (page.getData().isEmpty()) {
-                break;
-            }
-
-            for (MqttClientCredentials credentials : page.getData()) {
-                String name = credentials.getName();
-                if (seen.add(name)) {
-                    continue;
-                }
-
-                String newName = getUniqueNameWith3RandomCharsAsSuffix(name, seen);
-                while (mqttClientCredentialsService.findCredentialsByName(newName) != null) {
-                    seen.add(newName);
-                    newName = getUniqueNameWith3RandomCharsAsSuffix(name, seen);
-                }
-
-                credentials.setName(newName);
-                mqttClientCredentialsService.saveCredentials(credentials);
-                seen.add(newName);
-                updated++;
-            }
-
-            if (!page.hasNext()) {
-                break;
-            }
-            pageLink = pageLink.nextPageLink();
-        }
-        log.info("Updated {} duplicated credentials!", updated);
-    }
-
-    private String getUniqueNameWith3RandomCharsAsSuffix(String base, Set<String> reserved) {
-        String candidate;
-        do {
-            candidate = base + " " + rand3();
-            if (candidate.length() > 255) {
-                throw new IllegalArgumentException("Could not fix duplicate by adding space and 3 random chars: new MQTT client credential name is too long. Original name is: " + base);
-            }
-        } while (reserved.contains(candidate));
-        return candidate;
-    }
-
-    private String rand3() {
-        return StringUtils.randomAlphabetic(3);
-    }
 }

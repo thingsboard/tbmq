@@ -20,7 +20,6 @@ import io.netty.handler.ssl.SslHandler;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.server.AbstractMqttWsChannelInitializer;
@@ -33,11 +32,6 @@ import org.thingsboard.mqtt.broker.server.MqttHandlerFactory;
 public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer {
 
     private final MqttWssServerContext context;
-
-    @Value("${listener.wss.netty.sub_protocols}")
-    private String subprotocols;
-    @Value("${listener.wss.config.enabled_cipher_suites}")
-    private String[] enabledCipherSuites;
 
     public MqttWssChannelInitializer(MqttHandlerFactory handlerFactory, MqttWssServerContext context) {
         super(handlerFactory);
@@ -61,6 +55,16 @@ public class MqttWssChannelInitializer extends AbstractMqttWsChannelInitializer 
 
     @Override
     public SslHandler getSslHandler() {
-        return context.getWssHandlerProvider().getSslHandler(enabledCipherSuites, handlerFactory.getClientAuthType());
+        return context.getWssHandlerProvider().getSslHandler(context.getEnabledCipherSuites(), handlerFactory.getClientAuthType());
+    }
+
+    @Override
+    public Boolean isListenerProxyProtocolEnabled() {
+        return context.getListenerProxyProtocolEnabled();
+    }
+
+    @Override
+    protected String getSubprotocols() {
+        return context.getSubprotocols();
     }
 }

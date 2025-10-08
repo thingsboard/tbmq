@@ -62,7 +62,7 @@ if (Test-Path "docker-compose.yml") {
     Write-Host "docker-compose.yml is already present in the current directory. Skipping download."
 } else {
     Write-Host "docker-compose.yml is absent in the current directory. Downloading the file..."
-    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/release-2.1.0/msa/tbmq/configs/docker-compose.yml" -OutFile "docker-compose.yml"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/thingsboard/tbmq/release-2.2.0/msa/tbmq/configs/docker-compose.yml" -OutFile "docker-compose.yml"
 }
 
 $COMPOSE_VERSION = compose_version
@@ -80,7 +80,9 @@ if (Select-String -Path "docker-compose.yml" -Pattern $search_string) {
 
 create_volume_if_not_exists "tbmq-postgres-data"
 create_volume_if_not_exists "tbmq-kafka-data"
-create_volume_if_not_exists "tbmq-redis-data"
+create_volume_if_not_exists "tbmq-kafka-secrets"
+create_volume_if_not_exists "tbmq-kafka-config"
+create_volume_if_not_exists "tbmq-valkey-data"
 create_volume_if_not_exists "tbmq-logs"
 create_volume_if_not_exists "tbmq-data"
 create_volume_if_not_exists "tbmq-ie-logs"

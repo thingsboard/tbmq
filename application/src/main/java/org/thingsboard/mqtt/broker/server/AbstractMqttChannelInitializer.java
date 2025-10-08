@@ -29,6 +29,8 @@ import org.thingsboard.mqtt.broker.server.ip.IpAddressHandler;
 import org.thingsboard.mqtt.broker.server.ip.ProxyIpAddressHandler;
 import org.thingsboard.mqtt.broker.server.traffic.DuplexTrafficHandler;
 
+import java.util.Objects;
+
 @Slf4j
 @Getter
 public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<SocketChannel> implements MqttChannelInitializer {
@@ -38,7 +40,7 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     @Value("${historical-data-report.enabled:true}")
     private boolean historicalDataReportEnabled;
     @Value("${listener.proxy_enabled:false}")
-    private boolean proxyProtocolEnabled;
+    private boolean globalProxyProtocolEnabled;
 
     protected final MqttHandlerFactory handlerFactory;
 
@@ -50,7 +52,7 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
     public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
 
-        if (proxyProtocolEnabled) {
+        if (isProxyProtocolEnabled()) {
             pipeline.addLast("proxy", new HAProxyMessageDecoder());
             pipeline.addLast("ipAdrHandler", new ProxyIpAddressHandler());
         } else {
@@ -83,6 +85,10 @@ public abstract class AbstractMqttChannelInitializer extends ChannelInitializer<
 
     protected void constructWsPipeline(SocketChannel ch) {
 
+    }
+
+    private boolean isProxyProtocolEnabled() {
+        return Objects.requireNonNullElseGet(isListenerProxyProtocolEnabled(), () -> globalProxyProtocolEnabled);
     }
 
 }

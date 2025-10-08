@@ -17,7 +17,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tb-broker-ingress
+  name: tbmq-ingress
   namespace: thingsboard-mqtt-broker
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
@@ -31,6 +31,6 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: tb-broker
+                name: tbmq
                 port:
                   number: 8083

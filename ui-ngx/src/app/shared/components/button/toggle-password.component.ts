@@ -14,19 +14,22 @@
 /// limitations under the License.
 ///
 
-import { AfterViewInit, Component, ElementRef, input } from '@angular/core';
-
-import { MatIconButton } from '@angular/material/button';
+import { AfterViewInit, Component, ElementRef } from '@angular/core';
 import { MatIcon } from '@angular/material/icon';
 
 @Component({
     selector: 'tb-toggle-password',
     templateUrl: 'toggle-password.component.html',
-    imports: [MatIconButton, MatIcon]
+    styles: [`
+      :host {
+        cursor: pointer;
+        padding: 12px;
+      }`
+    ],
+    imports: [MatIcon]
 })
 export class TogglePasswordComponent implements AfterViewInit {
 
-  disabled = input<boolean>(false);
   showPassword = false;
   hideToggle = false;
 

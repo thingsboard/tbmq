@@ -26,7 +26,6 @@ import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttSubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.common.data.ApplicationSharedSubscription;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.mqtt.MsgExpiryResult;
 import org.thingsboard.mqtt.broker.common.data.subscription.TopicSubscription;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
@@ -80,10 +79,8 @@ public class MqttSubscribeHandler {
         Set<TopicSharedSubscription> currentSharedSubscriptions = clientSubscriptionService.getClientSharedSubscriptions(ctx.getClientId());
         List<TopicSubscription> topicSubscriptions = msg.getTopicSubscriptions();
 
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
-                    ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
-        }
+        log.trace("[{}][{}] Processing subscribe, messageId - {}, subscriptions - {}",
+                ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), topicSubscriptions);
 
         List<MqttReasonCodes.SubAck> codes = collectMqttReasonCodes(ctx, msg);
         if (CollectionUtils.isEmpty(codes)) {
@@ -140,7 +137,7 @@ public class MqttSubscribeHandler {
                 }
             }
 
-            if (subscription.isSharedSubscription() && ctx.getSessionInfo().isPersistent() && ClientType.APPLICATION == ctx.getClientType()) {
+            if (subscription.isSharedSubscription() && ctx.getSessionInfo().isPersistentAppClient()) {
                 if (findSharedSubscriptionByTopicFilter(subscription.getTopicFilter()) == null) {
                     log.warn("[{}] Failed to subscribe to a non-existent shared subscription topic filter!", subscription.getTopicFilter());
                     codes.add(MqttReasonCodeResolver.implementationSpecificError(ctx));
@@ -216,7 +213,7 @@ public class MqttSubscribeHandler {
     }
 
     List<RetainedMsg> getRetainedMessagesForTopicSubscriptions(List<TopicSubscription> newSubscriptions,
-                                                              Set<TopicSubscription> currentSubscriptions) {
+                                                               Set<TopicSubscription> currentSubscriptions) {
         return newSubscriptions
                 .stream()
                 .filter(TopicSubscription::isCommonSubscription)
@@ -260,16 +257,12 @@ public class MqttSubscribeHandler {
     private void startProcessingSharedSubscriptions(ClientSessionCtx ctx, List<TopicSubscription> topicSubscriptions,
                                                     Set<TopicSharedSubscription> currentSharedSubscriptions) {
         if (!ctx.getSessionInfo().isPersistent()) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
-            }
+            log.debug("[{}] The client session is not persistent to process persisted messages for shared subscriptions!", ctx.getClientId());
             return;
         }
         Set<TopicSharedSubscription> newSharedSubscriptions = collectUniqueSharedSubscriptions(topicSubscriptions);
         if (CollectionUtils.isEmpty(newSharedSubscriptions)) {
-            if (log.isDebugEnabled()) {
-                log.debug("[{}] No shared subscriptions found!", ctx.getClientId());
-            }
+            log.debug("[{}] No new shared subscriptions found!", ctx.getClientId());
             return;
         }
         Set<TopicSharedSubscription> newSubscriptions = filterNewUniqueSubscriptions(newSharedSubscriptions, currentSharedSubscriptions);
@@ -289,7 +282,7 @@ public class MqttSubscribeHandler {
                                                                        Set<TopicSharedSubscription> newSharedSubscriptions,
                                                                        Set<TopicSharedSubscription> currentSharedSubscriptions) {
         Set<TopicSharedSubscription> differentQosSubscriptions;
-        if (ClientType.APPLICATION == ctx.getClientType()) {
+        if (ctx.isAppClient()) {
             differentQosSubscriptions = filterSameSubscriptionsWithDifferentQos(newSharedSubscriptions, currentSharedSubscriptions, this::isQosDifferent);
             applicationPersistenceProcessor.stopProcessingSharedSubscriptions(ctx, differentQosSubscriptions);
         } else {

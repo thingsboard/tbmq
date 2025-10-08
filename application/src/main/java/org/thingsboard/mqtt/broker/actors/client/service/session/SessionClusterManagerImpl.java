@@ -33,6 +33,7 @@ import org.thingsboard.mqtt.broker.cache.CacheNameResolver;
 import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
 import org.thingsboard.mqtt.broker.common.data.ClientInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientSession;
+import org.thingsboard.mqtt.broker.common.data.ClientSessionInfo;
 import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.ConnectionInfo;
 import org.thingsboard.mqtt.broker.common.data.SessionInfo;
@@ -256,9 +257,9 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
             callback.onFailure(new RuntimeException("Trying to remove APPLICATION topic for empty clientId"));
             return;
         }
-        ClientSession clientSession = getClientSessionForClient(clientId);
-        if (clientSession == null || ClientType.APPLICATION == clientSession.getClientType()) {
-            log.debug("[{}] Skipping application topic removal: {}", clientId, clientSession == null ? "no client session found" : "type is APPLICATION");
+        ClientSessionInfo clientSessionInfo = getClientSessionInfoForClient(clientId);
+        if (clientSessionInfo == null || clientSessionInfo.isAppClient()) {
+            log.debug("[{}] Skipping application topic removal: {}", clientId, clientSessionInfo == null ? "no client session found" : "type is APPLICATION");
             callback.onSuccess();
             return;
         }
@@ -399,6 +400,10 @@ public class SessionClusterManagerImpl implements SessionClusterManager {
 
     private ClientSession getClientSessionForClient(String clientId) {
         return clientSessionService.getClientSession(clientId);
+    }
+
+    private ClientSessionInfo getClientSessionInfoForClient(String clientId) {
+        return clientSessionService.getClientSessionInfo(clientId);
     }
 
     private void saveClientSession(String clientId, ClientSession clientSession) {

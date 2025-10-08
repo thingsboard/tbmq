@@ -23,12 +23,13 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
+import org.thingsboard.mqtt.broker.common.data.SessionInfo;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
 import org.thingsboard.mqtt.broker.service.subscription.shared.TopicSharedSubscription;
 import org.thingsboard.mqtt.broker.session.ClientSessionCtx;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -38,7 +39,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +51,7 @@ public class MqttUnsubscribeHandlerTest {
     MqttUnsubscribeHandler mqttUnsubscribeHandler;
 
     ClientSessionCtx ctx;
+    SessionInfo sessionInfo;
 
     @Before
     public void setUp() {
@@ -60,6 +61,9 @@ public class MqttUnsubscribeHandlerTest {
         mqttUnsubscribeHandler = spy(new MqttUnsubscribeHandler(mqttMessageGenerator, clientSubscriptionService, applicationPersistenceProcessor));
 
         ctx = mock(ClientSessionCtx.class);
+        sessionInfo = mock(SessionInfo.class);
+        when(ctx.getSessionInfo()).thenReturn(sessionInfo);
+        when(sessionInfo.isPersistentAppClient()).thenReturn(false);
     }
 
     @Test
@@ -68,22 +72,26 @@ public class MqttUnsubscribeHandlerTest {
 
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
-        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCodes.UnsubAck.SUCCESS)));
-        verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(List.of(MqttReasonCodes.UnsubAck.SUCCESS)));
+        verify(clientSubscriptionService).unsubscribeAndPersist(any(), any(), any());
     }
 
     @Test
     public void testProcess_MQTT3() {
         mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("topic")));
 
-        verify(mqttMessageGenerator, times(1)).createUnSubAckMessage(eq(1), eq(getList()));
-        verify(clientSubscriptionService, times(1)).unsubscribeAndPersist(any(), any(), any());
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(Collections.singletonList(null)));
+        verify(clientSubscriptionService).unsubscribeAndPersist(any(), any(), any());
     }
 
-    private List<MqttReasonCodes.UnsubAck> getList() {
-        List<MqttReasonCodes.UnsubAck> value = new ArrayList<>();
-        value.add(null);
-        return value;
+    @Test
+    public void testProcess_MQTT3AppClient() {
+        when(sessionInfo.isPersistentAppClient()).thenReturn(true);
+        mqttUnsubscribeHandler.process(ctx, new MqttUnsubscribeMsg(UUID.randomUUID(), 1, List.of("$share/group/topic")));
+
+        verify(mqttMessageGenerator).createUnSubAckMessage(eq(1), eq(Collections.singletonList(null)));
+        verify(clientSubscriptionService).unsubscribeAndPersist(any(), any(), any());
+        verify(applicationPersistenceProcessor).stopProcessingSharedSubscriptions(any(), eq(Set.of(new TopicSharedSubscription("topic", "group"))));
     }
 
     @Test

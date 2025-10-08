@@ -61,7 +61,7 @@ server:
 
 # MQTT listeners parameters
 listener:
-  # Enable proxy protocol support. Disabled by default. If enabled, supports both v1 and v2.
+  # Enable proxy protocol support as a global setting for all listeners. Disabled by default. If enabled, supports both v1 and v2.
   # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
   proxy_enabled: "${MQTT_PROXY_PROTOCOL_ENABLED:false}"
   # Netty leak detector level: DISABLED, SIMPLE, ADVANCED, PARANOID. It is set globally for all listeners
@@ -81,6 +81,10 @@ listener:
     bind_address: "${LISTENER_TCP_BIND_ADDRESS:0.0.0.0}"
     # MQTT TCP listener bind port
     bind_port: "${LISTENER_TCP_BIND_PORT:1883}"
+    # Enable proxy protocol support for the MQTT TCP listener. Unset by default – in this case it inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
+    # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
+    proxy_enabled: "${MQTT_TCP_PROXY_PROTOCOL_ENABLED:}"
     netty:
       # Netty boss group threads count
       boss_group_thread_count: "${TCP_NETTY_BOSS_GROUP_THREADS:1}"
@@ -101,6 +105,10 @@ listener:
     bind_address: "${LISTENER_SSL_BIND_ADDRESS:0.0.0.0}"
     # MQTT SSL listener bind port
     bind_port: "${LISTENER_SSL_BIND_PORT:8883}"
+    # Enable proxy protocol support for the MQTT TLS listener. Unset by default – in this case it inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
+    # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
+    proxy_enabled: "${MQTT_SSL_PROXY_PROTOCOL_ENABLED:}"
     config:
       # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_SSL_PROTOCOL:TLSv1.2}"
@@ -151,6 +159,10 @@ listener:
     bind_address: "${LISTENER_WS_BIND_ADDRESS:0.0.0.0}"
     # MQTT WS listener bind port
     bind_port: "${LISTENER_WS_BIND_PORT:8084}"
+    # Enable proxy protocol support for the MQTT WS listener. Unset by default – in this case it inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
+    # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
+    proxy_enabled: "${MQTT_WS_PROXY_PROTOCOL_ENABLED:}"
     netty:
       # Comma-separated list of subprotocols that the WebSocket can negotiate. The subprotocol setting `mqtt` represents MQTT 3.1.1 and MQTT 5
       sub_protocols: "${WS_NETTY_SUB_PROTOCOLS:mqttv3.1,mqtt}"
@@ -173,6 +185,10 @@ listener:
     bind_address: "${LISTENER_WSS_BIND_ADDRESS:0.0.0.0}"
     # MQTT WSS listener bind port
     bind_port: "${LISTENER_WSS_BIND_PORT:8085}"
+    # Enable proxy protocol support for the MQTT WSS listener. Unset by default – in this case it inherits the global MQTT_PROXY_PROTOCOL_ENABLED value.
+    # If explicitly set, supports both v1 and v2 and takes precedence over the global setting.
+    # Useful to get the real IP address of the client in the logs, for session details info and unauthorized clients feature
+    proxy_enabled: "${MQTT_WSS_PROXY_PROTOCOL_ENABLED:}"
     config:
       # SSL protocol: see <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#sslcontext-algorithms">this link</a>
       protocol: "${LISTENER_WSS_PROTOCOL:TLSv1.2}"

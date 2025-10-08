@@ -24,7 +24,6 @@ import org.springframework.util.CollectionUtils;
 import org.thingsboard.mqtt.broker.actors.client.messages.mqtt.MqttUnsubscribeMsg;
 import org.thingsboard.mqtt.broker.actors.client.service.subscription.ClientSubscriptionService;
 import org.thingsboard.mqtt.broker.adaptor.NettyMqttConverter;
-import org.thingsboard.mqtt.broker.common.data.ClientType;
 import org.thingsboard.mqtt.broker.common.data.util.CallbackUtil;
 import org.thingsboard.mqtt.broker.service.mqtt.MqttMessageGenerator;
 import org.thingsboard.mqtt.broker.service.mqtt.persistence.application.ApplicationPersistenceProcessor;
@@ -46,9 +45,7 @@ public class MqttUnsubscribeHandler {
     private final ApplicationPersistenceProcessor applicationPersistenceProcessor;
 
     public void process(ClientSessionCtx ctx, MqttUnsubscribeMsg msg) {
-        if (log.isTraceEnabled()) {
-            log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
-        }
+        log.trace("[{}][{}] Processing unsubscribe, messageId - {}, topic filters - {}", ctx.getClientId(), ctx.getSessionId(), msg.getMessageId(), msg.getTopics());
 
         MqttMessage unSubAckMessage = mqttMessageGenerator.createUnSubAckMessage(msg.getMessageId(), getCodes(ctx, msg));
         clientSubscriptionService.unsubscribeAndPersist(ctx.getClientId(), msg.getTopics(),
@@ -69,7 +66,7 @@ public class MqttUnsubscribeHandler {
     }
 
     private void stopProcessingApplicationSharedSubscriptions(ClientSessionCtx ctx, List<String> topics) {
-        if (ClientType.APPLICATION == ctx.getClientType()) {
+        if (ctx.getSessionInfo().isPersistentAppClient()) {
             Set<TopicSharedSubscription> subscriptions = collectUniqueSharedSubscriptions(topics);
             if (CollectionUtils.isEmpty(subscriptions)) {
                 return;

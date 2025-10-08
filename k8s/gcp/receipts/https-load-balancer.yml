@@ -34,7 +34,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: thingsboard-mqtt-broker
-  name: tb-broker-https-loadbalancer
+  name: tbmq-https-loadbalancer
   annotations:
     kubernetes.io/ingress.class: "gce"
     kubernetes.io/ingress.global-static-ip-name: tbmq-http-lb-address
@@ -48,6 +48,6 @@ spec:
             pathType: ImplementationSpecific
             backend:
               service:
-                name: tb-broker
+                name: tbmq
                 port:
                   number: 8083
