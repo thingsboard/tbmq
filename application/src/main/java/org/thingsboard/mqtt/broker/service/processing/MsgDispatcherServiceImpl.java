@@ -187,15 +187,19 @@ public class MsgDispatcherServiceImpl implements MsgDispatcherService {
 
     List<ValueWithTopicFilter<EntitySubscription>> applyTotalMsgsRateLimits(List<ValueWithTopicFilter<EntitySubscription>> clientSubscriptions) {
         if (rateLimitService.isTotalMsgsLimitEnabled() && clientSubscriptions.size() > 1) {
-            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(clientSubscriptions.size());
+            int tokensLimit = clientSubscriptions.size() - 1;
+            int availableTokens = (int) rateLimitService.tryConsumeAsMuchAsPossibleTotalMsgs(tokensLimit);
             if (availableTokens == 0) {
                 log.debug("No available tokens left for total msgs bucket");
                 return Collections.emptyList();
             }
-            if (log.isDebugEnabled() && availableTokens < clientSubscriptions.size()) {
+            if (availableTokens == tokensLimit) {
+                return clientSubscriptions;
+            }
+            if (log.isDebugEnabled() && availableTokens < tokensLimit) {
                 log.debug("Hitting total messages rate limits on subscriptions processing. Skipping {} messages", clientSubscriptions.size() - availableTokens);
             }
-            return clientSubscriptions.subList(0, availableTokens);
+            return clientSubscriptions.subList(0, availableTokens + 1);
         }
         return clientSubscriptions;
     }
