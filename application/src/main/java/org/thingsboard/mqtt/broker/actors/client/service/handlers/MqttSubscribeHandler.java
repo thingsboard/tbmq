@@ -207,7 +207,7 @@ public class MqttSubscribeHandler {
             if (log.isDebugEnabled() && availableTokens < retainedMsgList.size()) {
                 log.debug("Hitting total messages rate limits on retained msg processing. Skipping {} messages", retainedMsgList.size() - availableTokens);
             }
-            return retainedMsgList.stream().limit(availableTokens).toList();
+            return retainedMsgList.subList(0, availableTokens);
         }
         return retainedMsgList;
     }
