@@ -16,9 +16,15 @@
 package org.thingsboard.mqtt.broker.server;
 
 import io.netty.handler.ssl.SslHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.thingsboard.mqtt.broker.common.data.BrokerConstants;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.common.data.security.ssl.MqttClientAuthType;
 import org.thingsboard.mqtt.broker.common.data.util.StringUtils;
+import org.thingsboard.mqtt.broker.service.auth.unauthorized.UnauthorizedClientManager;
 import org.thingsboard.mqtt.broker.ssl.config.SslCredentials;
 
 import javax.net.ssl.KeyManager;
@@ -33,6 +39,9 @@ import java.security.cert.X509Certificate;
 
 @Slf4j
 public abstract class AbstractMqttHandlerProvider {
+
+    @Autowired
+    private UnauthorizedClientManager unauthorizedClientManager;
 
     private SSLContext sslContext;
 
@@ -70,9 +79,7 @@ public abstract class AbstractMqttHandlerProvider {
             if (StringUtils.isEmpty(sslProtocol)) {
                 sslProtocol = "TLS";
             } else {
-                if (log.isDebugEnabled()) {
-                    log.debug("sslProtocol is set to {}", sslProtocol);
-                }
+                log.debug("sslProtocol is set to {}", sslProtocol);
             }
             SSLContext sslContext = SSLContext.getInstance(sslProtocol);
             sslContext.init(km, tm, null);
@@ -86,42 +93,38 @@ public abstract class AbstractMqttHandlerProvider {
     private TrustManager getX509TrustManager(TrustManagerFactory tmf) {
         X509TrustManager x509Tm = null;
         if (tmf.getTrustManagers().length == 0) {
-            if (log.isDebugEnabled()) {
-                log.debug("TrustManagers of TrustManagerFactory is empty!");
-            }
+            log.debug("TrustManagers of TrustManagerFactory is empty!");
         }
         for (TrustManager tm : tmf.getTrustManagers()) {
             if (tm instanceof X509TrustManager) {
                 x509Tm = (X509TrustManager) tm;
-                if (log.isDebugEnabled()) {
-                    log.debug("Found X509TrustManager {}", x509Tm);
-                }
+                log.debug("Found X509TrustManager {}", x509Tm);
                 break;
             }
         }
-        if (x509Tm == null && log.isDebugEnabled()) {
-            log.debug("X509TrustManager was not found!");
+        if (x509Tm == null) {
+            log.warn("X509TrustManager was not found!");
         }
-        return new ThingsboardMqttX509TrustManager(x509Tm);
+        return new ThingsboardMqttX509TrustManager(x509Tm, unauthorizedClientManager);
     }
 
+    @RequiredArgsConstructor
     static class ThingsboardMqttX509TrustManager implements X509TrustManager {
 
         private final X509TrustManager trustManager;
-
-        ThingsboardMqttX509TrustManager(X509TrustManager trustManager) {
-            this.trustManager = trustManager;
-        }
+        private final UnauthorizedClientManager unauthorizedClientManager;
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {
-            return trustManager.getAcceptedIssuers();
+            return trustManager != null ? trustManager.getAcceptedIssuers() : new X509Certificate[0];
         }
 
         @Override
         public void checkServerTrusted(X509Certificate[] chain,
                                        String authType) throws CertificateException {
-            trustManager.checkServerTrusted(chain, authType);
+            if (trustManager != null) {
+                trustManager.checkServerTrusted(chain, authType);
+            }
         }
 
         @Override
@@ -129,13 +132,37 @@ public abstract class AbstractMqttHandlerProvider {
                                        String authType) throws CertificateException {
             // think if better to add credentials validation here
             try {
-                trustManager.checkClientTrusted(chain, authType);
+                if (trustManager != null) {
+                    trustManager.checkClientTrusted(chain, authType);
+                }
             } catch (CertificateException e) {
-                X509Certificate leaf = chain.length > 0 ? chain[0] : null;
-                String subject = leaf == null ? "none" : leaf.getSubjectX500Principal().getName();
-                log.warn("Rejecting client with leaf cert [{}], chain size - [{}]", subject, chain.length);
+                String subject = extractSubjectFromChain(chain);
+                log.warn("Rejecting client with leaf cert [{}], chain size - [{}]", subject, chain != null ? chain.length : 0);
+                unauthorizedClientManager.persistClientUnauthorized(getUnauthorizedClient(subject, e));
                 throw e;
             }
+        }
+
+        private String extractSubjectFromChain(X509Certificate[] chain) {
+            return (chain != null && chain.length > 0)
+                    ? chain[0].getSubjectX500Principal().getName()
+                    : null;
+        }
+
+        private UnauthorizedClient getUnauthorizedClient(String subject, CertificateException e) {
+            return UnauthorizedClient.builder()
+                    .clientId(generateUnknownClientId(subject))
+                    .ipAddress(BrokerConstants.UNKNOWN) // can be improved later
+                    .ts(System.currentTimeMillis())
+                    .username(BrokerConstants.UNKNOWN)
+                    .passwordProvided(false)
+                    .tlsUsed(true)
+                    .reason(e.getMessage())
+                    .build();
+        }
+
+        private String generateUnknownClientId(String subject) {
+            return subject != null ? subject : BrokerConstants.UNKNOWN_PREFIX + RandomStringUtils.secure().nextAlphanumeric(6);
         }
     }
 

@@ -71,9 +71,18 @@ public class UnauthorizedClientManagerImpl implements UnauthorizedClientManager 
                 .tlsUsed(clientSessionCtx.getSslHandler() != null)
                 .reason(reason)
                 .build();
+        persist(unauthorizedClient);
+    }
+
+    @Override
+    public void persistClientUnauthorized(UnauthorizedClient unauthorizedClient) {
+        persist(unauthorizedClient);
+    }
+
+    private void persist(UnauthorizedClient unauthorizedClient) {
         DonAsynchron.withCallback(unauthorizedClientService.save(unauthorizedClient),
-                v -> log.debug("[{}] Unauthorized Client saved successfully! {}", state.getClientId(), unauthorizedClient),
-                throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", state.getClientId(), unauthorizedClient, throwable));
+                v -> log.debug("[{}] Unauthorized Client saved successfully! {}", unauthorizedClient.getClientId(), unauthorizedClient),
+                throwable -> log.warn("[{}] Failed to persist unauthorized client! {}", unauthorizedClient.getClientId(), unauthorizedClient, throwable));
     }
 
     @Override

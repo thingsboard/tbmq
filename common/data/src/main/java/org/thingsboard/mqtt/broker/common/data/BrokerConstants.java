@@ -182,6 +182,7 @@ public class BrokerConstants {
     public static final String LATEST_VERSION_AVAILABLE_TOPIC_NAME = SYSTEMS_TOPIC_PREFIX + "latest/version/available";
 
     public static final String UNKNOWN = "unknown";
+    public static final String UNKNOWN_PREFIX = "unknown_";
 
     public static final int BLANK_PACKET_ID = -1;
     public static final int MAX_PACKET_ID = 0xffff;

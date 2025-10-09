@@ -17,6 +17,7 @@ package org.thingsboard.mqtt.broker.service.auth.unauthorized;
 
 import org.thingsboard.mqtt.broker.actors.client.messages.SessionInitMsg;
 import org.thingsboard.mqtt.broker.actors.client.state.ClientActorState;
+import org.thingsboard.mqtt.broker.common.data.UnauthorizedClient;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthContinueResponse;
 import org.thingsboard.mqtt.broker.service.auth.enhanced.EnhancedAuthFinalResponse;
 import org.thingsboard.mqtt.broker.service.auth.providers.AuthResponse;
@@ -34,6 +35,8 @@ public interface UnauthorizedClientManager {
 
     void persistClientUnauthorized(ClientActorState state, ClientSessionCtx clientSessionCtx,
                                    String username, boolean passwordProvided, String reason);
+
+    void persistClientUnauthorized(UnauthorizedClient client);
 
     void removeClientUnauthorized(ClientActorState state);
 
