@@ -57,6 +57,10 @@ new_version="2.2.0"
 old_image="image: \"thingsboard/tbmq:$old_version\""
 new_image="image: \"thingsboard/tbmq:$new_version\""
 
+# Define TBMQ IE images
+old_ie_image="image: \"thingsboard/tbmq-integration-executor:$old_version\""
+new_ie_image="image: \"thingsboard/tbmq-integration-executor:$new_version\""
+
 # Define DB variables
 db_url="jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
 db_username="postgres"
@@ -78,6 +82,14 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   sed -i "s#$old_image#$new_image#g" docker-compose.yml
 else
   sed -i '' "s#$old_image#$new_image#g" docker-compose.yml
+fi
+
+# Replace the TBMQ IE image version using sed
+echo "Trying to replace the TBMQ Integration Executor image version from [$old_version] to [$new_version]..."
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  sed -i "s#$old_ie_image#$new_ie_image#g" docker-compose.yml
+else
+  sed -i '' "s#$old_ie_image#$new_ie_image#g" docker-compose.yml
 fi
 
 if grep -q "$new_image" docker-compose.yml; then
