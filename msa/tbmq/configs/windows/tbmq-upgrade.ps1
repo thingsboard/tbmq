@@ -47,6 +47,10 @@ try {
     $old_image = "image: `"thingsboard/tbmq:$old_version`""
     $new_image = "image: `"thingsboard/tbmq:$new_version`""
 
+    # Define TBMQ IE images
+    $old_ie_image = "image: `"thingsboard/tbmq-integration-executor:$old_version`""
+    $new_ie_image = "image: `"thingsboard/tbmq-integration-executor:$new_version`""
+
     # Define DB variables
     $db_url = "jdbc:postgresql://postgres:5432/thingsboard_mqtt_broker"
     $db_username = "postgres"
@@ -63,6 +67,11 @@ try {
     # Replace the TBMQ image version using PowerShell's Get-Content and Set-Content
     $composeFileContent = Get-Content -Path "docker-compose.yml"
     $updatedComposeContent = $composeFileContent -replace [regex]::Escape($old_image), $new_image
+    $updatedComposeContent | Set-Content -Path "docker-compose.yml"
+
+    # Replace the TBMQ IE image version using PowerShell's Get-Content and Set-Content
+    $composeFileContent = Get-Content -Path "docker-compose.yml"
+    $updatedComposeContent = $composeFileContent -replace [regex]::Escape($old_ie_image), $new_ie_image
     $updatedComposeContent | Set-Content -Path "docker-compose.yml"
 
     if (Select-String -Path "docker-compose.yml" -Pattern $new_image) {
