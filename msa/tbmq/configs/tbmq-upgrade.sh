@@ -127,7 +127,7 @@ V2)
 
   docker compose rm tbmq
 
-  docker compose up -d tbmq --no-deps
+  docker compose up -d tbmq tbmq-integration-executor --no-deps
   ;;
 V1)
   docker-compose stop tbmq
@@ -148,7 +148,7 @@ V1)
 
   docker-compose rm tbmq
 
-  docker-compose up -d tbmq --no-deps
+  docker-compose up -d tbmq tbmq-integration-executor --no-deps
   ;;
 *)
   # unknown option
