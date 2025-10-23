@@ -10,7 +10,7 @@ This guide will deploy an **Apache Kafka cluster** with 3 pods running in **KRaf
 Check the Kafka cluster definition file:
 
 ```bash
-ls kafka/tb-kafka.yml
+ls kafka/tbmq-kafka.yml
 ```
 
 ---
@@ -20,19 +20,19 @@ ls kafka/tb-kafka.yml
 Apply the cluster manifest:
 
 ```bash
-kubectl apply -f kafka/tb-kafka.yml
+kubectl apply -f kafka/tbmq-kafka.yml
 ```
 
 Monitor the deployment:
 
 ```bash
-kubectl get pod -w | grep tb-kafka
+kubectl get pod -w | grep tbmq-kafka
 ```
 
 Wait for all pods in the StatefulSet to become ready:
 
 ```bash
-kubectl rollout status statefulset/tb-kafka
+kubectl rollout status statefulset/tbmq-kafka
 ```
 
 ---
@@ -42,9 +42,9 @@ kubectl rollout status statefulset/tb-kafka
 Once deployment is complete, you should see a **3-node Kafka cluster** running in **KRaft dual-role mode**:
 
 ```text
-tb-kafka-0    1/1   Running   0   4m7s
-tb-kafka-1    1/1   Running   0   4m7s
-tb-kafka-2    1/1   Running   0   4m7s
+tbmq-kafka-0    1/1   Running   0   4m7s
+tbmq-kafka-1    1/1   Running   0   4m7s
+tbmq-kafka-2    1/1   Running   0   4m7s
 ```
 
 ✅ You now have a fully running Apache Kafka cluster.

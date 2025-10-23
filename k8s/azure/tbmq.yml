@@ -89,7 +89,7 @@ spec:
 
           # Uncomment the following lines to connect to Apache Kafka
           #            - name: TB_KAFKA_SERVERS
-          #              value: "tb-kafka:9092"
+          #              value: "tbmq-kafka:9092"
 
           # Uncomment the following lines to connect to Strimzi
           #            - name: TB_KAFKA_SERVERS

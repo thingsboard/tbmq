@@ -17,19 +17,19 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: tb-kafka
+  name: tbmq-kafka
   namespace: thingsboard-mqtt-broker
 spec:
-  serviceName: "tb-kafka-headless"
+  serviceName: "tbmq-kafka-headless"
   replicas: 3
   podManagementPolicy: Parallel
   selector:
     matchLabels:
-      app: tb-kafka
+      app: tbmq-kafka
   template:
     metadata:
       labels:
-        app: tb-kafka
+        app: tbmq-kafka
     spec:
       affinity:
         podAntiAffinity:
@@ -39,7 +39,7 @@ spec:
                   - key: "app"
                     operator: In
                     values:
-                      - tb-kafka
+                      - tbmq-kafka
               topologyKey: "kubernetes.io/hostname"
       volumes:
         - name: kafka-config
@@ -80,13 +80,13 @@ spec:
             - name: KAFKA_LISTENERS
               value: "PLAINTEXT://:9092,CONTROLLER://:9093"
             - name: KAFKA_ADVERTISED_LISTENERS
-              value: "PLAINTEXT://$(POD_NAME).tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9092"
+              value: "PLAINTEXT://$(POD_NAME).tbmq-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9092"
             - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
               value: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
             - name: KAFKA_INTER_BROKER_LISTENER_NAME
               value: "PLAINTEXT"
             - name: KAFKA_CONTROLLER_QUORUM_VOTERS
-              value: "0@tb-kafka-0.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,1@tb-kafka-1.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,2@tb-kafka-2.tb-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093"
+              value: "0@tbmq-kafka-0.tbmq-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,1@tbmq-kafka-1.tbmq-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093,2@tbmq-kafka-2.tbmq-kafka-headless.thingsboard-mqtt-broker.svc.cluster.local:9093"
             - name: KAFKA_CONTROLLER_LISTENER_NAMES
               value: "CONTROLLER"
             - name: KAFKA_PROCESS_ROLES
@@ -154,14 +154,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-kafka-headless
+  name: tbmq-kafka-headless
   namespace: thingsboard-mqtt-broker
   labels:
-    app: tb-kafka
+    app: tbmq-kafka
 spec:
   clusterIP: None
   selector:
-    app: tb-kafka
+    app: tbmq-kafka
   ports:
     - port: 9092
       name: client
@@ -171,14 +171,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tb-kafka
+  name: tbmq-kafka
   namespace: thingsboard-mqtt-broker
   labels:
-    app: tb-kafka
+    app: tbmq-kafka
 spec:
   type: ClusterIP
   selector:
-    app: tb-kafka
+    app: tbmq-kafka
   ports:
     - port: 9092
       name: client
