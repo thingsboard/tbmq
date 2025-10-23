@@ -239,6 +239,8 @@
     "title": "Unsaved changes"
   },
   "common": {
+    "allowed": "Allowed",
+    "not-allowed": "Now allowed",
     "username": "Username",
     "password": "Password",
     "enter-username": "Enter username",
@@ -945,6 +947,7 @@
     "no-updates": "Version is up to date."
   },
   "config": {
+    "allow-kafka-topic-deletion": "Kafka Topic Deletion",
     "key": "Key",
     "value": "Value",
     "port-mqtt": "TCP Port",

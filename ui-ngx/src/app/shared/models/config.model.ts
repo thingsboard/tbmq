@@ -37,9 +37,10 @@ export interface BrokerConfig {
   existsBasicCredentials: boolean;
   existsX509Credentials: boolean;
   existsScramCredentials: boolean;
+  allowKafkaTopicDeletion: boolean;
 }
 
-export interface BrokerConfigTable extends BaseData {
+export interface BrokerConfigTableParam extends BaseData {
   key: ConfigParams;
   value: any;
 }
@@ -64,6 +65,7 @@ export enum ConfigParams {
   existsBasicCredentials = 'existsBasicCredentials',
   existsX509Credentials = 'existsX509Credentials',
   existsScramCredentials = 'existsScramCredentials',
+  allowKafkaTopicDeletion = 'allowKafkaTopicDeletion',
 }
 
 export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
@@ -84,6 +86,7 @@ export const ConfigParamTranslationMap = new Map<ConfigParams, string>(
     [ConfigParams.wsMaxPayloadSize, 'config.ws-listener-max-payload-size'],
     [ConfigParams.wssMaxPayloadSize, 'config.wss-listener-max-payload-size'],
     [ConfigParams.jwtAuthEnabled, 'config.jwt-auth'],
+    [ConfigParams.allowKafkaTopicDeletion, 'config.allow-kafka-topic-deletion'],
   ]
 );
 
@@ -119,3 +122,6 @@ export const settingsConfigPortMap = new Map<string, string>(
     ['wss', 'wssPort'],
   ]
 );
+
+export const allowedFlagKeys = [ConfigParams.allowKafkaTopicDeletion];
+export const customValueKeys = [...allowedFlagKeys];

@@ -16,12 +16,14 @@
 
 import { Component } from '@angular/core';
 import {
-  BrokerConfigTable,
+  BrokerConfigTableParam,
   BrokerConfig,
   ConfigParams,
   ConfigParamAuthProviderTypeMap,
   ConfigParamTranslationMap,
   ConfigParamAuthProviderTranslationMap,
+  customValueKeys,
+  allowedFlagKeys,
 } from '@shared/models/config.model';
 import { Store } from '@ngrx/store';
 import { AppState } from '@core/core.state';
@@ -34,7 +36,6 @@ import { mergeMap } from 'rxjs/operators';
 import { EntitiesTableHomeNoPagination } from '../entity/entities-table-no-pagination.component';
 import { CardTitleButtonComponent } from '@shared/components/button/card-title-button.component';
 import { MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow } from '@angular/material/table';
-import { MatSort, MatSortHeader } from '@angular/material/sort';
 import { CopyButtonComponent } from '@shared/components/button/copy-button.component';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -49,9 +50,9 @@ import { of } from 'rxjs';
     selector: 'tb-card-config',
     templateUrl: './card-config.component.html',
     styleUrls: ['./card-config.component.scss'],
-    imports: [CardTitleButtonComponent, MatTable, MatSort, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatSortHeader, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatSlideToggle, FormsModule]
+    imports: [CardTitleButtonComponent, MatTable, MatColumnDef, MatHeaderCellDef, MatHeaderCell, MatCellDef, MatCell, TranslateModule, CopyButtonComponent, MatIcon, MatTooltip, MatHeaderRowDef, MatHeaderRow, MatRowDef, MatRow, MatSlideToggle, FormsModule]
 })
-export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTable> {
+export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerConfigTableParam> {
 
   cardType = HomePageTitleType.CONFIG;
   configParamTranslationMap = ConfigParamTranslationMap;
@@ -87,10 +88,10 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
   }
 
   getColumns() {
-    const columns: Array<EntityColumn<BrokerConfigTable>> = [];
+    const columns: Array<EntityColumn<BrokerConfigTableParam>> = [];
     columns.push(
-      new EntityTableColumn<BrokerConfigTable>('key', 'config.key', '70%'),
-      new EntityTableColumn<BrokerConfigTable>('value', 'config.value', '30%',
+      new EntityTableColumn<BrokerConfigTableParam>('key', 'config.key', '70%'),
+      new EntityTableColumn<BrokerConfigTableParam>('value', 'config.value', '30%',
           entity => entity.value, () => ({color: 'rgba(0,0,0,0.54)'}))
     );
     return columns;
@@ -100,23 +101,32 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
     window.open(`https://thingsboard.io/docs/mqtt-broker/${page}`, '_blank');
   }
 
-  formatBytesToValue(entity: BrokerConfigTable): string {
-    if (entity.key === ConfigParams.tlsMaxPayloadSize || entity.key === ConfigParams.tcpMaxPayloadSize ||
-       entity.key === ConfigParams.wsMaxPayloadSize || entity.key === ConfigParams.wssMaxPayloadSize) {
-      return formatBytes(entity.value);
+  transformValue(entity: BrokerConfigTableParam): string {
+    const key = entity.key;
+    const value = entity.value;
+    if (key === ConfigParams.tlsMaxPayloadSize ||
+        key === ConfigParams.tcpMaxPayloadSize ||
+        key === ConfigParams.wsMaxPayloadSize ||
+        key === ConfigParams.wssMaxPayloadSize) {
+      return formatBytes(value);
     }
-    if (typeof entity.value === 'boolean') {
-      return entity.value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
+    if (customValueKeys.includes(key)) {
+      if (allowedFlagKeys.includes(key)) {
+        return value ? this.translate.instant('common.allowed') : this.translate.instant('common.not-allowed');
+      }
     }
-    return entity.value;
+    if (typeof value === 'boolean') {
+      return value ? this.translate.instant('common.enabled') : this.translate.instant('common.disabled');
+    }
+    return value;
   }
 
-  showCopyButton(entity: BrokerConfigTable): boolean {
+  showCopyButton(entity: BrokerConfigTableParam): boolean {
     return entity.key === ConfigParams.tlsPort || entity.key === ConfigParams.tcpPort ||
            entity.key === ConfigParams.wsPort || entity.key === ConfigParams.wssPort;
   }
 
-  showWarningIcon(entity: BrokerConfigTable): boolean {
+  showWarningIcon(entity: BrokerConfigTableParam): boolean {
     const brokerConfig: BrokerConfig = this.configService.brokerConfig;
     return entity.value === false &&
            ((entity.key === ConfigParams.x509AuthEnabled && brokerConfig.existsX509Credentials) ||
@@ -124,11 +134,11 @@ export class CardConfigComponent extends EntitiesTableHomeNoPagination<BrokerCon
             (entity.key === ConfigParams.scramAuthEnabled && brokerConfig.existsScramCredentials));
   }
 
-  isAuthProviderParam(entity: BrokerConfigTable) {
+  isAuthProviderParam(entity: BrokerConfigTableParam) {
     return this.configParamAuthProviderTypeMap.has(entity.key);
   }
 
-  switchParam(entity: BrokerConfigTable) {
+  switchParam(entity: BrokerConfigTableParam) {
     const providerType = this.configParamAuthProviderTypeMap.get(entity.key);
     const initValue = !entity.value;
     if (!this.authProviders) {

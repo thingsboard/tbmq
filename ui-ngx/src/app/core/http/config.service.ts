@@ -18,7 +18,7 @@ import { Injectable } from '@angular/core';
 import { defaultHttpOptionsFromConfig, RequestConfig } from './http-utils';
 import { mergeMap, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { BrokerConfig, BrokerConfigTable, SystemVersionInfo } from '@shared/models/config.model';
+import { BrokerConfig, BrokerConfigTableParam, SystemVersionInfo } from '@shared/models/config.model';
 import { PageData } from '@shared/models/page/page-data';
 
 @Injectable({
@@ -31,7 +31,7 @@ export class ConfigService {
   constructor(private http: HttpClient) {
   }
 
-  public getBrokerConfigPageData(): Observable<PageData<BrokerConfigTable>> {
+  public getBrokerConfigPageData(): Observable<PageData<BrokerConfigTableParam>> {
     const data = [];
     for (const [key, value] of Object.entries(this.brokerConfig)) {
       data.push({
