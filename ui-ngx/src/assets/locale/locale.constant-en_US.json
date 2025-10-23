@@ -789,6 +789,12 @@
   "shared-subscription": {
     "add": "Add Application Shared Subscription",
     "application-shared-subscriptions": "Application Entities",
+    "create-kafka-topics": "Sync Kafka Topics",
+    "create-kafka-topics-title": "Create Kafka Topics for all Application Shared Subscriptions?",
+    "create-kafka-topics-text": "This will create Kafka Topics for all Application Shared Subscriptions. Existing topics are kept, missing topics will be created.",
+    "delete-kafka-topics": "Delete Kafka Topics",
+    "delete-kafka-topics-title": "Delete Kafka Topics for all Application Shared Subscriptions?",
+    "delete-kafka-topics-text": "Be careful, this will permanently purge Kafka Topics of all Application Shared Subscriptions and may disrupt message flow.",
     "delete": "Delete Application Shared Subscription",
     "delete-shared-subscriptions": "Delete Application Shared Subscriptions",
     "delete-shared-subscription-title": "Are you sure you want to delete the Application Shared Subscription '{{name}}'?",

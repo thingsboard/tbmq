@@ -49,4 +49,12 @@ export class SharedSubscriptionService {
   public getSharedSubscriptionsV2(query: SharedSubscriptionQuery, config?: RequestConfig): Observable<PageData<SharedSubscriptionGroup>> {
     return this.http.get<PageData<SharedSubscriptionGroup>>(`/api/subscription${query.toQuery()}`, defaultHttpOptionsFromConfig(config));
   }
+
+  public createKafkaTopicsForAppSharedSubscriptions(config?: RequestConfig): Observable<void> {
+    return this.http.post<void>(`/api/app/shared/subs/createTopics`, defaultHttpOptionsFromConfig(config));
+  }
+
+  public deleteKafkaTopicsForAppSharedSubscriptions(config?: RequestConfig): Observable<void> {
+    return this.http.delete<void>(`/api/app/shared/subs/deleteTopics`, defaultHttpOptionsFromConfig(config));
+  }
 }

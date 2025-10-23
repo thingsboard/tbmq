@@ -31,6 +31,8 @@ import { Observable, of } from 'rxjs';
 import { EntityAction } from '@home/models/entity/entity-component.models';
 import { Injectable } from '@angular/core';
 import { saveTopicsToLocalStorage } from '@core/utils';
+import { DialogService } from '@core/services/dialog.service';
+import { ConfigService } from '@core/http/config.service';
 
 @Injectable()
 export class SharedSubscriptionsTableConfigResolver {
@@ -40,6 +42,8 @@ export class SharedSubscriptionsTableConfigResolver {
   constructor(private sharedSubscriptionService: SharedSubscriptionService,
               private translate: TranslateService,
               private router: Router,
+              private dialogService: DialogService,
+              private configService: ConfigService,
               private datePipe: DatePipe) {
 
     this.config.entityType = EntityType.SHARED_SUBSCRIPTION;
@@ -66,6 +70,21 @@ export class SharedSubscriptionsTableConfigResolver {
         icon: 'add',
         isEnabled: () => true,
         onAction: ($event) => this.config.getTable().addEntity($event)
+      }
+    );
+
+    this.config.headerActionDescriptors.push(
+      {
+        name: this.translate.instant('shared-subscription.create-kafka-topics'),
+        icon: 'playlist_add',
+        isEnabled: () => true,
+        onAction: ($event) => this.createKafkaTopicsForAppSharedSubscriptions($event)
+      },
+      {
+        name: this.translate.instant('shared-subscription.delete-kafka-topics'),
+        icon: 'playlist_remove',
+        isEnabled: () => this.configService.brokerConfig.allowKafkaTopicDeletion,
+        onAction: ($event) => this.deleteKafkaTopicsForAppSharedSubscriptions($event)
       }
     );
 
@@ -106,5 +125,39 @@ export class SharedSubscriptionsTableConfigResolver {
   private saveSharedSubscription(entity: SharedSubscription): Observable<SharedSubscription> {
     saveTopicsToLocalStorage(entity.topicFilter);
     return this.sharedSubscriptionService.saveSharedSubscription(entity);
+  }
+
+  private createKafkaTopicsForAppSharedSubscriptions($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialogService.confirm(
+      this.translate.instant('shared-subscription.create-kafka-topics-title'),
+      this.translate.instant('shared-subscription.create-kafka-topics-text'),
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((result) => {
+      if (result) {
+        this.sharedSubscriptionService.createKafkaTopicsForAppSharedSubscriptions().subscribe();
+      }
+    });
+  }
+
+  private deleteKafkaTopicsForAppSharedSubscriptions($event: Event) {
+    if ($event) {
+      $event.stopPropagation();
+    }
+    this.dialogService.confirm(
+      this.translate.instant('shared-subscription.delete-kafka-topics-title'),
+      this.translate.instant('shared-subscription.delete-kafka-topics-text'),
+      this.translate.instant('action.no'),
+      this.translate.instant('action.yes'),
+      true
+    ).subscribe((result) => {
+      if (result) {
+        this.sharedSubscriptionService.deleteKafkaTopicsForAppSharedSubscriptions().subscribe();
+      }
+    });
   }
 }
