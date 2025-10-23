@@ -364,7 +364,12 @@ queue:
   kafka:
     # List of kafka bootstrap servers used to establish connection
     bootstrap.servers: "${TB_KAFKA_SERVERS:localhost:9092}"
-    # Enable/disable deletion of topics for Application MQTT Clients
+    # Controls whether TBMQ is allowed to delete Kafka topics that were created for
+    # Application MQTT Clients or Application Shared subscriptions.
+    # When set to 'true', TBMQ may automatically remove topics during cleanup
+    # (for example, when an Application client or shared subscription is deleted).
+    # When set to 'false', TBMQ will skip topic deletions and simply stop using them.
+    # This helps prevent accidental data loss in production environments
     enable-topic-deletion: "${TB_KAFKA_ENABLE_TOPIC_DELETION:true}"
     default:
       consumer:

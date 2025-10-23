@@ -69,6 +69,9 @@ public class BrokerHomePageConfig {
     @Value("${listener.wss.netty.max_payload_size}")
     private int wssMaxPayloadSize;
 
+    @Value("${queue.kafka.enable-topic-deletion:true}")
+    private boolean enableKafkaTopicDeletion;
+
     private final MqttClientCredentialsService mqttClientCredentialsService;
     private final AdminSettingsService adminSettingsService;
     private final MqttAuthProviderService mqttAuthProviderService;
@@ -96,6 +99,7 @@ public class BrokerHomePageConfig {
                 .existsBasicCredentials(existsBasicCredentials())
                 .existsX509Credentials(existsX509Credentials())
                 .existsScramCredentials(existsScramCredentials())
+                .allowKafkaTopicDeletion(enableKafkaTopicDeletion)
                 .build();
     }
 

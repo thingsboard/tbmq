@@ -116,12 +116,8 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Override
     public void createTopic(String topic, Map<String, String> topicConfigs) {
         Map<String, String> configs = new HashMap<>(topicConfigs);
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Creating topic", topic);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace("Topic configs - {}.", configs);
-        }
+        log.debug("[{}] Creating topic", topic);
+        log.trace("Topic configs - {}.", configs);
         try {
             NewTopic newTopic = new NewTopic(topic, extractPartitionsNumber(configs), extractReplicationFactor(configs)).configs(configs);
             client.createTopics(Collections.singletonList(newTopic)).values().get(topic).get();
@@ -144,14 +140,10 @@ public class TbKafkaAdmin implements TbQueueAdmin {
     @Override
     public void deleteTopic(String topic, BasicCallback callback) {
         if (!enableTopicDeletion) {
-            if (log.isDebugEnabled()) {
-                log.debug("Ignoring deletion of topic {}", topic);
-            }
+            log.debug("Ignoring deletion of topic {}", topic);
             return;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("[{}] Deleting topic", topic);
-        }
+        log.debug("[{}] Deleting topic", topic);
         DeleteTopicsResult result = client.deleteTopics(Collections.singletonList(topic));
         result.all().whenComplete((unused, throwable) -> {
             if (throwable == null) {
@@ -167,9 +159,7 @@ public class TbKafkaAdmin implements TbQueueAdmin {
 
     @Override
     public void deleteConsumerGroups(Collection<String> consumerGroups) {
-        if (log.isDebugEnabled()) {
-            log.debug("Deleting Consumer Groups - {}", consumerGroups);
-        }
+        log.debug("Deleting Consumer Groups - {}", consumerGroups);
         try {
             doDeleteConsumerGroups(consumerGroups);
         } catch (Exception e) {
@@ -418,22 +408,16 @@ public class TbKafkaAdmin implements TbQueueAdmin {
                     .toList();
 
             if (CollectionUtils.isEmpty(groupIdsToDelete)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No old consumer groups found for deletion.");
-                }
+                log.debug("No old consumer groups found for deletion.");
                 return;
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("Found {} old consumer group(s) to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
-            }
+            log.debug("Found {} old consumer group(s) to be deleted: {}!", groupIdsToDelete.size(), groupIdsToDelete);
             KafkaFuture<Void> deleteCgsFuture = client.deleteConsumerGroups(groupIdsToDelete).all();
             deleteCgsFuture.whenComplete((unused, deleteThrowable) -> {
                 if (deleteThrowable == null) {
                     long end = System.nanoTime();
-                    if (log.isDebugEnabled()) {
-                        log.debug("[{}] Deletion processing of old consumer group(s) took {} nanos", groupIdsToDelete, end - start);
-                    }
+                    log.debug("[{}] Deletion processing of old consumer group(s) took {} nanos", groupIdsToDelete, end - start);
                 } else {
                     log.warn("Failed to delete old consumer groups!", deleteThrowable);
                 }

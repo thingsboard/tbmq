@@ -41,5 +41,6 @@ public class HomePageConfigDto {
     private boolean existsBasicCredentials;
     private boolean existsX509Credentials;
     private boolean existsScramCredentials;
+    private boolean allowKafkaTopicDeletion;
 
 }
