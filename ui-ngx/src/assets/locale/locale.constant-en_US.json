@@ -240,7 +240,7 @@
   },
   "common": {
     "allowed": "Allowed",
-    "not-allowed": "Now allowed",
+    "not-allowed": "Not allowed",
     "username": "Username",
     "password": "Password",
     "enter-username": "Enter username",
