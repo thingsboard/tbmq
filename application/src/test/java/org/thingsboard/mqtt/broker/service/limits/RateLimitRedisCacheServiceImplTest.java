@@ -90,14 +90,6 @@ public class RateLimitRedisCacheServiceImplTest {
     }
 
     @Test
-    public void testSetSessionCount() {
-        int count = 5;
-        rateLimitRedisCacheService.setSessionCount(count);
-
-        verify(valueOperations, times(1)).set(CacheConstants.CLIENT_SESSIONS_LIMIT_CACHE_KEY, Integer.toString(count));
-    }
-
-    @Test
     public void testInitSessionCountWhenSessionsLimitIsZero() {
         rateLimitRedisCacheService.setSessionsLimit(0);
         int count = 5;

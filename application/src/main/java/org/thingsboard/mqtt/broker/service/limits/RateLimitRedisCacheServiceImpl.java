@@ -92,15 +92,6 @@ public class RateLimitRedisCacheServiceImpl implements RateLimitCacheService {
     }
 
     @Override
-    public void setSessionCount(int count) {
-        if (sessionsLimit <= 0) {
-            return;
-        }
-        log.debug("Set session limit cache to {}", count);
-        redisTemplate.opsForValue().set(clientSessionsLimitCacheKey, Integer.toString(count));
-    }
-
-    @Override
     public void initApplicationClientsCount(int count) {
         if (applicationClientsLimit <= 0) {
             return;
