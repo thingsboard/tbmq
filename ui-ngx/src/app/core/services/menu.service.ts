@@ -23,6 +23,7 @@ import { MenuId, MenuSection } from '@core/services/menu.models';
 import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 import { Authority } from '@shared/models/authority.enum';
 import { AuthState } from '@core/auth/auth.models';
+import { HelpLinks } from '@shared/models/constants';
 
 @Injectable({
   providedIn: 'root'
@@ -269,37 +270,37 @@ export class MenuService {
       },
       {
         name: 'home.configuration',
-        path: 'install/config',
+        path: HelpLinks.linksMap.configuration,
         icon: 'mdi:cog-outline'
       },
       {
         name: 'home.integration-with-thingsboard',
-        path: 'user-guide/integrations/how-to-connect-thingsboard-to-tbmq',
+        path: HelpLinks.linksMap.connectToThingsBoard,
         icon: 'input'
       },
       {
         name: 'home.performance-tests',
-        path: 'reference/100m-connections-performance-test',
+        path: HelpLinks.linksMap.perfTest100m,
         icon: 'mdi:speedometer'
       },
       {
         name: 'home.security',
-        path: 'security',
+        path: HelpLinks.linksMap.securitySettings,
         icon: 'mdi:security'
       },
       {
         name: 'home.mqtt-client-type',
-        path: 'user-guide/mqtt-client-type',
+        path: HelpLinks.linksMap.clientType,
         icon: 'mdi:devices'
       },
       {
         name: 'home.shared-subscriptions',
-        path: 'user-guide/shared-subscriptions',
+        path: HelpLinks.linksMap.sharedSubscriptions,
         icon: 'mdi:monitor-share'
       },
       {
         name: 'home.retained-messages',
-        path: 'user-guide/retained-messages',
+        path: HelpLinks.linksMap.retainedMessages,
         icon: 'mdi:archive'
       }
     ]);

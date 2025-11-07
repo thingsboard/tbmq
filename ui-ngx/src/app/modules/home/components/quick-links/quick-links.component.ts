@@ -37,11 +37,9 @@ export class QuickLinksComponent {
   }
 
   navigate(path: string) {
-    let location: string;
+    let location = path;
     if (path === 'rest-api') {
       location = window.location.origin + '/swagger-ui.html';
-    } else {
-      location = 'https://thingsboard.io/docs/mqtt-broker/' + path;
     }
     window.open(location, '_blank');
   }

@@ -19,14 +19,14 @@ export const Constants = {
     general: 2,
     authentication: 10,
     jwtTokenExpired: 11,
-    tenantTrialExpired: 12,
     credentialsExpired: 15,
     permissionDenied: 20,
     invalidArguments: 30,
     badRequestParams: 31,
     itemNotFound: 32,
     tooManyRequests: 33,
-    tooManyUpdates: 34
+    tooManyUpdates: 34,
+    passwordViolation: 45
   },
   entryPoints: {
     login: '/api/auth/login',
@@ -54,28 +54,51 @@ export const MediaBreakpoints = {
   'md-lg': 'screen and (min-width: 960px) and (max-width: 1819px)'
 };
 
-export const helpBaseUrl = 'https://thingsboard.io';
-
+export const helpBaseUrl = 'http://localhost:4000';
+export const docsPath = '/docs/mqtt-broker';
 export const HelpLinks = {
   linksMap: {
-    outgoingMailSettings: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mail-server/',
-    users: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/users/',
-    clientCredentials: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/mqtt-client-credentials/',
-    sessions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/sessions',
-    sharedSubscriptions: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/shared-subscriptions',
-    connection: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/websocket-client',
-    unauthorizedClient: helpBaseUrl + '/docs/mqtt-broker/user-guide/ui/unauthorized-client',
-    integrations: helpBaseUrl + '/docs/mqtt-broker/integrations',
-    integrationHttp: helpBaseUrl + '/docs/mqtt-broker/integrations/http',
-    integrationMqtt: helpBaseUrl + '/docs/mqtt-broker/integrations/mqtt',
-    integrationKafka: helpBaseUrl + '/docs/mqtt-broker/integrations/kafka',
-    blockedClient: helpBaseUrl + '/docs/mqtt-broker/other/blocked-client',
-    securitySettings: helpBaseUrl + '/docs/mqtt-broker/security/overview/#settings',
-    providerBasic: helpBaseUrl + '/docs/mqtt-broker/security/authentication/basic',
-    providerX509: helpBaseUrl + '/docs/mqtt-broker/security/authentication/x509',
-    providerJwt: helpBaseUrl + '/docs/mqtt-broker/security/authentication/jwt',
-    providerScram: helpBaseUrl + '/docs/mqtt-broker/security/authentication/scram',
-    providerHttp: helpBaseUrl + '/docs/mqtt-broker/security/authentication/http',
+    outgoingMailSettings: helpBaseUrl + docsPath + '/user-guide/ui/mail-server',
+    users: helpBaseUrl + docsPath + '/user-guide/ui/users',
+    clientCredentials: helpBaseUrl + docsPath + '/user-guide/ui/mqtt-client-credentials',
+    sessions: helpBaseUrl + docsPath + '/user-guide/ui/sessions',
+    sharedSubscriptions: helpBaseUrl + docsPath + '/user-guide/ui/shared-subscriptions',
+    connection: helpBaseUrl + docsPath + '/user-guide/ui/websocket-client',
+    unauthorizedClient: helpBaseUrl + docsPath + '/user-guide/ui/unauthorized-clients',
+    integrations: helpBaseUrl + docsPath + '/integrations',
+    integrationHttp: helpBaseUrl + docsPath + '/integrations/http',
+    integrationMqtt: helpBaseUrl + docsPath + '/integrations/mqtt',
+    integrationKafka: helpBaseUrl + docsPath + '/integrations/kafka',
+    mqttAuthSettings: helpBaseUrl + docsPath + '/security/authentication',
+    oauth2Settings: helpBaseUrl + docsPath + '/security/oauth-2-support',
+    oauth2Apple: 'https://developer.apple.com/sign-in-with-apple/get-started',
+    oauth2Facebook: 'https://developers.facebook.com/docs/facebook-login/web#logindialog',
+    oauth2Github: 'https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app',
+    oauth2Google: 'https://developers.google.com/google-ads/api/docs/start',
+    blockedClient: helpBaseUrl + docsPath + '/other/blocked-client',
+    securitySettings: helpBaseUrl + docsPath + '/security/overview',
+    providerBasic: helpBaseUrl + docsPath + '/security/authentication/basic',
+    providerX509: helpBaseUrl + docsPath + '/security/authentication/x509',
+    providerJwt: helpBaseUrl + docsPath + '/security/authentication/jwt',
+    providerScram: helpBaseUrl + docsPath + '/security/authentication/scram',
+    providerHttp: helpBaseUrl + docsPath + '/security/authentication/http',
+    gettingStarted: helpBaseUrl + docsPath + '/getting-started',
+    help: helpBaseUrl + docsPath + '/help',
+    mqttOverWs: helpBaseUrl + docsPath + '/user-guide/mqtt-over-ws',
+    retainedMessages: helpBaseUrl + docsPath + '/user-guide/retained-messages',
+    lastWill: helpBaseUrl + docsPath + '/user-guide/last-will',
+    keepAlive: helpBaseUrl + docsPath + '/user-guide/keep-alive',
+    qos: helpBaseUrl + docsPath + '/user-guide/qos',
+    topics: helpBaseUrl + docsPath + '/user-guide/topics',
+    mqttProtocol: helpBaseUrl + docsPath + '/user-guide/mqtt-protocol',
+    troubleshooting: helpBaseUrl + docsPath + '/troubleshooting',
+    monitoring: helpBaseUrl + docsPath + '/user-guide/ui/monitoring',
+    clientType: helpBaseUrl + docsPath + '/user-guide/mqtt-client-type',
+    connectToThingsBoard: helpBaseUrl + docsPath + '/user-guide/integrations/how-to-connect-thingsboard-to-tbmq',
+    perfTest100m: helpBaseUrl + docsPath + '/reference/100m-connections-performance-test',
+    configuration: helpBaseUrl + docsPath + '/install/config',
+    architecture: helpBaseUrl + docsPath + '/architecture',
+    pricing: helpBaseUrl + '/pricing/?section=tbmq',
   }
 };
 

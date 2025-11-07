@@ -14,6 +14,8 @@
 /// limitations under the License.
 ///
 
+import { HelpLinks } from '@shared/models/constants';
+
 export const gettingStartedGuideTitle = (id: string) => gettingStartedGuides.find(el => el.id === id)?.title;
 
 export const gettingStartedGuides: GettingStartedLink[] = [
@@ -65,52 +67,52 @@ export const gettingStartedDocs: GettingStartedLink[] = [
   {
     img: '/assets/getting-started/getting_started.svg',
     title: 'Getting Started',
-    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started'
+    url: HelpLinks.linksMap.gettingStarted
   },
   {
     img: '/assets/getting-started/architecture.svg',
     title: 'Architecture',
-    url: 'https://thingsboard.io/docs/mqtt-broker/architecture'
+    url: HelpLinks.linksMap.architecture
   },
   {
     img: '/assets/getting-started/configuration.svg',
     title: 'Configuration',
-    url: 'https://thingsboard.io/docs/mqtt-broker/install/config'
+    url: HelpLinks.linksMap.configuration
   },
   {
     img: '/assets/getting-started/security.svg',
     title: 'Security',
-    url: 'https://thingsboard.io/docs/mqtt-broker/security'
+    url: HelpLinks.linksMap.securitySettings
   },
   {
     img: '/assets/getting-started/integrations.svg',
     title: 'Integrations',
-    url: 'https://thingsboard.io/docs/mqtt-broker/integrations'
+    url: HelpLinks.linksMap.integrations
   },
   {
     img: '/assets/getting-started/client_type.svg',
     title: 'Client Type',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-client-type'
+    url: HelpLinks.linksMap.clientType
   },
   {
     img: '/assets/getting-started/monitoring.svg',
     title: 'Monitoring',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/monitoring'
+    url: HelpLinks.linksMap.monitoring
   },
   {
     img: '/assets/getting-started/websocket_client.svg',
     title: 'WebSocket Client',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/websocket-client'
+    url: HelpLinks.linksMap.connection
   },
   {
     img: '/assets/getting-started/unauthorized-clients.svg',
     title: 'Unauthorized Clients',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/ui/unauthorized-clients'
+    url: HelpLinks.linksMap.unauthorizedClient
   },
   {
     img: '/assets/getting-started/troubleshooting.svg',
     title: 'Troubleshooting',
-    url: 'https://thingsboard.io/docs/mqtt-broker/troubleshooting'
+    url: HelpLinks.linksMap.troubleshooting
   },
 ]
 
@@ -118,42 +120,42 @@ export const gettingStartedFeatures: GettingStartedLink[] = [
   {
     img: '/assets/getting-started/mqtt-protocol.svg',
     title: 'MQTT Protocol',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-protocol'
+    url: HelpLinks.linksMap.mqttProtocol
   },
   {
     img: '/assets/getting-started/topics.svg',
     title: 'Topics & Wildcards',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/topics'
+    url: HelpLinks.linksMap.topics
   },
   {
     img: '/assets/getting-started/qos.svg',
     title: 'Quality of Service (QoS)',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/qos'
+    url: HelpLinks.linksMap.qos
   },
   {
     img: '/assets/getting-started/keep-alive.svg',
     title: 'Keep Alive',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/keep-alive'
+    url: HelpLinks.linksMap.keepAlive
   },
   {
     img: '/assets/getting-started/last-will.svg',
     title: 'Last Will & Testament',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/last-will'
+    url: HelpLinks.linksMap.lastWill
   },
   {
     img: '/assets/getting-started/retained-messages.svg',
     title: 'Retained Messages',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/retained-messages'
+    url: HelpLinks.linksMap.retainedMessages
   },
   {
     img: '/assets/getting-started/shared-subscriptions.svg',
     title: 'Shared Subscriptions',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/shared-subscriptions'
+    url: HelpLinks.linksMap.sharedSubscriptions
   },
   {
     img: '/assets/getting-started/mqtt-over-ws.svg',
     title: 'MQTT over WebSocket',
-    url: 'https://thingsboard.io/docs/mqtt-broker/user-guide/mqtt-over-ws/'
+    url: HelpLinks.linksMap.mqttOverWs
   },
 ]
 
@@ -172,7 +174,7 @@ export const gettingStartedActions: GettingStartedLink[] = [
   },
   {
     title: 'getting-started.guide.support',
-    url: 'https://thingsboard.io/docs/mqtt-broker/help'
+    url: HelpLinks.linksMap.help
   },
   {
     title: 'getting-started.guide.github',
@@ -180,10 +182,10 @@ export const gettingStartedActions: GettingStartedLink[] = [
   },
   {
     title: 'getting-started.guide.docs',
-    url: 'https://thingsboard.io/docs/mqtt-broker/getting-started/'
+    url: HelpLinks.linksMap.gettingStarted
   },
   {
     title: 'getting-started.guide.pricing',
-    url: 'https://thingsboard.io/pricing/?section=tbmq-options'
+    url: HelpLinks.linksMap.pricing
   }
 ]
