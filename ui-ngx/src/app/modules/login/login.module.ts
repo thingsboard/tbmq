@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common';
 import { LoginRoutingModule } from './login-routing.module';
 import { LoginComponent } from './pages/login/login.component';
 import { ResetPasswordRequestComponent } from '@modules/login/pages/login/reset-password-request.component';
+import { ResetPasswordComponent } from '@modules/login/pages/login/reset-password.component';
 
 @NgModule({
   imports: [
@@ -26,6 +27,7 @@ import { ResetPasswordRequestComponent } from '@modules/login/pages/login/reset-
     LoginRoutingModule,
     LoginComponent,
     ResetPasswordRequestComponent,
+    ResetPasswordComponent,
   ]
 })
 export class LoginModule { }
