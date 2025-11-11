@@ -98,7 +98,7 @@ export const HelpLinks = {
     perfTest100m: helpBaseUrl + docsPath + '/reference/100m-connections-performance-test',
     configuration: helpBaseUrl + docsPath + '/install/config',
     architecture: helpBaseUrl + docsPath + '/architecture',
-    pricing: helpBaseUrl + '/pricing/?section=tbmq',
+    pricing: helpBaseUrl + '/pricing/?section=tbmq-options&product=tbmq-ce',
   }
 };
 
