@@ -54,7 +54,7 @@ export const MediaBreakpoints = {
   'md-lg': 'screen and (min-width: 960px) and (max-width: 1819px)'
 };
 
-export const helpBaseUrl = 'http://localhost:4000';
+export const helpBaseUrl = 'https://thingsboard.io';
 export const docsPath = '/docs/mqtt-broker';
 export const HelpLinks = {
   linksMap: {
