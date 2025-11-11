@@ -23,9 +23,9 @@
   background: $tb-primary-color;
 
   button {
-    width: calc(100% - 16px);
-    justify-content: flex-start;
-    background: rgba(255, 255, 255, 0.2);
+    width: calc(100% - 24px);
+    justify-content: center;
+    background: rgba(255,255,255,0.2);
     gap: 4px;
   }
 }
