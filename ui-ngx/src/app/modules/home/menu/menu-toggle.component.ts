@@ -48,7 +48,10 @@ export class MenuToggleComponent {
 
   toggleSection(event: MouseEvent) {
     event.stopPropagation();
-    this.section().opened = !this.section().opened;
+    const inOpenedSection = !this.router.url.startsWith(this.section().path);
+    if (inOpenedSection) {
+      this.section().opened = !this.section().opened;
+    }
   }
 
   trackBySectionPages(index: number, section: MenuSection){
